@@ -1,0 +1,159 @@
+[tool.ruff]
+output-format = "full"
+lint.select = ["ALL"]
+line-length = 100
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".eggs",
+    "*.egg",
+    "dist",
+    "tests/fixtures/**",
+    "tests/**/snapshots/**",
+    "alembic",
+    "airich",
+]
+lint.ignore = [
+    "B008",
+    "Q000",
+    "S101",
+    "PT016",
+    "ANN101",
+    "ANN102",
+    "N805",
+    "PLC0414",
+    "D",
+    "ANN10",
+    "RUF001",
+    "RUF012",
+    "FIX",
+    "TD002",
+    "TD003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/tests/*" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
+"src/tests/conftest.py" = ["ARG001"]
+"src/tests/mocks/*" = ["ARG002", "ARG003"]
+"src/tests/**/helper.py" = ["PLR0913", "ANN401"]
+"src/app/config/*" = ["ANN401"]
+"src/app/api/boundary.py" = ["ARG002", "ANN003", "A003", "ANN401"]
+"src/app/api/*/endpoint.py" = ["PLR0913"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+ignore-decorators = ["typing.overload"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 11
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "pydantic.model_validator",
+    "pydantic.field_validator",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"typings/*" = ["ANN401"]
+"__init__.py" = ["F401", "F405"]
+"*/migrations/versions/*" = ["D103"]
+"src/app/main.py" = ["E402"]
+"src/cli/commands/*" = ["E402", "ANN201"]
+"src/cli/__init__.py" = ["E402", "ANN201", "FBT001", "FBT002", "UP007"]
+"manage.py" = ["E402"]
+"tests/*" = ["D103"]
+
+
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+
+
+[tool.coverage]
+[tool.coverage.run]
+source = ["src/app"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "enum.Enum",
+    "(Protocol):",
+    "(typing.Protocol):",
+    "pragma: no cover",
+    "pragma: no coverage",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@overload",
+]
+omit = ["src/alembic/*", "src/tests/*", "src/app/main.py"]
+
+[tool.pytest]
+testpath = "tests"
+
+
+[tool.bandit]
+exclude = ['tests']
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py']
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "ruff>=0.3.4",
+    "vulture>=2.11",
+    "pytest>=8.1.1",
+    "black>=24.3.0",
+    "bandit>=1.7.8",
+    "coverage>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "isort>=5.13.2",
+    "pyright>=1.1.355",
+    "freezegun>=1.4.0",
+    "mimesis>=15.1.0",
+    "ipython>=8.22.2",
+    "pytest-asyncio>=0.23.6",
+    "httpx>=0.27.0",
+    "pytest-mock>=3.14.0",
+    "behave[toml] @ git+https://github.com/behave/behave@v1.2.7.dev5",
+]
+
+
+[project]
+name = "my-site-backend"
+version = "3.0.0"
+description = "My site backend"
+authors = [{ name = "Dmitriy Lunev", email = "dima.lunev14@gmail.com" }]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "litestar[pydantic,brotli,cryptography,jwt,structlog,sqlalchemy]>=2.11.0",
+    "uvicorn>=0.30.6",
+    "pydantic-settings>=2.4.0",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
