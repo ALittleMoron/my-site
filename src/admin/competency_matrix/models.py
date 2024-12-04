@@ -41,7 +41,7 @@ class Resource(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Внешний ресурс \"{self.name}\""
+        return f'Внешний ресурс "{self.name}"'
 
     class Meta:
         verbose_name = "Внешние ресурс"

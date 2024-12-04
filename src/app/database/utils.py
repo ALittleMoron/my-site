@@ -1,6 +1,7 @@
 from alembic.command import downgrade as alembic_downgrade
 from alembic.command import upgrade as alembic_upgrade
 from alembic.config import Config
+
 from app.config.settings import settings
 
 

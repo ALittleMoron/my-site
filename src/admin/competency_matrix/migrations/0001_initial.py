@@ -29,7 +29,10 @@ class Migration(migrations.Migration):
                 (
                     'id',
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
                     ),
                 ),
                 ('name', models.CharField(max_length=255, verbose_name='Название')),
@@ -37,7 +40,8 @@ class Migration(migrations.Migration):
                 (
                     'context',
                     mdeditor.fields.MDTextField(
-                        blank=True, verbose_name='Контекст, зачем этот ресурс был сюда добавлен'
+                        blank=True,
+                        verbose_name='Контекст, зачем этот ресурс был сюда добавлен',
                     ),
                 ),
             ],
@@ -74,7 +78,10 @@ class Migration(migrations.Migration):
                 (
                     'id',
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
                     ),
                 ),
                 ('question', models.CharField(max_length=255, verbose_name='Вопрос')),
@@ -82,7 +89,8 @@ class Migration(migrations.Migration):
                 (
                     'interview_expected_answer',
                     mdeditor.fields.MDTextField(
-                        blank=True, verbose_name='Ответ, который ожидают на интервью'
+                        blank=True,
+                        verbose_name='Ответ, который ожидают на интервью',
                     ),
                 ),
                 (
@@ -97,7 +105,9 @@ class Migration(migrations.Migration):
                 (
                     'resources',
                     models.ManyToManyField(
-                        blank=True, to='competency_matrix.resource', verbose_name='Внешние ресурсы'
+                        blank=True,
+                        to='competency_matrix.resource',
+                        verbose_name='Внешние ресурсы',
                     ),
                 ),
                 (

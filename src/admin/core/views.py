@@ -32,7 +32,7 @@ def custom_markdown_upload_image(request) -> HttpResponse:
         return JsonResponse({'success': 0, 'message': msg, 'url': ""})
     random_name = uuid.uuid4().hex + '-' + image.name.replace(' ', '_')
     current_date = datetime.now().strftime('%Y-%m-%d')
-    upload_path = os.path.join(getattr(settings, "MARTOR_UPLOAD_PATH"), current_date, random_name)
+    upload_path = os.path.join(settings.MARTOR_UPLOAD_PATH, current_date, random_name)
     def_path = default_storage.save(name=upload_path, content=ContentFile(image.read()))
     image_url = ''.join([settings.MEDIA_URL, def_path])
     return JsonResponse(

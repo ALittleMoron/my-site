@@ -90,7 +90,7 @@ DATABASES = {
         'PASSWORD': config('ADMIN_DB_PASSWORD', default='postgres'),
         'HOST': config('ADMIN_DB_HOST', default='localhost'),
         'PORT': config('ADMIN_DB_PORT', default='5432'),
-    }
+    },
 }
 
 
@@ -233,7 +233,7 @@ MDEDITOR_CONFIGS = {
         'lineWrapping': True,
         'lineNumbers': True,
         'language': 'ru',
-    }
+    },
 }
 
 UNFOLD = {
@@ -241,8 +241,8 @@ UNFOLD = {
     "SITE_HEADER": "Админ-панель",
     "THEME": "dark",
     "SITE_ICON": {
-        "light": lambda request: static("core/icon-light.png"),  # light mode
-        "dark": lambda request: static("core/icon-dark.png"),  # dark mode
+        "light": lambda _: static("core/icon-light.png"),  # light mode
+        "dark": lambda _: static("core/icon-dark.png"),  # dark mode
     },
     "COLORS": {
         "font": {
