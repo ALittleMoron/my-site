@@ -9,7 +9,7 @@ from litestar.openapi.plugins import (
 )
 from litestar.openapi.spec import Contact, License, Server, Tag
 
-from app.utils import get_app_version
+from app.core_utils import get_app_version
 
 description = """
 Документация API моего личного сайта.
