@@ -1,22 +1,44 @@
 from django.db import models
 from mdeditor.fields import MDTextField
 
-from admin.core.models import TypeModel
+from admin.core.models import ModelWithName, PublishModel
 
 
-class Section(TypeModel):
+class Sheet(ModelWithName):
+    class Meta:
+        verbose_name = "Лист"
+        verbose_name_plural = "Листы"
+
+
+class Section(ModelWithName):
+    sheet = models.ForeignKey(
+        Sheet,
+        on_delete=models.CASCADE,
+        verbose_name="Лист",
+        null=False,
+        blank=False,
+    )
+
     class Meta:
         verbose_name = "Раздел"
         verbose_name_plural = "Разделы"
 
 
-class SubSection(TypeModel):
+class SubSection(ModelWithName):
+    section = models.ForeignKey(
+        Section,
+        on_delete=models.CASCADE,
+        verbose_name="Раздел",
+        null=False,
+        blank=False,
+    )
+
     class Meta:
         verbose_name = "Подраздел"
         verbose_name_plural = "Подразделы"
 
 
-class Grade(TypeModel):
+class Grade(ModelWithName):
     class Meta:
         verbose_name = "Уровень компетенции"
         verbose_name_plural = "Уровень компетенций"
@@ -48,7 +70,10 @@ class Resource(models.Model):
         verbose_name_plural = "Внешние ресурсы"
 
 
-class CompetencyMatrixItem(models.Model):
+class CompetencyMatrixItem(PublishModel, models.Model):
+    draft: "models.Manager[CompetencyMatrixItem]"
+    published: "models.Manager[CompetencyMatrixItem]"
+
     question = models.CharField(
         max_length=255,
         verbose_name='Вопрос',
@@ -66,21 +91,17 @@ class CompetencyMatrixItem(models.Model):
         blank=True,
     )
 
-    section = models.ForeignKey(
-        Section,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
     subsection = models.ForeignKey(
         SubSection,
         on_delete=models.SET_NULL,
+        verbose_name="Подраздел",
         null=True,
         blank=True,
     )
     grade = models.ForeignKey(
         Grade,
         on_delete=models.SET_NULL,
+        verbose_name="Уровень компетенции",
         null=True,
         blank=True,
     )
@@ -95,6 +116,6 @@ class CompetencyMatrixItem(models.Model):
 
     class Meta:
         db_table = "competency_matrix_item"
-        ordering = ['section', 'subsection', 'grade', 'question']
+        ordering = ['subsection', 'subsection__section', 'grade', 'question']
         verbose_name = "Элемент матрицы компетенций"
         verbose_name_plural = "Элементы матрицы компетенций"

@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:293091bc7d85ad8ba5a7513280034219a6cb0f994594e47983f986d61b6a03c0"
+content_hash = "sha256:6a6912c3331a061a2d3c69ceadcaab9b6f0973a9590f19d518edcf83e68f0619"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -514,6 +514,17 @@ files = [
 ]
 
 [[package]]
+name = "diff-match-patch"
+version = "20241021"
+requires_python = ">=3.7"
+summary = "Repackaging of Google's Diff Match and Patch libraries."
+groups = ["default"]
+files = [
+    {file = "diff_match_patch-20241021-py3-none-any.whl", hash = "sha256:93cea333fb8b2bc0d181b0de5e16df50dd344ce64828226bda07728818936782"},
+    {file = "diff_match_patch-20241021.tar.gz", hash = "sha256:beae57a99fa48084532935ee2968b8661db861862ec82c6f21f4acdd6d835073"},
+]
+
+[[package]]
 name = "django"
 version = "5.1.3"
 requires_python = ">=3.10"
@@ -542,6 +553,22 @@ dependencies = [
 files = [
     {file = "django_debug_toolbar-4.4.6-py3-none-any.whl", hash = "sha256:3beb671c9ec44ffb817fad2780667f172bd1c067dbcabad6268ce39a81335f45"},
     {file = "django_debug_toolbar-4.4.6.tar.gz", hash = "sha256:36e421cb908c2f0675e07f9f41e3d1d8618dc386392ec82d23bcfcd5d29c7044"},
+]
+
+[[package]]
+name = "django-import-export"
+version = "4.3.3"
+requires_python = ">=3.9"
+summary = "Django application and library for importing and exporting data with included admin integration."
+groups = ["default"]
+dependencies = [
+    "Django>=4.2",
+    "diff-match-patch==20241021",
+    "tablib>=3.7.0",
+]
+files = [
+    {file = "django_import_export-4.3.3-py3-none-any.whl", hash = "sha256:91b47c9a2701a5b039667df5c46ee682a41bb224ac215a0e66b177a459e35983"},
+    {file = "django_import_export-4.3.3.tar.gz", hash = "sha256:b261f44aedf572a69f975655afba15bff1e354eddd91d9c1bbd32d3cee44168d"},
 ]
 
 [[package]]
@@ -1887,6 +1914,17 @@ groups = ["default"]
 files = [
     {file = "structlog-24.4.0-py3-none-any.whl", hash = "sha256:597f61e80a91cc0749a9fd2a098ed76715a1c8a01f73e336b746504d1aad7610"},
     {file = "structlog-24.4.0.tar.gz", hash = "sha256:b27bfecede327a6d2da5fbc96bd859f114ecc398a6389d664f62085ee7ae6fc4"},
+]
+
+[[package]]
+name = "tablib"
+version = "3.7.0"
+requires_python = ">=3.9"
+summary = "Format agnostic tabular data library (XLS, JSON, YAML, CSV, etc.)"
+groups = ["default"]
+files = [
+    {file = "tablib-3.7.0-py3-none-any.whl", hash = "sha256:9a6930037cfe0f782377963ca3f2b1dae3fd4cdbf0883848f22f1447e7bb718b"},
+    {file = "tablib-3.7.0.tar.gz", hash = "sha256:f9db84ed398df5109bd69c11d46613d16cc572fb9ad3213f10d95e2b5f12c18e"},
 ]
 
 [[package]]

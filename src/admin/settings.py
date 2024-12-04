@@ -5,6 +5,7 @@ from typing import cast
 
 from decouple import AutoConfig
 from django.templatetags.static import static
+from django.urls import reverse_lazy
 
 BASE_DIR = Path(__file__).resolve().parent
 SRC_DIR = BASE_DIR.parent
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     "unfold.contrib.filters",
     "unfold.contrib.forms",
     "unfold.contrib.inlines",
+    "unfold.contrib.import_export",
     # builtin
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,6 +45,7 @@ INSTALLED_APPS = [
     # third-party
     'mdeditor',
     'django_minio_backend',
+    'import_export',
     "debug_toolbar",
     # applications
     'core.apps.CoreConfig',
@@ -102,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'ru-RU'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
@@ -168,8 +171,8 @@ MAX_IMAGE_UPLOAD_SIZE = 10485760
 
 MDEDITOR_CONFIGS = {
     'default': {
-        'width': '90% ',  # Custom edit box width
-        'height': 500,  # Custom edit box height
+        'width': '90% ',
+        'height': 500,
         'toolbar': [
             "undo",
             "redo",
@@ -243,6 +246,78 @@ UNFOLD = {
     "SITE_ICON": {
         "light": lambda _: static("core/icon-light.png"),  # light mode
         "dark": lambda _: static("core/icon-dark.png"),  # dark mode
+    },
+    "TABS": [
+        {
+            "models": ["competency_matrix.competencymatrixitem"],
+            "items": [
+                {
+                    "title": "Элементы матрицы компетенций",
+                    "icon": "sports_motorsports",
+                    "link": reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
+                },
+                {
+                    "title": "Заполненные",
+                    "icon": "sports_motorsports",
+                    "link": lambda _: '{0}?subsection__isnull=false&grade__isnull=false'.format(
+                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    ),
+                },
+                {
+                    "title": "Опубликованные",
+                    "icon": "sports_motorsports",
+                    "link": lambda _: '{0}?status__exact=published'.format(
+                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    ),
+                },
+                {
+                    "title": "Черновики",
+                    "icon": "sports_motorsports",
+                    "link": lambda _: '{0}?status__exact=draft'.format(
+                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    ),
+                },
+            ],
+        },
+    ],
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                'title': 'Навигация',
+                'items': [
+                    {
+                        "title": "Панель",
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                    {
+                        "title": "Матрица компетенций",
+                        "icon": "school",
+                        "link": reverse_lazy(
+                            "admin:competency_matrix_competencymatrixitem_changelist"
+                        ),
+                    },
+                ],
+            },
+            {
+                "title": "Пользователи и группы",
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": "Пользователи",
+                        "icon": "person",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                    {
+                        "title": "Группы",
+                        "icon": "group",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
+                ],
+            },
+        ],
     },
     "COLORS": {
         "font": {
