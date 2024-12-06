@@ -1,9 +1,6 @@
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import (
     JsonRenderPlugin,
-    RapidocRenderPlugin,
-    RedocRenderPlugin,
-    StoplightRenderPlugin,
     SwaggerRenderPlugin,
     YamlRenderPlugin,
 )
@@ -38,19 +35,16 @@ openapi_config = OpenAPIConfig(
     servers=[Server('/', description="Локальный сервер, запущенный на вашей машине.")],
     summary=None,
     tags=[
-        Tag(name="health-check", description="Проверка работоспособности приложения"),
+        Tag(name="healthcheck", description="Проверка работоспособности приложения"),
+        Tag(name="competency matrix", description="Матрица компетенций"),
     ],
     terms_of_service=None,
     use_handler_docstrings=True,
     render_plugins=[
-        StoplightRenderPlugin(),
+        SwaggerRenderPlugin(),
         JsonRenderPlugin(),
         YamlRenderPlugin(),
-        RapidocRenderPlugin(),
-        RedocRenderPlugin(),
-        SwaggerRenderPlugin(),
     ],
     path="/docs",
-    root_schema_site="swagger",
     enabled_endpoints=None,
 )

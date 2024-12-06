@@ -62,12 +62,12 @@ class Resource(models.Model):
         blank=True,
     )
 
-    def __str__(self) -> str:
-        return f'Внешний ресурс "{self.name}"'
-
     class Meta:
         verbose_name = "Внешние ресурс"
         verbose_name_plural = "Внешние ресурсы"
+
+    def __str__(self) -> str:
+        return f'Внешний ресурс "{self.name}"'
 
 
 class CompetencyMatrixItem(PublishModel, models.Model):
@@ -111,11 +111,11 @@ class CompetencyMatrixItem(PublishModel, models.Model):
         blank=True,
     )
 
-    def __str__(self) -> str:
-        return self.question
-
     class Meta:
         db_table = "competency_matrix_item"
         ordering = ['subsection', 'subsection__section', 'grade', 'question']
         verbose_name = "Элемент матрицы компетенций"
         verbose_name_plural = "Элементы матрицы компетенций"
+
+    def __str__(self) -> str:
+        return self.question

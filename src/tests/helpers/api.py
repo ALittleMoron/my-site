@@ -1,17 +1,16 @@
-import pytest
+from dataclasses import dataclass
+
 from httpx import Response
 from litestar import Litestar
 from litestar.testing import TestClient
 
 
+@dataclass(kw_only=True)
 class ApiHelper:
-    __test__ = False
-
     client: TestClient[Litestar]
-
-    @pytest.fixture(autouse=True)
-    def _setup(self, test_client: TestClient[Litestar]) -> None:
-        self.client = test_client
 
     def base_healthcheck(self) -> Response:
         return self.client.get("/api/health/base/")
+
+    def list_competency_matrix(self) -> Response:
+        return self.client.get("/api/competencyMatrix/items/")

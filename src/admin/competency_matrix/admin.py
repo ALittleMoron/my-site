@@ -6,7 +6,7 @@ from unfold.admin import ModelAdmin, display
 from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
 from .forms import CompetencyMatrixItemForm
-from .models import CompetencyMatrixItem, Grade, Resource, Section, SubSection, Sheet
+from .models import CompetencyMatrixItem, Grade, Resource, Section, Sheet, SubSection
 
 
 @admin.register(Sheet)
@@ -62,7 +62,7 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
         models.TextField: {"widget": MDEditorWidget},
     }
 
-    def get_queryset(self, request):
+    def get_queryset(self, request):  # noqa: ANN001 ANN201
         qs = super().get_queryset(request)
         return qs.select_related(
             "subsection",

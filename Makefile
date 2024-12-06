@@ -38,6 +38,7 @@ fix:
 .PHONY: test
 tests:
 	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
-	PYTHONPATH=src $(PDM) run coverage run -m pytest -vv
+	PYTHONPATH=src $(PDM) run coverage run -m behave
+	PYTHONPATH=src $(PDM) run coverage run -a -m pytest -vvv
 	$(PDM) run coverage xml
 	$(PDM) run coverage report --fail-under=95

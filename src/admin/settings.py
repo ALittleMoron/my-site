@@ -259,22 +259,22 @@ UNFOLD = {
                 {
                     "title": "Заполненные",
                     "icon": "sports_motorsports",
-                    "link": lambda _: '{0}?subsection__isnull=false&grade__isnull=false'.format(
-                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    "link": lambda _: '{url}?subsection__isnull=false&grade__isnull=false'.format(
+                        url=reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
                     ),
                 },
                 {
                     "title": "Опубликованные",
                     "icon": "sports_motorsports",
-                    "link": lambda _: '{0}?status__exact=published'.format(
-                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    "link": lambda _: '{url}?status__exact=published'.format(
+                        url=reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
                     ),
                 },
                 {
                     "title": "Черновики",
                     "icon": "sports_motorsports",
-                    "link": lambda _: '{0}?status__exact=draft'.format(
-                        reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist")
+                    "link": lambda _: '{url}?status__exact=draft'.format(
+                        url=reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
                     ),
                 },
             ],
@@ -296,7 +296,7 @@ UNFOLD = {
                         "title": "Матрица компетенций",
                         "icon": "school",
                         "link": reverse_lazy(
-                            "admin:competency_matrix_competencymatrixitem_changelist"
+                            "admin:competency_matrix_competencymatrixitem_changelist",
                         ),
                     },
                 ],
