@@ -88,11 +88,11 @@ WSGI_APPLICATION = 'admin.wsgi.application'
 DATABASES = {
     'default': {
         "ENGINE": "django.db.backends.postgresql",
-        'NAME': config('ADMIN_DB_NAME', default='my_site_database'),
-        'USER': config('ADMIN_DB_USER', default='postgres'),
-        'PASSWORD': config('ADMIN_DB_PASSWORD', default='postgres'),
-        'HOST': config('ADMIN_DB_HOST', default='localhost'),
-        'PORT': config('ADMIN_DB_PORT', default='5432'),
+        'NAME': config('DB_NAME', default='my_site_database'),
+        'USER': config('DB_USER', default='postgres'),
+        'PASSWORD': config('DB_PASSWORD', default='postgres'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     },
 }
 

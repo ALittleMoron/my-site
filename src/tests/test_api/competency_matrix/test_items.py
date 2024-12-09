@@ -7,7 +7,7 @@ from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItems
 
 
-class TestCompetencyMatrixItems(ApiFixture, FactoryFixture):
+class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
     current_datetime: datetime.datetime
     use_case: MockListCompetencyMatrixItems
 
@@ -36,8 +36,8 @@ class TestCompetencyMatrixItems(ApiFixture, FactoryFixture):
                 subsection_id=2,
             ),
         ]
-        response = self.api.list_competency_matrix()
-        assert response.is_success, response.text
+        response = self.mocked_api.list_competency_matrix()
+        assert response.is_success
         assert response.json() == {
             'items': [
                 {

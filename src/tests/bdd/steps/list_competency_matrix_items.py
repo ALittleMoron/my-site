@@ -25,11 +25,11 @@ async def when(context: Context) -> None:
 def then(context: Context) -> None:
     expected_items = context.bdd.parse_short_filled_competency_matrix_items()
     context.bdd.assert_equal(
-        actual=len(context.short_items.values),
+        actual=len(context.short_items),
         expected=len(expected_items),
         msg="actual competency matrix items count not suit expected",
     )
-    for actual_item, expected_item in zip(context.short_items.values, expected_items, strict=False):
+    for actual_item, expected_item in zip(context.short_items, expected_items, strict=False):
         context.bdd.assert_equal(
             actual=actual_item.id,
             expected=expected_item.id,

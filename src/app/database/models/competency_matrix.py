@@ -1,4 +1,5 @@
 import datetime
+from typing import Self
 
 from sqlalchemy import (
     BigInteger,
@@ -15,7 +16,15 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.competency_matrix.enums import StatusEnum
-from app.core.competency_matrix.schemas import ShortCompetencyMatrixItem
+from app.core.competency_matrix.schemas import (
+    FullCompetencyMatrixItem,
+    Grade,
+    Resource,
+    Section,
+    Sheet,
+    ShortCompetencyMatrixItem,
+    Subsection,
+)
 from app.database.models.base import Base
 
 DjangoIdIdentity = Identity(
@@ -57,12 +66,26 @@ class SheetModel(Base):
     id: Mapped[int] = mapped_column(BigInteger, DjangoIdIdentity, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
 
+    @classmethod
+    def from_schema(cls, schema: Sheet) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+        )
+
 
 class GradeModel(Base):
     __tablename__ = 'competency_matrix_grade'
 
     id: Mapped[int] = mapped_column(BigInteger, DjangoIdIdentity, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
+
+    @classmethod
+    def from_schema(cls, schema: Grade) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+        )
 
 
 class SectionModel(Base):
@@ -81,6 +104,14 @@ class SectionModel(Base):
     )
 
     sheet: Mapped['SheetModel'] = relationship()
+
+    @classmethod
+    def from_schema(cls, schema: Section) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            sheet=SheetModel.from_schema(schema=schema.sheet),
+        )
 
 
 class SubsectionModel(Base):
@@ -106,6 +137,14 @@ class SubsectionModel(Base):
 
     section: Mapped['SectionModel'] = relationship()
 
+    @classmethod
+    def from_schema(cls, schema: Subsection) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            section=SectionModel.from_schema(schema=schema.section),
+        )
+
 
 class ResourceModel(Base):
     __tablename__ = 'competency_matrix_resource'
@@ -114,6 +153,15 @@ class ResourceModel(Base):
     name: Mapped[str] = mapped_column(String(255))
     url: Mapped[str] = mapped_column(String(200))
     context: Mapped[str] = mapped_column(Text)
+
+    @classmethod
+    def from_schema(cls, schema: Resource) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            url=schema.url,
+            context=schema.context,
+        )
 
 
 class CompetencyMatrixItemModel(Base):
@@ -151,6 +199,26 @@ class CompetencyMatrixItemModel(Base):
     grade: Mapped['GradeModel | None'] = relationship()
     subsection: Mapped['SubsectionModel | None'] = relationship()
     resources: Mapped[list['ResourceModel']] = relationship(secondary=items_to_resources)
+
+    @classmethod
+    def from_domain_schema(cls, schema: FullCompetencyMatrixItem) -> Self:
+        return cls(
+            id=schema.id,
+            status=schema.status,
+            status_changed=schema.status_changed,
+            question=schema.question,
+            answer=schema.answer,
+            interview_expected_answer=schema.interview_expected_answer,
+            grade_id=schema.grade_id,
+            subsection_id=schema.subsection_id,
+            grade=GradeModel.from_schema(schema=schema.grade) if schema.grade is not None else None,
+            subsection=(
+                SubsectionModel.from_schema(schema=schema.subsection)
+                if schema.subsection is not None
+                else None
+            ),
+            resources=[ResourceModel.from_schema(schema=resource) for resource in schema.resources],
+        )
 
     def to_short_domain_schema(self) -> "ShortCompetencyMatrixItem":
         return ShortCompetencyMatrixItem(

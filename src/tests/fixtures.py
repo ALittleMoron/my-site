@@ -2,23 +2,23 @@ import pytest
 from litestar import Litestar
 from litestar.testing import TestClient
 
+from app.database.storages import DatabaseStorage
 from tests.helpers.api import ApiHelper
-from tests.helpers.app import AppHelper
 from tests.helpers.factory import FactoryHelper
+from tests.helpers.storage import StorageHelper
 
 
 class ApiFixture:
-    api: ApiHelper
-    app: AppHelper
+    mocked_api: ApiHelper
 
     @pytest.fixture(autouse=True)
     def _setup_api(
         self,
-        test_app: Litestar,
-        test_client: TestClient[Litestar],
+        client: TestClient[Litestar],
+        mocked_client: TestClient[Litestar],
     ) -> None:
-        self.app = AppHelper(app=test_app)
-        self.api = ApiHelper(client=test_client)
+        self.api = ApiHelper(client=client)
+        self.mocked_api = ApiHelper(client=mocked_client)
 
 
 class FactoryFixture:
@@ -27,3 +27,13 @@ class FactoryFixture:
     @pytest.fixture(autouse=True)
     def _setup_factory(self) -> None:
         self.factory = FactoryHelper()
+
+
+class StorageFixture:
+    storage: DatabaseStorage
+    storage_helper: StorageHelper
+
+    @pytest.fixture(autouse=True)
+    def _setup_storage(self, storage: DatabaseStorage) -> None:
+        self.storage = storage
+        self.storage_helper = StorageHelper(session=self.storage.session, use_flush=False)

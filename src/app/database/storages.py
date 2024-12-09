@@ -8,13 +8,14 @@ from app.core.competency_matrix.schemas import ShortCompetencyMatrixItem
 from app.database.models import CompetencyMatrixItemModel
 
 
-class Storage(ABC):
+class CompetencyMatrixStorage(ABC):
     @abstractmethod
-    async def list_competency_matrix_items(self) -> list[ShortCompetencyMatrixItem]: ...
+    async def list_competency_matrix_items(self) -> list[ShortCompetencyMatrixItem]:
+        raise NotImplementedError
 
 
 @dataclass
-class DatabaseStorage(Storage):
+class DatabaseStorage(CompetencyMatrixStorage):
     session: AsyncSession
 
     async def list_competency_matrix_items(self) -> list[ShortCompetencyMatrixItem]:

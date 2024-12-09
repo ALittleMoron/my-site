@@ -5,7 +5,7 @@ from behave.model import Scenario
 
 from tests.bdd.fixtures import Context, list_competency_matrix_use_case
 from tests.helpers.bdd import BddHelper
-from tests.mocks.storage_mock import MockStorage
+from tests.mocks.storage_mock import MockCompetencyMatrixStorage
 
 fixtures = {
     "setup.use_case.list_competency_matrix_use_case": list_competency_matrix_use_case,
@@ -14,7 +14,7 @@ fixtures = {
 
 def before_scenario(context: Context, _: Scenario) -> None:
     context.bdd = BddHelper(context=context)
-    context.storage = MockStorage()
+    context.storage = MockCompetencyMatrixStorage()
     context.current_datetime = datetime.datetime.now(tz=datetime.UTC)
     for tag in context.tags:
         if tag.startswith("setup.use_case"):

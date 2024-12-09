@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -32,6 +33,7 @@ class Grade:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Resource:
+    id: int
     name: str
     url: str
     context: str = ""
@@ -40,6 +42,12 @@ class Resource:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Resources:
     values: list[Resource]
+
+    def __len__(self) -> int:  # pragma: no cover
+        return len(self.values)
+
+    def __iter__(self) -> Iterator[Resource]:  # pragma: no cover
+        return iter(self.values)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -95,14 +103,26 @@ class CompetencyMatrixItems:
                     grade_id=item.grade_id,
                     subsection_id=item.subsection_id,
                 )
-                for item in self.values
+                for item in self
                 if item.grade_id is not None
                 and item.subsection_id is not None
                 and item.status == StatusEnum.PUBLISHED
             ],
         )
 
+    def __len__(self) -> int:  # pragma: no cover
+        return len(self.values)
+
+    def __iter__(self) -> Iterator[ShortCompetencyMatrixItem]:  # pragma: no cover
+        return iter(self.values)
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class FilledCompetencyMatrixItems:
     values: list[ShortFilledCompetencyMatrixItem]
+
+    def __len__(self) -> int:  # pragma: no cover
+        return len(self.values)
+
+    def __iter__(self) -> Iterator[ShortFilledCompetencyMatrixItem]:  # pragma: no cover
+        return iter(self.values)

@@ -7,11 +7,11 @@ from app.core.competency_matrix.schemas import (
     ShortCompetencyMatrixItem,
     Subsection,
 )
-from app.database.storage import Storage
+from app.database.storages import CompetencyMatrixStorage
 
 
 @dataclass(kw_only=True)
-class MockStorage(Storage):
+class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
     sheets: dict[int, Sheet] = field(default_factory=dict)
     section: dict[int, Section] = field(default_factory=dict)
     subsection: dict[int, Subsection] = field(default_factory=dict)

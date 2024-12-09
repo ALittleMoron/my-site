@@ -21,6 +21,7 @@ def get_plugins() -> list[InitPluginProtocol]:
 
 
 def create_app(
+    *,
     debug: bool = False,
     route_handlers: Sequence[ControllerRouterHandler] | None = None,
     openapi_configuration: OpenAPIConfig | None = None,

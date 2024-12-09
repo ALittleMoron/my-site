@@ -35,10 +35,16 @@ fix:
 	$(PDM) run ruff check $(NAME) --config ./pyproject.toml --fix
 	$(PDM) run black --config ./pyproject.toml $(NAME)
 
-.PHONY: test
+.PHONY: tests
 tests:
 	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
-	PYTHONPATH=src $(PDM) run coverage run -m behave
-	PYTHONPATH=src $(PDM) run coverage run -a -m pytest -vvv
+	PYTHONPATH=src DB_NAME=my_site_database_test $(PDM) run behave --stop
+	PYTHONPATH=src DB_NAME=my_site_database_test $(PDM) run pytest -vvv -x
+
+.PHONY: tests-coverage
+tests-coverage:
+	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
+	PYTHONPATH=src DB_NAME=my_site_database_test $(PDM) run coverage run -m behave
+	PYTHONPATH=src DB_NAME=my_site_database_test $(PDM) run coverage run -a -m pytest -v
 	$(PDM) run coverage xml
 	$(PDM) run coverage report --fail-under=95
