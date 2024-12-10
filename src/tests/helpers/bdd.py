@@ -8,6 +8,9 @@ from app.core.competency_matrix.enums import StatusEnum
 from app.core.competency_matrix.schemas import (
     ShortCompetencyMatrixItem,
     ShortFilledCompetencyMatrixItem,
+    Sheet,
+    Section,
+    Subsection,
 )
 
 if TYPE_CHECKING:
@@ -55,6 +58,41 @@ class BddHelper:
                 status_changed=self.parse_datetime(row.get('status_changed')),
                 grade_id=self.parse_int_or_none(row['grade.id']),
                 subsection_id=self.parse_int_or_none(row['subsection.id']),
+            )
+            for row in self.context.table
+        ]
+
+    def parse_sheets(self) -> list[Sheet]:
+        return [
+            Sheet(id=int(row['sheet.id']), name=row['sheet.name']) for row in self.context.table
+        ]
+
+    def parse_sections(self) -> list[Section]:
+        return [
+            Section(
+                id=int(row['section.id']),
+                name=row['section.name'],
+                sheet=Sheet(
+                    id=int(row['sheet.id']),
+                    name=row['sheet.name'],
+                ),
+            )
+            for row in self.context.table
+        ]
+
+    def parse_subsections(self):
+        return [
+            Subsection(
+                id=int(row['subsection.id']),
+                name=row['subsection.name'],
+                section=Section(
+                    id=int(row['section.id']),
+                    name=row['section.name'],
+                    sheet=Sheet(
+                        id=int(row['sheet.id']),
+                        name=row['sheet.name'],
+                    ),
+                ),
             )
             for row in self.context.table
         ]

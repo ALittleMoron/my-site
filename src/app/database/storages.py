@@ -10,7 +10,10 @@ from app.database.models import CompetencyMatrixItemModel, SectionModel, SheetMo
 
 class CompetencyMatrixStorage(ABC):
     @abstractmethod
-    async def list_competency_matrix_items(self) -> list[ShortCompetencyMatrixItem]:
+    async def list_competency_matrix_items(
+        self,
+        sheet_id: int | None = None,
+    ) -> list[ShortCompetencyMatrixItem]:
         raise NotImplementedError
 
 

@@ -9,15 +9,42 @@ class Context(BaseContext):
     use_case: ListCompetencyMatrixItemsUseCase
 
 
+@given("Список листов с вопросами")
+def given_sheets(context: Context) -> None:
+    for sheet in context.bdd.parse_sheets():
+        context.storage.sheets[sheet.id] = sheet
+
+
+@given("Список разделов")
+def given_sections(context: Context) -> None:
+    for section in context.bdd.parse_sections():
+        context.storage.sections[section.id] = section
+        context.storage.sheets[section.sheet.id] = section.sheet
+
+
+@given("Список подразделов")
+def given_subsections(context: Context) -> None:
+    for subsection in context.bdd.parse_subsections():
+        context.storage.subsections[subsection.id] = subsection
+        context.storage.sections[subsection.section.id] = subsection.section
+        context.storage.sheets[subsection.section.sheet.id] = subsection.section.sheet
+
+
 @given("Список вопросов в матрице компетенций")
-def given(context: Context) -> None:
+def given_items(context: Context) -> None:
     for item in context.bdd.parse_short_competency_matrix_items():
         context.storage.short_competency_matrix_items[item.id] = item
 
 
+@when("Получаем список вопросов из матрицы компетенций по листу {sheet_id:d}")
+@async_run_until_complete
+async def when_get_items_list_by_sheet_id(context: Context, sheet_id: int) -> None:
+    context.short_items = await context.use_case.execute(sheet_id=sheet_id)
+
+
 @when("Получаем список вопросов из матрицы компетенций")
 @async_run_until_complete
-async def when(context: Context) -> None:
+async def when_get_items_list(context: Context) -> None:
     context.short_items = await context.use_case.execute()
 
 
