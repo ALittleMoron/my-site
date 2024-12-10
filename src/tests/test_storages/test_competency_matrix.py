@@ -77,3 +77,12 @@ class TestCompetencyMatrixStorage(StorageFixture, FactoryFixture):
         items = await self.storage.list_competency_matrix_items()
         assert len(items) == 2
         assert {item.id for item in items} == {1, 2}
+
+    async def test_with_filter_by_sheet_id_find(self) -> None:
+        items = await self.storage.list_competency_matrix_items(sheet_id=1)
+        assert len(items) == 1
+        assert items[0].id == 1
+
+    async def test_with_filter_by_sheet_id_not_found(self) -> None:
+        items = await self.storage.list_competency_matrix_items(sheet_id=-1)
+        assert len(items) == 0
