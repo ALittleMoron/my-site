@@ -1,7 +1,10 @@
 from litestar import MediaType, Router, get, status_codes
 
 from app.api.competency_matrix.deps import ListCompetencyMatrixItemsUseCaseDeps
-from app.api.competency_matrix.schemas import CompetencyMatrixListSchema
+from app.api.competency_matrix.schemas import (
+    CompetencyMatrixListItemsParams,
+    CompetencyMatrixListSchema,
+)
 
 
 @get(
@@ -11,9 +14,11 @@ from app.api.competency_matrix.schemas import CompetencyMatrixListSchema
     description="Получение списка вопросов по матрице компетенций.",
 )
 async def list_competency_matrix_handler(
+    list_competency_matrix_items_params: CompetencyMatrixListItemsParams,
     list_competency_matrix_items_use_case: ListCompetencyMatrixItemsUseCaseDeps,
 ) -> CompetencyMatrixListSchema:
-    matrix = await list_competency_matrix_items_use_case.execute()
+    params = list_competency_matrix_items_params.to_schema()
+    matrix = await list_competency_matrix_items_use_case.execute(params=params)
     return CompetencyMatrixListSchema.from_domain_schema(schema=matrix)
 
 

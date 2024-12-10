@@ -3,6 +3,7 @@ from collections.abc import Generator
 
 import pytest
 
+from app.core.competency_matrix.schemas import ListCompetencyMatrixItemsParams
 from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItems
 
@@ -20,6 +21,11 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
         self.use_case = mock_list_competency_matrix_items_use_case
         yield
         self.use_case.items = []
+
+    def test_list_by_sheet_id(self) -> None:
+        response = self.mocked_api.list_competency_matrix(sheet_id=1)
+        assert response.is_success
+        assert self.use_case.params == ListCompetencyMatrixItemsParams(sheet_id=1)
 
     def test_list(self) -> None:
         self.use_case.items = [

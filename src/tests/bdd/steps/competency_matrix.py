@@ -1,6 +1,7 @@
 from behave import given, then, when
 from behave.api.async_step import async_run_until_complete
 
+from app.core.competency_matrix.schemas import ListCompetencyMatrixItemsParams
 from app.core.competency_matrix.use_cases import ListCompetencyMatrixItemsUseCase
 from tests.bdd.fixtures import Context as BaseContext
 
@@ -39,17 +40,21 @@ def given_items(context: Context) -> None:
 @when("Получаем список вопросов из матрицы компетенций по листу {sheet_id:d}")
 @async_run_until_complete
 async def when_get_items_list_by_sheet_id(context: Context, sheet_id: int) -> None:
-    context.short_items = await context.use_case.execute(sheet_id=sheet_id)
+    context.short_items = await context.use_case.execute(
+        params=ListCompetencyMatrixItemsParams(sheet_id=sheet_id),
+    )
 
 
 @when("Получаем список вопросов из матрицы компетенций")
 @async_run_until_complete
 async def when_get_items_list(context: Context) -> None:
-    context.short_items = await context.use_case.execute()
+    context.short_items = await context.use_case.execute(
+        params=ListCompetencyMatrixItemsParams(sheet_id=None),
+    )
 
 
 @then("Полученный список вопросов матрицы компетенций")
-def then(context: Context) -> None:
+def then_assert_items_list(context: Context) -> None:
     expected_items = context.bdd.parse_short_filled_competency_matrix_items()
     context.bdd.assert_equal(
         actual=len(context.short_items),

@@ -18,16 +18,30 @@ shell:
 clean:
 	find . -type d -name "__pycache__" | xargs rm -rf {};
 
-.PHONY: lint
-lint:
+.PHONY: types
+types:
 	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
-	$(PDM) run mypy --explicit-package-bases --config-file pyproject.toml src
-	$(PDM) run pyright $(NAME)
-	$(PDM) run isort --settings-path ./pyproject.toml --check-only $(NAME)
-	$(PDM) run black --config ./pyproject.toml --check $(NAME) --diff
-	$(PDM) run ruff check $(NAME)
-	$(PDM) run vulture $(NAME) --min-confidence 100
+	$(PDM) run mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml src
+
+.PHONY: bandit
+bandit:
+	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
 	$(PDM) run bandit --configfile ./pyproject.toml -r ./$(NAME)
+
+.PHONY: vulture
+vulture:
+	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
+	$(PDM) run vulture $(NAME) --min-confidence 100
+
+.PHONY: black-check
+black-check:
+	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
+	$(PDM) run black --config ./pyproject.toml --check $(NAME) --diff
+
+.PHONY: ruff-check
+ruff-check:
+	@if [ -z $(PDM) ]; then echo "PDM could not be found."; exit 2; fi
+	$(PDM) run ruff check $(NAME)
 
 .PHONY: fix
 fix:
@@ -48,3 +62,12 @@ tests-coverage:
 	PYTHONPATH=src DB_NAME=my_site_database_test $(PDM) run coverage run -a -m pytest -v
 	$(PDM) run coverage xml
 	$(PDM) run coverage report --fail-under=95
+
+.PHONY: quality
+quality:
+	-make bandit
+	-make vulture
+	make types
+	make ruff-check
+	make black-check
+	make tests

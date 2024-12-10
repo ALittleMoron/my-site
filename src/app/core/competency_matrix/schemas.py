@@ -5,6 +5,11 @@ from datetime import datetime
 from app.core.competency_matrix.enums import StatusEnum
 
 
+@dataclass(kw_only=True)
+class ListCompetencyMatrixItemsParams:
+    sheet_id: int | None
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Sheet:
     id: int

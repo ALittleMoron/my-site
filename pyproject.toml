@@ -43,6 +43,7 @@ lint.ignore = [
 "src/app/config/*" = ["ANN401"]
 "src/app/api/boundary.py" = ["ARG002", "ANN003", "A003", "ANN401"]
 "src/app/api/*/endpoint.py" = ["PLR0913"]
+"src/app/api/**/*.py" = ["N803"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -69,8 +70,8 @@ classmethod-decorators = [
 
 
 [tool.mypy]
-mypy_path = ["src/admin", "src/admin"]
-plugins = ["mypy_django_plugin.main"]
+mypy_path = ["src.admin", "src.app", "src.tests"]
+plugins = ["mypy_django_plugin.main", "pydantic.mypy"]
 follow_imports = "silent"
 strict = true
 disallow_subclassing_any = false
@@ -78,9 +79,20 @@ disallow_any_generics = false
 ignore_missing_imports = true
 disable_error_code = ["import-untyped"]
 
+[[tool.mypy.overrides]]
+module = ["src.tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
 [tool.django-stubs]
 django_settings_module = "admin.settings"
 
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.black]
 line-length = 100

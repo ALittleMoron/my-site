@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import TypeVar
 
 from litestar.di import Provide
@@ -5,29 +6,15 @@ from litestar.di import Provide
 T = TypeVar("T")
 
 
-def provide_sync(
-    entity: T,
-    *,
-    call_entity: bool = False,
-    use_cache: bool = False,
-    sync_to_thread: bool | None = None,
-) -> Provide:
-    return Provide(
-        lambda: entity() if call_entity else entity,
-        use_cache=use_cache,
-        sync_to_thread=sync_to_thread,
-    )
-
-
 def provide_async(
-    entity: T,
+    entity: T | Callable[[], T],
     *,
     call_entity: bool = False,
     use_cache: bool = False,
     sync_to_thread: bool | None = None,
 ) -> Provide:
-    async def handler() -> T:
-        if call_entity:
+    async def handler() -> T | Callable[[], T]:
+        if call_entity and callable(entity):
             return entity()
         return entity
 

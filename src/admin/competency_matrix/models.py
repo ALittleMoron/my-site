@@ -11,7 +11,7 @@ class Sheet(ModelWithName):
 
 
 class Section(ModelWithName):
-    sheet = models.ForeignKey(
+    sheet = models.ForeignKey(  # type: ignore[var-annotated]
         Sheet,
         on_delete=models.CASCADE,
         verbose_name="Лист",
@@ -25,7 +25,7 @@ class Section(ModelWithName):
 
 
 class SubSection(ModelWithName):
-    section = models.ForeignKey(
+    section = models.ForeignKey(  # type: ignore[var-annotated]
         Section,
         on_delete=models.CASCADE,
         verbose_name="Раздел",

@@ -33,6 +33,6 @@ class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
                         and self.subsections[item.subsection_id].section.sheet.id == sheet_id
                     ),
                     self.short_competency_matrix_items.values(),
-                )
+                ),
             )
         return list(self.short_competency_matrix_items.values())

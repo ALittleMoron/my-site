@@ -93,3 +93,17 @@ class TestCompetencyMatrixItemsApiIntegration(ApiFixture, FactoryFixture, Storag
                 },
             ],
         }
+
+    async def test_get_list_by_sheet_id(self) -> None:
+        response = self.api.list_competency_matrix(sheet_id=1)
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            'items': [
+                {
+                    "id": 1,
+                    "question": "Range - это итератор?",
+                    "grade_id": 1,
+                    "subsection_id": 1,
+                },
+            ],
+        }

@@ -6,10 +6,10 @@ from dateutil.parser import parse
 
 from app.core.competency_matrix.enums import StatusEnum
 from app.core.competency_matrix.schemas import (
+    Section,
+    Sheet,
     ShortCompetencyMatrixItem,
     ShortFilledCompetencyMatrixItem,
-    Sheet,
-    Section,
     Subsection,
 )
 
@@ -33,8 +33,8 @@ class BddHelper:
 
     def parse_datetime(self, dt: str | None) -> datetime.datetime:
         if not dt:
-            return self.context.current_datetime
-        return parse(dt)
+            return self.context.current_datetime  # type: ignore[no-any-return]
+        return parse(dt)  # type: ignore[no-any-return]
 
     def parse_short_competency_matrix_items(self) -> list[ShortCompetencyMatrixItem]:
         return [

@@ -5,8 +5,16 @@ from pydantic import Field
 from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
+    ListCompetencyMatrixItemsParams,
     ShortFilledCompetencyMatrixItem,
 )
+
+
+class CompetencyMatrixListItemsParams(CamelCaseSchema):
+    sheet_id: int | None = None
+
+    def to_schema(self) -> ListCompetencyMatrixItemsParams:
+        return ListCompetencyMatrixItemsParams(sheet_id=self.sheet_id)
 
 
 class CompetencyMatrixBaseSchema(CamelCaseSchema):

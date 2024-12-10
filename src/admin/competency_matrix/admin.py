@@ -1,5 +1,8 @@
+from typing import TYPE_CHECKING
+
 from django.contrib import admin
 from django.db import models
+from django.http import HttpRequest
 from import_export.admin import ImportExportModelAdmin
 from mdeditor.widgets import MDEditorWidget
 from unfold.admin import ModelAdmin, display
@@ -7,6 +10,9 @@ from unfold.contrib.import_export.forms import ExportForm, ImportForm
 
 from .forms import CompetencyMatrixItemForm
 from .models import CompetencyMatrixItem, Grade, Resource, Section, Sheet, SubSection
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 
 @admin.register(Sheet)
@@ -62,27 +68,30 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
         models.TextField: {"widget": MDEditorWidget},
     }
 
-    def get_queryset(self, request):  # noqa: ANN001 ANN201
+    def get_queryset(
+        self,
+        request: HttpRequest,
+    ) -> "QuerySet[CompetencyMatrixItem, CompetencyMatrixItem]":
         qs = super().get_queryset(request)
-        return qs.select_related(
+        return qs.select_related(  # type: ignore[no-any-return]
             "subsection",
             "subsection__section",
             "subsection__section__sheet",
             "grade",
         ).prefetch_related("resources")
 
-    @display(description="Вопрос")
+    @display(description="Вопрос")  # type: ignore[misc]
     def display_question(self, instance: CompetencyMatrixItem) -> str:
         return instance.question
 
-    @display(description="Раздел")
+    @display(description="Раздел")  # type: ignore[misc]
     def display_section(self, instance: CompetencyMatrixItem) -> str:
         return instance.subsection.section.name if instance.subsection else ""
 
-    @display(description="Подраздел")
+    @display(description="Подраздел")  # type: ignore[misc]
     def display_subsection(self, instance: CompetencyMatrixItem) -> str:
         return instance.subsection.name if instance.subsection else ""
 
-    @display(description="Уровень компетенций")
+    @display(description="Уровень компетенций")  # type: ignore[misc]
     def display_grade(self, instance: CompetencyMatrixItem) -> str:
         return instance.grade.name if instance.grade else ""

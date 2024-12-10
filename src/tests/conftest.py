@@ -1,5 +1,4 @@
-from collections.abc import AsyncGenerator, Mapping
-from typing import TYPE_CHECKING
+from collections.abc import AsyncGenerator, Generator, Mapping
 
 import pytest
 import pytest_asyncio
@@ -31,9 +30,6 @@ from tests.mocks.storage_mock import MockCompetencyMatrixStorage
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItems
 from tests.utils import provide_async
 
-if TYPE_CHECKING:
-    from collections.abc import Generator
-
 
 @pytest.fixture(scope="session")
 def mock_storage() -> MockCompetencyMatrixStorage:
@@ -50,28 +46,38 @@ def app_dependencies(
     mock_storage: MockCompetencyMatrixStorage,
     mock_list_competency_matrix_items_use_case: MockListCompetencyMatrixItems,
 ) -> Mapping[str, Provide]:
-    return {
+    deps = {
         'storage': provide_async(mock_storage),
         'list_competency_matrix_items_use_case': provide_async(
             mock_list_competency_matrix_items_use_case,
         ),
     }
+    deps.update({key: value for key, value in dependencies.items() if key not in deps})
+    return deps
 
 
 @pytest.fixture(scope="session")
 def app() -> Litestar:
-    return create_app(debug=True, plugins=get_plugins(), deps=dependencies)
+    return create_app(  # type: ignore[no-any-return]
+        debug=True,
+        plugins=get_plugins(),
+        deps=dependencies,
+    )
 
 
 @pytest.fixture(scope="session")
-def client(app: Litestar) -> TestClient:
+def client(app: Litestar) -> "Generator[TestClient, None, None]":
     with TestClient(app=app) as client:
         yield client
 
 
 @pytest.fixture(scope="session")
 def mocked_app(app_dependencies: Mapping[str, Provide]) -> Litestar:
-    return create_app(debug=True, plugins=get_plugins(), deps=app_dependencies)
+    return create_app(  # type: ignore[no-any-return]
+        debug=True,
+        plugins=get_plugins(),
+        deps=app_dependencies,
+    )
 
 
 @pytest.fixture(scope="session")
