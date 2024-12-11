@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.competency_matrix.schemas import FullCompetencyMatrixItem
-from app.database.models import CompetencyMatrixItemModel
+from app.core.competency_matrix.schemas import FullCompetencyMatrixItem, Sheet
+from app.database.models import CompetencyMatrixItemModel, SheetModel
 
 
 @dataclass(kw_only=True)
@@ -22,3 +22,9 @@ class StorageHelper:
         await self.session.merge(db_item)
         await self._flush_or_commit()
         return db_item
+
+    async def insert_sheet(self, sheet: Sheet) -> SheetModel:
+        db_sheet = SheetModel.from_schema(schema=sheet)
+        await self.session.merge(db_sheet)
+        await self._flush_or_commit()
+        return db_sheet

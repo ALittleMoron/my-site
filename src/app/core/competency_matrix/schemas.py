@@ -17,6 +17,17 @@ class Sheet:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class Sheets:
+    values: list[Sheet]
+
+    def __len__(self) -> int:  # pragma: no cover
+        return len(self.values)
+
+    def __iter__(self) -> Iterator[Sheet]:  # pragma: no cover
+        return iter(self.values)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Section:
     id: int
     name: str

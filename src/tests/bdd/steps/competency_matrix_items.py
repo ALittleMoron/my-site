@@ -1,19 +1,17 @@
 from behave import given, then, when
 from behave.api.async_step import async_run_until_complete
 
-from app.core.competency_matrix.schemas import ListCompetencyMatrixItemsParams
+from app.core.competency_matrix.schemas import (
+    ListCompetencyMatrixItemsParams,
+    FilledCompetencyMatrixItems,
+)
 from app.core.competency_matrix.use_cases import ListCompetencyMatrixItemsUseCase
 from tests.bdd.fixtures import Context as BaseContext
 
 
 class Context(BaseContext):
     use_case: ListCompetencyMatrixItemsUseCase
-
-
-@given("Список листов с вопросами")
-def given_sheets(context: Context) -> None:
-    for sheet in context.bdd.parse_sheets():
-        context.storage.sheets[sheet.id] = sheet
+    short_items: FilledCompetencyMatrixItems
 
 
 @given("Список разделов")
@@ -61,7 +59,7 @@ def then_assert_items_list(context: Context) -> None:
         expected=len(expected_items),
         msg="actual competency matrix items count not suit expected",
     )
-    for actual_item, expected_item in zip(context.short_items, expected_items, strict=False):
+    for actual_item, expected_item in zip(context.short_items, expected_items, strict=True):
         context.bdd.assert_equal(
             actual=actual_item.id,
             expected=expected_item.id,

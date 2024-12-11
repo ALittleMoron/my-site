@@ -27,7 +27,10 @@ from app.database.models.competency_matrix import items_to_resources
 from app.database.storages import DatabaseStorage
 from app.main import create_app, get_plugins
 from tests.mocks.storage_mock import MockCompetencyMatrixStorage
-from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItems
+from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItemsUseCase
+from tests.mocks.use_cases.list_competency_matrix_sheets import (
+    MockListCompetencyMatrixSheetsUseCase,
+)
 from tests.utils import provide_async
 
 
@@ -37,19 +40,28 @@ def mock_storage() -> MockCompetencyMatrixStorage:
 
 
 @pytest.fixture(scope="session")
-def mock_list_competency_matrix_items_use_case() -> MockListCompetencyMatrixItems:
-    return MockListCompetencyMatrixItems()
+def mock_list_competency_matrix_items_use_case() -> MockListCompetencyMatrixItemsUseCase:
+    return MockListCompetencyMatrixItemsUseCase()
+
+
+@pytest.fixture(scope="session")
+def mock_list_competency_matrix_sheets_use_case() -> MockListCompetencyMatrixSheetsUseCase:
+    return MockListCompetencyMatrixSheetsUseCase()
 
 
 @pytest.fixture(scope="session")
 def app_dependencies(
     mock_storage: MockCompetencyMatrixStorage,
-    mock_list_competency_matrix_items_use_case: MockListCompetencyMatrixItems,
+    mock_list_competency_matrix_items_use_case: MockListCompetencyMatrixItemsUseCase,
+    mock_list_competency_matrix_sheets_use_case: MockListCompetencyMatrixSheetsUseCase,
 ) -> Mapping[str, Provide]:
     deps = {
         'storage': provide_async(mock_storage),
         'list_competency_matrix_items_use_case': provide_async(
             mock_list_competency_matrix_items_use_case,
+        ),
+        'list_competency_matrix_sheets_use_case': provide_async(
+            mock_list_competency_matrix_sheets_use_case,
         ),
     }
     deps.update({key: value for key, value in dependencies.items() if key not in deps})

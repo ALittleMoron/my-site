@@ -3,12 +3,13 @@ import datetime
 from behave.fixture import use_fixture_by_tag
 from behave.model import Scenario
 
-from tests.bdd.fixtures import Context, list_competency_matrix_use_case
+from tests.bdd.fixtures import Context, list_competency_matrix_use_case, list_sheets_use_case
 from tests.helpers.bdd import BddHelper
 from tests.mocks.storage_mock import MockCompetencyMatrixStorage
 
 fixtures = {
     "setup.use_case.list_competency_matrix_use_case": list_competency_matrix_use_case,
+    "setup.use_case.list_sheets_use_case": list_sheets_use_case,
 }
 
 

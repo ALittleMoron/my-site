@@ -75,7 +75,7 @@ class TestCompetencyMatrixItemsApiIntegration(ApiFixture, FactoryFixture, Storag
         )
 
     async def test_get_list(self) -> None:
-        response = self.api.list_competency_matrix()
+        response = self.api.list_competency_matrix_items()
         assert response.status_code == codes.OK
         assert response.json() == {
             'items': [
@@ -95,7 +95,7 @@ class TestCompetencyMatrixItemsApiIntegration(ApiFixture, FactoryFixture, Storag
         }
 
     async def test_get_list_by_sheet_id(self) -> None:
-        response = self.api.list_competency_matrix(sheet_id=1)
+        response = self.api.list_competency_matrix_items(sheet_id=1)
         assert response.status_code == codes.OK
         assert response.json() == {
             'items': [
@@ -106,4 +106,27 @@ class TestCompetencyMatrixItemsApiIntegration(ApiFixture, FactoryFixture, Storag
                     "subsection_id": 1,
                 },
             ],
+        }
+
+
+class TestCompetencyMatrixSheet(ApiFixture, FactoryFixture, StorageFixture):
+    @pytest_asyncio.fixture(autouse=True, loop_scope="function")
+    async def setup(self) -> None:
+        await self.storage_helper.insert_sheet(sheet=self.factory.sheet(sheet_id=1, name="Python"))
+        await self.storage_helper.insert_sheet(sheet=self.factory.sheet(sheet_id=2, name="PHP"))
+
+    async def test_list(self) -> None:
+        response = self.api.list_competency_matrix_sheets()
+        assert response.status_code == codes.OK
+        assert response.json() == {
+            'sheets': [
+                {
+                    "id": 1,
+                    "name": "Python",
+                },
+                {
+                    "id": 2,
+                    "name": "PHP",
+                },
+            ]
         }

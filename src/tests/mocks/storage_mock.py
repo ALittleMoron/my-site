@@ -36,3 +36,6 @@ class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
                 ),
             )
         return list(self.short_competency_matrix_items.values())
+
+    async def list_sheets(self) -> list[Sheet]:
+        return list(self.sheets.values())

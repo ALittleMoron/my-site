@@ -1,5 +1,5 @@
 @setup.use_case.list_competency_matrix_use_case
-Feature: Список вопросов матрицы компетенций
+Feature: Список вопросы матрицы компетенций
 
   Scenario: Успешный вывод списка
     Given Список вопросов в матрице компетенций

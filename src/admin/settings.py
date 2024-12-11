@@ -20,11 +20,16 @@ ALLOWED_HOSTS: list[str] = cast(
     list[str],
     config(
         "ADMIN_ALLOWED_HOST",
-        default="*",
+        default="localhost",
         cast=lambda hosts: hosts.split(","),
     ),
 )
 CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:8000",
+    cast=lambda x: x.split(","),
+)
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 INTERNAL_IPS = ["127.0.0.1"]
 

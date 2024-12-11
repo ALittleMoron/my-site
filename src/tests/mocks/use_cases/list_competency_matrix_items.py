@@ -9,7 +9,7 @@ from app.core.use_cases import UseCase
 
 
 @dataclass
-class MockListCompetencyMatrixItems(UseCase):
+class MockListCompetencyMatrixItemsUseCase(UseCase):
     items: list[ShortFilledCompetencyMatrixItem] = field(default_factory=list)
     params: ListCompetencyMatrixItemsParams | None | object = field(
         default_factory=lambda: object(),

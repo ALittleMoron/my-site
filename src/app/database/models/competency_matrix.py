@@ -73,6 +73,9 @@ class SheetModel(Base):
             name=schema.name,
         )
 
+    def to_schema(self) -> Sheet:
+        return Sheet(id=self.id, name=self.name)
+
 
 class GradeModel(Base):
     __tablename__ = 'competency_matrix_grade'
