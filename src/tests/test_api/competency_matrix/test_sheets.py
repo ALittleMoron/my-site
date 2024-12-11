@@ -5,18 +5,18 @@ import pytest
 
 from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_sheets import (
-    MockListCompetencyMatrixSheetsUseCase,
+    MockListSheetsUseCase,
 )
 
 
 class TestCompetencyMatrixSheetsAPI(ApiFixture, FactoryFixture):
     current_datetime: datetime.datetime
-    use_case: MockListCompetencyMatrixSheetsUseCase
+    use_case: MockListSheetsUseCase
 
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        mock_list_competency_matrix_sheets_use_case: MockListCompetencyMatrixSheetsUseCase,
+        mock_list_competency_matrix_sheets_use_case: MockListSheetsUseCase,
     ) -> Generator[None, None, None]:
         self.current_datetime = datetime.datetime.now(tz=datetime.UTC)
         self.use_case = mock_list_competency_matrix_sheets_use_case
@@ -40,5 +40,5 @@ class TestCompetencyMatrixSheetsAPI(ApiFixture, FactoryFixture):
                     "id": 2,
                     "name": "JavaScript",
                 },
-            ]
+            ],
         }

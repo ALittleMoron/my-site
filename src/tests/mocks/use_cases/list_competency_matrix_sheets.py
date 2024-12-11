@@ -5,7 +5,7 @@ from app.core.use_cases import UseCase
 
 
 @dataclass
-class MockListCompetencyMatrixSheetsUseCase(UseCase):
+class MockListSheetsUseCase(UseCase):
     sheets: list[Sheet] = field(default_factory=list)
 
     async def execute(self) -> Sheets:

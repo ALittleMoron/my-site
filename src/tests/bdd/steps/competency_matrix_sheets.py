@@ -25,13 +25,13 @@ async def when_get_sheets_list(context: Context) -> None:
 
 @then("Полученный список листов с вопросами матрицы компетенций")
 def then_assert_sheets_list(context: Context) -> None:
-    expected_items = context.bdd.parse_sheets()
+    expected_sheets = context.bdd.parse_sheets()
     context.bdd.assert_equal(
         actual=len(context.sheets),
-        expected=len(expected_items),
+        expected=len(expected_sheets),
         msg="actual competency matrix sheets count not suit expected",
     )
-    for actual_item, expected_item in zip(context.sheets, expected_items, strict=True):
+    for actual_item, expected_item in zip(context.sheets, expected_sheets, strict=True):
         context.bdd.assert_equal(
             actual=actual_item.id,
             expected=expected_item.id,

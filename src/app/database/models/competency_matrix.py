@@ -116,6 +116,13 @@ class SectionModel(Base):
             sheet=SheetModel.from_schema(schema=schema.sheet),
         )
 
+    def to_full_schema(self) -> Section:
+        return Section(
+            id=self.id,
+            name=self.name,
+            sheet=self.sheet.to_schema(),
+        )
+
 
 class SubsectionModel(Base):
     __tablename__ = 'competency_matrix_subsection'
@@ -146,6 +153,13 @@ class SubsectionModel(Base):
             id=schema.id,
             name=schema.name,
             section=SectionModel.from_schema(schema=schema.section),
+        )
+
+    def to_full_schema(self) -> Subsection:
+        return Subsection(
+            id=self.id,
+            name=self.name,
+            section=self.section.to_full_schema(),
         )
 
 

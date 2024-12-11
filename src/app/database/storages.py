@@ -3,8 +3,9 @@ from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
-from app.core.competency_matrix.schemas import ShortCompetencyMatrixItem, Sheet
+from app.core.competency_matrix.schemas import Sheet, ShortCompetencyMatrixItem, Subsection
 from app.database.models import CompetencyMatrixItemModel, SectionModel, SheetModel, SubsectionModel
 
 
@@ -18,6 +19,10 @@ class CompetencyMatrixStorage(ABC):
 
     @abstractmethod
     async def list_sheets(self) -> list[Sheet]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_subsections(self) -> list[Subsection]:
         raise NotImplementedError
 
 
@@ -45,3 +50,9 @@ class DatabaseStorage(CompetencyMatrixStorage):
     async def list_sheets(self) -> list[Sheet]:
         query = select(SheetModel)
         return [sheet.to_schema() for sheet in await self.session.scalars(query)]
+
+    async def list_subsections(self) -> list[Subsection]:
+        query = select(SubsectionModel).options(
+            joinedload(SubsectionModel.section).joinedload(SectionModel.sheet),
+        )
+        return [subsection.to_full_schema() for subsection in await self.session.scalars(query)]

@@ -5,7 +5,11 @@ from litestar.openapi.spec import Example
 from litestar.params import Dependency, Parameter
 
 from app.api.competency_matrix.schemas import CompetencyMatrixListItemsParams
-from app.core.competency_matrix.use_cases import ListCompetencyMatrixItemsUseCase, ListSheetsUseCase
+from app.core.competency_matrix.use_cases import (
+    ListCompetencyMatrixItemsUseCase,
+    ListSheetsUseCase,
+    ListSubsectionsUseCase,
+)
 from app.database.storages import CompetencyMatrixStorage
 
 
@@ -29,6 +33,18 @@ async def list_competency_matrix_sheets_use_case_deps(
 
 ListCompetencyMatrixSheetsUseCaseDeps = Annotated[
     ListSheetsUseCase,
+    Dependency(skip_validation=True),
+]
+
+
+async def list_competency_matrix_subsections_use_case_deps(
+    storage: CompetencyMatrixStorage,
+) -> ListSubsectionsUseCase:
+    return ListSubsectionsUseCase(storage=storage)
+
+
+ListCompetencyMatrixSubsectionsUseCaseDeps = Annotated[
+    ListSubsectionsUseCase,
     Dependency(skip_validation=True),
 ]
 
@@ -62,5 +78,8 @@ dependencies = {
     ),
     "list_competency_matrix_sheets_use_case": Provide(
         list_competency_matrix_sheets_use_case_deps,
+    ),
+    "list_competency_matrix_subsections_use_case": Provide(
+        list_competency_matrix_subsections_use_case_deps,
     ),
 }

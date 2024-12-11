@@ -3,11 +3,13 @@ from litestar import MediaType, Router, get, status_codes
 from app.api.competency_matrix.deps import (
     ListCompetencyMatrixItemsUseCaseDeps,
     ListCompetencyMatrixSheetsUseCaseDeps,
+    ListCompetencyMatrixSubsectionsUseCaseDeps,
 )
 from app.api.competency_matrix.schemas import (
-    CompetencyMatrixListItemsParams,
     CompetencyMatrixItemsListSchema,
+    CompetencyMatrixListItemsParams,
     CompetencyMatrixSheetsListSchema,
+    CompetencyMatrixSubsectionsListSchema,
 )
 
 
@@ -43,8 +45,28 @@ async def list_competency_matrix_sheet_handler(
     return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
 
 
+@get(
+    "subsections/",
+    media_type=MediaType.JSON,
+    status_code=status_codes.HTTP_200_OK,
+    description=(
+        "Получение списка подразделов листов матрицы компетенций. Также в ответе содержится "
+        "информация о разделе и листе данных подразделов."
+    ),
+)
+async def list_competency_matrix_subsection_handler(
+    list_competency_matrix_subsections_use_case: ListCompetencyMatrixSubsectionsUseCaseDeps,
+) -> CompetencyMatrixSubsectionsListSchema:
+    subsections = await list_competency_matrix_subsections_use_case.execute()
+    return CompetencyMatrixSubsectionsListSchema.from_domain_schema(schema=subsections)
+
+
 router = Router(
     "/competencyMatrix/",
-    route_handlers=[list_competency_matrix_handler, list_competency_matrix_sheet_handler],
+    route_handlers=[
+        list_competency_matrix_handler,
+        list_competency_matrix_sheet_handler,
+        list_competency_matrix_subsection_handler,
+    ],
     tags=["competency matrix"],
 )

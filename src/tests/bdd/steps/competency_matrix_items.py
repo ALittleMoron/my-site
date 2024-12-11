@@ -2,8 +2,8 @@ from behave import given, then, when
 from behave.api.async_step import async_run_until_complete
 
 from app.core.competency_matrix.schemas import (
-    ListCompetencyMatrixItemsParams,
     FilledCompetencyMatrixItems,
+    ListCompetencyMatrixItemsParams,
 )
 from app.core.competency_matrix.use_cases import ListCompetencyMatrixItemsUseCase
 from tests.bdd.fixtures import Context as BaseContext
@@ -19,14 +19,6 @@ def given_sections(context: Context) -> None:
     for section in context.bdd.parse_sections():
         context.storage.sections[section.id] = section
         context.storage.sheets[section.sheet.id] = section.sheet
-
-
-@given("Список подразделов")
-def given_subsections(context: Context) -> None:
-    for subsection in context.bdd.parse_subsections():
-        context.storage.subsections[subsection.id] = subsection
-        context.storage.sections[subsection.section.id] = subsection.section
-        context.storage.sheets[subsection.section.sheet.id] = subsection.section.sheet
 
 
 @given("Список вопросов в матрице компетенций")

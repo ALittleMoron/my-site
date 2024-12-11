@@ -6,9 +6,12 @@ from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
     ListCompetencyMatrixItemsParams,
-    ShortFilledCompetencyMatrixItem,
-    Sheets,
+    Section,
     Sheet,
+    Sheets,
+    ShortFilledCompetencyMatrixItem,
+    Subsection,
+    Subsections,
 )
 
 
@@ -110,6 +113,99 @@ class CompetencyMatrixSheetsListSchema(CamelCaseSchema):
         return cls(
             sheets=[
                 CompetencyMatrixSheetsBaseSchema.from_domain_schema(schema=item)
+                for item in schema.values
+            ],
+        )
+
+
+class CompetencyMatrixSectionBaseSchema(CamelCaseSchema):
+    id: int = Field(
+        ...,
+        title="Идентификатор",
+        description="Идентификатор раздела в матрице компетенций",
+        examples=[1, 2, 3],
+    )
+    name: str = Field(
+        ...,
+        title="Наименование",
+        description="Наименование раздела в матрице компетенций",
+        examples=["Основы", "ООП", "Асинхронное программирование"],
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Section) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+        )
+
+
+class CompetencyMatrixSectionSchema(CompetencyMatrixSectionBaseSchema):
+    sheet: CompetencyMatrixSectionBaseSchema = Field(
+        ...,
+        title="Лист",
+        description="Лист с вопросами в матрице компетенций",
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Section) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            sheet=CompetencyMatrixSheetsBaseSchema.from_domain_schema(schema=schema.sheet),
+        )
+
+
+class CompetencyMatrixSubsectionBaseSchema(CamelCaseSchema):
+    id: int = Field(
+        ...,
+        title="Идентификатор",
+        description="Идентификатор подраздела в матрице компетенций",
+        examples=[1, 2, 3],
+    )
+    name: str = Field(
+        ...,
+        title="Наименование",
+        description="Наименование подраздела в матрице компетенций",
+        examples=["Функции", "Магические методы", "Лексические структуры"],
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Subsection) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+        )
+
+
+class CompetencyMatrixSubsectionSchema(CompetencyMatrixSubsectionBaseSchema):
+    section: CompetencyMatrixSectionSchema = Field(
+        ...,
+        title="Раздел",
+        description="Раздел, в котором находится подраздел",
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Subsection) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            section=CompetencyMatrixSectionSchema.from_domain_schema(schema=schema.section),
+        )
+
+
+class CompetencyMatrixSubsectionsListSchema(CamelCaseSchema):
+    subsections: list[CompetencyMatrixSubsectionSchema] = Field(
+        ...,
+        title="Список",
+        description="Список подразделов матрицы компетенций",
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Subsections) -> Self:
+        return cls(
+            subsections=[
+                CompetencyMatrixSubsectionSchema.from_domain_schema(schema=item)
                 for item in schema.values
             ],
         )

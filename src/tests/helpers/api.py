@@ -18,3 +18,6 @@ class ApiHelper:
 
     def list_competency_matrix_sheets(self) -> Response:
         return self.client.get("/api/competencyMatrix/sheets/")
+
+    def list_competency_matrix_subsections(self) -> Response:
+        return self.client.get("/api/competencyMatrix/subsections/")

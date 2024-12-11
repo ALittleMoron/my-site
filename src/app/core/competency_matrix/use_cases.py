@@ -5,12 +5,13 @@ from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
     ListCompetencyMatrixItemsParams,
     Sheets,
+    Subsections,
 )
 from app.core.use_cases import UseCase
 from app.database.storages import CompetencyMatrixStorage
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ListSheetsUseCase(UseCase):
     storage: CompetencyMatrixStorage
 
@@ -19,7 +20,16 @@ class ListSheetsUseCase(UseCase):
         return Sheets(values=sheets)
 
 
-@dataclass
+@dataclass(kw_only=True)
+class ListSubsectionsUseCase(UseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self) -> Subsections:
+        subsections = await self.storage.list_subsections()
+        return Subsections(values=subsections)
+
+
+@dataclass(kw_only=True)
 class ListCompetencyMatrixItemsUseCase(UseCase):
     storage: CompetencyMatrixStorage
 

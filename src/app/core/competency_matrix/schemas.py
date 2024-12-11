@@ -1,8 +1,8 @@
-from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 
 from app.core.competency_matrix.enums import StatusEnum
+from app.core.schemas import ValuedDataclass
 
 
 @dataclass(kw_only=True)
@@ -17,14 +17,7 @@ class Sheet:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Sheets:
-    values: list[Sheet]
-
-    def __len__(self) -> int:  # pragma: no cover
-        return len(self.values)
-
-    def __iter__(self) -> Iterator[Sheet]:  # pragma: no cover
-        return iter(self.values)
+class Sheets(ValuedDataclass[Sheet]): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -42,6 +35,10 @@ class Subsection:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class Subsections(ValuedDataclass[Subsection]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Grade:
     id: int
     name: str
@@ -56,14 +53,7 @@ class Resource:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Resources:
-    values: list[Resource]
-
-    def __len__(self) -> int:  # pragma: no cover
-        return len(self.values)
-
-    def __iter__(self) -> Iterator[Resource]:  # pragma: no cover
-        return iter(self.values)
+class Resources(ValuedDataclass[Resource]): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -105,9 +95,7 @@ class FullFilledCompetencyMatrixItem(ShortFilledCompetencyMatrixItem):
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class CompetencyMatrixItems:
-    values: list[ShortCompetencyMatrixItem]
-
+class CompetencyMatrixItems(ValuedDataclass[ShortCompetencyMatrixItem]):
     def only_available(self) -> "FilledCompetencyMatrixItems":
         return FilledCompetencyMatrixItems(
             values=[
@@ -126,19 +114,6 @@ class CompetencyMatrixItems:
             ],
         )
 
-    def __len__(self) -> int:  # pragma: no cover
-        return len(self.values)
-
-    def __iter__(self) -> Iterator[ShortCompetencyMatrixItem]:  # pragma: no cover
-        return iter(self.values)
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class FilledCompetencyMatrixItems:
-    values: list[ShortFilledCompetencyMatrixItem]
-
-    def __len__(self) -> int:  # pragma: no cover
-        return len(self.values)
-
-    def __iter__(self) -> Iterator[ShortFilledCompetencyMatrixItem]:  # pragma: no cover
-        return iter(self.values)
+class FilledCompetencyMatrixItems(ValuedDataclass[ShortFilledCompetencyMatrixItem]): ...
