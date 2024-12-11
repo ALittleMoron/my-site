@@ -22,7 +22,10 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_subsections(self) -> list[Subsection]:
+    async def list_subsections(
+        self,
+        sheet_id: int | None = None,
+    ) -> list[Subsection]:
         raise NotImplementedError
 
 
@@ -51,8 +54,17 @@ class DatabaseStorage(CompetencyMatrixStorage):
         query = select(SheetModel)
         return [sheet.to_schema() for sheet in await self.session.scalars(query)]
 
-    async def list_subsections(self) -> list[Subsection]:
+    async def list_subsections(
+        self,
+        sheet_id: int | None = None,
+    ) -> list[Subsection]:
         query = select(SubsectionModel).options(
             joinedload(SubsectionModel.section).joinedload(SectionModel.sheet),
         )
+        if sheet_id is not None:
+            query = (
+                query.join(SectionModel, SectionModel.id == SubsectionModel.section_id)
+                .join(SheetModel, SheetModel.id == SectionModel.sheet_id)
+                .where(SheetModel.id == sheet_id)
+            )
         return [subsection.to_full_schema() for subsection in await self.session.scalars(query)]

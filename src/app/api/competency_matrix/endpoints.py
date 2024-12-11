@@ -10,6 +10,7 @@ from app.api.competency_matrix.schemas import (
     CompetencyMatrixListItemsParams,
     CompetencyMatrixSheetsListSchema,
     CompetencyMatrixSubsectionsListSchema,
+    CompetencyMatrixListSubsectionsParams,
 )
 
 
@@ -55,9 +56,11 @@ async def list_competency_matrix_sheet_handler(
     ),
 )
 async def list_competency_matrix_subsection_handler(
+    list_competency_matrix_subsections_params: CompetencyMatrixListSubsectionsParams,
     list_competency_matrix_subsections_use_case: ListCompetencyMatrixSubsectionsUseCaseDeps,
 ) -> CompetencyMatrixSubsectionsListSchema:
-    subsections = await list_competency_matrix_subsections_use_case.execute()
+    params = list_competency_matrix_subsections_params.to_schema()
+    subsections = await list_competency_matrix_subsections_use_case.execute(params=params)
     return CompetencyMatrixSubsectionsListSchema.from_domain_schema(schema=subsections)
 
 

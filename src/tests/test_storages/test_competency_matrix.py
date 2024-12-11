@@ -129,6 +129,21 @@ class TestCompetencyMatrixSubsectionStorage(StorageFixture, FactoryFixture):
             ),
         )
 
+    async def test_list_by_sheet_id(self) -> None:
+        sheets = await self.storage.list_subsections(sheet_id=1)
+        assert len(sheets) == 1
+        assert sheets == [
+            self.factory.subsection(
+                subsection_id=1,
+                name="SUBSECTION 1",
+                section=self.factory.section(
+                    section_id=1,
+                    name="SECTION 1",
+                    sheet=self.factory.sheet(sheet_id=1, name="SHEET 1"),
+                ),
+            ),
+        ]
+
     async def test_list(self) -> None:
         sheets = await self.storage.list_subsections()
         assert len(sheets) == 2

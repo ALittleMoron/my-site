@@ -40,5 +40,12 @@ class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
     async def list_sheets(self) -> list[Sheet]:
         return list(self.sheets.values())
 
-    async def list_subsections(self) -> list[Subsection]:
+    async def list_subsections(
+        self,
+        sheet_id: int | None = None,
+    ) -> list[Subsection]:
+        if sheet_id is not None:
+            return list(
+                filter(lambda item: item.section.sheet.id == sheet_id, self.subsections.values())
+            )
         return list(self.subsections.values())

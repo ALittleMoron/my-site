@@ -10,6 +10,11 @@ class ListCompetencyMatrixItemsParams:
     sheet_id: int | None
 
 
+@dataclass(kw_only=True)
+class ListSubsectionsParams:
+    sheet_id: int | None
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Sheet:
     id: int

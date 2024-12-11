@@ -9,28 +9,48 @@ class TestCompetencyMatrixSheet(ApiFixture, FactoryFixture, StorageFixture):
         await self.storage_helper.insert_subsection(
             subsection=self.factory.subsection(
                 subsection_id=1,
-                name="SUBSECTION 1",
+                name="Функции",
                 section=self.factory.section(
                     section_id=1,
-                    name="SECTION 1",
-                    sheet=self.factory.sheet(sheet_id=1, name="SHEET 1"),
+                    name="Основы",
+                    sheet=self.factory.sheet(sheet_id=1, name="Python"),
                 ),
             ),
         )
         await self.storage_helper.insert_subsection(
             subsection=self.factory.subsection(
                 subsection_id=2,
-                name="SUBSECTION 2",
+                name="Протоколы",
                 section=self.factory.section(
                     section_id=2,
-                    name="SECTION 2",
-                    sheet=self.factory.sheet(sheet_id=2, name="SHEET 2"),
+                    name="ООП",
+                    sheet=self.factory.sheet(sheet_id=2, name="JavaScript"),
                 ),
             ),
         )
 
+    async def test_list_by_sheet_id(self) -> None:
+        response = self.api.list_competency_matrix_subsections(sheet_id=1)
+        assert response.is_success
+        assert response.json() == {
+            'subsections': [
+                {
+                    "id": 1,
+                    "name": "Функции",
+                    "section": {
+                        "id": 1,
+                        "name": "Основы",
+                        "sheet": {
+                            "id": 1,
+                            "name": "Python",
+                        },
+                    },
+                },
+            ],
+        }
+
     async def test_list(self) -> None:
-        response = self.mocked_api.list_competency_matrix_subsections()
+        response = self.api.list_competency_matrix_subsections()
         assert response.is_success
         assert response.json() == {
             'subsections': [

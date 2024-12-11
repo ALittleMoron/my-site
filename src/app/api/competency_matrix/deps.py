@@ -1,10 +1,12 @@
 from typing import Annotated
 
 from litestar.di import Provide
-from litestar.openapi.spec import Example
 from litestar.params import Dependency, Parameter
 
-from app.api.competency_matrix.schemas import CompetencyMatrixListItemsParams
+from app.api.competency_matrix.schemas import (
+    CompetencyMatrixListItemsParams,
+    CompetencyMatrixListSubsectionsParams,
+)
 from app.core.competency_matrix.use_cases import (
     ListCompetencyMatrixItemsUseCase,
     ListSheetsUseCase,
@@ -50,29 +52,38 @@ ListCompetencyMatrixSubsectionsUseCaseDeps = Annotated[
 
 
 async def build_competency_matrix_list_items_params(
-    sheetId: Annotated[
+    sheet_id: Annotated[
         int | None,
         Parameter(
+            int | None,
             title="Идентификатор",
             description="Идентификатор листа, на котором располагаются вопросы",
-            examples=[
-                Example(
-                    summary="Любое число",
-                    description=(
-                        "Любой числовой идентификатор листа с вопросами. "
-                        "Если числа нет в базе, то выдаст пустой список."
-                    ),
-                    value=1,
-                ),
-            ],
+            query="sheetId",
         ),
     ] = None,
 ) -> CompetencyMatrixListItemsParams:
-    return CompetencyMatrixListItemsParams(sheet_id=sheetId)
+    return CompetencyMatrixListItemsParams(sheet_id=sheet_id)
+
+
+async def build_competency_matrix_subsections_params(
+    sheet_id: Annotated[
+        int | None,
+        Parameter(
+            int | None,
+            title="Идентификатор",
+            description="Идентификатор листа, на котором располагаются подразделы",
+            query="sheetId",
+        ),
+    ] = None,
+):
+    return CompetencyMatrixListSubsectionsParams(sheet_id=sheet_id)
 
 
 dependencies = {
     "list_competency_matrix_items_params": Provide(build_competency_matrix_list_items_params),
+    "list_competency_matrix_subsections_params": Provide(
+        build_competency_matrix_subsections_params
+    ),
     "list_competency_matrix_items_use_case": Provide(
         list_competency_matrix_items_use_case_deps,
     ),

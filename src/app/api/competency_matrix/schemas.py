@@ -12,6 +12,7 @@ from app.core.competency_matrix.schemas import (
     ShortFilledCompetencyMatrixItem,
     Subsection,
     Subsections,
+    ListSubsectionsParams,
 )
 
 
@@ -20,6 +21,13 @@ class CompetencyMatrixListItemsParams(CamelCaseSchema):
 
     def to_schema(self) -> ListCompetencyMatrixItemsParams:
         return ListCompetencyMatrixItemsParams(sheet_id=self.sheet_id)
+
+
+class CompetencyMatrixListSubsectionsParams(CamelCaseSchema):
+    sheet_id: int | None = None
+
+    def to_schema(self) -> ListSubsectionsParams:
+        return ListSubsectionsParams(sheet_id=self.sheet_id)
 
 
 class CompetencyMatrixItemsBaseSchema(CamelCaseSchema):

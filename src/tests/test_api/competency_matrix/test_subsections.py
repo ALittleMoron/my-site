@@ -3,6 +3,7 @@ from collections.abc import Generator
 
 import pytest
 
+from app.core.competency_matrix.schemas import ListSubsectionsParams
 from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_subsections import (
     MockListSubsectionsUseCase,
@@ -22,6 +23,11 @@ class TestCompetencyMatrixSubsectionsAPI(ApiFixture, FactoryFixture):
         self.use_case = mock_list_competency_matrix_subsections_use_case
         yield
         self.use_case.items = []
+
+    def test_list_by_sheet_id(self) -> None:
+        response = self.mocked_api.list_competency_matrix_subsections(sheet_id=1)
+        assert response.is_success
+        assert self.use_case.params == ListSubsectionsParams(sheet_id=1)
 
     def test_list(self) -> None:
         self.use_case.subsections = [
