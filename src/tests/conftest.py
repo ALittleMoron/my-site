@@ -1,9 +1,8 @@
-from collections.abc import AsyncGenerator, Generator, Mapping
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
 from litestar import Litestar
-from litestar.di import Provide
 from litestar.testing import TestClient
 from sqlalchemy import NullPool, delete
 from sqlalchemy.ext.asyncio import (
@@ -26,58 +25,6 @@ from app.database.models import (
 from app.database.models.competency_matrix import items_to_resources
 from app.database.storages import DatabaseStorage
 from app.main import create_app, get_plugins
-from tests.mocks.storage_mock import MockCompetencyMatrixStorage
-from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItemsUseCase
-from tests.mocks.use_cases.list_competency_matrix_sheets import (
-    MockListSheetsUseCase,
-)
-from tests.mocks.use_cases.list_competency_matrix_subsections import (
-    MockListSubsectionsUseCase,
-)
-from tests.utils import provide_async
-
-
-@pytest.fixture(scope="session")
-def mock_storage() -> MockCompetencyMatrixStorage:
-    return MockCompetencyMatrixStorage()
-
-
-@pytest.fixture(scope="session")
-def mock_list_competency_matrix_items_use_case() -> MockListCompetencyMatrixItemsUseCase:
-    return MockListCompetencyMatrixItemsUseCase()
-
-
-@pytest.fixture(scope="session")
-def mock_list_competency_matrix_sheets_use_case() -> MockListSheetsUseCase:
-    return MockListSheetsUseCase()
-
-
-@pytest.fixture(scope="session")
-def mock_list_competency_matrix_subsections_use_case() -> MockListSubsectionsUseCase:
-    return MockListSubsectionsUseCase()
-
-
-@pytest.fixture(scope="session")
-def app_dependencies(
-    mock_storage: MockCompetencyMatrixStorage,
-    mock_list_competency_matrix_items_use_case: MockListCompetencyMatrixItemsUseCase,
-    mock_list_competency_matrix_sheets_use_case: MockListSheetsUseCase,
-    mock_list_competency_matrix_subsections_use_case: MockListSubsectionsUseCase,
-) -> Mapping[str, Provide]:
-    deps = {
-        'storage': provide_async(mock_storage),
-        'list_competency_matrix_items_use_case': provide_async(
-            mock_list_competency_matrix_items_use_case,
-        ),
-        'list_competency_matrix_sheets_use_case': provide_async(
-            mock_list_competency_matrix_sheets_use_case,
-        ),
-        'list_competency_matrix_subsections_use_case': provide_async(
-            mock_list_competency_matrix_subsections_use_case,
-        ),
-    }
-    deps.update({key: value for key, value in dependencies.items() if key not in deps})
-    return deps
 
 
 @pytest.fixture(scope="session")
@@ -92,21 +39,6 @@ def app() -> Litestar:
 @pytest.fixture(scope="session")
 def client(app: Litestar) -> "Generator[TestClient, None, None]":
     with TestClient(app=app) as client:
-        yield client
-
-
-@pytest.fixture(scope="session")
-def mocked_app(app_dependencies: Mapping[str, Provide]) -> Litestar:
-    return create_app(  # type: ignore[no-any-return]
-        debug=True,
-        plugins=get_plugins(),
-        deps=app_dependencies,
-    )
-
-
-@pytest.fixture(scope="session")
-def mocked_client(mocked_app: Litestar) -> "Generator[TestClient[Litestar], None, None]":
-    with TestClient(app=mocked_app) as client:
         yield client
 
 

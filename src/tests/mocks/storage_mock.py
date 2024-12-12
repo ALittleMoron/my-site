@@ -46,6 +46,6 @@ class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
     ) -> list[Subsection]:
         if sheet_id is not None:
             return list(
-                filter(lambda item: item.section.sheet.id == sheet_id, self.subsections.values())
+                filter(lambda item: item.section.sheet.id == sheet_id, self.subsections.values()),
             )
         return list(self.subsections.values())

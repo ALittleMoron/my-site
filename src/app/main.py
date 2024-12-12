@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
-
 from typing import TYPE_CHECKING
+
 import uvicorn
 from litestar import Litestar
 from litestar.di import Provide
@@ -26,7 +26,7 @@ def get_plugins() -> list[InitPluginProtocol]:
     return [sqlalchemy_plugin]
 
 
-def create_app(
+def create_app(  # noqa: PLR0913
     *,
     debug: bool = False,
     route_handlers: Sequence[ControllerRouterHandler] | None = None,

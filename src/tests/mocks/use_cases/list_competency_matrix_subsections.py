@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from app.core.competency_matrix.schemas import Subsection, Subsections, ListSubsectionsParams
+from app.core.competency_matrix.schemas import ListSubsectionsParams, Subsection, Subsections
 from app.core.use_cases import UseCase
 
 

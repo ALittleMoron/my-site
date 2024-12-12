@@ -1,7 +1,10 @@
 from collections.abc import Callable
 from typing import TypeVar
 
+from litestar import Litestar
 from litestar.di import Provide
+from litestar.testing import TestClient, create_test_client
+from litestar.types import ControllerRouterHandler
 
 T = TypeVar("T")
 
@@ -19,3 +22,10 @@ def provide_async(
         return entity
 
     return Provide(handler, use_cache=use_cache, sync_to_thread=sync_to_thread)
+
+
+def create_mocked_test_client(
+    handler: ControllerRouterHandler,
+    dependencies: dict[str, Provide],
+) -> TestClient[Litestar]:
+    return create_test_client(handler, dependencies=dependencies)

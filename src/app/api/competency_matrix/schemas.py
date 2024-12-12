@@ -6,13 +6,13 @@ from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
     ListCompetencyMatrixItemsParams,
+    ListSubsectionsParams,
     Section,
     Sheet,
     Sheets,
     ShortFilledCompetencyMatrixItem,
     Subsection,
     Subsections,
-    ListSubsectionsParams,
 )
 
 

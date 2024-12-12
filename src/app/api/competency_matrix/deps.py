@@ -75,14 +75,14 @@ async def build_competency_matrix_subsections_params(
             query="sheetId",
         ),
     ] = None,
-):
+) -> CompetencyMatrixListSubsectionsParams:
     return CompetencyMatrixListSubsectionsParams(sheet_id=sheet_id)
 
 
 dependencies = {
     "list_competency_matrix_items_params": Provide(build_competency_matrix_list_items_params),
     "list_competency_matrix_subsections_params": Provide(
-        build_competency_matrix_subsections_params
+        build_competency_matrix_subsections_params,
     ),
     "list_competency_matrix_items_use_case": Provide(
         list_competency_matrix_items_use_case_deps,

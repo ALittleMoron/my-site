@@ -9,16 +9,13 @@ from tests.helpers.storage import StorageHelper
 
 
 class ApiFixture:
-    mocked_api: ApiHelper
 
     @pytest.fixture(autouse=True)
     def _setup_api(
         self,
         client: TestClient[Litestar],
-        mocked_client: TestClient[Litestar],
     ) -> None:
         self.api = ApiHelper(client=client)
-        self.mocked_api = ApiHelper(client=mocked_client)
 
 
 class FactoryFixture:

@@ -8,9 +8,9 @@ from app.api.competency_matrix.deps import (
 from app.api.competency_matrix.schemas import (
     CompetencyMatrixItemsListSchema,
     CompetencyMatrixListItemsParams,
+    CompetencyMatrixListSubsectionsParams,
     CompetencyMatrixSheetsListSchema,
     CompetencyMatrixSubsectionsListSchema,
-    CompetencyMatrixListSubsectionsParams,
 )
 
 
@@ -20,7 +20,7 @@ from app.api.competency_matrix.schemas import (
     status_code=status_codes.HTTP_200_OK,
     description="Получение списка вопросов по матрице компетенций.",
 )
-async def list_competency_matrix_handler(
+async def list_competency_matrix_items_handler(
     list_competency_matrix_items_params: CompetencyMatrixListItemsParams,
     list_competency_matrix_items_use_case: ListCompetencyMatrixItemsUseCaseDeps,
 ) -> CompetencyMatrixItemsListSchema:
@@ -67,7 +67,7 @@ async def list_competency_matrix_subsection_handler(
 router = Router(
     "/competencyMatrix/",
     route_handlers=[
-        list_competency_matrix_handler,
+        list_competency_matrix_items_handler,
         list_competency_matrix_sheet_handler,
         list_competency_matrix_subsection_handler,
     ],

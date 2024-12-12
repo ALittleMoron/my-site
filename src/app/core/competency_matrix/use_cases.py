@@ -4,9 +4,9 @@ from app.core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     FilledCompetencyMatrixItems,
     ListCompetencyMatrixItemsParams,
+    ListSubsectionsParams,
     Sheets,
     Subsections,
-    ListSubsectionsParams,
 )
 from app.core.use_cases import UseCase
 from app.database.storages import CompetencyMatrixStorage

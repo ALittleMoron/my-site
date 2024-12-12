@@ -1,29 +1,33 @@
-import datetime
-from collections.abc import Generator
-
 import pytest
+from litestar.di import Provide
 
+from app.api.competency_matrix.deps import build_competency_matrix_list_items_params
+from app.api.competency_matrix.endpoints import list_competency_matrix_items_handler
 from app.core.competency_matrix.schemas import ListCompetencyMatrixItemsParams
-from tests.fixtures import ApiFixture, FactoryFixture
+from tests.fixtures import FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItemsUseCase
+from tests.utils import create_mocked_test_client, provide_async
 
 
-class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
-    current_datetime: datetime.datetime
+class TestCompetencyMatrixItemsAPI(FactoryFixture):
     use_case: MockListCompetencyMatrixItemsUseCase
 
     @pytest.fixture(autouse=True)
-    def setup(
-        self,
-        mock_list_competency_matrix_items_use_case: MockListCompetencyMatrixItemsUseCase,
-    ) -> Generator[None, None, None]:
-        self.current_datetime = datetime.datetime.now(tz=datetime.UTC)
-        self.use_case = mock_list_competency_matrix_items_use_case
-        yield
-        self.use_case.items = []
+    def setup(self) -> None:
+        self.use_case = MockListCompetencyMatrixItemsUseCase()
+        self.client = create_mocked_test_client(
+            handler=list_competency_matrix_items_handler,
+            dependencies={
+                'list_competency_matrix_items_params': Provide(
+                    build_competency_matrix_list_items_params,
+                ),
+                'list_competency_matrix_items_use_case': provide_async(self.use_case),
+            },
+        )
+        self.url = "/items/"
 
     def test_list_by_sheet_id(self) -> None:
-        response = self.mocked_api.list_competency_matrix_items(sheet_id=1)
+        response = self.client.get(self.url, params={"sheetId": 1})
         assert response.is_success
         assert self.use_case.params == ListCompetencyMatrixItemsParams(sheet_id=1)
 
@@ -42,7 +46,7 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
                 subsection_id=2,
             ),
         ]
-        response = self.mocked_api.list_competency_matrix_items()
+        response = self.client.get(self.url)
         assert response.is_success
         assert response.json() == {
             'items': [

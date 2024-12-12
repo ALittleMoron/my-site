@@ -1,7 +1,7 @@
 from behave import given, then, when
 from behave.api.async_step import async_run_until_complete
 
-from app.core.competency_matrix.schemas import Subsections, ListSubsectionsParams
+from app.core.competency_matrix.schemas import ListSubsectionsParams, Subsections
 from app.core.competency_matrix.use_cases import ListSubsectionsUseCase
 from tests.bdd.fixtures import Context as BaseContext
 
@@ -21,7 +21,7 @@ def given_subsections(context: Context) -> None:
 
 @when("Получаем список подразделов к вопросам по листу {sheet_id:d}")
 @async_run_until_complete
-async def when_get_subsections_list(context: Context, sheet_id: int) -> None:
+async def when_get_subsections_list_by_sheet_id(context: Context, sheet_id: int) -> None:
     context.subsections = await context.use_case.execute(
         params=ListSubsectionsParams(sheet_id=sheet_id),
     )
