@@ -17,14 +17,14 @@ from app.core.competency_matrix.schemas import (
 
 
 class CompetencyMatrixListItemsParams(CamelCaseSchema):
-    sheet_id: int | None = None
+    sheet_id: int
 
     def to_schema(self) -> ListItemsParams:
         return ListItemsParams(sheet_id=self.sheet_id)
 
 
 class CompetencyMatrixListSubsectionsParams(CamelCaseSchema):
-    sheet_id: int | None = None
+    sheet_id: int
 
     def to_schema(self) -> ListSubsectionsParams:
         return ListSubsectionsParams(sheet_id=self.sheet_id)

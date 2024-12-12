@@ -13,11 +13,6 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
         self.use_case = MockListCompetencyMatrixItemsUseCase()
         self.client = self.app.create_list_competency_matrix_items_client(self.use_case)
 
-    def test_list_by_sheet_id(self) -> None:
-        response = self.client.get('', params={"sheetId": 1})
-        assert response.is_success
-        assert self.use_case.params == ListItemsParams(sheet_id=1)
-
     def test_list(self) -> None:
         self.use_case.items = [
             self.factory.short_filled_competency_matrix_item(
@@ -33,7 +28,8 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
                 subsection_id=2,
             ),
         ]
-        response = self.client.get('')
+        response = self.client.get('', params={"sheetId": 1})
+        assert self.use_case.params == ListItemsParams(sheet_id=1)
         assert response.is_success
         assert response.json() == {
             'items': [

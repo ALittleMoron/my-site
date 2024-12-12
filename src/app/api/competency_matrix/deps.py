@@ -48,27 +48,29 @@ ListCompetencyMatrixSubsectionsUseCaseDeps = Annotated[
 
 async def build_items_params(
     sheet_id: Annotated[
-        int | None,
+        int,
         Parameter(
-            int | None,
+            int,
+            required=True,
             title="Идентификатор",
             description="Идентификатор листа, на котором располагаются вопросы",
             query="sheetId",
         ),
-    ] = None,
+    ],
 ) -> CompetencyMatrixListItemsParams:
     return CompetencyMatrixListItemsParams(sheet_id=sheet_id)
 
 
 async def build_subsections_params(
     sheet_id: Annotated[
-        int | None,
+        int,
         Parameter(
-            int | None,
+            int,
+            required=True,
             title="Идентификатор",
             description="Идентификатор листа, на котором располагаются подразделы",
             query="sheetId",
         ),
-    ] = None,
+    ],
 ) -> CompetencyMatrixListSubsectionsParams:
     return CompetencyMatrixListSubsectionsParams(sheet_id=sheet_id)

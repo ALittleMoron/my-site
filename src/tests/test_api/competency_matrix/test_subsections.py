@@ -15,11 +15,6 @@ class TestCompetencyMatrixSubsectionsAPI(ApiFixture, FactoryFixture):
         self.use_case = MockListSubsectionsUseCase()
         self.client = self.app.create_list_competency_matrix_subsections_client(self.use_case)
 
-    def test_list_by_sheet_id(self) -> None:
-        response = self.client.get('', params={"sheetId": 1})
-        assert response.is_success
-        assert self.use_case.params == ListSubsectionsParams(sheet_id=1)
-
     def test_list(self) -> None:
         self.use_case.subsections = [
             self.factory.subsection(
@@ -37,11 +32,12 @@ class TestCompetencyMatrixSubsectionsAPI(ApiFixture, FactoryFixture):
                 section=self.factory.section(
                     section_id=2,
                     name="ООП",
-                    sheet=self.factory.sheet(sheet_id=2, name="JavaScript"),
+                    sheet=self.factory.sheet(sheet_id=1, name="Python"),
                 ),
             ),
         ]
-        response = self.client.get('')
+        response = self.client.get('', params={"sheetId": 1})
+        assert self.use_case.params == ListSubsectionsParams(sheet_id=1)
         assert response.is_success
         assert response.json() == {
             'subsections': [
@@ -64,8 +60,8 @@ class TestCompetencyMatrixSubsectionsAPI(ApiFixture, FactoryFixture):
                         "id": 2,
                         "name": "ООП",
                         "sheet": {
-                            "id": 2,
-                            "name": "JavaScript",
+                            "id": 1,
+                            "name": "Python",
                         },
                     },
                 },

@@ -6,8 +6,7 @@ Feature: Список подразделов к вопросам
       | sheet.id | sheet.name | section.id | section.name | subsection.id | subsection.name   |
       | 1        | Python     | 1          | Основы       | 1             | Функции           |
       | 2        | JavaScript | 2          | ООП          | 2             | Магические методы |
-    When Получаем список подразделов к вопросам
+    When Получаем список подразделов к вопросам по листу 1
     Then Полученный список подразделов к вопросам матрицы компетенций
       | sheet.id | sheet.name | section.id | section.name | subsection.id | subsection.name   |
       | 1        | Python     | 1          | Основы       | 1             | Функции           |
-      | 2        | JavaScript | 2          | ООП          | 2             | Магические методы |

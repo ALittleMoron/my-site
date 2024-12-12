@@ -22,30 +22,26 @@ class MockCompetencyMatrixStorage(CompetencyMatrixStorage):
 
     async def list_competency_matrix_items(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[ShortCompetencyMatrixItem]:
-        if sheet_id is not None:
-            return list(
-                filter(
-                    lambda item: (
-                        item.subsection_id is not None
-                        and item.subsection_id in self.subsections
-                        and self.subsections[item.subsection_id].section.sheet.id == sheet_id
-                    ),
-                    self.short_competency_matrix_items.values(),
+        return list(
+            filter(
+                lambda item: (
+                    item.subsection_id is not None
+                    and item.subsection_id in self.subsections
+                    and self.subsections[item.subsection_id].section.sheet.id == sheet_id
                 ),
-            )
-        return list(self.short_competency_matrix_items.values())
+                self.short_competency_matrix_items.values(),
+            ),
+        )
 
     async def list_sheets(self) -> list[Sheet]:
         return list(self.sheets.values())
 
     async def list_subsections(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[Subsection]:
-        if sheet_id is not None:
-            return list(
-                filter(lambda item: item.section.sheet.id == sheet_id, self.subsections.values()),
-            )
-        return list(self.subsections.values())
+        return list(
+            filter(lambda item: item.section.sheet.id == sheet_id, self.subsections.values()),
+        )

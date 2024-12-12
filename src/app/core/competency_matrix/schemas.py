@@ -7,12 +7,12 @@ from app.core.schemas import ValuedDataclass
 
 @dataclass(kw_only=True)
 class ListItemsParams:
-    sheet_id: int | None
+    sheet_id: int
 
 
 @dataclass(kw_only=True)
 class ListSubsectionsParams:
-    sheet_id: int | None
+    sheet_id: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

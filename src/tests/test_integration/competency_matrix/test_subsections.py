@@ -29,7 +29,7 @@ class TestCompetencyMatrixSheet(ApiFixture, FactoryFixture, StorageFixture):
             ),
         )
 
-    async def test_list_by_sheet_id(self) -> None:
+    async def test_list(self) -> None:
         response = self.api.list_competency_matrix_subsections(sheet_id=1)
         assert response.is_success
         assert response.json() == {
@@ -43,38 +43,6 @@ class TestCompetencyMatrixSheet(ApiFixture, FactoryFixture, StorageFixture):
                         "sheet": {
                             "id": 1,
                             "name": "Python",
-                        },
-                    },
-                },
-            ],
-        }
-
-    async def test_list(self) -> None:
-        response = self.api.list_competency_matrix_subsections()
-        assert response.is_success
-        assert response.json() == {
-            'subsections': [
-                {
-                    "id": 1,
-                    "name": "Функции",
-                    "section": {
-                        "id": 1,
-                        "name": "Основы",
-                        "sheet": {
-                            "id": 1,
-                            "name": "Python",
-                        },
-                    },
-                },
-                {
-                    "id": 2,
-                    "name": "Протоколы",
-                    "section": {
-                        "id": 2,
-                        "name": "ООП",
-                        "sheet": {
-                            "id": 2,
-                            "name": "JavaScript",
                         },
                     },
                 },

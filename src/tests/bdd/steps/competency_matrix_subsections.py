@@ -27,14 +27,6 @@ async def when_get_subsections_list_by_sheet_id(context: Context, sheet_id: int)
     )
 
 
-@when("Получаем список подразделов к вопросам")
-@async_run_until_complete
-async def when_get_subsections_list(context: Context) -> None:
-    context.subsections = await context.use_case.execute(
-        params=ListSubsectionsParams(sheet_id=None),
-    )
-
-
 @then("Полученный список подразделов к вопросам матрицы компетенций")
 def then_assert_subsections_list(context: Context) -> None:
     expected_subsections = context.bdd.parse_subsections()

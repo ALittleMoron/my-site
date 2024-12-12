@@ -13,7 +13,7 @@ class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def list_competency_matrix_items(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[ShortCompetencyMatrixItem]:
         raise NotImplementedError
 
@@ -24,7 +24,7 @@ class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def list_subsections(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[Subsection]:
         raise NotImplementedError
 
@@ -35,19 +35,18 @@ class DatabaseStorage(CompetencyMatrixStorage):
 
     async def list_competency_matrix_items(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[ShortCompetencyMatrixItem]:
-        query = select(CompetencyMatrixItemModel)
-        if sheet_id is not None:
-            query = (
-                query.join(
-                    SubsectionModel,
-                    SubsectionModel.id == CompetencyMatrixItemModel.subsection_id,
-                )
-                .join(SectionModel, SectionModel.id == SubsectionModel.section_id)
-                .join(SheetModel, SheetModel.id == SectionModel.sheet_id)
-                .where(SheetModel.id == sheet_id)
+        query = (
+            select(CompetencyMatrixItemModel)
+            .join(
+                SubsectionModel,
+                SubsectionModel.id == CompetencyMatrixItemModel.subsection_id,
             )
+            .join(SectionModel, SectionModel.id == SubsectionModel.section_id)
+            .join(SheetModel, SheetModel.id == SectionModel.sheet_id)
+            .where(SheetModel.id == sheet_id)
+        )
         return [item.to_short_domain_schema() for item in await self.session.scalars(query)]
 
     async def list_sheets(self) -> list[Sheet]:
@@ -56,15 +55,15 @@ class DatabaseStorage(CompetencyMatrixStorage):
 
     async def list_subsections(
         self,
-        sheet_id: int | None = None,
+        sheet_id: int,
     ) -> list[Subsection]:
-        query = select(SubsectionModel).options(
-            joinedload(SubsectionModel.section).joinedload(SectionModel.sheet),
-        )
-        if sheet_id is not None:
-            query = (
-                query.join(SectionModel, SectionModel.id == SubsectionModel.section_id)
-                .join(SheetModel, SheetModel.id == SectionModel.sheet_id)
-                .where(SheetModel.id == sheet_id)
+        query = (
+            select(SubsectionModel)
+            .options(
+                joinedload(SubsectionModel.section).joinedload(SectionModel.sheet),
             )
+            .join(SectionModel, SectionModel.id == SubsectionModel.section_id)
+            .join(SheetModel, SheetModel.id == SectionModel.sheet_id)
+            .where(SheetModel.id == sheet_id)
+        )
         return [subsection.to_full_schema() for subsection in await self.session.scalars(query)]

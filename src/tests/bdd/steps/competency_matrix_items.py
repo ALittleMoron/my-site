@@ -35,14 +35,6 @@ async def when_get_items_list_by_sheet_id(context: Context, sheet_id: int) -> No
     )
 
 
-@when("Получаем список вопросов из матрицы компетенций")
-@async_run_until_complete
-async def when_get_items_list(context: Context) -> None:
-    context.short_items = await context.use_case.execute(
-        params=ListItemsParams(sheet_id=None),
-    )
-
-
 @then("Полученный список вопросов матрицы компетенций")
 def then_assert_items_list(context: Context) -> None:
     expected_items = context.bdd.parse_short_filled_competency_matrix_items()
