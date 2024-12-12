@@ -4,17 +4,21 @@ from litestar.testing import TestClient
 
 from app.database.storages import DatabaseStorage
 from tests.helpers.api import ApiHelper
+from tests.helpers.app import AppHelper
 from tests.helpers.factory import FactoryHelper
 from tests.helpers.storage import StorageHelper
 
 
 class ApiFixture:
+    api: ApiHelper
+    app: AppHelper
 
     @pytest.fixture(autouse=True)
     def _setup_api(
         self,
         client: TestClient[Litestar],
     ) -> None:
+        self.app = AppHelper()
         self.api = ApiHelper(client=client)
 
 
