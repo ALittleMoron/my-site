@@ -1,7 +1,7 @@
 import pytest
 
-from app.core.competency_matrix.schemas import ListCompetencyMatrixItemsParams
-from tests.fixtures import FactoryFixture, ApiFixture
+from app.core.competency_matrix.schemas import ListItemsParams
+from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItemsUseCase
 
 
@@ -16,7 +16,7 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
     def test_list_by_sheet_id(self) -> None:
         response = self.client.get('', params={"sheetId": 1})
         assert response.is_success
-        assert self.use_case.params == ListCompetencyMatrixItemsParams(sheet_id=1)
+        assert self.use_case.params == ListItemsParams(sheet_id=1)
 
     def test_list(self) -> None:
         self.use_case.items = [

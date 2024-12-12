@@ -26,7 +26,7 @@ def provide_async(
 
 def create_mocked_test_client(
     handler: ControllerRouterHandler,
-    dependencies: dict[str, Provide],
+    dependencies: dict[str, Provide] | None = None,
     base_url: str = "",
 ) -> TestClient[Litestar]:
-    return create_test_client(handler, base_url=base_url, dependencies=dependencies)
+    return create_test_client(handler, base_url=base_url, dependencies=dependencies or {})

@@ -5,7 +5,7 @@ from pydantic import Field
 from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
-    ListCompetencyMatrixItemsParams,
+    ListItemsParams,
     ListSubsectionsParams,
     Section,
     Sheet,
@@ -19,8 +19,8 @@ from app.core.competency_matrix.schemas import (
 class CompetencyMatrixListItemsParams(CamelCaseSchema):
     sheet_id: int | None = None
 
-    def to_schema(self) -> ListCompetencyMatrixItemsParams:
-        return ListCompetencyMatrixItemsParams(sheet_id=self.sheet_id)
+    def to_schema(self) -> ListItemsParams:
+        return ListItemsParams(sheet_id=self.sheet_id)
 
 
 class CompetencyMatrixListSubsectionsParams(CamelCaseSchema):

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from app.core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     FilledCompetencyMatrixItems,
-    ListCompetencyMatrixItemsParams,
+    ListItemsParams,
     ListSubsectionsParams,
     Sheets,
     Subsections,
@@ -31,9 +31,9 @@ class ListSubsectionsUseCase(UseCase):
 
 
 @dataclass(kw_only=True)
-class ListCompetencyMatrixItemsUseCase(UseCase):
+class ListItemsUseCase(UseCase):
     storage: CompetencyMatrixStorage
 
-    async def execute(self, params: ListCompetencyMatrixItemsParams) -> FilledCompetencyMatrixItems:
+    async def execute(self, params: ListItemsParams) -> FilledCompetencyMatrixItems:
         items = await self.storage.list_competency_matrix_items(sheet_id=params.sheet_id)
         return CompetencyMatrixItems(values=items).only_available()

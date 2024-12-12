@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
-    ListCompetencyMatrixItemsParams,
+    ListItemsParams,
     ShortFilledCompetencyMatrixItem,
 )
 from app.core.use_cases import UseCase
@@ -11,10 +11,10 @@ from app.core.use_cases import UseCase
 @dataclass
 class MockListCompetencyMatrixItemsUseCase(UseCase):
     items: list[ShortFilledCompetencyMatrixItem] = field(default_factory=list)
-    params: ListCompetencyMatrixItemsParams | None | object = field(
+    params: ListItemsParams | None | object = field(
         default_factory=lambda: object(),
     )
 
-    async def execute(self, params: ListCompetencyMatrixItemsParams) -> FilledCompetencyMatrixItems:
+    async def execute(self, params: ListItemsParams) -> FilledCompetencyMatrixItems:
         self.params = params
         return FilledCompetencyMatrixItems(values=self.items)

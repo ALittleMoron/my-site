@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from litestar.di import Provide
 from litestar.params import Dependency, Parameter
 
 from app.api.competency_matrix.schemas import (
@@ -8,28 +7,24 @@ from app.api.competency_matrix.schemas import (
     CompetencyMatrixListSubsectionsParams,
 )
 from app.core.competency_matrix.use_cases import (
-    ListCompetencyMatrixItemsUseCase,
+    ListItemsUseCase,
     ListSheetsUseCase,
     ListSubsectionsUseCase,
 )
 from app.database.storages import CompetencyMatrixStorage
 
 
-async def list_competency_matrix_items_use_case_deps(
-    storage: CompetencyMatrixStorage,
-) -> ListCompetencyMatrixItemsUseCase:
-    return ListCompetencyMatrixItemsUseCase(storage=storage)
+async def build_list_items_use_case(storage: CompetencyMatrixStorage) -> ListItemsUseCase:
+    return ListItemsUseCase(storage=storage)
 
 
 ListCompetencyMatrixItemsUseCaseDeps = Annotated[
-    ListCompetencyMatrixItemsUseCase,
+    ListItemsUseCase,
     Dependency(skip_validation=True),
 ]
 
 
-async def list_competency_matrix_sheets_use_case_deps(
-    storage: CompetencyMatrixStorage,
-) -> ListSheetsUseCase:
+async def build_list_sheets_use_case(storage: CompetencyMatrixStorage) -> ListSheetsUseCase:
     return ListSheetsUseCase(storage=storage)
 
 
@@ -39,7 +34,7 @@ ListCompetencyMatrixSheetsUseCaseDeps = Annotated[
 ]
 
 
-async def list_competency_matrix_subsections_use_case_deps(
+async def build_list_subsections_use_case(
     storage: CompetencyMatrixStorage,
 ) -> ListSubsectionsUseCase:
     return ListSubsectionsUseCase(storage=storage)
@@ -51,7 +46,7 @@ ListCompetencyMatrixSubsectionsUseCaseDeps = Annotated[
 ]
 
 
-async def build_competency_matrix_list_items_params(
+async def build_items_params(
     sheet_id: Annotated[
         int | None,
         Parameter(
@@ -65,7 +60,7 @@ async def build_competency_matrix_list_items_params(
     return CompetencyMatrixListItemsParams(sheet_id=sheet_id)
 
 
-async def build_competency_matrix_subsections_params(
+async def build_subsections_params(
     sheet_id: Annotated[
         int | None,
         Parameter(
@@ -77,20 +72,3 @@ async def build_competency_matrix_subsections_params(
     ] = None,
 ) -> CompetencyMatrixListSubsectionsParams:
     return CompetencyMatrixListSubsectionsParams(sheet_id=sheet_id)
-
-
-dependencies = {
-    "list_competency_matrix_items_params": Provide(build_competency_matrix_list_items_params),
-    "list_competency_matrix_subsections_params": Provide(
-        build_competency_matrix_subsections_params,
-    ),
-    "list_competency_matrix_items_use_case": Provide(
-        list_competency_matrix_items_use_case_deps,
-    ),
-    "list_competency_matrix_sheets_use_case": Provide(
-        list_competency_matrix_sheets_use_case_deps,
-    ),
-    "list_competency_matrix_subsections_use_case": Provide(
-        list_competency_matrix_subsections_use_case_deps,
-    ),
-}

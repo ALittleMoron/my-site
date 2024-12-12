@@ -6,7 +6,7 @@ from app.core.schemas import ValuedDataclass
 
 
 @dataclass(kw_only=True)
-class ListCompetencyMatrixItemsParams:
+class ListItemsParams:
     sheet_id: int | None
 
 

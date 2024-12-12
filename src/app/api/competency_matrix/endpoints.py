@@ -1,9 +1,15 @@
 from litestar import MediaType, Router, get, status_codes
+from litestar.di import Provide
 
 from app.api.competency_matrix.deps import (
     ListCompetencyMatrixItemsUseCaseDeps,
     ListCompetencyMatrixSheetsUseCaseDeps,
     ListCompetencyMatrixSubsectionsUseCaseDeps,
+    build_items_params,
+    build_list_items_use_case,
+    build_list_sheets_use_case,
+    build_list_subsections_use_case,
+    build_subsections_params,
 )
 from app.api.competency_matrix.schemas import (
     CompetencyMatrixItemsListSchema,
@@ -18,14 +24,17 @@ from app.api.competency_matrix.schemas import (
     "items/",
     media_type=MediaType.JSON,
     status_code=status_codes.HTTP_200_OK,
+    dependencies={
+        'params': Provide(build_items_params),
+        "use_case": Provide(build_list_items_use_case),
+    },
     description="Получение списка вопросов по матрице компетенций.",
 )
 async def list_competency_matrix_items_handler(
-    list_competency_matrix_items_params: CompetencyMatrixListItemsParams,
-    list_competency_matrix_items_use_case: ListCompetencyMatrixItemsUseCaseDeps,
+    params: CompetencyMatrixListItemsParams,
+    use_case: ListCompetencyMatrixItemsUseCaseDeps,
 ) -> CompetencyMatrixItemsListSchema:
-    params = list_competency_matrix_items_params.to_schema()
-    matrix = await list_competency_matrix_items_use_case.execute(params=params)
+    matrix = await use_case.execute(params=params.to_schema())
     return CompetencyMatrixItemsListSchema.from_domain_schema(schema=matrix)
 
 
@@ -33,6 +42,7 @@ async def list_competency_matrix_items_handler(
     "sheets/",
     media_type=MediaType.JSON,
     status_code=status_codes.HTTP_200_OK,
+    dependencies={"use_case": Provide(build_list_sheets_use_case)},
     description=(
         "Получение списка листов матрицы компетенций. Список содержит только доступные листы "
         "без вывода вопросов по ним. Сделайте запрос на ручку `items/` с параметром sheetId, "
@@ -40,9 +50,9 @@ async def list_competency_matrix_items_handler(
     ),
 )
 async def list_competency_matrix_sheet_handler(
-    list_competency_matrix_sheets_use_case: ListCompetencyMatrixSheetsUseCaseDeps,
+    use_case: ListCompetencyMatrixSheetsUseCaseDeps,
 ) -> CompetencyMatrixSheetsListSchema:
-    sheets = await list_competency_matrix_sheets_use_case.execute()
+    sheets = await use_case.execute()
     return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
 
 
@@ -50,17 +60,20 @@ async def list_competency_matrix_sheet_handler(
     "subsections/",
     media_type=MediaType.JSON,
     status_code=status_codes.HTTP_200_OK,
+    dependencies={
+        "params": Provide(build_subsections_params),
+        "use_case": Provide(build_list_subsections_use_case),
+    },
     description=(
         "Получение списка подразделов листов матрицы компетенций. Также в ответе содержится "
         "информация о разделе и листе данных подразделов."
     ),
 )
 async def list_competency_matrix_subsection_handler(
-    list_competency_matrix_subsections_params: CompetencyMatrixListSubsectionsParams,
-    list_competency_matrix_subsections_use_case: ListCompetencyMatrixSubsectionsUseCaseDeps,
+    params: CompetencyMatrixListSubsectionsParams,
+    use_case: ListCompetencyMatrixSubsectionsUseCaseDeps,
 ) -> CompetencyMatrixSubsectionsListSchema:
-    params = list_competency_matrix_subsections_params.to_schema()
-    subsections = await list_competency_matrix_subsections_use_case.execute(params=params)
+    subsections = await use_case.execute(params=params.to_schema())
     return CompetencyMatrixSubsectionsListSchema.from_domain_schema(schema=subsections)
 
 

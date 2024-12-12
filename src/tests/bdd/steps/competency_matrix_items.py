@@ -3,14 +3,14 @@ from behave.api.async_step import async_run_until_complete
 
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
-    ListCompetencyMatrixItemsParams,
+    ListItemsParams,
 )
-from app.core.competency_matrix.use_cases import ListCompetencyMatrixItemsUseCase
+from app.core.competency_matrix.use_cases import ListItemsUseCase
 from tests.bdd.fixtures import Context as BaseContext
 
 
 class Context(BaseContext):
-    use_case: ListCompetencyMatrixItemsUseCase
+    use_case: ListItemsUseCase
     short_items: FilledCompetencyMatrixItems
 
 
@@ -31,7 +31,7 @@ def given_items(context: Context) -> None:
 @async_run_until_complete
 async def when_get_items_list_by_sheet_id(context: Context, sheet_id: int) -> None:
     context.short_items = await context.use_case.execute(
-        params=ListCompetencyMatrixItemsParams(sheet_id=sheet_id),
+        params=ListItemsParams(sheet_id=sheet_id),
     )
 
 
@@ -39,7 +39,7 @@ async def when_get_items_list_by_sheet_id(context: Context, sheet_id: int) -> No
 @async_run_until_complete
 async def when_get_items_list(context: Context) -> None:
     context.short_items = await context.use_case.execute(
-        params=ListCompetencyMatrixItemsParams(sheet_id=None),
+        params=ListItemsParams(sheet_id=None),
     )
 
 

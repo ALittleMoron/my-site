@@ -1,7 +1,7 @@
 import pytest
 
 from app.core.competency_matrix.schemas import ListSubsectionsParams
-from tests.fixtures import FactoryFixture, ApiFixture
+from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_subsections import (
     MockListSubsectionsUseCase,
 )

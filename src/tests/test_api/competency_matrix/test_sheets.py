@@ -1,6 +1,6 @@
 import pytest
 
-from tests.fixtures import FactoryFixture, ApiFixture
+from tests.fixtures import ApiFixture, FactoryFixture
 from tests.mocks.use_cases.list_competency_matrix_sheets import (
     MockListSheetsUseCase,
 )
