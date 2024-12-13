@@ -14,17 +14,18 @@ class Context(BaseContext):
     short_items: FilledCompetencyMatrixItems
 
 
-@given("Список разделов")
-def given_sections(context: Context) -> None:
-    for section in context.bdd.parse_sections():
-        context.storage.sections[section.id] = section
-        context.storage.sheets[section.sheet.id] = section.sheet
-
-
 @given("Список вопросов в матрице компетенций")
 def given_items(context: Context) -> None:
     for item in context.bdd.parse_short_competency_matrix_items():
         context.storage.short_competency_matrix_items[item.id] = item
+
+
+@given("Полный список вопросов в матрице компетенций")
+def given_item_additional_info(context: Context) -> None:
+    for full_item in context.bdd.parse_full_competency_matrix_items():
+        context.storage.full_competency_matrix_items[full_item.id] = full_item
+    for short_item in context.bdd.parse_short_competency_matrix_items():
+        context.storage.short_competency_matrix_items[short_item.id] = short_item
 
 
 @when("Получаем список вопросов из матрицы компетенций по листу {sheet_id:d}")

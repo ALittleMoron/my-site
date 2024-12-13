@@ -5,6 +5,7 @@ from behave.model import Scenario
 
 from tests.bdd.fixtures import (
     Context,
+    get_competency_matrix_use_case,
     list_competency_matrix_use_case,
     list_sheets_use_case,
     list_subsections_use_case,
@@ -13,6 +14,7 @@ from tests.helpers.bdd import BddHelper
 from tests.mocks.storage_mock import MockCompetencyMatrixStorage
 
 fixtures = {
+    "setup.use_case.get_competency_matrix_use_case": get_competency_matrix_use_case,
     "setup.use_case.list_competency_matrix_use_case": list_competency_matrix_use_case,
     "setup.use_case.list_sheets_use_case": list_sheets_use_case,
     "setup.use_case.list_subsections_use_case": list_subsections_use_case,

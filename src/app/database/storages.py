@@ -3,13 +3,23 @@ from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
-from app.core.competency_matrix.schemas import Sheet, ShortCompetencyMatrixItem, Subsection
+from app.core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from app.core.competency_matrix.schemas import (
+    FullCompetencyMatrixItem,
+    Sheet,
+    ShortCompetencyMatrixItem,
+    Subsection,
+)
 from app.database.models import CompetencyMatrixItemModel, SectionModel, SheetModel, SubsectionModel
 
 
 class CompetencyMatrixStorage(ABC):
+    @abstractmethod
+    async def get_competency_matrix_item(self, item_id: int) -> FullCompetencyMatrixItem:
+        raise NotImplementedError
+
     @abstractmethod
     async def list_competency_matrix_items(
         self,
@@ -32,6 +42,25 @@ class CompetencyMatrixStorage(ABC):
 @dataclass
 class DatabaseStorage(CompetencyMatrixStorage):
     session: AsyncSession
+
+    async def get_competency_matrix_item(self, item_id: int) -> FullCompetencyMatrixItem:
+        query = (
+            select(CompetencyMatrixItemModel)
+            .options(
+                joinedload(CompetencyMatrixItemModel.grade),
+                (
+                    joinedload(CompetencyMatrixItemModel.subsection)
+                    .joinedload(SubsectionModel.section)
+                    .joinedload(SectionModel.sheet)
+                ),
+                selectinload(CompetencyMatrixItemModel.resources),
+            )
+            .where(CompetencyMatrixItemModel.id == item_id)
+        )
+        item = await self.session.scalar(query)
+        if item is None:
+            raise CompetencyMatrixItemNotFoundError
+        return item.to_full_domain_schema()
 
     async def list_competency_matrix_items(
         self,

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from app.core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     FilledCompetencyMatrixItems,
+    FullFilledCompetencyMatrixItem,
     ListItemsParams,
     ListSubsectionsParams,
     Sheets,
@@ -28,6 +29,15 @@ class ListSubsectionsUseCase(UseCase):
     async def execute(self, params: ListSubsectionsParams) -> Subsections:
         subsections = await self.storage.list_subsections(sheet_id=params.sheet_id)
         return Subsections(values=subsections)
+
+
+@dataclass(kw_only=True)
+class GetItemUseCase(UseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self, item_id: int) -> FullFilledCompetencyMatrixItem:
+        item = await self.storage.get_competency_matrix_item(item_id=item_id)
+        return item.to_full_filled()
 
 
 @dataclass(kw_only=True)

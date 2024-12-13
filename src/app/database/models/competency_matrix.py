@@ -20,6 +20,7 @@ from app.core.competency_matrix.schemas import (
     FullCompetencyMatrixItem,
     Grade,
     Resource,
+    Resources,
     Section,
     Sheet,
     ShortCompetencyMatrixItem,
@@ -89,6 +90,9 @@ class GradeModel(Base):
             id=schema.id,
             name=schema.name,
         )
+
+    def to_schema(self) -> Grade:
+        return Grade(id=self.id, name=self.name)
 
 
 class SectionModel(Base):
@@ -180,6 +184,9 @@ class ResourceModel(Base):
             context=schema.context,
         )
 
+    def to_schema(self) -> Resource:
+        return Resource(id=self.id, name=self.name, url=self.url, context=self.context)
+
 
 class CompetencyMatrixItemModel(Base):
     __tablename__ = 'competency_matrix_item'
@@ -245,4 +252,19 @@ class CompetencyMatrixItemModel(Base):
             status_changed=self.status_changed,
             grade_id=self.grade_id,
             subsection_id=self.subsection_id,
+        )
+
+    def to_full_domain_schema(self) -> "FullCompetencyMatrixItem":
+        return FullCompetencyMatrixItem(
+            id=self.id,
+            question=self.question,
+            answer=self.answer,
+            interview_expected_answer=self.interview_expected_answer,
+            status=StatusEnum(self.status),
+            status_changed=self.status_changed,
+            grade_id=self.grade_id,
+            grade=self.grade.to_schema() if self.grade is not None else None,
+            subsection_id=self.subsection_id,
+            subsection=self.subsection.to_full_schema() if self.subsection is not None else None,
+            resources=Resources(values=[resource.to_schema() for resource in self.resources]),
         )

@@ -1,8 +1,10 @@
 import datetime
 
+import pytest
 import pytest_asyncio
 
 from app.core.competency_matrix.enums import StatusEnum
+from app.core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from tests.fixtures import FactoryFixture, StorageFixture
 
 
@@ -51,7 +53,7 @@ class TestCompetencyMatrixItemsStorage(StorageFixture, FactoryFixture):
                 answer="Это паттерн проектирования",
                 interview_expected_answer="Я не знаю",
                 grade_id=2,
-                grade=self.factory.grade(grade_id=1, name="GRADE 2"),
+                grade=self.factory.grade(grade_id=2, name="GRADE 2"),
                 subsection_id=2,
                 subsection=self.factory.subsection(
                     subsection_id=2,
@@ -73,14 +75,49 @@ class TestCompetencyMatrixItemsStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-    async def test_with_filter_by_sheet_id_find(self) -> None:
+    async def test_list_with_filter_by_sheet_id_found(self) -> None:
         items = await self.storage.list_competency_matrix_items(sheet_id=1)
         assert len(items) == 1
         assert items[0].id == 1
 
-    async def test_with_filter_by_sheet_id_not_found(self) -> None:
+    async def test_list_with_filter_by_sheet_id_not_found(self) -> None:
         items = await self.storage.list_competency_matrix_items(sheet_id=-1)
         assert len(items) == 0
+
+    async def test_get_item_found(self) -> None:
+        item = await self.storage.get_competency_matrix_item(item_id=1)
+        assert item == self.factory.full_competency_matrix_item(
+            item_id=1,
+            question="Range - это итератор?",
+            status=StatusEnum.PUBLISHED,
+            status_changed=self.current_datetime,
+            answer="Почти да, но нет",
+            interview_expected_answer="Нет",
+            grade_id=1,
+            grade=self.factory.grade(grade_id=1, name="GRADE 1"),
+            subsection_id=1,
+            subsection=self.factory.subsection(
+                subsection_id=1,
+                name="SUBSECTION 1",
+                section=self.factory.section(
+                    section_id=1,
+                    name="SECTION 1",
+                    sheet=self.factory.sheet(sheet_id=1, name="SHEET 1"),
+                ),
+            ),
+            resources=[
+                self.factory.resource(
+                    resource_id=1,
+                    name="RESOURCE 1",
+                    url="https://example1.com",
+                    context="CONTEXT 2",
+                ),
+            ],
+        )
+
+    async def test_get_item_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.get_competency_matrix_item(item_id=-1)
 
 
 class TestCompetencyMatrixSheetStorage(StorageFixture, FactoryFixture):

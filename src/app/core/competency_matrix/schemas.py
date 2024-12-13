@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 
 from app.core.competency_matrix.enums import StatusEnum
+from app.core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from app.core.schemas import ValuedDataclass
 
 
@@ -74,6 +76,15 @@ class ShortCompetencyMatrixItem(BaseCompetencyMatrixItem):
     grade_id: int | None
     subsection_id: int | None
 
+    def is_short_available(self) -> bool:
+        return all(
+            [
+                self.grade_id is not None,
+                self.subsection_id is not None,
+                self.status == StatusEnum.PUBLISHED,
+            ],
+        )
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ShortFilledCompetencyMatrixItem(BaseCompetencyMatrixItem):
@@ -88,6 +99,26 @@ class FullCompetencyMatrixItem(ShortCompetencyMatrixItem):
     grade: Grade | None
     subsection: Subsection | None
     resources: Resources
+
+    def is_full_available(self) -> bool:
+        return all([self.is_short_available(), self.grade is not None, self.subsection is not None])
+
+    def to_full_filled(self) -> "FullFilledCompetencyMatrixItem":
+        if not self.is_full_available():
+            raise CompetencyMatrixItemNotFoundError
+        return FullFilledCompetencyMatrixItem(
+            id=self.id,
+            question=self.question,
+            answer=self.answer,
+            interview_expected_answer=self.interview_expected_answer,
+            status=self.status,
+            status_changed=self.status_changed,
+            grade_id=cast(int, self.grade_id),
+            grade=cast(Grade, self.grade),
+            subsection_id=cast(int, self.subsection_id),
+            subsection=cast(Subsection, self.subsection),
+            resources=self.resources,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -113,9 +144,7 @@ class CompetencyMatrixItems(ValuedDataclass[ShortCompetencyMatrixItem]):
                     subsection_id=item.subsection_id,
                 )
                 for item in self
-                if item.grade_id is not None
-                and item.subsection_id is not None
-                and item.status == StatusEnum.PUBLISHED
+                if item.is_short_available()
             ],
         )
 
