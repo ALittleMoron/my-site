@@ -8,10 +8,12 @@ from litestar.handlers import HTTPRouteHandler
 from litestar.testing import TestClient
 
 from app.api.competency_matrix.endpoints import (
+    detail_competency_matrix_items_handler,
     list_competency_matrix_items_handler,
     list_competency_matrix_sheet_handler,
     list_competency_matrix_subsection_handler,
 )
+from tests.mocks.use_cases.detail_competecy_matrix_item import MockGetItemUseCase
 from tests.mocks.use_cases.list_competency_matrix_items import MockListCompetencyMatrixItemsUseCase
 from tests.mocks.use_cases.list_competency_matrix_sheets import MockListSheetsUseCase
 from tests.mocks.use_cases.list_competency_matrix_subsections import MockListSubsectionsUseCase
@@ -34,6 +36,18 @@ class AppHelper:
         for key, value in override_dependencies.items():
             (handler_copy.dependencies or {})[key] = value  # type: ignore[index]
         return handler_copy
+
+    def create_detail_competency_matrix_item_client(
+        self,
+        use_case: MockGetItemUseCase,
+    ) -> TestClient[Litestar]:
+        return create_mocked_test_client(  # type: ignore[no-any-return]
+            handler=self.get_mocked_handler(
+                handler=detail_competency_matrix_items_handler,
+                override_dependencies={"use_case": provide_async(use_case)},
+            ),
+            base_url=self.merge_url("/items/"),
+        )
 
     def create_list_competency_matrix_items_client(
         self,

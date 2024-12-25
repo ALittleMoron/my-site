@@ -36,14 +36,14 @@ class TestCompetencyMatrixItemsAPI(ApiFixture, FactoryFixture):
                 {
                     "id": 1,
                     "question": "range - это итератор?",
-                    "grade_id": 1,
-                    "subsection_id": 1,
+                    "gradeId": 1,
+                    "subsectionId": 1,
                 },
                 {
                     "id": 2,
                     "question": "Что такое декоратор?",
-                    "grade_id": 2,
-                    "subsection_id": 2,
+                    "gradeId": 2,
+                    "subsectionId": 2,
                 },
             ],
         }

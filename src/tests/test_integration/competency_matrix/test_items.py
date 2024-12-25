@@ -82,8 +82,8 @@ class TestCompetencyMatrixItemsApiIntegration(ApiFixture, FactoryFixture, Storag
                 {
                     "id": 1,
                     "question": "Range - это итератор?",
-                    "grade_id": 1,
-                    "subsection_id": 1,
+                    "gradeId": 1,
+                    "subsectionId": 1,
                 },
             ],
         }

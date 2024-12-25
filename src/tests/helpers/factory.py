@@ -4,6 +4,7 @@ from app.core.competency_matrix.enums import StatusEnum
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
     FullCompetencyMatrixItem,
+    FullFilledCompetencyMatrixItem,
     Grade,
     Resource,
     Resources,
@@ -118,5 +119,37 @@ class FactoryHelper:
             interview_expected_answer=interview_expected_answer,
             grade=grade,
             subsection=subsection,
+            resources=Resources(values=resources or []),
+        )
+
+    @classmethod
+    def full_filled_competency_matrix_item(
+        cls,
+        item_id: int,
+        question: str = "TEST",
+        status: StatusEnum = StatusEnum.PUBLISHED,
+        status_changed: datetime.datetime | None = None,
+        answer: str = "ANSWER",
+        interview_expected_answer: str = "INTERVIEW",
+        grade_id: int | None = None,
+        grade: Grade | None = None,
+        subsection_id: int | None = None,
+        subsection: Subsection | None = None,
+        resources: list[Resource] | None = None,
+    ) -> FullFilledCompetencyMatrixItem:
+        if (grade and not grade_id) or (subsection and not subsection_id):
+            msg = "grade or subsection required, if their ids are passed."
+            raise ValueError(msg)
+        return FullFilledCompetencyMatrixItem(
+            id=item_id,
+            question=question,
+            status=status,
+            status_changed=status_changed or datetime.datetime.now(tz=datetime.UTC),
+            grade_id=grade_id or 1,
+            subsection_id=subsection_id or 1,
+            answer=answer,
+            interview_expected_answer=interview_expected_answer,
+            grade=grade or cls.grade(grade_id=grade_id or 1),
+            subsection=subsection or cls.subsection(subsection_id=subsection_id or 1),
             resources=Resources(values=resources or []),
         )

@@ -5,8 +5,12 @@ from pydantic import Field
 from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
+    FullFilledCompetencyMatrixItem,
+    Grade,
     ListItemsParams,
     ListSubsectionsParams,
+    Resource,
+    Resources,
     Section,
     Sheet,
     Sheets,
@@ -30,7 +34,7 @@ class CompetencyMatrixListSubsectionsParams(CamelCaseSchema):
         return ListSubsectionsParams(sheet_id=self.sheet_id)
 
 
-class CompetencyMatrixItemsBaseSchema(CamelCaseSchema):
+class CompetencyMatrixItemBaseSchema(CamelCaseSchema):
     id: int = Field(
         ...,
         title="Идентификатор",
@@ -71,7 +75,7 @@ class CompetencyMatrixItemsBaseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemsListSchema(CamelCaseSchema):
-    items: list[CompetencyMatrixItemsBaseSchema] = Field(
+    items: list[CompetencyMatrixItemBaseSchema] = Field(
         ...,
         title="Список",
         description="Список вопросов в матрице компетенций",
@@ -81,7 +85,7 @@ class CompetencyMatrixItemsListSchema(CamelCaseSchema):
     def from_domain_schema(cls, *, schema: FilledCompetencyMatrixItems) -> Self:
         return cls(
             items=[
-                CompetencyMatrixItemsBaseSchema.from_domain_schema(schema=item)
+                CompetencyMatrixItemBaseSchema.from_domain_schema(schema=item)
                 for item in schema.values
             ],
         )
@@ -216,4 +220,116 @@ class CompetencyMatrixSubsectionsListSchema(CamelCaseSchema):
                 CompetencyMatrixSubsectionSchema.from_domain_schema(schema=item)
                 for item in schema.values
             ],
+        )
+
+
+class CompetencyMatrixGradeSchema(CamelCaseSchema):
+    id: int = Field(
+        ...,
+        title="Идентификатор",
+        description="Идентификатор компетенции",
+        examples=[1, 2, 3],
+    )
+    name: str = Field(
+        ...,
+        title="Наименование",
+        description="Наименование компетенции",
+        examples=["Junior", "Middle", "Junior+", "Middle+"],
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Grade) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+        )
+
+
+class CompetencyMatrixResourceSchema(CamelCaseSchema):
+    id: int
+    name: str
+    url: str
+    context: str = ""
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Resource) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            url=schema.url,
+            context=schema.context,
+        )
+
+    @classmethod
+    def from_domain_schema_list(cls, *, schema: Resources) -> list[Self]:
+        return [cls.from_domain_schema(schema=resource) for resource in schema.values]
+
+
+class CompetencyMatrixItemDetailSchema(CamelCaseSchema):
+    id: int = Field(
+        ...,
+        title="Идентификатор",
+        description="Идентификатор вопроса в матрице компетенций",
+        examples=[1, 2, 3],
+    )
+    question: str = Field(
+        ...,
+        title="Вопрос",
+        description="Вопрос в матрице компетенций",
+        examples=[
+            "что такое и зачем нужен Pep8?",
+            "Что такое Mixin? Какие плюсы и минусы есть у такого подхода к наследованию?",
+            "range - это итератор?",
+        ],
+    )
+    answer: str = Field(
+        ...,
+        title="Ответ",
+        description="Подробный ответ на вопрос",
+        examples=[
+            "Да",
+            "Нет",
+            "Что-то более длинное... Вообще, это текст со стилями, так что тут может быть всё",
+        ],
+    )
+    interview_expected_answer: str = Field(
+        ...,
+        title="Ожидаемый ответ",
+        description="Ответ, который хочет услышать интервьюер",
+        examples=[
+            "Да",
+            "Нет",
+            "Что-то более длинное... Вообще, это текст со стилями, так что тут может быть всё",
+        ],
+    )
+    grade: CompetencyMatrixGradeSchema = Field(
+        ...,
+        title="Компетенция",
+        description="Категория компетенции вопроса (Для какого грейда этот вопрос)",
+    )
+    subsection: CompetencyMatrixSubsectionSchema = Field(
+        ...,
+        title="Подраздел",
+        description="Подраздел вопроса",
+    )
+    resources: list[CompetencyMatrixResourceSchema] = Field(
+        ...,
+        title="Подраздел",
+        description="Подраздел вопроса",
+    )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: FullFilledCompetencyMatrixItem) -> Self:
+        return cls(
+            id=schema.id,
+            question=schema.question,
+            answer=schema.answer,
+            interview_expected_answer=schema.interview_expected_answer,
+            grade=CompetencyMatrixGradeSchema.from_domain_schema(schema=schema.grade),
+            subsection=CompetencyMatrixSubsectionSchema.from_domain_schema(
+                schema=schema.subsection,
+            ),
+            resources=CompetencyMatrixResourceSchema.from_domain_schema_list(
+                schema=schema.resources,
+            ),
         )

@@ -3,8 +3,10 @@ from typing import TypeVar
 
 from litestar import Litestar
 from litestar.di import Provide
+from litestar.plugins.pydantic import PydanticInitPlugin
 from litestar.testing import TestClient, create_test_client
 from litestar.types import ControllerRouterHandler
+from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 T = TypeVar("T")
 
@@ -29,4 +31,10 @@ def create_mocked_test_client(
     dependencies: dict[str, Provide] | None = None,
     base_url: str = "",
 ) -> TestClient[Litestar]:
-    return create_test_client(handler, base_url=base_url, dependencies=dependencies or {})
+    return create_test_client(
+        handler,
+        base_url=base_url,
+        dependencies=dependencies or {},
+        exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
+        plugins=[PydanticInitPlugin(prefer_alias=True)],
+    )

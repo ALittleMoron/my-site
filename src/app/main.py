@@ -6,6 +6,7 @@ from litestar import Litestar
 from litestar.di import Provide
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.base import InitPluginProtocol
+from litestar.plugins.pydantic import PydanticInitPlugin
 from litestar.plugins.sqlalchemy import SQLAlchemyAsyncConfig, SQLAlchemyInitPlugin
 from litestar.types import ControllerRouterHandler
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
@@ -21,9 +22,12 @@ if TYPE_CHECKING:
 
 
 def get_plugins() -> list[InitPluginProtocol]:
-    config = SQLAlchemyAsyncConfig(connection_string=settings.database.url.get_secret_value())
-    sqlalchemy_plugin = SQLAlchemyInitPlugin(config=config)
-    return [sqlalchemy_plugin]
+    return [
+        PydanticInitPlugin(prefer_alias=True),
+        SQLAlchemyInitPlugin(
+            config=SQLAlchemyAsyncConfig(connection_string=settings.database.url.get_secret_value())
+        ),
+    ]
 
 
 def create_app(  # noqa: PLR0913

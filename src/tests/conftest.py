@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from app.api.deps import dependencies
 from app.config import settings
@@ -33,6 +34,7 @@ def app() -> Litestar:
         debug=True,
         plugins=get_plugins(),
         deps=dependencies,
+        exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
     )
 
 
