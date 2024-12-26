@@ -25,7 +25,9 @@ def get_plugins() -> list[InitPluginProtocol]:
     return [
         PydanticInitPlugin(prefer_alias=True),
         SQLAlchemyInitPlugin(
-            config=SQLAlchemyAsyncConfig(connection_string=settings.database.url.get_secret_value())
+            config=SQLAlchemyAsyncConfig(
+                connection_string=settings.database.url.get_secret_value(),
+            ),
         ),
     ]
 
