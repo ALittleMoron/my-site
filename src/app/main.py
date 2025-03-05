@@ -3,18 +3,20 @@ from typing import TYPE_CHECKING
 
 import uvicorn
 from litestar import Litestar
+from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.di import Provide
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.base import InitPluginProtocol
 from litestar.plugins.pydantic import PydanticInitPlugin
 from litestar.plugins.sqlalchemy import SQLAlchemyAsyncConfig, SQLAlchemyInitPlugin
+from litestar.template.config import TemplateConfig
 from litestar.types import ControllerRouterHandler
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
-from app.api.deps import dependencies
-from app.api.router import router as api_router
 from app.config import settings
 from app.openapi import openapi_config
+from app.views.deps import dependencies
+from app.views.router import router as api_router
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
@@ -48,6 +50,10 @@ def create_app(  # noqa: PLR0913
         plugins=plugins,
         dependencies=deps,
         exception_handlers=exception_handlers,
+        template_config=TemplateConfig(
+            directory=settings.dir.app_templates,
+            engine=JinjaTemplateEngine,
+        ),
     )
 
 

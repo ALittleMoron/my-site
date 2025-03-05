@@ -4,7 +4,7 @@ from litestar import MediaType, Router, get, status_codes
 from litestar.di import Provide
 from litestar.params import Parameter
 
-from app.api.competency_matrix.deps import (
+from app.views.competency_matrix.deps import (
     GetItemUseCaseDeps,
     ListItemsUseCaseDeps,
     ListSheetsUseCaseDeps,
@@ -16,7 +16,7 @@ from app.api.competency_matrix.deps import (
     build_list_subsections_use_case,
     build_subsections_params,
 )
-from app.api.competency_matrix.schemas import (
+from app.views.competency_matrix.schemas import (
     CompetencyMatrixItemDetailSchema,
     CompetencyMatrixItemsListSchema,
     CompetencyMatrixListItemsParams,

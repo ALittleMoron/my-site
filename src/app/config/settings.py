@@ -1,7 +1,7 @@
-from pathlib import Path
-
-from pydantic import BaseModel, SecretStr
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.config.configs import _DirConstants
 
 
 class _AppSettings(BaseSettings):
@@ -10,11 +10,6 @@ class _AppSettings(BaseSettings):
     debug: bool = False
 
     model_config = SettingsConfigDict(env_prefix='APP_', env_nested_delimiter="_")
-
-
-class _DirSettings(BaseModel):
-    root_path: Path = Path(__file__).parent.parent.parent.parent
-    src_path: Path = root_path / "src"
 
 
 class _DatabaseSettings(BaseSettings):
@@ -40,7 +35,7 @@ class _DatabaseSettings(BaseSettings):
 
 class Settings(BaseSettings):
     app: _AppSettings = _AppSettings()
-    dir: _DirSettings = _DirSettings()
+    dir: _DirConstants = _DirConstants()
     database: _DatabaseSettings = _DatabaseSettings()
 
 

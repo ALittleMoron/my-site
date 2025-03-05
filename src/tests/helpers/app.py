@@ -7,7 +7,7 @@ from litestar.di import Provide
 from litestar.handlers import HTTPRouteHandler
 from litestar.testing import TestClient
 
-from app.api.competency_matrix.endpoints import (
+from app.views.competency_matrix.endpoints import (
     detail_competency_matrix_items_handler,
     list_competency_matrix_items_handler,
     list_competency_matrix_sheet_handler,

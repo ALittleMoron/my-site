@@ -2,7 +2,6 @@ from typing import Self
 
 from pydantic import Field
 
-from app.api.schemas import CamelCaseSchema
 from app.core.competency_matrix.schemas import (
     FilledCompetencyMatrixItems,
     FullFilledCompetencyMatrixItem,
@@ -18,6 +17,7 @@ from app.core.competency_matrix.schemas import (
     Subsection,
     Subsections,
 )
+from app.views.schemas import CamelCaseSchema
 
 
 class CompetencyMatrixListItemsParams(CamelCaseSchema):

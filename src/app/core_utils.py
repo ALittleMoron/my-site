@@ -4,7 +4,7 @@ from app.config import settings
 
 
 def get_app_version() -> str:
-    with (settings.dir.root_path / "pyproject.toml").open('rb') as reader:
+    with (settings.dir.root / "pyproject.toml").open('rb') as reader:
         project_metadata = tomllib.load(reader)
     try:
         return str(project_metadata["project"]["version"])

@@ -2,10 +2,6 @@ from typing import Annotated
 
 from litestar.params import Dependency, Parameter
 
-from app.api.competency_matrix.schemas import (
-    CompetencyMatrixListItemsParams,
-    CompetencyMatrixListSubsectionsParams,
-)
 from app.core.competency_matrix.use_cases import (
     GetItemUseCase,
     ListItemsUseCase,
@@ -13,6 +9,10 @@ from app.core.competency_matrix.use_cases import (
     ListSubsectionsUseCase,
 )
 from app.database.storages import CompetencyMatrixStorage
+from app.views.competency_matrix.schemas import (
+    CompetencyMatrixListItemsParams,
+    CompetencyMatrixListSubsectionsParams,
+)
 
 no_validation_dependency = Dependency(skip_validation=True)
 

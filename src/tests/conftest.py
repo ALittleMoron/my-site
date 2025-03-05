@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
-from app.api.deps import dependencies
 from app.config import settings
 from app.database.models import (
     CompetencyMatrixItemModel,
@@ -26,6 +25,7 @@ from app.database.models import (
 from app.database.models.competency_matrix import items_to_resources
 from app.database.storages import DatabaseStorage
 from app.main import create_app, get_plugins
+from app.views.deps import dependencies
 
 
 @pytest.fixture(scope="session")
