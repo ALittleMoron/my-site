@@ -1,19 +1,6 @@
 [tool.ruff]
 output-format = "full"
 lint.select = ["ALL"]
-line-length = 100
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    ".eggs",
-    "*.egg",
-    "dist",
-    "tests/fixtures/**",
-    "tests/**/snapshots/**",
-    "alembic",
-    "airich",
-]
 lint.ignore = [
     "B008",
     "Q000",
@@ -31,6 +18,19 @@ lint.ignore = [
     "TD002",
     "TD003",
 ]
+line-length = 100
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".eggs",
+    "*.egg",
+    "dist",
+    "tests/fixtures/**",
+    "tests/**/snapshots/**",
+    "alembic",
+    "airich",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "src/**/*.py" = ["PD"]
@@ -44,6 +44,7 @@ lint.ignore = [
 "src/app/api/boundary.py" = ["ARG002", "ANN003", "A003", "ANN401"]
 "src/app/api/*/endpoint.py" = ["PLR0913"]
 "src/app/api/**/*.py" = ["N803"]
+"src/settings/auto.py" = ["PGH004"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -58,19 +59,8 @@ classmethod-decorators = [
     "pydantic.field_validator",
 ]
 
-[tool.ruff.lint.extend-per-file-ignores]
-"typings/*" = ["ANN401"]
-"__init__.py" = ["F401", "F405"]
-"*/migrations/versions/*" = ["D103"]
-"src/app/main.py" = ["E402"]
-"src/cli/commands/*" = ["E402", "ANN201"]
-"src/cli/__init__.py" = ["E402", "ANN201", "FBT001", "FBT002", "UP007"]
-"manage.py" = ["E402"]
-"tests/*" = ["D103"]
-
-
 [tool.mypy]
-mypy_path = ["src.admin", "src.app", "src.tests"]
+mypy_path = ["src"]
 plugins = ["mypy_django_plugin.main", "pydantic.mypy"]
 follow_imports = "silent"
 strict = true
@@ -80,14 +70,14 @@ ignore_missing_imports = true
 disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
-module = ["src.tests.*"]
+module = ["tests.*"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_decorators = false
 
 [tool.django-stubs]
-django_settings_module = "admin.settings"
+django_settings_module = "settings.auto"
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -144,6 +134,8 @@ testpath = "tests"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+DJANGO_SETTINGS_MODULE = "settings.auto"
 
 [tool.behave]
 paths = ["src/tests/bdd"]
@@ -163,7 +155,6 @@ requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
-    "litestar[pydantic,brotli,cryptography,jwt,structlog,sqlalchemy]>=2.11.0",
     "uvicorn>=0.30.6",
     "pydantic-settings>=2.4.0",
     "psycopg[binary]>=3.2.2",
@@ -178,6 +169,9 @@ dependencies = [
     "django-debug-toolbar>=4.4.6",
     "django-import-export>=4.3.3",
     "python-dateutil>=2.9.0.post0",
+    "django-ninja>=1.3.0",
+    "django-ninja-extra>=0.22.5",
+    "anydi>=0.39.3",
 ]
 
 [build-system]
@@ -189,7 +183,6 @@ dev = [
     "ruff>=0.3.4",
     "vulture>=2.11",
     "pytest>=8.1.1",
-    "black>=24.3.0",
     "bandit>=1.7.8",
     "coverage>=7.4.4",
     "pytest-cov>=4.1.0",
@@ -203,7 +196,6 @@ dev = [
     "pytest-mock>=3.14.0",
     "mypy>=1.13.0",
     "django-stubs[compatible-mypy]>=5.1.1",
-    "behave[toml] @ git+https://github.com/behave/behave@v1.2.7.dev5",
-    "sqlacodegen>=3.0.0rc5",
     "setuptools>=75.6.0",
+    "pytest-django>=4.10.0",
 ]

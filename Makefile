@@ -6,7 +6,6 @@ install:
 	@if [ -z $(UV) ]; then echo "PDM could not be found."; exit 2; fi
 	$(UV) install -G:all --no-self
 
-
 .PHONY: shell
 shell:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
@@ -21,7 +20,7 @@ clean:
 .PHONY: types
 types:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml src
+	$(UV) run mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(NAME)
 
 .PHONY: bandit
 bandit:
@@ -33,10 +32,10 @@ vulture:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	$(UV) run vulture $(NAME) --min-confidence 100
 
-.PHONY: black-check
-black-check:
+.PHONY: ruff-format
+ruff-format:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run black --config ./pyproject.toml --check $(NAME) --diff
+	$(UV) run ruff format $(NAME)
 
 .PHONY: ruff-check
 ruff-check:
@@ -52,14 +51,12 @@ fix:
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src DB_NAME=my_site_database_test $(UV) run behave --stop
-	PYTHONPATH=src DB_NAME=my_site_database_test $(UV) run pytest -vvv -x
+	PYTHONPATH=$(NAME) DB_NAME=my_site_database_test $(UV) run pytest -vvv -x
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src DB_NAME=my_site_database_test $(UV) run coverage run -m behave
-	PYTHONPATH=src DB_NAME=my_site_database_test $(UV) run coverage run -a -m pytest -v
+	PYTHONPATH=$(NAME) DB_NAME=my_site_database_test $(UV) run coverage run -m pytest -v
 	$(UV) run coverage xml
 	$(UV) run coverage report --fail-under=95
 
@@ -67,7 +64,7 @@ tests-coverage:
 quality:
 	-make bandit
 	-make vulture
+	make ruff-format
 	make types
 	make ruff-check
-	make black-check
 	make tests
