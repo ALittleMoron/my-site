@@ -1,1 +1,54 @@
 # My Site
+
+A full-stack web application with a Django backend and React frontend, featuring a competency matrix system.
+
+## Project Structure
+
+```
+my-site/
+├── backend/           # Django backend application
+│   ├── src/          # Source code
+│   └── README.md     # Backend documentation
+└── frontend/         # React frontend application
+    ├── src/          # Source code
+    └── README.md     # Frontend documentation
+```
+
+## Features
+
+- Competency matrix management system
+- Interactive grid and list views
+- Detailed question and answer display
+- Resource management
+- Dark theme UI
+
+## Documentation
+
+- [Backend Documentation](backend/README.md) - Django setup, API endpoints, and database configuration
+- [Frontend Documentation](frontend/README.md) - React setup, component structure, and development guide
+
+## Quick Start
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/my-site.git
+cd my-site
+```
+
+2. Set up the backend:
+```bash
+cd backend
+# Follow instructions in backend/README.md
+```
+
+3. Set up the frontend:
+```bash
+cd frontend
+# Follow instructions in frontend/README.md
+```
+
+## Development
+
+- Backend runs on `http://localhost:8000`
+- Frontend runs on `http://localhost:5173`
+- API documentation available at `http://localhost:8000/api/docs`
