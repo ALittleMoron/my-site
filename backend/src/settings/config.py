@@ -72,9 +72,18 @@ class _MartorConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MARTOR_")
 
 
+class _CorsConfig(BaseSettings):
+    allow_all_origins: bool = True
+    allow_credentials: bool = True
+    allowed_origins: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
+
+    model_config = SettingsConfigDict(env_prefix="CORS_")
+
+
 class Config(BaseSettings):
     app: _AppConfig = _AppConfig()
     csrf: _CSRFConfig = _CSRFConfig()
+    cors: _CorsConfig = _CorsConfig()
     dir: _DirConstants = _DirConstants()
     minio: _MinioConfig = _MinioConfig()
     database: _DatabaseConfig = _DatabaseConfig()

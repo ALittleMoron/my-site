@@ -33,12 +33,14 @@ INSTALLED_APPS = [
     "import_export",
     "debug_toolbar",
     "anydi.ext.django",
+    "corsheaders",
     # applications
     "infra.apps.DjangoInfraConfig",
     "db.apps.DjangoDatabaseConfig",
 ]
 MIDDLEWARE = [
     "anydi.ext.django.middleware.request_scoped_middleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

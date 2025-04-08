@@ -16,20 +16,20 @@ UNFOLD = {
                 {
                     "title": "Элементы матрицы компетенций",
                     "icon": "sports_motorsports",
-                    "link": reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
+                    "link": reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                 },
                 {
                     "title": "Опубликованные",
                     "icon": "sports_motorsports",
                     "link": lambda _: "{url}?status__exact=published".format(
-                        url=reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
+                        url=reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                     ),
                 },
                 {
                     "title": "Черновики",
                     "icon": "sports_motorsports",
                     "link": lambda _: "{url}?status__exact=draft".format(
-                        url=reverse_lazy("admin:competency_matrix_competencymatrixitem_changelist"),
+                        url=reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                     ),
                 },
             ],
@@ -51,7 +51,7 @@ UNFOLD = {
                         "title": "Матрица компетенций",
                         "icon": "school",
                         "link": reverse_lazy(
-                            "admin:competency_matrix_competencymatrixitem_changelist",
+                            "admin:db_competencymatrixitemmodel_changelist",
                         ),
                     },
                 ],

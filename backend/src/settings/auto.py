@@ -10,6 +10,7 @@ from settings.sub_storages import *  # noqa
 from settings.sub_martor import *  # noqa
 from settings.sub_unfold import *  # noqa
 from settings.sub_anydi import *  # noqa
+from settings.sub_cors import *  # noqa
 
 if DEBUG:  # noqa: F405
     os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"

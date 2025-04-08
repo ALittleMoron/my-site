@@ -7,7 +7,9 @@ from import_export.admin import ImportExportModelAdmin
 from mdeditor.widgets import MDEditorWidget
 from unfold.admin import ModelAdmin, display
 from unfold.contrib.import_export.forms import ExportForm, ImportForm
+from unfold.decorators import action
 
+from core.competency_matrix.enums import StatusEnum
 from db.models import CompetencyMatrixItemModel, ResourceModel
 from infra.forms import CompetencyMatrixItemForm
 
@@ -44,6 +46,7 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
     autocomplete_fields = [
         "resources",
     ]
+    actions = ["publish_elements"]
     formfield_overrides = {
         models.TextField: {"widget": MDEditorWidget},
     }
@@ -74,3 +77,11 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
     @display(description="Уровень компетенций")  # type: ignore[misc]
     def display_grade(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.grade if instance.grade else ""
+
+    @action(description="Опубликовать выбранные элементы матрицы компетенций")
+    def publish_elements(
+        self,
+        request: HttpRequest,
+        queryset: "QuerySet[CompetencyMatrixItemModel, CompetencyMatrixItemModel]",
+    ):
+        queryset.update(status=StatusEnum.PUBLISHED)

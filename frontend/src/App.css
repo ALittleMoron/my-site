@@ -1,36 +1,32 @@
+:root {
+  --matrix-bg: #1a1a1a;
+  --matrix-header: #2d2d2d;
+  --matrix-border: #404040;
+  --matrix-accent: #3b82f6;
+  --matrix-accent-dark: #2563eb;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--matrix-bg);
+  color: var(--text-primary);
+}
+
 #root {
+  min-height: 100vh;
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-  text-align: center;
 }
 
+/* Remove default styles */
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+  display: none;
 }
 
 .card {
@@ -38,5 +34,5 @@
 }
 
 .read-the-docs {
-  color: #888;
+  color: var(--text-tertiary);
 }
