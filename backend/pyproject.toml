@@ -1,0 +1,208 @@
+[tool.ruff]
+output-format = "full"
+lint.select = ["ALL"]
+lint.ignore = [
+    "B008",
+    "Q000",
+    "S101",
+    "PT016",
+    "ANN101",
+    "ANN102",
+    "N805",
+    "PLC0414",
+    "D",
+    "ANN10",
+    "RUF001",
+    "RUF012",
+    "FIX",
+    "TD002",
+    "TD003",
+]
+line-length = 100
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".eggs",
+    "*.egg",
+    "dist",
+    "tests/fixtures/**",
+    "tests/**/snapshots/**",
+    "alembic",
+    "airich",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/**/*.py" = ["PD"]
+"src/tests/*" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
+"src/tests/conftest.py" = ["ARG001", "ANN401"]
+"src/tests/mocks/*" = ["ARG002", "ARG003"]
+"src/tests/**/helper.py" = ["PLR0913", "ANN401"]
+"src/tests/helpers/*.py" = ["PLR0913", "ANN401"]
+"src/tests/types.py" = ["ANN"]
+"src/app/config/*" = ["ANN401"]
+"src/api/schemas.py" = ["ARG002", "ANN003", "A003", "ANN401"]
+"src/api/*/endpoints.py" = ["ARG001", "PLR0913"]
+"src/api/**/*.py" = ["N803"]
+"src/settings/auto.py" = ["PGH004"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+ignore-decorators = ["typing.overload"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 11
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+    "pydantic.model_validator",
+    "pydantic.field_validator",
+]
+
+[tool.mypy]
+mypy_path = ["src"]
+plugins = ["mypy_django_plugin.main", "pydantic.mypy"]
+follow_imports = "silent"
+strict = true
+disallow_subclassing_any = false
+disallow_any_generics = false
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
+[tool.django-stubs]
+django_settings_module = "settings.auto"
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+
+[tool.coverage]
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "enum.Enum",
+    "(Protocol):",
+    "(typing.Protocol):",
+    "pragma: no cover",
+    "pragma: no coverage",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@overload",
+    "raise AssertionError",
+]
+omit = [
+    "src/manage.py",
+    "src/settings/*",
+    "src/urls.py",
+    "src/wsgi.py",
+    "src/asgi.py",
+    "src/**/apps.py",
+    "src/**/forms.py",
+    "src/**/admin.py",
+]
+
+[tool.pytest]
+testpath = "tests"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+DJANGO_SETTINGS_MODULE = "settings.auto"
+
+[tool.behave]
+paths = ["src/tests/bdd"]
+
+[tool.bandit]
+exclude = ['tests']
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py']
+
+[project]
+name = "my-site-backend"
+version = "1.0.0"
+description = "My site backend"
+authors = [{ name = "Dmitriy Lunev", email = "dima.lunev14@gmail.com" }]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = [
+    "uvicorn>=0.30.6",
+    "pydantic-settings>=2.4.0",
+    "psycopg[binary]>=3.2.2",
+    "verbose-http-exceptions[litestar]>=3.0.0",
+    "django>=5.1.3",
+    "python-decouple>=3.8",
+    "django-storages[s3]>=1.14.4",
+    "django-model-utils>=5.0.0",
+    "django-minio-backend>=3.7.2",
+    "django-unfold>=0.42.0",
+    "django-mdeditor>=0.1.20",
+    "django-debug-toolbar>=4.4.6",
+    "django-import-export>=4.3.3",
+    "python-dateutil>=2.9.0.post0",
+    "django-ninja>=1.3.0",
+    "django-ninja-extra>=0.22.5",
+    "anydi>=0.39.3",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.3.4",
+    "vulture>=2.11",
+    "pytest>=8.1.1",
+    "bandit>=1.7.8",
+    "coverage>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "isort>=5.13.2",
+    "pyright>=1.1.355",
+    "freezegun>=1.4.0",
+    "mimesis>=15.1.0",
+    "ipython>=8.22.2",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.13.0",
+    "django-stubs[compatible-mypy]>=5.1.1",
+    "setuptools>=75.6.0",
+    "pytest-django>=4.10.0",
+]
