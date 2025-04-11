@@ -68,15 +68,15 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
 
     @display(description="Раздел")  # type: ignore[misc]
     def display_section(self, instance: CompetencyMatrixItemModel) -> str:
-        return instance.section if instance.subsection else ""
+        return instance.section
 
     @display(description="Подраздел")  # type: ignore[misc]
     def display_subsection(self, instance: CompetencyMatrixItemModel) -> str:
-        return instance.subsection if instance.subsection else ""
+        return instance.subsection
 
     @display(description="Уровень компетенций")  # type: ignore[misc]
     def display_grade(self, instance: CompetencyMatrixItemModel) -> str:
-        return instance.grade if instance.grade else ""
+        return instance.grade
 
     @action(description="Опубликовать выбранные элементы матрицы компетенций")
     def publish_elements(

@@ -11,23 +11,20 @@ UNFOLD = {
     },
     "TABS": [
         {
-            "models": ["competency_matrix.competencymatrixitem"],
+            "models": ["db.competencymatrixitemmodel"],
             "items": [
                 {
                     "title": "Элементы матрицы компетенций",
-                    "icon": "sports_motorsports",
                     "link": reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                 },
                 {
                     "title": "Опубликованные",
-                    "icon": "sports_motorsports",
                     "link": lambda _: "{url}?status__exact=published".format(
                         url=reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                     ),
                 },
                 {
                     "title": "Черновики",
-                    "icon": "sports_motorsports",
                     "link": lambda _: "{url}?status__exact=draft".format(
                         url=reverse_lazy("admin:db_competencymatrixitemmodel_changelist"),
                     ),

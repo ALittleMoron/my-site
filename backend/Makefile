@@ -2,6 +2,16 @@ NAME := src
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
 
+.PHONY: collectstatic
+collectstatic:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) run manage.py collectstatic --noinput
+
+.PHONY: migrate
+migrate:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) run manage.py migrate
+
 .PHONY: install
 install:
 	@if [ -z $(UV) ]; then echo "PDM could not be found."; exit 2; fi

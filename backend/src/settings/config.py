@@ -24,7 +24,7 @@ class _AppConfig(BaseSettings):
     secret_key: SecretStr = SecretStr("abc")
     allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
     host: str = "0.0.0.0"  # noqa: S104
-    port: int = 8080
+    port: int = 8000
     x_frame_options: str = "SAMEORIGIN"
     internal_ips: list[str] = ["127.0.0.1"]
     language_code: str = "ru-Ru"

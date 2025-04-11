@@ -80,9 +80,9 @@ class ResourceModel(models.Model):
 
 
 class CompetencyMatrixItemModel(PublishModel, models.Model):
+    objects: "models.Manager[CompetencyMatrixItemModel]" = models.Manager()
     draft: "models.Manager[CompetencyMatrixItemModel]" = DraftManager()
     published: "models.Manager[CompetencyMatrixItemModel]" = PublishedManager()
-    objects: "models.Manager[CompetencyMatrixItemModel]" = models.Manager()
 
     question = models.CharField(
         max_length=255,
