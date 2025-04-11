@@ -11,10 +11,6 @@ export const CompetencyMatrix = () => {
 
   useEffect(() => {
     console.log('CompetencyMatrix component mounted');
-    console.log('Current environment:', {
-      API_URL: typeof window !== 'undefined' ? (window as any).ENV?.NEXT_PUBLIC_API_URL : 'Not available in SSR',
-      NODE_ENV: typeof window !== 'undefined' ? (window as any).ENV?.NODE_ENV : 'Not available in SSR',
-    });
 
     const fetchSheets = async () => {
       try {

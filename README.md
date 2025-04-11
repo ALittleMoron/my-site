@@ -31,24 +31,29 @@ my-site/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/my-site.git
+git clone git@github.com:ALittleMoron/my-site.git
 cd my-site
 ```
 
-2. Set up the backend:
+2. Make .env file
 ```bash
-cd backend
-# Follow instructions in backend/README.md
+cp .env.example .env
+
+# ... add custom variables to .env
 ```
 
-3. Set up the frontend:
+3. Add exec permission for run.sh file
 ```bash
-cd frontend
-# Follow instructions in frontend/README.md
+chmod +x ./docker/scripts/run.sh
+```
+
+4. Run makefile
+```bash
+make run
 ```
 
 ## Development
 
 - Backend runs on `http://localhost:8000`
-- Frontend runs on `http://localhost:5173`
+- Frontend runs on `http://localhost:8080`
 - API documentation available at `http://localhost:8000/api/docs`
