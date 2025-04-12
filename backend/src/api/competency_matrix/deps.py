@@ -1,6 +1,7 @@
 import anydi
 
 from core.competency_matrix.use_cases import (
+    GetItemUseCase,
     ListItemsUseCase,
     ListSheetsUseCase,
 )
@@ -21,3 +22,10 @@ class CompetencyMatrixDepsModule(anydi.Module):
         storage: CompetencyMatrixStorage = anydi.auto,
     ) -> ListSheetsUseCase:
         return ListSheetsUseCase(storage=storage)
+
+    @anydi.provider(scope="singleton")
+    async def build_get_item_use_case(
+        self,
+        storage: CompetencyMatrixStorage = anydi.auto,
+    ) -> GetItemUseCase:
+        return GetItemUseCase(storage=storage)

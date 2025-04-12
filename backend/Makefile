@@ -47,13 +47,13 @@ vulture:
 .PHONY: fix
 fix:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run ruff format $(NAME) --config ./pyproject.toml
 	$(UV) run ruff format $(TESTS) --config ./pyproject.toml
+	$(UV) run ruff format $(NAME) --config ./pyproject.toml
 
 .PHONY: ruff-check
 ruff-check:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run ruff check $(NAME)
+	$(UV) run ruff check $(NAME) --fix
 
 .PHONY: tests
 tests:

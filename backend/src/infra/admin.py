@@ -58,30 +58,30 @@ class CompetencyMatrixElementAdmin(ModelAdmin, ImportExportModelAdmin):
         qs = super().get_queryset(request)
         return qs.prefetch_related("resources")  # type: ignore[no-any-return]
 
-    @display(description="Вопрос")  # type: ignore[misc]
+    @display(description="Вопрос")
     def display_question(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.question
 
-    @display(description="Лист")  # type: ignore[misc]
+    @display(description="Лист")
     def display_sheet(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.sheet
 
-    @display(description="Раздел")  # type: ignore[misc]
+    @display(description="Раздел")
     def display_section(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.section
 
-    @display(description="Подраздел")  # type: ignore[misc]
+    @display(description="Подраздел")
     def display_subsection(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.subsection
 
-    @display(description="Уровень компетенций")  # type: ignore[misc]
+    @display(description="Уровень компетенций")
     def display_grade(self, instance: CompetencyMatrixItemModel) -> str:
         return instance.grade
 
     @action(description="Опубликовать выбранные элементы матрицы компетенций")
     def publish_elements(
         self,
-        request: HttpRequest,
+        _: HttpRequest,
         queryset: "QuerySet[CompetencyMatrixItemModel, CompetencyMatrixItemModel]",
-    ):
+    ) -> None:
         queryset.update(status=StatusEnum.PUBLISHED)

@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from db.storages import CompetencyMatrixDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
 
@@ -43,3 +44,16 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 status_changed=self.status_changed,
             ),
         ]
+
+    async def test_get_competency_matrix_item_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.get_competency_matrix_item(item_id=-1)
+
+    async def test_get_competency_matrix_item_found(self) -> None:
+        item = await self.storage.get_competency_matrix_item(item_id=1)
+        assert item == self.factory.competency_matrix_item(
+            item_id=1,
+            question="1",
+            sheet="Python",
+            status_changed=self.status_changed,
+        )

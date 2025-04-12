@@ -8,14 +8,14 @@ from anydi.ext.django.apps import ContainerConfig
 from django.apps.registry import apps
 from ninja import NinjaAPI
 
-from api.routers import api
+from api.app import ninja_app
 from tests.client import SyncAndAsyncNinjaClient
 
 
 @pytest.fixture(scope="session")
 def app() -> NinjaAPI:
     os.environ["NINJA_SKIP_REGISTRY"] = "yes"
-    return api
+    return ninja_app
 
 
 @pytest.fixture(scope="session")

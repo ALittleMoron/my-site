@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import CompetencyMatrixItem
 from db.models import CompetencyMatrixItemModel
 
@@ -11,6 +12,10 @@ class CompetencyMatrixStorage(ABC):
 
     @abstractmethod
     async def list_competency_matrix_items(self, sheet_name: str) -> list[CompetencyMatrixItem]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_competency_matrix_item(self, item_id: int) -> CompetencyMatrixItem:
         raise NotImplementedError
 
 
@@ -35,3 +40,10 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 sheet__iexact=sheet_name.lower(),
             )
         ]
+
+    async def get_competency_matrix_item(self, item_id: int) -> CompetencyMatrixItem:
+        try:
+            item = await CompetencyMatrixItemModel.objects.aget(id=item_id)
+            return item.to_domain_schema()
+        except CompetencyMatrixItemModel.DoesNotExist as exc:
+            raise CompetencyMatrixItemNotFoundError from exc

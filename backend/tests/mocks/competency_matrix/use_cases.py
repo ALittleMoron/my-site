@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItems,
@@ -24,3 +25,15 @@ class MockListItemsUseCase(UseCase):
         return CompetencyMatrixItems(
             values=[item for item in self.items if item.sheet == sheet_name],
         )
+
+
+@dataclass(kw_only=True)
+class MockGetItemUseCase(UseCase):
+    item_id: int | None = None
+    item: CompetencyMatrixItem | None = None
+
+    async def execute(self, item_id: int) -> CompetencyMatrixItem:
+        self.item_id = item_id
+        if self.item is None:
+            raise CompetencyMatrixItemNotFoundError
+        return self.item

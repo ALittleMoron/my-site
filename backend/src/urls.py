@@ -1,10 +1,10 @@
 from django.conf import settings
 from django.urls import include, path
 
-from api.routers import api
+from api.app import ninja_app
 
 urlpatterns = [
-    path("api/", api.urls),
+    path("api/", ninja_app.urls),
     path("", include("infra.urls")),
 ]
 

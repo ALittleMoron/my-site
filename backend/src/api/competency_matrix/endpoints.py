@@ -4,11 +4,13 @@ from ninja import Query, Router
 from verbose_http_exceptions import status
 
 from api.competency_matrix.schemas import (
+    CompetencyMatrixItemDetailSchema,
     CompetencyMatrixItemsListSchema,
     CompetencyMatrixListItemsParams,
     CompetencyMatrixSheetsListSchema,
 )
 from core.competency_matrix.use_cases import (
+    GetItemUseCase,
     ListItemsUseCase,
     ListSheetsUseCase,
 )
@@ -20,6 +22,7 @@ router = Router(tags=["competency matrix"])
     "items/",
     response={status.HTTP_200_OK: CompetencyMatrixItemsListSchema},
     description="Получение списка вопросов по матрице компетенций.",
+    by_alias=True,
 )
 async def list_competency_matrix_items_handler(
     request: HttpRequest,
@@ -34,6 +37,23 @@ async def list_competency_matrix_items_handler(
 
 
 @router.get(
+    "items/{pk}/",
+    response={status.HTTP_200_OK: CompetencyMatrixItemDetailSchema},
+    description="Получение подробной информации о вопросе из матрицы компетенций.",
+    by_alias=True,
+)
+async def get_competency_matrix_item_handler(
+    request: HttpRequest,
+    pk: int,
+    use_case: GetItemUseCase = anydi.auto,
+) -> CompetencyMatrixItemDetailSchema:
+    item = await use_case.execute(item_id=pk)
+    return CompetencyMatrixItemDetailSchema.from_domain_schema(
+        schema=item,
+    )
+
+
+@router.get(
     "sheets/",
     response={status.HTTP_200_OK: CompetencyMatrixSheetsListSchema},
     description=(
@@ -41,6 +61,7 @@ async def list_competency_matrix_items_handler(
         "без вывода вопросов по ним. Сделайте запрос на ручку `items/` с параметром sheetId, "
         "чтобы получить вопросы по нужному листу."
     ),
+    by_alias=True,
 )
 async def list_competency_matrix_sheet_handler(
     request: HttpRequest,
