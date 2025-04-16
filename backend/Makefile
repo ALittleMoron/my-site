@@ -2,15 +2,20 @@ NAME := src
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
 
-.PHONY: collectstatic
-collectstatic:
+.PHONY: revision
+revision:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run manage.py collectstatic --noinput
+	$(UV) run alembic -c src/db/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
 
 .PHONY: migrate
 migrate:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run manage.py migrate
+	$(UV) run alembic -c src/db/alembic/alembic.ini upgrade head
+
+.PHONY: downgrade
+downgrade:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) run alembic -c src/db/alembic/alembic.ini downgrade -1
 
 .PHONY: install
 install:

@@ -1,25 +1,28 @@
+from dataclasses import dataclass
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.competency_matrix.schemas import CompetencyMatrixItem
-from db.models import CompetencyMatrixItemModel, ResourceModel
+from db.models import CompetencyMatrixItemModel
 
 
+@dataclass(kw_only=True)
 class StorageHelper:
-    def create_competency_matrix_item(
-        cls,
+    session: AsyncSession
+
+    async def create_competency_matrix_item(
+        self,
         item: CompetencyMatrixItem,
     ) -> CompetencyMatrixItemModel:
         model = CompetencyMatrixItemModel.from_domain_schema(item=item)
-        model.save()
-        model.resources.set(
-            [ResourceModel.from_domain_schema(schema=resource) for resource in item.resources]
-        )
+        await self.session.merge(model)
         return model
 
-    def create_competency_matrix_items(
-        cls,
+    async def create_competency_matrix_items(
+        self,
         items: list[CompetencyMatrixItem],
     ) -> list[CompetencyMatrixItemModel]:
-        res = []
-        for item in items:
-            model = cls.create_competency_matrix_item(item=item)
-            res.append(model)
-        return res
+        items = [CompetencyMatrixItemModel.from_domain_schema(item=item) for item in items]
+        self.session.add_all(items)
+        await self.session.commit()
+        return items

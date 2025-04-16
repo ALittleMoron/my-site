@@ -1,18 +1,14 @@
-from collections.abc import Generator
-
-import pytest
+import pytest_asyncio
 from verbose_http_exceptions import status
 
 from core.competency_matrix.enums import StatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture
-from tests.mocks.competency_matrix.use_cases import MockGetItemUseCase
 
 
-class TestItemsAPI(ApiFixture, FactoryFixture):
-    @pytest.fixture(autouse=True)
-    def setup(self) -> Generator[None, None, None]:
-        self.use_case = MockGetItemUseCase()
-        yield from self.app.override_get_competency_matrix_item(use_case=self.use_case)
+class TestGetItemAPI(ApiFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self) -> None:
+        self.use_case = await self.app.get_mock_get_item_use_case()
 
     def test_not_found(self) -> None:
         self.use_case.item = None

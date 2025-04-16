@@ -1,31 +1,53 @@
-from datetime import UTC, datetime
-
 import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from db.storages import CompetencyMatrixDatabaseStorage
+from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
 
 
-@pytest.mark.django_db(transaction=True)
 class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
-    @pytest.fixture(autouse=True)
-    def setup(self) -> None:
-        self.storage = CompetencyMatrixDatabaseStorage()
-        self.status_changed = datetime.now(tz=UTC)
-        self.db.create_competency_matrix_items(
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self, session: AsyncSession) -> None:
+        self.storage = CompetencyMatrixDatabaseStorage(session=session)
+        await self.db.create_competency_matrix_items(
             items=[
                 self.factory.competency_matrix_item(
                     item_id=1,
                     question="1",
+                    answer="Answer 1",
+                    interview_expected_answer="Expected answer 1",
                     sheet="Python",
-                    status_changed=self.status_changed,
+                    grade="Middle+",
+                    section="SECTION 1",
+                    subsection="SUBSECTION 1",
+                    resources=[
+                        self.factory.resource(
+                            resource_id=1,
+                            name="NAME 1",
+                            url="https://example1.com",
+                            context="CONTEXT 1",
+                        ),
+                    ],
                 ),
                 self.factory.competency_matrix_item(
                     item_id=2,
                     question="2",
+                    answer="Answer 2",
+                    interview_expected_answer="Expected answer 2",
                     sheet="SQL",
-                    status_changed=self.status_changed,
+                    grade="Senior",
+                    section="SECTION 2",
+                    subsection="SUBSECTION 2",
+                    resources=[
+                        self.factory.resource(
+                            resource_id=2,
+                            name="NAME 2",
+                            url="https://example2.com",
+                            context="CONTEXT 2",
+                        ),
+                    ],
                 ),
             ],
         )
@@ -40,8 +62,13 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             self.factory.competency_matrix_item(
                 item_id=1,
                 question="1",
+                answer="Answer 1",
+                interview_expected_answer="Expected answer 1",
                 sheet="Python",
-                status_changed=self.status_changed,
+                grade="Middle+",
+                section="SECTION 1",
+                subsection="SUBSECTION 1",
+                resources=[],
             ),
         ]
 
@@ -54,6 +81,18 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert item == self.factory.competency_matrix_item(
             item_id=1,
             question="1",
+            answer="Answer 1",
+            interview_expected_answer="Expected answer 1",
             sheet="Python",
-            status_changed=self.status_changed,
+            grade="Middle+",
+            section="SECTION 1",
+            subsection="SUBSECTION 1",
+            resources=[
+                self.factory.resource(
+                    resource_id=1,
+                    name="NAME 1",
+                    url="https://example1.com",
+                    context="CONTEXT 1",
+                ),
+            ],
         )

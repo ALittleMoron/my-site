@@ -1,7 +1,10 @@
-from datetime import UTC, datetime
-
 from core.competency_matrix.enums import StatusEnum
-from core.competency_matrix.schemas import CompetencyMatrixItem, Resource, Resources, Sheets
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItem,
+    ExternalResource,
+    ExternalResources,
+    Sheets,
+)
 
 
 class FactoryHelper:
@@ -12,8 +15,8 @@ class FactoryHelper:
         name: str = "RESOURCE",
         url: str = "https://example.com",
         context: str = "Context",
-    ) -> Resource:
-        return Resource(
+    ) -> ExternalResource:
+        return ExternalResource(
             id=resource_id,
             name=name,
             url=url,
@@ -26,27 +29,25 @@ class FactoryHelper:
         item_id: int,
         question: str,
         status: StatusEnum = StatusEnum.PUBLISHED,
-        status_changed: datetime | None = None,
         answer: str = "",
         interview_expected_answer: str = "",
         sheet: str = "",
         grade: str = "",
         section: str = "",
         subsection: str = "",
-        resources: list[Resource] | None = None,
+        resources: list[ExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=item_id,
             question=question,
             status=status,
-            status_changed=status_changed or datetime.now(tz=UTC),
             answer=answer,
             interview_expected_answer=interview_expected_answer,
             sheet=sheet,
             grade=grade,
             section=section,
             subsection=subsection,
-            resources=Resources(values=resources or []),
+            resources=ExternalResources(values=resources or []),
         )
 
     @classmethod

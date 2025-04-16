@@ -1,37 +1,23 @@
-from collections.abc import Generator
 from dataclasses import dataclass
 
-from anydi import Container
+from dishka import AsyncContainer
 
-from core.competency_matrix.use_cases import ListItemsUseCase, ListSheetsUseCase, GetItemUseCase
 from tests.mocks.competency_matrix.use_cases import (
+    MockGetItemUseCase,
     MockListItemsUseCase,
     MockListSheetsUseCase,
-    MockGetItemUseCase,
 )
 
 
-@dataclass(kw_only=True, frozen=True, slots=True)
+@dataclass(kw_only=True)
 class AppHelper:
-    container: Container
+    container: AsyncContainer
 
-    def override_list_sheets_use_case(
-        self,
-        use_case: MockListSheetsUseCase,
-    ) -> Generator[None, None, None]:
-        with self.container.override(ListSheetsUseCase, use_case):
-            yield
+    async def get_mock_get_item_use_case(self) -> MockGetItemUseCase:
+        return await self.container.get(MockGetItemUseCase)
 
-    def override_list_competency_matrix_items(
-        self,
-        use_case: MockListItemsUseCase,
-    ) -> Generator[None, None, None]:
-        with self.container.override(ListItemsUseCase, use_case):
-            yield
+    async def get_mock_list_items_use_case(self) -> MockListItemsUseCase:
+        return await self.container.get(MockListItemsUseCase)
 
-    def override_get_competency_matrix_item(
-        self,
-        use_case: MockGetItemUseCase,
-    ) -> Generator[None, None, None]:
-        with self.container.override(GetItemUseCase, use_case):
-            yield
+    async def get_mock_list_sheets_use_case(self) -> MockListSheetsUseCase:
+        return await self.container.get(MockListSheetsUseCase)

@@ -2,7 +2,7 @@ from dataclasses import field
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import CompetencyMatrixItem
-from db.storages import CompetencyMatrixStorage
+from db.storages.competency_matrix import CompetencyMatrixStorage
 
 
 class MockCompetencyMatrixStorage(CompetencyMatrixStorage):

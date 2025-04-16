@@ -1,5 +1,3 @@
-from datetime import datetime, UTC
-
 import pytest
 
 from core.competency_matrix.enums import StatusEnum
@@ -13,7 +11,6 @@ class TestListItemsUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = MockCompetencyMatrixStorage()
-        self.status_changed = datetime.now(tz=UTC)
         self.use_case = GetItemUseCase(storage=self.storage)
 
     async def test_not_available(self) -> None:
@@ -41,7 +38,6 @@ class TestListItemsUseCase(FactoryFixture):
                 grade="1",
                 section="1",
                 subsection="1",
-                status_changed=self.status_changed,
             ),
         ]
         item = await self.use_case.execute(item_id=1)
@@ -53,5 +49,4 @@ class TestListItemsUseCase(FactoryFixture):
             grade="1",
             section="1",
             subsection="1",
-            status_changed=self.status_changed,
         )

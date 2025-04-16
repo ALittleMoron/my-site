@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 from core.competency_matrix.enums import StatusEnum
 from core.schemas import ValuedDataclass
@@ -14,7 +13,7 @@ class Subsections(ValuedDataclass[str]): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Resource:
+class ExternalResource:
     id: int
     name: str
     url: str
@@ -22,7 +21,7 @@ class Resource:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Resources(ValuedDataclass[Resource]): ...
+class ExternalResources(ValuedDataclass[ExternalResource]): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -30,14 +29,13 @@ class CompetencyMatrixItem:
     id: int
     question: str
     status: StatusEnum
-    status_changed: datetime
     answer: str
     interview_expected_answer: str
     sheet: str
     grade: str
     section: str
     subsection: str
-    resources: Resources
+    resources: ExternalResources
 
     def is_available(self) -> bool:
         return all(

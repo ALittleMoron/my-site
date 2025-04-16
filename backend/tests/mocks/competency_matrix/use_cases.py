@@ -6,11 +6,15 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     Sheets,
 )
-from core.use_cases import UseCase
+from core.competency_matrix.use_cases import (
+    AbstractGetItemUseCase,
+    AbstractListItemsUseCase,
+    AbstractListSheetsUseCase,
+)
 
 
 @dataclass(kw_only=True)
-class MockListSheetsUseCase(UseCase):
+class MockListSheetsUseCase(AbstractListSheetsUseCase):
     sheets: list[str] | None = field(default_factory=list)
 
     async def execute(self) -> Sheets:
@@ -18,7 +22,7 @@ class MockListSheetsUseCase(UseCase):
 
 
 @dataclass(kw_only=True)
-class MockListItemsUseCase(UseCase):
+class MockListItemsUseCase(AbstractListItemsUseCase):
     items: list[CompetencyMatrixItem] = field(default_factory=list)
 
     async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
@@ -28,7 +32,7 @@ class MockListItemsUseCase(UseCase):
 
 
 @dataclass(kw_only=True)
-class MockGetItemUseCase(UseCase):
+class MockGetItemUseCase(AbstractGetItemUseCase):
     item_id: int | None = None
     item: CompetencyMatrixItem | None = None
 

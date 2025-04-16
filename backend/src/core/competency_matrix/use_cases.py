@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
@@ -7,11 +8,29 @@ from core.competency_matrix.schemas import (
     Sheets,
 )
 from core.use_cases import UseCase
-from db.storages import CompetencyMatrixStorage
+from db.storages.competency_matrix import CompetencyMatrixStorage
+
+
+class AbstractListSheetsUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self) -> Sheets:
+        raise NotImplementedError()
+
+
+class AbstractListItemsUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
+        raise NotImplementedError()
+
+
+class AbstractGetItemUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, item_id: int) -> CompetencyMatrixItem:
+        raise NotImplementedError()
 
 
 @dataclass(kw_only=True)
-class ListSheetsUseCase(UseCase):
+class ListSheetsUseCase(AbstractListSheetsUseCase):
     storage: CompetencyMatrixStorage
 
     async def execute(self) -> Sheets:
@@ -20,7 +39,7 @@ class ListSheetsUseCase(UseCase):
 
 
 @dataclass(kw_only=True)
-class ListItemsUseCase(UseCase):
+class ListItemsUseCase(AbstractListItemsUseCase):
     storage: CompetencyMatrixStorage
 
     async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
@@ -29,7 +48,7 @@ class ListItemsUseCase(UseCase):
 
 
 @dataclass(kw_only=True)
-class GetItemUseCase(UseCase):
+class GetItemUseCase(AbstractGetItemUseCase):
     storage: CompetencyMatrixStorage
 
     async def execute(self, item_id: int) -> CompetencyMatrixItem:

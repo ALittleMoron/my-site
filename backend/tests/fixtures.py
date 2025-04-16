@@ -1,7 +1,8 @@
 import pytest
-from anydi import Container
+from dishka import AsyncContainer
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.client import SyncAndAsyncNinjaClient
 from tests.helpers.api import APIHelper
 from tests.helpers.app import AppHelper
 from tests.helpers.factory import FactoryHelper
@@ -17,22 +18,22 @@ class FactoryFixture:
 
 
 class ApiFixture:
-    app: AppHelper
     api: APIHelper
+    app: AppHelper
 
     @pytest.fixture(autouse=True)
     def _setup_api(
         self,
-        client: SyncAndAsyncNinjaClient,
-        test_container: Container,
+        client: TestClient,
+        container: AsyncContainer,
     ) -> None:
         self.api = APIHelper(client=client)
-        self.app = AppHelper(container=test_container)
+        self.app = AppHelper(container=container)
 
 
 class StorageFixture:
     db: StorageHelper
 
     @pytest.fixture(autouse=True)
-    def _setup_storage(self) -> None:
-        self.db = StorageHelper()
+    def _setup_storage(self, session: AsyncSession) -> None:
+        self.db = StorageHelper(session=session)
