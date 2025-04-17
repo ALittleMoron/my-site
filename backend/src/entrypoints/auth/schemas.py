@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from core.auth.schemas import RoleEnum
+from core.users.schemas import RoleEnum
 
 
 @dataclass(kw_only=True)

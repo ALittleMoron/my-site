@@ -176,14 +176,11 @@ exclude_lines = [
     "raise AssertionError",
 ]
 omit = [
+    "src/main.py",
     "src/manage.py",
-    "src/settings/*",
-    "src/urls.py",
-    "src/wsgi.py",
-    "src/asgi.py",
-    "src/**/apps.py",
-    "src/**/forms.py",
-    "src/**/admin.py",
+    "src/entrypoints/admin/**",
+    "src/config/*",
+    "src/admin/**",
 ]
 
 [tool.pytest]

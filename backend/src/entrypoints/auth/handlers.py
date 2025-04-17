@@ -9,8 +9,8 @@ import pyseto
 from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
-from core.auth.schemas import RoleEnum
 from core.schemas import Secret
+from core.users.schemas import RoleEnum
 from entrypoints.auth.schemas import Payload
 
 
@@ -66,7 +66,7 @@ class AuthHandler:
     def decode_token(self, token: bytes) -> Payload:
         try:
             decoded = pyseto.decode(keys=self.public_key, token=token).payload
-        except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error) as err:
+        except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError) as err:
             logger.warning(event="Pyseto decode error", exc=err, token=token)
             raise UnauthorizedHTTPException from err
         payload_dict = json.loads(decoded) if isinstance(decoded, bytes) else decoded

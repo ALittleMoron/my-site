@@ -19,12 +19,23 @@ from config.initializers import create_base_app
 from config.settings import settings, Settings
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
 from db.utils import migrate, downgrade
+from tests.mocks.auth.providers import MockAuthProvider
 from tests.mocks.competency_matrix.providers import MockCompetencyMatrixProvider
 
 
+@pytest.fixture(scope="session")
+def test_settings() -> Generator[Settings, None, None]:
+    settings.database.name = "my_site_database_test"
+    yield settings
+    settings.database.name = "my_site_database"
+
+
 @pytest_asyncio.fixture(loop_scope="session", scope="session")
-async def container() -> AsyncGenerator[AsyncContainer, None]:
-    container = make_async_container(MockCompetencyMatrixProvider())
+async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, None]:
+    container = make_async_container(
+        MockCompetencyMatrixProvider(),
+        MockAuthProvider(settings=test_settings),
+    )
     yield container
     await container.close()
 
@@ -40,13 +51,6 @@ def app(container: AsyncContainer) -> FastAPI:
 def client(app: FastAPI) -> Generator[TestClient, None, None]:
     with TestClient(app) as client:
         yield client
-
-
-@pytest.fixture(scope="session")
-def test_settings() -> Generator[Settings, None, None]:
-    settings.database.name = "my_site_database_test"
-    yield settings
-    settings.database.name = "my_site_database"
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")

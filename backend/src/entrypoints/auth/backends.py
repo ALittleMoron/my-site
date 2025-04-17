@@ -1,26 +1,30 @@
 from typing import Self
 
+from dishka import AsyncContainer
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import Response
 from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
-from core.auth.exceptions import UserNotFoundError
-from core.auth.schemas import User
-from core.auth.utils import Hasher
+from core.users.exceptions import UserNotFoundError
+from core.users.schemas import User
 from db.storages.auth import AuthStorage
 from entrypoints.auth.handlers import AuthHandler
 from entrypoints.auth.schemas import Payload
-from ioc.container import container
+from entrypoints.auth.utils import Hasher
 
 
-class BaseAuthBackend(AuthenticationBackend):
+class BaseAuthenticationBackend(AuthenticationBackend):
+    def __init__(self, secret_key: str, container: AsyncContainer) -> None:
+        super().__init__(secret_key=secret_key)
+        self.container = container
+
     def check_permission(self, user: User) -> bool:
         raise NotImplementedError()
 
     async def login(self: Self, request: Request) -> bool:
-        async with container() as request_container:
+        async with self.container() as request_container:
             storage = await request_container.get(AuthStorage)
             auth_handler = await request_container.get(AuthHandler)
             hasher = await request_container.get(Hasher)
@@ -49,10 +53,7 @@ class BaseAuthBackend(AuthenticationBackend):
                 )
                 return False
             token = auth_handler.encode_token(
-                payload=Payload(
-                    username=user.username,
-                    role=user.role,
-                ),
+                payload=Payload(username=user.username, role=user.role),
             )
             request.session.update({"token": token.decode()})
             return True
@@ -62,7 +63,7 @@ class BaseAuthBackend(AuthenticationBackend):
         return True
 
     async def authenticate(self: Self, request: Request) -> Response | bool:
-        async with container() as request_container:
+        async with self.container() as request_container:
             storage = await request_container.get(AuthStorage)
             auth_handler = await request_container.get(AuthHandler)
             if (token := request.session.get("token")) is None or not isinstance(token, str):
@@ -74,34 +75,29 @@ class BaseAuthBackend(AuthenticationBackend):
                 request.session.clear()
                 return False
             try:
-                await storage.get_user_by_username(username=payload.username)
+                user = await storage.get_user_by_username(username=payload.username)
             except UserNotFoundError:
                 logger.warning(event="No user in db from token payload", payload=payload)
                 return False
+            if not self.check_permission(user):
+                logger.warning(
+                    "User not pass permission check",
+                    username=user.username,
+                    permission_passed=self.check_permission(user),
+                )
+                return False
+            new_token = auth_handler.encode_token(
+                payload=Payload(username=user.username, role=user.role),
+            )
+            request.session.update({"token": new_token.decode()})
             return True
 
 
-class AdminAuthBackend(BaseAuthBackend):
+class AdminAuthenticationBackend(BaseAuthenticationBackend):
     def check_permission(self, user: User) -> bool:
         return user.is_admin
 
 
-class UserAuthBackend(BaseAuthBackend):
+class UserAuthenticationBackend(BaseAuthenticationBackend):
     def check_permission(self, user: User) -> bool:
         return user.is_user
-
-
-class MockAuthBackend(AuthenticationBackend):
-    async def login(self, request: Request) -> bool:
-        request.session.update({"token": "..."})
-        return True
-
-    async def logout(self, request: Request) -> bool:
-        request.session.clear()
-        return True
-
-    async def authenticate(self, request: Request) -> bool:
-        token = request.session.get("token")
-        if not token:
-            return False
-        return True

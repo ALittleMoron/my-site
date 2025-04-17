@@ -3,10 +3,10 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
-from core.auth.utils import Hasher
 from core.schemas import Secret
 from db.storages.auth import AuthStorage, AuthDatabaseStorage
 from entrypoints.auth.handlers import AuthHandler
+from entrypoints.auth.utils import Hasher
 
 
 class AuthProvider(Provider):

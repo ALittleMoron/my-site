@@ -10,22 +10,13 @@ from db.models.abc import PublishModel
 from db.models.base import Base
 
 
-class CompetencyMatrixItemToResourceModel(Base, IntegerIDMixin):
-    """Связь M2M для элементов матрицы компетенций и внешних ресурсов"""
-
-    resource_id: Mapped[int] = mapped_column(
-        ForeignKey("competency_matrix_resources.id", ondelete="CASCADE"),
-    )
-    item_id: Mapped[int] = mapped_column(
-        ForeignKey("competency_matrix_items.id", ondelete="CASCADE"),
-    )
-
-    __tablename__ = "competency_matrix_item_to_resource"
-
-
 class ExternalResourceModel(Base, IntegerIDMixin):
     """Внешний ресурс"""
 
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("competency_matrix_items.id", ondelete="CASCADE"),
+        doc="Идентификатор элемента матрицы компетенций",
+    )
     name: Mapped[str] = mapped_column(
         String(length=255),
         doc="Название ресурса",
@@ -39,14 +30,20 @@ class ExternalResourceModel(Base, IntegerIDMixin):
         doc="Контекст того, почему ресурс вообще был прикреплен к вопросу.",
     )
 
+    item: Mapped["CompetencyMatrixItemModel"] = relationship(
+        foreign_keys=[item_id],
+        back_populates="resources",
+    )
+
     __tablename__ = "competency_matrix_resources"
 
     def __str__(self) -> str:
         return f'Внешний ресурс "{self.name}"'
 
     @classmethod
-    def from_domain_schema(cls, schema: ExternalResource) -> Self:
+    def from_domain_schema(cls, item_id: int, schema: ExternalResource) -> Self:
         return cls(
+            item_id=item_id,
             id=schema.id,
             name=schema.name,
             url=schema.url,
@@ -93,9 +90,10 @@ class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
         String(length=255),
         doc="Уровень компетенции",
     )
+
     resources: Mapped[list[ExternalResourceModel]] = relationship(
         doc="Внешние ресурсы",
-        secondary="competency_matrix_item_to_resource",
+        back_populates="item",
     )
 
     __tablename__ = "competency_matrix_items"
@@ -122,7 +120,7 @@ class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
             subsection=item.subsection,
             grade=item.grade,
             resources=[
-                ExternalResourceModel.from_domain_schema(schema=resource)
+                ExternalResourceModel.from_domain_schema(item_id=item.id, schema=resource)
                 for resource in item.resources
             ],
         )

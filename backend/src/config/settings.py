@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from config.constants import _DirConstants
+from config.constants import _DirConstants, _MinioBucketNamesConstants
 
 
 class _AppConfig(BaseSettings):
@@ -55,11 +55,27 @@ class _AuthConfig(BaseSettings):
     crypto_schemes: list[str] = ["bcrypt"]
 
 
+class _MinioSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="MINIO_")
+
+    host: str = "localhost"
+    port: int = 9000
+    secret_key: SecretStr = SecretStr("")
+    access_key: str = ""
+    secure: bool = False
+    bucket_names: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
+
+    @property
+    def endpoint(self) -> str:
+        return f"{self.host}:{self.port}"
+
+
 class Settings(BaseSettings):
     app: _AppConfig = _AppConfig()
     auth: _AuthConfig = _AuthConfig()
     dir: _DirConstants = _DirConstants()
     database: _DatabaseConfig = _DatabaseConfig()
+    minio: _MinioSettings = _MinioSettings()
 
 
 settings = Settings()

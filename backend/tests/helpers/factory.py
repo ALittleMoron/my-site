@@ -5,6 +5,8 @@ from core.competency_matrix.schemas import (
     ExternalResources,
     Sheets,
 )
+from core.schemas import Secret
+from core.users.schemas import User, RoleEnum
 
 
 class FactoryHelper:
@@ -53,3 +55,16 @@ class FactoryHelper:
     @classmethod
     def sheets(cls, values: list[str] | None = None) -> Sheets:
         return Sheets(values=values or [])
+
+    @classmethod
+    def user(
+        cls,
+        username: str = "",
+        password: str = "",
+        role: RoleEnum = RoleEnum.USER,
+    ) -> User:
+        return User(
+            username=username,
+            password=Secret(password),
+            role=role,
+        )

@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer import secho
 
-from core.auth.schemas import RoleEnum
-from core.auth.utils import Hasher
+from core.users.schemas import RoleEnum
 from db.models.auth import UserModel
+from entrypoints.auth.utils import Hasher
 from ioc.container import container
 
 

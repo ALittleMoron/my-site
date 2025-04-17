@@ -9,7 +9,7 @@ from config.settings import settings
 from db.utils import migrate
 from entrypoints.admin.registry import get_admin_views
 from entrypoints.api.routers import api_router
-from entrypoints.auth.backends import AdminAuthBackend
+from entrypoints.auth.backends import AdminAuthenticationBackend
 from ioc.container import container
 
 
@@ -20,8 +20,9 @@ def create_admin(
     admin = Admin(
         app=app,
         engine=engine,
-        authentication_backend=AdminAuthBackend(
+        authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
+            container=container,
         ),
     )
     for view in get_admin_views():

@@ -1,5 +1,52 @@
-from db.models import CompetencyMatrixItemModel
+from wtforms.fields.simple import TextAreaField
+
+from db.models import CompetencyMatrixItemModel, ExternalResourceModel
 from entrypoints.admin.views.base import ModelViewWithAction
+
+
+class ExternalResourceView(ModelViewWithAction, model=ExternalResourceModel):
+    icon = "fa-solid fa-book-open"
+
+    name_plural = "Внешние ресурсы"
+
+    can_create = True
+    can_edit = True
+    can_view_details = True
+    can_delete = True
+    can_export = True
+
+    form_args = {}
+    form_include_pk = False
+    form_columns = [
+        ExternalResourceModel.name,
+        ExternalResourceModel.url,
+        ExternalResourceModel.context,
+    ]
+    form_overrides = {
+        "context": TextAreaField,
+    }
+    form_widget_args = {}
+    form_ajax_refs = {}
+
+    column_formatters = {}
+    column_labels = {
+        ExternalResourceModel.name: "Название ресурса",
+        ExternalResourceModel.url: "Ссылка на ресурс",
+        ExternalResourceModel.context: "Контекст использования ресурса",
+    }
+    column_searchable_list = [ExternalResourceModel.name]
+    column_default_sort = []
+    column_sortable_list = []
+    column_details_list = [
+        ExternalResourceModel.id,
+        ExternalResourceModel.name,
+        ExternalResourceModel.url,
+        ExternalResourceModel.context,
+    ]
+    column_list = [
+        ExternalResourceModel.id,
+        ExternalResourceModel.name,
+    ]
 
 
 class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemModel):
@@ -15,8 +62,21 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
 
     form_args = {}
     form_include_pk = False
-    form_columns = []
-    form_overrides = {}
+    form_columns = [
+        CompetencyMatrixItemModel.sheet,
+        CompetencyMatrixItemModel.section,
+        CompetencyMatrixItemModel.subsection,
+        CompetencyMatrixItemModel.grade,
+        CompetencyMatrixItemModel.question,
+        CompetencyMatrixItemModel.answer,
+        CompetencyMatrixItemModel.interview_expected_answer,
+        CompetencyMatrixItemModel.status,
+        CompetencyMatrixItemModel.resources,
+    ]
+    form_overrides = {
+        "answer": TextAreaField,
+        "interview_expected_answer": TextAreaField,
+    }
     form_widget_args = {}
     form_ajax_refs = {
         "resources": {
@@ -37,7 +97,13 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         CompetencyMatrixItemModel.interview_expected_answer: "Ожидаемый ответ на собеседовании",
         CompetencyMatrixItemModel.resources: "Внешние ресурсы",
     }
-    column_searchable_list = []
+    column_searchable_list = [
+        CompetencyMatrixItemModel.question,
+        CompetencyMatrixItemModel.sheet,
+        CompetencyMatrixItemModel.section,
+        CompetencyMatrixItemModel.subsection,
+        CompetencyMatrixItemModel.grade,
+    ]
     column_default_sort = [
         (CompetencyMatrixItemModel.sheet, True),
         (CompetencyMatrixItemModel.section, True),
@@ -52,6 +118,7 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         CompetencyMatrixItemModel.section,
         CompetencyMatrixItemModel.subsection,
         CompetencyMatrixItemModel.grade,
+        CompetencyMatrixItemModel.status,
     ]
     column_details_list = [
         CompetencyMatrixItemModel.id,
@@ -62,6 +129,7 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         CompetencyMatrixItemModel.question,
         CompetencyMatrixItemModel.answer,
         CompetencyMatrixItemModel.interview_expected_answer,
+        CompetencyMatrixItemModel.status,
         CompetencyMatrixItemModel.resources,
     ]
     column_list = [
