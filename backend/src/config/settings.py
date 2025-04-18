@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from config.constants import _DirConstants, _MinioBucketNamesConstants
+from config.constants import _DirConstants, _MinioBucketNamesConstants, _StaticFilesConstants
 
 
 class _AppConfig(BaseSettings):
@@ -9,7 +9,7 @@ class _AppConfig(BaseSettings):
 
     debug: bool = True
     secret_key: SecretStr = SecretStr("SECRET_KEY")
-    host: str = "0.0.0.0"  # noqa: S104
+    domain_host: str = "0.0.0.0"  # noqa: S104
     port: int = 8000
 
 
@@ -64,6 +64,7 @@ class _MinioSettings(BaseSettings):
     access_key: str = ""
     secure: bool = False
     bucket_names: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
+    static_files: _StaticFilesConstants = _StaticFilesConstants()
 
     @property
     def endpoint(self) -> str:
@@ -76,6 +77,19 @@ class Settings(BaseSettings):
     dir: _DirConstants = _DirConstants()
     database: _DatabaseConfig = _DatabaseConfig()
     minio: _MinioSettings = _MinioSettings()
+
+    @property
+    def minio_url(self) -> str:
+        schema = "https" if self.minio.secure else "http"
+        is_local_domain = self.app.domain_host in {'localhost', '127.0.0.1', '0.0.0.0'}
+        port = f':{self.minio.port}' if is_local_domain else ""
+        path = '' if is_local_domain else '/minio'
+        return f'{schema}://{self.app.domain_host}{port}{path}'
+
+    def get_minio_object_url(self, bucket: str, object_path: str) -> str:
+        if object_path.startswith("/"):
+            object_path = object_path[1:]
+        return f"{self.minio_url}/{bucket}/{object_path}"
 
 
 settings = Settings()

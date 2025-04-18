@@ -12,3 +12,10 @@ class _DirConstants:
 class _MinioBucketNamesConstants:
     static: str = "static"
     media: str = "media"
+
+
+@dataclass(kw_only=True, frozen=True)
+class _StaticFilesConstants:
+    logo_dark = "core/icon-dark.png"
+    logo_light = "core/icon-light.png"
+    favicon = "favicon.ico"

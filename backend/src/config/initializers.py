@@ -20,6 +20,14 @@ def create_admin(
     admin = Admin(
         app=app,
         engine=engine,
+        logo_url=settings.get_minio_object_url(
+            bucket=settings.minio.bucket_names.static,
+            object=settings.minio.static_files.logo_dark,
+        ),
+        favicon_url=settings.get_minio_object_url(
+            bucket=settings.minio.bucket_names.static,
+            object=settings.minio.static_files.favicon,
+        ),
         authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
             container=container,
