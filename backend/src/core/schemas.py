@@ -12,10 +12,10 @@ class Secret(Generic[T]):
     def get_secret_value(self) -> T:
         return self.__value
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: no cover
         return 'SECRET-VALUE'
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return '<Secret instance>'
 
 

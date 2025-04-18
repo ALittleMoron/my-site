@@ -9,7 +9,6 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     ExternalResource,
     Sheets,
-    Subsections,
 )
 from entrypoints.api.schemas import CamelCaseSchema
 
@@ -236,18 +235,6 @@ class CompetencyMatrixItemsListSchema(CamelCaseSchema):
             ]
             return cls(sheet=sheet, sections=sections)
         return cls.empty(sheet=sheet)
-
-
-class CompetencyMatrixSubsectionsListSchema(CamelCaseSchema):
-    subsections: list[str] = Field(
-        ...,
-        title="Список",
-        description="Список листов матрицы компетенций",
-    )
-
-    @classmethod
-    def from_domain_schema(cls, *, schema: Subsections) -> Self:
-        return cls(subsections=schema.values)
 
 
 class CompetencyMatrixSheetsListSchema(CamelCaseSchema):

@@ -181,6 +181,7 @@ omit = [
     "src/entrypoints/admin/**",
     "src/config/*",
     "src/admin/**",
+    "src/db/alembic/**",
 ]
 
 [tool.pytest]

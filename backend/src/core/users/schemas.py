@@ -8,10 +8,6 @@ class RoleEnum(StrEnum):
     USER = "user"
     ADMIN = "admin"
 
-    @classmethod
-    def choices(cls) -> list[tuple[str, str]]:
-        return [(key.value, key.name) for key in cls]
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class User:

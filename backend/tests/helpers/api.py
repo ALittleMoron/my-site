@@ -9,7 +9,7 @@ class APIHelper:
     client: TestClient
 
     def get_health(self) -> Response:
-        return self.client.get("/api/health")
+        return self.client.get("/api/healthcheck")
 
     def get_competency_matrix_sheets(self) -> Response:
         return self.client.get("/api/competency-matrix/sheets")

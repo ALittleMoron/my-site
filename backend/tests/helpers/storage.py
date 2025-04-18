@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.schemas import CompetencyMatrixItem
-from db.models import CompetencyMatrixItemModel
+from core.users.schemas import User
+from db.models import CompetencyMatrixItemModel, UserModel
 
 
 @dataclass(kw_only=True)
@@ -26,3 +27,14 @@ class StorageHelper:
         self.session.add_all(items)
         await self.session.commit()
         return items
+
+    async def create_user(self, user: User) -> UserModel:
+        model = UserModel.from_domain_schema(schema=user)
+        await self.session.merge(model)
+        return model
+
+    async def create_users(self, users: list[User]) -> list[UserModel]:
+        users = [UserModel.from_domain_schema(schema=user) for user in users]
+        self.session.add_all(users)
+        await self.session.commit()
+        return users

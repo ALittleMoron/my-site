@@ -37,6 +37,6 @@ class UserModel(Base):
     def from_domain_schema(cls, schema: User) -> "UserModel":
         return cls(
             username=schema.username,
-            password=schema.password,
+            password=schema.password.get_secret_value(),
             role=schema.role,
         )

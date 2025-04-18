@@ -10,6 +10,34 @@ class TestItemsAPI(ApiFixture, FactoryFixture):
     async def setup(self) -> None:
         self.use_case = await self.app.get_mock_list_items_use_case()
 
+    def test_list_not_correct_sheet_name(self) -> None:
+        self.use_case.items = [
+            self.factory.competency_matrix_item(
+                item_id=1,
+                question="Как написать свою функцию?",
+                status=StatusEnum.PUBLISHED,
+                grade="Junior",
+                subsection="Функции",
+                section="Основы",
+                sheet="Python",
+            ),
+            self.factory.competency_matrix_item(
+                item_id=2,
+                question="Как написать свою функцию?",
+                status=StatusEnum.PUBLISHED,
+                grade="Junior",
+                subsection="Функции",
+                section="Основы",
+                sheet="JavaScript",
+            ),
+        ]
+        response = self.api.get_competency_matrix_items(sheet_name="Java")
+        assert response.status_code == status.HTTP_200_OK, response.content
+        assert response.json() == {
+            "sheet": "Java",
+            "sections": [],
+        }
+
     def test_list(self) -> None:
         self.use_case.items = [
             self.factory.competency_matrix_item(
