@@ -1,7 +1,7 @@
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { api, CompetencyMatrixItem, CompetencyMatrixItemsResponse } from "@/services/api";
+import { api, CompetencyMatrixItemDetailed, CompetencyMatrixItemShort, CompetencyMatrixItemsResponse } from "@/services/api";
+import { useEffect, useState } from "react";
 
 interface CompetencyTableProps {
   sheetName: string;
@@ -10,9 +10,22 @@ interface CompetencyTableProps {
 
 export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) => {
   const [data, setData] = useState<CompetencyMatrixItemsResponse | null>(null);
-  const [selectedQuestion, setSelectedQuestion] = useState<CompetencyMatrixItem | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<CompetencyMatrixItemDetailed | null>(null);
+  const [isLoadingItem, setIsLoadingItem] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
+
+  const handleQuestionClick = async (question: CompetencyMatrixItemShort) => {
+    try {
+      setIsLoadingItem(true);
+      const detailedItem = await api.getItem(question.id);
+      setSelectedQuestion(detailedItem);
+    } catch (error) {
+      console.error('Error fetching detailed item:', error);
+    } finally {
+      setIsLoadingItem(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,12 +66,10 @@ export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) =
           {data.sections.map((sectionData, sectionIndex) => (
             <div key={`section-${sectionIndex}`} className="bg-matrix-header rounded-lg border border-matrix-border p-4">
               <h2 className="text-xl font-bold text-gray-100 mb-4">{sectionData.section}</h2>
-              
               <div className="space-y-6">
                 {sectionData.subsections.map((subsection, subIndex) => (
                   <div key={`${sectionData.section}-${subsection.subsection}-${subIndex}`} className="border-t border-matrix-border pt-4 first:border-t-0 first:pt-0">
                     <h3 className="text-lg font-medium text-gray-100 mb-3">{subsection.subsection}</h3>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       {subsection.grades.map((gradeData) => (
                         <div key={gradeData.grade} className="bg-matrix-bg/30 p-3 rounded">
@@ -67,7 +78,7 @@ export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) =
                             {gradeData.items.map((question) => (
                               <div
                                 key={question.id}
-                                onClick={() => setSelectedQuestion(question)}
+                                onClick={() => handleQuestionClick(question)}
                                 className="text-matrix-accent hover:text-matrix-accent-dark cursor-pointer transition-colors text-sm break-words"
                               >
                                 {question.question}
@@ -89,39 +100,45 @@ export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) =
             <AlertDialogHeader>
               <AlertDialogTitle className="text-gray-100">Детали вопроса</AlertDialogTitle>
             </AlertDialogHeader>
-            <div className="space-y-4">
-              <div className="text-gray-100">
-                <h3 className="font-semibold mb-2">Вопрос:</h3>
-                <p className="break-words">{selectedQuestion?.question}</p>
+            {isLoadingItem ? (
+              <div className="flex items-center justify-center p-4">
+                <div className="text-gray-100">Loading details...</div>
               </div>
-              {selectedQuestion?.answer && (
+            ) : (
+              <div className="space-y-4">
                 <div className="text-gray-100">
-                  <h3 className="font-semibold mb-2">Ответ:</h3>
-                  <p className="break-words whitespace-pre-wrap">{selectedQuestion.answer}</p>
+                  <h3 className="font-semibold mb-2">Вопрос:</h3>
+                  <p className="break-words">{selectedQuestion?.question}</p>
                 </div>
-              )}
-              {selectedQuestion?.interviewExpectedAnswer && (
-                <div className="text-gray-100">
-                  <h3 className="font-semibold mb-2">Ожидаемый ответ:</h3>
-                  <p className="break-words whitespace-pre-wrap">{selectedQuestion.interviewExpectedAnswer}</p>
-                </div>
-              )}
-              {selectedQuestion?.resources && selectedQuestion.resources.length > 0 && (
-                <div className="text-gray-100">
-                  <h3 className="font-semibold mb-2">Ресурсы:</h3>
-                  <ul className="list-disc pl-5">
-                    {selectedQuestion.resources.map((resource) => (
-                      <li key={resource.id} className="text-matrix-accent break-all">
-                        <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                          {resource.name}
-                        </a>
-                        {resource.context && <p className="text-gray-400 text-sm mt-1">{resource.context}</p>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+                {selectedQuestion?.answer && (
+                  <div className="text-gray-100">
+                    <h3 className="font-semibold mb-2">Ответ:</h3>
+                    <p className="break-words whitespace-pre-wrap">{selectedQuestion.answer}</p>
+                  </div>
+                )}
+                {selectedQuestion?.interviewExpectedAnswer && (
+                  <div className="text-gray-100">
+                    <h3 className="font-semibold mb-2">Ожидаемый ответ:</h3>
+                    <p className="break-words whitespace-pre-wrap">{selectedQuestion.interviewExpectedAnswer}</p>
+                  </div>
+                )}
+                {selectedQuestion?.resources && selectedQuestion.resources.length > 0 && (
+                  <div className="text-gray-100">
+                    <h3 className="font-semibold mb-2">Ресурсы:</h3>
+                    <ul className="list-disc pl-5">
+                      {selectedQuestion.resources.map((resource) => (
+                        <li key={resource.id} className="text-matrix-accent break-all">
+                          <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                            {resource.name}
+                          </a>
+                          {resource.context && <p className="text-gray-400 text-sm mt-1">{resource.context}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </AlertDialogContent>
         </AlertDialog>
       </>
@@ -162,7 +179,7 @@ export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) =
                         {grade.items.map((question) => (
                           <div
                             key={question.id}
-                            onClick={() => setSelectedQuestion(question)}
+                            onClick={() => handleQuestionClick(question)}
                             className="text-matrix-accent hover:text-matrix-accent-dark cursor-pointer transition-colors break-words"
                           >
                             {question.question}
@@ -183,39 +200,45 @@ export const CompetencyTable = ({ sheetName, viewMode }: CompetencyTableProps) =
           <AlertDialogHeader>
             <AlertDialogTitle className="text-gray-100">Детали вопроса</AlertDialogTitle>
           </AlertDialogHeader>
-          <div className="space-y-4">
-            <div className="text-gray-100">
-              <h3 className="font-semibold mb-2">Вопрос:</h3>
-              <p className="break-words">{selectedQuestion?.question}</p>
+          {isLoadingItem ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="text-gray-100">Loading details...</div>
             </div>
-            {selectedQuestion?.answer && (
+          ) : (
+            <div className="space-y-4">
               <div className="text-gray-100">
-                <h3 className="font-semibold mb-2">Ответ:</h3>
-                <p className="break-words whitespace-pre-wrap">{selectedQuestion.answer}</p>
+                <h3 className="font-semibold mb-2">Вопрос:</h3>
+                <p className="break-words">{selectedQuestion?.question}</p>
               </div>
-            )}
-            {selectedQuestion?.interviewExpectedAnswer && (
-              <div className="text-gray-100">
-                <h3 className="font-semibold mb-2">Ожидаемый ответ:</h3>
-                <p className="break-words whitespace-pre-wrap">{selectedQuestion.interviewExpectedAnswer}</p>
-              </div>
-            )}
-            {selectedQuestion?.resources && selectedQuestion.resources.length > 0 && (
-              <div className="text-gray-100">
-                <h3 className="font-semibold mb-2">Ресурсы:</h3>
-                <ul className="list-disc pl-5">
-                  {selectedQuestion.resources.map((resource) => (
-                    <li key={resource.id} className="text-matrix-accent break-all">
-                      <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                        {resource.name}
-                      </a>
-                      {resource.context && <p className="text-gray-400 text-sm mt-1">{resource.context}</p>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+              {selectedQuestion?.answer && (
+                <div className="text-gray-100">
+                  <h3 className="font-semibold mb-2">Ответ:</h3>
+                  <p className="break-words whitespace-pre-wrap">{selectedQuestion.answer}</p>
+                </div>
+              )}
+              {selectedQuestion?.interviewExpectedAnswer && (
+                <div className="text-gray-100">
+                  <h3 className="font-semibold mb-2">Ожидаемый ответ:</h3>
+                  <p className="break-words whitespace-pre-wrap">{selectedQuestion.interviewExpectedAnswer}</p>
+                </div>
+              )}
+              {selectedQuestion?.resources && selectedQuestion.resources.length > 0 && (
+                <div className="text-gray-100">
+                  <h3 className="font-semibold mb-2">Ресурсы:</h3>
+                  <ul className="list-disc pl-5">
+                    {selectedQuestion.resources.map((resource) => (
+                      <li key={resource.id} className="text-matrix-accent break-all">
+                        <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                          {resource.name}
+                        </a>
+                        {resource.context && <p className="text-gray-400 text-sm mt-1">{resource.context}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>

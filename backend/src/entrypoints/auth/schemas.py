@@ -15,6 +15,6 @@ class Payload:
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "Payload":
         return cls(
-            username=payload['username'],
-            role=RoleEnum(payload['role']),
+            username=payload["username"],
+            role=RoleEnum(payload["role"]),
         )

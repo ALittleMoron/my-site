@@ -27,7 +27,7 @@ class TestAnyPermissionsBackend(FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
         self.container = container
-        self.backend = AnyPermissionsBackend(secret_key='', container=container)
+        self.backend = AnyPermissionsBackend(secret_key="", container=container)
         hasher = await container.get(Hasher)
         # TODO: optimize users. It very slow
         users.extend(
@@ -67,7 +67,7 @@ class TestAnyPermissionsBackend(FactoryFixture):
         request.form = AsyncMock(return_value={"username": "user2", "password": "1234"})
         request.session = {}
         assert (await self.backend.login(request=request)) is True
-        assert 'token' in request.session
+        assert "token" in request.session
 
     async def test_logout(self) -> None:
         request = AsyncMock()
@@ -108,15 +108,15 @@ class TestAnyPermissionsBackend(FactoryFixture):
         )
         request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=request)) is True
-        assert 'token' in request.session
-        assert request.session['token'] != str(token)
+        assert "token" in request.session
+        assert request.session["token"] != str(token)
 
 
 class TestAdminAuthenticationBackend(FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
         self.container = container
-        self.backend = AdminAuthenticationBackend(secret_key='', container=container)
+        self.backend = AdminAuthenticationBackend(secret_key="", container=container)
         hasher = await container.get(Hasher)
         # TODO: optimize users. It very slow
         users.append(
@@ -144,7 +144,7 @@ class TestUserAuthenticationBackend(FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
         self.container = container
-        self.backend = UserAuthenticationBackend(secret_key='', container=container)
+        self.backend = UserAuthenticationBackend(secret_key="", container=container)
         hasher = await container.get(Hasher)
         # TODO: optimize users. It very slow
         users.append(

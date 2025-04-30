@@ -25,6 +25,7 @@ dependencies = [
     "itsdangerous>=2.2.0",
     "structlog>=25.2.0",
     "miniopy-async>=1.22.1",
+    "typer>=0.15.2",
 ]
 
 [dependency-groups]
@@ -45,7 +46,6 @@ dev = [
     "pytest-mock>=3.14.0",
     "mypy>=1.13.0",
     "setuptools>=75.6.0",
-    "typer>=0.15.2",
 ]
 
 [build-system]

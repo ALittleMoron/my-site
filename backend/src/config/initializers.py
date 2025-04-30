@@ -22,11 +22,11 @@ def create_admin(
         engine=engine,
         logo_url=settings.get_minio_object_url(
             bucket=settings.minio.bucket_names.static,
-            object=settings.minio.static_files.logo_dark,
+            object_path=settings.minio.static_files.logo_dark,
         ),
         favicon_url=settings.get_minio_object_url(
             bucket=settings.minio.bucket_names.static,
-            object=settings.minio.static_files.favicon,
+            object_path=settings.minio.static_files.favicon,
         ),
         authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
@@ -39,7 +39,7 @@ def create_admin(
 
 
 def create_base_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.include_router(api_router)
     apply_all_handlers(app, override_422_openapi=True)
     return app
@@ -57,7 +57,7 @@ async def create_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
 
 
 def check_certs_exists() -> None:
-    folder = settings.dir.root_path / "certs"
+    folder = settings.dir.backend_path / "certs"
     if not (folder / settings.auth.public_key_pem_file_name).exists():
         msg = "Public key certificate file does not exists."
         raise RuntimeError(msg)

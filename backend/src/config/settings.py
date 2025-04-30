@@ -1,20 +1,40 @@
+from typing import Literal
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from config.constants import _DirConstants, _MinioBucketNamesConstants, _StaticFilesConstants
+from config.constants import (
+    _DirConstants,
+    _MinioBucketNamesConstants,
+    _StaticFilesConstants,
+    dir_constants,
+    minio_bucket_names_constants,
+    static_files_constants,
+)
+
+env_file_path = dir_constants.backend_path / ".env"
 
 
 class _AppConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_")
+    model_config = SettingsConfigDict(
+        env_prefix="APP_",
+        env_file=env_file_path,
+        extra="ignore",
+    )
 
     debug: bool = True
     secret_key: SecretStr = SecretStr("SECRET_KEY")
-    domain_host: str = "0.0.0.0"  # noqa: S104
+    domain: str = "localhost"
+    host: str = "0.0.0.0"  # noqa: S104
     port: int = 8000
 
 
 class _DatabaseConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="DB_")
+    model_config = SettingsConfigDict(
+        env_prefix="DB_",
+        env_file=env_file_path,
+        extra="ignore",
+    )
 
     # connection creds settings
     user: str = "postgres"
@@ -47,24 +67,32 @@ class _DatabaseConfig(BaseSettings):
 
 
 class _AuthConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ADMIN_")
+    model_config = SettingsConfigDict(
+        env_prefix="AUTH_",
+        env_file=env_file_path,
+        extra="ignore",
+    )
 
     public_key_pem_file_name: str = "public.pem"
     secret_key_pem_file_name: str = "private.pem"
     token_expire_seconds: int = 60 * 60 * 24 * 2
-    crypto_schemes: list[str] = ["bcrypt"]
+    crypto_scheme: str = "bcrypt"
 
 
 class _MinioSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="MINIO_")
+    model_config = SettingsConfigDict(
+        env_prefix="MINIO_",
+        env_file=env_file_path,
+        extra="ignore",
+    )
 
     host: str = "localhost"
     port: int = 9000
-    secret_key: SecretStr = SecretStr("")
-    access_key: str = ""
+    secret_key: SecretStr = SecretStr("minioadmin")
+    access_key: str = "minioadmin"
     secure: bool = False
-    bucket_names: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
-    static_files: _StaticFilesConstants = _StaticFilesConstants()
+    bucket_names: _MinioBucketNamesConstants = minio_bucket_names_constants
+    static_files: _StaticFilesConstants = static_files_constants
 
     @property
     def endpoint(self) -> str:
@@ -74,19 +102,17 @@ class _MinioSettings(BaseSettings):
 class Settings(BaseSettings):
     app: _AppConfig = _AppConfig()
     auth: _AuthConfig = _AuthConfig()
-    dir: _DirConstants = _DirConstants()
+    dir: _DirConstants = dir_constants
     database: _DatabaseConfig = _DatabaseConfig()
     minio: _MinioSettings = _MinioSettings()
 
     @property
     def minio_url(self) -> str:
-        schema = "https" if self.minio.secure else "http"
-        is_local_domain = self.app.domain_host in {'localhost', '127.0.0.1', '0.0.0.0'}
-        port = f':{self.minio.port}' if is_local_domain else ""
-        path = '' if is_local_domain else '/minio'
-        return f'{schema}://{self.app.domain_host}{port}{path}'
+        is_local_domain = self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}
+        schema = "http" if is_local_domain else "https"
+        return f"{schema}://{self.app.domain}"
 
-    def get_minio_object_url(self, bucket: str, object_path: str) -> str:
+    def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
         if object_path.startswith("/"):
             object_path = object_path[1:]
         return f"{self.minio_url}/{bucket}/{object_path}"

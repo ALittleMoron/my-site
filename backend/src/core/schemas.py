@@ -13,10 +13,10 @@ class Secret(Generic[T]):
         return self.__value
 
     def __str__(self) -> str:  # pragma: no cover
-        return 'SECRET-VALUE'
+        return "SECRET-VALUE"
 
     def __repr__(self) -> str:  # pragma: no cover
-        return '<Secret instance>'
+        return "<Secret instance>"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -34,7 +34,7 @@ class MockAuthProvider(Provider):
 
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> Hasher:
-        return Hasher(context=CryptContext(schemes=self.settings.auth.crypto_schemes))
+        return Hasher(context=CryptContext(schemes=self.settings.auth.crypto_scheme))
 
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> AuthHandler:

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     app = asyncio.run(create_app(lifespan=lifespan))
     uvicorn.run(
         app=app,
-        host=settings.app.domain_host,
+        host=settings.app.host,
         port=settings.app.port,
         access_log=False,
     )

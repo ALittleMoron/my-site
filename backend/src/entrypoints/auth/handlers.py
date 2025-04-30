@@ -24,10 +24,10 @@ def validate_payload_dict(payload: dict[str, Any]) -> bool:
             required_keys=required_keys,
         )
         return False
-    if not isinstance(payload['username'], str):
+    if not isinstance(payload["username"], str):
         logger.error(event="Payload field `username` is not valid", payload=payload)
         return False
-    if not isinstance(payload['role'], str) or payload['role'] not in RoleEnum:
+    if not isinstance(payload["role"], str) or payload["role"] not in RoleEnum:
         logger.error(event="Payload field `role` is invalid", payload=payload)
         return False
     return True
@@ -57,7 +57,7 @@ class AuthHandler:
 
     def prepare_payload(self, payload: Payload) -> dict[str, Any]:
         payload_dict = payload.to_dict()
-        payload_dict['exp'] = (
+        payload_dict["exp"] = (
             datetime.datetime.now(tz=ZoneInfo("Etc/UTC"))
             + datetime.timedelta(seconds=self.token_expire_seconds)
         ).isoformat()

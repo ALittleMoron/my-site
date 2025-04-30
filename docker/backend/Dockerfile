@@ -11,13 +11,9 @@ ENV PATH="/root/.local/bin/:$PATH"
 
 WORKDIR /app
 
-COPY backend/README.md backend/pyproject.toml backend/uv.lock ./
+COPY backend/README.md backend/pyproject.toml backend/uv.lock backend/ .env ./
 RUN uv sync --frozen
-COPY backend/ .
-
-RUN make collectstatic
-RUN make migrate
 
 EXPOSE ${APP_PORT}
 
-CMD ["uv", "run", "gunicorn", "src.asgi:application", "--bind", "${APP_HOST}:{APP_PORT}", "--workers", "4"]
+CMD ["uv", "run", "python", "src/main.py"]

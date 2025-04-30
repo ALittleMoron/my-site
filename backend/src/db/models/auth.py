@@ -23,8 +23,8 @@ class UserModel(Base):
         doc="Роль пользователя",
     )
 
-    __tablename__ = 'users'
-    __table_args__ = (Index('users_username_idx', username),)
+    __tablename__ = "users"
+    __table_args__ = (Index("users_username_idx", username),)
 
     def to_domain_schema(self) -> User:
         return User(
