@@ -1,10 +1,6 @@
 import axios from "axios";
 
-// In Next.js, we need to use the window object to access environment variables
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? (window as any).ENV?.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-    : "http://localhost:8000/api";
+const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
 console.log("API Service initialized with base URL:", API_BASE_URL);
 

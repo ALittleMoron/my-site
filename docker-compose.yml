@@ -1,4 +1,31 @@
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -33,20 +60,6 @@ services:
       timeout: 60s
       retries: 12
 
-  app:
-    build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    networks:
-      - app-network
-
   nginx:
     build:
       context: .
@@ -55,9 +68,23 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - app
+      - backend
     networks:
       - app-network
+
+  postgresql_backup_ui:
+    image: eduardolat/pgbackweb:latest
+    environment:
+      PBW_ENCRYPTION_KEY: ${PBW_ENCRYPTION_KEY}
+      PBW_POSTGRES_CONN_STRING: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/${DB_NAME}?sslmode=disable"
+      TZ: "Europe/Moscow"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
 networks:
   app-network:
