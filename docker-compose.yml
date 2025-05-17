@@ -17,8 +17,6 @@ services:
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
     env_file:
       - .env
     depends_on:
@@ -27,9 +25,12 @@ services:
       - app-network
 
   postgres:
+    build:
+      context: .
+      dockerfile: docker/postgresql/Dockerfile
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_MULTIPLE_DATABASES: ${DB_NAME},backups_db
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
@@ -48,6 +49,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
+      # TODO: remove port by adding nginx routing (failed to do it last time due to static files)
       - 9001:9001
     volumes:
       - minio_data:/data
@@ -74,9 +76,12 @@ services:
 
   postgresql_backup_ui:
     image: eduardolat/pgbackweb:latest
+    ports:
+      # TODO: remove port by adding nginx routing (failed to do it last time due to static files)
+      - "8085:8085"
     environment:
       PBW_ENCRYPTION_KEY: ${PBW_ENCRYPTION_KEY}
-      PBW_POSTGRES_CONN_STRING: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/${DB_NAME}?sslmode=disable"
+      PBW_POSTGRES_CONN_STRING: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/backups_db?sslmode=disable"
       TZ: "Europe/Moscow"
     networks:
       - app-network

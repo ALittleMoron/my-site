@@ -1,12 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
-
-console.log("API Service initialized with base URL:", API_BASE_URL);
-
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -98,11 +93,8 @@ export interface CompetencyMatrixItemsResponse {
 export const api = {
   getSheets: async (): Promise<CompetencyMatrixSheet> => {
     try {
-      console.log(
-        "Fetching sheets from:",
-        `${API_BASE_URL}/competency-matrix/sheets/`
-      );
-      const response = await apiClient.get("/competency-matrix/sheets/");
+      console.log("Fetching sheets from:", `/api/competency-matrix/sheets/`);
+      const response = await apiClient.get("/api/competency-matrix/sheets/");
       return response.data;
     } catch (error) {
       console.error("Error fetching sheets:", error);
@@ -115,7 +107,7 @@ export const api = {
   ): Promise<CompetencyMatrixItemsResponse> => {
     try {
       console.log("Fetching items for sheet:", sheetName);
-      const response = await apiClient.get("/competency-matrix/items/", {
+      const response = await apiClient.get("/api/competency-matrix/items/", {
         params: { sheetName },
       });
       return response.data;
@@ -128,7 +120,9 @@ export const api = {
   getItem: async (id: number): Promise<CompetencyMatrixItemDetailed> => {
     try {
       console.log("Fetching item with ID:", id);
-      const response = await apiClient.get(`/competency-matrix/items/${id}/`);
+      const response = await apiClient.get(
+        `/api/competency-matrix/items/${id}/`
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching item:", error);

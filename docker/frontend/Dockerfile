@@ -1,7 +1,7 @@
 # Build stage
 FROM node:22.14.0-alpine AS build
 WORKDIR /app
-COPY frontend/package.json frontend/yarn.lock ./
+COPY frontend/package.json frontend/yarn.lock .env ./
 RUN yarn install --frozen-lockfile
 COPY frontend/ ./
 ENV NODE_ENV=production
