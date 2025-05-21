@@ -1,4 +1,5 @@
-from dishka.integrations.fastapi import setup_dishka
+from dishka.integrations.fastapi import setup_dishka as setup_diska_fastapi
+from dishka.integrations.starlette import setup_dishka as setup_diska_starlette
 from fastapi import FastAPI
 from sqladmin import Admin
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -30,11 +31,11 @@ def create_admin(
         ),
         authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
-            container=container,
         ),
     )
     for view in get_admin_views():
         admin.add_view(view=view)
+    setup_diska_starlette(container=container, app=admin.admin)
     return admin
 
 
@@ -47,7 +48,7 @@ def create_base_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
 
 async def create_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
     app = create_base_app(lifespan=lifespan)
-    setup_dishka(container, app)
+    setup_diska_fastapi(container, app)
     create_admin(
         app=app,
         engine=await container.get(AsyncEngine),
