@@ -1,20 +1,16 @@
-from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock
 
 import pytest_asyncio
-from dishka import AsyncContainer
 
+from core.users.exceptions import UserNotFoundError
 from core.users.schemas import User, RoleEnum
 from entrypoints.auth.backends import (
     BaseAuthenticationBackend,
     AdminAuthenticationBackend,
     UserAuthenticationBackend,
 )
-from entrypoints.auth.handlers import AuthHandler
 from entrypoints.auth.schemas import Payload
-from entrypoints.auth.utils import Hasher
-from tests.fixtures import FactoryFixture
-from tests.mocks.auth.providers import users
+from tests.fixtures import FactoryFixture, ContainerFixture
 
 
 class AnyPermissionsBackend(BaseAuthenticationBackend):
@@ -23,46 +19,41 @@ class AnyPermissionsBackend(BaseAuthenticationBackend):
         return True
 
 
-class TestAnyPermissionsBackend(FactoryFixture):
+class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
-    async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
-        self.container = container
+    async def setup(self) -> None:
         self.backend = AnyPermissionsBackend(secret_key="")
-        hasher = await container.get(Hasher)
-        # TODO: optimize users. It very slow
-        users.extend(
-            [
-                self.factory.user(
-                    username="user1",
-                    password=hasher.hash_password("1111"),
-                    role=RoleEnum.USER,
-                ),
-                self.factory.user(
-                    username="user2",
-                    password=hasher.hash_password("1234"),
-                    role=RoleEnum.ADMIN,
-                ),
-            ]
+        hasher = await self.container.get_hasher()
+        self.user_1 = self.factory.user(
+            username="user1",
+            password=hasher.hash_password("1111"),
+            role=RoleEnum.USER,
         )
+        self.user_2 = self.factory.user(
+            username="user2",
+            password=hasher.hash_password("1234"),
+            role=RoleEnum.ADMIN,
+        )
+        self.storage = await self.container.get_auth_storage()
         self.request = AsyncMock()
-        async with container() as request_container:
-            self.request.state.dishka_container = request_container
-            yield
-        users.clear()
+        self.request.state.dishka_container = self.container.container
 
     async def test_login_incorrect_input_data(self) -> None:
         self.request.form = AsyncMock(return_value={"username": 123, "password": 123})
         assert (await self.backend.login(request=self.request)) is False
 
     async def test_login_user_not_found(self) -> None:
+        self.storage.get_user_by_username.side_effect = UserNotFoundError()
         self.request.form = AsyncMock(return_value={"username": "NOT_FOUND", "password": "1234"})
         assert (await self.backend.login(request=self.request)) is False
 
     async def test_login_password_not_suit(self) -> None:
+        self.storage.get_user_by_username.return_value = self.user_1
         self.request.form = AsyncMock(return_value={"username": "user1", "password": "1234"})
         assert (await self.backend.login(request=self.request)) is False
 
     async def test_login(self) -> None:
+        self.storage.get_user_by_username.return_value = self.user_2
         self.request.form = AsyncMock(return_value={"username": "user2", "password": "1234"})
         self.request.session = {}
         assert (await self.backend.login(request=self.request)) is True
@@ -86,7 +77,8 @@ class TestAnyPermissionsBackend(FactoryFixture):
         assert (await self.backend.authenticate(request=self.request)) is False
 
     async def test_authenticate_user_not_found(self) -> None:
-        auth_handler = await self.container.get(AuthHandler)
+        self.storage.get_user_by_username.side_effect = UserNotFoundError()
+        auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
             payload=Payload(username="not_presented", role=RoleEnum.ADMIN),
         )
@@ -94,10 +86,10 @@ class TestAnyPermissionsBackend(FactoryFixture):
         assert (await self.backend.authenticate(request=self.request)) is False
 
     async def test_authenticate(self) -> None:
-        auth_handler = await self.container.get(AuthHandler)
-        user = users[1]
+        auth_handler = await self.container.get_auth_handler()
+        self.storage.get_user_by_username.return_value = self.user_1
         token = auth_handler.encode_token(
-            payload=Payload(username=user.username, role=user.role),
+            payload=Payload(username=self.user_1.username, role=self.user_1.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is True
@@ -105,61 +97,49 @@ class TestAnyPermissionsBackend(FactoryFixture):
         assert self.request.session["token"] != str(token)
 
 
-class TestAdminAuthenticationBackend(FactoryFixture):
+class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
-    async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
-        self.container = container
+    async def setup(self) -> None:
+        hasher = await self.container.get_hasher()
         self.backend = AdminAuthenticationBackend(secret_key="")
-        hasher = await container.get(Hasher)
-        # TODO: optimize users. It very slow
-        users.append(
-            self.factory.user(
-                username="user1",
-                password=hasher.hash_password("1111"),
-                role=RoleEnum.USER,
-            ),
+        self.user = self.factory.user(
+            username="user1",
+            password=hasher.hash_password("1111"),
+            role=RoleEnum.USER,
         )
+        self.storage = await self.container.get_auth_storage()
+        self.storage.get_user_by_username.return_value = self.user
         self.request = AsyncMock()
-        async with container() as request_container:
-            self.request.state.dishka_container = request_container
-            yield
-        users.clear()
+        self.request.state.dishka_container = self.container.container
 
     async def test_authenticate_user_not_admin(self) -> None:
-        auth_handler = await self.container.get(AuthHandler)
-        user = users[0]
+        auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
-            payload=Payload(username=user.username, role=user.role),
+            payload=Payload(username=self.user.username, role=self.user.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
 
 
-class TestUserAuthenticationBackend(FactoryFixture):
+class TestUserAuthenticationBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
-    async def setup(self, container: AsyncContainer) -> AsyncGenerator[None, None]:
-        self.container = container
+    async def setup(self) -> None:
         self.backend = UserAuthenticationBackend(secret_key="")
-        hasher = await container.get(Hasher)
-        # TODO: optimize users. It very slow
-        users.append(
-            self.factory.user(
-                username="user1",
-                password=hasher.hash_password("1111"),
-                role=RoleEnum.ADMIN,
-            ),
+        hasher = await self.container.get_hasher()
+        self.user = self.factory.user(
+            username="user1",
+            password=hasher.hash_password("1111"),
+            role=RoleEnum.ADMIN,
         )
+        self.storage = await self.container.get_auth_storage()
+        self.storage.get_user_by_username.return_value = self.user
         self.request = AsyncMock()
-        async with container() as request_container:
-            self.request.state.dishka_container = request_container
-            yield
-        users.clear()
+        self.request.state.dishka_container = self.container.container
 
     async def test_authenticate_user_not_user(self) -> None:
-        auth_handler = await self.container.get(AuthHandler)
-        user = users[0]
+        auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
-            payload=Payload(username=user.username, role=user.role),
+            payload=Payload(username=self.user.username, role=self.user.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False

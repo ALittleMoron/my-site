@@ -1,45 +1,44 @@
+from unittest.mock import Mock
+
 import pytest
 
 from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.use_cases import GetItemUseCase
+from db.storages.competency_matrix import CompetencyMatrixStorage
 from tests.fixtures import FactoryFixture
-from tests.mocks.competency_matrix.storages import MockCompetencyMatrixStorage
 
 
-class TestListItemsUseCase(FactoryFixture):
+class TestGetItemUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        self.storage = MockCompetencyMatrixStorage()
+        self.storage = Mock(spec=CompetencyMatrixStorage)
         self.use_case = GetItemUseCase(storage=self.storage)
 
     async def test_not_available(self) -> None:
-        self.storage.items = [
-            self.factory.competency_matrix_item(
-                item_id=2,
-                question="2",
-                status=StatusEnum.DRAFT,
-                sheet="Python",
-                grade="",
-                section="",
-                subsection="",
-            ),
-        ]
+        self.storage.get_competency_matrix_item.return_value = self.factory.competency_matrix_item(
+            item_id=2,
+            question="2",
+            status=StatusEnum.DRAFT,
+            sheet="Python",
+            grade="",
+            section="",
+            subsection="",
+        )
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.execute(item_id=2)
 
     async def test_available(self) -> None:
-        self.storage.items = [
-            self.factory.competency_matrix_item(
-                item_id=1,
-                question="1",
-                status=StatusEnum.PUBLISHED,
-                sheet="Python",
-                grade="1",
-                section="1",
-                subsection="1",
-            ),
-        ]
+        self.storage.get_competency_matrix_item.return_value = self.factory.competency_matrix_item(
+            item_id=1,
+            question="1",
+            status=StatusEnum.PUBLISHED,
+            sheet="Python",
+            grade="1",
+            section="1",
+            subsection="1",
+        )
+
         item = await self.use_case.execute(item_id=1)
         assert item == self.factory.competency_matrix_item(
             item_id=1,

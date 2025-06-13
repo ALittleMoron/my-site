@@ -4,6 +4,7 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     ExternalResources,
     Sheets,
+    CompetencyMatrixItems,
 )
 from core.schemas import Secret
 from core.users.schemas import User, RoleEnum
@@ -68,3 +69,10 @@ class FactoryHelper:
             password=Secret(password),
             role=role,
         )
+
+    @classmethod
+    def competency_matrix_items(
+        cls,
+        values: list[CompetencyMatrixItem] | None = None,
+    ) -> CompetencyMatrixItems:
+        return CompetencyMatrixItems(values=values or [])

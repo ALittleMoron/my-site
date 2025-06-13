@@ -2,18 +2,19 @@ import pytest_asyncio
 from verbose_http_exceptions import status
 
 from core.competency_matrix.enums import StatusEnum
-from tests.fixtures import ApiFixture, FactoryFixture
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
 
-class TestGetItemAPI(ApiFixture, FactoryFixture):
+class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.app.get_mock_get_item_use_case()
+        self.use_case = await self.container.get_mock_get_item_use_case()
 
     def test_not_found(self) -> None:
-        self.use_case.item = None
+        self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.get_competency_matrix_item(item_id=-100)
-        assert self.use_case.item_id == -100
+        self.use_case.execute.assert_called_once_with(item_id=-100)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json() == {
             "code": "client_error",
@@ -24,7 +25,7 @@ class TestGetItemAPI(ApiFixture, FactoryFixture):
         }
 
     def test_found(self) -> None:
-        self.use_case.item = self.factory.competency_matrix_item(
+        self.use_case.execute.return_value = self.factory.competency_matrix_item(
             item_id=1,
             question="Как написать свою функцию?",
             status=StatusEnum.PUBLISHED,
@@ -44,7 +45,7 @@ class TestGetItemAPI(ApiFixture, FactoryFixture):
             ],
         )
         response = self.api.get_competency_matrix_item(item_id=1)
-        assert self.use_case.item_id == 1
+        self.use_case.execute.assert_called_once_with(item_id=1)
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "id": 1,

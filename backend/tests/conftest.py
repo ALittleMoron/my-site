@@ -30,7 +30,7 @@ def test_settings() -> Generator[Settings, None, None]:
     settings.database.name = "my_site_database"
 
 
-@pytest_asyncio.fixture(loop_scope="session", scope="session")
+@pytest_asyncio.fixture(loop_scope="session")
 async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, None]:
     container = make_async_container(
         MockCompetencyMatrixProvider(),
@@ -40,14 +40,14 @@ async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, N
     await container.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def app(container: AsyncContainer) -> FastAPI:
     app = create_base_app()
     setup_dishka(container=container, app=app)
     return app
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def client(app: FastAPI) -> Generator[TestClient, None, None]:
     with TestClient(app) as client:
         yield client

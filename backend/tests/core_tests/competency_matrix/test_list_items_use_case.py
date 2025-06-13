@@ -1,19 +1,21 @@
+from unittest.mock import Mock
+
 import pytest
 
 from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.use_cases import ListItemsUseCase
+from db.storages.competency_matrix import CompetencyMatrixStorage
 from tests.fixtures import FactoryFixture
-from tests.mocks.competency_matrix.storages import MockCompetencyMatrixStorage
 
 
 class TestListItemsUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        self.storage = MockCompetencyMatrixStorage()
+        self.storage = Mock(spec=CompetencyMatrixStorage)
         self.use_case = ListItemsUseCase(storage=self.storage)
 
     async def test_filter_available(self) -> None:
-        self.storage.items = [
+        self.storage.list_competency_matrix_items.return_value = [
             self.factory.competency_matrix_item(
                 # available
                 item_id=1,
