@@ -14,12 +14,12 @@ class TestAuthStorage(FactoryFixture, StorageFixture):
         self.storage = AuthDatabaseStorage(session=session)
         await self.db.create_users(
             users=[
-                self.factory.user(
+                self.factory.core.user(
                     username="user1",
                     password="password1",
                     role=RoleEnum.USER,
                 ),
-                self.factory.user(
+                self.factory.core.user(
                     username="user2",
                     password="password2",
                     role=RoleEnum.ADMIN,
@@ -33,4 +33,6 @@ class TestAuthStorage(FactoryFixture, StorageFixture):
 
     async def test_get_user_by_username(self) -> None:
         user = await self.storage.get_user_by_username(username="user1")
-        assert user == self.factory.user(username="user1", password="password1", role=RoleEnum.USER)
+        assert user == self.factory.core.user(
+            username="user1", password="password1", role=RoleEnum.USER
+        )

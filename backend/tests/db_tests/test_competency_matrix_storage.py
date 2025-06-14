@@ -13,7 +13,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         self.storage = CompetencyMatrixDatabaseStorage(session=session)
         await self.db.create_competency_matrix_items(
             items=[
-                self.factory.competency_matrix_item(
+                self.factory.core.competency_matrix_item(
                     item_id=1,
                     question="1",
                     answer="Answer 1",
@@ -23,7 +23,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
-                        self.factory.resource(
+                        self.factory.core.resource(
                             resource_id=1,
                             name="NAME 1",
                             url="https://example1.com",
@@ -31,7 +31,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                         ),
                     ],
                 ),
-                self.factory.competency_matrix_item(
+                self.factory.core.competency_matrix_item(
                     item_id=2,
                     question="2",
                     answer="Answer 2",
@@ -41,7 +41,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 2",
                     subsection="SUBSECTION 2",
                     resources=[
-                        self.factory.resource(
+                        self.factory.core.resource(
                             resource_id=2,
                             name="NAME 2",
                             url="https://example2.com",
@@ -59,7 +59,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
     async def test_list_items(self) -> None:
         items = await self.storage.list_competency_matrix_items(sheet_name="Python")
         assert items == [
-            self.factory.competency_matrix_item(
+            self.factory.core.competency_matrix_item(
                 item_id=1,
                 question="1",
                 answer="Answer 1",
@@ -78,7 +78,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
 
     async def test_get_competency_matrix_item_found(self) -> None:
         item = await self.storage.get_competency_matrix_item(item_id=1)
-        assert item == self.factory.competency_matrix_item(
+        assert item == self.factory.core.competency_matrix_item(
             item_id=1,
             question="1",
             answer="Answer 1",
@@ -88,7 +88,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             section="SECTION 1",
             subsection="SUBSECTION 1",
             resources=[
-                self.factory.resource(
+                self.factory.core.resource(
                     resource_id=1,
                     name="NAME 1",
                     url="https://example1.com",

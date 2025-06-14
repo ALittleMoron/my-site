@@ -16,7 +16,7 @@ class TestGetItemUseCase(FactoryFixture):
         self.use_case = GetItemUseCase(storage=self.storage)
 
     async def test_not_available(self) -> None:
-        self.storage.get_competency_matrix_item.return_value = self.factory.competency_matrix_item(
+        item = self.factory.core.competency_matrix_item(
             item_id=2,
             question="2",
             status=StatusEnum.DRAFT,
@@ -25,11 +25,12 @@ class TestGetItemUseCase(FactoryFixture):
             section="",
             subsection="",
         )
+        self.storage.get_competency_matrix_item.return_value = item
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.execute(item_id=2)
 
     async def test_available(self) -> None:
-        self.storage.get_competency_matrix_item.return_value = self.factory.competency_matrix_item(
+        item = self.factory.core.competency_matrix_item(
             item_id=1,
             question="1",
             status=StatusEnum.PUBLISHED,
@@ -38,14 +39,6 @@ class TestGetItemUseCase(FactoryFixture):
             section="1",
             subsection="1",
         )
-
-        item = await self.use_case.execute(item_id=1)
-        assert item == self.factory.competency_matrix_item(
-            item_id=1,
-            question="1",
-            status=StatusEnum.PUBLISHED,
-            sheet="Python",
-            grade="1",
-            section="1",
-            subsection="1",
-        )
+        self.storage.get_competency_matrix_item.return_value = item
+        res_item = await self.use_case.execute(item_id=1)
+        assert item == res_item

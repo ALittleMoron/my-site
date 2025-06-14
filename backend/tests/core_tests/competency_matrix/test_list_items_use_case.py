@@ -16,7 +16,7 @@ class TestListItemsUseCase(FactoryFixture):
 
     async def test_filter_available(self) -> None:
         self.storage.list_competency_matrix_items.return_value = [
-            self.factory.competency_matrix_item(
+            self.factory.core.competency_matrix_item(
                 # available
                 item_id=1,
                 question="1",
@@ -26,7 +26,7 @@ class TestListItemsUseCase(FactoryFixture):
                 section="1",
                 subsection="1",
             ),
-            self.factory.competency_matrix_item(
+            self.factory.core.competency_matrix_item(
                 # Not available
                 item_id=2,
                 question="2",

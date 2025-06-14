@@ -25,7 +25,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         }
 
     def test_found(self) -> None:
-        self.use_case.execute.return_value = self.factory.competency_matrix_item(
+        self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="Как написать свою функцию?",
             status=StatusEnum.PUBLISHED,
@@ -36,7 +36,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             section="Основы",
             sheet="Python",
             resources=[
-                self.factory.resource(
+                self.factory.core.resource(
                     resource_id=1,
                     name="resource",
                     url="http://example.com",

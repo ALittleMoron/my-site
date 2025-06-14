@@ -16,4 +16,4 @@ class TestListSheetsUseCase(FactoryFixture):
     async def test_list_sheets(self) -> None:
         self.storage.list_sheets.return_value = ["Python", "SQL"]
         sheets = await self.use_case.execute()
-        assert sheets == self.factory.sheets(values=["Python", "SQL"])
+        assert sheets == self.factory.core.sheets(values=["Python", "SQL"])

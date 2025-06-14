@@ -11,9 +11,9 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case = await self.container.get_mock_list_items_use_case()
 
     def test_list_not_correct_sheet_name(self) -> None:
-        self.use_case.execute.return_value = self.factory.competency_matrix_items(
+        self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
             values=[
-                self.factory.competency_matrix_item(
+                self.factory.core.competency_matrix_item(
                     item_id=1,
                     question="Как написать свою функцию?",
                     status=StatusEnum.PUBLISHED,
@@ -22,7 +22,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     section="Основы",
                     sheet="Python",
                 ),
-                self.factory.competency_matrix_item(
+                self.factory.core.competency_matrix_item(
                     item_id=2,
                     question="Как написать свою функцию?",
                     status=StatusEnum.PUBLISHED,
@@ -42,9 +42,9 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         }
 
     def test_list(self) -> None:
-        self.use_case.execute.return_value = self.factory.competency_matrix_items(
+        self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
             values=[
-                self.factory.competency_matrix_item(
+                self.factory.core.competency_matrix_item(
                     item_id=1,
                     question="Как написать свою функцию?",
                     status=StatusEnum.PUBLISHED,

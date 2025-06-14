@@ -24,12 +24,12 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         self.backend = AnyPermissionsBackend(secret_key="")
         hasher = await self.container.get_hasher()
-        self.user_1 = self.factory.user(
+        self.user_1 = self.factory.core.user(
             username="user1",
             password=hasher.hash_password("1111"),
             role=RoleEnum.USER,
         )
-        self.user_2 = self.factory.user(
+        self.user_2 = self.factory.core.user(
             username="user2",
             password=hasher.hash_password("1234"),
             role=RoleEnum.ADMIN,
@@ -102,7 +102,7 @@ class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         hasher = await self.container.get_hasher()
         self.backend = AdminAuthenticationBackend(secret_key="")
-        self.user = self.factory.user(
+        self.user = self.factory.core.user(
             username="user1",
             password=hasher.hash_password("1111"),
             role=RoleEnum.USER,
@@ -126,7 +126,7 @@ class TestUserAuthenticationBackend(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         self.backend = UserAuthenticationBackend(secret_key="")
         hasher = await self.container.get_hasher()
-        self.user = self.factory.user(
+        self.user = self.factory.core.user(
             username="user1",
             password=hasher.hash_password("1111"),
             role=RoleEnum.ADMIN,

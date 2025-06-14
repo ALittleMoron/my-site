@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { CompetencyTable } from "./CompetencyTable";
 import { api } from "@/services/api";
+import { useEffect, useState } from "react";
+import { CompetencyTable } from "./CompetencyTable";
 
 export const CompetencyMatrix = () => {
   const [sheets, setSheets] = useState<string[]>([]);
