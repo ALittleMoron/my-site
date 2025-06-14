@@ -56,6 +56,7 @@ build-backend = "pdm.backend"
 output-format = "full"
 lint.select = ["ALL"]
 lint.ignore = [
+    "RUF002",
     "B008",
     "Q000",
     "S101",
@@ -115,7 +116,7 @@ classmethod-decorators = [
 
 [tool.mypy]
 mypy_path = ["src"]
-plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
+plugins = ["pydantic.mypy"]
 follow_imports = "silent"
 strict = true
 disallow_subclassing_any = false
@@ -129,6 +130,10 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["tests.helpers.app"]
+warn_return_any = false
 
 [tool.pydantic-mypy]
 init_forbid_extra = true

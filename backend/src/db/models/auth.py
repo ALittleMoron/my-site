@@ -1,5 +1,5 @@
-from sqlalchemy import String, Enum, Index
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy import Enum, Index, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 from core.schemas import Secret
 from core.users.schemas import RoleEnum, User

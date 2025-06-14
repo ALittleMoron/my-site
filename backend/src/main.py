@@ -1,15 +1,16 @@
 import asyncio
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 
-from config.initializers import create_app, check_certs_exists
+from config.initializers import check_certs_exists, create_app
 from config.settings import settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     await app.state.dishka_container.close()
 

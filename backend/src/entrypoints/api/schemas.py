@@ -1,4 +1,4 @@
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel as camel_case
 from pydantic.alias_generators import to_snake as snake_case
 

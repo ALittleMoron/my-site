@@ -1,11 +1,11 @@
 from typing import Self
 
-from sqlalchemy import ForeignKey, String, Index, func
+from sqlalchemy import ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 
 from core.competency_matrix.enums import StatusEnum
-from core.competency_matrix.schemas import ExternalResource, CompetencyMatrixItem, ExternalResources
+from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from db.models.abc import PublishModel
 from db.models.base import Base
 

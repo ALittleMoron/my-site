@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     RevisionType: TypeAlias = str | Iterable[str | None] | Iterable[str]
 
 config = context.config
-config.compare_type = True
 config.set_main_option("sqlalchemy.url", settings.database.url.get_secret_value())
 target_metadata = db.models.base.Base.metadata
 
@@ -53,6 +52,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -71,6 +71,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             process_revision_directives=process_revision_directives,
+            compare_type=True,
         )
 
         with context.begin_transaction():

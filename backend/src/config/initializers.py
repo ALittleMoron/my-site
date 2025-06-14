@@ -59,9 +59,9 @@ async def create_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
 
 def check_certs_exists() -> None:
     folder = settings.dir.backend_path / "certs"
-    if not (folder / settings.auth.public_key_pem_file_name).exists():
+    if not (folder / "public.pem").exists():
         msg = "Public key certificate file does not exists."
         raise RuntimeError(msg)
-    if not (folder / settings.auth.secret_key_pem_file_name).exists():
+    if not (folder / "private.pem").exists():
         msg = "Secret key certificate file does not exists."
         raise RuntimeError(msg)

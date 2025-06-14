@@ -19,5 +19,4 @@ class ModelViewWithAction(ModelView):
         referer = request.headers.get("Referer")
         if referer:
             return RedirectResponse(referer)
-        else:
-            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+        return RedirectResponse(request.url_for("admin:list", identity=self.identity))

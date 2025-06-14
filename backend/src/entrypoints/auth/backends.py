@@ -1,6 +1,5 @@
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
-from dishka import AsyncContainer
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import Response
@@ -14,10 +13,13 @@ from entrypoints.auth.handlers import AuthHandler
 from entrypoints.auth.schemas import Payload
 from entrypoints.auth.utils import Hasher
 
+if TYPE_CHECKING:
+    from dishka import AsyncContainer
+
 
 class BaseAuthenticationBackend(AuthenticationBackend):
     def check_permission(self, user: User) -> bool:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container

@@ -1,11 +1,11 @@
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
-from dishka import Provider, provide, Scope
+from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import (
-    create_async_engine,
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
+    create_async_engine,
 )
 
 from config.settings import settings
@@ -28,12 +28,11 @@ class DatabaseProvider(Provider):
         self,
         async_engine: AsyncEngine,
     ) -> async_sessionmaker[AsyncSession]:
-        session_maker = async_sessionmaker(
+        return async_sessionmaker(
             bind=async_engine,
             class_=AsyncSession,
             expire_on_commit=settings.database.expire_on_commit,
         )
-        return session_maker
 
     @provide(scope=Scope.REQUEST)
     async def provide_async_session(

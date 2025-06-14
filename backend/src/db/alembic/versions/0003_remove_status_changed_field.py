@@ -26,5 +26,5 @@ def downgrade() -> None:
     op.alter_column(
         "competency_matrix_items",
         "status_changed",
-        server_default=None,
+        server_default=None,  # type: ignore
     )

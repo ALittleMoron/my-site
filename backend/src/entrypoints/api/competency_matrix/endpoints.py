@@ -5,8 +5,8 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, Query
 
 from core.competency_matrix.use_cases import (
-    AbstractListItemsUseCase,
     AbstractGetItemUseCase,
+    AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
 )
 from entrypoints.api.competency_matrix.schemas import (

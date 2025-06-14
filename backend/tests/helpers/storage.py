@@ -23,10 +23,10 @@ class StorageHelper:
         self,
         items: list[CompetencyMatrixItem],
     ) -> list[CompetencyMatrixItemModel]:
-        items = [CompetencyMatrixItemModel.from_domain_schema(item=item) for item in items]
-        self.session.add_all(items)
+        db_items = [CompetencyMatrixItemModel.from_domain_schema(item=item) for item in items]
+        self.session.add_all(db_items)
         await self.session.commit()
-        return items
+        return db_items
 
     async def create_user(self, user: User) -> UserModel:
         model = UserModel.from_domain_schema(schema=user)
@@ -34,7 +34,7 @@ class StorageHelper:
         return model
 
     async def create_users(self, users: list[User]) -> list[UserModel]:
-        users = [UserModel.from_domain_schema(schema=user) for user in users]
-        self.session.add_all(users)
+        db_users = [UserModel.from_domain_schema(schema=user) for user in users]
+        self.session.add_all(db_users)
         await self.session.commit()
-        return users
+        return db_users

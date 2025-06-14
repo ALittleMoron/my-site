@@ -14,19 +14,19 @@ from db.storages.competency_matrix import CompetencyMatrixStorage
 class AbstractListSheetsUseCase(UseCase, ABC):
     @abstractmethod
     async def execute(self) -> Sheets:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class AbstractListItemsUseCase(UseCase, ABC):
     @abstractmethod
     async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class AbstractGetItemUseCase(UseCase, ABC):
     @abstractmethod
     async def execute(self, item_id: int) -> CompetencyMatrixItem:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass(kw_only=True)

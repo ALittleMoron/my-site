@@ -82,7 +82,7 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         "resources": {
             "fields": ("id", "name", "url", "context"),
             "order_by": "name",
-        }
+        },
     }
 
     column_formatters = {}

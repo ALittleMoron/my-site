@@ -55,14 +55,7 @@ class _DatabaseConfig(BaseSettings):
     @property
     def url(self) -> SecretStr:
         return SecretStr(
-            "{driver}://{user}:{password}@{host}:{port}/{name}".format(
-                driver=self.driver,
-                user=self.user,
-                password=self.password.get_secret_value(),
-                host=self.host,
-                port=self.port,
-                name=self.name,
-            )
+            f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
         )
 
 
@@ -73,8 +66,6 @@ class _AuthConfig(BaseSettings):
         extra="ignore",
     )
 
-    public_key_pem_file_name: str = "public.pem"
-    secret_key_pem_file_name: str = "private.pem"
     token_expire_seconds: int = 60 * 60 * 24 * 2
     crypto_scheme: str = "bcrypt"
 
@@ -108,7 +99,7 @@ class Settings(BaseSettings):
 
     @property
     def minio_url(self) -> str:
-        is_local_domain = self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}
+        is_local_domain = self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104
         schema = "http" if is_local_domain else "https"
         return f"{schema}://{self.app.domain}"
 

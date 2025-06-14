@@ -1,10 +1,10 @@
-from dishka import Provider, provide, Scope
+from dishka import Provider, Scope, provide
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
 from core.schemas import Secret
-from db.storages.auth import AuthStorage, AuthDatabaseStorage
+from db.storages.auth import AuthDatabaseStorage, AuthStorage
 from entrypoints.auth.handlers import AuthHandler
 from entrypoints.auth.utils import Hasher
 
@@ -17,13 +17,9 @@ class AuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> AuthHandler:
         return AuthHandler(
-            public_key_pem=(
-                settings.dir.backend_path / "certs" / settings.auth.public_key_pem_file_name
-            ).read_text(),
+            public_key_pem=(settings.dir.backend_path / "certs" / "public.pem").read_text(),
             secret_key_pem=Secret(
-                (
-                    settings.dir.backend_path / "certs" / settings.auth.secret_key_pem_file_name
-                ).read_text()
+                (settings.dir.backend_path / "certs" / "private.pem").read_text(),
             ),
             token_expire_seconds=settings.auth.token_expire_seconds,
         )
