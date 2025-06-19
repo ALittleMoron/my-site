@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from fastapi.testclient import TestClient
 from httpx import Response
+from litestar.testing import TestClient
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)

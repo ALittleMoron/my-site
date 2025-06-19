@@ -1,6 +1,6 @@
-from fastapi import Request
-from fastapi.responses import RedirectResponse
 from sqladmin import ModelView, action
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 
 
 class ModelViewWithAction(ModelView):

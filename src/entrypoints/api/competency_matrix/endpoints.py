@@ -1,8 +1,9 @@
 from typing import Annotated
 
 from dishka import FromDishka
-from dishka.integrations.fastapi import inject
-from fastapi import APIRouter, Query
+from dishka.integrations.litestar import inject
+from litestar import Router, get
+from litestar.params import Parameter
 
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
@@ -12,31 +13,28 @@ from core.competency_matrix.use_cases import (
 from entrypoints.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailSchema,
     CompetencyMatrixItemsListSchema,
-    CompetencyMatrixListItemsParams,
     CompetencyMatrixSheetsListSchema,
 )
 
-api_router = APIRouter()
 
-
-@api_router.get(
-    "/competency-matrix/items",
+@get(
+    "/items",
     description="Получение списка вопросов по матрице компетенций.",
 )
 @inject
 async def list_competency_matrix_items_handler(
-    params: Annotated[CompetencyMatrixListItemsParams, Query()],
+    sheet_name: Annotated[str, Parameter(query="sheetName")],
     use_case: FromDishka[AbstractListItemsUseCase],
 ) -> CompetencyMatrixItemsListSchema:
-    items = await use_case.execute(sheet_name=params.sheet_name)
+    items = await use_case.execute(sheet_name=sheet_name)
     return CompetencyMatrixItemsListSchema.from_domain_schema(
-        sheet=params.sheet_name,
+        sheet=sheet_name,
         schema=items,
     )
 
 
-@api_router.get(
-    "/competency-matrix/items/{pk}",
+@get(
+    "/items/{pk:int}",
     description="Получение подробной информации о вопросе из матрицы компетенций.",
 )
 @inject
@@ -50,8 +48,8 @@ async def get_competency_matrix_item_handler(
     )
 
 
-@api_router.get(
-    "/competency-matrix/sheets",
+@get(
+    "/sheets",
     description=(
         "Получение списка листов матрицы компетенций. Список содержит только доступные листы "
         "без вывода вопросов по ним. Сделайте запрос на ручку `items/` с параметром sheetId, "
@@ -64,3 +62,13 @@ async def list_competency_matrix_sheet_handler(
 ) -> CompetencyMatrixSheetsListSchema:
     sheets = await use_case.execute()
     return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
+
+
+api_router = Router(
+    "/competency-matrix",
+    route_handlers=[
+        list_competency_matrix_items_handler,
+        get_competency_matrix_item_handler,
+        list_competency_matrix_sheet_handler,
+    ],
+)

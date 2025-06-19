@@ -13,16 +13,6 @@ from core.competency_matrix.schemas import (
 from entrypoints.api.schemas import CamelCaseSchema
 
 
-class CompetencyMatrixListItemsParams(CamelCaseSchema):
-    sheet_name: Annotated[
-        str,
-        Field(
-            title="Лист",
-            description="Наименование листа для фильтрации по нему",
-        ),
-    ]
-
-
 class ResourceSchema(CamelCaseSchema):
     id: Annotated[
         int,

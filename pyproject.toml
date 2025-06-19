@@ -13,8 +13,6 @@ dependencies = [
     "verbose-http-exceptions[litestar]>=3.0.0",
     "python-decouple>=3.8",
     "python-dateutil>=2.9.0.post0",
-    "fastapi>=0.115.12",
-    "sqladmin>=0.20.1",
     "dishka>=1.5.3",
     "sqlalchemy[asyncio,mypy]>=2.0.40",
     "sqlalchemy-dev-utils>=1.3.1",
@@ -26,6 +24,9 @@ dependencies = [
     "structlog>=25.2.0",
     "miniopy-async>=1.22.1",
     "typer>=0.15.2",
+    "litestar[jinja,pydantic]>=2.16.0",
+    "sqladmin>=0.20.1",
+    "starlette>=0.46.2",
 ]
 
 [dependency-groups]

@@ -4,9 +4,9 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from dishka import AsyncContainer, make_async_container
-from dishka.integrations.fastapi import setup_dishka
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+from dishka.integrations.litestar import setup_dishka
+from litestar import Litestar
+from litestar.testing import TestClient
 from sqlalchemy import NullPool, delete
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -41,14 +41,14 @@ async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, N
 
 
 @pytest.fixture
-def app(container: AsyncContainer) -> FastAPI:
-    app = create_base_app()
+def app(container: AsyncContainer) -> Litestar:
+    app = create_base_app(lifespan=[])
     setup_dishka(container=container, app=app)
     return app
 
 
 @pytest.fixture
-def client(app: FastAPI) -> Generator[TestClient, None, None]:
+def client(app: Litestar) -> Generator[TestClient, None, None]:
     with TestClient(app) as client:
         yield client
 

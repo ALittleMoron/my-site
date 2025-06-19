@@ -1,6 +1,6 @@
 import pytest
 from dishka import AsyncContainer
-from fastapi.testclient import TestClient
+from litestar.testing import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.helpers.api import APIHelper
