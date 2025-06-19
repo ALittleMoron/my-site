@@ -67,14 +67,14 @@ ruff-check:
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run pytest -vvv -x
+	PYTHONPATH=src $(UV) run pytest -vvv -x $(TESTS)
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run coverage run -m pytest -v
-	$(UV) run coverage xml
-	$(UV) run coverage report --fail-under=95
+	PYTHONPATH=src $(UV) run coverage run -m pytest -v
+	PYTHONPATH=src $(UV) run coverage xml
+	PYTHONPATH=src $(UV) run coverage report --fail-under=95
 
 .PHONY: quality
 quality:

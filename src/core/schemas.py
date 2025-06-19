@@ -1,12 +1,9 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Generic, TypeVar
-
-T = TypeVar("T")
 
 
 @dataclass(kw_only=False, frozen=True, slots=True)
-class Secret(Generic[T]):
+class Secret[T]:
     __value: T
 
     def get_secret_value(self) -> T:
@@ -20,7 +17,7 @@ class Secret(Generic[T]):
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ValuedDataclass(Generic[T]):
+class ValuedDataclass[T]:
     values: list[T]
 
     def __len__(self) -> int:  # pragma: no cover

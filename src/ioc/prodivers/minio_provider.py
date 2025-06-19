@@ -1,5 +1,5 @@
 from dishka import Provider, Scope, provide
-from miniopy_async import Minio
+from miniopy_async.api import Minio
 
 from config.settings import settings
 

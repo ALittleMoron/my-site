@@ -8,6 +8,7 @@ class _DirConstants:
     src_path: Path = Path(__file__).resolve().parent.parent
     root_path: Path = src_path.parent
     certs_path: Path = root_path / "certs"
+    alembic_path: Path = src_path / "db" / "alembic"
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -23,6 +24,10 @@ class _StaticFilesConstants:
     favicon = "favicon.ico"
 
 
-dir_constants = _DirConstants()
-minio_bucket_names_constants = _MinioBucketNamesConstants()
-static_files_constants = _StaticFilesConstants()
+class Constants:
+    dir: _DirConstants = _DirConstants()
+    minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
+    static_files: _StaticFilesConstants = _StaticFilesConstants()
+
+
+constants = Constants()

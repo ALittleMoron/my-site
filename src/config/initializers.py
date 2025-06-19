@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.types import Lifespan
 from verbose_http_exceptions.ext.fastapi import apply_all_handlers
 
+from config.constants import constants
 from config.settings import settings
 from db.utils import migrate
 from entrypoints.admin.registry import get_admin_views
@@ -22,12 +23,12 @@ def create_admin(
         app=app,
         engine=engine,
         logo_url=settings.get_minio_object_url(
-            bucket=settings.minio.bucket_names.static,
-            object_path=settings.minio.static_files.logo_dark,
+            bucket=constants.minio_buckets.static,
+            object_path=constants.static_files.logo_dark,
         ),
         favicon_url=settings.get_minio_object_url(
-            bucket=settings.minio.bucket_names.static,
-            object_path=settings.minio.static_files.favicon,
+            bucket=constants.minio_buckets.static,
+            object_path=constants.static_files.favicon,
         ),
         authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
@@ -58,9 +59,9 @@ async def create_app(lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
 
 
 def check_certs_exists() -> None:
-    if not (settings.dir.certs_path / "public.pem").exists():
+    if not (constants.dir.certs_path / "public.pem").exists():
         msg = "Public key certificate file does not exists."
         raise RuntimeError(msg)
-    if not (settings.dir.certs_path / "private.pem").exists():
+    if not (constants.dir.certs_path / "private.pem").exists():
         msg = "Secret key certificate file does not exists."
         raise RuntimeError(msg)

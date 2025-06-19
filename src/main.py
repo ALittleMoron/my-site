@@ -10,7 +10,7 @@ from config.settings import settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     yield
     await app.state.dishka_container.close()
 

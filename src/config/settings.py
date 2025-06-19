@@ -1,21 +1,23 @@
+import os
 from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from config.constants import (
-    _DirConstants,
-    _MinioBucketNamesConstants,
-    _StaticFilesConstants,
-    dir_constants,
-    minio_bucket_names_constants,
-    static_files_constants,
-)
+from config.constants import constants
 
-env_file_path = dir_constants.root_path / ".env"
+ENV_TYPE = os.environ.get("ENV_TYPE", "DEV").upper()
+match ENV_TYPE:
+    case "DEV":
+        env_file_name = ".env.dev"
+    case "LOCAL":
+        env_file_name = ".env.local"
+    case _:
+        env_file_name = ".env"
+env_file_path = constants.dir.root_path / env_file_name
 
 
-class _AppConfig(BaseSettings):
+class _AppSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP_",
         env_file=env_file_path,
@@ -29,7 +31,7 @@ class _AppConfig(BaseSettings):
     port: int = 8000
 
 
-class _DatabaseConfig(BaseSettings):
+class _DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="DB_",
         env_file=env_file_path,
@@ -59,7 +61,7 @@ class _DatabaseConfig(BaseSettings):
         )
 
 
-class _AuthConfig(BaseSettings):
+class _AuthSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="AUTH_",
         env_file=env_file_path,
@@ -82,19 +84,16 @@ class _MinioSettings(BaseSettings):
     secret_key: SecretStr = SecretStr("minioadmin")
     access_key: str = "minioadmin"
     secure: bool = False
-    bucket_names: _MinioBucketNamesConstants = minio_bucket_names_constants
-    static_files: _StaticFilesConstants = static_files_constants
 
     @property
     def endpoint(self) -> str:
         return f"{self.host}:{self.port}"
 
 
-class Settings(BaseSettings):
-    app: _AppConfig = _AppConfig()
-    auth: _AuthConfig = _AuthConfig()
-    dir: _DirConstants = dir_constants
-    database: _DatabaseConfig = _DatabaseConfig()
+class Settings:
+    app: _AppSettings = _AppSettings()
+    auth: _AuthSettings = _AuthSettings()
+    database: _DatabaseSettings = _DatabaseSettings()
     minio: _MinioSettings = _MinioSettings()
 
     @property
@@ -104,8 +103,7 @@ class Settings(BaseSettings):
         return f"{schema}://{self.app.domain}"
 
     def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
-        if object_path.startswith("/"):
-            object_path = object_path[1:]
+        object_path = object_path.removeprefix("/")
         return f"{self.minio_url}/{bucket}/{object_path}"
 
 

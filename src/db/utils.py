@@ -2,14 +2,14 @@ from alembic.command import downgrade as alembic_downgrade
 from alembic.command import upgrade as alembic_upgrade
 from alembic.config import Config
 
-from config.settings import settings
+from config.constants import constants
 
 
 def migrate(revision: str) -> None:
-    config = Config(settings.dir.src_path / "db" / "alembic" / "alembic.ini")
+    config = Config(constants.dir.alembic_path / "alembic.ini")
     alembic_upgrade(config=config, revision=revision)
 
 
 def downgrade(revision: str) -> None:
-    config = Config(settings.dir.src_path / "db" / "alembic" / "alembic.ini")
+    config = Config(constants.dir.alembic_path / "alembic.ini")
     alembic_downgrade(config=config, revision=revision)
