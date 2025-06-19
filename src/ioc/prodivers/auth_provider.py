@@ -17,10 +17,8 @@ class AuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> AuthHandler:
         return AuthHandler(
-            public_key_pem=(settings.dir.backend_path / "certs" / "public.pem").read_text(),
-            secret_key_pem=Secret(
-                (settings.dir.backend_path / "certs" / "private.pem").read_text(),
-            ),
+            public_key_pem=(settings.dir.certs_path / "public.pem").read_text(),
+            secret_key_pem=Secret(settings.dir.certs_path / "private.pem").read_text(),
             token_expire_seconds=settings.auth.token_expire_seconds,
         )
 

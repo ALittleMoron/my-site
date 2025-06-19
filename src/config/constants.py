@@ -6,8 +6,8 @@ from typing import Literal
 @dataclass(kw_only=True, frozen=True)
 class _DirConstants:
     src_path: Path = Path(__file__).resolve().parent.parent
-    backend_path: Path = src_path.parent
-    root_path: Path = backend_path.parent
+    root_path: Path = src_path.parent
+    certs_path: Path = root_path / "certs"
 
 
 @dataclass(kw_only=True, frozen=True)

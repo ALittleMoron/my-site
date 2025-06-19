@@ -12,7 +12,7 @@ from config.constants import (
     static_files_constants,
 )
 
-env_file_path = dir_constants.backend_path / ".env"
+env_file_path = dir_constants.root_path / ".env"
 
 
 class _AppConfig(BaseSettings):
