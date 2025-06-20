@@ -7,7 +7,7 @@ from entrypoints.auth.utils import Hasher
 from ioc.container import container
 
 
-async def create_admin_command(username: str, password: str):
+async def create_admin_command(username: str, password: str) -> None:
     async with container() as request_container:
         hasher = await request_container.get(Hasher)
         session = await request_container.get(AsyncSession)
@@ -20,7 +20,7 @@ async def create_admin_command(username: str, password: str):
             )
             session.add(admin)
             await session.commit()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             secho(f"Внутренняя ошибка: {exc}", fg="red")
         else:
             secho("Администратор успешно создан.", fg="green")

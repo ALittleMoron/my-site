@@ -1,11 +1,11 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
-from dishka.integrations.litestar import setup_dishka as setup_diska_fastapi
 from dishka.integrations.starlette import setup_dishka as setup_diska_starlette
 from litestar import Litestar, asgi
 from litestar.handlers.asgi_handlers import ASGIRouteHandler
 from litestar.openapi.config import OpenAPIConfig
+from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
 from litestar.types import ControllerRouterHandler
 from sqladmin import Admin
@@ -15,7 +15,6 @@ from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from config.constants import constants
 from config.settings import settings
-from db.utils import migrate
 from entrypoints.admin.registry import get_admin_views
 from entrypoints.api.routers import api_router
 from entrypoints.auth.backends import AdminAuthenticationBackend
@@ -52,12 +51,13 @@ def create_admin_asgi_app(engine: AsyncEngine) -> ASGIRouteHandler:
 def create_litestar(
     route_handlers: Sequence[ControllerRouterHandler],
     lifespan: Lifespan,
+    extra_plugins: Sequence[PluginProtocol] | None = None,
 ) -> Litestar:
     return Litestar(
         route_handlers,
         lifespan=lifespan,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
-        plugins=[PydanticPlugin(prefer_alias=True)],
+        plugins=[PydanticPlugin(prefer_alias=True), *(extra_plugins or [])],
         openapi_config=OpenAPIConfig(
             title="docs",
             version="0.1.0",
@@ -69,14 +69,6 @@ def create_litestar(
 
 def create_base_app(lifespan: Lifespan) -> Litestar:
     return create_litestar([api_router], lifespan=lifespan)
-
-
-async def create_app(lifespan: Lifespan) -> Litestar:
-    admin = create_admin_asgi_app(engine=await container.get(AsyncEngine))
-    app = create_litestar(route_handlers=[api_router, admin], lifespan=lifespan)
-    setup_diska_fastapi(container, app)
-    migrate("head")
-    return app
 
 
 def check_certs_exists() -> None:

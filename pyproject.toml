@@ -24,7 +24,7 @@ dependencies = [
     "structlog>=25.2.0",
     "miniopy-async>=1.22.1",
     "typer>=0.15.2",
-    "litestar[jinja,pydantic]>=2.16.0",
+    "litestar[cli,jinja,pydantic]>=2.16.0",
     "sqladmin>=0.20.1",
     "starlette>=0.46.2",
 ]

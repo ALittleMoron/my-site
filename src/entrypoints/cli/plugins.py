@@ -1,0 +1,33 @@
+import click
+from litestar import Litestar
+from litestar.plugins import CLIPluginProtocol
+from miniopy_async.api import Minio
+
+from config.constants import constants
+from entrypoints.cli.commands.admin import create_admin_command
+from entrypoints.cli.commands.files import collect_static
+from entrypoints.cli.utils import run_sync
+from ioc.container import container
+
+
+class CLIPlugin(CLIPluginProtocol):
+    def on_cli_init(self, cli: click.Group) -> None:
+        @cli.command()
+        @click.option("--username", "-U", help="Никнейм администратора")
+        @click.option("--password", "-P", help="Пароль администратора")
+        def createsuperuser(app: Litestar, username: str, password: str) -> None:
+            """Создает нового администратора для админ-панели."""
+
+            run_sync(create_admin_command(username, password))
+
+        @cli.command()
+        def collectstatic(app: Litestar) -> None:
+            """Синхронизирует static-файлы: закидывает их в minio."""
+
+            client = run_sync(container.get(Minio))
+            run_sync(
+                collect_static(
+                    static_files_path=constants.dir.src_path / "static",
+                    client=client,
+                ),
+            )

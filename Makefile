@@ -1,10 +1,15 @@
 NAME := src
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
+LITESTAR_APP := "src.main:create_cli_app"
 
 .PHONY: run
 run:
 	./docker/scripts/run.sh
+
+.PHONY: litestar
+litestar:
+	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
 
 .PHONY: revision
 revision:

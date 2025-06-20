@@ -1,4 +1,3 @@
-import os
 from typing import Literal
 
 from pydantic import SecretStr
@@ -6,15 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.constants import constants
 
-ENV_TYPE = os.environ.get("ENV_TYPE", "DEV").upper()
-match ENV_TYPE:
-    case "DEV":
-        env_file_name = ".env.dev"
-    case "LOCAL":
-        env_file_name = ".env.local"
-    case _:
-        env_file_name = ".env"
-env_file_path = constants.dir.root_path / env_file_name
+env_file_path = constants.dir.root_path / ".env"
 
 
 class _AppSettings(BaseSettings):
@@ -108,3 +99,5 @@ class Settings:
 
 
 settings = Settings()
+print(env_file_path)
+print(settings.database.url.get_secret_value())
