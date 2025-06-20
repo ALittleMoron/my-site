@@ -12,6 +12,7 @@ from config.settings import settings
 from db.utils import migrate
 from entrypoints.api.routers import api_router
 from entrypoints.cli.plugins import CLIPlugin
+from entrypoints.views.routers import views_router
 from ioc.container import container
 
 
@@ -30,7 +31,10 @@ def create_cli_app() -> Litestar:
 
 async def create_app() -> Litestar:
     admin = create_admin_asgi_app(engine=await container.get(AsyncEngine))
-    app = create_litestar(route_handlers=[api_router, admin], lifespan=[app_lifespan])
+    app = create_litestar(
+        route_handlers=[views_router, api_router, admin],
+        lifespan=[app_lifespan],
+    )
     setup_diska_fastapi(container, app)
     migrate("head")
     return app

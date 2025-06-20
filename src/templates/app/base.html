@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block head %}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{% block title %}{% endblock %} - Мой сайт</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    {% endblock %}
+  </head>
+  <body>
+    <div id="root">
+      <div class="min-h-screen flex flex-col">
+        <div id="navbar">{% include 'app/blocks/navbar.html' %}</div>
+        <div id="content">{% block content %}{% endblock %}</div>
+        <div id="footer">{% include 'app/blocks/footer.html' %}</div>
+      </div>
+    </div>
+  </body>
+</html>
