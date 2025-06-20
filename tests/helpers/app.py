@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import cast
 from unittest.mock import Mock
 
 from dishka import AsyncContainer
@@ -24,13 +25,17 @@ class IocContainerHelper:
         return await self.container.get(AuthHandler)
 
     async def get_mock_get_item_use_case(self) -> Mock:
-        return await self.container.get(AbstractGetItemUseCase)
+        use_case = await self.container.get(AbstractGetItemUseCase)
+        return cast(Mock, use_case)
 
     async def get_mock_list_items_use_case(self) -> Mock:
-        return await self.container.get(AbstractListItemsUseCase)
+        use_case = await self.container.get(AbstractListItemsUseCase)
+        return cast(Mock, use_case)
 
     async def get_mock_list_sheets_use_case(self) -> Mock:
-        return await self.container.get(AbstractListSheetsUseCase)
+        use_case = await self.container.get(AbstractListSheetsUseCase)
+        return cast(Mock, use_case)
 
     async def get_auth_storage(self) -> Mock:
-        return await self.container.get(AuthStorage)
+        use_case = await self.container.get(AuthStorage)
+        return cast(Mock, use_case)
