@@ -3,11 +3,14 @@ from contextlib import AbstractAsyncContextManager
 
 from dishka.integrations.starlette import setup_dishka as setup_diska_starlette
 from litestar import Litestar, asgi
+from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.handlers.asgi_handlers import ASGIRouteHandler
 from litestar.openapi.config import OpenAPIConfig
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
+from litestar.template import TemplateConfig
 from litestar.types import ControllerRouterHandler
+from litestar_htmx import HTMXPlugin
 from sqladmin import Admin
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.applications import Starlette
@@ -57,7 +60,11 @@ def create_litestar(
         route_handlers,
         lifespan=lifespan,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
-        plugins=[PydanticPlugin(prefer_alias=True), *(extra_plugins or [])],
+        plugins=[HTMXPlugin(), PydanticPlugin(prefer_alias=True), *(extra_plugins or [])],
+        template_config=TemplateConfig(
+            directory=constants.dir.src_path / "templates",
+            engine=JinjaTemplateEngine,
+        ),
         openapi_config=OpenAPIConfig(
             title="docs",
             version="0.1.0",

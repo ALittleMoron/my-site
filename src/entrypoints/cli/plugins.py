@@ -15,13 +15,13 @@ class CLIPlugin(CLIPluginProtocol):
         @cli.command()
         @click.option("--username", "-U", help="Никнейм администратора")
         @click.option("--password", "-P", help="Пароль администратора")
-        def createsuperuser(app: Litestar, username: str, password: str) -> None:
+        def createsuperuser(app: Litestar, username: str, password: str) -> None:  # noqa: ARG001
             """Создает нового администратора для админ-панели."""
 
             run_sync(create_admin_command(username, password))
 
         @cli.command()
-        def collectstatic(app: Litestar) -> None:
+        def collectstatic(app: Litestar) -> None:  # noqa: ARG001
             """Синхронизирует static-файлы: закидывает их в minio."""
 
             client = run_sync(container.get(Minio))

@@ -1,10 +1,10 @@
 from litestar import Router
 
-from entrypoints.api.competency_matrix import endpoints as competency_matrix
-from entrypoints.api.healthcheck import endpoints as healthcheck
+from entrypoints.api.competency_matrix.endpoints import api_router as competency_matrix_router
+from entrypoints.api.healthcheck.endpoints import api_router as healthcheck_router
 
 api_router = Router(
     "/api",
-    route_handlers=[healthcheck.api_router, competency_matrix.api_router],
+    route_handlers=[healthcheck_router, competency_matrix_router],
     tags=["api"],
 )

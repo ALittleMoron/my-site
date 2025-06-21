@@ -99,5 +99,3 @@ class Settings:
 
 
 settings = Settings()
-print(env_file_path)
-print(settings.database.url.get_secret_value())
