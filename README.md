@@ -53,5 +53,6 @@ make run
 - Frontend runs on `http://localhost`
 - API runs on `http://localhost/api`
 - API documentation available at `http://localhost/api/docs`
+- OpenAPI specification available at `http://localhost/api/docs/openapi.json`
 
 For other routes see [docker-compose.yaml](./docker-compose.yml)

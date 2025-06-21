@@ -6,6 +6,7 @@ from litestar import Litestar, asgi
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.handlers.asgi_handlers import ASGIRouteHandler
 from litestar.openapi.config import OpenAPIConfig
+from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
 from litestar.template import TemplateConfig
@@ -68,8 +69,8 @@ def create_litestar(
         openapi_config=OpenAPIConfig(
             title="docs",
             version="0.1.0",
-            # TODO: check openapi json and yaml files location
             path="/api/docs",
+            render_plugins=[SwaggerRenderPlugin()],
         ),
     )
 
