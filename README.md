@@ -1,29 +1,27 @@
 # My Site
 
-A full-stack web application with a FastAPI backend and React frontend. My site with blog,
-mentoring things and others.
+A web application with a Litestar as backend with HTMX as frontend (Server Side Rendering). 
+My site with blog, mentoring things and others.
 
 ## Project Structure
 
 ```
 my-site/
-├── backend/           # FastAPI backend application
-│   ├── src/          # Source code
-│   └── README.md     # Backend documentation
-└── frontend/         # React frontend application
-    ├── src/          # Source code
-    └── README.md     # Frontend documentation
+├── certs/        # Folder with certificates for auth system works
+├── docker/       # Docker configuration files (scripts, Dockerfile, nginx conf, etc.)
+├── src/          # Source code
+├── tests/        # Project autotests
+├── .env.example  # Example of project envs
+├── ...
+└── README.md     # Project readme (current file)
 ```
 
 ## Features
 
 - Competency matrix with questions and answers
+- Simple dynamic frontend using HTMX
+- API with documentation
 - Dark theme UI
-
-## Documentation
-
-- [Backend Documentation](backend/README.md) - FastAPI setup, API endpoints, and database configuration
-- [Frontend Documentation](frontend/README.md) - React setup, component structure, and development guide
 
 ## Quick Start
 
@@ -45,15 +43,15 @@ cp .env.example .env
 chmod +x ./docker/scripts/run.sh
 ```
 
-5. Run makefile
+5. Run Makefile
 ```bash
 make run
 ```
 
 ## Development
 
-- Backend runs on `http://localhost/api`
 - Frontend runs on `http://localhost`
+- API runs on `http://localhost/api`
 - API documentation available at `http://localhost/api/docs`
 
 For other routes see [docker-compose.yaml](./docker-compose.yml)
