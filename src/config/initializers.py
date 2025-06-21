@@ -60,6 +60,7 @@ def create_litestar(
     return Litestar(
         route_handlers,
         lifespan=lifespan,
+        debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
         plugins=[HTMXPlugin(), PydanticPlugin(prefer_alias=True), *(extra_plugins or [])],
         template_config=TemplateConfig(

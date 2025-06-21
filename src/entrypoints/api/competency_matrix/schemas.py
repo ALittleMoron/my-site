@@ -299,6 +299,7 @@ class CompetencyMatrixSheetsListSchema(CamelCaseSchema):
         Field(
             title="Список",
             description="Список листов матрицы компетенций",
+            examples=[["SQL", "Python", "JS", "Web"]],
         ),
     ]
 
