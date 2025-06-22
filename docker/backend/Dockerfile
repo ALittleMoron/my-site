@@ -11,9 +11,9 @@ ENV PATH="/root/.local/bin/:$PATH"
 
 WORKDIR /app
 
-COPY backend/README.md backend/pyproject.toml backend/uv.lock backend/ .env ./
+COPY README.md pyproject.toml uv.lock / .env ./
 RUN uv sync --frozen
 
 EXPOSE ${APP_PORT}
 
-CMD ["uv", "run", "python", "src/main.py"]
+CMD ["sh", "./docker/backend/start.sh"]

@@ -38,12 +38,19 @@ cp .env.example .env
 
 3. Change .env file variables to yours
 
-4. Add exec permission for run.sh file
+4. Create certificates
+```bash
+cd certs
+openssl genpkey -algorithm ed25519 -out private.pem
+openssl pkey -in private.pem -pubout -out public.pem
+```
+
+5. Add exec permission for run.sh file
 ```bash
 chmod +x ./docker/scripts/run.sh
 ```
 
-5. Run Makefile
+6. Run Makefile
 ```bash
 make run
 ```

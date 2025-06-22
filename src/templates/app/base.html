@@ -4,10 +4,10 @@
     {% block head %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{% block title %}{% endblock %} - Мой сайт</title>
+    <title>{% block title %}{% endblock %} - Мой сайт</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
+      href="{{ get_static_file_url('styles.css') }}"
     />
     {% endblock %}
   </head>

@@ -9,7 +9,7 @@ fi
 
 # Check docker-compose is installed
 if ! command -v docker-compose &> /dev/null; then
-    echo "docker-compose could not be found"
+    echo "docker-compose application could not be found. Install it."
     exit 1
 fi
 

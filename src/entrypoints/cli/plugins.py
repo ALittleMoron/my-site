@@ -5,7 +5,7 @@ from miniopy_async.api import Minio
 
 from config.constants import constants
 from entrypoints.cli.commands.admin import create_admin_command
-from entrypoints.cli.commands.files import collect_static
+from entrypoints.cli.commands.files import collect_static, init_buckets
 from entrypoints.cli.utils import run_sync
 from ioc.container import container
 
@@ -19,6 +19,11 @@ class CLIPlugin(CLIPluginProtocol):
             """Создает нового администратора для админ-панели."""
 
             run_sync(create_admin_command(username, password))
+            
+        @cli.command()
+        def initbuckets(app: Litestar) -> None:  # noqa: ARG001
+            client = run_sync(container.get(Minio))
+            run_sync(init_buckets(client=client))
 
         @cli.command()
         def collectstatic(app: Litestar) -> None:  # noqa: ARG001

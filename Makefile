@@ -7,6 +7,10 @@ LITESTAR_APP := "src.main:create_cli_app"
 run:
 	./docker/scripts/run.sh
 
+.PHONY: start_app
+start_app:
+	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
+
 .PHONY: litestar
 litestar:
 	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
