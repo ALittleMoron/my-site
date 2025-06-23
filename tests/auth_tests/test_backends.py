@@ -3,26 +3,16 @@ from unittest.mock import AsyncMock
 import pytest_asyncio
 
 from core.users.exceptions import UserNotFoundError
-from core.users.schemas import User, RoleEnum
-from entrypoints.admin.auth.backends import (
-    BaseAuthenticationBackend,
-    AdminAuthenticationBackend,
-    UserAuthenticationBackend,
-)
+from core.users.schemas import RoleEnum
+from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.auth.schemas import Payload
 from tests.fixtures import FactoryFixture, ContainerFixture
-
-
-class AnyPermissionsBackend(BaseAuthenticationBackend):
-    def check_permission(self, user: User) -> bool:
-        _ = user
-        return True
 
 
 class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
-        self.backend = AnyPermissionsBackend(secret_key="")
+        self.backend = AdminAuthenticationBackend(secret_key="")
         hasher = await self.container.get_hasher()
         self.user_1 = self.factory.core.user(
             username="user1",
@@ -85,11 +75,20 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
 
-    async def test_authenticate(self) -> None:
+    async def test_authenticate_user_not_admin(self) -> None:
         auth_handler = await self.container.get_auth_handler()
         self.storage.get_user_by_username.return_value = self.user_1
         token = auth_handler.encode_token(
             payload=Payload(username=self.user_1.username, role=self.user_1.role),
+        )
+        self.request.session = {"token": token.decode()}
+        assert (await self.backend.authenticate(request=self.request)) is False
+
+    async def test_authenticate(self) -> None:
+        auth_handler = await self.container.get_auth_handler()
+        self.storage.get_user_by_username.return_value = self.user_2
+        token = auth_handler.encode_token(
+            payload=Payload(username=self.user_2.username, role=self.user_2.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is True
@@ -113,30 +112,6 @@ class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
         self.request.state.dishka_container = self.container.container
 
     async def test_authenticate_user_not_admin(self) -> None:
-        auth_handler = await self.container.get_auth_handler()
-        token = auth_handler.encode_token(
-            payload=Payload(username=self.user.username, role=self.user.role),
-        )
-        self.request.session = {"token": token.decode()}
-        assert (await self.backend.authenticate(request=self.request)) is False
-
-
-class TestUserAuthenticationBackend(ContainerFixture, FactoryFixture):
-    @pytest_asyncio.fixture(autouse=True, loop_scope="session")
-    async def setup(self) -> None:
-        self.backend = UserAuthenticationBackend(secret_key="")
-        hasher = await self.container.get_hasher()
-        self.user = self.factory.core.user(
-            username="user1",
-            password=hasher.hash_password("1111"),
-            role=RoleEnum.ADMIN,
-        )
-        self.storage = await self.container.get_auth_storage()
-        self.storage.get_user_by_username.return_value = self.user
-        self.request = AsyncMock()
-        self.request.state.dishka_container = self.container.container
-
-    async def test_authenticate_user_not_user(self) -> None:
         auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
             payload=Payload(username=self.user.username, role=self.user.role),

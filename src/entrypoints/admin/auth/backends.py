@@ -7,7 +7,6 @@ from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
 from core.users.exceptions import UserNotFoundError
-from core.users.schemas import User
 from db.storages.auth import AuthStorage
 from entrypoints.admin.auth.handlers import AuthHandler
 from entrypoints.admin.auth.schemas import Payload
@@ -17,10 +16,7 @@ if TYPE_CHECKING:
     from dishka import AsyncContainer
 
 
-class BaseAuthenticationBackend(AuthenticationBackend):
-    def check_permission(self, user: User) -> bool:
-        raise NotImplementedError
-
+class AdminAuthenticationBackend(AuthenticationBackend):
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container
         storage = await request_container.get(AuthStorage)
@@ -40,14 +36,16 @@ class BaseAuthenticationBackend(AuthenticationBackend):
         except UserNotFoundError:
             logger.warning(event="No user in db from username form field", username=username)
             return False
-        if not self.check_permission(user) or not hasher.verify_password(
+        if not user.is_admin:
+            logger.warning("User is not admin", username=user.username)
+            return False
+        if not hasher.verify_password(
             plain_password=password,
             hashed_password=user.password.get_secret_value(),
         ):
             logger.warning(
-                "incorrect credentials or user not pass permission check",
+                "incorrect credentials (passwords not suit)",
                 username=user.username,
-                permission_passed=self.check_permission(user),
             )
             return False
         token = auth_handler.encode_token(
@@ -77,25 +75,11 @@ class BaseAuthenticationBackend(AuthenticationBackend):
         except UserNotFoundError:
             logger.warning(event="No user in db from token payload", payload=payload)
             return False
-        if not self.check_permission(user):
-            logger.warning(
-                "User not pass permission check",
-                username=user.username,
-                permission_passed=self.check_permission(user),
-            )
+        if not user.is_admin:
+            logger.warning("User is not admin", username=user.username)
             return False
         new_token = auth_handler.encode_token(
             payload=Payload(username=user.username, role=user.role),
         )
         request.session.update({"token": new_token.decode()})
         return True
-
-
-class AdminAuthenticationBackend(BaseAuthenticationBackend):
-    def check_permission(self, user: User) -> bool:
-        return user.is_admin
-
-
-class UserAuthenticationBackend(BaseAuthenticationBackend):
-    def check_permission(self, user: User) -> bool:
-        return user.is_user
