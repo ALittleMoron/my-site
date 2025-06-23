@@ -31,7 +31,6 @@ def create_bucket_policy(bucket_name: str) -> dict[str, Any]:
     }
 
 
-
 async def init_buckets(client: Minio) -> None:
     for bucket_name in [constants.minio_buckets.static, constants.minio_buckets.media]:
         if not await client.bucket_exists(bucket_name):

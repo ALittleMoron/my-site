@@ -20,9 +20,9 @@ from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 from config.constants import constants
 from config.settings import settings
 from config.template_callables import register_template_callables
+from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
 from entrypoints.api.routers import api_router
-from entrypoints.auth.backends import AdminAuthenticationBackend
 from ioc.container import container
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]

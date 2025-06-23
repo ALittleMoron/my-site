@@ -3,7 +3,7 @@ from typer import secho
 
 from core.users.schemas import RoleEnum
 from db.models.auth import UserModel
-from entrypoints.auth.utils import Hasher
+from entrypoints.admin.auth.utils import Hasher
 from ioc.container import container
 
 

@@ -10,8 +10,8 @@ from core.competency_matrix.use_cases import (
     AbstractListSheetsUseCase,
 )
 from db.storages.auth import AuthStorage
-from entrypoints.auth.handlers import AuthHandler
-from entrypoints.auth.utils import Hasher
+from entrypoints.admin.auth.handlers import AuthHandler
+from entrypoints.admin.auth.utils import Hasher
 
 
 @dataclass(kw_only=True)

@@ -6,8 +6,8 @@ from passlib.context import CryptContext
 from config.settings import Settings
 from core.schemas import Secret
 from db.storages.auth import AuthStorage
-from entrypoints.auth.handlers import AuthHandler
-from entrypoints.auth.utils import Hasher
+from entrypoints.admin.auth.handlers import AuthHandler
+from entrypoints.admin.auth.utils import Hasher
 
 test_public_key_pem = """\
 -----BEGIN PUBLIC KEY-----

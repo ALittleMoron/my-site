@@ -6,8 +6,8 @@ from config.constants import constants
 from config.settings import settings
 from core.schemas import Secret
 from db.storages.auth import AuthDatabaseStorage, AuthStorage
-from entrypoints.auth.handlers import AuthHandler
-from entrypoints.auth.utils import Hasher
+from entrypoints.admin.auth.handlers import AuthHandler
+from entrypoints.admin.auth.utils import Hasher
 
 
 class AuthProvider(Provider):

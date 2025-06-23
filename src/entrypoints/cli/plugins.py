@@ -19,7 +19,7 @@ class CLIPlugin(CLIPluginProtocol):
             """Создает нового администратора для админ-панели."""
 
             run_sync(create_admin_command(username, password))
-            
+
         @cli.command()
         def initbuckets(app: Litestar) -> None:  # noqa: ARG001
             client = run_sync(container.get(Minio))

@@ -4,7 +4,7 @@ import pytest_asyncio
 from dishka import AsyncContainer
 from verbose_http_exceptions import UnauthorizedHTTPException
 
-from entrypoints.auth.handlers import validate_payload_dict, AuthHandler
+from entrypoints.admin.auth.handlers import validate_payload_dict, AuthHandler
 
 
 class TestValidatePayloadDict:

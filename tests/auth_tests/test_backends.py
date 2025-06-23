@@ -4,12 +4,12 @@ import pytest_asyncio
 
 from core.users.exceptions import UserNotFoundError
 from core.users.schemas import User, RoleEnum
-from entrypoints.auth.backends import (
+from entrypoints.admin.auth.backends import (
     BaseAuthenticationBackend,
     AdminAuthenticationBackend,
     UserAuthenticationBackend,
 )
-from entrypoints.auth.schemas import Payload
+from entrypoints.admin.auth.schemas import Payload
 from tests.fixtures import FactoryFixture, ContainerFixture
 
 

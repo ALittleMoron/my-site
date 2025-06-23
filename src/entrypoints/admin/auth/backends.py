@@ -9,9 +9,9 @@ from config.loggers import logger
 from core.users.exceptions import UserNotFoundError
 from core.users.schemas import User
 from db.storages.auth import AuthStorage
-from entrypoints.auth.handlers import AuthHandler
-from entrypoints.auth.schemas import Payload
-from entrypoints.auth.utils import Hasher
+from entrypoints.admin.auth.handlers import AuthHandler
+from entrypoints.admin.auth.schemas import Payload
+from entrypoints.admin.auth.utils import Hasher
 
 if TYPE_CHECKING:
     from dishka import AsyncContainer
