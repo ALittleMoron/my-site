@@ -9,7 +9,7 @@ run:
 
 .PHONY: start_app
 start_app:
-	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
+	PYTHONPATH=src uv run src/main.py
 
 .PHONY: litestar
 litestar:

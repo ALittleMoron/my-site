@@ -22,7 +22,6 @@ from config.settings import settings
 from config.template_callables import register_template_callables
 from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
-from entrypoints.api.routers import api_router
 from ioc.container import container
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
@@ -63,7 +62,11 @@ def create_litestar(
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
-        plugins=[HTMXPlugin(), PydanticPlugin(prefer_alias=True), *(extra_plugins or [])],
+        plugins=[
+            HTMXPlugin(),
+            PydanticPlugin(prefer_alias=True),
+            *(extra_plugins or []),
+        ],
         template_config=TemplateConfig(
             directory=constants.dir.src_path / "templates",
             engine=JinjaTemplateEngine,
@@ -76,10 +79,6 @@ def create_litestar(
             render_plugins=[SwaggerRenderPlugin()],
         ),
     )
-
-
-def create_base_app(lifespan: Lifespan) -> Litestar:
-    return create_litestar([api_router], lifespan=lifespan)
 
 
 def check_certs_exists() -> None:

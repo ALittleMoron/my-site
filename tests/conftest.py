@@ -15,10 +15,11 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
-from config.initializers import create_base_app
+from config.initializers import create_litestar
 from config.settings import settings, Settings
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
 from db.utils import migrate, downgrade
+from entrypoints.api.routers import api_router
 from tests.mocks.auth.providers import MockAuthProvider
 from tests.mocks.competency_matrix.providers import MockCompetencyMatrixProvider
 
@@ -42,7 +43,7 @@ async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, N
 
 @pytest.fixture
 def app(container: AsyncContainer) -> Litestar:
-    app = create_base_app(lifespan=[])
+    app = create_litestar(route_handlers=[api_router], lifespan=[])
     setup_dishka(container=container, app=app)
     return app
 
