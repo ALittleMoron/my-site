@@ -17,6 +17,14 @@
   --hovered-main-component-color-rgb: 34, 197, 94;
 }
 
+.link-active {
+  color: var(--main-component-color) !important;
+}
+
+.link-colored:hover {
+  color: var(--main-component-color) !important;
+}
+
 /*
 TODO: add light theme.
 */
