@@ -17,12 +17,47 @@
   --hovered-main-component-color-rgb: 34, 197, 94;
 }
 
+.button-active {
+    color: var(--main-bg-color) !important;
+    background-color: var(--main-component-color) !important;
+    border-color: var(--hovered-main-component-color) !important;
+    z-index: 1;
+}
+
+.button-active:hover {
+    color: var(--main-text-color) !important;
+    background-color: var(--main-component-color) !important;
+    border-color: var(--hovered-main-component-color) !important;
+    z-index: 1;
+}
+
+.button-inactive {
+    color: var(--main-text-color) !important;
+    background-color: var(--secondary-bg-color) !important;
+    border-color: var(--main-bg-color) !important;
+    z-index: 1;
+}
+
+.button-inactive:hover {
+    color: var(--main-bg-color) !important;
+    background-color: var(--main-component-color) !important;
+    border-color: var(--hovered-main-component-color) !important;
+    z-index: 1;
+}
+
 .link-active {
   color: var(--main-component-color) !important;
 }
 
 .link-colored:hover {
   color: var(--main-component-color) !important;
+}
+
+.form-bordered:focus {
+  background-color: var(--main-bg-color) !important;
+  border-color: var(--secondary-component-color) !important;
+  box-shadow: 1px 1px 0.15em rgba(243, 244, 246) !important;
+  transform: border-color .10s easy-in-out, box-shadow .10s easy-in-out !important;
 }
 
 /*
