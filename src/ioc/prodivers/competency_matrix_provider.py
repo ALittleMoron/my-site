@@ -10,9 +10,14 @@ from core.competency_matrix.use_cases import (
     ListSheetsUseCase,
 )
 from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage, CompetencyMatrixStorage
+from entrypoints.views.competency_matrix.context_converters import CompetencyMatrixContextConverter
 
 
 class CompetencyMatrixProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def provide_context_converter(self) -> CompetencyMatrixContextConverter:
+        return CompetencyMatrixContextConverter()
+
     @provide(scope=Scope.REQUEST)
     async def provide_competency_matrix_storage(
         self,

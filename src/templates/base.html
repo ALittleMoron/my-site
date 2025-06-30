@@ -14,14 +14,10 @@
     <link rel="stylesheet" href="{{ get_static_file_url('styles.css') }}" />
     {% endblock %}
   </head>
-  <body>
-    <div id="root">
-      <div class="min-h-screen flex flex-col">
-        <div id="navbar">{% include 'app/blocks/navbar.html' %}</div>
-        <div id="content">{% block content %}{% endblock %}</div>
-        <div id="footer">{% include 'app/blocks/footer.html' %}</div>
-      </div>
-    </div>
+  <body class="d-flex flex-column min-vh-100">
+        <div id="navbar">{% include 'blocks/navbar.html' %}</div>
+        <div id="content" class="mx-4 my-4">{% block content %}{% endblock %}</div>
+        <div id="footer" class="bg-body-tertiary mt-auto">{% include 'blocks/footer.html' %}</div>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"

@@ -1,4 +1,5 @@
-from litestar import Response, Router, get
+from dishka.integrations.litestar import DishkaRouter
+from litestar import Response, get
 from verbose_http_exceptions import status
 
 
@@ -11,4 +12,4 @@ async def health() -> Response:
     return Response(content="", status_code=status.HTTP_200_OK)
 
 
-api_router = Router("/healthcheck", route_handlers=[health])
+api_router = DishkaRouter("/healthcheck", route_handlers=[health])

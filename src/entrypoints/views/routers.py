@@ -15,5 +15,5 @@ async def homepage_handler() -> Response[Any]:
 views_router = Router(
     "/",
     route_handlers=[homepage_handler, about_me_router, competency_matrix_router],
-    include_in_schema=False,
+    tags=["views"],
 )

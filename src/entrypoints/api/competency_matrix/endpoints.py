@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from dishka import FromDishka
-from dishka.integrations.litestar import inject
-from litestar import Router, get
+from dishka.integrations.litestar import DishkaRouter
+from litestar import get
 from litestar.params import Parameter
 
 from core.competency_matrix.use_cases import (
@@ -21,7 +21,6 @@ from entrypoints.api.competency_matrix.schemas import (
     "/items",
     description="Получение списка вопросов по матрице компетенций.",
 )
-@inject
 async def list_competency_matrix_items_handler(
     sheet_name: Annotated[str, Parameter(query="sheetName")],
     use_case: FromDishka[AbstractListItemsUseCase],
@@ -37,7 +36,6 @@ async def list_competency_matrix_items_handler(
     "/items/{pk:int}",
     description="Получение подробной информации о вопросе из матрицы компетенций.",
 )
-@inject
 async def get_competency_matrix_item_handler(
     pk: int,
     use_case: FromDishka[AbstractGetItemUseCase],
@@ -56,7 +54,6 @@ async def get_competency_matrix_item_handler(
         "чтобы получить вопросы по нужному листу."
     ),
 )
-@inject
 async def list_competency_matrix_sheet_handler(
     use_case: FromDishka[AbstractListSheetsUseCase],
 ) -> CompetencyMatrixSheetsListSchema:
@@ -64,7 +61,7 @@ async def list_competency_matrix_sheet_handler(
     return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
 
 
-api_router = Router(
+api_router = DishkaRouter(
     "/competency-matrix",
     route_handlers=[
         list_competency_matrix_items_handler,

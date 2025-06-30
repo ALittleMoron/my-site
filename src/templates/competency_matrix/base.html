@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Матрица компетенций{% endblock %}
+
+{% block content %}
+    <h2 class="fw-bold">Матрица компетенций</h2>
+    {% include 'competency_matrix/blocks/navbar.html' %}
+    {% block matrix %}{% endblock %}
+    <div class="justify-content-start py-4 my-4 border-top btn-toolbar">
+        <form class="btn-group me-3">
+            <button class="btn btn-success button-active rounded rounded-3">
+                Python
+            </button>
+        </form>
+        <form class="btn-group me-3">
+            <button class="btn btn-success button-inactive rounded rounded-3">
+                Databases
+            </button>
+        </form>
+        <form class="btn-group me-3">
+            <button class="btn btn-success button-inactive rounded rounded-3">
+                JavaScript
+            </button>
+        </form>
+    </div>
+{% endblock %}
