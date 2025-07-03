@@ -4,7 +4,11 @@ from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
 
-@get("")
+@get(
+    "/",
+    description="Отображение раздела Обо мне",
+    name="about-me-handler",
+)
 async def about_me_handler() -> Template:
     return HTMXTemplate(template_name="about_me.html", context={})
 

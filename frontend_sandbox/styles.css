@@ -60,6 +60,10 @@
   transform: border-color .10s easy-in-out, box-shadow .10s easy-in-out !important;
 }
 
+.force-display-block {
+  display: block !important;
+}
+
 /*
 TODO: add light theme.
 */

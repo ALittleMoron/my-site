@@ -40,23 +40,16 @@ SheetName = Annotated[
 ]
 
 
-async def sheet_name_dependency(sheet: SheetName) -> str:
-    return sheet
-
-
-async def competency_matrix_layout_dependency(layout_: Layout) -> CompetencyMatrixLayoutEnum:
-    if layout_ in CompetencyMatrixLayoutEnum:
-        return CompetencyMatrixLayoutEnum(layout_)
-    return CompetencyMatrixLayoutEnum.LIST
-
-
-async def template_name_by_layout_dependency(
-    competency_matrix_layout: CompetencyMatrixLayoutEnum,
-) -> str:
-    match competency_matrix_layout:
+async def template_name_by_layout_dependency(layout: Layout) -> str:
+    _layout = (
+        CompetencyMatrixLayoutEnum(layout)
+        if layout in CompetencyMatrixLayoutEnum
+        else CompetencyMatrixLayoutEnum.LIST
+    )
+    match _layout:
         case CompetencyMatrixLayoutEnum.LIST:
-            return "competency_matrix/list.html"
+            return "competency_matrix/items_list.html"
         case CompetencyMatrixLayoutEnum.GRID:
-            return "competency_matrix/grid.html"
-    msg = f"Not implemented template name for {competency_matrix_layout}"
+            return "competency_matrix/items_grid.html"
+    msg = f"Not implemented template name for {_layout}"
     raise ValueError(msg)

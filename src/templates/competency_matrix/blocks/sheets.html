@@ -1,0 +1,51 @@
+<div class="justify-content-start py-4 my-4 border-top btn-toolbar">
+    {% for item in sheets %}
+        <div class="btn-group me-3">
+            <button
+                    hx-get="/competency-matrix/items?sheetName={{ item }}"
+                    hx-trigger="click"
+                    hx-target="#competency_matrix_elements"
+                    hx-swap="innerHTML"
+                    class="btn btn-success button-active rounded rounded-3">
+                {{ item }}
+            </button>
+        </div>
+    {% else %}
+        <div
+                id="error-modal"
+                class="modal force-display-block"
+                style="background-color: rgba(0, 0, 0, 0.5)"
+        >
+            <div class="modal-dialog">
+                <div class="modal-content" style="z-index: 1066">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Что-то пошло не так</h5>
+                        <button
+                                type="button"
+                                class="btn-close"
+                                aria-label="Close"
+                                onclick="document.getElementById('error-modal').remove()"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            К сожалению, в данный момент на сайте нет ни одного листа с
+                            вопросами.
+                        </p>
+                        <p>
+                            Пожалуйста, зайдите на данную страницу позже или попробуйте
+                            перезагрузить её.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <a
+                                class="btn btn-danger"
+                                href="javascript:window.location.href=window.location.href"
+                        >Перезагрузить</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
