@@ -1,78 +1,119 @@
-<div class="rounded rounded-3 bg-body-tertiary px-2 py-2 my-4">
-    <div class="row my-3 mx-1">
-        <div class="col-3">
-            <form class="" role="search">
-                <div class="input-group">
-                <span class="input-group-text bg-body">
-                  <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="currentColor"
-                          class="bi bi-search"
-                          viewBox="0 0 16 16"
-                  >
-                    <path
-                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"
-                    />
-                  </svg>
-                </span>
-                    <input
-                            id="matrix-competency-search-bar"
-                            type="text"
-                            class="form-control form-bordered"
-                            placeholder="Поиск навыков и вопросов"
-                            aria-label="Search"
-                    />
-                </div>
-            </form>
+<div
+  class="rounded rounded-3 bg-body-tertiary px-2 py-2 my-4"
+  _="
+    on load
+        if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN'
+          set localStorage's chosenLayout to 'list'
+    end
+  "
+>
+  <div class="row my-3 mx-1">
+    <div class="col-3">
+      <form class="" role="search">
+        <div class="input-group">
+          <span class="input-group-text bg-body">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-search"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"
+              />
+            </svg>
+          </span>
+          <input
+            id="matrix-competency-search-bar"
+            type="text"
+            class="form-control form-bordered"
+            placeholder="Поиск навыков и вопросов"
+            aria-label="Search"
+          />
         </div>
-        <div class="col"></div>
-        <div class="col-3 d-flex justify-content-end">
-            <div class="btn-group">
-                <button class="btn btn-success button-active">
-                    <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class=""
-                            style="height: 1.25em"
-                    >
-                        <rect width="7" height="7" x="3" y="3" rx="1"></rect>
-                        <rect width="7" height="7" x="3" y="14" rx="1"></rect>
-                        <path d="M14 4h7"></path>
-                        <path d="M14 9h7"></path>
-                        <path d="M14 15h7"></path>
-                        <path d="M14 20h7"></path>
-                    </svg>
-                </button>
-                <button class="btn btn-success button-inactive">
-                    <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class=""
-                            style="height: 1.25em"
-                    >
-                        <rect width="7" height="7" x="3" y="3" rx="1"></rect>
-                        <rect width="7" height="7" x="14" y="3" rx="1"></rect>
-                        <rect width="7" height="7" x="14" y="14" rx="1"></rect>
-                        <rect width="7" height="7" x="3" y="14" rx="1"></rect>
-                    </svg>
-                </button>
-            </div>
-        </div>
+      </form>
     </div>
+    <div class="col"></div>
+    <div class="col-3 d-flex justify-content-end">
+      <div class="btn-group">
+        <button
+          id="layout-button-list"
+          class="btn btn-success button-active"
+          _="
+            on load
+                if localStorage's chosenLayout is 'list'
+                  add .button-active
+                  remove .button-inactive
+                end
+            end
+            on click remove .button-inactive
+                then add .button-active
+                then remove .button-active .button-inactive from #layout-button-grid
+                then add .button-inactive to #layout-button-grid
+                then set localStorage's chosenLayout to 'list'
+            end
+        "
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class=""
+            style="height: 1.25em"
+          >
+            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+            <path d="M14 4h7"></path>
+            <path d="M14 9h7"></path>
+            <path d="M14 15h7"></path>
+            <path d="M14 20h7"></path>
+          </svg>
+        </button>
+        <button
+          id="layout-button-grid"
+          class="btn btn-success button-inactive"
+          _="
+            on load
+                if localStorage's chosenLayout is 'grid'
+                  add .button-active
+                  remove .button-inactive
+                end
+            end
+            on click remove .button-inactive
+                then add .button-active
+                then remove .button-active .button-inactive from #layout-button-list
+                then add .button-inactive to #layout-button-list
+                then set localStorage's chosenLayout to 'grid'
+         "
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class=""
+            style="height: 1.25em"
+          >
+            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

@@ -77,13 +77,6 @@
       </nav>
     </div>
     <div id="container" class="mx-4 my-4">
-      <!--
-        
-      -->
-
-      <!--
-      
-      -->
       <h2 class="fw-bold">Матрица компетенций</h2>
       <div class="rounded rounded-3 bg-body-tertiary px-2 py-2 my-4">
         <div class="row my-3 mx-1">
@@ -115,9 +108,34 @@
             </form>
           </div>
           <div class="col"></div>
-          <div class="col-3 d-flex justify-content-end">
+          <div
+            class="col-3 d-flex justify-content-end"
+            _="
+                on load
+                    if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN'
+                      set localStorage's chosenLayout to 'list'
+                end
+          "
+          >
             <div class="btn-group">
-              <button class="btn btn-success button-active">
+              <button
+                id="layout-button-list"
+                class="btn btn-success button-inactive"
+                _="
+                    on load
+                        if localStorage's chosenLayout is 'list'
+                          add .button-active
+                          remove .button-inactive
+                        end
+                    end
+                    on click remove .button-inactive
+                        then add .button-active
+                        then remove .button-active .button-inactive from #layout-button-grid
+                        then add .button-inactive to #layout-button-grid
+                        then set localStorage's chosenLayout to 'list'
+                    end
+                "
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -139,7 +157,23 @@
                   <path d="M14 20h7"></path>
                 </svg>
               </button>
-              <button class="btn btn-success button-inactive">
+              <button
+                id="layout-button-grid"
+                class="btn btn-success button-inactive"
+                _="
+                    on load
+                        if localStorage's chosenLayout is 'grid'
+                          add .button-active
+                          remove .button-inactive
+                        end
+                    end
+                    on click remove .button-inactive
+                        then add .button-active
+                        then remove .button-active .button-inactive from #layout-button-list
+                        then add .button-inactive to #layout-button-list
+                        then set localStorage's chosenLayout to 'grid'
+                "
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -225,17 +259,50 @@
       </div>
       <div class="justify-content-start py-4 my-4 border-top btn-toolbar">
         <form class="btn-group me-3">
-          <button class="btn btn-success button-active rounded rounded-3">
+          <button
+            id="sheet-button-1"
+            class="btn btn-success button-active rounded rounded-3"
+            _="
+              on click
+              remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+              then add .button-inactive to <button[id^='sheet-button-']/>
+              then remove .button-inactive
+              then add .button-active
+              then set localStorage's chosenSheetId to me.id
+            "
+          >
             Python
           </button>
         </form>
         <form class="btn-group me-3">
-          <button class="btn btn-success button-inactive rounded rounded-3">
+          <button
+            id="sheet-button-2"
+            class="btn btn-success button-inactive rounded rounded-3"
+            _="
+              on click
+              remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+              then add .button-inactive to <button[id^='sheet-button-']/>
+              then remove .button-inactive
+              then add .button-active
+              then set localStorage's chosenSheetId to me.id
+            "
+          >
             Databases
           </button>
         </form>
         <form class="btn-group me-3">
-          <button class="btn btn-success button-inactive rounded rounded-3">
+          <button
+            id="sheet-button-3"
+            class="btn btn-success button-inactive rounded rounded-3"
+            _="
+              on click
+              remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+              then add .button-inactive to <button[id^='sheet-button-']/>
+              then remove .button-inactive
+              then add .button-active
+              then set localStorage's chosenSheetId to me.id
+            "
+          >
             JavaScript
           </button>
         </form>
