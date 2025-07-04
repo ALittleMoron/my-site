@@ -1,10 +1,8 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
-from dishka.integrations.starlette import setup_dishka as setup_diska_starlette
-from litestar import Litestar, asgi
+from litestar import Litestar
 from litestar.contrib.jinja import JinjaTemplateEngine
-from litestar.handlers.asgi_handlers import ASGIRouteHandler
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
@@ -22,16 +20,13 @@ from config.settings import settings
 from config.template_callables import register_template_callables
 from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
-from ioc.container import container
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
 
 
-def create_admin_asgi_app(engine: AsyncEngine) -> ASGIRouteHandler:
-    starlette_app = Starlette()
+def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
     admin = Admin(
-        app=starlette_app,
-        base_url="/",
+        app=app,
         engine=engine,
         logo_url=settings.get_minio_object_url(
             bucket=constants.minio_buckets.static,
@@ -47,9 +42,7 @@ def create_admin_asgi_app(engine: AsyncEngine) -> ASGIRouteHandler:
     )
     for view in get_admin_views():
         admin.add_view(view=view)
-    setup_diska_starlette(container=container, app=admin.admin)
-    setup_diska_starlette(container=container, app=starlette_app)
-    return asgi("/admin", is_mount=True, copy_scope=True)(starlette_app)
+    return admin
 
 
 def create_litestar(

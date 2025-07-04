@@ -1,14 +1,26 @@
 services:
-  backend:
+  application:
     build:
       context: .
-      dockerfile: docker/backend/Dockerfile
+      dockerfile: docker/backend/application.Dockerfile
     env_file:
       - .env
     depends_on:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/backend/admin.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
         condition: service_healthy
     networks:
       - app-network
@@ -59,7 +71,7 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - backend
+      - application
     networks:
       - app-network
 

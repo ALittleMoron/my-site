@@ -18,8 +18,6 @@ class _AppSettings(BaseSettings):
     debug: bool = True
     secret_key: SecretStr = SecretStr("SECRET_KEY")
     domain: str = "localhost"
-    host: str = "0.0.0.0"  # noqa: S104
-    port: int = 8000
 
 
 class _DatabaseSettings(BaseSettings):
@@ -48,7 +46,14 @@ class _DatabaseSettings(BaseSettings):
     @property
     def url(self) -> SecretStr:
         return SecretStr(
-            f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
+            '{driver}://{user}:{password}@{host}:{port}/{name}'.format(
+                driver=self.driver,
+                user=self.user,
+                password=self.password.get_secret_value(),
+                host=self.host,
+                port=self.port,
+                name=self.name,
+            ),
         )
 
 

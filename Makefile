@@ -9,7 +9,11 @@ run:
 
 .PHONY: start_app
 start_app:
-	PYTHONPATH=src uv run src/main.py
+	PYTHONPATH=src uv run uvicorn src.main:create_app --port 8000 --host 0.0.0.0
+
+.PHONY: start_admin
+start_admin:
+	PYTHONPATH=src uv run uvicorn src.main:create_admin_app --port 8000 --host 0.0.0.0
 
 .PHONY: litestar
 litestar:

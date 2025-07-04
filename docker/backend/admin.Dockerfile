@@ -1,4 +1,3 @@
-# Use Python 3.12 slim image
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -16,4 +15,4 @@ RUN uv sync --frozen
 
 EXPOSE ${APP_PORT}
 
-CMD ["sh", "./docker/backend/start.sh"]
+CMD ["make", "start_admin"]

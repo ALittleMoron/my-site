@@ -8,8 +8,8 @@ from litestar.response import Template
 from core.competency_matrix.use_cases import AbstractListItemsUseCase, AbstractListSheetsUseCase
 from entrypoints.views.competency_matrix.context_converters import CompetencyMatrixContextConverter
 from entrypoints.views.competency_matrix.dependencies import (
-    template_name_by_layout_dependency,
     SheetName,
+    template_name_by_layout_dependency,
 )
 
 
