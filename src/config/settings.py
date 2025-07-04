@@ -46,14 +46,7 @@ class _DatabaseSettings(BaseSettings):
     @property
     def url(self) -> SecretStr:
         return SecretStr(
-            '{driver}://{user}:{password}@{host}:{port}/{name}'.format(
-                driver=self.driver,
-                user=self.user,
-                password=self.password.get_secret_value(),
-                host=self.host,
-                port=self.port,
-                name=self.name,
-            ),
+            f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
         )
 
 

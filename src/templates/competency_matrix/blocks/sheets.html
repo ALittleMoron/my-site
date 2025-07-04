@@ -2,11 +2,20 @@
     {% for item in sheets %}
         <div class="btn-group me-3">
             <button
+                    id="sheet-button-{{ loop.index }}"
+                    class="btn btn-success button-inactive rounded rounded-3"
                     hx-get="/competency-matrix/items?sheetName={{ item }}"
                     hx-trigger="click"
                     hx-target="#competency_matrix_elements"
                     hx-swap="innerHTML"
-                    class="btn btn-success button-active rounded rounded-3">
+                    _="
+                      on htmx:beforeRequest
+                      remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+                      then add .button-inactive to <button[id^='sheet-button-']/>
+                      then remove .button-inactive
+                      then add .button-active
+                      then set localStorage's chosenSheetId to me.id
+                    ">
                 {{ item }}
             </button>
         </div>
@@ -24,7 +33,7 @@
                                 type="button"
                                 class="btn-close"
                                 aria-label="Close"
-                                onclick="document.getElementById('error-modal').remove()"
+                                _="on click remove #error-modal"
                         ></button>
                     </div>
                     <div class="modal-body">
@@ -38,11 +47,11 @@
                         </p>
                     </div>
                     <div class="modal-footer">
-                        <a
+                        <button
                                 class="btn btn-danger"
-                                href="javascript:window.location.href=window.location.href"
-                        >Перезагрузить</a
-                        >
+                                _="on click reload() the location of the window">
+                            Перезагрузить
+                        </button>
                     </div>
                 </div>
             </div>
