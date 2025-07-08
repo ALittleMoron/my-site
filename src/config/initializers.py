@@ -7,6 +7,7 @@ from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
+from litestar.static_files import create_static_files_router
 from litestar.template import TemplateConfig
 from litestar.types import ControllerRouterHandler
 from litestar_htmx import HTMXPlugin
@@ -50,8 +51,16 @@ def create_litestar(
     lifespan: Lifespan,
     extra_plugins: Sequence[PluginProtocol] | None = None,
 ) -> Litestar:
+    route_handlers_list = list(route_handlers)
+    if settings.app.debug:
+        route_handlers_list.append(
+            create_static_files_router(
+                path='/static',
+                directories=[constants.dir.src_path / "static"],
+            ),
+        )
     return Litestar(
-        route_handlers,
+        route_handlers=route_handlers_list,
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,

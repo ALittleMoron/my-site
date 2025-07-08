@@ -15,6 +15,10 @@ start_app:
 start_admin:
 	PYTHONPATH=src uv run uvicorn src.main:create_admin_app --port 8000 --host 0.0.0.0
 
+.PHONY: start_local_app
+start_local_app:
+	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost uv run uvicorn src.main:create_app --port 8000 --host 0.0.0.0 --reload --reload-delay 1
+
 .PHONY: litestar
 litestar:
 	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
