@@ -1,0 +1,18 @@
+{% extends "base/base.html" %} {% block title %}Матрица компетенций{% endblock
+        %} {% block content %}
+    <h2 class="fw-bold">Матрица компетенций</h2>
+    {% include 'competency_matrix/blocks/filters.html' %}
+    <div id="competency_matrix_elements"></div>
+    <div
+            hx-get="/competency-matrix/sheets"
+            hx-trigger="load delay:0.25s"
+            hx-swap="outerHTML"
+            _="
+    on htmx:afterRequest wait 100ms then
+    if no localStorage's chosenSheetId or localStorage's chosenSheetId is 'NaN'
+      set localStorage's chosenSheetId to 'sheet-button-1'
+    else
+      toggle between .button-inactive and .button-active on #{localStorage's chosenSheetId}
+  "
+    ></div>
+{% endblock %}

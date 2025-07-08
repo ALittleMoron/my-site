@@ -40,6 +40,24 @@ async def matrix_elements_handler(
 
 
 @get(
+    "/prices",
+    description="Отображение страницы матрицы компетенций со всеми вопросами",
+    name="competency-matrix-prices-handler",
+)
+async def competency_matrix_prices_handler() -> Template:
+    return HTMXTemplate(template_name="competency_matrix/index_prices.html", context={})
+
+
+@get(
+    "/questions",
+    description="Отображение страницы матрицы компетенций со всеми вопросами",
+    name="competency-matrix-questions-handler",
+)
+async def competency_matrix_questions_handler() -> Template:
+    return HTMXTemplate(template_name="competency_matrix/index_questions.html", context={})
+
+
+@get(
     "",
     description="Отображение домашней страницы матрицы компетенций",
     name="competency-matrix-index-handler",
@@ -50,6 +68,12 @@ async def competency_matrix_handler() -> Template:
 
 router = DishkaRouter(
     "/competency-matrix",
-    route_handlers=[competency_matrix_handler, matrix_elements_handler, sheets_handler],
+    route_handlers=[
+        competency_matrix_handler,
+        competency_matrix_questions_handler,
+        competency_matrix_prices_handler,
+        matrix_elements_handler,
+        sheets_handler,
+    ],
     dependencies={"template_name": Provide(template_name_by_layout_dependency)},
 )
