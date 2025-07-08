@@ -1,60 +1,63 @@
 <div class="justify-content-start py-4 my-4 border-top btn-toolbar">
-    {% for item in sheets %}
-        <div class="btn-group me-3">
-            <button
-                    id="sheet-button-{{ loop.index }}"
-                    class="btn btn-success button-inactive rounded rounded-3"
-                    hx-get="/competency-matrix/items?sheetName={{ item }}"
-                    hx-trigger="click"
-                    hx-target="#competency_matrix_elements"
-                    hx-swap="innerHTML"
-                    _="
-                      on htmx:beforeRequest
-                      remove .button-active .button-inactive from <button[id^='sheet-button-']/>
-                      then add .button-inactive to <button[id^='sheet-button-']/>
-                      then remove .button-inactive
-                      then add .button-active
-                      then set localStorage's chosenSheetId to me.id
-                    ">
-                {{ item }}
-            </button>
+  {% for item in sheets %}
+  <div class="btn-group me-3">
+    <button
+      id="sheet-button-{{ loop.index }}"
+      class="btn btn-success button-inactive rounded rounded-3"
+      hx-get="/competency-matrix/items"
+      hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list'}"
+      hx-trigger="click"
+      hx-target="#competency_matrix_elements"
+      hx-swap="innerHTML"
+      _="
+          on htmx:beforeRequest
+          remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+          then add .button-inactive to <button[id^='sheet-button-']/>
+          then remove .button-inactive
+          then add .button-active
+          then set localStorage's chosenSheetId to me.id
+      "
+    >
+      {{ item }}
+    </button>
+  </div>
+  {% else %}
+  <div
+    id="error-modal"
+    class="modal force-display-block"
+    style="background-color: rgba(0, 0, 0, 0.5)"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content" style="z-index: 1066">
+        <div class="modal-header">
+          <h5 class="modal-title">Что-то пошло не так</h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            _="on click remove #error-modal"
+          ></button>
         </div>
-    {% else %}
-        <div
-                id="error-modal"
-                class="modal force-display-block"
-                style="background-color: rgba(0, 0, 0, 0.5)"
-        >
-            <div class="modal-dialog">
-                <div class="modal-content" style="z-index: 1066">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Что-то пошло не так</h5>
-                        <button
-                                type="button"
-                                class="btn-close"
-                                aria-label="Close"
-                                _="on click remove #error-modal"
-                        ></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>
-                            К сожалению, в данный момент на сайте нет ни одного листа с
-                            вопросами.
-                        </p>
-                        <p>
-                            Пожалуйста, зайдите на данную страницу позже или попробуйте
-                            перезагрузить её.
-                        </p>
-                    </div>
-                    <div class="modal-footer">
-                        <button
-                                class="btn btn-danger"
-                                _="on click reload() the location of the window">
-                            Перезагрузить
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div class="modal-body">
+          <p>
+            К сожалению, в данный момент на сайте нет ни одного листа с
+            вопросами.
+          </p>
+          <p>
+            Пожалуйста, зайдите на данную страницу позже или попробуйте
+            перезагрузить её.
+          </p>
         </div>
-    {% endfor %}
+        <div class="modal-footer">
+          <button
+            class="btn btn-danger"
+            _="on click reload() the location of the window"
+          >
+            Перезагрузить
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>

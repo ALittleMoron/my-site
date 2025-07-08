@@ -4,6 +4,7 @@ from litestar import Router, get
 from litestar.response import Redirect, Response
 
 from entrypoints.views.about_me.views import router as about_me_router
+from entrypoints.views.blog.views import router as blog_router
 from entrypoints.views.competency_matrix.views import router as competency_matrix_router
 
 
@@ -14,6 +15,6 @@ async def homepage_handler() -> Response[Any]:
 
 views_router = Router(
     "/",
-    route_handlers=[homepage_handler, about_me_router, competency_matrix_router],
+    route_handlers=[homepage_handler, about_me_router, competency_matrix_router, blog_router],
     tags=["views"],
 )
