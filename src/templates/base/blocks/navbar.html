@@ -6,6 +6,14 @@
         <a
           class="nav-link link-colored"
           href="{{ url_for('about-me-index-handler') }}"
+          _="
+              on load
+                  if the window's location's pathname is '{{ url_for('about-me-index-handler') }}'
+                    add .link-active
+                    remove .link-colored
+                  end
+              end
+          "
           ><svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -27,6 +35,14 @@
         <a
           class="nav-link link-colored"
           href="{{ url_for('blog-index-handler') }}"
+          _="
+              on load
+                  if the window's location's pathname is '{{ url_for('blog-index-handler') }}'
+                    add .link-active
+                    remove .link-colored
+                  end
+              end
+          "
           ><svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -50,6 +66,14 @@
         <a
           class="nav-link link-colored"
           href="{{ url_for('competency-matrix-index-handler') }}"
+          _="
+              on load
+                  if the window's location's pathname is '{{ url_for('competency-matrix-index-handler') }}'
+                    add .link-active
+                    remove .link-colored
+                  end
+              end
+          "
           ><svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"

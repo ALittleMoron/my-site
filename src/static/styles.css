@@ -49,6 +49,10 @@
   color: var(--main-component-color) !important;
 }
 
+.link-active:hover {
+  color: var(--hovered-main-component-color) !important;
+}
+
 .link-colored:hover {
   color: var(--main-component-color) !important;
 }

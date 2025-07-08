@@ -15,42 +15,18 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div
-      id="error-modal"
-      class="modal force-display-block"
-      style="background-color: rgba(0, 0, 0, 0.5)"
+    <button
+      class="button-inactive"
+      _="
+      on load
+          if the window's location's pathname is '/hyperscript.html'
+            add .button-active
+            remove .button-inactive
+          end
+      end
+    "
     >
-      <div class="modal-dialog">
-        <div class="modal-content" style="z-index: 1066">
-          <div class="modal-header">
-            <h5 class="modal-title">Что-то пошло не так</h5>
-            <button
-              type="button"
-              class="btn-close"
-              aria-label="Close"
-              _="on click remove #error-modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <p>
-              К сожалению, в данный момент на сайте нет ни одного листа с
-              вопросами.
-            </p>
-            <p>
-              Пожалуйста, зайдите на данную страницу позже или попробуйте
-              перезагрузить её.
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button
-              class="btn btn-danger"
-              _="on click reload() the location of the window"
-            >
-              Перезагрузить
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      aboba
+    </button>
   </body>
 </html>
