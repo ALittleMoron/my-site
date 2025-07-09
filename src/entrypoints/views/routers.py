@@ -8,13 +8,13 @@ from entrypoints.views.blog.views import router as blog_router
 from entrypoints.views.competency_matrix.views import router as competency_matrix_router
 
 
-@get("")
+@get("/")
 async def homepage_handler() -> Response[Any]:
     return Redirect(path="/about-me/")
 
 
 views_router = Router(
-    "/",
+    "",
     route_handlers=[homepage_handler, about_me_router, competency_matrix_router, blog_router],
-    tags=["views"],
+    tags=["views (Server Side Rendering endpoints)"],
 )
