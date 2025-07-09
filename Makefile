@@ -17,7 +17,7 @@ start_admin:
 
 .PHONY: start_local_app
 start_local_app:
-	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost uv run uvicorn src.main:create_app --port 8000 --host 0.0.0.0 --reload --reload-delay 1
+	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost uv run src/main.py
 
 .PHONY: litestar
 litestar:

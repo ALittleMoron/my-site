@@ -1,0 +1,12 @@
+{% extends "base/blocks/error_modal.html" %}
+
+{% block modal_block %}
+    <p>К сожалению, в данный момент на сайте нет ни одного вопроса к листу {{ sheet }}.</p>
+    <p>Пожалуйста, зайдите на данную страницу позже или попробуйте перезагрузить её.</p>
+{% endblock %}
+
+{% block modal_footer %}
+    <button class="btn btn-danger" _="on click reload() the location of the window">
+        Перезагрузить
+    </button>
+{% endblock %}

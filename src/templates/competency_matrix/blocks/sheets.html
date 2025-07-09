@@ -4,7 +4,7 @@
     <button
       id="sheet-button-{{ loop.index }}"
       class="btn btn-success button-inactive rounded rounded-3"
-      hx-get="/competency-matrix/items"
+      hx-get="{{ url_for('competency-matrix-items-list-handler') }}"
       hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list'}"
       hx-trigger="click"
       hx-target="#competency_matrix_elements"
@@ -22,42 +22,6 @@
     </button>
   </div>
   {% else %}
-  <div
-    id="error-modal"
-    class="modal force-display-block"
-    style="background-color: rgba(0, 0, 0, 0.5)"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content" style="z-index: 1066">
-        <div class="modal-header">
-          <h5 class="modal-title">Что-то пошло не так</h5>
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            _="on click remove #error-modal"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <p>
-            К сожалению, в данный момент на сайте нет ни одного листа с
-            вопросами.
-          </p>
-          <p>
-            Пожалуйста, зайдите на данную страницу позже или попробуйте
-            перезагрузить её.
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button
-            class="btn btn-danger"
-            _="on click reload() the location of the window"
-          >
-            Перезагрузить
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+      {% include 'competency_matrix/blocks/error_modal_no_sheets.html' %}
   {% endfor %}
 </div>

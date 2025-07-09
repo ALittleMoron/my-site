@@ -1,0 +1,33 @@
+<div
+  id="item-detail-{{item_id}}"
+  class="modal force-display-block"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="z-index: 1066">
+      <div class="modal-header">
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          _="on click remove #item-detail-{{item_id}}"
+        ></button>
+      </div>
+      <div class="modal-body">
+          <h5>Вопрос:</h5>
+          <p>{{ question }}</p>
+          <h5>Ответ:</h5>
+          <p>{{ answer }}</p>
+          <h5>Ответ, который ожидается на собеседовании:</h5>
+          <p>{{ interview_expected_answer }}</p>
+      </div>
+      {% if resources %}
+      <div class="modal-footer">
+          {% for resource in resources %}
+          	{{ resource }}
+          {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

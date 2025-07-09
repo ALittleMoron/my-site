@@ -1,0 +1,25 @@
+<div
+  id="error-modal"
+  class="modal force-display-block"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog">
+    <div class="modal-content" style="z-index: 1066">
+      < class="modal-header">
+        <h5 class="modal-title">{% block modal_title %}Что-то пошло не так{% endblock %}</h5>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          _="on click remove #error-modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+          {% block modal_body %}{% endblock %}
+      </div>
+      <div class="modal-footer">
+          {% block modal_footer %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</div>

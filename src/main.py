@@ -48,4 +48,10 @@ def create_app() -> Litestar:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app=create_app(), host="localhost", port=8000, access_log=False)
+    uvicorn.run(
+        app="__main__:create_app",
+        host="localhost",
+        port=8000,
+        access_log=False,
+        reload=True,
+    )
