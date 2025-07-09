@@ -14,18 +14,29 @@
         ></button>
       </div>
       <div class="modal-body">
-          <h5>Вопрос:</h5>
-          <p>{{ question }}</p>
-          <h5>Ответ:</h5>
-          <p>{{ answer }}</p>
-          <h5>Ответ, который ожидается на собеседовании:</h5>
-          <p>{{ interview_expected_answer }}</p>
+        <h5>Вопрос:</h5>
+        <p>{{ question }}</p>
+        <h5>Ответ:</h5>
+        <p>{{ answer }}</p>
+        <h5>Ответ, который ожидается на собеседовании:</h5>
+        <p>{{ interview_expected_answer }}</p>
       </div>
       {% if resources %}
       <div class="modal-footer">
+        <ul class="list-unstyled">
           {% for resource in resources %}
-          	{{ resource }}
+          <li class="mt-2">
+            <span>
+              <a
+                class="p-0 text-body-secondary link-active"
+                href="{{ resource.url }}"
+                >{{ resource.name }}</a
+              >
+              - {{ resource.context }}
+            </span>
+          </li>
           {% endfor %}
+        </ul>
       </div>
       {% endif %}
     </div>

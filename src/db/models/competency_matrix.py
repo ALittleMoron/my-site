@@ -10,13 +10,24 @@ from db.models.abc import PublishModel
 from db.models.base import Base
 
 
-class ExternalResourceModel(Base, IntegerIDMixin):
-    """Внешний ресурс"""
+class ResourceToItemSecondaryModel(Base, IntegerIDMixin):
+    """Связь M2M внешнего ресурса к элементу матрицы компетенций."""
 
     item_id: Mapped[int] = mapped_column(
         ForeignKey("competency_matrix_items.id", ondelete="CASCADE"),
         doc="Идентификатор элемента матрицы компетенций",
     )
+    resource_id: Mapped[int] = mapped_column(
+        ForeignKey("competency_matrix_resources.id", ondelete="CASCADE"),
+        doc="Идентификатор внешнего ресурса",
+    )
+
+    __tablename__ = "resource_to_item_secondary"
+
+
+class ExternalResourceModel(Base, IntegerIDMixin):
+    """Внешний ресурс"""
+
     name: Mapped[str] = mapped_column(
         String(length=255),
         doc="Название ресурса",
@@ -28,11 +39,6 @@ class ExternalResourceModel(Base, IntegerIDMixin):
     context: Mapped[str] = mapped_column(
         String(),
         doc="Контекст того, почему ресурс вообще был прикреплен к вопросу.",
-    )
-
-    item: Mapped["CompetencyMatrixItemModel"] = relationship(
-        foreign_keys=[item_id],
-        back_populates="resources",
     )
 
     __tablename__ = "competency_matrix_resources"
@@ -93,7 +99,7 @@ class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
 
     resources: Mapped[list[ExternalResourceModel]] = relationship(
         doc="Внешние ресурсы",
-        back_populates="item",
+        secondary="resource_to_item_secondary",
     )
 
     __tablename__ = "competency_matrix_items"
