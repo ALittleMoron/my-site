@@ -9,7 +9,6 @@
 >
   <div class="row my-3 mx-1">
     <div class="col-3">
-      <form class="" role="search">
         <div class="input-group">
           <span class="input-group-text bg-body">
             <svg
@@ -31,9 +30,20 @@
             class="form-control form-bordered"
             placeholder="Поиск навыков и вопросов"
             aria-label="Search"
+            _="
+              on input show <article/> in #competency_matrix_elements
+              when its textContent.toLowerCase() contains my value.toLowerCase()
+            "
           />
+          <button
+            class="btn btn-sm btn-success button-active"
+            _="
+              on click set #matrix-competency-search-bar.value to ''
+              trigger input on #matrix-competency-search-bar
+            ">
+              Очистить
+          </button>
         </div>
-      </form>
     </div>
     <div class="col"></div>
     <div class="col-3 d-flex justify-content-end">
