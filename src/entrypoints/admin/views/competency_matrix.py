@@ -85,7 +85,14 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         },
     }
 
-    column_formatters = {}
+    column_formatters = {
+        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,
+        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,
+    }
+    column_formatters_detail = {
+        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,
+        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,
+    }
     column_labels = {
         CompetencyMatrixItemModel.id: "Идентификатор",
         CompetencyMatrixItemModel.sheet: "Лист",
@@ -96,6 +103,7 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
         CompetencyMatrixItemModel.answer: "Ответ",
         CompetencyMatrixItemModel.interview_expected_answer: "Ожидаемый ответ на собеседовании",
         CompetencyMatrixItemModel.resources: "Внешние ресурсы",
+        CompetencyMatrixItemModel.status: "Статус",
     }
     column_searchable_list = [
         CompetencyMatrixItemModel.question,

@@ -1,10 +1,10 @@
 from typing import Self
 
-from sqlalchemy import ForeignKey, Index, String, func
+from sqlalchemy import ForeignKey, Index, String, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 
-from core.competency_matrix.enums import StatusEnum
+from core.competency_matrix.enums import StatusEnum, GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from db.models.abc import PublishModel
 from db.models.base import Base
@@ -92,8 +92,8 @@ class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
         String(length=255),
         doc="Подраздел",
     )
-    grade: Mapped[str] = mapped_column(
-        String(length=255),
+    grade: Mapped[GradeEnum] = mapped_column(
+        Enum(GradeEnum, native_enum=False, length=11),
         doc="Уровень компетенции",
     )
 
