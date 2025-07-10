@@ -53,5 +53,6 @@ if __name__ == "__main__":
         host="localhost",
         port=8000,
         access_log=False,
+        log_config=None,
         reload=True,
     )

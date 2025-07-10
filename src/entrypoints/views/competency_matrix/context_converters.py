@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from itertools import groupby
 from typing import Any
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItems, Sheets, CompetencyMatrixItem
 
 
@@ -39,35 +40,26 @@ class CompetencyMatrixContextConverter:
         sheet: str,
         items: CompetencyMatrixItems,
     ) -> dict[str, Any]:
-        return {
-            "sheet": sheet,
-            "sections": [
-                {
-                    "section": section,
-                    "subsections": [
-                        {
-                            "subsection": subsection,
-                            "grades": [
-                                {
-                                    "grade": grade,
-                                    "items": [
-                                        {"id": item.id, "question": item.question}
-                                        for item in grade_items
-                                    ],
-                                }
-                                # FIXME: add grade enum + make sure all grades will be in dict
-                                for grade, grade_items in groupby(
-                                    subsection_items,
-                                    key=lambda item: item.grade,
-                                )
-                            ],
-                        }
-                        for subsection, subsection_items in groupby(
-                            section_items,
-                            key=lambda item: item.subsection,
-                        )
-                    ],
-                }
-                for section, section_items in groupby(items, key=lambda item: item.section)
-            ],
-        }
+        result_dict = {"sheet": sheet}
+        sections = []
+        for section, section_items in groupby(items, key=lambda item: item.section):
+            subsections = []
+            for subsection, subsection_items in groupby(
+                section_items,
+                key=lambda item: item.subsection,
+            ):
+                grades_list = list(subsection_items)
+                grades_dict = [
+                    {
+                        "grade": grade.value,
+                        "items": [
+                            {"id": item.id, "question": item.question}
+                            for item in filter(lambda item: item.grade == grade, grades_list)
+                        ],
+                    }
+                    for grade in GradeEnum
+                ]
+                subsections.append({"subsection": subsection, "grades": grades_dict})
+            sections.append({"section": section, "subsections": subsections})
+        result_dict["sections"] = sections
+        return result_dict
