@@ -17,6 +17,10 @@
   --hovered-main-component-color-rgb: 34, 197, 94;
 }
 
+.text-main {
+  color: var(--hovered-main-component-color) !important;
+}
+
 .button-active {
   color: var(--main-bg-color) !important;
   background-color: var(--main-component-color) !important;
