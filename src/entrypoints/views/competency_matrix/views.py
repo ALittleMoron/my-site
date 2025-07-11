@@ -48,7 +48,7 @@ async def matrix_elements_handler(
     items = await use_case.execute(sheet_name=sheet)
     return HTMXTemplate(
         template_name=template_name,
-        context=context_converter.from_competency_matrix_items(sheet=sheet, items=items),
+        context=context_converter.context_from_competency_matrix_items(sheet=sheet, items=items),
     )
 
 
@@ -70,7 +70,7 @@ async def get_competency_matrix_item_detail_handler(
         )
     return HTMXTemplate(
         template_name="competency_matrix/blocks/item_detail.html",
-        context=context_converter.from_competency_matrix_item(item=item),
+        context=context_converter.context_from_competency_matrix_item(item=item),
     )
 
 

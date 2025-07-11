@@ -47,9 +47,8 @@ class ExternalResourceModel(Base, IntegerIDMixin):
         return f'Внешний ресурс "{self.name}"'
 
     @classmethod
-    def from_domain_schema(cls, item_id: int, schema: ExternalResource) -> Self:
+    def from_domain_schema(cls, schema: ExternalResource) -> Self:
         return cls(
-            item_id=item_id,
             id=schema.id,
             name=schema.name,
             url=schema.url,
@@ -126,7 +125,7 @@ class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
             subsection=item.subsection,
             grade=item.grade,
             resources=[
-                ExternalResourceModel.from_domain_schema(item_id=item.id, schema=resource)
+                ExternalResourceModel.from_domain_schema(schema=resource)
                 for resource in item.resources
             ],
         )

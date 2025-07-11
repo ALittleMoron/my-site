@@ -10,12 +10,12 @@
       hx-target="#competency_matrix_elements"
       hx-swap="innerHTML"
       _="
-          on htmx:beforeRequest
-          remove .button-active .button-inactive from <button[id^='sheet-button-']/>
-          then add .button-inactive to <button[id^='sheet-button-']/>
-          then remove .button-inactive
-          then add .button-active
-          then set localStorage's chosenSheetId to me.id
+          on click
+              remove .button-active .button-inactive from <button[id^='sheet-button-']/>
+              then add .button-inactive to <button[id^='sheet-button-']/>
+              then remove .button-inactive
+              then add .button-active
+              then set localStorage's chosenSheetId to me.id
       "
     >
       {{ item }}

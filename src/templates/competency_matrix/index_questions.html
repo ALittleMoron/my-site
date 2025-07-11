@@ -8,11 +8,15 @@
             hx-trigger="load delay:0.25s"
             hx-swap="outerHTML"
             _="
-    on htmx:afterRequest wait 100ms then
-    if no localStorage's chosenSheetId or localStorage's chosenSheetId is 'NaN'
-      set localStorage's chosenSheetId to 'sheet-button-1'
-    else
-      toggle between .button-inactive and .button-active on #{localStorage's chosenSheetId}
-  "
+                on htmx:afterRequest wait 100ms then
+                    if no localStorage's chosenSheetId or localStorage's chosenSheetId is 'NaN'
+                      set localStorage's chosenSheetId to 'sheet-button-1'
+
+                    else
+                      toggle between .button-inactive and .button-active on #{localStorage's chosenSheetId}
+                    end
+                    get #{localStorage's chosenSheetId} then trigger click on it
+                end
+            "
     ></div>
 {% endblock %}

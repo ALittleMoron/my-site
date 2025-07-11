@@ -55,7 +55,7 @@ def create_litestar(
     if settings.app.debug:
         route_handlers_list.append(
             create_static_files_router(
-                path='/static',
+                path="/static",
                 directories=[constants.dir.src_path / "static"],
             ),
         )

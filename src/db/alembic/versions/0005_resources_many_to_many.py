@@ -37,7 +37,19 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.add_column(
         "competency_matrix_resources",
-        sa.Column("item_id", sa.BIGINT(), autoincrement=False, nullable=False),
+        sa.Column(
+            "item_id",
+            sa.BIGINT(),
+            autoincrement=False,
+            nullable=False,
+            server_default="0",
+        ),
+    )
+    op.execute("DELETE FROM competency_matrix_resources WHERE item_id = 0")
+    op.alter_column(
+        "competency_matrix_resources",
+        "item_id",
+        server_default=None,
     )
     op.create_foreign_key(
         op.f("fk_competency_matrix_resources_item_id"),

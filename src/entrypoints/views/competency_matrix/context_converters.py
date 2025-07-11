@@ -11,7 +11,7 @@ class CompetencyMatrixContextConverter:
     def from_competency_matrix_sheets(self, sheets: Sheets) -> dict[str, Any]:
         return {"sheets": sheets.values}
 
-    def from_competency_matrix_item(
+    def context_from_competency_matrix_item(
         self,
         item: CompetencyMatrixItem,
     ) -> dict[str, Any]:
@@ -35,12 +35,12 @@ class CompetencyMatrixContextConverter:
             ],
         }
 
-    def from_competency_matrix_items(
+    def context_from_competency_matrix_items(
         self,
         sheet: str,
         items: CompetencyMatrixItems,
     ) -> dict[str, Any]:
-        result_dict = {"sheet": sheet}
+        result_dict: dict[str, Any] = {"sheet": sheet}
         sections = []
         for section, section_items in groupby(items, key=lambda item: item.section):
             subsections = []

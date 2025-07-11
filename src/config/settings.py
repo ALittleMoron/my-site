@@ -89,7 +89,7 @@ class Settings:
     def minio_url(self) -> str:
         is_local_domain = self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104
         schema = "http" if is_local_domain else "https"
-        postfix = ":8000" if self.app.debug else ""
+        postfix = ":8000" if self.app.debug and is_local_domain else ""
         return f"{schema}://{self.app.domain}{postfix}"
 
     def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
