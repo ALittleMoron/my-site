@@ -75,18 +75,9 @@ async def get_competency_matrix_item_detail_handler(
 
 
 @get(
-    "/questions",
-    description="Отображение страницы матрицы компетенций со всеми вопросами",
-    name="competency-matrix-questions-handler",
-)
-async def competency_matrix_questions_handler() -> Template:
-    return HTMXTemplate(template_name="competency_matrix/index_questions.html", context={})
-
-
-@get(
     "",
     description="Отображение домашней страницы матрицы компетенций",
-    name="competency-matrix-index-handler",
+    name="competency-matrix-questions-handler",
 )
 async def competency_matrix_handler() -> Template:
     return HTMXTemplate(template_name="competency_matrix/index.html", context={})
@@ -96,7 +87,6 @@ router = DishkaRouter(
     "/competency-matrix",
     route_handlers=[
         competency_matrix_handler,
-        competency_matrix_questions_handler,
         matrix_elements_handler,
         get_competency_matrix_item_detail_handler,
         sheets_handler,

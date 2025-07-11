@@ -62,20 +62,16 @@
           ><span>Блог</span></a
         >
       </li>
-      <li class="nav-item mx-3 dropdown">
+      <li class="nav-item mx-3">
         <a
-          class="nav-link link-colored dropdown-toggle"
-          href="#"
+          class="nav-link link-colored"
+          href="{{ url_for('competency-matrix-questions-handler') }}"
           _="
               on load
-                  if the window's location's pathname is '{{ url_for('competency-matrix-index-handler') }}'
-                  or the window's location's pathname is '{{ url_for('competency-matrix-questions-handler') }}'
+                  if the window's location's pathname is '{{ url_for('competency-matrix-questions-handler') }}'
                     add .link-active
                     remove .link-colored
                   end
-              end
-              on click
-                  toggle .show on #mentorship-dropdown
               end
           "
           ><svg
@@ -92,63 +88,8 @@
             <path
               d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"
             /></svg
-          ><span>Менторство</span></a
+          ><span>Матрица компетенций</span></a
         >
-        <ul id="mentorship-dropdown" class="dropdown-menu">
-          <li class="nav-item mx-1">
-            <a
-              href="{{ url_for('competency-matrix-index-handler') }}"
-              class="dropdown-item link-colored"
-              _="
-                  on load
-                      if the window's location's pathname is '{{ url_for('competency-matrix-index-handler') }}'
-                        add .link-active
-                        remove .link-colored
-                      end
-                  end
-              "
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                fill="currentColor"
-                class="bi bi-info-square-fill me-2"
-                viewBox="0 0 16 16"
-              >
-                <path
-                  d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm8.93 4.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2"
-                />
-              </svg><small>О разделе</small>
-            </a>
-          </li>
-          <li class="nav-item mx-1">
-            <a
-              class="dropdown-item link-colored"
-              href="{{ url_for('competency-matrix-questions-handler') }}"
-              _="
-                  on load
-                      if the window's location's pathname is '{{ url_for('competency-matrix-questions-handler') }}'
-                        add .link-active
-                        remove .link-colored
-                      end
-                  end
-              "
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                fill="currentColor"
-                class="bi bi-table me-2"
-                viewBox="0 0 16 16"
-              >
-                <path
-                  d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z"
-                /></svg
-              ><snan>Вопросы</snan></a
-            >
-          </li>
-        </ul>
       </li>
     </ul>
   </div>

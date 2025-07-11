@@ -1,7 +1,10 @@
-{% extends "base/base.html" %}
-
-{% block title %}Обо мне{% endblock %}
-
-{% block content %}
-    <h1 class="text-danger text-center">WIP</h1>
+{% extends "base/base.html" %} {% block title %}Обо мне{% endblock %} {%block content %}
+<main>
+    {% include 'about_me/blocks/section_personal_abstracts.html' %}
+    {% include 'about_me/blocks/section_mentoring_intro.html' %}
+    {% include 'about_me/blocks/section_my_experience.html' %}
+    {% include 'about_me/blocks/section_competency_matrix.html' %}
+    {% include 'about_me/blocks/section_mentoring_prices.html' %}
+    {% include 'about_me/blocks/section_contact_me.html' %}
+</main>
 {% endblock %}
