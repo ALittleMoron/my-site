@@ -17,6 +17,14 @@
   --hovered-main-component-color-rgb: 34, 197, 94;
 }
 
+.accent-border {
+  border-color: var(--main-component-color) !important;
+}
+
+.text-accent {
+  color: var(--main-component-color) !important;
+}
+
 .text-main {
   color: var(--hovered-main-component-color) !important;
 }
