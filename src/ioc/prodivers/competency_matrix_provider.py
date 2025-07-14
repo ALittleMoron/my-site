@@ -1,6 +1,7 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
@@ -9,7 +10,7 @@ from core.competency_matrix.use_cases import (
     ListItemsUseCase,
     ListSheetsUseCase,
 )
-from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage, CompetencyMatrixStorage
+from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from entrypoints.views.competency_matrix.context_converters import CompetencyMatrixContextConverter
 
 

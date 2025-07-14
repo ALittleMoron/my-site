@@ -4,8 +4,8 @@ import pytest
 
 from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import GetItemUseCase
-from db.storages.competency_matrix import CompetencyMatrixStorage
 from tests.fixtures import FactoryFixture
 
 

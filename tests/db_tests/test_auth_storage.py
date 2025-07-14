@@ -12,7 +12,7 @@ class TestAuthStorage(FactoryFixture, StorageFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = AuthDatabaseStorage(session=session)
-        await self.db.create_users(
+        await self.storage_helper.create_users(
             users=[
                 self.factory.core.user(
                     username="user1",

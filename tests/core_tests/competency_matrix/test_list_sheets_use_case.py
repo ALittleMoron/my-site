@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import ListSheetsUseCase
-from db.storages.competency_matrix import CompetencyMatrixStorage
 from tests.fixtures import FactoryFixture
 
 

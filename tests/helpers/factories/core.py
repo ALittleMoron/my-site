@@ -1,3 +1,5 @@
+import uuid
+
 from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -6,6 +8,7 @@ from core.competency_matrix.schemas import (
     Sheets,
     CompetencyMatrixItems,
 )
+from core.contacts.schemas import ContactMe
 from core.schemas import Secret
 from core.users.schemas import User, RoleEnum
 
@@ -76,3 +79,22 @@ class CoreFactoryHelper:
         values: list[CompetencyMatrixItem] | None = None,
     ) -> CompetencyMatrixItems:
         return CompetencyMatrixItems(values=values or [])
+
+    @classmethod
+    def contact_me(
+        cls,
+        contact_me_id: uuid.UUID | None = None,
+        user_ip: str = "127.0.0.1",
+        name: str | None = None,
+        email: str | None = None,
+        telegram: str | None = None,
+        message: str = "Message",
+    ) -> ContactMe:
+        return ContactMe(
+            id=contact_me_id or uuid.uuid4(),
+            user_ip=user_ip,
+            name=name,
+            email=email,
+            telegram=telegram,
+            message=message,
+        )

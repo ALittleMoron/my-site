@@ -11,7 +11,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = CompetencyMatrixDatabaseStorage(session=session)
-        await self.db.create_competency_matrix_items(
+        await self.storage_helper.create_competency_matrix_items(
             items=[
                 self.factory.core.competency_matrix_item(
                     item_id=1,

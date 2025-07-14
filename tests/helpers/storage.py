@@ -1,15 +1,26 @@
 from dataclasses import dataclass
+from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.schemas import CompetencyMatrixItem
+from core.contacts.exceptions import ContactMePurchaseNotFoundError
+from core.contacts.schemas import ContactMe
 from core.users.schemas import User
-from db.models import CompetencyMatrixItemModel, UserModel
+from db.models import CompetencyMatrixItemModel, UserModel, ContactMeModel
 
 
 @dataclass(kw_only=True)
 class StorageHelper:
     session: AsyncSession
+
+    async def get_contact_me_by_id(self, contact_me_id: UUID) -> ContactMe:
+        query = select(ContactMeModel).where(ContactMeModel.id == contact_me_id)
+        contact_me = await self.session.scalar(query)
+        if contact_me is None:
+            raise ContactMePurchaseNotFoundError
+        return contact_me.to_schema()
 
     async def create_competency_matrix_item(
         self,

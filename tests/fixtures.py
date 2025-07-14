@@ -40,8 +40,8 @@ class ApiFixture:
 
 
 class StorageFixture:
-    db: StorageHelper
+    storage_helper: StorageHelper
 
     @pytest.fixture(autouse=True)
     def _setup_storage(self, session: AsyncSession) -> None:
-        self.db = StorageHelper(session=session)
+        self.storage_helper = StorageHelper(session=session)

@@ -7,8 +7,8 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     Sheets,
 )
+from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.use_cases import UseCase
-from db.storages.competency_matrix import CompetencyMatrixStorage
 
 
 class AbstractListSheetsUseCase(UseCase, ABC):
