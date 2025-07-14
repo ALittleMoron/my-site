@@ -1,20 +1,35 @@
 * {
-  --main-bg-color: rgb(26, 31, 44);
-  --main-bg-color-rgb: 26, 31, 44;
-  --main-component-color: rgb(74, 222, 128);
-  --main-component-color-rgb: 74, 222, 128;
+  --main-bg-color: rgb(19, 23, 32);
+  --main-bg-color-opacity: rgba(19, 23, 32, 0.9);
+  --main-bg-color-rgb: 19, 23, 32;
+  --main-component-color: rgb(22, 162, 73);
+  --main-component-color-rgb: 22, 162, 73;
   --main-text-color: rgb(243, 244, 246);
   --main-text-color-rgb: 243, 244, 246;
-  --main-link-color: rgb(74, 222, 128);
-  --main-link-color-rgb: 74, 222, 128;
+  --main-link-color: rgb(22, 162, 73);
+  --main-link-color-rgb: 22, 162, 73;
 
-  --secondary-bg-color: rgb(45, 55, 72);
-  --secondary-bg-color-rgb: 45, 55, 72;
+  --border-color: rgb(69, 84, 116);
+  --border-color-translucent: rgb(69, 84, 116, 0.15);
+
+  --secondary-bg-color: rgb(23, 27, 36);
+  --secondary-bg-color-rgb: 23, 27, 36;
   --secondary-component-color: rgb(209, 213, 219);
   --secondary-component-color-rgb: 209, 213, 219;
 
-  --hovered-main-component-color: rgb(34, 197, 94);
+  --hovered-main-component-color: rgb(18, 131, 58);
   --hovered-main-component-color-rgb: 34, 197, 94;
+}
+
+.gradient-body {
+  background: #07210f !important;
+  background: linear-gradient(136deg,rgba(7, 33, 15, 1) 0%, rgba(12, 29, 23, 1) 4%, rgba(19, 23, 33, 1) 65%) !important;
+}
+
+.nav-blur {
+  background-color: var(--main-bg-color-opacity) !important;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 .accent-border {
@@ -55,6 +70,14 @@
   background-color: var(--main-component-color) !important;
   border-color: var(--hovered-main-component-color) !important;
   z-index: 1;
+}
+
+.link-inactive {
+  color: var(--main-text-color) !important;
+}
+
+.link-inactive:hover {
+  color: var(--main-component-color) !important;
 }
 
 .link-active {
@@ -135,8 +158,8 @@ TODO: add light theme.
   --bs-code-color: #e685b5;
   --bs-highlight-color: #dee2e6;
   --bs-highlight-bg: #664d03;
-  --bs-border-color: #495057;
-  --bs-border-color-translucent: rgba(255, 255, 255, 0.15);
+  --bs-border-color: var(--border-color);
+  --bs-border-color-translucent: var(--border-color-translucent);
   --bs-form-valid-color: #75b798;
   --bs-form-valid-border-color: #75b798;
   --bs-form-invalid-color: #ea868f;

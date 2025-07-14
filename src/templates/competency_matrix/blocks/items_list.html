@@ -1,7 +1,7 @@
 {% for section_dict in sections %}
 <section
     id="competency-matrix-items-section-{{ loop.index }}"
-    class="rounded rounded-3 bg-body-tertiary px-2 py-2 my-4">
+    class="card rounded rounded-3 px-2 py-2 my-4">
   <div class="my-3 mx-3">
     <h5 class="fw-bold">{{ section_dict.section }}</h5>
     {% for subsection_dict in section_dict.subsections %}
@@ -10,9 +10,9 @@
       {% for grade_dict in subsection_dict.grades %}
       <article class="col">
         <div class="card rounded rounded-3 h-100">
-          <div class="card-header">{{ grade_dict.grade }}</div>
-          <div class="card-body text-secondary my-auto">
-            <ul class="list-group list-group-flush mb-0">
+          <p class="ps-2 pt-2">{{ grade_dict.grade }}</p>
+          <div class="my-auto">
+            <ul class="list-group list-group-flush mb-1 pb-1">
               {% for item in grade_dict['items'] %}
               <li class="list-group-item">
                 <a
