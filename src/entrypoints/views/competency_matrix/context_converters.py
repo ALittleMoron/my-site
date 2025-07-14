@@ -3,7 +3,7 @@ from itertools import groupby
 from typing import Any
 
 from core.competency_matrix.enums import GradeEnum
-from core.competency_matrix.schemas import CompetencyMatrixItems, Sheets, CompetencyMatrixItem
+from core.competency_matrix.schemas import CompetencyMatrixItem, CompetencyMatrixItems, Sheets
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)

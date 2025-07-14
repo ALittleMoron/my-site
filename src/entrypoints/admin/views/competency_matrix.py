@@ -86,12 +86,12 @@ class CompetencyMatrixItemView(ModelViewWithAction, model=CompetencyMatrixItemMo
     }
 
     column_formatters = {
-        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,
-        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,
+        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,  # type: ignore[attr-defined]
     }
     column_formatters_detail = {
-        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,
-        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,
+        CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.status: lambda item, _: item.status.value,  # type: ignore[attr-defined]
     }
     column_labels = {
         CompetencyMatrixItemModel.id: "Идентификатор",
