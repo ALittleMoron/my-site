@@ -21,6 +21,13 @@
   --hovered-main-component-color-rgb: 34, 197, 94;
 }
 
+.alerts-section {
+  margin-top: 5rem;
+  margin-right: 1rem;
+  min-width: 20rem;
+  z-index: 1100;
+}
+
 .gradient-body {
   background: #07210f !important;
   background: linear-gradient(136deg,rgba(7, 33, 15, 1) 0%, rgba(12, 29, 23, 1) 4%, rgba(19, 23, 33, 1) 65%) !important;

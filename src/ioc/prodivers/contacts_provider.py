@@ -7,9 +7,14 @@ from core.contacts.use_cases import (
     CreateContactMeRequestUseCase,
 )
 from db.storages.contacts import ContactMeDatabaseStorage
+from entrypoints.views.contacts.context_converters import ContactsContextConverter
 
 
 class ContactsProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def provide_context_converter(self) -> ContactsContextConverter:
+        return ContactsContextConverter()
+
     @provide(scope=Scope.REQUEST)
     async def provide_contact_me_storage(
         self,

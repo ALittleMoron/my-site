@@ -10,6 +10,7 @@ from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
+from entrypoints.views.contacts.context_converters import ContactsContextConverter
 from entrypoints.views.contacts.schemas import ContactMeRequest
 
 rate_limit: tuple[DurationUnit, int] = ("minute", 1)
@@ -26,18 +27,24 @@ async def contact_me_request(
     request: Request,
     contact_me_id: FromDishka[uuid.UUID],
     data: Annotated[ContactMeRequest, Body()],
+    context_converter: FromDishka[ContactsContextConverter],
     use_case: FromDishka[AbstractCreateContactMeRequestUseCase],
 ) -> Template:
-    flag, message = data.is_valid()
-    if flag is False:
-        return HTMXTemplate()  # TODO: отправлять нотификацию о том, что данные невалидные
     await use_case.execute(
         form=data.to_schema(
             contact_me_id=contact_me_id,
             user_ip=request.client.host if request.client else "0.0.0.0",  # noqa: S104
         ),
     )
-    return HTMXTemplate()  # TODO: отправить нотификацию о том, что запрос успешно прошёл
+    return HTMXTemplate(
+        re_swap="afterbegin",
+        re_target="#alerts",
+        template_name='base/blocks/alert.html',
+        context=context_converter.alert_context(
+            alert_type="success",
+            message='Запрос успешно отправлен',
+        ),
+    )
 
 
 router = DishkaRouter("/contacts", route_handlers=[contact_me_request])

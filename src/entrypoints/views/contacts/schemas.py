@@ -1,7 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Self
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from core.contacts.schemas import ContactMe
 from entrypoints.api.schemas import CamelCaseSchema
@@ -11,6 +11,8 @@ class ContactMeRequest(CamelCaseSchema):
     name: Annotated[
         str | None,
         Field(
+            min_length=1,
+            max_length=255,
             description="Имя пользователя (можно полное по желанию).",
             examples=["Дмитрий Лунев"],
         ),
@@ -18,6 +20,8 @@ class ContactMeRequest(CamelCaseSchema):
     email: Annotated[
         str | None,
         Field(
+            min_length=1,
+            max_length=255,
             description="Адрес электронной почты пользователя.",
             examples=["example@mail.ru"],
         ),
@@ -25,6 +29,8 @@ class ContactMeRequest(CamelCaseSchema):
     telegram: Annotated[
         str | None,
         Field(
+            min_length=2,
+            max_length=256,
             description="Телеграм аккаунт для связи с пользователем",
             examples=["@alittlemoron"],
         ),
@@ -39,29 +45,23 @@ class ContactMeRequest(CamelCaseSchema):
         ),
     ]
 
-    def is_valid(self) -> tuple[Literal[False], str] | tuple[Literal[True], None]:
-        name_min_length, name_max_length = 1, 255
-        email_min_length, email_max_length = 1, 255
-        telegram_min_length, telegram_max_length = 2, 256
+    @field_validator("telegram", mode="after")
+    @classmethod
+    def check_telegram(cls, value: str, _: ValidationInfo) -> str:
+        max_length = 256
+        if value[0] != "@":
+            value = "@" + value
+        if len(value) > max_length:
+            msg = "telegram name too long"
+            raise ValueError(msg)
+        return value
+
+    @model_validator(mode="after")
+    def check_contact_data_filled(self) -> Self:  # noqa: N804
         if all(item is None for item in [self.name, self.email, self.telegram]):
-            return False, "Нужно, чтобы хотя бы 1 поле было заполнено: имя, email или telegram"
-        if self.name is not None and (name_max_length < len(self.name) < name_min_length):
-            return False, "Имя пользователя имеет невалидную длину"
-        if self.email is not None and (email_max_length < len(self.email) < email_min_length):
-            return False, "email пользователя имеет невалидную длину"
-        if self.telegram is not None and (
-            telegram_max_length < len(self.telegram) < telegram_min_length
-        ):
-            return False, "Телеграм пользователя имеет невалидную длину"
-        if self.telegram is not None:
-            if self.telegram[0] != "@":
-                self.telegram = "@" + self.telegram
-            if len(self.telegram) > telegram_max_length:
-                return (
-                    False,
-                    "Телеграм пользователя больше максимального из-за непроставленного знака @",
-                )
-        return True, None
+            msg = "name or email or telegram should be filled"
+            raise ValueError(msg)
+        return self
 
     def to_schema(self, contact_me_id: UUID, user_ip: str) -> ContactMe:
         return ContactMe(

@@ -14,10 +14,12 @@
     />
     <link rel="stylesheet" href="{{ get_static_file_url('styles.css') }}" />
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"></script>
     <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
     {% endblock %}
   </head>
   <body class="gradient-body d-flex flex-column min-vh-100">
+    <div id="alerts" class="alerts-section position-fixed top-0 end-0"></div>
     <div id="navbar">{% include 'base/blocks/navbar.html' %}</div>
     <div id="content" class="mx-4 my-4">{% block content %}{% endblock %}</div>
     <div id="footer" class="mt-auto">{% include 'base/blocks/footer.html' %}</div>
