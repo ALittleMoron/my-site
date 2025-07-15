@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Generator
 from typing import AsyncGenerator
 
@@ -20,8 +21,15 @@ from config.settings import settings, Settings
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
 from db.utils import migrate, downgrade
 from entrypoints.api.routers import api_router
-from tests.mocks.auth.providers import MockAuthProvider
-from tests.mocks.competency_matrix.providers import MockCompetencyMatrixProvider
+from tests.mocks.providers.auth import MockAuthProvider
+from tests.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
+from tests.mocks.providers.contacts import MockContactsProvider
+from tests.mocks.providers.general import MockGeneralProvider
+
+
+@pytest.fixture(scope="session")
+def global_random_uuid() -> uuid.UUID:
+    return uuid.uuid4()
 
 
 @pytest.fixture(scope="session")
@@ -32,9 +40,14 @@ def test_settings() -> Generator[Settings, None, None]:
 
 
 @pytest_asyncio.fixture(loop_scope="session")
-async def container(test_settings: Settings) -> AsyncGenerator[AsyncContainer, None]:
+async def container(
+    test_settings: Settings,
+    global_random_uuid: uuid.UUID,
+) -> AsyncGenerator[AsyncContainer, None]:
     container = make_async_container(
+        MockGeneralProvider(uuid_=global_random_uuid),
         MockCompetencyMatrixProvider(),
+        MockContactsProvider(),
         MockAuthProvider(settings=test_settings),
     )
     yield container

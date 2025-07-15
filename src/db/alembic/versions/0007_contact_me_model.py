@@ -11,7 +11,7 @@ def upgrade() -> None:
     op.create_table(
         "mentoring_contact_me",
         sa.Column("user_ip", sa.String(length=45), nullable=False),
-        sa.Column("name", sa.String(), nullable=True),
+        sa.Column("name", sa.String(length=255), nullable=True),
         sa.Column("email", sa.String(length=255), nullable=True),
         sa.Column("telegram", sa.String(length=256), nullable=True),
         sa.Column("message", sa.String(), nullable=False),

@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from typing import cast
 from unittest.mock import Mock
@@ -9,6 +10,7 @@ from core.competency_matrix.use_cases import (
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
 )
+from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from db.storages.auth import AuthStorage
 from entrypoints.admin.auth.handlers import AuthHandler
 from entrypoints.admin.auth.utils import Hasher
@@ -20,6 +22,13 @@ class IocContainerHelper:
 
     async def get_hasher(self) -> Hasher:
         return await self.container.get(Hasher)
+
+    async def get_random_uuid(self) -> uuid.UUID:
+        return await self.container.get(uuid.UUID)
+
+    async def get_mock_create_contact_me_request_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractCreateContactMeRequestUseCase)
+        return cast(Mock, use_case)
 
     async def get_auth_handler(self) -> AuthHandler:
         return await self.container.get(AuthHandler)

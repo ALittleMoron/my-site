@@ -1,5 +1,5 @@
 from core.exceptions import EntryNotFoundError
 
 
-class ContactMePurchaseNotFoundError(EntryNotFoundError):
-    message = "Contact me purchase not found"
+class ContactMeRequestNotFoundError(EntryNotFoundError):
+    message = "Contact me request not found"

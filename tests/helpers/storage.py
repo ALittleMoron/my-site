@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.schemas import CompetencyMatrixItem
-from core.contacts.exceptions import ContactMePurchaseNotFoundError
+from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
 from core.users.schemas import User
 from db.models import CompetencyMatrixItemModel, UserModel, ContactMeModel
@@ -19,7 +19,7 @@ class StorageHelper:
         query = select(ContactMeModel).where(ContactMeModel.id == contact_me_id)
         contact_me = await self.session.scalar(query)
         if contact_me is None:
-            raise ContactMePurchaseNotFoundError
+            raise ContactMeRequestNotFoundError
         return contact_me.to_schema()
 
     async def create_competency_matrix_item(

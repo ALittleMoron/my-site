@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from dishka import Provider, provide, Scope, BaseScope, Component
+from dishka import Provider, BaseScope, Component, provide, Scope
 from passlib.context import CryptContext
 
 from config.settings import Settings

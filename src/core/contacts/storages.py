@@ -5,5 +5,5 @@ from core.contacts.schemas import ContactMe
 
 class ContactMeStorage(ABC):
     @abstractmethod
-    async def create_contact_me_purchase(self, form: ContactMe) -> None:
+    async def create_contact_me_request(self, form: ContactMe) -> None:
         raise NotImplementedError

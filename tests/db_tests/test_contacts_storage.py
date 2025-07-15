@@ -14,7 +14,7 @@ class TestContactMeStorage(FactoryFixture, StorageFixture):
 
     async def test_create_mentoring_contact_me(self) -> None:
         contact_me_id = uuid.uuid4()
-        await self.storage.create_contact_me_purchase(
+        await self.storage.create_contact_me_request(
             form=self.factory.core.contact_me(
                 contact_me_id=contact_me_id,
                 user_ip="167.12.25.12",

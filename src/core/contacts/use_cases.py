@@ -6,15 +6,15 @@ from core.contacts.storages import ContactMeStorage
 from core.use_cases import UseCase
 
 
-class AbstractCreateContactMePurchaseUseCase(UseCase, ABC):
+class AbstractCreateContactMeRequestUseCase(UseCase, ABC):
     @abstractmethod
     async def execute(self, form: ContactMe) -> None:
         raise NotImplementedError
 
 
 @dataclass(kw_only=True)
-class CreateContactMePurchaseUseCase(AbstractCreateContactMePurchaseUseCase):
+class CreateContactMeRequestUseCase(AbstractCreateContactMeRequestUseCase):
     storage: ContactMeStorage
 
     async def execute(self, form: ContactMe) -> None:
-        await self.storage.create_contact_me_purchase(form=form)
+        await self.storage.create_contact_me_request(form=form)

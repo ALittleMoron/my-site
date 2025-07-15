@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from dishka import provide, Scope, Provider
+from dishka import Provider, provide, Scope
 
 from core.competency_matrix.use_cases import (
     AbstractListItemsUseCase,
