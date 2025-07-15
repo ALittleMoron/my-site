@@ -56,6 +56,7 @@ package = false
 output-format = "full"
 lint.select = ["ALL"]
 lint.ignore = [
+    "RUF003",
     "RUF002",
     "B008",
     "Q000",
