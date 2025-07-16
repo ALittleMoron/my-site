@@ -1,3 +1,4 @@
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer import secho
 
@@ -20,7 +21,10 @@ async def create_admin_command(username: str, password: str) -> None:
             )
             session.add(admin)
             await session.commit()
+        except SQLAlchemyError:
+            secho(f"Ошибка базы данных", fg="red")
+            await session.rollback()
         except Exception as exc:  # noqa: BLE001
-            secho(f"Внутренняя ошибка: {exc}", fg="red")
+            secho(f"Внутренняя ошибка: {exc!s}", fg="red")
         else:
             secho("Администратор успешно создан.", fg="green")
