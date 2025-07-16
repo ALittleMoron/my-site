@@ -20,6 +20,7 @@
                   class="card-text link-active nav-link"
                   hx-get="{{ url_for('competency-matrix-item-detail-handler', pk=item.id) }}"
                   hx-target="#competency_matrix_item_detail_modal"
+                  style="cursor: pointer"
                 >
                   {{ item.question }}
                 </a>
