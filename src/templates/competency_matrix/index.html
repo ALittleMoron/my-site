@@ -1,8 +1,6 @@
 {% extends "base/base.html" %} {% block title %}Вопросы{% endblock %} {% block content %}
     <h2 class="fw-bold" style="margin-top: 5rem">Матрица компетенций</h2>
     {% include 'competency_matrix/blocks/filters.html' %}
-    <div id="competency_matrix_item_detail_modal"></div>
-    <main id="competency_matrix_elements"></main>
     <div
             hx-get="{{ url_for('competency-matrix-sheets-list-handler') }}"
             hx-trigger="load delay:0.25s"
@@ -19,4 +17,6 @@
                 end
             "
     ></div>
+    <div id="competency_matrix_item_detail_modal"></div>
+    <main id="competency_matrix_elements"></main>
 {% endblock %}
