@@ -4,14 +4,15 @@ from typing import Annotated
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Request, post
-from litestar.middleware.rate_limit import RateLimitConfig
+from litestar.middleware.rate_limit import DurationUnit, RateLimitConfig
 from litestar.params import Body
 from verbose_http_exceptions import status
 
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.api.contacts.schemas import ContactMeRequest
 
-rate_limit_config = RateLimitConfig(rate_limit=("minute", 1))
+rate_limit: tuple[DurationUnit, int] = ("second", 5)
+rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 
 
 @post(
@@ -29,7 +30,7 @@ async def contact_me_request(
     await use_case.execute(
         form=data.to_schema(
             contact_me_id=contact_me_id,
-            user_ip=request.client.host if request.client else "0.0.0.0",  # noqa: S104
+            user_ip=request.client.host if request.client else "<no ip found>",
         ),
     )
 

@@ -13,7 +13,7 @@ from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.views.contacts.context_converters import ContactsContextConverter
 from entrypoints.views.contacts.schemas import ContactMeRequest
 
-rate_limit: tuple[DurationUnit, int] = ("minute", 1)
+rate_limit: tuple[DurationUnit, int] = ("second", 5)
 rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 
 

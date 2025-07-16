@@ -18,7 +18,25 @@
     <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
     {% endblock %}
   </head>
-  <body class="gradient-body d-flex flex-column min-vh-100">
+  <body
+      class="gradient-body d-flex flex-column min-vh-100"
+      _="
+        on load
+            if no localStorage's chosenTheme or localStorage's chosenTheme is 'NaN' or ['light', 'dark'] does not contains  localStorage's chosenTheme
+              set localStorage's chosenTheme to 'light'
+            end
+            if localStorage's chosenTheme is 'light'
+                add @data-bs-theme='light' to <:root/>
+            end
+            if localStorage's chosenTheme is 'dark'
+                add @data-bs-theme='dark' to <:root/>
+            end
+            if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN' or ['list', 'grid'] does not contains  localStorage's chosenLayout
+              set localStorage's chosenLayout to 'list'
+            end
+        end
+      "
+  >
     <div id="alerts" class="alerts-section position-fixed top-0 end-0"></div>
     <div id="navbar">{% include 'base/blocks/navbar.html' %}</div>
     <div id="content" class="mx-4 my-4">{% block content %}{% endblock %}</div>
