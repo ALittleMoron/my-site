@@ -18,6 +18,12 @@ class _AppSettings(BaseSettings):
     debug: bool = True
     secret_key: SecretStr = SecretStr("SECRET_KEY")
     domain: str = "localhost"
+    use_cache: bool = True
+
+    def get_cache_duration(self, value: int) -> int:
+        if self.use_cache:
+            return value
+        return 0
 
 
 class _DatabaseSettings(BaseSettings):

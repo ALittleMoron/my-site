@@ -5,6 +5,7 @@ from litestar.di import Provide
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
+from config.settings import settings
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
@@ -22,6 +23,7 @@ from entrypoints.views.competency_matrix.dependencies import (
     "/sheets",
     description="Отображение списка листов матрицы компетенций",
     name="competency-matrix-sheets-list-handler",
+    cache=settings.app.get_cache_duration(120),  # 2 минуты
 )
 async def sheets_handler(
     context_converter: FromDishka[CompetencyMatrixContextConverter],
@@ -38,6 +40,7 @@ async def sheets_handler(
     "/items",
     description="Отображение элементов матрицы компетенций",
     name="competency-matrix-items-list-handler",
+    cache=settings.app.get_cache_duration(60),  # 1 минута
 )
 async def matrix_elements_handler(
     sheet: SheetName,
@@ -56,6 +59,7 @@ async def matrix_elements_handler(
     "/items/{pk:int}",
     description="Получение подробной информации о вопросе из матрицы компетенций.",
     name="competency-matrix-item-detail-handler",
+    cache=settings.app.get_cache_duration(15),  # 15 секунд
 )
 async def get_competency_matrix_item_detail_handler(
     pk: int,
@@ -78,6 +82,7 @@ async def get_competency_matrix_item_detail_handler(
     "",
     description="Отображение домашней страницы матрицы компетенций",
     name="competency-matrix-questions-handler",
+    cache=settings.app.get_cache_duration(600),  # 10 минут
 )
 async def competency_matrix_handler() -> Template:
     return HTMXTemplate(template_name="competency_matrix/index.html", context={})

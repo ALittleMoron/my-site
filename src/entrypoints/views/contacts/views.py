@@ -13,7 +13,7 @@ from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.views.contacts.context_converters import ContactsContextConverter
 from entrypoints.views.contacts.schemas import ContactMeRequest
 
-rate_limit: tuple[DurationUnit, int] = ("second", 5)
+rate_limit: tuple[DurationUnit, int] = ("minute", 1)
 rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 
 
@@ -39,10 +39,10 @@ async def contact_me_request(
     return HTMXTemplate(
         re_swap="afterbegin",
         re_target="#alerts",
-        template_name='base/blocks/alert.html',
+        template_name="base/blocks/alert.html",
         context=context_converter.alert_context(
             alert_type="success",
-            message='Запрос успешно отправлен',
+            message="Запрос успешно отправлен",
         ),
     )
 

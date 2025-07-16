@@ -11,7 +11,7 @@ from verbose_http_exceptions import status
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.api.contacts.schemas import ContactMeRequest
 
-rate_limit: tuple[DurationUnit, int] = ("second", 5)
+rate_limit: tuple[DurationUnit, int] = ("minute", 1)
 rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 
 
