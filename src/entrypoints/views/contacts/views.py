@@ -9,6 +9,7 @@ from litestar.params import Body
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
+from config.settings import settings
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.views.contacts.context_converters import ContactsContextConverter
 from entrypoints.views.contacts.schemas import ContactMeRequest
@@ -20,7 +21,7 @@ rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 @post(
     "",
     description="Создание заявки на то, чтобы связаться со мной",
-    middleware=[rate_limit_config.middleware],
+    middleware=[rate_limit_config.middleware] if settings.app.use_rate_limit else [],
     name="contact-me-request",
 )
 async def contact_me_request(

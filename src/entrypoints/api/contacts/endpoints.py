@@ -8,6 +8,7 @@ from litestar.middleware.rate_limit import DurationUnit, RateLimitConfig
 from litestar.params import Body
 from verbose_http_exceptions import status
 
+from config.settings import settings
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from entrypoints.api.contacts.schemas import ContactMeRequest
 
@@ -19,7 +20,7 @@ rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
     "",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Создание заявки на то, чтобы связаться со мной",
-    middleware=[rate_limit_config.middleware],
+    middleware=[rate_limit_config.middleware] if settings.app.use_rate_limit else [],
 )
 async def contact_me_request(
     request: Request,

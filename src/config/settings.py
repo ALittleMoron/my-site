@@ -19,6 +19,7 @@ class _AppSettings(BaseSettings):
     secret_key: SecretStr = SecretStr("SECRET_KEY")
     domain: str = "localhost"
     use_cache: bool = True
+    use_rate_limit: bool = True
 
     def get_cache_duration(self, value: int) -> int:
         if self.use_cache:
