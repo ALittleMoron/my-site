@@ -8,6 +8,7 @@ from litestar import Litestar
 from starlette.applications import Starlette
 
 from config.initializers import check_certs_exists, create_admin_starlette_app, create_litestar
+from config.loggers import logger
 from db.meta import engine
 from db.utils import migrate
 from entrypoints.api.routers import api_router
@@ -48,6 +49,7 @@ def create_app() -> Litestar:
 
 
 if __name__ == "__main__":
+    logger.debug("START APP", aboba='asgajswtawjtawltj'.encode())
     uvicorn.run(
         app="__main__:create_app",
         host="localhost",
@@ -56,3 +58,4 @@ if __name__ == "__main__":
         log_config=None,
         reload=True,
     )
+    logger.debug("STOP APP")

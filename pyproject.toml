@@ -27,6 +27,7 @@ dependencies = [
     "litestar[cli,jinja,pydantic]>=2.16.0",
     "sqladmin>=0.20.1",
     "starlette>=0.46.2",
+    "ecs-logging>=2.2.0",
 ]
 
 [dependency-groups]

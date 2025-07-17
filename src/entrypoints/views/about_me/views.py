@@ -13,7 +13,7 @@ from config.settings import settings
     cache=settings.app.get_cache_duration(600),  # 10 минут
 )
 async def about_me_handler() -> Template:
-    return HTMXTemplate(template_name="about_me/index.html", context={})
+    return HTMXTemplate(template_name="about_me/index.html")
 
 
 router = DishkaRouter(

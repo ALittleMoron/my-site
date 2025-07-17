@@ -3,10 +3,12 @@ from contextlib import AbstractAsyncContextManager
 
 from litestar import Litestar
 from litestar.contrib.jinja import JinjaTemplateEngine
+from litestar.middleware.logging import LoggingMiddlewareConfig
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
+from litestar.plugins.structlog import StructlogPlugin, StructLoggingConfig, StructlogConfig
 from litestar.static_files import create_static_files_router
 from litestar.template import TemplateConfig
 from litestar.types import ControllerRouterHandler
@@ -16,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.applications import Starlette
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
+from config import loggers
 from config.constants import constants
 from config.settings import settings
 from config.template_callables import register_template_callables
@@ -66,6 +69,20 @@ def create_litestar(
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
         plugins=[
             HTMXPlugin(),
+            StructlogPlugin(
+                config=StructlogConfig(
+                    structlog_logging_config=StructLoggingConfig(
+                        processors=loggers.processors,
+                        wrapper_class=loggers.wrapper_class,
+                        logger_factory=loggers.logger_factory,
+                        cache_logger_on_first_use=loggers.cache_logger_on_first_use,
+                    ),
+                    middleware_logging_config=LoggingMiddlewareConfig(
+                        request_log_fields=["path", "method", "query", "path_params"],
+                        response_log_fields=['status_code'],
+                    ),
+                ),
+            ),
             PydanticPlugin(prefer_alias=True),
             *(extra_plugins or []),
         ],

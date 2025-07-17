@@ -85,7 +85,7 @@ async def get_competency_matrix_item_detail_handler(
     cache=settings.app.get_cache_duration(600),  # 10 минут
 )
 async def competency_matrix_handler() -> Template:
-    return HTMXTemplate(template_name="competency_matrix/index.html", context={})
+    return HTMXTemplate(template_name="competency_matrix/index.html")
 
 
 router = DishkaRouter(
