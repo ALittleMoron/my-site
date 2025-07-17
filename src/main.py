@@ -49,7 +49,7 @@ def create_app() -> Litestar:
 
 
 if __name__ == "__main__":
-    logger.debug("START APP", aboba='asgajswtawjtawltj'.encode())
+    logger.debug("START APP")
     uvicorn.run(
         app="__main__:create_app",
         host="localhost",
