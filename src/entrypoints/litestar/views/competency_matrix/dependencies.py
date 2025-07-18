@@ -3,7 +3,7 @@ from typing import Annotated
 from litestar.openapi.spec.example import Example
 from litestar.params import Parameter
 
-from entrypoints.views.competency_matrix.enums import CompetencyMatrixLayoutEnum
+from entrypoints.litestar.views.competency_matrix.enums import CompetencyMatrixLayoutEnum
 
 Layout = Annotated[
     str,

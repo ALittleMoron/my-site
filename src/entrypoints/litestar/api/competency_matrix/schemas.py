@@ -10,7 +10,7 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     Sheets,
 )
-from entrypoints.api.schemas import CamelCaseSchema
+from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class ResourceSchema(CamelCaseSchema):

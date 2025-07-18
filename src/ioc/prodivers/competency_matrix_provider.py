@@ -11,7 +11,9 @@ from core.competency_matrix.use_cases import (
     ListSheetsUseCase,
 )
 from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
-from entrypoints.views.competency_matrix.context_converters import CompetencyMatrixContextConverter
+from entrypoints.litestar.views.competency_matrix.context_converters import (
+    CompetencyMatrixContextConverter,
+)
 
 
 class CompetencyMatrixProvider(Provider):

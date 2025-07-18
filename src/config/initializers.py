@@ -3,15 +3,16 @@ from contextlib import AbstractAsyncContextManager
 
 from litestar import Litestar
 from litestar.contrib.jinja import JinjaTemplateEngine
+from litestar.logging import StructLoggingConfig
 from litestar.middleware.logging import LoggingMiddlewareConfig
 from litestar.openapi.config import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
-from litestar.plugins.structlog import StructlogPlugin, StructLoggingConfig, StructlogConfig
+from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
 from litestar.static_files import create_static_files_router
 from litestar.template import TemplateConfig
-from litestar.types import ControllerRouterHandler
+from litestar.types import ControllerRouterHandler, Middleware
 from litestar_htmx import HTMXPlugin
 from sqladmin import Admin
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -22,10 +23,17 @@ from config import loggers
 from config.constants import constants
 from config.settings import settings
 from config.template_callables import register_template_callables
+from db.utils import migrate
 from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
+from entrypoints.litestar.middlewares.logging import RequestIdLoggingMiddleware
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
+
+
+def before_app_create() -> None:
+    check_certs_exists()
+    migrate("head")
 
 
 def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
@@ -53,6 +61,7 @@ def create_litestar(
     route_handlers: Sequence[ControllerRouterHandler],
     lifespan: Lifespan,
     extra_plugins: Sequence[PluginProtocol] | None = None,
+    extra_middlewares: Sequence[Middleware] | None = None,
 ) -> Litestar:
     route_handlers_list = list(route_handlers)
     if settings.app.debug:
@@ -67,6 +76,10 @@ def create_litestar(
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
+        middleware=[
+            RequestIdLoggingMiddleware(),
+            *(extra_middlewares or []),
+        ],
         plugins=[
             HTMXPlugin(),
             StructlogPlugin(
@@ -79,7 +92,7 @@ def create_litestar(
                     ),
                     middleware_logging_config=LoggingMiddlewareConfig(
                         request_log_fields=["path", "method", "query", "path_params"],
-                        response_log_fields=['status_code'],
+                        response_log_fields=["status_code"],
                     ),
                 ),
             ),

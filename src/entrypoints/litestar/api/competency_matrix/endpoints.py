@@ -11,7 +11,7 @@ from core.competency_matrix.use_cases import (
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
 )
-from entrypoints.api.competency_matrix.schemas import (
+from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailSchema,
     CompetencyMatrixItemsListSchema,
     CompetencyMatrixSheetsListSchema,

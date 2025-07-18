@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import ecs_logging
 import structlog
-from structlog.typing import Processor, BindableLogger, WrappedLogger
+from structlog.typing import BindableLogger, Processor, WrappedLogger
 
 from config.settings import settings
 
@@ -25,7 +25,9 @@ if settings.app.debug:
     ]
     wrapper_class = structlog.make_filtering_bound_logger(logging.DEBUG)
 else:
-    processors += [ecs_logging.StructlogFormatter()]
+    processors += [
+        ecs_logging.StructlogFormatter(),  # type: ignore[list-item]
+    ]
     wrapper_class = structlog.make_filtering_bound_logger(logging.INFO)
 
 structlog.configure(

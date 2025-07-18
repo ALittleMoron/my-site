@@ -7,7 +7,7 @@ from core.contacts.use_cases import (
     CreateContactMeRequestUseCase,
 )
 from db.storages.contacts import ContactMeDatabaseStorage
-from entrypoints.views.contacts.context_converters import ContactsContextConverter
+from entrypoints.litestar.views.contacts.context_converters import ContactsContextConverter
 
 
 class ContactsProvider(Provider):

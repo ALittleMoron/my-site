@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from core.contacts.schemas import ContactMe
-from entrypoints.api.schemas import CamelCaseSchema
+from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class ContactMeRequest(CamelCaseSchema):

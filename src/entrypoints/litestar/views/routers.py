@@ -3,10 +3,10 @@ from typing import Any
 from litestar import Router, get
 from litestar.response import Redirect, Response
 
-from entrypoints.views.about_me.views import router as about_me_router
-from entrypoints.views.blog.views import router as blog_router
-from entrypoints.views.competency_matrix.views import router as competency_matrix_router
-from entrypoints.views.contacts.views import router as contacts_router
+from entrypoints.litestar.views.about_me.views import router as about_me_router
+from entrypoints.litestar.views.blog.views import router as blog_router
+from entrypoints.litestar.views.competency_matrix.views import router as competency_matrix_router
+from entrypoints.litestar.views.contacts.views import router as contacts_router
 
 
 @get("/")

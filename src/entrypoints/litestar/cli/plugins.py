@@ -4,9 +4,9 @@ from litestar.plugins import CLIPluginProtocol
 from miniopy_async.api import Minio
 
 from config.constants import constants
-from entrypoints.cli.commands.admin import create_admin_command
-from entrypoints.cli.commands.files import collect_static, init_buckets
-from entrypoints.cli.utils import run_sync
+from entrypoints.litestar.cli.commands.admin import create_admin_command
+from entrypoints.litestar.cli.commands.files import collect_static, init_buckets
+from entrypoints.litestar.cli.utils import run_sync
 from ioc.container import container
 
 

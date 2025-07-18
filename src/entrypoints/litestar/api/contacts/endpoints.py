@@ -10,7 +10,7 @@ from verbose_http_exceptions import status
 
 from config.settings import settings
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
-from entrypoints.api.contacts.schemas import ContactMeRequest
+from entrypoints.litestar.api.contacts.schemas import ContactMeRequest
 
 rate_limit: tuple[DurationUnit, int] = ("minute", 1)
 rate_limit_config = RateLimitConfig(rate_limit=rate_limit)

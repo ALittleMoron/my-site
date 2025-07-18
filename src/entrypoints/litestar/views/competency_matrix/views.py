@@ -12,8 +12,10 @@ from core.competency_matrix.use_cases import (
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
 )
-from entrypoints.views.competency_matrix.context_converters import CompetencyMatrixContextConverter
-from entrypoints.views.competency_matrix.dependencies import (
+from entrypoints.litestar.views.competency_matrix.context_converters import (
+    CompetencyMatrixContextConverter,
+)
+from entrypoints.litestar.views.competency_matrix.dependencies import (
     SheetName,
     template_name_by_layout_dependency,
 )
