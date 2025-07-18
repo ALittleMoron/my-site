@@ -54,5 +54,6 @@ if __name__ == "__main__":
         access_log=False,
         log_config=None,
         reload=True,
+        factory=True,
     )
     logger.debug("Local application ended")

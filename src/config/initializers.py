@@ -26,6 +26,7 @@ from config.template_callables import register_template_callables
 from db.utils import migrate
 from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
+from entrypoints.litestar.events.startup import on_startup
 from entrypoints.litestar.middlewares.logging import RequestIdLoggingMiddleware
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
@@ -80,6 +81,7 @@ def create_litestar(
             RequestIdLoggingMiddleware(),
             *(extra_middlewares or []),
         ],
+        on_startup=[on_startup],
         plugins=[
             HTMXPlugin(),
             StructlogPlugin(
