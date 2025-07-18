@@ -40,7 +40,7 @@ def create_admin_app() -> Starlette:
 
 def create_app() -> Litestar:
     before_app_create()
-    app = create_litestar(route_handlers=[views_router, api_router], lifespan=[app_lifespan])
+    app = create_litestar(route_handlers=[api_router, views_router], lifespan=[app_lifespan])
     setup_diska_fastapi(container, app)
     return app
 

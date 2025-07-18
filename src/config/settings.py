@@ -1,5 +1,6 @@
 from typing import Literal
 
+from litestar.config.response_cache import CACHE_FOREVER
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,7 +22,10 @@ class _AppSettings(BaseSettings):
     use_cache: bool = True
     use_rate_limit: bool = True
 
-    def get_cache_duration(self, value: int) -> int:
+    def get_cache_duration(
+        self,
+        value: bool | int | type[CACHE_FOREVER],
+    ) -> bool | int | type[CACHE_FOREVER]:
         if self.use_cache:
             return value
         return 0
@@ -93,15 +97,27 @@ class Settings:
     minio: _MinioSettings = _MinioSettings()
 
     @property
+    def is_local_domain(self) -> bool:
+        return self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104
+
+    @property
+    def url_schema(self) -> str:
+        return "http" if self.is_local_domain else "https"
+
+    @property
+    def base_url(self) -> str:
+        return f"{self.url_schema}://{self.app.domain}"
+
+    @property
     def minio_url(self) -> str:
-        is_local_domain = self.app.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104
-        schema = "http" if is_local_domain else "https"
-        postfix = ":8000" if self.app.debug and is_local_domain else ""
-        return f"{schema}://{self.app.domain}{postfix}"
+        postfix = ":8000" if self.app.debug and self.is_local_domain else ""
+        return f"{self.base_url}{postfix}"
 
     def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
-        object_path = object_path.removeprefix("/")
-        return f"{self.minio_url}/{bucket}/{object_path}"
+        return f"{self.minio_url}/{bucket}/{object_path.removeprefix("/")}"
+
+    def get_url(self, path: str) -> str:
+        return f'{self.base_url}/{path.removeprefix("/")}'
 
 
 settings = Settings()
