@@ -1,0 +1,29 @@
+{% extends "base/base.html" %} {% block title %}Карта сайта{% endblock %}
+{%block content %}
+<main class="container">
+  <h3 class="mt-md-5 pb-1 border-bottom">Карта сайта</h3>
+  <div class="row" style="margin-top: 5rem">
+    <div class="col text-md-start justify-content-center align-items-center">
+      <ul class="list-unstyled">
+        <li class="mb-1">Матрица компетенций</li>
+        <li style="font-size: 0.9rem">
+          <a
+            class="nav-link link-active"
+            href="{{ url_for('competency-matrix-questions-handler') }}"
+            >Вопросы матрицы компетенций</a
+          >
+        </li>
+      </ul>
+      <ul class="mt-5 list-unstyled">
+        <li>Обо мне</li>
+        <li style="font-size: 0.9rem">
+          <a
+            class="nav-link link-active"
+            href="{{ url_for('about-me-index-handler') }}"
+          >Стартовая страница</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</main>
+{% endblock %}
