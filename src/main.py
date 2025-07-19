@@ -7,7 +7,12 @@ from dishka.integrations.starlette import setup_dishka as setup_diska_starlette
 from litestar import Litestar
 from starlette.applications import Starlette
 
-from config.initializers import before_app_create, create_admin_starlette_app, create_litestar
+from config.initializers import (
+    before_app_create,
+    create_admin_starlette_app,
+    create_litestar,
+    init_sentry,
+)
 from config.loggers import logger
 from db.meta import engine
 from entrypoints.litestar.api.routers import api_router
@@ -31,6 +36,7 @@ def create_cli_app() -> Litestar:
 
 def create_admin_app() -> Starlette:
     before_app_create()
+    init_sentry()
     app = Starlette()
     admin = create_admin_starlette_app(app=app, engine=engine)
     setup_diska_starlette(container=container, app=admin.admin)
@@ -40,6 +46,7 @@ def create_admin_app() -> Starlette:
 
 def create_app() -> Litestar:
     before_app_create()
+    init_sentry()
     app = create_litestar(route_handlers=[api_router, views_router], lifespan=[app_lifespan])
     setup_diska_fastapi(container, app)
     return app

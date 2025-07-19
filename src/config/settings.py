@@ -90,11 +90,22 @@ class _MinioSettings(BaseSettings):
         return f"{self.host}:{self.port}"
 
 
+class _SentrySettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="SENTRY_",
+        env_file=env_file_path,
+        extra="ignore",
+    )
+
+    dsn: str = ''
+
+
 class Settings:
     app: _AppSettings = _AppSettings()
     auth: _AuthSettings = _AuthSettings()
     database: _DatabaseSettings = _DatabaseSettings()
     minio: _MinioSettings = _MinioSettings()
+    sentry: _SentrySettings = _SentrySettings()
 
     @property
     def is_local_domain(self) -> bool:

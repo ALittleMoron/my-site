@@ -1,6 +1,7 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
+import sentry_sdk
 from litestar import Litestar
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.logging import StructLoggingConfig
@@ -14,6 +15,7 @@ from litestar.static_files import create_static_files_router
 from litestar.template import TemplateConfig
 from litestar.types import ControllerRouterHandler, Middleware
 from litestar_htmx import HTMXPlugin
+from sentry_sdk.integrations.litestar import LitestarIntegration
 from sqladmin import Admin
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.applications import Starlette
@@ -35,6 +37,20 @@ Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | Abstract
 def before_app_create() -> None:
     check_certs_exists()
     migrate("head")
+
+
+def init_sentry() -> None:
+    if settings.app.debug:
+        # NOTE: просто не надо во время локальной разработки срать в sentry. На проде можно
+        #
+        # debug использую, потому что у меня нет много окружений. Только прод и локальный запуск.
+        # Поэтому мне не нужно на каждый инструмент делать параметр enabled.
+        return
+    sentry_sdk.init(
+        dsn=settings.sentry.dsn,
+        send_default_pii=True,
+        integrations=[LitestarIntegration()],
+    )
 
 
 def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
