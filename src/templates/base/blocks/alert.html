@@ -1,6 +1,15 @@
-<div class="alert alert-{{ alert_type }}" role="alert" _="on load wait 5s then remove me">
-    <div class="row">
-        <div class="col"><p class="m-0">{{ message }}</p></div>
-        <button type="button" class="btn-close col-2 pe-3" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+<div
+  class="alert alert-{{ alert_type }}"
+  role="alert"
+  _="on load wait 5s then remove me"
+>
+  <div class="row">
+    <div class="col"><p class="m-0">{{ message }}</p></div>
+    <button
+      type="button"
+      class="btn-close col-2 pe-3"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
 </div>

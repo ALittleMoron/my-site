@@ -1,16 +1,32 @@
-{% extends "base/base.html" %} {% block title %}Обо мне{% endblock %} {%block content %}
+{% extends "base/base.html" %} {% block head_extra_meta %}
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Личный сайт Дмитрия Лунева" />
+<meta
+  name="twitter:description"
+  content="Мой личный сайт с всевозможной информацией об IT: менторство, блог, матрица компетенций и многое другое."
+/>
+<meta property="og:title" content="Обо мне" />
+<meta
+  property="og:url"
+  content="{{ get_full_url(url_for('about-me-index-handler')) }}"
+/>
+<meta
+  property="og:description"
+  content="Мой личный сайт с всевозможной информацией об IT: менторство, блог, матрица компетенций и многое другое."
+/>
+{% endblock %} {% block title %}Обо мне{% endblock %} {%block content %}
 <main>
-    <div style="margin-top: 7rem;"></div>
-    {% include 'about_me/blocks/section_personal_abstracts.html' %}
-    <div style="margin-top: 17rem;"></div>
-    {% include 'about_me/blocks/section_mentoring_intro.html' %}
-    <div style="margin-top: 7rem;"></div>
-    {% include 'about_me/blocks/section_my_experience.html' %}
-    <div style="margin-top: 7rem;"></div>
-    {% include 'about_me/blocks/section_competency_matrix.html' %}
-    <div style="margin-top: 7rem;"></div>
-    {% include 'about_me/blocks/section_mentoring_prices.html' %}
-    <div style="margin-top: 7rem;"></div>
-    {% include 'about_me/blocks/section_contact_me.html' %}
+  <div style="margin-top: 7rem"></div>
+  {% include 'about_me/blocks/section_personal_abstracts.html' %}
+  <div style="margin-top: 17rem"></div>
+  {% include 'about_me/blocks/section_mentoring_intro.html' %}
+  <div style="margin-top: 7rem"></div>
+  {% include 'about_me/blocks/section_my_experience.html' %}
+  <div style="margin-top: 7rem"></div>
+  {% include 'about_me/blocks/section_competency_matrix.html' %}
+  <div style="margin-top: 7rem"></div>
+  {% include 'about_me/blocks/section_mentoring_prices.html' %}
+  <div style="margin-top: 7rem"></div>
+  {% include 'about_me/blocks/section_contact_me.html' %}
 </main>
 {% endblock %}

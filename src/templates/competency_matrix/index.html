@@ -1,22 +1,38 @@
-{% extends "base/base.html" %} {% block title %}Вопросы{% endblock %} {% block content %}
-    <h2 class="fw-bold" style="margin-top: 5rem">Матрица компетенций</h2>
-    {% include 'competency_matrix/blocks/filters.html' %}
-    <div
-            hx-get="{{ url_for('competency-matrix-sheets-list-handler') }}"
-            hx-trigger="load delay:0.25s"
-            hx-swap="outerHTML"
-            _="
-                on htmx:afterRequest wait 100ms then
-                    if no localStorage's chosenSheetId or localStorage's chosenSheetId is 'NaN'
-                      set localStorage's chosenSheetId to 'sheet-button-1'
+{% extends "base/base.html" %} {% block head_extra_meta %}
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Матрица компетенций" />
+<meta
+  name="twitter:description"
+  content="Список вопросов, разделенных по грейдам, разделам, подразделам и типам."
+/>
+<meta property="og:title" content="Матрица компетенций" />
+<meta
+  property="og:url"
+  content="{{ get_full_url(url_for('competency-matrix-questions-handler')) }}"
+/>
+<meta
+  property="og:description"
+  content="Список вопросов, разделенных по грейдам, разделам, подразделам и типам."
+/>
+{% endblock %} {% block title %}Вопросы{% endblock %} {% block content %}
+<h1 class="fw-bold" style="margin-top: 5rem">Матрица компетенций</h1>
+{% include 'competency_matrix/blocks/filters.html' %}
+<div
+  hx-get="{{ url_for('competency-matrix-sheets-list-handler') }}"
+  hx-trigger="load delay:0.25s"
+  hx-swap="outerHTML"
+  _="
+    on htmx:afterRequest wait 100ms then
+        if no localStorage's chosenSheetId or localStorage's chosenSheetId is 'NaN'
+          set localStorage's chosenSheetId to 'sheet-button-1'
 
-                    else
-                      toggle between .button-inactive and .button-active on #{localStorage's chosenSheetId}
-                    end
-                    get #{localStorage's chosenSheetId} then trigger click on it
-                end
-            "
-    ></div>
-    <div id="competency_matrix_item_detail_modal"></div>
-    <main id="competency_matrix_elements"></main>
+        else
+          toggle between .button-inactive and .button-active on #{localStorage's chosenSheetId}
+        end
+        get #{localStorage's chosenSheetId} then trigger click on it
+    end
+  "
+></div>
+<div id="competency_matrix_item_detail_modal"></div>
+<main id="competency_matrix_elements"></main>
 {% endblock %}

@@ -21,7 +21,6 @@
       {{ item }}
     </button>
   </div>
-  {% else %}
-      {% include 'competency_matrix/blocks/error_modal_no_sheets.html' %}
+  {% else %} {% include 'competency_matrix/blocks/error_modal_no_sheets.html' %}
   {% endfor %}
 </div>

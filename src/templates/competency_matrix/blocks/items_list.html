@@ -1,7 +1,8 @@
 {% for section_dict in sections %}
 <section
-    id="competency-matrix-items-section-{{ loop.index }}"
-    class="card rounded rounded-3 px-2 py-2 my-4">
+  id="competency-matrix-items-section-{{ loop.index }}"
+  class="card rounded rounded-3 px-2 py-2 my-4"
+>
   <div class="my-3 mx-3">
     <h5 class="fw-bold">{{ section_dict.section }}</h5>
     {% for subsection_dict in section_dict.subsections %}
@@ -36,4 +37,3 @@
   </div>
 </section>
 {% endfor %}
-

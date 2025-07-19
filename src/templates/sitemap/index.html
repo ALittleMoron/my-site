@@ -1,7 +1,24 @@
-{% extends "base/base.html" %} {% block title %}Карта сайта{% endblock %}
-{%block content %}
+{% extends "base/base.html" %} {% block head_extra_meta %}
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Карта сайта" />
+<meta
+  name="twitter:description"
+  content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим."
+/>
+<meta property="og:title" content="Карта сайта" />
+<meta
+  property="og:url"
+  content="{{ get_full_url(url_for('sitemap-handler')) }}"
+/>
+<meta
+  property="og:description"
+  content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим."
+/>
+{% endblock %} {% block title %}Карта сайта{% endblock %} {%block content %}
 <main class="container">
-  <h3 class="mt-md-5 pb-1 border-bottom">Карта сайта</h3>
+  <h1 class="mt-md-5 pb-1 border-bottom" style="font-size: 2rem">
+    Карта сайта
+  </h1>
   <div class="row" style="margin-top: 5rem">
     <div class="col text-md-start justify-content-center align-items-center">
       <ul class="list-unstyled">
@@ -20,7 +37,8 @@
           <a
             class="nav-link link-active"
             href="{{ url_for('about-me-index-handler') }}"
-          >Стартовая страница</a>
+            >Стартовая страница</a
+          >
         </li>
       </ul>
     </div>
