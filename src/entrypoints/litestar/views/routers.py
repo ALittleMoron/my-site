@@ -53,7 +53,7 @@ async def sitemap_xml_handler(request: Request) -> str:
     urls = ''.join(
         url_template.format(loc=loc, lastmod=lastmod, changefreq=changefreq, priority=priority)
         for loc, changefreq, priority in [
-            (request.url_for('about-me-index-handler'), 'weekly', 1.0),
+            (request.url_for('about-me-index-handler'), 'monthly', 1.0),
             (request.url_for('competency-matrix-questions-handler'), 'daily', 0.9),
         ]
     )
