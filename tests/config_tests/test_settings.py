@@ -9,8 +9,8 @@ class TestSettings:
         self.settings = test_settings
         self.settings.app.domain = "alittlemoron.ru"
 
-    def test_minio_url(self) -> None:
-        assert self.settings.minio_url == "https://alittlemoron.ru"
+    def test_base_url(self) -> None:
+        assert self.settings.base_url == "https://alittlemoron.ru"
 
     def test_get_minio_object_url(self) -> None:
         assert (
