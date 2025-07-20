@@ -9,14 +9,13 @@ from starlette.applications import Starlette
 
 from config.initializers import (
     before_app_create,
-    create_admin_starlette_app,
-    create_litestar,
-    init_sentry,
 )
 from config.loggers import logger
 from db.meta import engine
+from entrypoints.admin.initializers import create_admin_starlette_app
 from entrypoints.litestar.api.routers import api_router
 from entrypoints.litestar.cli.plugins import CLIPlugin
+from entrypoints.litestar.initializers import create_litestar
 from entrypoints.litestar.views.routers import views_router
 from ioc.container import container
 
@@ -28,7 +27,6 @@ async def app_lifespan(app: Litestar) -> AsyncGenerator[None]:
 
 
 def create_cli_app() -> Litestar:
-    before_app_create()
     app = create_litestar(route_handlers=[], lifespan=[], extra_plugins=[CLIPlugin()])
     setup_diska_fastapi(container, app)
     return app
@@ -36,7 +34,6 @@ def create_cli_app() -> Litestar:
 
 def create_admin_app() -> Starlette:
     before_app_create()
-    init_sentry()
     app = Starlette()
     admin = create_admin_starlette_app(app=app, engine=engine)
     setup_diska_starlette(container=container, app=admin.admin)
@@ -45,8 +42,6 @@ def create_admin_app() -> Starlette:
 
 
 def create_app() -> Litestar:
-    before_app_create()
-    init_sentry()
     app = create_litestar(route_handlers=[api_router, views_router], lifespan=[app_lifespan])
     setup_diska_fastapi(container, app)
     return app

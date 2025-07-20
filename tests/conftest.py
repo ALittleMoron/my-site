@@ -16,11 +16,11 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
 )
 
-from config.initializers import create_litestar
 from config.settings import settings, Settings
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
 from db.utils import migrate, downgrade
 from entrypoints.litestar.api.routers import api_router
+from entrypoints.litestar.initializers import create_litestar
 from tests.mocks.providers.auth import MockAuthProvider
 from tests.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.mocks.providers.contacts import MockContactsProvider
