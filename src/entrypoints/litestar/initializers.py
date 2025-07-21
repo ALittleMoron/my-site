@@ -1,5 +1,5 @@
+from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
-from typing import Sequence, Callable
 
 from litestar import Litestar
 from litestar.contrib.jinja import JinjaTemplateEngine
@@ -9,7 +9,7 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
-from litestar.plugins.structlog import StructlogPlugin, StructlogConfig
+from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
 from litestar.static_files import create_static_files_router
 from litestar.template import TemplateConfig
 from litestar.types import ControllerRouterHandler, Middleware
@@ -18,7 +18,6 @@ from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from config import loggers
 from config.constants import constants
-from config.initializers import before_app_create
 from config.settings import settings
 from config.template_callables import register_template_callables
 from entrypoints.litestar.middlewares.logging import RequestIdLoggingMiddleware
@@ -49,7 +48,6 @@ def create_litestar(
             RequestIdLoggingMiddleware(),
             *(extra_middlewares or []),
         ],
-        on_startup=[before_app_create],
         plugins=[
             HTMXPlugin(),
             StructlogPlugin(

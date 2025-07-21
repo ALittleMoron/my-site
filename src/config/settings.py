@@ -28,7 +28,7 @@ class _AppSettings(BaseSettings):
 
     def get_cache_duration(
         self,
-        value: bool | int | type[CACHE_FOREVER],
+        value: bool | int | type[CACHE_FOREVER],  # noqa: FBT001
     ) -> bool | int | type[CACHE_FOREVER]:
         if self.use_cache:
             return value
@@ -101,7 +101,7 @@ class _SentrySettings(BaseSettings):
         extra="ignore",
     )
 
-    dsn: str = ''
+    dsn: str = ""
 
 
 class Settings:
@@ -118,10 +118,10 @@ class Settings:
         return f"{url_schema}://{self.app.domain}{postfix}"
 
     def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
-        return f"{self.base_url}/{bucket}/{object_path.removeprefix("/")}"
+        return f"{self.base_url}/{bucket}/{object_path.removeprefix('/')}"
 
     def get_url(self, path: str) -> str:
-        return f'{self.base_url}/{path.removeprefix("/")}'
+        return f"{self.base_url}/{path.removeprefix('/')}"
 
 
 settings = Settings()

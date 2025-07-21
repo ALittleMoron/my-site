@@ -32,7 +32,7 @@ def check_certs_exists() -> None:
         raise RuntimeError(msg)
 
 
-async def monitor_event_loop_lag(loop: asyncio.AbstractEventLoop):
+async def monitor_event_loop_lag(loop: asyncio.AbstractEventLoop) -> None:
     start = loop.time()
     sleep_interval = 1
 
@@ -42,11 +42,11 @@ async def monitor_event_loop_lag(loop: asyncio.AbstractEventLoop):
         lag = diff - sleep_interval
         if lag > 1:
             coro_names = {
-                task._coro.cr_code.co_qualname
+                task._coro.cr_code.co_qualname  # type: ignore[attr-defined]  # noqa: SLF001
                 for task in asyncio.all_tasks(loop)
-                if task._coro.cr_code.co_name != 'monitor_event_loop_lag'
+                if task._coro.cr_code.co_name != "monitor_event_loop_lag"  # type: ignore[attr-defined]  # noqa: SLF001
             }
-            logger.warn(f"Event loop has lag", lag=lag, coroutine_names=coro_names)
+            logger.warn("Event loop has lag", lag=lag, coroutine_names=coro_names)
         start = loop.time()
 
 
@@ -54,4 +54,4 @@ def before_app_create() -> None:
     loop = asyncio.get_running_loop()
     check_certs_exists()
     migrate("head")
-    loop.create_task(monitor_event_loop_lag(loop))
+    loop.create_task(monitor_event_loop_lag(loop))  # noqa: RUF006

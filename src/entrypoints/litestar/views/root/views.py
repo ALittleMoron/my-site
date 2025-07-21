@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from dishka.integrations.litestar import DishkaRouter
-from litestar import get, Request
+from litestar import Request, get
 from litestar.config.response_cache import CACHE_FOREVER
 from litestar.enums import MediaType
 from litestar.plugins.htmx import HTMXTemplate
@@ -48,26 +48,26 @@ async def robots_txt_handler() -> str:
 )
 async def sitemap_xml_handler(request: Request) -> str:
     url_template = (
-        '<url>'
-        '<loc>{loc}</loc>'
-        '<lastmod>{lastmod}</lastmod>'
-        '<changefreq>{changefreq}</changefreq>'
-        '<priority>{priority}</priority>'
-        '</url>'
+        "<url>"
+        "<loc>{loc}</loc>"
+        "<lastmod>{lastmod}</lastmod>"
+        "<changefreq>{changefreq}</changefreq>"
+        "<priority>{priority}</priority>"
+        "</url>"
     )
-    lastmod = datetime.today().strftime("%Y-%m-%d")
-    urls = ''.join(
+    lastmod = datetime.now(tz=UTC).strftime("%Y-%m-%d")
+    urls = "".join(
         url_template.format(loc=loc, lastmod=lastmod, changefreq=changefreq, priority=priority)
         for loc, changefreq, priority in [
-            (request.url_for('about-me-index-handler'), 'monthly', 1.0),
-            (request.url_for('competency-matrix-questions-handler'), 'daily', 0.9),
+            (request.url_for("about-me-index-handler"), "monthly", 1.0),
+            (request.url_for("competency-matrix-questions-handler"), "daily", 0.9),
         ]
     )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        f'{urls}'
-        '</urlset>'
+        f"{urls}"
+        "</urlset>"
     )
 
 

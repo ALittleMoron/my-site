@@ -10,7 +10,7 @@ def get_static_file_url(ctx: Mapping[str, Any], file_path: str) -> str:  # noqa:
     return settings.get_minio_object_url(bucket="static", object_path=file_path)
 
 
-def get_full_url(ctx: Mapping[[str, Any]], path: str) -> str:  # noqa: ARG001
+def get_full_url(ctx: Mapping[str, Any], path: str) -> str:  # noqa: ARG001
     return settings.get_url(path=path)
 
 
