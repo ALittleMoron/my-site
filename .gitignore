@@ -115,3 +115,4 @@ generated
 .DS_Store
 .ruff_cache
 coverage.*
+!coverage.svg
