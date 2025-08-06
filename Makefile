@@ -41,7 +41,7 @@ downgrade:
 .PHONY: install
 install:
 	@if [ -z $(UV) ]; then echo "PDM could not be found."; exit 2; fi
-	$(UV) install -G:all --no-self
+	$(UV) sync --locked --all-extras
 
 .PHONY: shell
 shell:
@@ -89,7 +89,7 @@ tests:
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src $(UV) run coverage run -m pytest -v
+	PYTHONPATH=src $(UV) run coverage run -m pytest -vvv
 	PYTHONPATH=src $(UV) run coverage xml
 	PYTHONPATH=src $(UV) run coverage report --fail-under=95
 

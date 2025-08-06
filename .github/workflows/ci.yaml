@@ -1,0 +1,10 @@
+name: "test, lint and publish"
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    name: "Check project quality"
+    uses: ./.github/workflows/_quality.yaml
