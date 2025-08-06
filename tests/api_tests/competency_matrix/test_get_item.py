@@ -1,7 +1,7 @@
 import pytest_asyncio
 from verbose_http_exceptions import status
 
-from core.competency_matrix.enums import StatusEnum
+from core.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 

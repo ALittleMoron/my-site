@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 from dishka import AsyncContainer
 from litestar.testing import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,8 +41,12 @@ class ApiFixture:
 
 
 class StorageFixture:
+    db_session: AsyncSession
     storage_helper: StorageHelper
 
-    @pytest.fixture(autouse=True)
-    def _setup_storage(self, session: AsyncSession) -> None:
+    @pytest_asyncio.fixture(autouse=True)
+    async def _setup_storage(self, session: AsyncSession):
+        self.db_session = session
         self.storage_helper = StorageHelper(session=session)
+        yield
+        await self.db_session.rollback()

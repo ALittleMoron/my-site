@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from dishka import Provider
 
 from ioc.prodivers.auth_provider import AuthProvider
+from ioc.prodivers.blog_provider import BlogProvider
 from ioc.prodivers.competency_matrix_provider import CompetencyMatrixProvider
 from ioc.prodivers.contacts_provider import ContactsProvider
 from ioc.prodivers.database_provider import DatabaseProvider
@@ -18,4 +19,5 @@ def get_providers() -> Iterable[Provider]:
         CompetencyMatrixProvider(),
         AuthProvider(),
         ContactsProvider(),
+        BlogProvider(),
     )

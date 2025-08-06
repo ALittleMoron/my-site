@@ -4,8 +4,9 @@ from sqlalchemy import Enum, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 
-from core.competency_matrix.enums import GradeEnum, StatusEnum
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
+from core.enums import StatusEnum
 from db.models.abc import PublishModel
 from db.models.base import Base
 

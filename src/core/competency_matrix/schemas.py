@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from core.competency_matrix.enums import StatusEnum
+from core.enums import StatusEnum
 from core.schemas import ValuedDataclass
 
 

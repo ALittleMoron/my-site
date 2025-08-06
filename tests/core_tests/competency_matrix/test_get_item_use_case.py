@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.enums import StatusEnum
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import GetItemUseCase
 from tests.fixtures import FactoryFixture

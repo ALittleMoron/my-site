@@ -4,10 +4,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from core.competency_matrix.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import CompetencyMatrixItem
 from core.competency_matrix.storages import CompetencyMatrixStorage
+from core.enums import StatusEnum
 from db.models import CompetencyMatrixItemModel
 
 
