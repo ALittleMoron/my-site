@@ -186,11 +186,18 @@ exclude_lines = [
 ]
 omit = [
     "src/main.py",
-    "src/manage.py",
-    "src/entrypoints/admin/**",
+    "src/entrypoints/admin/views/**",
+    "src/entrypoints/admin/initializers.py",
+    "src/entrypoints/admin/registry.py",
+    "src/entrypoints/litestar/views/**",
+    "src/entrypoints/litestar/cli/**",
+    "src/entrypoints/litestar/lifespan.py",
+    "src/ioc/prodivers/**",
+    "src/ioc/registry.py",
     "src/config/*",
     "src/admin/**",
     "src/db/alembic/**",
+    "src/db/meta.py",
 ]
 
 [tool.pytest]

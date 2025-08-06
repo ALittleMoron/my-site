@@ -1,5 +1,13 @@
 # My Site
 
+![coverage](./coverage.svg)
+
+> [!WARNING]
+> Coverage badge shows percentage of coverage not for entire project.
+> I did it on purpose due to some part of codes I tested manually (CLI, HTMX frontend),
+> and for some part of codes there is no sense to test it using pytest, because its trivial
+> code with no business-logic like IOC providers or SQLAdmin views configuration.
+
 A web application with a Litestar as backend with HTMX as frontend (Server Side Rendering). 
 My site with blog, mentoring things and others.
 
