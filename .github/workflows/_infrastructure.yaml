@@ -1,0 +1,62 @@
+name: Upload infrastructure & .env
+
+on:
+  workflow_call:
+
+jobs:
+  infrastructure:
+    name: Generate .env and rsync to server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create .env file from secrets
+        run: |
+          echo "DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}" >> .env
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
+          echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" >> .env
+          echo "REMOTE_PATH=${{ secrets.REMOTE_PATH }}" >> .env
+          echo "REMOTE_HOST=${{ secrets.REMOTE_HOST }}" >> .env
+          echo "REMOTE_USER=${{ secrets.REMOTE_USER }}" >> .env
+          echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> .env
+          echo "INIT_ADMIN_LOGIN=${{ secrets.INIT_ADMIN_LOGIN }}" >> .env
+          echo "INIT_ADMIN_PASSWORD=${{ secrets.INIT_ADMIN_PASSWORD }}" >> .env
+          echo "APP_DEBUG=${{ secrets.APP_DEBUG }}" >> .env
+          echo "APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }}" >> .env
+          echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
+          echo "APP_USE_CACHE=${{ secrets.APP_USE_CACHE }}" >> .env
+          echo "APP_USE_RATE_LIMIT=${{ secrets.APP_USE_RATE_LIMIT }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_POOL_PRE_PING=${{ secrets.DB_POOL_PRE_PING }}" >> .env
+          echo "DB_POOL_SIZE=${{ secrets.DB_POOL_SIZE }}" >> .env
+          echo "DB_MAX_OVERFLOW=${{ secrets.DB_MAX_OVERFLOW }}" >> .env
+          echo "DB_EXPIRE_ON_COMMIT=${{ secrets.DB_EXPIRE_ON_COMMIT }}" >> .env
+          echo "PBW_ENCRYPTION_KEY=${{ secrets.PBW_ENCRYPTION_KEY }}" >> .env
+          echo "AUTH_TOKEN_EXPIRE_SECONDS=${{ secrets.AUTH_TOKEN_EXPIRE_SECONDS }}" >> .env
+          echo "AUTH_CRYPTO_SCHEMES=${{ secrets.AUTH_CRYPTO_SCHEMES }}" >> .env
+          echo "MINIO_HOST=${{ secrets.MINIO_HOST }}" >> .env
+          echo "MINIO_PORT=${{ secrets.MINIO_PORT }}" >> .env
+          echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
+          echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
+          echo "MINIO_SECURE=${{ secrets.MINIO_SECURE }}" >> .env
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
+
+      - name: Sync infrastructure files to server
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avzr --delete
+          path: |
+            docker-compose.yaml
+            docker/
+            .env
+          remote_path: ${{ secrets.REMOTE_PATH }}
+          remote_host: ${{ secrets.REMOTE_HOST }}
+          remote_user: ${{ secrets.REMOTE_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}

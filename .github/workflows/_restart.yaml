@@ -1,0 +1,20 @@
+name: Restart docker-compose
+
+on:
+  workflow_call:
+
+jobs:
+  restart:
+    name: SSH & restart services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Restart docker-compose via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            make run

@@ -17,4 +17,6 @@ fi
 export $(grep -v '^#' .env | xargs -0)
 
 # Run docker-compose up with build option
-docker-compose up --build
+docker compose pull
+docker compose down --remove-orphans
+docker compose up -d
