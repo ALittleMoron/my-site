@@ -35,7 +35,7 @@ def validate_payload_dict(payload: dict[str, Any]) -> bool:
 
 @dataclass(kw_only=True, frozen=True, slots=True)
 class AuthHandler:
-    public_key_pem: str | bytes
+    public_key_pem: Secret[str | bytes]
     secret_key_pem: Secret[str | bytes]
     token_expire_seconds: int
 
@@ -44,7 +44,7 @@ class AuthHandler:
         return pyseto.Key.new(
             version=4,
             purpose="public",
-            key=self.public_key_pem,
+            key=self.public_key_pem.get_secret_value(),
         )
 
     @property

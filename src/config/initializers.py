@@ -1,9 +1,9 @@
 import asyncio
 
+import pem
 import sentry_sdk
 from sentry_sdk.integrations.litestar import LitestarIntegration
 
-from config.constants import constants
 from config.loggers import logger
 from config.settings import settings
 from db.utils import migrate
@@ -24,11 +24,11 @@ def init_sentry() -> None:
 
 
 def check_certs_exists() -> None:
-    if not (constants.dir.certs_path / "public.pem").exists():
-        msg = "Public key certificate file does not exists."
+    if not pem.parse(settings.auth.public_key.get_secret_value()):
+        msg = "Public key certificate is not valid. Check your .env file or environment variables."
         raise RuntimeError(msg)
-    if not (constants.dir.certs_path / "private.pem").exists():
-        msg = "Secret key certificate file does not exists."
+    if not pem.parse(settings.auth.private_key.get_secret_value()):
+        msg = "Private key certificate is not valid. Check your .env file or environment variables."
         raise RuntimeError(msg)
 
 

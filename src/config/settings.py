@@ -72,6 +72,8 @@ class _AuthSettings(BaseSettings):
         extra="ignore",
     )
 
+    public_key: SecretStr
+    private_key: SecretStr
     token_expire_seconds: int = 60 * 60 * 24 * 2
     crypto_scheme: str = "bcrypt"
 

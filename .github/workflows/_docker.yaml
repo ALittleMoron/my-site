@@ -15,11 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Recreate certs keys
-        run: |
-          echo "${{ secrets.AUTH_PRIVATE_KEY }}" > certs/private.pem
-          echo "${{ secrets.AUTH_PUBLIC_KEY }}" > certs/public.pem
-
       - name: Log in to Docker Registry
         uses: docker/login-action@v2
         with:

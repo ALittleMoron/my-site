@@ -7,7 +7,6 @@ from typing import Literal
 class _DirConstants:
     src_path: Path = Path(__file__).resolve().parent.parent
     root_path: Path = src_path.parent
-    certs_path: Path = root_path / "certs"
     alembic_path: Path = src_path / "db" / "alembic"
 
 

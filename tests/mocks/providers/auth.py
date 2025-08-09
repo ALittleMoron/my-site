@@ -38,7 +38,7 @@ class MockAuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> AuthHandler:
         return AuthHandler(
-            public_key_pem=test_public_key_pem,
+            public_key_pem=Secret(test_public_key_pem),
             secret_key_pem=Secret(test_private_key_pem),
             token_expire_seconds=self.settings.auth.token_expire_seconds,
         )
