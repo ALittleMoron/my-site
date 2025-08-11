@@ -7,8 +7,8 @@ from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from core.enums import StatusEnum
-from db.models.abc import PublishModel
 from db.models.base import Base
+from db.models.mixins.publish import PublishMixin
 
 
 class ResourceToItemSecondaryModel(Base, IntegerIDMixin):
@@ -65,7 +65,7 @@ class ExternalResourceModel(Base, IntegerIDMixin):
         )
 
 
-class CompetencyMatrixItemModel(PublishModel, IntegerIDMixin):
+class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
     """Элемент матрицы компетенций"""
 
     question: Mapped[str] = mapped_column(

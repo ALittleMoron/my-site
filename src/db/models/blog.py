@@ -8,10 +8,10 @@ from sqlalchemy_dev_utils.mixins.ids import UUIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.blog.schemas import BlogPost
-from db.models.abc import PublishModel
+from db.models.mixins.publish import PublishMixin
 
 
-class BlogPostModel(PublishModel, UUIDMixin, AuditMixin):
+class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
     title: Mapped[str] = mapped_column(
         String(length=255),
         doc="Title of the blog post",
