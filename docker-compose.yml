@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/backend/application.Dockerfile
-    image: ${DOCKER_REGISTRY}/ALittleMoron/my_site_application:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:latest
     env_file:
       - .env
     depends_on:
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: docker/backend/admin.Dockerfile
-    image: ${DOCKER_REGISTRY}/ALittleMoron/my_site_admin:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_admin:latest
     env_file:
       - .env
     depends_on:
@@ -33,7 +33,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgresql/Dockerfile
-    image: ${DOCKER_REGISTRY}/ALittleMoron/my_site_postgres:latest
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_postgres:latest
     environment:
       POSTGRES_MULTIPLE_DATABASES: ${DB_NAME},backups_db
       POSTGRES_USER: ${DB_USER}
