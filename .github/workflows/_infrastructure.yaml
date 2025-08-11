@@ -14,6 +14,7 @@ jobs:
 
       - name: Create .env file from secrets
         run: |
+          echo "IMAGE_TAG=${{ github.sha }}" >> .env
           echo "DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}" >> .env
           echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
           echo "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" >> .env
@@ -51,7 +52,7 @@ jobs:
       - name: Sync infrastructure files to server
         uses: burnett01/rsync-deployments@7.0.2
         with:
-          switches: -avzr --delete
+          switches: -avzr --delete --exclude '.git' --exclude 'node_modules' --exclude '.venv'
           path: |
             docker-compose.yaml
             docker/

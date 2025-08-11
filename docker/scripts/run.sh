@@ -17,6 +17,7 @@ fi
 export $(grep -v '^#' .env | xargs -0)
 
 # Run docker-compose up with build option
+docker compose up -d postgres minio postgresql_backup_ui
+docker compose ps
 docker compose pull
-docker compose down --remove-orphans
-docker compose up -d
+docker compose up -d --no-deps --remove-orphans application admin nginx

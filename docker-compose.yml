@@ -11,6 +11,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - app-network
 
@@ -24,6 +25,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - app-network
 
@@ -31,7 +33,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgresql/Dockerfile
-    image: postgres:16-alpine
+    image: ${DOCKER_REGISTRY}/ALittleMoron/my_site_postgres:latest
     environment:
       POSTGRES_MULTIPLE_DATABASES: ${DB_NAME},backups_db
       POSTGRES_USER: ${DB_USER}
