@@ -116,3 +116,4 @@ generated
 .ruff_cache
 coverage.*
 !coverage.svg
+certs
