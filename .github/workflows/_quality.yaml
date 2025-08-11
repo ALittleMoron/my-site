@@ -34,6 +34,13 @@ jobs:
         uses: astral-sh/setup-uv@v6
       - name: Install the project dependencies
         run: make install
+      - name: Prepare envs
+        run: |
+          openssl genpkey -algorithm ed25519 -out private.pem
+          openssl pkey -in private.pem -pubout -out public.pem
+          export AUTH_PRIVATE_KEY="$(cat private.pem)"
+          export AUTH_PUBLIC_KEY="$(cat public.pem)"
+          rm public.pem private.pem
       - name: Run the automated tests with coverage
         run: make tests-coverage
       - name: Coverage Badge
