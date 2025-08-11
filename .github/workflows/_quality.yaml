@@ -38,8 +38,14 @@ jobs:
         run: |
           openssl genpkey -algorithm ed25519 -out private.pem
           openssl pkey -in private.pem -pubout -out public.pem
-          echo "AUTH_PRIVATE_KEY=$(cat private.pem)" >> $GITHUB_ENV 
-          echo "AUTH_PUBLIC_KEY=$(cat public.pem)" >> $GITHUB_ENV 
+          {
+            echo "AUTH_PRIVATE_KEY<<EOF"
+            cat private.pem
+            echo "EOF"
+            echo "AUTH_PUBLIC_KEY<<EOF"
+            cat public.pem
+            echo "EOF"
+          } >> "$GITHUB_ENV"
           rm public.pem private.pem
       - name: Run the automated tests with coverage
         run: make tests-coverage
