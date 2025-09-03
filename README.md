@@ -1,4 +1,4 @@
-# My Site
+# My Personal Site
 
 ![coverage](./coverage.svg)
 
@@ -15,7 +15,6 @@ My site with blog, mentoring things and others.
 
 ```
 my-site/
-├── certs/        # Folder with certificates for auth system works
 ├── docker/       # Docker configuration files (scripts, Dockerfile, nginx conf, etc.)
 ├── src/          # Source code
 ├── tests/        # Project autotests
@@ -46,17 +45,12 @@ cp .env.example .env
 
 3. Change .env file variables to yours
 
-4. Add exec permission for run.sh file
-```bash
-chmod +x ./docker/scripts/run.sh
-```
-
-5. Run Makefile
+4. Run Makefile
 ```bash
 make run
 ```
 
-## Development
+## Endpoints
 
 - Frontend runs on `http://localhost`
 - API runs on `http://localhost/api`
