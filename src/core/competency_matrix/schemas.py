@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from core.schemas import ValuedDataclass
 
 
@@ -28,7 +28,7 @@ class ExternalResources(ValuedDataclass[ExternalResource]): ...
 class CompetencyMatrixItem:
     id: int
     question: str
-    status: StatusEnum
+    publish_status: PublishStatusEnum
     answer: str
     interview_expected_answer: str
     sheet: str
@@ -40,7 +40,7 @@ class CompetencyMatrixItem:
     def is_available(self) -> bool:
         return all(
             [
-                self.status == StatusEnum.PUBLISHED,
+                self.publish_status == PublishStatusEnum.PUBLISHED,
                 self.sheet != "",
                 self.grade != "",
                 self.section != "",

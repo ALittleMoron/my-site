@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import CompetencyMatrixItem
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from db.models import CompetencyMatrixItemModel
 
 
@@ -18,7 +18,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def list_sheets(self) -> list[str]:
         stmt = (
             select(CompetencyMatrixItemModel.sheet)
-            .where(CompetencyMatrixItemModel.status == StatusEnum.PUBLISHED)
+            .where(CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED)
             .distinct()
             .order_by(CompetencyMatrixItemModel.sheet)
         )
@@ -27,7 +27,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def list_competency_matrix_items(self, sheet_name: str) -> list[CompetencyMatrixItem]:
         stmt = select(CompetencyMatrixItemModel).where(
-            CompetencyMatrixItemModel.status == StatusEnum.PUBLISHED,
+            CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED,
             func.lower(CompetencyMatrixItemModel.sheet) == sheet_name.lower(),
         )
         items = await self.session.scalars(stmt)
@@ -37,7 +37,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         stmt = (
             select(CompetencyMatrixItemModel)
             .where(
-                CompetencyMatrixItemModel.status == StatusEnum.PUBLISHED,
+                CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED,
                 CompetencyMatrixItemModel.id == item_id,
             )
             .options(selectinload(CompetencyMatrixItemModel.resources))

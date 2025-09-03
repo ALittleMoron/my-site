@@ -7,7 +7,7 @@ import pytest_asyncio
 
 from core.blog.exceptions import BlogPostNotFoundError
 from core.blog.schemas import BlogPostFilters
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from db.storages.blog import BlogDatabaseStorage
 from tests.fixtures import StorageFixture, FactoryFixture
 
@@ -23,7 +23,7 @@ class TestBlogDatabaseStorage(StorageFixture, FactoryFixture):
                 title="Test Post",
                 content="Test content",
                 slug="test-post",
-                status=StatusEnum.PUBLISHED,
+                publish_status=PublishStatusEnum.PUBLISHED,
                 published_at="2024-01-01T00:00:00",
                 created_at="2024-01-01T00:00:00",
                 updated_at="2024-01-01T00:00:00",
@@ -34,7 +34,7 @@ class TestBlogDatabaseStorage(StorageFixture, FactoryFixture):
 
         assert result.title == "Test Post"
         assert result.slug == "test-post"
-        assert result.status == StatusEnum.PUBLISHED
+        assert result.publish_status == PublishStatusEnum.PUBLISHED
 
     async def test_get_post_by_slug_not_found(self) -> None:
         storage = BlogDatabaseStorage(session=self.storage_helper.session)
@@ -87,13 +87,13 @@ class TestBlogDatabaseStorage(StorageFixture, FactoryFixture):
         filters = BlogPostFilters(page=1, page_size=10, only_available=True)
         await self.storage_helper.create_blog_posts(
             blog_posts=[
-                self.factory.core.blog_post(status=StatusEnum.PUBLISHED, slug=str(i))
+                self.factory.core.blog_post(publish_status=PublishStatusEnum.PUBLISHED, slug=str(i))
                 for i in range(5)
             ]
         )
         await self.storage_helper.create_blog_posts(
             blog_posts=[
-                self.factory.core.blog_post(status=StatusEnum.DRAFT, slug=str(i + 5))
+                self.factory.core.blog_post(publish_status=PublishStatusEnum.DRAFT, slug=str(i + 5))
                 for i in range(15)
             ]
         )
@@ -105,7 +105,8 @@ class TestBlogDatabaseStorage(StorageFixture, FactoryFixture):
     async def test_list_posts_with_pagination(self) -> None:
         filters = BlogPostFilters(page=1, page_size=10, only_available=False)
         posts = [
-            self.factory.core.blog_post(status=StatusEnum.PUBLISHED, slug=str(i)) for i in range(15)
+            self.factory.core.blog_post(publish_status=PublishStatusEnum.PUBLISHED, slug=str(i))
+            for i in range(15)
         ]
         await self.storage_helper.create_blog_posts(blog_posts=posts)
 

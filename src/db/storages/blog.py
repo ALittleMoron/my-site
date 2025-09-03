@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.blog.exceptions import BlogPostNotFoundError
 from core.blog.schemas import BlogPost, BlogPostFilters, BlogPostList
 from core.blog.storages import BlogStorage
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from db.models import BlogPostModel
 
 
@@ -38,11 +38,11 @@ class BlogDatabaseStorage(BlogStorage):
             .order_by(BlogPostModel.published_at.desc())
         )
         if filters.only_available:
-            query = query.where(BlogPostModel.status == StatusEnum.PUBLISHED)
+            query = query.where(BlogPostModel.publish_status == PublishStatusEnum.PUBLISHED)
             total_count = (
                 await self.session.scalar(
                     select(func.count(BlogPostModel.id)).where(
-                        BlogPostModel.status == StatusEnum.PUBLISHED,
+                        BlogPostModel.publish_status == PublishStatusEnum.PUBLISHED,
                     ),
                 )
             ) or 0

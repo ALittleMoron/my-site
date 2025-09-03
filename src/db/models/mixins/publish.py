@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from sqlalchemy import Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm.decl_api import declarative_mixin
+from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from db.models import Base
 
 
@@ -10,7 +13,11 @@ from db.models import Base
 class PublishMixin(Base):
     __abstract__ = True
 
-    status: Mapped[StatusEnum] = mapped_column(
-        Enum(StatusEnum, native_enum=False, length=10),
+    published_at: Mapped[datetime | None] = mapped_column(
+        UTCDateTime(timezone=True),
+        doc="Publication date of the blog post",
+    )
+    publish_status: Mapped[PublishStatusEnum] = mapped_column(
+        Enum(PublishStatusEnum, native_enum=False, length=10),
         doc="Статус опубликования записи",
     )

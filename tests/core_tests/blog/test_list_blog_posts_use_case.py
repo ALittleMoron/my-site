@@ -7,7 +7,7 @@ import pytest
 from core.blog.schemas import BlogPostFilters
 from core.blog.storages import BlogStorage
 from core.blog.use_cases import ListBlogPostsUseCase
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from tests.fixtures import FactoryFixture
 
 
@@ -25,7 +25,7 @@ class TestListBlogPostsUseCase(FactoryFixture):
             posts=[
                 self.factory.core.blog_post(
                     post_id=post_id,
-                    status=StatusEnum.PUBLISHED,
+                    publish_status=PublishStatusEnum.PUBLISHED,
                     published_at=now,
                     created_at=now,
                     updated_at=now,
@@ -41,7 +41,7 @@ class TestListBlogPostsUseCase(FactoryFixture):
             posts=[
                 self.factory.core.blog_post(
                     post_id=post_id,
-                    status=StatusEnum.PUBLISHED,
+                    publish_status=PublishStatusEnum.PUBLISHED,
                     published_at=now,
                     created_at=now,
                     updated_at=now,

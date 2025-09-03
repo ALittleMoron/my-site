@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -12,12 +12,12 @@ class BlogPost:
     content: str
     slug: str
     published_at: datetime | None
-    status: StatusEnum
+    publish_status: PublishStatusEnum
     created_at: datetime
     updated_at: datetime
 
     def is_available(self) -> bool:
-        return self.status == StatusEnum.PUBLISHED
+        return self.publish_status == PublishStatusEnum.PUBLISHED
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -25,13 +25,6 @@ class BlogPostList:
     total_count: int
     total_pages: int
     posts: list[BlogPost]
-
-    def only_available(self) -> "BlogPostList":
-        return BlogPostList(
-            posts=[post for post in self.posts if post.is_available()],
-            total_count=self.total_count,
-            total_pages=self.total_pages,
-        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

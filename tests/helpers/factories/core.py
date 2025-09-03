@@ -10,7 +10,7 @@ from core.competency_matrix.schemas import (
     ExternalResources,
 )
 from core.contacts.schemas import ContactMe
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from core.schemas import Secret
 from core.users.schemas import User, RoleEnum
 
@@ -35,20 +35,20 @@ class CoreFactoryHelper:
     def competency_matrix_item(
         cls,
         item_id: int,
-        question: str,
-        status: StatusEnum = StatusEnum.PUBLISHED,
-        answer: str = "",
-        interview_expected_answer: str = "",
-        sheet: str = "",
-        grade: str = "",
-        section: str = "",
-        subsection: str = "",
+        question: str = "QUESTION",
+        publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
+        answer: str = "Answer",
+        interview_expected_answer: str = "Answer",
+        sheet: str = "Sheet",
+        grade: str = "Junior",
+        section: str = "Section",
+        subsection: str = "Subsection",
         resources: list[ExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=item_id,
             question=question,
-            status=status,
+            publish_status=publish_status,
             answer=answer,
             interview_expected_answer=interview_expected_answer,
             sheet=sheet,
@@ -108,7 +108,7 @@ class CoreFactoryHelper:
         title: str = "Test Blog Post",
         content: str = "This is a test blog post content.",
         slug: str = "test-blog-post",
-        status: StatusEnum = StatusEnum.PUBLISHED,
+        publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         published_at: str | None = None,
         created_at: str | None = None,
         updated_at: str | None = None,
@@ -119,7 +119,7 @@ class CoreFactoryHelper:
             title=title,
             content=content,
             slug=slug,
-            status=status,
+            publish_status=publish_status,
             published_at=(
                 datetime.fromisoformat(published_at).replace(tzinfo=UTC)
                 if published_at is not None

@@ -1,6 +1,6 @@
 from enum import StrEnum
 
 
-class StatusEnum(StrEnum):
+class PublishStatusEnum(StrEnum):
     DRAFT = "Draft"
     PUBLISHED = "Published"

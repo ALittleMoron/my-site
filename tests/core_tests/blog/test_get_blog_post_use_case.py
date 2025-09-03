@@ -5,7 +5,7 @@ import pytest
 from core.blog.exceptions import BlogPostNotFoundError
 from core.blog.storages import BlogStorage
 from core.blog.use_cases import GetBlogPostUseCase
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from tests.fixtures import FactoryFixture
 
 
@@ -27,7 +27,9 @@ class TestGetBlogPostUseCase(FactoryFixture):
 
     async def test_get_blog_post_not_found_by_not_available(self) -> None:
         slug = "test-post"
-        expected_post = self.factory.core.blog_post(slug=slug, status=StatusEnum.DRAFT)
+        expected_post = self.factory.core.blog_post(
+            slug=slug, publish_status=PublishStatusEnum.DRAFT
+        )
         self.storage.get_post_by_slug.return_value = expected_post
 
         with pytest.raises(BlogPostNotFoundError):

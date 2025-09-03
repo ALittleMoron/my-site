@@ -1,8 +1,8 @@
 from db.models import UserModel
-from entrypoints.admin.views.base import ModelViewWithAction
+from entrypoints.admin.views.base import ModelViewWithDeleteAction
 
 
-class UserView(ModelViewWithAction, model=UserModel):
+class UserView(ModelViewWithDeleteAction, model=UserModel):
     icon = "fa-solid fa-user-tie"
 
     name_plural = "Пользователи"
