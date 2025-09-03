@@ -23,8 +23,8 @@ class BlogPost:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class BlogPostList:
     total_count: int
-    posts: list[BlogPost]
     total_pages: int
+    posts: list[BlogPost]
 
     def only_available(self) -> "BlogPostList":
         return BlogPostList(

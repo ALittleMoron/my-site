@@ -12,6 +12,8 @@ from db.models.mixins.publish import PublishMixin
 
 
 class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
+    __tablename__ = "blog_posts"
+
     title: Mapped[str] = mapped_column(
         String(length=255),
         doc="Title of the blog post",
@@ -29,8 +31,6 @@ class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
         UTCDateTime(timezone=True),
         doc="Publication date of the blog post",
     )
-
-    __tablename__ = "blog_posts"
 
     def __str__(self) -> str:
         return f'Blog post "{self.title}"'

@@ -7,7 +7,7 @@ from db.models.base import Base
 
 
 class UserModel(Base):
-    """Пользователь."""
+    __tablename__ = "users"
 
     username: Mapped[str] = mapped_column(
         String(255),
@@ -23,7 +23,6 @@ class UserModel(Base):
         doc="Роль пользователя",
     )
 
-    __tablename__ = "users"
     __table_args__ = (Index("users_username_idx", username),)
 
     def to_domain_schema(self) -> User:

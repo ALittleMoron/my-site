@@ -12,7 +12,7 @@ from db.models.mixins.publish import PublishMixin
 
 
 class ResourceToItemSecondaryModel(Base, IntegerIDMixin):
-    """Связь M2M внешнего ресурса к элементу матрицы компетенций."""
+    __tablename__ = "resource_to_item_secondary"
 
     item_id: Mapped[int] = mapped_column(
         ForeignKey("competency_matrix_items.id", ondelete="CASCADE"),
@@ -23,11 +23,9 @@ class ResourceToItemSecondaryModel(Base, IntegerIDMixin):
         doc="Идентификатор внешнего ресурса",
     )
 
-    __tablename__ = "resource_to_item_secondary"
-
 
 class ExternalResourceModel(Base, IntegerIDMixin):
-    """Внешний ресурс"""
+    __tablename__ = "competency_matrix_resources"
 
     name: Mapped[str] = mapped_column(
         String(length=255),
@@ -41,8 +39,6 @@ class ExternalResourceModel(Base, IntegerIDMixin):
         String(),
         doc="Контекст того, почему ресурс вообще был прикреплен к вопросу.",
     )
-
-    __tablename__ = "competency_matrix_resources"
 
     def __str__(self) -> str:
         return f'Внешний ресурс "{self.name}"'
@@ -66,7 +62,7 @@ class ExternalResourceModel(Base, IntegerIDMixin):
 
 
 class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
-    """Элемент матрицы компетенций"""
+    __tablename__ = "competency_matrix_items"
 
     question: Mapped[str] = mapped_column(
         String(length=255),
@@ -102,7 +98,6 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
         secondary="resource_to_item_secondary",
     )
 
-    __tablename__ = "competency_matrix_items"
     __table_args__ = (
         Index(
             "cmi_sheet_idx",
