@@ -52,6 +52,8 @@ async def monitor_event_loop_lag(loop: asyncio.AbstractEventLoop) -> None:
 
 def before_app_create() -> None:
     loop = asyncio.get_running_loop()
+    init_sentry()
     check_certs_exists()
+    # TODO: move migrate to separated task in docker-compose
     migrate("head")
     loop.create_task(monitor_event_loop_lag(loop))  # noqa: RUF006
