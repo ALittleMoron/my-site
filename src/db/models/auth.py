@@ -2,7 +2,8 @@ from sqlalchemy import Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.schemas import Secret
-from core.users.schemas import RoleEnum, User
+from core.users.enums import RoleEnum
+from core.users.schemas import User
 from db.models.base import Base
 
 

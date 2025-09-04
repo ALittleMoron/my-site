@@ -2,7 +2,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from typer import secho
 
-from core.users.schemas import RoleEnum
+from core.users.enums import RoleEnum
 from db.models.auth import UserModel
 from entrypoints.admin.auth.utils import Hasher
 from ioc.container import container

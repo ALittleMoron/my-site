@@ -12,7 +12,8 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.schemas import Secret
-from core.users.schemas import User, RoleEnum
+from core.users.enums import RoleEnum
+from core.users.schemas import User
 
 
 class CoreFactoryHelper:

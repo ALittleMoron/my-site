@@ -10,10 +10,10 @@ class Secret[T]:
         return self.__value
 
     def __str__(self) -> str:  # pragma: no cover
-        return "SECRET-VALUE"
+        return "**********"
 
     def __repr__(self) -> str:  # pragma: no cover
-        return "<Secret instance>"
+        return 'Secret("**********")'
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -26,5 +26,5 @@ class ValuedDataclass[T]:
     def __iter__(self) -> Iterator[T]:  # pragma: no cover
         return iter(self.values)
 
-    def __getitem__(self, idx: int, /) -> T:
+    def __getitem__(self, idx: int, /) -> T:  # pragma: no cover
         return self.values[idx]

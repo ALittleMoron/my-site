@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock
 
 import pytest_asyncio
 
+from core.users.enums import RoleEnum
 from core.users.exceptions import UserNotFoundError
-from core.users.schemas import RoleEnum
 from entrypoints.admin.auth.backends import AdminAuthenticationBackend
 from entrypoints.admin.auth.schemas import Payload
 from tests.fixtures import FactoryFixture, ContainerFixture
