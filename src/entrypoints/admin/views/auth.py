@@ -20,10 +20,15 @@ class UserView(ModelViewWithDeleteAction, model=UserModel):
     form_widget_args = {}
     form_ajax_refs = {}
 
-    column_formatters = {}
+    column_formatters = {
+        UserModel.role: lambda user, _: user.role.label,  # type: ignore[attr-defined]
+    }
+    column_formatters_detail = {
+        UserModel.role: lambda user, _: user.role.label,  # type: ignore[attr-defined]
+    }
     column_labels = {
         UserModel.username: "Имя пользователя",
-        UserModel.role: "Роль пользователя",
+        UserModel.role: "Роль",
     }
     column_searchable_list = [UserModel.username]
     column_default_sort = (UserModel.username, True)

@@ -6,7 +6,6 @@ from entrypoints.admin.views.base import ModelViewWithDeleteAction, ModelViewWit
 
 class ExternalResourceView(
     ModelViewWithDeleteAction,
-    ModelViewWithPublishAction,
     model=ExternalResourceModel,
 ):
     icon = "fa-solid fa-book-open"
@@ -53,7 +52,11 @@ class ExternalResourceView(
     ]
 
 
-class CompetencyMatrixItemView(ModelViewWithDeleteAction, model=CompetencyMatrixItemModel):
+class CompetencyMatrixItemView(
+    ModelViewWithDeleteAction,
+    ModelViewWithPublishAction,
+    model=CompetencyMatrixItemModel,
+):
     icon = "fa-solid fa-table"
 
     name_plural = "Матрица компетенций"
@@ -75,13 +78,18 @@ class CompetencyMatrixItemView(ModelViewWithDeleteAction, model=CompetencyMatrix
         CompetencyMatrixItemModel.answer,
         CompetencyMatrixItemModel.interview_expected_answer,
         CompetencyMatrixItemModel.publish_status,
+        CompetencyMatrixItemModel.published_at,
         CompetencyMatrixItemModel.resources,
     ]
     form_overrides = {
         "answer": TextAreaField,
         "interview_expected_answer": TextAreaField,
     }
-    form_widget_args = {}
+    form_widget_args = {
+        "published_at": {
+            "readonly": True,
+        },
+    }
     form_ajax_refs = {
         "resources": {
             "fields": ("id", "name", "url", "context"),
@@ -91,11 +99,17 @@ class CompetencyMatrixItemView(ModelViewWithDeleteAction, model=CompetencyMatrix
 
     column_formatters = {
         CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
-        CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.value,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.label,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.published_at: lambda item, _: item.published_at.strftime(  # type: ignore[attr-defined]
+            "%m/%d/%Y %I:%M:%S %p (UTC)",
+        ),
     }
     column_formatters_detail = {
         CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
-        CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.value,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.label,  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.published_at: lambda item, _: item.published_at.strftime(  # type: ignore[attr-defined]
+            "%m/%d/%Y %I:%M:%S %p (UTC)",
+        ),
     }
     column_labels = {
         CompetencyMatrixItemModel.id: "Идентификатор",
@@ -108,6 +122,7 @@ class CompetencyMatrixItemView(ModelViewWithDeleteAction, model=CompetencyMatrix
         CompetencyMatrixItemModel.interview_expected_answer: "Ожидаемый ответ на собеседовании",
         CompetencyMatrixItemModel.resources: "Внешние ресурсы",
         CompetencyMatrixItemModel.publish_status: "Статус",
+        CompetencyMatrixItemModel.published_at: "Время публикации",
     }
     column_searchable_list = [
         CompetencyMatrixItemModel.question,
@@ -142,6 +157,7 @@ class CompetencyMatrixItemView(ModelViewWithDeleteAction, model=CompetencyMatrix
         CompetencyMatrixItemModel.answer,
         CompetencyMatrixItemModel.interview_expected_answer,
         CompetencyMatrixItemModel.publish_status,
+        CompetencyMatrixItemModel.published_at,
         CompetencyMatrixItemModel.resources,
     ]
     column_list = [
