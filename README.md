@@ -1,4 +1,6 @@
-# My Personal Site
+# Мой личный сайт
+
+[🇷🇺 Русская версия](./README_RU.md)
 
 ![coverage](./coverage.svg)
 
@@ -7,11 +9,18 @@
 > I did it on purpose due to some part of codes I tested manually (CLI, HTMX frontend),
 > and for some part of codes there is no sense to test it using pytest, because its trivial
 > code with no business-logic like IOC providers or SQLAdmin views configuration.
+> Maybe in future I'll add tests via selenium, but for now I only test it manually.
 
 A web application with a Litestar as backend with HTMX as frontend (Server Side Rendering). 
 My site with blog, mentoring things and others.
 
-## Project Structure
+
+## 📖 Documentation
+
+- [Project idea](docs/idea.md)  
+- [Project vision](docs/vision.md) 
+
+## 📂 Project Structure
 
 ```
 my-site/
@@ -23,14 +32,14 @@ my-site/
 └── README.md     # Project readme (current file)
 ```
 
-## Features
+## ✨ Features
 
 - Competency matrix with questions and answers
 - Simple dynamic frontend using HTMX
 - API with documentation
 - Dark theme UI
 
-## Quick Start
+## 🚀 Quick Start
 
 1. Clone the repository:
 ```bash
@@ -50,7 +59,7 @@ cp .env.example .env
 make run
 ```
 
-## Endpoints
+## ⚙️ Endpoints
 
 - Frontend runs on `http://localhost`
 - API runs on `http://localhost/api`
@@ -58,3 +67,4 @@ make run
 - OpenAPI specification available at `http://localhost/api/docs/openapi.json`
 
 For other routes see [docker-compose.yaml](./docker-compose.yml)
+
