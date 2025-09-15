@@ -7,15 +7,13 @@ from db.models.base import Base
 
 
 class ContactMeModel(Base, UUIDMixin):
-    """Заявка для связи со мной."""
+    __tablename__ = "mentoring_contact_me"
 
     user_ip: Mapped[str] = mapped_column(String(length=45))
     name: Mapped[str | None] = mapped_column(String(length=255))
     email: Mapped[str | None] = mapped_column(String(length=255))
     telegram: Mapped[str | None] = mapped_column(String(length=256))
     message: Mapped[str] = mapped_column()
-
-    __tablename__ = "mentoring_contact_me"
 
     @classmethod
     def from_schema(cls, form: ContactMe) -> "ContactMeModel":

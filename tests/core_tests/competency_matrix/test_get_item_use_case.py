@@ -3,9 +3,9 @@ from unittest.mock import Mock
 import pytest
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from core.enums import StatusEnum
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import GetItemUseCase
+from core.enums import PublishStatusEnum
 from tests.fixtures import FactoryFixture
 
 
@@ -19,7 +19,7 @@ class TestGetItemUseCase(FactoryFixture):
         item = self.factory.core.competency_matrix_item(
             item_id=2,
             question="2",
-            status=StatusEnum.DRAFT,
+            publish_status=PublishStatusEnum.DRAFT,
             sheet="Python",
             grade="",
             section="",
@@ -33,7 +33,7 @@ class TestGetItemUseCase(FactoryFixture):
         item = self.factory.core.competency_matrix_item(
             item_id=1,
             question="1",
-            status=StatusEnum.PUBLISHED,
+            publish_status=PublishStatusEnum.PUBLISHED,
             sheet="Python",
             grade="1",
             section="1",

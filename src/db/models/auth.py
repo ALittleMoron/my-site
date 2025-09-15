@@ -2,12 +2,13 @@ from sqlalchemy import Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.schemas import Secret
-from core.users.schemas import RoleEnum, User
+from core.users.enums import RoleEnum
+from core.users.schemas import User
 from db.models.base import Base
 
 
 class UserModel(Base):
-    """Пользователь."""
+    __tablename__ = "users"
 
     username: Mapped[str] = mapped_column(
         String(255),
@@ -23,7 +24,6 @@ class UserModel(Base):
         doc="Роль пользователя",
     )
 
-    __tablename__ = "users"
     __table_args__ = (Index("users_username_idx", username),)
 
     def to_domain_schema(self) -> User:

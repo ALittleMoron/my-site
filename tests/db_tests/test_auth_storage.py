@@ -2,8 +2,8 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.users.enums import RoleEnum
 from core.users.exceptions import UserNotFoundError
-from core.users.schemas import RoleEnum
 from db.storages.auth import AuthDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
 

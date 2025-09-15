@@ -30,11 +30,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version-file: "pyproject.toml"
-      - name: Install uv
+      - name: "Install UV"
         uses: astral-sh/setup-uv@v6
-      - name: Install the project dependencies
+      - name: "Install the project dependencies"
         run: make install
-      - name: Prepare envs
+      - name: "Prepare envs"
         run: |
           openssl genpkey -algorithm ed25519 -out private.pem
           openssl pkey -in private.pem -pubout -out public.pem
@@ -47,23 +47,23 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
           rm public.pem private.pem
-      - name: Run the automated tests with coverage
+      - name: "Run the automated tests with coverage"
         run: make tests-coverage
-      - name: Coverage Badge
+      - name: "Coverage Badge"
         uses: tj-actions/coverage-badge-py@v2
-      - name: Verify Changed files
+      - name: "Verify Changed files"
         uses: tj-actions/verify-changed-files@v16
         id: verify-changed-files
         with:
           files: coverage.svg
-      - name: Commit files
+      - name: "Commit files"
         if: steps.verify-changed-files.outputs.files_changed == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add coverage.svg
           git commit -m "Updated coverage.svg - project coverage have changed"
-      - name: Push changes
+      - name: "Push changes"
         if: steps.verify-changed-files.outputs.files_changed == 'true'
         uses: ad-m/github-push-action@master
         with:

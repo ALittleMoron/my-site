@@ -44,7 +44,7 @@ class ListItemsUseCase(AbstractListItemsUseCase):
 
     async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
         items = await self.storage.list_competency_matrix_items(sheet_name=sheet_name)
-        return CompetencyMatrixItems(values=items).only_available()
+        return CompetencyMatrixItems(values=items)
 
 
 @dataclass(kw_only=True)

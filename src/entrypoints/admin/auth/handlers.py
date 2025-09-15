@@ -10,7 +10,7 @@ from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
 from core.schemas import Secret
-from core.users.schemas import RoleEnum
+from core.users.enums import RoleEnum
 from entrypoints.admin.auth.schemas import Payload
 
 

@@ -1,12 +1,7 @@
 from dataclasses import dataclass
-from enum import StrEnum
 
 from core.schemas import Secret
-
-
-class RoleEnum(StrEnum):
-    USER = "user"
-    ADMIN = "admin"
+from core.users.enums import RoleEnum
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

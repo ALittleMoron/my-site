@@ -1,8 +1,8 @@
 import pytest_asyncio
 from verbose_http_exceptions import status
 
-from core.enums import StatusEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.enums import PublishStatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
 
@@ -28,7 +28,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="Как написать свою функцию?",
-            status=StatusEnum.PUBLISHED,
+            publish_status=PublishStatusEnum.PUBLISHED,
             answer="Просто берёшь и пишешь!",
             interview_expected_answer="Пиши!",
             grade="Junior",

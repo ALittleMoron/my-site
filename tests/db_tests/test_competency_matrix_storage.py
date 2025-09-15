@@ -3,6 +3,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.enums import PublishStatusEnum
 from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
 
@@ -55,6 +56,30 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
     async def test_list_sheets(self) -> None:
         sheets = await self.storage.list_sheets()
         assert sheets == ["Python", "SQL"]
+
+    async def test_list_items_only_available(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    sheet="JS",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=4,
+                    sheet="JS",
+                    publish_status=PublishStatusEnum.DRAFT,
+                ),
+            ],
+        )
+        items = await self.storage.list_competency_matrix_items(sheet_name="JS")
+        assert items == [
+            self.factory.core.competency_matrix_item(
+                item_id=3,
+                sheet="JS",
+                publish_status=PublishStatusEnum.PUBLISHED,
+            ),
+        ]
 
     async def test_list_items(self) -> None:
         items = await self.storage.list_competency_matrix_items(sheet_name="Python")

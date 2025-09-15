@@ -1,5 +1,4 @@
 import uvicorn
-from dishka.integrations.litestar import setup_dishka as setup_dishka_fastapi
 from dishka.integrations.starlette import setup_dishka as setup_dishka_starlette
 from litestar import Litestar
 from starlette.applications import Starlette
@@ -19,9 +18,11 @@ from ioc.container import container
 
 
 def create_cli_app() -> Litestar:
-    app = create_litestar(route_handlers=[], lifespan=[app_lifespan], extra_plugins=[CLIPlugin()])
-    setup_dishka_fastapi(container, app)
-    return app
+    return create_litestar(
+        route_handlers=[],
+        lifespan=[app_lifespan],
+        extra_plugins=[CLIPlugin()],
+    )
 
 
 def create_admin_app() -> Starlette:
@@ -34,9 +35,10 @@ def create_admin_app() -> Starlette:
 
 
 def create_app() -> Litestar:
-    app = create_litestar(route_handlers=[api_router, views_router], lifespan=[app_lifespan])
-    setup_dishka_fastapi(container, app)
-    return app
+    return create_litestar(
+        route_handlers=[api_router, views_router],
+        lifespan=[app_lifespan],
+    )
 
 
 if __name__ == "__main__":

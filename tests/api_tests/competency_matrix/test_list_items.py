@@ -1,7 +1,7 @@
 import pytest_asyncio
 from verbose_http_exceptions import status
 
-from core.enums import StatusEnum
+from core.enums import PublishStatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
 
@@ -16,7 +16,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 self.factory.core.competency_matrix_item(
                     item_id=1,
                     question="Как написать свою функцию?",
-                    status=StatusEnum.PUBLISHED,
+                    publish_status=PublishStatusEnum.PUBLISHED,
                     grade="Junior",
                     subsection="Функции",
                     section="Основы",
@@ -25,7 +25,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 self.factory.core.competency_matrix_item(
                     item_id=2,
                     question="Как написать свою функцию?",
-                    status=StatusEnum.PUBLISHED,
+                    publish_status=PublishStatusEnum.PUBLISHED,
                     grade="Junior",
                     subsection="Функции",
                     section="Основы",
@@ -47,7 +47,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 self.factory.core.competency_matrix_item(
                     item_id=1,
                     question="Как написать свою функцию?",
-                    status=StatusEnum.PUBLISHED,
+                    publish_status=PublishStatusEnum.PUBLISHED,
                     grade="Junior",
                     subsection="Функции",
                     section="Основы",
