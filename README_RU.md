@@ -5,13 +5,15 @@
 | Категория | Технологии |
 |----------|------------|
 | Покрытие | ![coverage](./badges/coverage.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) |
-| База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
-| Frontend | ![htmx](./badges/htmx.svg) |
-| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) |
-| Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) |
-| Логирование | ![structlog](./badges/structlog.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![bcrypt](./badges/bcrypt.svg) |
+| База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
+| Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
+| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
+| Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
+| Логирование | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
 | Архитектура | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
+| Инструменты | ![uv](./badges/uv.svg) ![uvicorn](./badges/uvicorn.svg) |
+| CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!WARNING]
 > Значок coverage показывает процент покрытия не всего проекта.  

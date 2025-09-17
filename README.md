@@ -5,13 +5,15 @@
 | Category | Technologies |
 |----------|--------------|
 | Coverage | ![coverage](./badges/coverage.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) |
-| Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
-| Frontend | ![htmx](./badges/htmx.svg) |
-| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) |
-| Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) |
-| Logging | ![structlog](./badges/structlog.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![bcrypt](./badges/bcrypt.svg) |
+| Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
+| Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
+| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
+| Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
+| Logging | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
 | Architecture | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
+| Tools | ![uv](./badges/uv.svg) ![uvicorn](./badges/uvicorn.svg) |
+| CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!WARNING]
 > Coverage badge shows percentage of coverage not for entire project.
