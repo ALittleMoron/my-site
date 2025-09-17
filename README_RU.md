@@ -2,10 +2,19 @@
 
 [🇺🇸 English version](./README.md)
 
-![coverage](./coverage.svg)
+| Категория | Технологии |
+|----------|------------|
+| Покрытие | ![coverage](./badges/coverage.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) |
+| База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
+| Frontend | ![htmx](./badges/htmx.svg) |
+| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) |
+| Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) |
+| Логирование | ![structlog](./badges/structlog.svg) |
+| Архитектура | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
 
 > [!WARNING]
-> Значок coverage.svg показывает процент покрытия не всего проекта.  
+> Значок coverage показывает процент покрытия не всего проекта.  
 > Я сделал это намеренно, так как некоторые части кода я тестировал вручную (CLI, HTMX-фронтенд),  
 > а для некоторых частей (например, провайдеры IOC или конфигурация SQLAdmin views)  
 > нет смысла писать pytest-тесты, так как это тривиальный код без бизнес-логики. Возможно, в

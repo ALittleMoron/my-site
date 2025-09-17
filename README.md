@@ -2,7 +2,16 @@
 
 [🇷🇺 Русская версия](./README_RU.md)
 
-![coverage](./coverage.svg)
+| Category | Technologies |
+|----------|--------------|
+| Coverage | ![coverage](./badges/coverage.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) |
+| Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
+| Frontend | ![htmx](./badges/htmx.svg) |
+| DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) |
+| Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) |
+| Logging | ![structlog](./badges/structlog.svg) |
+| Architecture | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
 
 > [!WARNING]
 > Coverage badge shows percentage of coverage not for entire project.
