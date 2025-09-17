@@ -19,6 +19,7 @@ My site with blog, mentoring things and others.
 
 - [Project idea](docs/idea.md)  
 - [Project vision](docs/vision.md) 
+- [ADR folder](docs/adr/)
 
 ## 📂 Project Structure
 
