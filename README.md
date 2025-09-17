@@ -1,4 +1,4 @@
-# Мой личный сайт
+# My Personal Site 
 
 [🇷🇺 Русская версия](./README_RU.md)
 
