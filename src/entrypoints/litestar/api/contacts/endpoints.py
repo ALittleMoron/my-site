@@ -14,13 +14,14 @@ from entrypoints.litestar.api.contacts.schemas import ContactMeRequest
 
 rate_limit: tuple[DurationUnit, int] = ("minute", 1)
 rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
+middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else []
 
 
 @post(
     "",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Создание заявки на то, чтобы связаться со мной",
-    middleware=[rate_limit_config.middleware] if settings.app.use_rate_limit else [],
+    middleware=middleware,
 )
 async def contact_me_request(
     request: Request,

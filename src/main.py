@@ -7,6 +7,7 @@ from config.initializers import (
     before_app_create,
 )
 from config.loggers import logger
+from config.settings import settings
 from db.meta import engine
 from entrypoints.admin.initializers import create_admin_starlette_app
 from entrypoints.litestar.api.routers import api_router
@@ -42,7 +43,7 @@ def create_app() -> Litestar:
 
 
 if __name__ == "__main__":
-    logger.debug("Local application started")
+    logger.debug("Local application started", debug=settings.app.debug)
     uvicorn.run(
         app="__main__:create_app",
         host="localhost",

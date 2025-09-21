@@ -18,7 +18,7 @@ start_admin:
 
 .PHONY: start_local_app
 start_local_app:
-	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost uv run src/main.py
+	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run src/main.py
 
 .PHONY: litestar
 litestar:

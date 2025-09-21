@@ -29,6 +29,16 @@ services:
     networks:
       - app-network
 
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    environment:
+      - VALKEY_DATABASE=${VALKEY_DB}
+    volumes:
+      - valkey_data:/data
+
   postgres:
     build:
       context: .
@@ -103,3 +113,4 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  valkey_data:

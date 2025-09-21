@@ -9,12 +9,12 @@ from config.constants import constants
 env_file_path = constants.dir.root_path / ".env"
 
 
-class _AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="APP_",
-        env_file=env_file_path,
-        extra="ignore",
-    )
+class _ProjectBaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=env_file_path, extra="ignore")
+
+
+class _AppSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="APP_")
 
     debug: bool = True
     secret_key: SecretStr = SecretStr("SECRET_KEY")
@@ -35,12 +35,8 @@ class _AppSettings(BaseSettings):
         return 0
 
 
-class _DatabaseSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="DB_",
-        env_file=env_file_path,
-        extra="ignore",
-    )
+class _DatabaseSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DB_")
 
     # connection creds settings
     user: str = "postgres"
@@ -65,12 +61,8 @@ class _DatabaseSettings(BaseSettings):
         )
 
 
-class _AuthSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="AUTH_",
-        env_file=env_file_path,
-        extra="ignore",
-    )
+class _AuthSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="AUTH_")
 
     public_key: SecretStr
     private_key: SecretStr
@@ -78,12 +70,8 @@ class _AuthSettings(BaseSettings):
     crypto_scheme: str = "bcrypt"
 
 
-class _MinioSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="MINIO_",
-        env_file=env_file_path,
-        extra="ignore",
-    )
+class _MinioSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="MINIO_")
 
     host: str = "localhost"
     port: int = 9000
@@ -96,14 +84,30 @@ class _MinioSettings(BaseSettings):
         return f"{self.host}:{self.port}"
 
 
-class _SentrySettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="SENTRY_",
-        env_file=env_file_path,
-        extra="ignore",
-    )
+class _SentrySettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="SENTRY_")
 
     dsn: str = ""
+
+
+class _ValkeySettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="VALKEY_")
+
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+    namespace: str = "APPLICATION"
+
+    @property
+    def url(self) -> SecretStr:
+        return SecretStr(
+            "valkey://{host}:{port}/{db}".format(
+                backend="valkey",
+                host=self.host,
+                port=self.port,
+                db=self.db,
+            )
+        )
 
 
 class Settings:
@@ -112,6 +116,7 @@ class Settings:
     database: _DatabaseSettings = _DatabaseSettings()
     minio: _MinioSettings = _MinioSettings()
     sentry: _SentrySettings = _SentrySettings()
+    valkey: _ValkeySettings = _ValkeySettings()
 
     @property
     def base_url(self) -> str:
