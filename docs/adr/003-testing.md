@@ -793,13 +793,13 @@ make tests-coverage
 
 tests: ## Run all tests
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src $(UV) run pytest -vvv -x $(TESTS)
+	PYTHONPATH=src APP_CACHE_CACHE=false $(UV) run pytest -vvv -x $(TESTS)
 
 tests-coverage: ## Run tests with coverage
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src $(UV) run coverage run -m pytest -vvv
-	PYTHONPATH=src $(UV) run coverage xml
-	PYTHONPATH=src $(UV) run coverage report --fail-under=95
+	PYTHONPATH=src APP_CACHE_CACHE=false APP_USE_RATE_LIMIT=false $(UV) run coverage run -m pytest -vvv
+	PYTHONPATH=src APP_CACHE_CACHE=false APP_USE_RATE_LIMIT=false $(UV) run coverage xml
+	PYTHONPATH=src APP_CACHE_CACHE=false APP_USE_RATE_LIMIT=false $(UV) run coverage report --fail-under=95
 ```
 
 ### Примеры тестов

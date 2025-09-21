@@ -96,7 +96,7 @@ class _ValkeySettings(_ProjectBaseSettings):
     host: str = "localhost"
     port: int = 6379
     db: int = 0
-    namespace: str = "APPLICATION"
+    namespace: str = "LITESTAR"
 
     @property
     def url(self) -> SecretStr:

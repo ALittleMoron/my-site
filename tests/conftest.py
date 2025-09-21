@@ -39,7 +39,7 @@ def test_settings() -> Generator[Settings, None, None]:
     settings.database.name = "my_site_database"
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture(loop_scope="function")
 async def container(
     test_settings: Settings,
     global_random_uuid: uuid.UUID,

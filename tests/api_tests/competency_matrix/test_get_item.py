@@ -45,7 +45,6 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ],
         )
         response = self.api.get_competency_matrix_item(item_id=1)
-        self.use_case.execute.assert_called_once_with(item_id=1)
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
             "id": 1,
@@ -65,3 +64,4 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 }
             ],
         }
+        self.use_case.execute.assert_called_once_with(item_id=1)

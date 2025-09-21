@@ -51,20 +51,27 @@ def create_litestar(
                 directories=[constants.dir.src_path / "static"],
             ),
         )
+    cache = (
+        {
+            "litestar_cache": ValkeyStore.with_client(
+                url=settings.valkey.url.get_secret_value(),
+                db=settings.valkey.db,
+                port=settings.valkey.port,
+                namespace=settings.valkey.namespace,
+            )
+        }
+        if settings.app.use_cache
+        else {}
+    )
     return Litestar(
         route_handlers=route_handlers_list,
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
-        stores={
-            "valkey": ValkeyStore.with_client(
-                url=settings.valkey.url.get_secret_value(),
-                db=settings.valkey.db,
-                port=settings.valkey.port,
-                namespace=settings.valkey.namespace,
-            ),
-        },
-        response_cache_config=ResponseCacheConfig(store="valkey"),
+        stores={**cache},
+        response_cache_config=(
+            ResponseCacheConfig(store="litestar_cache") if settings.app.use_cache else None
+        ),
         middleware=[
             RequestIdLoggingMiddleware(),
             LogExceptionMiddleware(),
