@@ -6,10 +6,10 @@ from config.constants import constants
 
 
 def migrate(revision: str) -> None:
-    config = Config(constants.dir.alembic_path / "alembic.ini")
+    config = Config(constants.path.alembic_dir / "alembic.ini")
     alembic_upgrade(config=config, revision=revision)
 
 
 def downgrade(revision: str) -> None:
-    config = Config(constants.dir.alembic_path / "alembic.ini")
+    config = Config(constants.path.alembic_dir / "alembic.ini")
     alembic_downgrade(config=config, revision=revision)

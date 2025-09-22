@@ -6,11 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.constants import constants
 
-env_file_path = constants.dir.root_path / ".env"
-
 
 class _ProjectBaseSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=env_file_path, extra="ignore")
+    model_config = SettingsConfigDict(env_file=constants.path.env_file, extra="ignore")
 
 
 class _AppSettings(_ProjectBaseSettings):
@@ -100,14 +98,7 @@ class _ValkeySettings(_ProjectBaseSettings):
 
     @property
     def url(self) -> SecretStr:
-        return SecretStr(
-            "valkey://{host}:{port}/{db}".format(
-                backend="valkey",
-                host=self.host,
-                port=self.port,
-                db=self.db,
-            )
-        )
+        return SecretStr(f"valkey://{self.host}:{self.port}/{self.db}")
 
 
 class Settings:

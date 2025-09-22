@@ -23,8 +23,8 @@ from config.constants import constants
 from config.settings import settings
 from config.template_callables import register_template_callables
 from entrypoints.litestar.middlewares.logging import (
-    RequestIdLoggingMiddleware,
     LogExceptionMiddleware,
+    RequestIdLoggingMiddleware,
 )
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
@@ -48,7 +48,7 @@ def create_litestar(
         route_handlers_list.append(
             create_static_files_router(
                 path="/static",
-                directories=[constants.dir.src_path / "static"],
+                directories=[constants.path.src_dir / "static"],
             ),
         )
     cache = (
@@ -58,7 +58,7 @@ def create_litestar(
                 db=settings.valkey.db,
                 port=settings.valkey.port,
                 namespace=settings.valkey.namespace,
-            )
+            ),
         }
         if settings.app.use_cache
         else {}
@@ -92,7 +92,7 @@ def create_litestar(
             *(extra_plugins or []),
         ],
         template_config=TemplateConfig(
-            directory=constants.dir.src_path / "templates",
+            directory=constants.path.src_dir / "templates",
             engine=JinjaTemplateEngine,
             engine_callback=register_template_callables,
         ),

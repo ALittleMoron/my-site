@@ -4,10 +4,12 @@ from typing import Literal
 
 
 @dataclass(kw_only=True, frozen=True)
-class _DirConstants:
-    src_path: Path = Path(__file__).resolve().parent.parent
-    root_path: Path = src_path.parent
-    alembic_path: Path = src_path / "db" / "alembic"
+class _PathConstants:
+    src_dir: Path = Path(__file__).resolve().parent.parent
+    root_dir: Path = src_dir.parent
+    env_file: Path = root_dir / ".env"
+    alembic_dir: Path = src_dir / "db" / "alembic"
+    static_dir: Path = src_dir / "static"
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -24,7 +26,7 @@ class _StaticFilesConstants:
 
 
 class Constants:
-    dir: _DirConstants = _DirConstants()
+    path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
     static_files: _StaticFilesConstants = _StaticFilesConstants()
 

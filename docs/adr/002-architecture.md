@@ -818,6 +818,7 @@ class RedisCacheService(CacheService):
 #### Интеграция клиентов и сервисов с Use Cases
 
 **Использование в Use Cases:**
+
 ```python
 # src/core/domain/use_cases.py
 @dataclass(kw_only=True)
@@ -826,33 +827,33 @@ class CreateEntityWithFileUseCase:
     file_service: FileService
     cache_service: CacheService
     logger: Logger
-    
+
     async def execute(self, data: CreateEntityData, file_data: bytes) -> Entity:
         self.logger.info("Creating entity with file", data_id=data.id)
-        
+
         # Валидация файла
         file_info = await self.file_service.validate_file(file_data)
         if not file_info.is_valid:
             raise ValidationError("Invalid file")
-        
+
         # Загрузка файла
-        file_url = await self.file_service.upload_file(
+        file_url = await self.file_service.upload_static_file(
             file_data=file_data,
             filename=file_info.filename,
             content_type=file_info.content_type,
         )
-        
+
         # Создание сущности
         entity_data = data.model_copy(update={"file_url": file_url})
         entity = await self.storage.create(entity_data)
-        
+
         # Кэширование результата
         await self.cache_service.set(
             key=f"entity:{entity.id}",
             value=entity.to_dict(),
             ttl=3600,
         )
-        
+
         self.logger.info("Entity created successfully", entity_id=entity.id)
         return entity
 ```
@@ -1690,6 +1691,7 @@ async def provide_get_cached_entity_use_case(
 #### 6. Использование клиентов и сервисов
 
 **Use Case с файловым сервисом:**
+
 ```python
 @dataclass(kw_only=True)
 class CreateEntityWithFileUseCase:
@@ -1697,33 +1699,33 @@ class CreateEntityWithFileUseCase:
     file_service: FileService
     cache_service: CacheService
     logger: Logger
-    
+
     async def execute(self, data: CreateEntityData, file_data: bytes) -> Entity:
         self.logger.info("Creating entity with file", data_id=data.id)
-        
+
         # Валидация файла через сервис
         file_info = await self.file_service.validate_file(file_data)
         if not file_info.is_valid:
             raise ValidationError("Invalid file format")
-        
+
         # Загрузка файла через клиент
-        file_url = await self.file_service.upload_file(
+        file_url = await self.file_service.upload_static_file(
             file_data=file_data,
             filename=file_info.filename,
             content_type=file_info.content_type,
         )
-        
+
         # Создание сущности
         entity_data = data.model_copy(update={"file_url": file_url})
         entity = await self.storage.create(entity_data)
-        
+
         # Кэширование через сервис
         await self.cache_service.set(
             key=f"entity:{entity.id}",
             value=entity.to_dict(),
             ttl=3600,
         )
-        
+
         return entity
 ```
 
@@ -1754,24 +1756,26 @@ class CreateEntityWithNotificationUseCase:
 #### 7. Тестирование с DI
 
 **Мокирование зависимостей:**
+
 ```python
 # tests/test_domain.py
 class TestDomainProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def provide_mock_storage(self) -> EntityStorage:
         return Mock(spec=EntityStorage)
-    
+
     @provide(scope=Scope.REQUEST)
     async def provide_mock_file_service(self) -> FileService:
         return Mock(spec=FileService)
-    
+
     @provide(scope=Scope.REQUEST)
     async def provide_mock_cache_service(self) -> CacheService:
         return Mock(spec=CacheService)
-    
+
     @provide(scope=Scope.REQUEST)
     async def provide_mock_logger(self) -> Logger:
         return Mock(spec=Logger)
+
 
 async def test_use_case_with_services():
     # Создание тестового контейнера
@@ -1779,33 +1783,33 @@ async def test_use_case_with_services():
         TestDomainProvider(),
         TestGeneralProvider(),
     )
-    
+
     async with test_container() as container:
         use_case = await container.get(AbstractCreateEntityWithFileUseCase)
-        
+
         # Настройка моков
         mock_storage = await container.get(EntityStorage)
         mock_file_service = await container.get(FileService)
         mock_cache_service = await container.get(CacheService)
-        
+
         # Настройка поведения моков
         mock_file_service.validate_file.return_value = FileInfo(
             is_valid=True,
             filename="test.jpg",
             content_type="image/jpeg"
         )
-        mock_file_service.upload_file.return_value = "https://storage.com/test.jpg"
+        mock_file_service.upload_static_file.return_value = "https://storage.com/test.jpg"
         mock_storage.create.return_value = Entity(id=UUID("123"), name="test")
-        
+
         # Тестирование
         result = await use_case.execute(
             data=CreateEntityData(name="test"),
             file_data=b"fake_image_data"
         )
-        
+
         assert result.name == "test"
         mock_file_service.validate_file.assert_called_once()
-        mock_file_service.upload_file.assert_called_once()
+        mock_file_service.upload_static_file.assert_called_once()
         mock_cache_service.set.assert_called_once()
 ```
 

@@ -32,17 +32,17 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "bandit>=1.8.5",
-    "coverage>=7.9.1",
+    "bandit>=1.8.6",
+    "coverage>=7.10.6",
     "httpx>=0.28.1",
-    "ipython>=9.3.0",
+    "ipython>=9.5.0",
     "mimesis>=18.0.0",
-    "mypy>=1.16.1",
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.2.1",
-    "pytest-mock>=3.14.1",
-    "ruff>=0.12.0",
+    "mypy>=1.18.1",
+    "pytest==8.3.3",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.15.1",
+    "ruff>=0.13.0",
     "setuptools>=80.9.0",
     "vulture>=2.14",
 ]
@@ -51,7 +51,7 @@ dev = [
 package = false
 
 [tool.ruff]
-output-format = "full"
+output-format = "concise"
 lint.select = ["ALL"]
 lint.ignore = [
     "RUF003",
