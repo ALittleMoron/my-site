@@ -28,6 +28,7 @@ dependencies = [
     "ecs-logging>=2.2.0",
     "sentry-sdk[litestar]>=2.33.0",
     "pem>=23.1.0",
+    "argon2-cffi>=23.1.0",
 ]
 
 [dependency-groups]

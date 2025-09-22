@@ -39,15 +39,18 @@ class AdminAuthenticationBackend(AuthenticationBackend):
         if not user.is_admin:
             logger.warning("User is not admin", username=user.username)
             return False
-        if not hasher.verify_password(
+        verified, need_rehash = hasher.verify_password(
             plain_password=password,
             hashed_password=user.password_hash.get_secret_value(),
-        ):
+        )
+        if not verified:
             logger.warning(
                 "incorrect credentials (passwords not suit)",
                 username=user.username,
             )
             return False
+        if need_rehash:
+            pass
         token = auth_handler.encode_token(
             payload=AuthTokenPayload(username=user.username, role=user.role),
         )

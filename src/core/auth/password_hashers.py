@@ -1,12 +1,21 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from passlib.context import CryptContext
+from argon2 import PasswordHasher as Argon2CryptContext
+from argon2.exceptions import VerificationError
+from passlib.context import CryptContext as PasslibCryptContext
+
+type NeedRehash = bool
+type PasswordVerified = bool
 
 
 class PasswordHasher(ABC):
     @abstractmethod
-    def verify_password(self, plain_password: str | bytes, hashed_password: str | bytes) -> bool:
+    def verify_password(
+        self,
+        plain_password: str | bytes,
+        hashed_password: str | bytes,
+    ) -> tuple[PasswordVerified, NeedRehash]:
         raise NotImplementedError
 
     @abstractmethod
@@ -16,10 +25,39 @@ class PasswordHasher(ABC):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class PasslibPasswordHasher(PasswordHasher):
-    context: CryptContext
+    context: PasslibCryptContext
 
-    def verify_password(self, plain_password: str | bytes, hashed_password: str | bytes) -> bool:
-        return self.context.verify(plain_password, hashed_password)  # type: ignore[no-any-return]
+    def verify_password(
+        self,
+        plain_password: str | bytes,
+        hashed_password: str | bytes,
+    ) -> tuple[PasswordVerified, NeedRehash]:
+        verify = self.context.verify(plain_password, hashed_password)
+        return verify, False
 
     def hash_password(self, password: str | bytes) -> str:
         return self.context.hash(password)  # type: ignore[no-any-return]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Argon2PasswordHasher(PasswordHasher):
+    context: Argon2CryptContext
+
+    def verify_password(
+        self,
+        plain_password: str | bytes,
+        hashed_password: str | bytes,
+    ) -> tuple[PasswordVerified, NeedRehash]:
+        hashed_password_str = (
+            hashed_password if isinstance(hashed_password, str) else hashed_password.decode()
+        )
+        try:
+            return (
+                self.context.verify(hashed_password, plain_password),
+                self.context.check_needs_rehash(hashed_password_str),
+            )
+        except VerificationError:
+            return False, False
+
+    def hash_password(self, password: str | bytes) -> str:
+        return self.context.hash(password)

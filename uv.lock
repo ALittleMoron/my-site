@@ -976,6 +976,7 @@ version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "argon2-cffi" },
     { name = "bcrypt" },
     { name = "dishka" },
     { name = "ecs-logging" },
@@ -1018,6 +1019,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.15.2" },
+    { name = "argon2-cffi", specifier = ">=23.1.0" },
     { name = "bcrypt", specifier = ">=4.3.0" },
     { name = "dishka", specifier = ">=1.5.3" },
     { name = "ecs-logging", specifier = ">=2.2.0" },
