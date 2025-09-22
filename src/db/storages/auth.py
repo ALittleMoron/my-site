@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.users.exceptions import UserNotFoundError
-from core.users.schemas import User
+from core.auth.exceptions import UserNotFoundError
+from core.auth.schemas import User
 from db.models import UserModel
 
 

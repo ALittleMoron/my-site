@@ -88,17 +88,16 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/**/*.py" = ["PD"]
-"src/tests/*" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
+"src/tests/**/*.py" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
 "src/tests/conftest.py" = ["ARG001", "ANN401"]
-"src/tests/mocks/*" = ["ARG002", "ARG003"]
+"src/tests/mocks/**/*.py" = ["ARG002", "ARG003"]
 "src/tests/**/helper.py" = ["PLR0913", "ANN401"]
 "src/tests/helpers/*.py" = ["PLR0913", "ANN401"]
 "src/tests/types.py" = ["ANN"]
-"src/app/config/*" = ["ANN401"]
+"src/app/config/*.py" = ["ANN401"]
 "src/api/schemas.py" = ["ARG002", "ANN003", "A003", "ANN401"]
 "src/api/*/endpoints.py" = ["ARG001", "PLR0913"]
 "src/api/**/*.py" = ["N803"]
-"src/settings/auto.py" = ["PGH004"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

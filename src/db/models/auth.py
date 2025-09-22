@@ -1,9 +1,9 @@
 from sqlalchemy import Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from core.auth.enums import RoleEnum
+from core.auth.schemas import User
 from core.schemas import Secret
-from core.users.enums import RoleEnum
-from core.users.schemas import User
 from db.models.base import Base
 
 
@@ -15,7 +15,7 @@ class UserModel(Base):
         doc="Имя пользователя",
         primary_key=True,
     )
-    password: Mapped[str] = mapped_column(
+    password_hash: Mapped[str] = mapped_column(
         String(127),
         doc="Зашифрованный парользо пользователя",
     )
@@ -29,7 +29,7 @@ class UserModel(Base):
     def to_domain_schema(self) -> User:
         return User(
             username=self.username,
-            password=Secret(self.password),
+            password_hash=Secret(self.password_hash),
             role=self.role,
         )
 
@@ -37,6 +37,6 @@ class UserModel(Base):
     def from_domain_schema(cls, schema: User) -> "UserModel":
         return cls(
             username=schema.username,
-            password=schema.password.get_secret_value(),
+            password_hash=schema.password_hash.get_secret_value(),
             role=schema.role,
         )

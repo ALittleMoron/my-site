@@ -4,10 +4,10 @@ from dishka import Provider, BaseScope, Component, provide, Scope
 from passlib.context import CryptContext
 
 from config.settings import Settings
+from core.auth.password_hashers import PasswordHasher, PasslibPasswordHasher
+from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
 from core.schemas import Secret
 from db.storages.auth import AuthStorage
-from entrypoints.admin.auth.handlers import AuthHandler
-from entrypoints.admin.auth.utils import Hasher
 
 test_public_key_pem = """\
 -----BEGIN PUBLIC KEY-----
@@ -32,12 +32,12 @@ class MockAuthProvider(Provider):
         self.settings = settings
 
     @provide(scope=Scope.APP)
-    async def provide_hasher(self) -> Hasher:
-        return Hasher(context=CryptContext(schemes=self.settings.auth.crypto_scheme))
+    async def provide_hasher(self) -> PasswordHasher:
+        return PasslibPasswordHasher(context=CryptContext(schemes=self.settings.auth.crypto_scheme))
 
     @provide(scope=Scope.APP)
-    async def provide_auth_handler(self) -> AuthHandler:
-        return AuthHandler(
+    async def provide_auth_handler(self) -> TokenHandler:
+        return PasetoTokenHandler(
             public_key_pem=Secret(test_public_key_pem),
             secret_key_pem=Secret(test_private_key_pem),
             token_expire_seconds=self.settings.auth.token_expire_seconds,

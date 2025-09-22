@@ -2,7 +2,7 @@ from io import BytesIO
 from unittest.mock import Mock, patch
 
 import pytest
-from miniopy_async import Minio
+from miniopy_async.api import Minio
 from miniopy_async.error import MinioException
 
 from core.file_storages.exceptions import FileStorageInternalError

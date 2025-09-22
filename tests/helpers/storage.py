@@ -4,11 +4,11 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.schemas import User
 from core.blog.schemas import BlogPost
 from core.competency_matrix.schemas import CompetencyMatrixItem
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
-from core.users.schemas import User
 from db.models import CompetencyMatrixItemModel, UserModel, ContactMeModel, BlogPostModel
 
 

@@ -3,22 +3,21 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
-from core.schemas import Secret
+from core.auth.password_hashers import PasslibPasswordHasher, PasswordHasher
+from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
 from db.storages.auth import AuthDatabaseStorage, AuthStorage
-from entrypoints.admin.auth.handlers import AuthHandler
-from entrypoints.admin.auth.utils import Hasher
 
 
 class AuthProvider(Provider):
     @provide(scope=Scope.APP)
-    async def provide_hasher(self) -> Hasher:
-        return Hasher(context=CryptContext(schemes=settings.auth.crypto_scheme))
+    async def provide_hasher(self) -> PasswordHasher:
+        return PasslibPasswordHasher(context=CryptContext(schemes=settings.auth.crypto_scheme))
 
     @provide(scope=Scope.APP)
-    async def provide_auth_handler(self) -> AuthHandler:
-        return AuthHandler(
-            public_key_pem=Secret(settings.auth.public_key.get_secret_value()),
-            secret_key_pem=Secret(settings.auth.private_key.get_secret_value()),
+    async def provide_auth_handler(self) -> TokenHandler:
+        return PasetoTokenHandler(
+            public_key_pem=settings.auth.public_key.to_domain_secret(),
+            secret_key_pem=settings.auth.private_key.to_domain_secret(),
             token_expire_seconds=settings.auth.token_expire_seconds,
         )
 

@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime, UTC
 
+from core.auth.enums import RoleEnum
+from core.auth.schemas import User
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -12,8 +14,6 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.schemas import Secret
-from core.users.enums import RoleEnum
-from core.users.schemas import User
 
 
 class CoreFactoryHelper:
@@ -72,7 +72,7 @@ class CoreFactoryHelper:
     ) -> User:
         return User(
             username=username,
-            password=Secret(password),
+            password_hash=Secret(password),
             role=role,
         )
 

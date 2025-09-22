@@ -2,10 +2,10 @@ from unittest.mock import AsyncMock
 
 import pytest_asyncio
 
-from core.users.enums import RoleEnum
-from core.users.exceptions import UserNotFoundError
-from entrypoints.admin.auth.backends import AdminAuthenticationBackend
-from entrypoints.admin.auth.schemas import Payload
+from core.auth.enums import RoleEnum
+from core.auth.exceptions import UserNotFoundError
+from core.auth.schemas import AuthTokenPayload
+from entrypoints.admin.auth_backends import AdminAuthenticationBackend
 from tests.fixtures import FactoryFixture, ContainerFixture
 
 
@@ -70,7 +70,7 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
         self.storage.get_user_by_username.side_effect = UserNotFoundError()
         auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
-            payload=Payload(username="not_presented", role=RoleEnum.ADMIN),
+            payload=AuthTokenPayload(username="not_presented", role=RoleEnum.ADMIN),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
@@ -79,7 +79,7 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
         auth_handler = await self.container.get_auth_handler()
         self.storage.get_user_by_username.return_value = self.user_1
         token = auth_handler.encode_token(
-            payload=Payload(username=self.user_1.username, role=self.user_1.role),
+            payload=AuthTokenPayload(username=self.user_1.username, role=self.user_1.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
@@ -88,7 +88,7 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
         auth_handler = await self.container.get_auth_handler()
         self.storage.get_user_by_username.return_value = self.user_2
         token = auth_handler.encode_token(
-            payload=Payload(username=self.user_2.username, role=self.user_2.role),
+            payload=AuthTokenPayload(username=self.user_2.username, role=self.user_2.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is True
@@ -114,7 +114,7 @@ class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
     async def test_authenticate_user_not_admin(self) -> None:
         auth_handler = await self.container.get_auth_handler()
         token = auth_handler.encode_token(
-            payload=Payload(username=self.user.username, role=self.user.role),
+            payload=AuthTokenPayload(username=self.user.username, role=self.user.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False

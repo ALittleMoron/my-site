@@ -4,7 +4,7 @@ from starlette.applications import Starlette
 
 from config.constants import constants
 from config.settings import settings
-from entrypoints.admin.auth.backends import AdminAuthenticationBackend
+from entrypoints.admin.auth_backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
 
 

@@ -5,6 +5,12 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.constants import constants
+from core.schemas import Secret
+
+
+class SecretStrExtended(SecretStr):
+    def to_domain_secret(self) -> Secret[str]:
+        return Secret(self.get_secret_value())
 
 
 class _ProjectBaseSettings(BaseSettings):
@@ -15,7 +21,7 @@ class _AppSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     debug: bool = True
-    secret_key: SecretStr = SecretStr("SECRET_KEY")
+    secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
     domain: str = "localhost"
     use_cache: bool = True
     use_rate_limit: bool = True
@@ -38,7 +44,7 @@ class _DatabaseSettings(_ProjectBaseSettings):
 
     # connection creds settings
     user: str = "postgres"
-    password: SecretStr = SecretStr("postgres")
+    password: SecretStrExtended = SecretStrExtended("postgres")
     driver: str = "postgresql+psycopg"
     host: str = "localhost"
     port: str = "5432"
@@ -53,8 +59,8 @@ class _DatabaseSettings(_ProjectBaseSettings):
     expire_on_commit: bool = False
 
     @property
-    def url(self) -> SecretStr:
-        return SecretStr(
+    def url(self) -> SecretStrExtended:
+        return SecretStrExtended(
             f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
         )
 
@@ -62,8 +68,8 @@ class _DatabaseSettings(_ProjectBaseSettings):
 class _AuthSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="AUTH_")
 
-    public_key: SecretStr
-    private_key: SecretStr
+    public_key: SecretStrExtended
+    private_key: SecretStrExtended
     token_expire_seconds: int = 60 * 60 * 24 * 2
     crypto_scheme: str = "bcrypt"
 
@@ -73,7 +79,7 @@ class _MinioSettings(_ProjectBaseSettings):
 
     host: str = "localhost"
     port: int = 9000
-    secret_key: SecretStr = SecretStr("minioadmin")
+    secret_key: SecretStrExtended = SecretStrExtended("minioadmin")
     access_key: str = "minioadmin"
     secure: bool = False
 
@@ -97,8 +103,8 @@ class _ValkeySettings(_ProjectBaseSettings):
     namespace: str = "LITESTAR"
 
     @property
-    def url(self) -> SecretStr:
-        return SecretStr(f"valkey://{self.host}:{self.port}/{self.db}")
+    def url(self) -> SecretStrExtended:
+        return SecretStrExtended(f"valkey://{self.host}:{self.port}/{self.db}")
 
 
 class Settings:

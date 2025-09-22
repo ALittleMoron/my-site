@@ -6,11 +6,11 @@ from starlette.responses import Response
 from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
-from core.users.exceptions import UserNotFoundError
+from core.auth.exceptions import UserNotFoundError
+from core.auth.password_hashers import PasswordHasher
+from core.auth.schemas import AuthTokenPayload
+from core.auth.token_handlers import TokenHandler
 from db.storages.auth import AuthStorage
-from entrypoints.admin.auth.handlers import AuthHandler
-from entrypoints.admin.auth.schemas import Payload
-from entrypoints.admin.auth.utils import Hasher
 
 if TYPE_CHECKING:
     from dishka import AsyncContainer
@@ -20,8 +20,8 @@ class AdminAuthenticationBackend(AuthenticationBackend):
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container
         storage = await request_container.get(AuthStorage)
-        auth_handler = await request_container.get(AuthHandler)
-        hasher = await request_container.get(Hasher)
+        auth_handler = await request_container.get(TokenHandler)
+        hasher = await request_container.get(PasswordHasher)
         form = await request.form()
         username, password = form["username"], form["password"]
         if not isinstance(username, str) or not isinstance(password, str):
@@ -41,7 +41,7 @@ class AdminAuthenticationBackend(AuthenticationBackend):
             return False
         if not hasher.verify_password(
             plain_password=password,
-            hashed_password=user.password.get_secret_value(),
+            hashed_password=user.password_hash.get_secret_value(),
         ):
             logger.warning(
                 "incorrect credentials (passwords not suit)",
@@ -49,7 +49,7 @@ class AdminAuthenticationBackend(AuthenticationBackend):
             )
             return False
         token = auth_handler.encode_token(
-            payload=Payload(username=user.username, role=user.role),
+            payload=AuthTokenPayload(username=user.username, role=user.role),
         )
         request.session.update({"token": token.decode()})
         return True
@@ -61,7 +61,7 @@ class AdminAuthenticationBackend(AuthenticationBackend):
     async def authenticate(self: Self, request: Request) -> Response | bool:
         request_container: AsyncContainer = request.state.dishka_container
         storage = await request_container.get(AuthStorage)
-        auth_handler = await request_container.get(AuthHandler)
+        auth_handler = await request_container.get(TokenHandler)
         if (token := request.session.get("token")) is None or not isinstance(token, str):
             logger.warning(event="No auth token or token is not str", token=token)
             return False
@@ -79,7 +79,7 @@ class AdminAuthenticationBackend(AuthenticationBackend):
             logger.warning("User is not admin", username=user.username)
             return False
         new_token = auth_handler.encode_token(
-            payload=Payload(username=user.username, role=user.role),
+            payload=AuthTokenPayload(username=user.username, role=user.role),
         )
         request.session.update({"token": new_token.decode()})
         return True
