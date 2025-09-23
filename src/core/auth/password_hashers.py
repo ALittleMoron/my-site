@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from argon2 import PasswordHasher as Argon2CryptContext
 from argon2.exceptions import VerificationError
-from passlib.context import CryptContext as PasslibCryptContext
 
 type NeedRehash = bool
 type PasswordVerified = bool
@@ -21,22 +20,6 @@ class PasswordHasher(ABC):
     @abstractmethod
     def hash_password(self, password: str | bytes) -> str:
         raise NotImplementedError
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class PasslibPasswordHasher(PasswordHasher):
-    context: PasslibCryptContext
-
-    def verify_password(
-        self,
-        plain_password: str | bytes,
-        hashed_password: str | bytes,
-    ) -> tuple[PasswordVerified, NeedRehash]:
-        verify = self.context.verify(plain_password, hashed_password)
-        return verify, False
-
-    def hash_password(self, password: str | bytes) -> str:
-        return self.context.hash(password)  # type: ignore[no-any-return]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

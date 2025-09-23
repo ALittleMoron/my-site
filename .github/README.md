@@ -5,7 +5,7 @@
 | Category | Technologies |
 |----------|--------------|
 | Coverage | ![coverage](./badges/coverage.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![bcrypt](./badges/bcrypt.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
 | Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
@@ -16,15 +16,13 @@
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!WARNING]
-> Coverage badge shows percentage of coverage not for entire project.
-> I did it on purpose due to some part of codes I tested manually (CLI, HTMX frontend),
-> and for some part of codes there is no sense to test it using pytest, because its trivial
-> code with no business-logic like IOC providers or SQLAdmin views configuration.
-> Maybe in future I'll add tests via selenium, but for now I only test it manually.
+> Coverage shows cover percents of entire project. That means, some parts of projects are not
+> covered yet, but it does not mean, that it is bad. For example, there is no coverage of endpoints
+> of templates (HTMX + HyperScript) or CLI. CLI I tested manually, frontend not tested yet. But
+> I will separate frontend and backend further.
 
 A web application with a Litestar as backend with HTMX as frontend (Server Side Rendering). 
 My site with blog, mentoring things and others.
-
 
 ## 📖 Documentation
 

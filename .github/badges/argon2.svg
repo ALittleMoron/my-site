@@ -12,9 +12,9 @@
     <path fill="url(#b)" d="M0 0h90v20H0z"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-    <text x="25" y="15" fill="#010101" fill-opacity=".3">bcrypt</text>
-    <text x="25" y="14">bcrypt</text>
-    <text x="70" y="15" fill="#010101" fill-opacity=".3">4.3+</text>
-    <text x="70" y="14">4.3+</text>
+    <text x="25" y="15" fill="#010101" fill-opacity=".3">argon2</text>
+    <text x="25" y="14">argon2</text>
+    <text x="70" y="15" fill="#010101" fill-opacity=".3">✓</text>
+    <text x="70" y="14">✓</text>
   </g>
 </svg>

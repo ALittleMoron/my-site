@@ -71,7 +71,6 @@ class _AuthSettings(_ProjectBaseSettings):
     public_key: SecretStrExtended
     private_key: SecretStrExtended
     token_expire_seconds: int = 60 * 60 * 24 * 2
-    crypto_scheme: str = "bcrypt"
 
 
 class _MinioSettings(_ProjectBaseSettings):

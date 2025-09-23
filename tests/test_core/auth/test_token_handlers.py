@@ -40,6 +40,6 @@ class TestPasetoTokenHandler:
         )
 
     def test_decode_token_not_valid_payload(self) -> None:
-        token = pyseto.encode(key=self.auth_handler.create_secret_key(), payload={"test": "test"})
+        token = pyseto.encode(key=self.auth_handler._create_secret_key(), payload={"test": "test"})
         with pytest.raises(UnauthorizedError):
             self.auth_handler.decode_token(token)

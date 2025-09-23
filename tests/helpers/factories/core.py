@@ -67,12 +67,12 @@ class CoreFactoryHelper:
     def user(
         cls,
         username: str = "",
-        password: str = "",
+        password_hash: str = "",
         role: RoleEnum = RoleEnum.USER,
     ) -> User:
         return User(
             username=username,
-            password_hash=Secret(password),
+            password_hash=Secret(password_hash),
             role=role,
         )
 

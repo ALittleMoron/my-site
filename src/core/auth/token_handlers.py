@@ -50,14 +50,14 @@ class PasetoTokenHandler(TokenHandler):
     secret_key_pem: Secret[str]
     token_expire_seconds: int
 
-    def create_public_key(self) -> pyseto.KeyInterface:
+    def _create_public_key(self) -> pyseto.KeyInterface:
         return pyseto.Key.new(
             version=4,
             purpose="public",
             key=self.public_key_pem.get_secret_value(),
         )
 
-    def create_secret_key(self) -> pyseto.KeyInterface:
+    def _create_secret_key(self) -> pyseto.KeyInterface:
         return pyseto.Key.new(
             version=4,
             purpose="public",
@@ -74,7 +74,7 @@ class PasetoTokenHandler(TokenHandler):
 
     def decode_token(self, token: bytes) -> AuthTokenPayload:
         try:
-            decoded = pyseto.decode(keys=self.create_public_key(), token=token).payload
+            decoded = pyseto.decode(keys=self._create_public_key(), token=token).payload
         except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError) as err:
             logger.warning(event="Pyseto decode error", exc=err, token=token)
             raise UnauthorizedError from err
@@ -86,6 +86,6 @@ class PasetoTokenHandler(TokenHandler):
 
     def encode_token(self, payload: AuthTokenPayload) -> bytes:
         return pyseto.encode(
-            key=self.create_secret_key(),
+            key=self._create_secret_key(),
             payload=self.prepare_payload(payload),
         )

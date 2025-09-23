@@ -20,8 +20,9 @@ from db.storages.auth import AuthStorage
 class IocContainerHelper:
     container: AsyncContainer
 
-    async def get_hasher(self) -> PasswordHasher:
-        return await self.container.get(PasswordHasher)
+    async def get_hasher(self) -> Mock:
+        hasher = await self.container.get(PasswordHasher)
+        return cast(Mock, hasher)
 
     async def get_random_uuid(self) -> uuid.UUID:
         return await self.container.get(uuid.UUID)

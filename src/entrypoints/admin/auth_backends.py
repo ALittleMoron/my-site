@@ -50,7 +50,10 @@ class AdminAuthenticationBackend(AuthenticationBackend):
             )
             return False
         if need_rehash:
-            pass
+            await storage.update_user_password_hash(
+                username=username,
+                password_hash=hasher.hash_password(password),
+            )
         token = auth_handler.encode_token(
             payload=AuthTokenPayload(username=user.username, role=user.role),
         )

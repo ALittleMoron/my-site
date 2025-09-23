@@ -1,10 +1,9 @@
 from unittest.mock import Mock
 
 from dishka import Provider, BaseScope, Component, provide, Scope
-from passlib.context import CryptContext
 
 from config.settings import Settings
-from core.auth.password_hashers import PasswordHasher, PasslibPasswordHasher
+from core.auth.password_hashers import PasswordHasher
 from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
 from core.schemas import Secret
 from db.storages.auth import AuthStorage
@@ -33,7 +32,10 @@ class MockAuthProvider(Provider):
 
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> PasswordHasher:
-        return PasslibPasswordHasher(context=CryptContext(schemes=self.settings.auth.crypto_scheme))
+        mock = Mock(spec=PasswordHasher)
+        mock.verify_password.return_value = True, False
+        mock.hash_password.return_value = "1234"
+        return mock
 
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> TokenHandler:

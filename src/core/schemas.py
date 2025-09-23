@@ -9,10 +9,10 @@ class Secret[T]:
     def get_secret_value(self) -> T:
         return self.__value
 
-    def __str__(self) -> str:  # pragma: no cover
+    def __str__(self) -> str:
         return "**********"
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         return 'Secret("**********")'
 
 
@@ -20,11 +20,11 @@ class Secret[T]:
 class ValuedDataclass[T]:
     values: list[T]
 
-    def __len__(self) -> int:  # pragma: no cover
+    def __len__(self) -> int:
         return len(self.values)
 
-    def __iter__(self) -> Iterator[T]:  # pragma: no cover
+    def __iter__(self) -> Iterator[T]:
         return iter(self.values)
 
-    def __getitem__(self, idx: int, /) -> T:  # pragma: no cover
+    def __getitem__(self, idx: int, /) -> T:
         return self.values[idx]

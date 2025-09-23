@@ -16,12 +16,12 @@ class TestAuthStorage(FactoryFixture, StorageFixture):
             users=[
                 self.factory.core.user(
                     username="user1",
-                    password="password1",
+                    password_hash="password1",
                     role=RoleEnum.USER,
                 ),
                 self.factory.core.user(
                     username="user2",
-                    password="password2",
+                    password_hash="password2",
                     role=RoleEnum.ADMIN,
                 ),
             ]
@@ -34,5 +34,23 @@ class TestAuthStorage(FactoryFixture, StorageFixture):
     async def test_get_user_by_username(self) -> None:
         user = await self.storage.get_user_by_username(username="user1")
         assert user == self.factory.core.user(
-            username="user1", password="password1", role=RoleEnum.USER
+            username="user1",
+            password_hash="password1",
+            role=RoleEnum.USER,
+        )
+
+    async def test_update_user_password_not_found(self) -> None:
+        with pytest.raises(UserNotFoundError):
+            await self.storage.update_user_password_hash(
+                username="user3",
+                password_hash="NEW_PASSWORD",
+            )
+
+    async def test_update_user_password(self) -> None:
+        await self.storage.update_user_password_hash(username="user1", password_hash="NEW_PASSWORD")
+        user = await self.storage.get_user_by_username(username="user1")
+        assert user == self.factory.core.user(
+            username="user1",
+            password_hash="NEW_PASSWORD",
+            role=RoleEnum.USER,
         )

@@ -13,15 +13,16 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.backend = AdminAuthenticationBackend(secret_key="")
-        hasher = await self.container.get_hasher()
+        self.hasher = await self.container.get_hasher()
+        self.auth_handler = await self.container.get_auth_handler()
         self.user_1 = self.factory.core.user(
             username="user1",
-            password=hasher.hash_password("1111"),
+            password_hash="1111",
             role=RoleEnum.USER,
         )
         self.user_2 = self.factory.core.user(
             username="user2",
-            password=hasher.hash_password("1234"),
+            password_hash="1234",
             role=RoleEnum.ADMIN,
         )
         self.storage = await self.container.get_auth_storage()
@@ -41,6 +42,24 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
         self.storage.get_user_by_username.return_value = self.user_1
         self.request.form = AsyncMock(return_value={"username": "user1", "password": "1234"})
         assert (await self.backend.login(request=self.request)) is False
+
+    async def test_login_password_not_verified_password(self) -> None:
+        self.hasher.verify_password.return_value = False, False
+        self.storage.get_user_by_username.return_value = self.user_2
+        self.request.form = AsyncMock(return_value={"username": "user2", "password": "1234"})
+        self.request.session = {}
+        assert (await self.backend.login(request=self.request)) is False
+
+    async def test_login_password_need_rehash(self) -> None:
+        self.hasher.verify_password.return_value = True, True
+        self.storage.get_user_by_username.return_value = self.user_2
+        self.request.form = AsyncMock(return_value={"username": "user2", "password": "1234"})
+        self.request.session = {}
+        await self.backend.login(request=self.request)
+        self.storage.update_user_password_hash.assert_called_once_with(
+            username="user2",
+            password_hash="1234",
+        )
 
     async def test_login(self) -> None:
         self.storage.get_user_by_username.return_value = self.user_2
@@ -68,26 +87,23 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
 
     async def test_authenticate_user_not_found(self) -> None:
         self.storage.get_user_by_username.side_effect = UserNotFoundError()
-        auth_handler = await self.container.get_auth_handler()
-        token = auth_handler.encode_token(
+        token = self.auth_handler.encode_token(
             payload=AuthTokenPayload(username="not_presented", role=RoleEnum.ADMIN),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
 
     async def test_authenticate_user_not_admin(self) -> None:
-        auth_handler = await self.container.get_auth_handler()
         self.storage.get_user_by_username.return_value = self.user_1
-        token = auth_handler.encode_token(
+        token = self.auth_handler.encode_token(
             payload=AuthTokenPayload(username=self.user_1.username, role=self.user_1.role),
         )
         self.request.session = {"token": token.decode()}
         assert (await self.backend.authenticate(request=self.request)) is False
 
     async def test_authenticate(self) -> None:
-        auth_handler = await self.container.get_auth_handler()
         self.storage.get_user_by_username.return_value = self.user_2
-        token = auth_handler.encode_token(
+        token = self.auth_handler.encode_token(
             payload=AuthTokenPayload(username=self.user_2.username, role=self.user_2.role),
         )
         self.request.session = {"token": token.decode()}
@@ -99,11 +115,12 @@ class TestAnyPermissionsBackend(ContainerFixture, FactoryFixture):
 class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
-        hasher = await self.container.get_hasher()
         self.backend = AdminAuthenticationBackend(secret_key="")
+        self.hasher = await self.container.get_hasher()
+        self.auth_handler = await self.container.get_auth_handler()
         self.user = self.factory.core.user(
             username="user1",
-            password=hasher.hash_password("1111"),
+            password_hash=self.hasher.hash_password("1111"),
             role=RoleEnum.USER,
         )
         self.storage = await self.container.get_auth_storage()
@@ -112,8 +129,7 @@ class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
         self.request.state.dishka_container = self.container.container
 
     async def test_authenticate_user_not_admin(self) -> None:
-        auth_handler = await self.container.get_auth_handler()
-        token = auth_handler.encode_token(
+        token = self.auth_handler.encode_token(
             payload=AuthTokenPayload(username=self.user.username, role=self.user.role),
         )
         self.request.session = {"token": token.decode()}

@@ -5,7 +5,7 @@
 | Категория | Технологии |
 |----------|------------|
 | Покрытие | ![coverage](./badges/coverage.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![bcrypt](./badges/bcrypt.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
 | Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
@@ -16,12 +16,13 @@
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!WARNING]
-> Значок coverage показывает процент покрытия не всего проекта.  
-> Я сделал это намеренно, так как некоторые части кода я тестировал вручную (CLI, HTMX-фронтенд),  
-> а для некоторых частей (например, провайдеры IOC или конфигурация SQLAdmin views)  
-> нет смысла писать pytest-тесты, так как это тривиальный код без бизнес-логики. Возможно, в
-> будущем я добавь тесты через какой-нибудь selenium или тому подобный инструментарий, но пока
-> такое тестирую вручную.
+> Значок coverage показывает процент покрытия всего проекта.  
+> Нужно иметь в виду, что если процент низкий, то это не значит, что проект покрыт слабо, а
+> следовательно плохо написан. Я пока не писал тесты на фронтенд, а он является весомой частью
+> проекта, правда протестировать его получится только каким-нибудь selenium. Когда я перепишу фронт
+> с HTMX + HyperScript на какой-нибудь модный frontend-framework, тогда coverage backend-части
+> вырастет весомо. Так и с некоторыми другими частями проекта. Core функционал протестирован на 95+
+> процентов.
 
 Веб-приложение с **Litestar** в качестве backend и **HTMX** в качестве frontend (Server Side
 Rendering). Мой сайт с блогом, матрицей компетенций, материалами по менторству и другими вещами.

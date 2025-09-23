@@ -1,9 +1,9 @@
+from argon2 import PasswordHasher as CryptContext
 from dishka import Provider, Scope, provide
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
-from core.auth.password_hashers import PasslibPasswordHasher, PasswordHasher
+from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
 from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
 from db.storages.auth import AuthDatabaseStorage, AuthStorage
 
@@ -11,7 +11,7 @@ from db.storages.auth import AuthDatabaseStorage, AuthStorage
 class AuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> PasswordHasher:
-        return PasslibPasswordHasher(context=CryptContext(schemes=settings.auth.crypto_scheme))
+        return Argon2PasswordHasher(context=CryptContext())
 
     @provide(scope=Scope.APP)
     async def provide_auth_handler(self) -> TokenHandler:
