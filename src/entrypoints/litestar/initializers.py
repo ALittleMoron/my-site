@@ -21,11 +21,11 @@ from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 from config import loggers
 from config.constants import constants
 from config.settings import settings
-from config.template_callables import register_template_callables
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
+from entrypoints.litestar.template_callables import register_template_callables
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
 
@@ -54,10 +54,10 @@ def create_litestar(
     cache = (
         {
             "litestar_cache": ValkeyStore.with_client(
-                url=settings.valkey.url.get_secret_value(),
-                db=settings.valkey.db,
+                url=settings.valkey.url_for_http_cache.get_secret_value(),
+                db=constants.valkey.databases.response_cache,
                 port=settings.valkey.port,
-                namespace=settings.valkey.namespace,
+                namespace=constants.valkey.namespaces.framework,
             ),
         }
         if settings.app.use_cache

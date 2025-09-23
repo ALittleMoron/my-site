@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -25,10 +25,31 @@ class _StaticFilesConstants:
     favicon = "favicon.ico"
 
 
+@dataclass(kw_only=True, frozen=True)
+class _ValkeyDatabaseConstants:
+    response_cache: int = 0
+
+
+@dataclass(kw_only=True, frozen=True)
+class _ValkeyNamespaceConstants:
+    framework: str = "LITESTAR"
+
+
+@dataclass(kw_only=True, frozen=True)
+class _ValkeyConstants:
+    databases: _ValkeyDatabaseConstants = field(
+        default_factory=lambda: _ValkeyDatabaseConstants(),
+    )
+    namespaces: _ValkeyNamespaceConstants = field(
+        default_factory=lambda: _ValkeyNamespaceConstants(),
+    )
+
+
 class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
     static_files: _StaticFilesConstants = _StaticFilesConstants()
+    valkey: _ValkeyConstants = _ValkeyConstants()
 
 
 constants = Constants()

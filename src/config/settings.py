@@ -98,12 +98,13 @@ class _ValkeySettings(_ProjectBaseSettings):
 
     host: str = "localhost"
     port: int = 6379
-    db: int = 0
-    namespace: str = "LITESTAR"
+
+    def get_url(self, db: int | str) -> SecretStrExtended:
+        return SecretStrExtended(f"valkey://{self.host}:{self.port}/{db}")
 
     @property
-    def url(self) -> SecretStrExtended:
-        return SecretStrExtended(f"valkey://{self.host}:{self.port}/{self.db}")
+    def url_for_http_cache(self) -> SecretStrExtended:
+        return self.get_url(db=constants.valkey.databases.response_cache)
 
 
 class Settings:
