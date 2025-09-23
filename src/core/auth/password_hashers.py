@@ -40,7 +40,7 @@ class Argon2PasswordHasher(PasswordHasher):
                 self.context.check_needs_rehash(hashed_password_str),
             )
         except VerificationError:
-            return False, False
+            return False, True
 
     def hash_password(self, password: str | bytes) -> str:
         return self.context.hash(password)
