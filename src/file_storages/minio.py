@@ -5,14 +5,12 @@ from typing import Any
 
 from miniopy_async.api import Minio
 from miniopy_async.error import MinioException
-from structlog import get_logger
 
+from config.loggers import logger
 from config.settings import settings
 from core.file_storages.exceptions import FileStorageInternalError
 from core.file_storages.schemas import FileUploadResult
 from core.file_storages.storages import FileStorage
-
-logger = get_logger(__name__)
 
 
 @dataclass(kw_only=True)
