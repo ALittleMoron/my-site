@@ -43,6 +43,7 @@ async def sheets_handler(
     description="Отображение элементов матрицы компетенций",
     name="competency-matrix-items-list-handler",
     cache=settings.app.get_cache_duration(60),  # 1 минута
+    dependencies={"template_name": Provide(template_name_by_layout_dependency)},
 )
 async def matrix_elements_handler(
     sheet: SheetName,
@@ -98,5 +99,4 @@ router = DishkaRouter(
         get_competency_matrix_item_detail_handler,
         sheets_handler,
     ],
-    dependencies={"template_name": Provide(template_name_by_layout_dependency)},
 )
