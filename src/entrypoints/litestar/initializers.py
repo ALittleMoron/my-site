@@ -92,7 +92,7 @@ def create_litestar(
             *(extra_plugins or []),
         ],
         template_config=TemplateConfig(
-            directory=constants.path.src_dir / "templates",
+            directory=constants.path.template_dir / "application",
             engine=JinjaTemplateEngine,
             engine_callback=register_template_callables,
         ),

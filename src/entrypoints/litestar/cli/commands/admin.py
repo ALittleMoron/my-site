@@ -16,18 +16,18 @@ async def create_admin_command(username: str, password: str) -> None:
         try:
             admin = UserModel(
                 username=username,
-                password=hashed_password,
+                password_hash=hashed_password,
                 role=RoleEnum.ADMIN,
             )
             session.add(admin)
             await session.commit()
         except SQLAlchemyError:
             msg = "Ошибка базы данных"
-            logger.error(msg)
+            logger.exception(msg)
             await session.rollback()
         except Exception as exc:  # noqa: BLE001
             msg = f"Внутренняя ошибка: {exc!s}"
-            logger.error(msg)
+            logger.exception(msg)
         else:
             msg = "Администратор успешно создан."
             logger.info(msg)

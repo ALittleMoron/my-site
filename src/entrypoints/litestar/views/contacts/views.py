@@ -41,7 +41,7 @@ async def contact_me_request(
     return HTMXTemplate(
         re_swap="afterbegin",
         re_target="#alerts",
-        template_name="base/blocks/alert.html",
+        template_name="blocks/alert.html",
         context=context_converter.alert_context(
             alert_type="success",
             message="Запрос успешно отправлен",

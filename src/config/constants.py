@@ -10,6 +10,7 @@ class _PathConstants:
     env_file: Path = root_dir / ".env"
     alembic_dir: Path = src_dir / "db" / "alembic"
     static_dir: Path = src_dir / "static"
+    template_dir: Path = src_dir / "templates"
 
 
 @dataclass(kw_only=True, frozen=True)

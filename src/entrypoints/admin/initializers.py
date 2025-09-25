@@ -23,6 +23,7 @@ def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
         authentication_backend=AdminAuthenticationBackend(
             secret_key=settings.app.secret_key.get_secret_value(),
         ),
+        templates_dir=constants.path.template_dir.as_posix(),
     )
     for view in get_admin_views():
         admin.add_view(view=view)
