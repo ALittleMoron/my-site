@@ -24,7 +24,7 @@ class ToastUIEditorWidget:
                 kwargs[k] = getattr(flags, k)
         attrs = {k: v for k, v in kwargs.items() if k in self.validation_attrs}
         editor_template = constants.path.template_dir / "sqladmin" / "_toastui_editor.html"
-        content = (
+        return Markup(
             Environment(loader=BaseLoader())
             .from_string(editor_template.read_text())
             .render(
@@ -37,7 +37,6 @@ class ToastUIEditorWidget:
                 height="auto",
             )
         )
-        return Markup(content)
 
 
 class ToastUIEditorField(TextAreaField):
