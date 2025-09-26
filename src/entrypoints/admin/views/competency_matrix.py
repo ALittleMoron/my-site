@@ -1,6 +1,5 @@
-from wtforms.fields.simple import TextAreaField
-
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel
+from entrypoints.admin.fields.toastui_editor import ToastUIEditorField
 from entrypoints.admin.views.base import ModelViewWithDeleteAction, ModelViewWithPublishAction
 
 
@@ -26,7 +25,7 @@ class ExternalResourceView(
         ExternalResourceModel.context,
     ]
     form_overrides = {
-        "context": TextAreaField,
+        "context": ToastUIEditorField,
     }
     form_widget_args = {}
     form_ajax_refs = {}
@@ -77,13 +76,11 @@ class CompetencyMatrixItemView(
         CompetencyMatrixItemModel.question,
         CompetencyMatrixItemModel.answer,
         CompetencyMatrixItemModel.interview_expected_answer,
-        CompetencyMatrixItemModel.publish_status,
-        CompetencyMatrixItemModel.published_at,
         CompetencyMatrixItemModel.resources,
     ]
     form_overrides = {
-        "answer": TextAreaField,
-        "interview_expected_answer": TextAreaField,
+        "answer": ToastUIEditorField,
+        "interview_expected_answer": ToastUIEditorField,
     }
     form_widget_args = {
         "published_at": {

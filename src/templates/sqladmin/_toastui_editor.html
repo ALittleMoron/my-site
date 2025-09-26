@@ -1,0 +1,36 @@
+  <div class="admin-editor {{ class_ }}">
+    <div id="{{ textarea_id }}__tui"></div>
+    <textarea {{ attrs }} id="{{ textarea_id }}" name="{{ textarea_name }}" class="d-none">{{ initial_value|e }}</textarea>
+  </div>
+  <script>
+      (function() {
+          const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+          document.getElementById('tui-dark').disabled = !isDark;
+
+          const editor = new toastui.Editor({
+              el: document.getElementById('{{ textarea_id }}__tui'),
+              height: '{{ height }}',
+              initialEditType: '{{ edit_type }}',
+              hideModeSwitch: true,
+              language: 'ru-RU',
+              previewStyle: 'vertical',
+              usageStatistics: false,
+              initialValue: document.getElementById('{{ textarea_id }}').value || '',
+              toolbarItems: [
+                  ['heading', 'bold', 'italic', 'strike'],
+                  ['hr', 'quote', 'ul', 'ol', 'task'],
+                  ['table', 'link', 'image', 'code', 'codeblock']
+              ],
+              placeholder: 'Пожалуйста, вставьте текст.',
+              events: {
+                  change: function () {
+                      document.getElementById('{{ textarea_id }}').value = editor.getMarkdown();
+                  }
+              }
+          });
+          window.applyTheme = (theme) => {
+              document.documentElement.setAttribute('data-bs-theme', theme);
+              document.getElementById('tui-dark').disabled = theme !== 'dark';
+          };
+      })();
+  </script>
