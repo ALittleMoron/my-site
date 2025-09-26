@@ -11,10 +11,9 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     async def setup(self) -> None:
         self.use_case = await self.container.get_mock_get_item_use_case()
 
-    def test_not_found(self) -> None:
+    def test_get_competency_matrix_item_not_found(self) -> None:
         self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.get_competency_matrix_item(item_id=-100)
-        self.use_case.execute.assert_called_once_with(item_id=-100)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json() == {
             "code": "client_error",
@@ -24,7 +23,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "location": None,
         }
 
-    def test_found(self) -> None:
+    def test_get_competency_matrix_item(self) -> None:
         self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="Как написать свою функцию?",

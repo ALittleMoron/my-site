@@ -85,14 +85,14 @@ ruff-check:
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run pytest -vvv -x $(TESTS)
+	PYTHONPATH=src APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage run -m pytest -vvv
 	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage xml
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage report
+	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage report --fail-under=60
 
 .PHONY: quality
 quality:
