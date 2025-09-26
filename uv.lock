@@ -387,11 +387,11 @@ wheels = [
 
 [[package]]
 name = "dishka"
-version = "1.7.1"
+version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/af/53/41679bbc5f738655c320b3f32eb957111a89abb4a0c5cd652a7cb4cb244b/dishka-1.7.1.tar.gz", hash = "sha256:a5a5eee9f2cd233c08ddaa11e95b8b0229dd9b712e2117ee39ce475c2d65f597", size = 67891 }
+sdist = { url = "https://files.pythonhosted.org/packages/40/d7/1be31f5ef32387059190353f9fa493ff4d07a1c75fa856c7566ca45e0800/dishka-1.7.2.tar.gz", hash = "sha256:47d4cb5162b28c61bf5541860e605ed5eaf5c667122299c7ef657c86fc8d5a49", size = 68132 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/41/fae3b2ee895ea5b3f42a5572e17e19ab0085cb4d92f9ac8feecdaa8bd19f/dishka-1.7.1-py3-none-any.whl", hash = "sha256:42f756f685ebc71c126e82dd9e002b7f277d97c8c7868c1ee412d265a3c98b63", size = 94567 },
+    { url = "https://files.pythonhosted.org/packages/b7/b9/89381173b4f336e986d72471198614806cd313e0f85c143ccb677c310223/dishka-1.7.2-py3-none-any.whl", hash = "sha256:f6faa6ab321903926b825b3337d77172ee693450279b314434864978d01fbad3", size = 94774 },
 ]
 
 [[package]]
@@ -968,7 +968,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.15.2" },
     { name = "argon2-cffi", specifier = ">=23.1.0" },
-    { name = "dishka", specifier = ">=1.5.3" },
+    { name = "dishka", specifier = ">=1.7.2" },
     { name = "ecs-logging", specifier = ">=2.2.0" },
     { name = "itsdangerous", specifier = ">=2.2.0" },
     { name = "litestar", extras = ["cli", "jinja", "pydantic", "valkey"], specifier = ">=2.16.0" },

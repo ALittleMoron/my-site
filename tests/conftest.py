@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from dishka import AsyncContainer, make_async_container
-from dishka.integrations.litestar import litestarprovider, setup_dishka
+from dishka.integrations.litestar import LitestarProvider, setup_dishka
 from litestar import Litestar
 from litestar.testing import TestClient
 from sqlalchemy import NullPool, delete
@@ -45,7 +45,7 @@ async def container(
     global_random_uuid: uuid.UUID,
 ) -> AsyncGenerator[AsyncContainer, None]:
     container = make_async_container(
-        litestarprovider(),
+        LitestarProvider(),
         MockGeneralProvider(uuid_=global_random_uuid),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),
