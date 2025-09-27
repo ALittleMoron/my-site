@@ -1,6 +1,6 @@
-  <div class="admin-editor {{ class_ }}">
-    <div id="{{ textarea_id }}__tui"></div>
-    <textarea {{ attrs }} id="{{ textarea_id }}" name="{{ textarea_name }}" class="d-none">{{ initial_value|e }}</textarea>
+  <div class="admin-editor {{ params.class_ }}">
+    <div id="{{ params.textarea_id }}__tui"></div>
+    <textarea {{ params.attrs }} id="{{ params.textarea_id }}" name="{{ params.textarea_name }}" class="d-none">{{ params.initial_value|e }}</textarea>
   </div>
   <script>
       (function() {
@@ -8,14 +8,14 @@
           document.getElementById('tui-dark').disabled = !isDark;
 
           const editor = new toastui.Editor({
-              el: document.getElementById('{{ textarea_id }}__tui'),
-              height: '{{ height }}',
-              initialEditType: '{{ edit_type }}',
+              el: document.getElementById('{{ params.textarea_id }}__tui'),
+              height: '{{ params.height }}',
+              initialEditType: '{{ params.edit_type }}',
               hideModeSwitch: true,
               language: 'ru-RU',
               previewStyle: 'vertical',
               usageStatistics: false,
-              initialValue: document.getElementById('{{ textarea_id }}').value || '',
+              initialValue: document.getElementById('{{ params.textarea_id }}').value || '',
               toolbarItems: [
                   ['heading', 'bold', 'italic', 'strike'],
                   ['hr', 'quote', 'ul', 'ol', 'task'],
@@ -24,7 +24,7 @@
               placeholder: 'Пожалуйста, вставьте текст.',
               events: {
                   change: function () {
-                      document.getElementById('{{ textarea_id }}').value = editor.getMarkdown();
+                      document.getElementById('{{ params.textarea_id }}').value = editor.getMarkdown();
                   }
               }
           });

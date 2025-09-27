@@ -52,11 +52,6 @@
                   </button>
                   {% if model_view.can_delete or model_view._custom_actions_in_list %}
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    {% if model_view.can_delete %}
-                    <a class="dropdown-item" id="action-delete" href="#" data-name="{{ model_view.name }}"
-                      data-url="{{ url_for('admin:delete', identity=model_view.identity) }}" data-bs-toggle="modal"
-                      data-bs-target="#modal-delete">Delete selected items</a>
-                    {% endif %}
                     {% for custom_action, label in model_view._custom_actions_in_list.items() %}
                     {% if custom_action in model_view._custom_actions_confirmation %}
                     <a class="dropdown-item" id="action-customconfirm-{{ custom_action }}" href="#" data-bs-toggle="modal"
