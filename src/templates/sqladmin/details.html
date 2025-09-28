@@ -14,8 +14,8 @@
         <table class="table card-table table-vcenter text-nowrap table-hover table-bordered">
           <thead>
             <tr>
-              <th class="w-1">Column</th>
-              <th class="w-1">Value</th>
+              <th class="w-1">Поле</th>
+              <th class="w-1">Значение</th>
             </tr>
           </thead>
           <tbody>
@@ -49,18 +49,16 @@
       </div>
       <div class="card-footer container">
         <div class="row">
-          <div class="col-md-1">
+          <div class="col">
             <a href="{{ url_for('admin:list', identity=model_view.identity) }}" class="btn">
-              Go Back
+              Обратно к списку
             </a>
+            {% if model_view.can_edit %}
+                <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
+                    Редактировать
+                </a>
+            {% endif %}
           </div>
-          {% if model_view.can_edit %}
-          <div class="col-md-1">
-            <a href="{{ model_view._build_url_for('admin:edit', request, model) }}" class="btn btn-primary">
-              Edit
-            </a>
-          </div>
-          {% endif %}
           <div class="col">
           {% for custom_action,label in model_view._custom_actions_in_detail.items() %}
             {% if custom_action in model_view._custom_actions_confirmation %}

@@ -9,7 +9,11 @@ class ExternalResourceView(
     model=ExternalResourceModel,
 ):
     icon = "fa-solid fa-book-open"
+    category_icon = "fa-thin fa-table"
 
+    category = "Матрица компетенций"
+
+    name = "Внешний ресурс"
     name_plural = "Внешние ресурсы"
 
     can_create = True
@@ -62,9 +66,13 @@ class CompetencyMatrixItemView(
     ModelViewWithPublishAction,
     model=CompetencyMatrixItemModel,
 ):
-    icon = "fa-solid fa-table"
+    icon = "fa-solid fa-circle-question"
+    category_icon = "fa-solid fa-table"
 
-    name_plural = "Матрица компетенций"
+    category = "Матрица компетенций"
+
+    name = "Вопрос"
+    name_plural = "Вопросы"
 
     can_create = True
     can_edit = True

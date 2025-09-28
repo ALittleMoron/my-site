@@ -5,6 +5,7 @@ from entrypoints.admin.views.base import ModelViewWithDeleteAction
 class UserView(ModelViewWithDeleteAction, model=UserModel):
     icon = "fa-solid fa-user-tie"
 
+    name = "Пользователь"
     name_plural = "Пользователи"
 
     can_create = True

@@ -21,6 +21,7 @@ def apply_views(admin: Admin) -> None:
 def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
     admin = Admin(
         app=app,
+        title="Админ-панель",
         engine=engine,
         logo_url=settings.get_minio_object_url(
             bucket=constants.minio_buckets.static,
