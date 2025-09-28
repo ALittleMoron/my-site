@@ -44,7 +44,7 @@ class ToastUIEditorWidget:
             textarea_name=field.name,
             attrs=html_params(**attrs),
             class_=kwargs.pop("class", ""),
-            initial_value=field._value(),
+            initial_value=field._value(),  # noqa: SLF001
             edit_type="markdown",
             height="auto",
         )

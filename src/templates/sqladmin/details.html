@@ -40,7 +40,7 @@
               </td>
               {% endif %}
               {% else %}
-              <td>{{ formatted_value }}</td>
+              <td>{{ formatted_value|safe }}</td>
               {% endif %}
             </tr>
             {% endfor %}

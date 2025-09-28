@@ -1,5 +1,6 @@
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel
 from entrypoints.admin.fields.toastui_editor import ToastUIEditorField
+from entrypoints.admin.template_callables import markdown_to_html
 from entrypoints.admin.views.base import ModelViewWithDeleteAction, ModelViewWithPublishAction
 
 
@@ -30,7 +31,12 @@ class ExternalResourceView(
     form_widget_args = {}
     form_ajax_refs = {}
 
-    column_formatters = {}
+    column_formatters = {
+        ExternalResourceModel.context: lambda item, _: markdown_to_html(item.context),  # type: ignore[attr-defined]
+    }
+    column_formatters_detail = {
+        ExternalResourceModel.context: lambda item, _: markdown_to_html(item.context),  # type: ignore[attr-defined]
+    }
     column_labels = {
         ExternalResourceModel.name: "Название ресурса",
         ExternalResourceModel.url: "Ссылка на ресурс",
@@ -100,12 +106,20 @@ class CompetencyMatrixItemView(
         CompetencyMatrixItemModel.published_at: lambda item, _: item.published_at.strftime(  # type: ignore[attr-defined]
             "%m/%d/%Y %I:%M:%S %p (UTC)",
         ),
+        CompetencyMatrixItemModel.answer: lambda item, _: markdown_to_html(item.answer),  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.interview_expected_answer: lambda item, _: markdown_to_html(
+            item.interview_expected_answer,  # type: ignore[attr-defined]
+        ),
     }
     column_formatters_detail = {
         CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
         CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.label,  # type: ignore[attr-defined]
         CompetencyMatrixItemModel.published_at: lambda item, _: item.published_at.strftime(  # type: ignore[attr-defined]
             "%m/%d/%Y %I:%M:%S %p (UTC)",
+        ),
+        CompetencyMatrixItemModel.answer: lambda item, _: markdown_to_html(item.answer),  # type: ignore[attr-defined]
+        CompetencyMatrixItemModel.interview_expected_answer: lambda item, _: markdown_to_html(
+            item.interview_expected_answer,  # type: ignore[attr-defined]
         ),
     }
     column_labels = {

@@ -27,8 +27,8 @@ middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else 
 )
 async def contact_me_request(
     request: Request,
-    contact_me_id: FromDishka[uuid.UUID],
     data: Annotated[ContactMeRequest, Body()],
+    contact_me_id: FromDishka[uuid.UUID],
     context_converter: FromDishka[ContactsContextConverter],
     use_case: FromDishka[AbstractCreateContactMeRequestUseCase],
 ) -> Template:

@@ -6,6 +6,16 @@ from config.constants import constants
 from config.settings import settings
 from entrypoints.admin.auth_backends import AdminAuthenticationBackend
 from entrypoints.admin.registry import get_admin_views
+from entrypoints.admin.template_callables import markdown_to_html
+
+
+def apply_template_callables(admin: Admin) -> None:
+    admin.templates.env.globals["markdown_to_html"] = markdown_to_html
+
+
+def apply_views(admin: Admin) -> None:
+    for view in get_admin_views():
+        admin.add_view(view=view)
 
 
 def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
@@ -25,6 +35,6 @@ def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
         ),
         templates_dir=constants.path.template_dir.as_posix(),
     )
-    for view in get_admin_views():
-        admin.add_view(view=view)
+    apply_views(admin)
+    apply_template_callables(admin)
     return admin

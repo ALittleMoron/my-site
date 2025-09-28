@@ -9,6 +9,7 @@ from ioc.prodivers.competency_matrix_provider import CompetencyMatrixProvider
 from ioc.prodivers.contacts_provider import ContactsProvider
 from ioc.prodivers.database_provider import DatabaseProvider
 from ioc.prodivers.general_provider import GeneralProvider
+from ioc.prodivers.markdown_provider import MarkdownProvider
 from ioc.prodivers.minio_provider import MinioProvider
 
 
@@ -18,6 +19,7 @@ def get_providers() -> Iterable[Provider]:
         MinioProvider(),
         DatabaseProvider(),
         LitestarProvider(),
+        MarkdownProvider(),
         CompetencyMatrixProvider(),
         AuthProvider(),
         ContactsProvider(),
