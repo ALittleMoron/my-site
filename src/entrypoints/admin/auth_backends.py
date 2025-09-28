@@ -3,10 +3,9 @@ from typing import TYPE_CHECKING, Self
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from starlette.responses import Response
-from verbose_http_exceptions import UnauthorizedHTTPException
 
 from config.loggers import logger
-from core.auth.exceptions import UserNotFoundError
+from core.auth.exceptions import UnauthorizedError, UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
 from core.auth.schemas import AuthTokenPayload
 from core.auth.token_handlers import TokenHandler
@@ -73,7 +72,7 @@ class AdminAuthenticationBackend(AuthenticationBackend):
             return False
         try:
             payload = auth_handler.decode_token(token.encode())
-        except UnauthorizedHTTPException:
+        except UnauthorizedError:
             request.session.clear()
             return False
         try:

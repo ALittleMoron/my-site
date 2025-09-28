@@ -6,6 +6,7 @@
 ## Рефакторинг
 
 - Упростить BootstrapRenderer
+- Вынести login и authenticate в use-case
 
 ## Доработки
 
