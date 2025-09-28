@@ -9,8 +9,8 @@ from miniopy_async.error import MinioException
 from config.loggers import logger
 from config.settings import settings
 from core.file_storages.exceptions import FileStorageInternalError
+from core.file_storages.file_storages import FileStorage
 from core.file_storages.schemas import FileUploadResult
-from core.file_storages.storages import FileStorage
 
 
 @dataclass(kw_only=True)

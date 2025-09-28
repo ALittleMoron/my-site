@@ -4,7 +4,7 @@ import mimetypes
 from config.constants import constants
 from config.loggers import logger
 from core.file_storages.exceptions import FileStorageInternalError
-from core.file_storages.storages import FileStorage
+from core.file_storages.file_storages import FileStorage
 
 
 async def collect_static(file_storage: FileStorage) -> None:

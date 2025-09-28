@@ -2,7 +2,7 @@ from dishka import Provider, Scope, provide
 from miniopy_async.api import Minio
 
 from config.settings import settings
-from core.file_storages.storages import FileStorage
+from core.file_storages.file_storages import FileStorage
 from file_storages.minio import MinioFileStorage
 
 

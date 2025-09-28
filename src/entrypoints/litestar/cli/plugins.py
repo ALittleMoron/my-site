@@ -2,7 +2,7 @@ import click
 from litestar import Litestar
 from litestar.plugins import CLIPluginProtocol
 
-from core.file_storages.storages import FileStorage
+from core.file_storages.file_storages import FileStorage
 from entrypoints.litestar.cli.commands.admin import create_admin_command
 from entrypoints.litestar.cli.commands.files import collect_static
 from entrypoints.litestar.cli.utils import run_sync
