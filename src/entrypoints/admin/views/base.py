@@ -11,7 +11,6 @@ from core.enums import PublishStatusEnum
 
 
 class AdminModelView(ModelView):
-
     @staticmethod
     def get_pks(request: Request) -> list[str]:
         return request.query_params.get("pks", "").split(",")
@@ -27,13 +26,13 @@ class AdminModelView(ModelView):
         request: Request,
         form: FormData,
         model_view: ModelView,
-        obj: Any,
+        obj: Any,  # noqa: ANN401
     ) -> str | URL:
         identity = request.path_params["identity"]
         identifier = get_object_identifier(obj)
         if form.get("save") == "Сохранить":
             return request.url_for("admin:list", identity=identity)
-        elif form.get("save") == "Сохранить и продолжить редактировать" or (
+        if form.get("save") == "Сохранить и продолжить редактировать" or (
             form.get("save") == "Сохранить как новое" and model_view.save_as_continue
         ):
             return request.url_for("admin:edit", identity=identity, pk=identifier)

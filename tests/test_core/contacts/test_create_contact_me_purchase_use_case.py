@@ -15,7 +15,6 @@ class TestCreateContactMeRequestUseCase(FactoryFixture):
 
     async def test(self) -> None:
         form = self.factory.core.contact_me(
-            user_ip="167.12.25.12",
             name="NAME",
             email="example@mail.ru",
             telegram="@telegram",

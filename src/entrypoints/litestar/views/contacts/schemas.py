@@ -63,10 +63,9 @@ class ContactMeRequest(CamelCaseSchema):
             raise ValueError(msg)
         return self
 
-    def to_schema(self, contact_me_id: UUID, user_ip: str) -> ContactMe:
+    def to_schema(self, contact_me_id: UUID) -> ContactMe:
         return ContactMe(
             id=contact_me_id,
-            user_ip=user_ip,
             name=self.name,
             email=self.email,
             telegram=self.telegram,

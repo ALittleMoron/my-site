@@ -23,7 +23,6 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.execute.assert_called_once_with(
             form=self.factory.core.contact_me(
                 contact_me_id=self.uuid,
-                user_ip="testclient",
                 name="NAME",
                 email="example@mail.ru",
                 telegram="@telegram",

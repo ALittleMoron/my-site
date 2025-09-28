@@ -25,7 +25,6 @@
 - Сделать выбор темной и светлой темы для админки
 - Когда выйдет 3.14, нужно добавить интроспекцию асинхронного лага
   [отсуда](https://docs.python.org/3.14/whatsnew/3.14.html#asyncio-introspection-capabilities)
-- Убрать user_ip из из contact_me
 
 ## Документация
 

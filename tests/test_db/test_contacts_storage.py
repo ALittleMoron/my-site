@@ -17,7 +17,6 @@ class TestContactMeStorage(FactoryFixture, StorageFixture):
         await self.storage.create_contact_me_request(
             form=self.factory.core.contact_me(
                 contact_me_id=contact_me_id,
-                user_ip="167.12.25.12",
                 name="NAME",
                 email="example@mail.ru",
                 telegram="@telegram",
@@ -27,7 +26,6 @@ class TestContactMeStorage(FactoryFixture, StorageFixture):
         contact_me = await self.storage_helper.get_contact_me_by_id(contact_me_id=contact_me_id)
         assert contact_me == self.factory.core.contact_me(
             contact_me_id=contact_me_id,
-            user_ip="167.12.25.12",
             name="NAME",
             email="example@mail.ru",
             telegram="@telegram",

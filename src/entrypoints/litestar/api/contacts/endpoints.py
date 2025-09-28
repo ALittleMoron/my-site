@@ -3,7 +3,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Request, post
+from litestar import post
 from litestar.middleware.rate_limit import DurationUnit, RateLimitConfig
 from litestar.params import Body
 from verbose_http_exceptions import status
@@ -24,17 +24,11 @@ middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else 
     middleware=middleware,
 )
 async def contact_me_request(
-    request: Request,
     contact_me_id: FromDishka[uuid.UUID],
     data: Annotated[ContactMeRequest, Body()],
     use_case: FromDishka[AbstractCreateContactMeRequestUseCase],
 ) -> None:
-    await use_case.execute(
-        form=data.to_schema(
-            contact_me_id=contact_me_id,
-            user_ip=request.client.host if request.client else "<no ip found>",
-        ),
-    )
+    await use_case.execute(form=data.to_schema(contact_me_id=contact_me_id))
 
 
 api_router = DishkaRouter("/contacts", route_handlers=[contact_me_request])
