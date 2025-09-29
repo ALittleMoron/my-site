@@ -5,11 +5,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from config.loggers import logger
-from core.auth.exceptions import UnauthorizedError, UserNotFoundError
-from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import AuthTokenPayload
-from core.auth.token_handlers import TokenHandler
-from db.storages.auth import AuthStorage
+from core.auth.enums import RoleEnum
+from core.auth.use_cases import AbstractAuthenticateUseCase, AbstractLoginUseCase
 
 if TYPE_CHECKING:
     from dishka import AsyncContainer
@@ -18,9 +15,7 @@ if TYPE_CHECKING:
 class AdminAuthenticationBackend(AuthenticationBackend):
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container
-        storage = await request_container.get(AuthStorage)
-        auth_handler = await request_container.get(TokenHandler)
-        hasher = await request_container.get(PasswordHasher)
+        login_use_case = await request_container.get(AbstractLoginUseCase)
         form = await request.form()
         username, password = form["username"], form["password"]
         if not isinstance(username, str) or not isinstance(password, str):
@@ -30,32 +25,13 @@ class AdminAuthenticationBackend(AuthenticationBackend):
                 password=password,
             )
             return False
-        try:
-            user = await storage.get_user_by_username(username=username)
-        except UserNotFoundError:
-            logger.warning(event="No user in db from username form field", username=username)
-            return False
-        if not user.is_admin:
-            logger.warning("User is not admin", username=user.username)
-            return False
-        verified, need_rehash = hasher.verify_password(
-            plain_password=password,
-            hashed_password=user.password_hash.get_secret_value(),
+        token = await login_use_case.execute(
+            username=username,
+            password=password,
+            required_role=RoleEnum.ADMIN,
         )
-        if not verified:
-            logger.warning(
-                "incorrect credentials (passwords not suit)",
-                username=user.username,
-            )
+        if not token:
             return False
-        if need_rehash:
-            await storage.update_user_password_hash(
-                username=username,
-                password_hash=hasher.hash_password(password),
-            )
-        token = auth_handler.encode_token(
-            payload=AuthTokenPayload(username=user.username, role=user.role),
-        )
         request.session.update({"token": token.decode()})
         return True
 
@@ -65,26 +41,17 @@ class AdminAuthenticationBackend(AuthenticationBackend):
 
     async def authenticate(self: Self, request: Request) -> Response | bool:
         request_container: AsyncContainer = request.state.dishka_container
-        storage = await request_container.get(AuthStorage)
-        auth_handler = await request_container.get(TokenHandler)
-        if (token := request.session.get("token")) is None or not isinstance(token, str):
+        authenticate_use_case = await request_container.get(AbstractAuthenticateUseCase)
+        token = request.session.get("token")
+        request.session.clear()
+        if token is None or not isinstance(token, str):
             logger.warning(event="No auth token or token is not str", token=token)
             return False
-        try:
-            payload = auth_handler.decode_token(token.encode())
-        except UnauthorizedError:
-            request.session.clear()
-            return False
-        try:
-            user = await storage.get_user_by_username(username=payload.username)
-        except UserNotFoundError:
-            logger.warning(event="No user in db from token payload", payload=payload)
-            return False
-        if not user.is_admin:
-            logger.warning("User is not admin", username=user.username)
-            return False
-        new_token = auth_handler.encode_token(
-            payload=AuthTokenPayload(username=user.username, role=user.role),
+        new_token = await authenticate_use_case.execute(
+            token=token,
+            required_role=RoleEnum.ADMIN,
         )
+        if not new_token:
+            return False
         request.session.update({"token": new_token.decode()})
         return True

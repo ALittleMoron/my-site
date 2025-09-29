@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, UTC
 
 from core.auth.enums import RoleEnum
-from core.auth.schemas import User
+from core.auth.schemas import User, AuthTokenPayload
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -147,4 +147,15 @@ class CoreFactoryHelper:
             posts=posts or [],
             total_count=total_count,
             total_pages=total_pages,
+        )
+
+    @classmethod
+    def auth_token_payload(
+        cls,
+        username: str = "test",
+        role: RoleEnum = RoleEnum.ADMIN,
+    ) -> AuthTokenPayload:
+        return AuthTokenPayload(
+            username=username,
+            role=role,
         )

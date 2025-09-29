@@ -19,6 +19,9 @@ class User:
     def is_user(self) -> bool:
         return self.role == RoleEnum.USER
 
+    def has_role(self, role: RoleEnum) -> bool:
+        return self.role == role
+
 
 @dataclass(kw_only=True)
 class AuthTokenPayload:
@@ -33,4 +36,11 @@ class AuthTokenPayload:
         return cls(
             username=payload["username"],
             role=RoleEnum(payload["role"]),
+        )
+
+    @classmethod
+    def from_user(cls, user: User) -> "AuthTokenPayload":
+        return cls(
+            username=user.username,
+            role=user.role,
         )

@@ -6,7 +6,6 @@
 ## Рефакторинг
 
 - Упростить BootstrapRenderer
-- Вынести login и authenticate в use-case
 
 ## Доработки
 
@@ -26,6 +25,7 @@
 - Сделать выбор темной и светлой темы для админки
 - Когда выйдет 3.14, нужно добавить интроспекцию асинхронного лага
   [отсуда](https://docs.python.org/3.14/whatsnew/3.14.html#asyncio-introspection-capabilities)
+- Добавь сессию для авторизации на базу + поправь use-case'ы и сделать use_case для logout'а
 
 ## Документация
 
