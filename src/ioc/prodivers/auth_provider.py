@@ -47,4 +47,4 @@ class AuthProvider(Provider):
         token_handler: TokenHandler,
         storage: AuthStorage,
     ) -> AbstractAuthenticateUseCase:
-        return AuthenticateUseCase(token_handler=token_handler, storage=storage)
+        return AuthenticateUseCase(token_handler=token_handler, user_storage=storage)

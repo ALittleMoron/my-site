@@ -14,7 +14,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
         self.storage = await self.container.get_auth_storage()
         self.use_case = AuthenticateUseCase(
             token_handler=self.token_handler,
-            storage=self.storage,
+            user_storage=self.storage,
         )
 
     async def test_authenticate_token_decode_error(self) -> None:

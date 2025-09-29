@@ -6,7 +6,7 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError, UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
 from core.auth.schemas import AuthTokenPayload
-from core.auth.storages import AuthStorage
+from core.auth.storages import AuthStorage, UserAuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.use_cases import UseCase
 
@@ -59,7 +59,7 @@ class AbstractAuthenticateUseCase(UseCase, ABC):
 @dataclass(kw_only=True, slots=True, frozen=True)
 class AuthenticateUseCase(AbstractAuthenticateUseCase):
     token_handler: TokenHandler
-    storage: AuthStorage
+    user_storage: UserAuthStorage
 
     async def execute(self, token: str, required_role: RoleEnum) -> bytes | None:
         try:
@@ -67,7 +67,7 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
         except UnauthorizedError:
             return None
         try:
-            user = await self.storage.get_user_by_username(username=payload.username)
+            user = await self.user_storage.get_user_by_username(username=payload.username)
         except UserNotFoundError:
             logger.warning(event="No user in db from token payload", payload=payload)
             return None
