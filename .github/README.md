@@ -77,5 +77,5 @@ make run
 - API documentation available at `http://localhost/api/docs`
 - OpenAPI specification available at `http://localhost/api/docs/openapi.json`
 
-For other routes see [docker-compose.yaml](./docker-compose.yml)
+For other routes see [docker-compose.yaml](../docker-compose.yml)
 

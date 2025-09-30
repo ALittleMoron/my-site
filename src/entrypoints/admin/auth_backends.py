@@ -1,6 +1,9 @@
-from typing import TYPE_CHECKING, Self
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Self, Literal
 
 from sqladmin.authentication import AuthenticationBackend
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -12,7 +15,32 @@ if TYPE_CHECKING:
     from dishka import AsyncContainer
 
 
+@dataclass(kw_only=True, slots=True, frozen=True)
+class SessionConfig:
+    secret_key: str
+    session_cookie: str = "session"
+    max_age: int | None = 14 * 24 * 60 * 60  # 14 days, in seconds
+    path: str = "/"
+    same_site: Literal["lax", "strict", "none"] = "lax"
+    https_only: bool = False
+    domain: str | None = None
+
+
 class AdminAuthenticationBackend(AuthenticationBackend):
+    def __init__(self, session_config: SessionConfig) -> None:
+        self.middlewares = [
+            Middleware(
+                SessionMiddleware,
+                secret_key=session_config.secret_key,
+                session_cookie=session_config.session_cookie,
+                max_age=session_config.max_age,
+                path=session_config.path,
+                same_site=session_config.same_site,
+                https_only=session_config.https_only,
+                domain=session_config.domain,
+            ),
+        ]
+
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container
         login_use_case = await request_container.get(AbstractLoginUseCase)

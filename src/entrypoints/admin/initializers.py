@@ -4,7 +4,7 @@ from starlette.applications import Starlette
 
 from config.constants import constants
 from config.settings import settings
-from entrypoints.admin.auth_backends import AdminAuthenticationBackend
+from entrypoints.admin.auth_backends import AdminAuthenticationBackend, SessionConfig
 from entrypoints.admin.registry import get_admin_views
 from entrypoints.admin.template_callables import markdown_to_html
 
@@ -32,7 +32,9 @@ def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
             object_path=constants.static_files.favicon,
         ),
         authentication_backend=AdminAuthenticationBackend(
-            secret_key=settings.app.secret_key.get_secret_value(),
+            session_config=SessionConfig(
+                secret_key=settings.app.secret_key.get_secret_value(),
+            ),
         ),
         templates_dir=constants.path.template_dir.as_posix(),
     )

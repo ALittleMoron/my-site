@@ -80,5 +80,5 @@ make run
 - Документация API: `http://localhost/api/docs`
 - OpenAPI спецификация: `http://localhost/api/docs/openapi.json`
 
-Другие ссылки см. в [docker-compose.yaml](./docker-compose.yml)
+Другие ссылки см. в [docker-compose.yaml](../docker-compose.yml)
 
