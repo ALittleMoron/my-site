@@ -3,14 +3,14 @@ from unittest.mock import AsyncMock
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
-from entrypoints.admin.auth_backends import AdminAuthenticationBackend
+from entrypoints.admin.auth_backends import AdminAuthenticationBackend, SessionConfig
 from tests.fixtures import FactoryFixture, ContainerFixture
 
 
 class TestAdminAuthenticationBackend(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
-        self.backend = AdminAuthenticationBackend(secret_key="")
+        self.backend = AdminAuthenticationBackend(session_config=SessionConfig(secret_key=""))
         self.hasher = await self.container.get_hasher()
         self.auth_handler = await self.container.get_token_handler()
         self.user_1 = self.factory.core.user(

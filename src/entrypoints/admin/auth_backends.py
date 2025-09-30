@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 from sqladmin.authentication import AuthenticationBackend
 from starlette.middleware import Middleware
