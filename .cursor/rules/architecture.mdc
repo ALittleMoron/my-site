@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+#рхитектурные принципы
+
+- Clean Architecture: Строгое разделение на слои (Core, DB, Entrypoints, IOC, Config). Зависимости направлены к центру архитектуры.
+- Domain-Driven Design: Организация Core слоя по бизнес-доменам. Каждый домен содержит: schemas.py, use_cases.py, storages.py, exceptions.py, enums.py (опционально).
+- Rich Domain Model: Бизнес-логика находится в методах доменных сущностей. Use Cases — это координаторы, а не контейнеры бизнес-логики.
+- Dependency Injection: Все зависимости управляются через IOC контейнер (Dishka). Никаких прямых импортов конкретных реализаций в Core слое.
+- Dependency Inversion: Core слой не зависит от фреймворков, БД, внешних сервисов. Все зависимости через абстракции.

@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Тестирование
+
+- 100% покрытие Core слоя: Все Use Cases, бизнес-правила и исключения должны быть покрыты тестами.
+- Fixtures для переиспользования: Используйте базовые фикстуры из tests/fixtures.py: FactoryFixture, ContainerFixture, ApiFixture, StorageFixture.
+- Factory Pattern для тестовых данных: Создавайте тестовые объекты через self.factory.core.* вместо прямого создания.
+- Мокирование зависимостей: В Core тестах мокируйте все внешние зависимости (Storage, Logger, внешние сервисы). В DB тестах используйте реальную БД с транзакциями.
+- Arrange-Act-Assert: Структурируйте тесты по паттерну AAA с явным разделением секций.
+Именование тестов: test_<method>_<scenario>_<expected_result>, например: test_get_entity_success, test_create_user_invalid_email.
