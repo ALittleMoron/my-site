@@ -99,6 +99,7 @@ coverage/
 .env.production.local
 *.pem
 
+# other
 .pdm-python
 .venv
 .vscode
@@ -117,3 +118,7 @@ generated
 coverage.*
 !coverage.svg
 certs
+
+# Cursor
+.cursor/
+!.cursor/rules/
