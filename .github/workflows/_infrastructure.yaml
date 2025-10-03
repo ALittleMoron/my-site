@@ -22,8 +22,9 @@ jobs:
           echo "REMOTE_HOST=${{ secrets.REMOTE_HOST }}" >> .env
           echo "REMOTE_USER=${{ secrets.REMOTE_USER }}" >> .env
           echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> .env
-          echo "INIT_ADMIN_LOGIN=${{ secrets.INIT_ADMIN_LOGIN }}" >> .env
-          echo "INIT_ADMIN_PASSWORD=${{ secrets.INIT_ADMIN_PASSWORD }}" >> .env
+          echo "ADMIN_SECRET_KEY=${{ secrets.ADMIN_SECRET_KEY }}" >> .env
+          echo "ADMIN_INIT_LOGIN=${{ secrets.ADMIN_INIT_LOGIN }}" >> .env
+          echo "ADMIN_INIT_PASSWORD=${{ secrets.ADMIN_INIT_PASSWORD }}" >> .env
           echo "APP_DEBUG=${{ secrets.APP_DEBUG }}" >> .env
           echo "APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }}" >> .env
           echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
@@ -47,6 +48,7 @@ jobs:
           echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
           echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
           echo "MINIO_SECURE=${{ secrets.MINIO_SECURE }}" >> .env
+          echo "PRESIGN_PUT_EXPIRES_SECONDS=${{ secrets.PRESIGN_PUT_EXPIRES_SECONDS }}" >> .env
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
 
       - name: Sync infrastructure files to server

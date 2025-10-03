@@ -837,7 +837,7 @@ class CreateEntityWithFileUseCase:
             raise ValidationError("Invalid file")
 
         # Загрузка файла
-        file_url = await self.file_service.upload_static_file(
+        file_url = await self.file_service.upload_file(
             file_data=file_data,
             filename=file_info.filename,
             content_type=file_info.content_type,
@@ -1709,7 +1709,7 @@ class CreateEntityWithFileUseCase:
             raise ValidationError("Invalid file format")
 
         # Загрузка файла через клиент
-        file_url = await self.file_service.upload_static_file(
+        file_url = await self.file_service.upload_file(
             file_data=file_data,
             filename=file_info.filename,
             content_type=file_info.content_type,
@@ -1798,7 +1798,7 @@ async def test_use_case_with_services():
             filename="test.jpg",
             content_type="image/jpeg"
         )
-        mock_file_service.upload_static_file.return_value = "https://storage.com/test.jpg"
+        mock_file_service.upload_file.return_value = "https://storage.com/test.jpg"
         mock_storage.create.return_value = Entity(id=UUID("123"), name="test")
 
         # Тестирование
@@ -1809,7 +1809,7 @@ async def test_use_case_with_services():
 
         assert result.name == "test"
         mock_file_service.validate_file.assert_called_once()
-        mock_file_service.upload_static_file.assert_called_once()
+        mock_file_service.upload_file.assert_called_once()
         mock_cache_service.set.assert_called_once()
 ```
 

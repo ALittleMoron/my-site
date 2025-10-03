@@ -13,7 +13,7 @@ class AbstractGetBlogPostUseCase(UseCase, ABC):
         raise NotImplementedError
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class GetBlogPostUseCase(AbstractGetBlogPostUseCase):
     storage: BlogStorage
 
@@ -30,7 +30,7 @@ class AbstractListBlogPostsUseCase(UseCase, ABC):
         raise NotImplementedError
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class ListBlogPostsUseCase(AbstractListBlogPostsUseCase):
     storage: BlogStorage
 

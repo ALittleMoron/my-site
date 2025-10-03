@@ -44,6 +44,9 @@
 ## Рефакторинг
 
 - Упростить BootstrapRenderer
+- Вынести guess_extension в отдельный метод или property на params, или на FileNameGenerator
+- Сделать FileNameGenerator по timestamp (или придумать другой способ), чтобы избежать потенциальной
+  коллизии имён файлов
 
 ## Доработки
 

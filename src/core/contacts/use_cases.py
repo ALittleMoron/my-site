@@ -12,7 +12,7 @@ class AbstractCreateContactMeRequestUseCase(UseCase, ABC):
         raise NotImplementedError
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class CreateContactMeRequestUseCase(AbstractCreateContactMeRequestUseCase):
     storage: ContactMeStorage
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
 
-from core.file_storages.schemas import FileUploadResult
+from core.files.schemas import FileUploadResult
 
 
 class FileStorage(ABC):
@@ -10,14 +10,19 @@ class FileStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def upload_static_file(
+    async def upload_file(
         self,
         file_data: BytesIO,
         object_name: str,
+        namespace: str,
         content_type: str | None = None,
     ) -> FileUploadResult:
         raise NotImplementedError
 
     @abstractmethod
     async def init_storage(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def presign_put_object(self, object_name: str, namespace: str) -> str:
         raise NotImplementedError

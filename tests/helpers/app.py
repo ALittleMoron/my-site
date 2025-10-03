@@ -15,6 +15,7 @@ from core.competency_matrix.use_cases import (
     AbstractListSheetsUseCase,
 )
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
+from core.files.file_name_generators import FileNameGenerator
 
 
 @dataclass(kw_only=True)
@@ -63,3 +64,8 @@ class IocContainerHelper:
     async def get_authenticate_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractAuthenticateUseCase)
         return cast(Mock, use_case)
+
+    # FILES
+    async def get_file_name_generator(self) -> Mock:
+        generator = await self.container.get(FileNameGenerator)
+        return cast(Mock, generator)

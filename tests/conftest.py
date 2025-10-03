@@ -24,6 +24,7 @@ from entrypoints.litestar.initializers import create_litestar
 from tests.mocks.providers.auth import MockAuthProvider
 from tests.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.mocks.providers.contacts import MockContactsProvider
+from tests.mocks.providers.files import MockFilesProvider
 from tests.mocks.providers.general import MockGeneralProvider
 
 
@@ -47,6 +48,7 @@ async def container(
     container = make_async_container(
         LitestarProvider(),
         MockGeneralProvider(uuid_=global_random_uuid),
+        MockFilesProvider(uuid_=global_random_uuid),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),
         MockAuthProvider(settings=test_settings),

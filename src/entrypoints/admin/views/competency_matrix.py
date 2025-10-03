@@ -1,7 +1,10 @@
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel
 from entrypoints.admin.fields.toastui_editor import ToastUIEditorField
 from entrypoints.admin.template_callables import markdown_to_html
-from entrypoints.admin.views.base import ModelViewWithDeleteAction, ModelViewWithPublishAction
+from entrypoints.admin.views.base import (
+    ModelViewWithDeleteAction,
+    ModelViewWithPublishAction,
+)
 
 
 class ExternalResourceView(

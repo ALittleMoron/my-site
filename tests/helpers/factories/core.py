@@ -13,6 +13,8 @@ from core.competency_matrix.schemas import (
 )
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
+from core.files.schemas import PresignPutObjectParams, PresignPutObject
+from core.files.types import Namespace
 from core.schemas import Secret
 
 
@@ -159,3 +161,24 @@ class CoreFactoryHelper:
             username=username,
             role=role,
         )
+
+    @classmethod
+    def presign_put_object_params(
+        cls,
+        folder: str = "folder",
+        namespace: Namespace = "media",
+        content_type: str = "application/octet-stream",
+    ) -> PresignPutObjectParams:
+        return PresignPutObjectParams(
+            folder=folder,
+            namespace=namespace,
+            content_type=content_type,
+        )
+
+    @classmethod
+    def presign_put_object(
+        cls,
+        upload_url: str = "http://localhost/upload_url",
+        access_url: str = "http://localhost/access_url",
+    ) -> PresignPutObject:
+        return PresignPutObject(upload_url=upload_url, access_url=access_url)

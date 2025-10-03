@@ -26,6 +26,27 @@
                   change: function () {
                       document.getElementById('{{ params.textarea_id }}').value = editor.getMarkdown();
                   }
+              },
+              hooks: {
+                  addImageBlobHook: async (blob, callback) => {
+                      try {
+                          const ct = blob.type || 'application/octet-stream';
+                          const res = await fetch('/admin/presign-put?content_type=' + encodeURIComponent(ct), {
+                              credentials: 'same-origin'
+                          });
+                          if (!res.ok) throw new Error('Presign failed');
+                          const presign = await res.json();
+                          const put = await fetch(presign.uploadUrl, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': ct },
+                              body: blob
+                          });
+                          if (!put.ok) throw new Error('PUT failed');
+                          callback(presign.accessUrl, 'image');
+                      } catch (e) {
+                          alert('Image upload error: ' + e.message);
+                      }
+                  }
               }
           });
           window.applyTheme = (theme) => {

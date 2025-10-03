@@ -1,10 +1,9 @@
-from typing import Literal
-
 from litestar.config.response_cache import CACHE_FOREVER
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from config.constants import constants
+from core.files.types import Namespace
 from core.schemas import Secret
 
 
@@ -37,6 +36,14 @@ class _AppSettings(_ProjectBaseSettings):
         if self.use_cache:
             return value
         return 0
+
+
+class _AdminSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="ADMIN_")
+
+    init_username: str = "admin"
+    init_password: SecretStrExtended = SecretStrExtended("admin")
+    secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
 
 
 class _DatabaseSettings(_ProjectBaseSettings):
@@ -81,6 +88,7 @@ class _MinioSettings(_ProjectBaseSettings):
     secret_key: SecretStrExtended = SecretStrExtended("minioadmin")
     access_key: str = "minioadmin"
     secure: bool = False
+    presign_put_expires_seconds: int = 60 * 5  # 5 minutes
 
     @property
     def endpoint(self) -> str:
@@ -109,6 +117,7 @@ class _ValkeySettings(_ProjectBaseSettings):
 
 class Settings:
     app: _AppSettings = _AppSettings()
+    admin: _AdminSettings = _AdminSettings()
     auth: _AuthSettings = _AuthSettings()
     database: _DatabaseSettings = _DatabaseSettings()
     minio: _MinioSettings = _MinioSettings()
@@ -121,8 +130,14 @@ class Settings:
         postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
         return f"{url_schema}://{self.app.domain}{postfix}"
 
-    def get_minio_object_url(self, bucket: Literal["media", "static"], object_path: str) -> str:
-        return f"{self.base_url}/{bucket}/{object_path.removeprefix('/')}"
+    def get_minio_object_url(self, bucket: Namespace, object_path: str) -> str:
+        url_schema = "http" if self.app.is_local_domain else "https"
+        base_url = (
+            f"{url_schema}://{self.minio.endpoint}"
+            if self.app.debug and self.app.is_local_domain
+            else f"{url_schema}://{self.app.domain}"
+        )
+        return f"{base_url}/{bucket}/{object_path.removeprefix('/')}"
 
     def get_url(self, path: str) -> str:
         return f"{self.base_url}/{path.removeprefix('/')}"

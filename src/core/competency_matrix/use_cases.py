@@ -29,7 +29,7 @@ class AbstractGetItemUseCase(UseCase, ABC):
         raise NotImplementedError
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class ListSheetsUseCase(AbstractListSheetsUseCase):
     storage: CompetencyMatrixStorage
 
@@ -38,7 +38,7 @@ class ListSheetsUseCase(AbstractListSheetsUseCase):
         return Sheets(values=sheets)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class ListItemsUseCase(AbstractListItemsUseCase):
     storage: CompetencyMatrixStorage
 
@@ -47,7 +47,7 @@ class ListItemsUseCase(AbstractListItemsUseCase):
         return CompetencyMatrixItems(values=items)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class GetItemUseCase(AbstractGetItemUseCase):
     storage: CompetencyMatrixStorage
 

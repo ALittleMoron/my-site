@@ -3,8 +3,8 @@ import mimetypes
 
 from config.constants import constants
 from config.loggers import logger
-from core.file_storages.exceptions import FileStorageInternalError
-from core.file_storages.file_storages import FileStorage
+from core.files.exceptions import FileStorageInternalError
+from core.files.file_storages import FileStorage
 
 
 async def collect_static(file_storage: FileStorage) -> None:
@@ -21,10 +21,11 @@ async def collect_static(file_storage: FileStorage) -> None:
             object_name = path.relative_to(constants.path.static_dir).as_posix()
 
             try:
-                await file_storage.upload_static_file(
+                await file_storage.upload_file(
                     file_data=data,
                     object_name=object_name,
                     content_type=content_type,
+                    namespace="static",
                 )
                 logger.info(f"Успешно добавлен файл по пути {object_name}")
             except FileStorageInternalError as e:
