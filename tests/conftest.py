@@ -40,15 +40,21 @@ def test_settings() -> Generator[Settings, None, None]:
     settings.database.name = "my_site_database"
 
 
+@pytest.fixture
+def random_suffix(global_random_uuid: uuid.UUID) -> str:
+    return global_random_uuid.hex[:8]
+
+
 @pytest_asyncio.fixture(loop_scope="function")
 async def container(
     test_settings: Settings,
     global_random_uuid: uuid.UUID,
+    random_suffix: str,
 ) -> AsyncGenerator[AsyncContainer, None]:
     container = make_async_container(
         LitestarProvider(),
         MockGeneralProvider(uuid_=global_random_uuid),
-        MockFilesProvider(uuid_=global_random_uuid),
+        MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),
         MockAuthProvider(settings=test_settings),

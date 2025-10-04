@@ -45,8 +45,6 @@
 
 - Упростить BootstrapRenderer
 - Вынести guess_extension в отдельный метод или property на params, или на FileNameGenerator
-- Сделать FileNameGenerator по timestamp (или придумать другой способ), чтобы избежать потенциальной
-  коллизии имён файлов
 
 ## Доработки
 
@@ -57,8 +55,6 @@
 - Провалидировать css (сделать упор на override переменных bootstrap)
 - Перенести bootstrap (и все остальные файлы, по необходимости) в папку со статикой
 - Заменить uvicorn на granian
-- Добавить rich text editor для текстов
-  - Api для загрузки изображений в minio (ТОЛЬКО ДЛЯ АДМИНОВ).
 - (SEO) Добавить ссылку canonical и schemaMarkUp
 - Добавить bootstrap + styles.css на админку
 - Сделать выбор темной и светлой темы для админки

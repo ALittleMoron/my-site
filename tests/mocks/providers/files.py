@@ -1,22 +1,31 @@
+import time
 import uuid
 from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide
 from miniopy_async.api import Minio
 
-from core.files.file_name_generators import FileNameGenerator, UUIDFileNameGenerator
+from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import AbstractPresignPutObjectUseCase
 
 
 class MockFilesProvider(Provider):
-    def __init__(self, uuid_: uuid.UUID | None = None):
+    def __init__(self, timestamp: int | None = None, random_suffix: str | None = None):
         super().__init__()
-        self.uuid_ = uuid_ or uuid.uuid4()
+        self.timestamp = timestamp or int(time.time() * 1_000_000)
+        self.random_suffix = random_suffix or "abcd1234"
 
     @provide(scope=Scope.APP)
     async def provide_file_name_generator(self) -> FileNameGenerator:
-        return UUIDFileNameGenerator(generator=lambda: self.uuid_)
+        def mock_call(folder: str | None = None) -> str:
+            file_name = f"{self.timestamp}_{self.random_suffix}"
+            path = "/".join([(folder or "").strip("/"), file_name])
+            return path.removeprefix("/")
+
+        mock_generator = Mock(spec=FileNameGenerator, side_effect=mock_call)
+
+        return mock_generator
 
     @provide(scope=Scope.APP)
     async def provide_minio_client(self) -> Minio:

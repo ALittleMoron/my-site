@@ -2,7 +2,7 @@ from dishka import Provider, Scope, provide
 from miniopy_async.api import Minio
 
 from config.settings import settings
-from core.files.file_name_generators import FileNameGenerator, UUIDFileNameGenerator
+from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import AbstractPresignPutObjectUseCase, PresignPutObjectUseCase
 from file_storages.minio import MinioFileStorage
@@ -11,7 +11,7 @@ from file_storages.minio import MinioFileStorage
 class FilesProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_file_name_generator(self) -> FileNameGenerator:
-        return UUIDFileNameGenerator()
+        return TimestampFileNameGenerator()
 
     @provide(scope=Scope.APP)
     async def provide_minio_client(self) -> Minio:
