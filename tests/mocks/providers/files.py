@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from dishka import Provider, Scope, provide
 from miniopy_async.api import Minio
 
-from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
+from core.files.file_name_generators import FileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import AbstractPresignPutObjectUseCase
 
