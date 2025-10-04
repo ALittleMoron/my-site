@@ -23,3 +23,12 @@ class TestSettings:
             self.settings.get_minio_object_url(bucket="media", object_path="/test.txt")
             == "https://alittlemoron.ru/media/test.txt"
         )
+
+    def test_valkey_get_url(self) -> None:
+        self.settings.valkey.host = "localhost"
+        self.settings.valkey.port = 6379
+        assert self.settings.valkey.get_url(db=0).get_secret_value() == "valkey://localhost:6379/0"
+        assert (
+            self.settings.valkey.url_for_http_cache.get_secret_value()
+            == "valkey://localhost:6379/0"
+        )
