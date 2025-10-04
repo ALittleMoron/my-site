@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.files.file_name_generators import UUIDFileNameGenerator
+from core.files.file_name_generators import UUIDFileNameGenerator, FileNameGenerator
 
 
 class TestUUIDFileNameGenerator:
@@ -78,3 +78,43 @@ class TestUUIDFileNameGenerator:
         assert callable(self.uuid_generator)
         file_name = self.uuid_generator()
         assert isinstance(file_name, str)
+
+    def test_generate_file_name_with_extension(self) -> None:
+        file_name = self.custom_uuid_generator(file_extension=".png")
+
+        assert file_name == "12345678123456789abcdef012345678.png"
+
+    def test_generate_file_name_with_folder_and_extension(self) -> None:
+        file_name = self.custom_uuid_generator(folder="images", file_extension=".jpg")
+
+        assert file_name == "images/12345678123456789abcdef012345678.jpg"
+
+    def test_generate_file_name_with_extension_without_dot(self) -> None:
+        file_name = self.custom_uuid_generator(file_extension="gif")
+
+        assert file_name == "12345678123456789abcdef012345678.gif"
+
+    def test_generate_file_name_with_folder_and_extension_without_dot(self) -> None:
+        file_name = self.custom_uuid_generator(folder="videos", file_extension="mp4")
+
+        assert file_name == "videos/12345678123456789abcdef012345678.mp4"
+
+
+class TestNormalizeExtension:
+    def test_normalize_extension_with_dot(self) -> None:
+        assert FileNameGenerator.normalize_extension(".png") == ".png"
+        assert FileNameGenerator.normalize_extension(".jpg") == ".jpg"
+        assert FileNameGenerator.normalize_extension(".mp4") == ".mp4"
+
+    def test_normalize_extension_without_dot(self) -> None:
+        assert FileNameGenerator.normalize_extension("png") == ".png"
+        assert FileNameGenerator.normalize_extension("jpg") == ".jpg"
+        assert FileNameGenerator.normalize_extension("mp4") == ".mp4"
+
+    def test_normalize_extension_empty(self) -> None:
+        assert FileNameGenerator.normalize_extension("") == ""
+        assert FileNameGenerator.normalize_extension(None) == ""  # type: ignore[arg-type]
+
+    def test_normalize_extension_special_cases(self) -> None:
+        assert FileNameGenerator.normalize_extension(".tar.gz") == ".tar.gz"
+        assert FileNameGenerator.normalize_extension("tar.gz") == ".tar.gz"

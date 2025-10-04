@@ -8,16 +8,23 @@ from dataclasses import dataclass
 
 class FileNameGenerator(metaclass=ABCMeta):
     @abstractmethod
-    def __call__(self, folder: str | None = None) -> str:
+    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
         raise NotImplementedError
+
+    @staticmethod
+    def normalize_extension(extension: str) -> str:
+        if not extension:
+            return ""
+        return extension if extension.startswith(".") else f".{extension}"
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class UUIDFileNameGenerator(FileNameGenerator):
     generator: Callable[[], uuid.UUID] = uuid.uuid4
 
-    def __call__(self, folder: str | None = None) -> str:
-        path = "/".join([(folder or "").strip("/"), self.generator().hex])
+    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
+        normalized_extension = self.normalize_extension(file_extension)
+        path = "/".join([(folder or "").strip("/"), self.generator().hex + normalized_extension])
         return path.removeprefix("/")
 
 
@@ -26,9 +33,10 @@ class TimestampFileNameGenerator(FileNameGenerator):
     random_suffix_length: int = 4
     random_generator: Callable[[int], str] = secrets.token_hex
 
-    def __call__(self, folder: str | None = None) -> str:
+    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
         timestamp = int(time.time() * 1_000_000)  # микросекунды
         random_suffix = self.random_generator(self.random_suffix_length)
-        file_name = f"{timestamp}_{random_suffix}"
+        normalized_extension = self.normalize_extension(file_extension)
+        file_name = f"{timestamp}_{random_suffix}{normalized_extension}"
         path = "/".join([(folder or "").strip("/"), file_name])
         return path.removeprefix("/")

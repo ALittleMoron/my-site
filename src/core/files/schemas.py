@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from mimetypes import guess_extension
 
 from core.files.exceptions import ContentTypeNotAllowedError
 from core.files.types import Namespace
@@ -17,6 +18,10 @@ class PresignPutObjectParams:
     content_type: str
     folder: str
     namespace: Namespace
+
+    @property
+    def file_extension(self) -> str:
+        return guess_extension(self.content_type) or ""
 
     def validate_content_type(self, allowed_types: set[str] | list[str] | tuple[str, ...]) -> None:
         if self.content_type not in allowed_types:

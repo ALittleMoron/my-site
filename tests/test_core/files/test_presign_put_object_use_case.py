@@ -48,3 +48,19 @@ class TestPresignPutObjectUseCase(FactoryFixture, ContainerFixture):
             upload_url="upload_url",
             access_url="access_url",
         )
+
+    async def test_file_extension_in_file_name(self) -> None:
+        self.file_storage.presign_put_object.return_value = "upload_url"
+        self.mock_get_minio_object_url.return_value = "access_url"
+
+        params = self.factory.core.presign_put_object_params(
+            folder="images",
+            namespace="media",
+            content_type="image/png",
+        )
+        await self.use_case.execute(params=params)
+
+        # Проверяем, что file_storage.presign_put_object был вызван с именем файла, содержащим расширение
+        call_args = self.file_storage.presign_put_object.call_args
+        object_name = call_args.kwargs["object_name"]
+        assert object_name.endswith(".png")

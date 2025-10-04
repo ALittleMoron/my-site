@@ -87,3 +87,39 @@ class TestTimestampFileNameGenerator:
         assert timestamp_part.isdigit()
         assert len(random_part) == 8
         assert all(c in "0123456789abcdef" for c in random_part)
+
+    def test_generate_file_name_with_extension(self) -> None:
+        file_name = self.timestamp_generator(file_extension=".png")
+
+        assert file_name.endswith(".png")
+        parts = file_name.replace(".png", "").split("_")
+        assert len(parts) == 2
+        assert parts[0].isdigit()
+        assert len(parts[1]) == 8
+
+    def test_generate_file_name_with_folder_and_extension(self) -> None:
+        file_name = self.timestamp_generator(folder="images", file_extension=".jpg")
+
+        assert file_name.startswith("images/")
+        assert file_name.endswith(".jpg")
+        file_name_without_path = file_name.replace("images/", "").replace(".jpg", "")
+        parts = file_name_without_path.split("_")
+        assert len(parts) == 2
+
+    def test_generate_file_name_with_extension_without_dot(self) -> None:
+        file_name = self.timestamp_generator(file_extension="gif")
+
+        assert file_name.endswith(".gif")
+        parts = file_name.replace(".gif", "").split("_")
+        assert len(parts) == 2
+        assert parts[0].isdigit()
+        assert len(parts[1]) == 8
+
+    def test_generate_file_name_with_folder_and_extension_without_dot(self) -> None:
+        file_name = self.timestamp_generator(folder="documents", file_extension="pdf")
+
+        assert file_name.startswith("documents/")
+        assert file_name.endswith(".pdf")
+        file_name_without_path = file_name.replace("documents/", "").replace(".pdf", "")
+        parts = file_name_without_path.split("_")
+        assert len(parts) == 2

@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from mimetypes import guess_extension
 
 from config.constants import constants
 from config.settings import settings
@@ -23,8 +22,10 @@ class PresignPutObjectUseCase(AbstractPresignPutObjectUseCase):
 
     async def execute(self, params: PresignPutObjectParams) -> PresignPutObject:
         params.validate_content_type(allowed_types=constants.admin.allowed_media_types)
-        extension = guess_extension(params.content_type) or ""
-        file_name = self.file_name_generator(folder=params.folder) + extension
+        file_name = self.file_name_generator(
+            folder=params.folder,
+            file_extension=params.file_extension,
+        )
         upload_url = await self.file_storage.presign_put_object(
             object_name=file_name,
             namespace=params.namespace,
