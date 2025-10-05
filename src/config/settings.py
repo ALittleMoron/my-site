@@ -130,7 +130,7 @@ class Settings:
         postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
         return f"{url_schema}://{self.app.domain}{postfix}"
 
-    def get_minio_object_url(self, bucket: Namespace, object_path: str) -> str:
+    def get_minio_object_url(self, object_path: str, bucket: Namespace) -> str:
         url_schema = "http" if self.app.is_local_domain else "https"
         base_url = (
             f"{url_schema}://{self.minio.endpoint}"

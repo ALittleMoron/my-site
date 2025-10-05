@@ -1,3 +1,5 @@
+from functools import partial
+
 from sqladmin import Admin
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.applications import Starlette
@@ -14,6 +16,13 @@ from entrypoints.admin.template_callables import markdown_to_html
 
 def apply_template_callables(admin: Admin) -> None:
     admin.templates.env.globals["markdown_to_html"] = markdown_to_html
+    admin.templates.env.globals["settings"] = settings
+    admin.templates.env.globals["constants"] = constants
+    admin.templates.env.globals["get_full_url"] = settings.get_url
+    admin.templates.env.globals["get_static_file_url"] = partial(
+        settings.get_minio_object_url,
+        bucket="static",
+    )
 
 
 def apply_views(admin: Admin) -> None:
