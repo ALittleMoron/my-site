@@ -40,7 +40,7 @@
     </div>
     <div class="col"></div>
     <div class="col-3 d-flex justify-content-end">
-      <div class="btn-group" style="display: none">
+      <div class="btn-group">
         <button
           id="layout-button-list"
           class="btn btn-success button-inactive"
@@ -56,6 +56,7 @@
                 then remove .button-active .button-inactive from #layout-button-grid
                 then add .button-inactive to #layout-button-grid
                 then set localStorage's chosenLayout to 'list'
+                then call switchLayout('list')
             end
         "
         >
@@ -95,6 +96,7 @@
                 then remove .button-active .button-inactive from #layout-button-list
                 then add .button-inactive to #layout-button-list
                 then set localStorage's chosenLayout to 'grid'
+                then call switchLayout('grid')
          "
         >
           <svg
@@ -120,3 +122,20 @@
     </div>
   </div>
 </div>
+
+<script>
+function switchLayout(layout) {
+  // Получаем текущий sheetName из URL или из localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const sheetName = urlParams.get('sheetName') || localStorage.getItem('chosenSheet') || 'Python';
+  
+  // Создаем URL для запроса с новым layout
+  const url = `/competency-matrix/items?sheetName=${encodeURIComponent(sheetName)}&layout=${layout}`;
+  
+  // Обновляем контент через HTMX
+  htmx.ajax('GET', url, {
+    target: '#competency_matrix_elements',
+    swap: 'innerHTML'
+  });
+}
+</script>

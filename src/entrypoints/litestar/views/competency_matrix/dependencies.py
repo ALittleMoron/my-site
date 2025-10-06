@@ -50,6 +50,6 @@ async def template_name_by_layout_dependency(layout: Layout) -> str:
         case CompetencyMatrixLayoutEnum.LIST:
             return "competency_matrix/blocks/items_list.html"
         case CompetencyMatrixLayoutEnum.GRID:
-            return "competency_matrix/blocks/items_list.html"
+            return "competency_matrix/blocks/items_grid.html"
     msg = f"Not implemented template name for {_layout}"
     raise ValueError(msg)

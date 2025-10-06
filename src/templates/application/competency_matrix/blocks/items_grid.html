@@ -1,0 +1,58 @@
+<div class="table-responsive competency-matrix-table-container">
+  <table class="table competency-matrix-table">
+    <thead class="competency-matrix-header">
+      <tr>
+        <th class="p-3 text-start">Раздел</th>
+        <th class="p-3 text-start">Подраздел</th>
+        {% set grades = [] %}
+        {% for section_dict in sections %}
+          {% for subsection_dict in section_dict.subsections %}
+            {% for grade_dict in subsection_dict.grades %}
+              {% if grade_dict.grade not in grades %}
+                {% set _ = grades.append(grade_dict.grade) %}
+                <th class="p-3 text-center">{{ grade_dict.grade }}</th>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for section_dict in sections %}
+        {% set section_rowspan = section_dict.subsections|length %}
+        {% for subsection_dict in section_dict.subsections %}
+          <tr>
+            {% if loop.first %}
+              <td 
+                rowspan="{{ section_rowspan }}" 
+                class="p-3 fw-semibold align-middle competency-matrix-section-cell"
+              >
+                {{ section_dict.section }}
+              </td>
+            {% endif %}
+            <td class="p-3 fw-medium competency-matrix-subsection-cell">
+              {{ subsection_dict.subsection }}
+            </td>
+            {% for grade_dict in subsection_dict.grades %}
+              <td class="p-3 align-top competency-matrix-grade-cell">
+                {% if grade_dict['items'] %}
+                  {% for item in grade_dict['items'] %}
+                    <div 
+                      class="link-active cursor-pointer mb-2"
+                      hx-get="{{ url_for('competency-matrix-item-detail-handler', pk=item.id) }}"
+                      hx-target="#competency_matrix_item_detail_modal"
+                      id="matrix-item-{{ item.id }}"
+                      style="cursor: pointer; word-wrap: break-word;"
+                    >
+                      {{ item.question }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

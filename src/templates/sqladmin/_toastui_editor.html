@@ -21,7 +21,6 @@
                   ['hr', 'quote', 'ul', 'ol', 'task'],
                   ['table', 'link', 'image', 'code', 'codeblock']
               ],
-              placeholder: 'Пожалуйста, вставьте текст.',
               events: {
                   change: function () {
                       document.getElementById('{{ params.textarea_id }}').value = editor.getMarkdown();

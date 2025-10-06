@@ -1,6 +1,7 @@
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel
+from entrypoints.admin import field_formatters
+from entrypoints.admin.field_formatters import markdown_to_html
 from entrypoints.admin.fields.toastui_editor import ToastUIEditorField
-from entrypoints.admin.template_callables import markdown_to_html
 from entrypoints.admin.views.base import (
     ModelViewWithDeleteAction,
     ModelViewWithPublishAction,
@@ -86,6 +87,7 @@ class CompetencyMatrixItemView(
     form_args = {}
     form_include_pk = False
     form_columns = [
+        CompetencyMatrixItemModel.publish_status,
         CompetencyMatrixItemModel.sheet,
         CompetencyMatrixItemModel.section,
         CompetencyMatrixItemModel.subsection,
@@ -112,6 +114,10 @@ class CompetencyMatrixItemView(
     }
 
     column_formatters = {
+        CompetencyMatrixItemModel.question: lambda item, _: field_formatters.short_string(
+            value=item.question,  # type: ignore[attr-defined]
+            length=50,
+        ),
         CompetencyMatrixItemModel.grade: lambda item, _: item.grade.value,  # type: ignore[attr-defined]
         CompetencyMatrixItemModel.publish_status: lambda item, _: item.publish_status.label,  # type: ignore[attr-defined]
         CompetencyMatrixItemModel.published_at: lambda item, _: item.published_at.strftime(  # type: ignore[attr-defined]

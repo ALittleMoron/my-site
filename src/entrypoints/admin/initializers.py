@@ -9,9 +9,9 @@ from starlette.staticfiles import StaticFiles
 from config.constants import constants
 from config.settings import settings
 from entrypoints.admin.auth_backends import AdminAuthenticationBackend, SessionConfig
+from entrypoints.admin.field_formatters import markdown_to_html
 from entrypoints.admin.registry import get_admin_views
 from entrypoints.admin.routes.files import presign_put_media_file
-from entrypoints.admin.template_callables import markdown_to_html
 
 
 def apply_template_callables(admin: Admin) -> None:
