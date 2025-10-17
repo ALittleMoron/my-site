@@ -1,9 +1,0 @@
----
-alwaysApply: true
----
-
-# Логирование
-
-- Structlog для всех логов: Импортируйте logger из config.loggers. Никогда не используйте print() для вывода информации.
-- Структурированное логирование: Используйте именованные параметры вместо f-strings: logger.info("User created", user_id=user.id) вместо logger.info(f"User {user.id} created").
-- Request ID автоматически: Не добавляйте request_id вручную, он добавляется через middleware.
