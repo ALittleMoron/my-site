@@ -83,6 +83,7 @@ def create_admin_starlette_app(app: Starlette, engine: AsyncEngine) -> Admin:
         authentication_backend=AdminAuthenticationBackend(
             session_config=SessionConfig(
                 secret_key=settings.admin.secret_key.get_secret_value(),
+                session_cookie=settings.admin.session_cookie_name,
             ),
         ),
         templates_dir=constants.path.template_dir.as_posix(),

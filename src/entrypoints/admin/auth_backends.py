@@ -8,8 +8,11 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from config.loggers import logger
+from config.settings import settings
 from core.auth.enums import RoleEnum
-from core.auth.use_cases import AbstractAuthenticateUseCase, AbstractLoginUseCase
+from core.auth.exceptions import UnauthorizedError
+from core.auth.schemas import AuthTokenPayload
+from core.auth.token_handlers import TokenHandler
 
 if TYPE_CHECKING:
     from dishka import AsyncContainer
@@ -43,23 +46,20 @@ class AdminAuthenticationBackend(AuthenticationBackend):
 
     async def login(self: Self, request: Request) -> bool:
         request_container: AsyncContainer = request.state.dishka_container
-        login_use_case = await request_container.get(AbstractLoginUseCase)
+        token_handler = await request_container.get(TokenHandler)
         form = await request.form()
         username, password = form["username"], form["password"]
         if not isinstance(username, str) or not isinstance(password, str):
-            logger.warning(
-                "username or password is not str",
-                username=username,
-                password=password,
-            )
+            logger.warning("username or password is not str", username=username, password=password)
             return False
-        token = await login_use_case.execute(
-            username=username,
-            password=password,
-            required_role=RoleEnum.ADMIN,
-        )
-        if not token:
+        if (
+            username != settings.admin.init_username
+            or password != settings.admin.init_password.get_secret_value()
+        ):
+            logger.warning("incorrect admin credentials", username=username, password=password)
             return False
+        payload = AuthTokenPayload(username=username, role=RoleEnum.ADMIN)
+        token = token_handler.encode_token(payload=payload)
         request.session.update({"token": token.decode()})
         return True
 
@@ -69,17 +69,24 @@ class AdminAuthenticationBackend(AuthenticationBackend):
 
     async def authenticate(self: Self, request: Request) -> Response | bool:
         request_container: AsyncContainer = request.state.dishka_container
-        authenticate_use_case = await request_container.get(AbstractAuthenticateUseCase)
+        token_handler = await request_container.get(TokenHandler)
         token = request.session.get("token")
         request.session.clear()
         if token is None or not isinstance(token, str):
             logger.warning(event="No auth token or token is not str", token=token)
             return False
-        new_token = await authenticate_use_case.execute(
-            token=token,
-            required_role=RoleEnum.ADMIN,
-        )
-        if not new_token:
+        try:
+            payload = token_handler.decode_token(token.encode())
+        except UnauthorizedError:
             return False
+        if payload.username != settings.admin.init_username or payload.role != RoleEnum.ADMIN:
+            logger.warning(
+                event="Token payload is invalid for admin auth backend",
+                username=payload.username,
+                role=payload.role,
+            )
+            return False
+        payload = AuthTokenPayload(username=payload.username, role=RoleEnum.ADMIN)
+        new_token = token_handler.encode_token(payload=payload)
         request.session.update({"token": new_token.decode()})
         return True
