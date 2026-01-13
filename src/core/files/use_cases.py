@@ -21,7 +21,7 @@ class PresignPutObjectUseCase(AbstractPresignPutObjectUseCase):
     file_name_generator: FileNameGenerator
 
     async def execute(self, params: PresignPutObjectParams) -> PresignPutObject:
-        params.validate_content_type(allowed_types=constants.admin.allowed_media_types)
+        params.validate_content_type(allowed_types=constants.files.allowed_to_upload_media_types)
         file_name = self.file_name_generator(
             folder=params.folder,
             file_extension=params.file_extension,

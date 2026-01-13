@@ -11,7 +11,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 
 COPY README.md pyproject.toml uv.lock / .env ./
-RUN uv sync --frozen
+RUN uv sync --no-dev --frozen
 
 EXPOSE ${APP_PORT}
 

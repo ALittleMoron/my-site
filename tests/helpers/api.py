@@ -23,3 +23,9 @@ class APIHelper:
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)
+
+    def get_presign_put_url(self, content_type: str) -> Response:
+        return self.client.get(
+            f"/api/files/presign-put",
+            params={"contentType": content_type},
+        )

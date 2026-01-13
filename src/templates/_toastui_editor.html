@@ -30,7 +30,7 @@
                   addImageBlobHook: async (blob, callback) => {
                       try {
                           const ct = blob.type || 'application/octet-stream';
-                          const res = await fetch('/admin/presign-put?content_type=' + encodeURIComponent(ct), {
+                          const res = await fetch('/api/files/presign-put?content_type=' + encodeURIComponent(ct), {
                               credentials: 'same-origin'
                           });
                           if (!res.ok) throw new Error('Presign failed');

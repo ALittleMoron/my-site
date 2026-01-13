@@ -43,8 +43,6 @@ class _AdminSettings(_ProjectBaseSettings):
 
     init_username: str = "admin"
     init_password: SecretStrExtended = SecretStrExtended("admin")
-    secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
-    session_cookie_name: str = "admin_session"
 
 
 class _DatabaseSettings(_ProjectBaseSettings):

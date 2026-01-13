@@ -9,7 +9,7 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.uuid = await self.container.get_random_uuid()
-        self.use_case = await self.container.get_mock_create_contact_me_request_use_case()
+        self.use_case = await self.container.get_create_contact_me_request_use_case()
 
     def test_contact_me_request(self) -> None:
         self.api.post_create_contact_me_request(

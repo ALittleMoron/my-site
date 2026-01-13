@@ -9,7 +9,7 @@ from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_mock_get_item_use_case()
+        self.use_case = await self.container.get_get_item_use_case()
 
     def test_get_competency_matrix_item_not_found(self) -> None:
         self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()

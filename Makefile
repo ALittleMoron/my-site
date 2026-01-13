@@ -12,10 +12,6 @@ run:
 start_app:
 	PYTHONPATH=src uv run uvicorn src.main:create_app --port 8000 --host 0.0.0.0 --log-config uvicorn_logger.json
 
-.PHONY: start_admin
-start_admin:
-	PYTHONPATH=src uv run uvicorn src.main:create_admin_app --port 8000 --host 0.0.0.0 --log-config uvicorn_logger.json
-
 .PHONY: start_local_app
 start_local_app:
 	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run src/main.py

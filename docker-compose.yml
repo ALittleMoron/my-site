@@ -15,20 +15,6 @@ services:
     networks:
       - app-network
 
-  admin:
-    build:
-      context: .
-      dockerfile: docker/backend/admin.Dockerfile
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_admin:latest
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - app-network
-
   valkey:
     image: valkey/valkey:latest
     container_name: valkey

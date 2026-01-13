@@ -16,6 +16,7 @@ from core.competency_matrix.use_cases import (
 )
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from core.files.file_name_generators import FileNameGenerator
+from core.files.use_cases import AbstractPresignPutObjectUseCase
 
 
 @dataclass(kw_only=True)
@@ -27,20 +28,20 @@ class IocContainerHelper:
         return await self.container.get(uuid.UUID)
 
     # CONTACTS
-    async def get_mock_create_contact_me_request_use_case(self) -> Mock:
+    async def get_create_contact_me_request_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractCreateContactMeRequestUseCase)
         return cast(Mock, use_case)
 
     # COMPETENCY MATRIX
-    async def get_mock_get_item_use_case(self) -> Mock:
+    async def get_get_item_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractGetItemUseCase)
         return cast(Mock, use_case)
 
-    async def get_mock_list_items_use_case(self) -> Mock:
+    async def get_list_items_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractListItemsUseCase)
         return cast(Mock, use_case)
 
-    async def get_mock_list_sheets_use_case(self) -> Mock:
+    async def get_list_sheets_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractListSheetsUseCase)
         return cast(Mock, use_case)
 
@@ -69,3 +70,7 @@ class IocContainerHelper:
     async def get_file_name_generator(self) -> Mock:
         generator = await self.container.get(FileNameGenerator)
         return cast(Mock, generator)
+
+    async def get_presign_put_url_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractPresignPutObjectUseCase)
+        return cast(Mock, use_case)

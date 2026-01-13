@@ -51,7 +51,7 @@ def create_litestar(
                 directories=[constants.path.src_dir / "static"],
             ),
         )
-    cache = (
+    cache_storages = (
         {
             "litestar_cache": ValkeyStore.with_client(
                 url=settings.valkey.url_for_http_cache.get_secret_value(),
@@ -68,7 +68,7 @@ def create_litestar(
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
-        stores={**cache},
+        stores={**cache_storages},
         response_cache_config=(
             ResponseCacheConfig(store="litestar_cache") if settings.app.use_cache else None
         ),

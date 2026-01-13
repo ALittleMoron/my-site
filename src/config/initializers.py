@@ -19,6 +19,9 @@ def init_sentry() -> None:
     sentry_sdk.init(
         dsn=settings.sentry.dsn,
         send_default_pii=True,
+        traces_sample_rate=1.0,
+        enable_logs=True,
+        profile_lifecycle="trace",
         integrations=[LitestarIntegration()],
     )
 

@@ -33,9 +33,6 @@
 - **Sentry** — мониторинг ошибок
 - *(опционально в будущем)* — Prometheus/Grafana для метрик
 
-**Админка:**
-- **SQLAdmin** — веб-интерфейс для управления БД
-
 **CLI:**
 - **Litestar CLI** — встроенные команды фреймворка
 
@@ -87,7 +84,7 @@ src/
 ├── config/            # Конфигурация приложения
 ├── core/              # Бизнес-логика (Clean Architecture)
 ├── db/                # Модели БД и миграции
-├── entrypoints/       # Точки входа (API, Admin, CLI)
+├── entrypoints/       # Точки входа (API, Views, CLI)
 ├── ioc/               # Inversion of Control контейнер
 ├── static/            # Статические файлы
 ├── templates/         # HTML шаблоны
@@ -110,7 +107,7 @@ src/
 **Слои архитектуры:**
 1. **Core Layer** — бизнес-логика (use_cases, schemas, exceptions)  
 2. **DB Layer** — работа с данными (models, storages, migrations)  
-3. **Entrypoints Layer** — точки входа (API, views, CLI, admin)  
+3. **Entrypoints Layer** — точки входа (API, views, CLI)  
 4. **IOC Layer** — управление зависимостями  
 5. **Clients Layer** *(потенциальное расширение)* — интеграции с внешними сервисами  
 6. **Services Layer** *(потенциальное расширение)* — общие сервисы для use_cases  
@@ -135,7 +132,6 @@ src/
 **API endpoints:**
 - **HTMX views** — основной фронтенд  
 - **REST API** — публичное API для интеграций  
-- **Admin interface** — SQLAdmin для управления контентом  
 - **CLI команды** — вспомогательные утилиты  
 
 ---

@@ -62,8 +62,8 @@ class _MarkdownConstants:
     styles: _MarkdownStylesConstants = _MarkdownStylesConstants()
 
 
-class _AdminConstants:
-    allowed_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+class _FilesConstants:
+    allowed_to_upload_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 
 
 class Constants:
@@ -72,7 +72,7 @@ class Constants:
     static_files: _StaticFilesConstants = _StaticFilesConstants()
     valkey: _ValkeyConstants = _ValkeyConstants()
     markdown_it: _MarkdownConstants = _MarkdownConstants()
-    admin: _AdminConstants = _AdminConstants()
+    files: _FilesConstants = _FilesConstants()
 
 
 constants = Constants()

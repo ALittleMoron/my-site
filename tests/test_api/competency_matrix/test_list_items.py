@@ -8,7 +8,7 @@ from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_mock_list_items_use_case()
+        self.use_case = await self.container.get_list_items_use_case()
 
     def test_list_not_correct_sheet_name(self) -> None:
         self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
