@@ -16,9 +16,17 @@ start_app:
 start_local_app:
 	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run src/main.py
 
-.PHONY: litestar
-litestar:
+.PHONY: cli
+cli:
 	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_APP) uv run litestar $(command)
+
+.PHONY: collectstatic
+collectstatic:
+	make cli command="collectstatic"
+
+.PHONY: initbuckets
+initbuckets:
+	make cli command="initbuckets"
 
 .PHONY: revision
 revision:

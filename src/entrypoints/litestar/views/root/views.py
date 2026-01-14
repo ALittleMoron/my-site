@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Request, get
+from litestar import Request, get, status_codes
 from litestar.config.response_cache import CACHE_FOREVER
 from litestar.enums import MediaType
 from litestar.plugins.htmx import HTMXTemplate
@@ -80,6 +80,15 @@ async def sitemap_handler() -> Template:
     return HTMXTemplate(template_name="sitemap/index.html")
 
 
+@get(
+    "/.well-known/appspecific/com.chrome.devtools.json",
+    name="chrome-devtools-handler",
+    media_type=MediaType.JSON,
+    cache=settings.app.get_cache_duration(CACHE_FOREVER),
+)
+async def chrome_devtools_handler() -> Response[Any]:
+    return Response[Any](content={"error": "Not Found"}, status_code=status_codes.HTTP_404_NOT_FOUND)
+
 router = DishkaRouter(
     "",
     route_handlers=[
@@ -88,5 +97,6 @@ router = DishkaRouter(
         robots_txt_handler,
         sitemap_xml_handler,
         sitemap_handler,
+        chrome_devtools_handler,
     ],
 )

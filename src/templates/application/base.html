@@ -22,29 +22,22 @@
       type="image/x-icon"
       href="{{ get_static_file_url('favicon.ico') }}"
     />
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
-      crossorigin="anonymous"
-    />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+    <link rel="stylesheet" href="{{ get_static_file_url('vendor/bootstrap/5.3.8/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ get_static_file_url('vendor/highlight.js/11.11.1/styles/default.min.css') }}" />
     <link rel="stylesheet" href="{{ get_static_file_url('styles.css') }}" />
     {% endblock %} {% block head_extra_links %}{% endblock %} {% block
     head_scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
-    <script src="https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"></script>
-    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/html.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/sql.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/xml.min.js"></script>
+    <script src="{{ get_static_file_url('vendor/htmx/2.0.6/htmx.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/htmx-ext-json-enc/2.0.1/json-enc.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/hyperscript/0.9.14/hyperscript.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/highlight.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/python.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/javascript.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/css.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/bash.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/json.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/xml.min.js') }}"></script>
+    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/sql.min.js') }}"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         hljs.highlightAll();
@@ -77,11 +70,7 @@
     <div id="footer" class="mt-auto">
       {% include 'blocks/footer.html' %}
     </div>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
-      crossorigin="anonymous"
-    ></script>
+    <script src="{{ get_static_file_url('vendor/bootstrap/5.3.8/bootstrap.bundle.min.js') }}"></script>
     <script>hljs.highlightAll();</script>
   </body>
 </html>

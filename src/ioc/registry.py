@@ -2,7 +2,6 @@ from collections.abc import Iterable
 
 from dishka import Provider
 from dishka.integrations.litestar import LitestarProvider
-from dishka.integrations.starlette import StarletteProvider
 
 from ioc.prodivers.auth_provider import AuthProvider
 from ioc.prodivers.blog_provider import BlogProvider
@@ -19,7 +18,6 @@ def get_providers() -> Iterable[Provider]:
         GeneralProvider(),
         FilesProvider(),
         DatabaseProvider(),
-        StarletteProvider(),
         LitestarProvider(),
         MarkdownProvider(),
         CompetencyMatrixProvider(),
