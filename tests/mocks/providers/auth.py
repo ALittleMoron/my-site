@@ -5,7 +5,7 @@ from dishka import Provider, BaseScope, Component, provide, Scope
 from config.settings import Settings
 from core.auth.enums import RoleEnum
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import AuthTokenPayload
+from core.auth.schemas import JwtUser
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.use_cases import AbstractLoginUseCase, AbstractAuthenticateUseCase
@@ -43,7 +43,7 @@ class MockAuthProvider(Provider):
     async def provide_token_handler(self) -> TokenHandler:
         mock = Mock(spec=TokenHandler)
         mock.encode_token.return_value = "TOKEN".encode()
-        mock.decode_token.return_value = AuthTokenPayload(username="test", role=RoleEnum.ADMIN)
+        mock.decode_token.return_value = JwtUser(username="test", role=RoleEnum.ADMIN)
         return mock
 
     @provide(scope=Scope.APP)

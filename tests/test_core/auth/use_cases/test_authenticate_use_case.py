@@ -25,7 +25,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
 
     async def test_authenticate_user_not_found(self) -> None:
         self.storage.get_user_by_username.side_effect = UserNotFoundError
-        self.token_handler.decode_token.return_value = self.factory.core.auth_token_payload(
+        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
             username="test",
             role=RoleEnum.ADMIN,
         )
@@ -50,7 +50,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             password_hash="test",
             role=user_role,
         )
-        self.token_handler.decode_token.return_value = self.factory.core.auth_token_payload(
+        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
             username="test",
             role=user_role,
         )
@@ -63,7 +63,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             password_hash="test",
             role=RoleEnum.ADMIN,
         )
-        self.token_handler.decode_token.return_value = self.factory.core.auth_token_payload(
+        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
             username="test",
             role=RoleEnum.ADMIN,
         )

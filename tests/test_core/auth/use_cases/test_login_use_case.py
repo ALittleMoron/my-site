@@ -3,7 +3,7 @@ import pytest_asyncio
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UserNotFoundError
-from core.auth.schemas import AuthTokenPayload
+from core.auth.schemas import JwtUser
 from core.auth.use_cases import LoginUseCase
 from tests.fixtures import FactoryFixture, ContainerFixture
 
@@ -107,5 +107,5 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             hashed_password="test",
         )
         self.token_handler.encode_token.assert_called_once_with(
-            payload=AuthTokenPayload(username="test", role=RoleEnum.ADMIN),
+            payload=JwtUser(username="test", role=RoleEnum.ADMIN),
         )

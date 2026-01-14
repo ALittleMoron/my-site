@@ -11,17 +11,17 @@ import pyseto
 from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
-from core.auth.schemas import AuthTokenPayload
+from core.auth.schemas import JwtUser
 from core.schemas import Secret
 
 
 class TokenHandler(ABC):
     @abstractmethod
-    def decode_token(self, token: bytes) -> AuthTokenPayload:
+    def decode_token(self, token: bytes) -> JwtUser:
         raise NotImplementedError
 
     @abstractmethod
-    def encode_token(self, payload: AuthTokenPayload) -> bytes:
+    def encode_token(self, payload: JwtUser) -> bytes:
         raise NotImplementedError
 
     @staticmethod
@@ -64,7 +64,7 @@ class PasetoTokenHandler(TokenHandler):
             key=self.secret_key_pem.get_secret_value(),
         )
 
-    def prepare_payload(self, payload: AuthTokenPayload) -> dict[str, Any]:
+    def prepare_payload(self, payload: JwtUser) -> dict[str, Any]:
         payload_dict = payload.to_dict()
         payload_dict["exp"] = (
             datetime.datetime.now(tz=ZoneInfo("Etc/UTC"))
@@ -72,7 +72,7 @@ class PasetoTokenHandler(TokenHandler):
         ).isoformat()
         return payload_dict
 
-    def decode_token(self, token: bytes) -> AuthTokenPayload:
+    def decode_token(self, token: bytes) -> JwtUser:
         try:
             decoded = pyseto.decode(keys=self._create_public_key(), token=token).payload
         except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError) as err:
@@ -80,11 +80,11 @@ class PasetoTokenHandler(TokenHandler):
             raise UnauthorizedError from err
         payload_dict = json.loads(decoded) if isinstance(decoded, bytes) else decoded
         if self.validate_payload_dict(payload_dict):
-            return AuthTokenPayload.from_dict(payload_dict)
+            return JwtUser.from_dict(payload_dict)
         logger.error(event="Decoded payload is not valid", payload=payload_dict)
         raise UnauthorizedError
 
-    def encode_token(self, payload: AuthTokenPayload) -> bytes:
+    def encode_token(self, payload: JwtUser) -> bytes:
         return pyseto.encode(
             key=self._create_secret_key(),
             payload=self.prepare_payload(payload),

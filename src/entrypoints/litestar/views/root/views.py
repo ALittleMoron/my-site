@@ -87,7 +87,11 @@ async def sitemap_handler() -> Template:
     cache=settings.app.get_cache_duration(CACHE_FOREVER),
 )
 async def chrome_devtools_handler() -> Response[Any]:
-    return Response[Any](content={"error": "Not Found"}, status_code=status_codes.HTTP_404_NOT_FOUND)
+    return Response[Any](
+        content={"error": "Not Found"},
+        status_code=status_codes.HTTP_404_NOT_FOUND,
+    )
+
 
 router = DishkaRouter(
     "",

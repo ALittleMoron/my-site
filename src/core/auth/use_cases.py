@@ -5,7 +5,7 @@ from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError, UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import AuthTokenPayload
+from core.auth.schemas import JwtUser
 from core.auth.storages import AuthStorage, UserAuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.use_cases import UseCase
@@ -47,7 +47,7 @@ class LoginUseCase(AbstractLoginUseCase):
                 username=username,
                 password_hash=self.hasher.hash_password(password),
             )
-        return self.token_handler.encode_token(payload=AuthTokenPayload.from_user(user=user))
+        return self.token_handler.encode_token(payload=JwtUser.from_user(user=user))
 
 
 class AbstractAuthenticateUseCase(UseCase, ABC):
@@ -74,4 +74,4 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
         if not user.has_role(role=required_role):
             logger.warning(f"User has no role {required_role.value}", username=user.username)
             return None
-        return self.token_handler.encode_token(payload=AuthTokenPayload.from_user(user=user))
+        return self.token_handler.encode_token(payload=JwtUser.from_user(user=user))

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, UTC
 
 from core.auth.enums import RoleEnum
-from core.auth.schemas import User, AuthTokenPayload
+from core.auth.schemas import User, JwtUser
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -72,11 +72,7 @@ class CoreFactoryHelper:
         password_hash: str = "",
         role: RoleEnum = RoleEnum.USER,
     ) -> User:
-        return User(
-            username=username,
-            password_hash=Secret(password_hash),
-            role=role,
-        )
+        return User(username=username, password_hash=Secret(password_hash), role=role)
 
     @classmethod
     def competency_matrix_items(
@@ -145,22 +141,15 @@ class CoreFactoryHelper:
         total_count: int = 0,
         total_pages: int = 0,
     ) -> BlogPostList:
-        return BlogPostList(
-            posts=posts or [],
-            total_count=total_count,
-            total_pages=total_pages,
-        )
+        return BlogPostList(posts=posts or [], total_count=total_count, total_pages=total_pages)
 
     @classmethod
-    def auth_token_payload(
+    def jwt_user(
         cls,
         username: str = "test",
         role: RoleEnum = RoleEnum.ADMIN,
-    ) -> AuthTokenPayload:
-        return AuthTokenPayload(
-            username=username,
-            role=role,
-        )
+    ) -> JwtUser:
+        return JwtUser(username=username, role=role)
 
     @classmethod
     def presign_put_object_params(
