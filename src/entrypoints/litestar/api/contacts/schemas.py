@@ -32,7 +32,7 @@ class ContactMeRequest(CamelCaseSchema):
             min_length=2,
             max_length=256,
             description="Телеграм аккаунт для связи с пользователем",
-            examples=["@alittlemoron"],
+            examples=["@alm_dmitriy_dev"],
         ),
     ] = None
     message: Annotated[

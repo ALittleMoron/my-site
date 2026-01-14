@@ -2,7 +2,7 @@
 name = "my-site-backend"
 version = "1.0.0"
 description = "My site backend"
-authors = [{ name = "Dmitriy Lunev", email = "dima.lunev14@gmail.com" }]
+authors = [{ name = "Dmitriy Lunev", email = "d.lunev.dev@gmail.com" }]
 requires-python = ">=3.13"
 readme = "README.md"
 license = { text = "MIT" }
