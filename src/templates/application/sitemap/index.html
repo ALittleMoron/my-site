@@ -1,47 +1,36 @@
-{% extends "base.html" %} {% block head_extra_meta %}
-<meta name="twitter:card" content="summary" />
-<meta name="twitter:title" content="Карта сайта" />
-<meta
-  name="twitter:description"
-  content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим."
-/>
-<meta property="og:title" content="Карта сайта" />
-<meta
-  property="og:url"
-  content="{{ get_full_url(url_for('sitemap-handler')) }}"
-/>
-<meta
-  property="og:description"
-  content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим."
-/>
-{% endblock %} {% block title %}Карта сайта{% endblock %} {%block content %}
-<main class="container">
-  <h1 class="mt-md-5 pb-1 border-bottom" style="font-size: 2rem">
-    Карта сайта
-  </h1>
-  <div class="row" style="margin-top: 5rem">
-    <div class="col text-md-start justify-content-center align-items-center">
-      <ul class="list-unstyled">
-        <li class="mb-1">Матрица компетенций</li>
-        <li style="font-size: 0.9rem">
-          <a
-            class="nav-link link-active"
-            href="{{ url_for('competency-matrix-questions-handler') }}"
-            >Вопросы матрицы компетенций</a
-          >
-        </li>
-      </ul>
-      <ul class="mt-5 list-unstyled">
-        <li>Обо мне</li>
-        <li style="font-size: 0.9rem">
-          <a
-            class="nav-link link-active"
-            href="{{ url_for('about-me-index-handler') }}"
-            >Стартовая страница</a
-          >
-        </li>
-      </ul>
-    </div>
-  </div>
-</main>
+{% extends "base.html" %}
+{% block head_extra_meta %}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Карта сайта" />
+    <meta name="twitter:description"
+          content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим." />
+    <meta property="og:title" content="Карта сайта" />
+    <meta property="og:url"
+          content="{{ get_full_url(url_for('sitemap-handler') ) }}" />
+    <meta property="og:description"
+          content="Карта моего личного сайта с информацией обо мне, матрицей компетенций и многим другим." />
+{% endblock %}
+{% block title %}Карта сайта{% endblock %}
+{% block content %}
+    <main class="container">
+        <h1 class="mt-md-5 pb-1 border-bottom" style="font-size: 2rem">Карта сайта</h1>
+        <div class="row" style="margin-top: 5rem">
+            <div class="col text-md-start justify-content-center align-items-center">
+                <ul class="list-unstyled">
+                    <li class="mb-1">Матрица компетенций</li>
+                    <li style="font-size: 0.9rem">
+                        <a class="nav-link link-active"
+                           href="{{ url_for("competency-matrix-questions-handler") }}">Вопросы матрицы компетенций</a>
+                    </li>
+                </ul>
+                <ul class="mt-5 list-unstyled">
+                    <li>Обо мне</li>
+                    <li style="font-size: 0.9rem">
+                        <a class="nav-link link-active"
+                           href="{{ url_for("about-me-index-handler") }}">Стартовая страница</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
 {% endblock %}

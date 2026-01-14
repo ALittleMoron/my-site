@@ -1,47 +1,39 @@
-<div
-  id="item-detail-{{item_id}}"
-  class="modal force-display-block"
-  style="background-color: rgba(0, 0, 0, 0.5)"
-  _="on load hljs.highlightAll()"
->
-  <div class="modal-dialog modal-dialog-centered modal-lg justify-content-center">
-    <div class="modal-content" style="z-index: 1066">
-      <div class="modal-header">
-        <button
-          type="button"
-          class="btn-close"
-          aria-label="Close"
-          _="on click remove #item-detail-{{item_id}}"
-        ></button>
-      </div>
-      <div class="modal-body">
-        <h2>Вопрос:</h2>
-        <p>{{ question }}</p>
-        <hr>
-        <h2>Ответ:</h2>
-        <p>{{ markdown_to_html(answer)|safe }}</p>
-        <hr>
-        <h2>Ответ, который ожидается на собеседовании:</h2>
-        <p>{{ markdown_to_html(interview_expected_answer)|safe }}</p>
-      {% if resources %}
-        <hr>
-        <h2>Внешние ресурсы:</h2>
-        <ul class="list-unstyled">
-          {% for resource in resources %}
-          <li class="mt-2">
-            <span>
-              <a
-                class="p-0 text-body-secondary link-active"
-                href="{{ resource.url }}"
-                >{{ resource.name }}</a
-              >
-              <p>{{ markdown_to_html(resource.context)|safe }}</p>
-            </span>
-          </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-      </div>
+<div id="item-detail-{{ item_id }}"
+     class="modal force-display-block"
+     style="background-color: rgba(0, 0, 0, 0.5)"
+     _="on load hljs.highlightAll()">
+    <div class="modal-dialog modal-dialog-centered modal-lg justify-content-center">
+        <div class="modal-content" style="z-index: 1066">
+            <div class="modal-header">
+                <button type="button"
+                        class="btn-close"
+                        aria-label="Close"
+                        _="on click remove #item-detail-{{ item_id }}"></button>
+            </div>
+            <div class="modal-body">
+                <h2>Вопрос:</h2>
+                <p>{{ question }}</p>
+                <hr>
+                <h2>Ответ:</h2>
+                <p>{{ markdown_to_html(answer) |safe }}</p>
+                <hr>
+                <h2>Ответ, который ожидается на собеседовании:</h2>
+                <p>{{ markdown_to_html(interview_expected_answer) |safe }}</p>
+                {% if resources %}
+                    <hr>
+                    <h2>Внешние ресурсы:</h2>
+                    <ul class="list-unstyled">
+                        {% for resource in resources %}
+                            <li class="mt-2">
+                                <span>
+                                    <a class="p-0 text-body-secondary link-active" href="{{ resource.url }}">{{ resource.name }}</a>
+                                    <p>{{ markdown_to_html(resource.context) |safe }}</p>
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
     </div>
-  </div>
 </div>

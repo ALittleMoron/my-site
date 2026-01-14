@@ -1,203 +1,112 @@
-<nav
-  class="nav nav-pills nav-blur navbar-expand-lg fixed-top px-4 pt-1 pb-1 border-bottom"
->
-  <a class="navbar-brand fs-4 text-success fw-bold" href="/">ALM</a>
-  <div class="container-fluid">
-    <ul class="navbar-nav d-flex justify-content-center">
-      <li class="nav-item mx-3">
-        <a
-          class="nav-link link-colored"
-          href="{{ url_for('about-me-index-handler') }}"
-          _="
-              on load
-                  if the window's location's pathname is '{{ url_for('about-me-index-handler') }}'
-                    add .link-active
-                    remove .link-colored
-                  end
-              end
-          "
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="me-1"
-          >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle></svg
-          ><span>Обо мне</span></a
-        >
-      </li>
-      <li class="nav-item mx-3" style="display: none">
-        <a
-          class="nav-link link-colored"
-          href="{{ url_for('blog-index-handler') }}"
-          _="
-              on load
-                  if the window's location's pathname is '{{ url_for('blog-index-handler') }}'
-                    add .link-active
-                    remove .link-colored
-                  end
-              end
-          "
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="me-1"
-          >
-            <path d="M12 7v14"></path>
-            <path
-              d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
-            ></path></svg
-          ><span>Блог</span></a
-        >
-      </li>
-      <li class="nav-item mx-3">
-        <a
-          class="nav-link link-colored"
-          href="{{ url_for('competency-matrix-questions-handler') }}"
-          _="
-              on load
-                  if the window's location's pathname is '{{ url_for('competency-matrix-questions-handler') }}'
-                    add .link-active
-                    remove .link-colored
-                  end
-              end
-          "
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            fill="currentColor"
-            class="bi bi-mortarboard me-1"
-            viewBox="0 0 16 16"
-          >
-            <path
-              d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917zM8 8.46 1.758 5.965 8 3.052l6.242 2.913z"
-            />
-            <path
-              d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"
-            /></svg
-          ><span>Матрица компетенций</span></a
-        >
-      </li>
-    </ul>
-  </div>
-  <div class="d-inline justify-content-end">
-    <button
-      id="theme-switcher-button"
-      class="btn link-inactive px-0 px-lg-2 py-2 dropdown-toggle"
-      type="button"
-      _="on click toggle .show on #theme-switcher-dropdown"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        fill="currentColor"
-        viewBox="0 0 16 16"
-      >
-        <path
-          d="M8 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m4 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M5.5 7a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m.5 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"
-        />
-        <path
-          d="M16 8c0 3.15-1.866 2.585-3.567 2.07C11.42 9.763 10.465 9.473 10 10c-.603.683-.475 1.819-.351 2.92C9.826 14.495 9.996 16 8 16a8 8 0 1 1 8-8m-8 7c.611 0 .654-.171.655-.176.078-.146.124-.464.07-1.119-.014-.168-.037-.37-.061-.591-.052-.464-.112-1.005-.118-1.462-.01-.707.083-1.61.704-2.314.369-.417.845-.578 1.272-.618.404-.038.812.026 1.16.104.343.077.702.186 1.025.284l.028.008c.346.105.658.199.953.266.653.148.904.083.991.024C14.717 9.38 15 9.161 15 8a7 7 0 1 0-7 7"
-        />
-      </svg>
-    </button>
-    <ul
-      id="theme-switcher-dropdown"
-      class="theme-switcher-dropdown position-fixed top-0 end-0 dropdown-menu dropdown-menu-end bg-body-secondary"
-    >
-      <li>
-        <button
-          id="theme-switcher-dropdown-button-light"
-          type="button"
-          class="dropdown-item d-flex align-items-center button-inactive"
-          _="
-            on load
-                if localStorage's chosenTheme is 'light'
-                    remove .button-inactive
-                    add .button-active
-                end
-            end
-            on click
-                set localStorage's chosenTheme to 'light'
-                remove .button-active .button-inactive from <button[id^='theme-switcher-dropdown-button-']/>
-                add .button-inactive to <button[id^='theme-switcher-dropdown-button-']/>
-                remove .button-inactive
-                add .button-active
-                add @data-bs-theme='light' to <:root/>
-            end
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            fill="currentColor"
-            class="me-2"
-            viewBox="0 0 16 16"
-          >
-            <path
-              d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"
-            />
-          </svg>
-          <span>Light</span>
+<nav class="nav nav-pills nav-blur navbar-expand-lg fixed-top px-4 pt-1 pb-1 border-bottom">
+    <a class="navbar-brand fs-4 text-success fw-bold" href="/">ALM</a>
+    <div class="container-fluid">
+        <ul class="navbar-nav d-flex justify-content-center">
+            <li class="nav-item mx-3">
+                <a class="nav-link link-colored"
+                   href="{{ url_for("about-me-index-handler") }}"
+                   _=" on load if the window's location's pathname is '{{ url_for("about-me-index-handler") }}' add .link-active remove .link-colored end end ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         class="me-1">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Обо мне</span></a>
+            </li>
+            <li class="nav-item mx-3" style="display: none">
+                <a class="nav-link link-colored"
+                   href="{{ url_for("blog-index-handler") }}"
+                   _=" on load if the window's location's pathname is '{{ url_for("blog-index-handler") }}' add .link-active remove .link-colored end end ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         class="me-1">
+                        <path d="M12 7v14"></path>
+                        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z">
+                        </path>
+                    </svg>
+                    <span>Блог</span></a>
+            </li>
+            <li class="nav-item mx-3">
+                <a class="nav-link link-colored"
+                   href="{{ url_for("competency-matrix-questions-handler") }}"
+                   _=" on load if the window's location's pathname is '{{ url_for("competency-matrix-questions-handler") }}' add .link-active remove .link-colored end end ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         fill="currentColor"
+                         class="bi bi-mortarboard me-1"
+                         viewBox="0 0 16 16">
+                        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917zM8 8.46 1.758 5.965 8 3.052l6.242 2.913z" />
+                        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z" />
+                    </svg>
+                    <span>Матрица компетенций</span></a>
+            </li>
+        </ul>
+    </div>
+    <div class="d-inline justify-content-end">
+        <button id="theme-switcher-button"
+                class="btn link-inactive px-0 px-lg-2 py-2 dropdown-toggle"
+                type="button"
+                _="on click toggle .show on #theme-switcher-dropdown">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 width="16"
+                 height="16"
+                 fill="currentColor"
+                 viewBox="0 0 16 16">
+                <path d="M8 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m4 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M5.5 7a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m.5 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3" />
+                <path d="M16 8c0 3.15-1.866 2.585-3.567 2.07C11.42 9.763 10.465 9.473 10 10c-.603.683-.475 1.819-.351 2.92C9.826 14.495 9.996 16 8 16a8 8 0 1 1 8-8m-8 7c.611 0 .654-.171.655-.176.078-.146.124-.464.07-1.119-.014-.168-.037-.37-.061-.591-.052-.464-.112-1.005-.118-1.462-.01-.707.083-1.61.704-2.314.369-.417.845-.578 1.272-.618.404-.038.812.026 1.16.104.343.077.702.186 1.025.284l.028.008c.346.105.658.199.953.266.653.148.904.083.991.024C14.717 9.38 15 9.161 15 8a7 7 0 1 0-7 7" />
+            </svg>
         </button>
-      </li>
-      <li>
-        <button
-          id="theme-switcher-dropdown-button-dark"
-          type="button"
-          class="dropdown-item d-flex align-items-center button-inactive"
-          _="
-            on load
-                if localStorage's chosenTheme is 'dark'
-                    remove .button-inactive
-                    add .button-active
-                end
-            end
-            on click
-                set localStorage's chosenTheme to 'dark'
-                remove .button-active .button-inactive from <button[id^='theme-switcher-dropdown-button-']/>
-                add .button-inactive to <button[id^='theme-switcher-dropdown-button-']/>
-                remove .button-inactive
-                add .button-active
-                add @data-bs-theme='dark' to <:root/>
-            end
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            fill="currentColor"
-            class="me-2"
-            viewBox="0 0 16 16"
-          >
-            <path
-              d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"
-            />
-            <path
-              d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"
-            />
-          </svg>
-          <span>Dark</span>
-        </button>
-      </li>
-    </ul>
-  </div>
+        <ul id="theme-switcher-dropdown"
+            class="theme-switcher-dropdown position-fixed top-0 end-0 dropdown-menu dropdown-menu-end bg-body-secondary">
+            <li>
+                <button id="theme-switcher-dropdown-button-light"
+                        type="button"
+                        class="dropdown-item d-flex align-items-center button-inactive"
+                        _=" on load if localStorage's chosenTheme is 'light' remove .button-inactive add .button-active end end on click set localStorage's chosenTheme to 'light' remove .button-active .button-inactive from <button[id^='theme-switcher-dropdown-button-']/> add .button-inactive to <button[id^='theme-switcher-dropdown-button-']/> remove .button-inactive add .button-active add @data-bs-theme='light' to <:root/> end ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="16"
+                         height="16"
+                         fill="currentColor"
+                         class="me-2"
+                         viewBox="0 0 16 16">
+                        <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708" />
+                    </svg>
+                    <span>Light</span>
+                </button>
+            </li>
+            <li>
+                <button id="theme-switcher-dropdown-button-dark"
+                        type="button"
+                        class="dropdown-item d-flex align-items-center button-inactive"
+                        _=" on load if localStorage's chosenTheme is 'dark' remove .button-inactive add .button-active end end on click set localStorage's chosenTheme to 'dark' remove .button-active .button-inactive from <button[id^='theme-switcher-dropdown-button-']/> add .button-inactive to <button[id^='theme-switcher-dropdown-button-']/> remove .button-inactive add .button-active add @data-bs-theme='dark' to <:root/> end ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="16"
+                         height="16"
+                         fill="currentColor"
+                         class="me-2"
+                         viewBox="0 0 16 16">
+                        <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286" />
+                        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z" />
+                    </svg>
+                    <span>Dark</span>
+                </button>
+            </li>
+        </ul>
+    </div>
 </nav>

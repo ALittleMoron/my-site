@@ -1,26 +1,18 @@
 <div class="justify-content-start py-2 my-2 btn-toolbar">
-  {% for item in sheets %}
-  <div class="btn-group me-3">
-    <button
-      id="sheet-button-{{ loop.index }}"
-      class="btn btn-success button-inactive rounded rounded-3"
-      hx-get="{{ url_for('competency-matrix-items-list-handler') }}"
-      hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list'}"
-      hx-trigger="click"
-      hx-target="#competency_matrix_elements"
-      hx-swap="innerHTML"
-      _="
-          on click
-              remove .button-active .button-inactive from <button[id^='sheet-button-']/>
-              then add .button-inactive to <button[id^='sheet-button-']/>
-              then remove .button-inactive
-              then add .button-active
-              then set localStorage's chosenSheetId to me.id
-      "
-    >
-      {{ item }}
-    </button>
-  </div>
-  {% else %} {% include 'competency_matrix/blocks/error_modal_no_sheets.html' %}
-  {% endfor %}
+    {% for item in sheets %}
+        <div class="btn-group me-3">
+            <button id="sheet-button-{{ loop.index }}"
+                    class="btn btn-success button-inactive rounded rounded-3"
+                    hx-get="{{ url_for("competency-matrix-items-list-handler") }}"
+                    hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list'}"
+                    hx-trigger="click"
+                    hx-target="#competency_matrix_elements"
+                    hx-swap="innerHTML"
+                    _=" on click remove .button-active .button-inactive from <button[id^='sheet-button-']/> then add .button-inactive to <button[id^='sheet-button-']/> then remove .button-inactive then add .button-active then set localStorage's chosenSheetId to me.id ">
+            {{ item }}
+        </button>
+    </div>
+{% else %}
+    {% include 'competency_matrix/blocks/error_modal_no_sheets.html' %}
+{% endfor %}
 </div>

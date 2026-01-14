@@ -1,76 +1,63 @@
 <!DOCTYPE html>
 <html lang="ru" data-bs-theme="dark">
-  <head>
-    {% block head %} {% block head_meta %}
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Мой личный сайт с всевозможной информацией об IT: менторство, блог, матрица компетенций и многое другое."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Личный сайт Дмитрия Лунева" />
-    <meta
-      property="og:image"
-      content="{{ get_static_file_url('logo-512x512.png') }}"
-    />
-    {% endblock %} {% block head_extra_meta %}{% endblock %}
-    <title>{% block title %}{% endblock %} - Мой сайт</title>
-    {% block head_links %}
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{{ get_static_file_url('favicon.ico') }}"
-    />
-    <link rel="stylesheet" href="{{ get_static_file_url('vendor/bootstrap/5.3.8/bootstrap.min.css') }}" />
-    <link rel="stylesheet" href="{{ get_static_file_url('vendor/highlight.js/11.11.1/styles/default.min.css') }}" />
-    <link rel="stylesheet" href="{{ get_static_file_url('styles.css') }}" />
-    {% endblock %} {% block head_extra_links %}{% endblock %} {% block
-    head_scripts %}
-    <script src="{{ get_static_file_url('vendor/htmx/2.0.6/htmx.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/htmx-ext-json-enc/2.0.1/json-enc.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/hyperscript/0.9.14/hyperscript.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/highlight.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/python.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/javascript.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/css.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/bash.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/json.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/xml.min.js') }}"></script>
-    <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/sql.min.js') }}"></script>
-    <script>
+    <head>
+        {% block head %}
+            {% block head_meta %}
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta name="description"
+                      content="Мой личный сайт с всевозможной информацией об IT: менторство, блог, матрица компетенций и многое другое." />
+                <meta property="og:type" content="website" />
+                <meta property="og:site_name" content="Личный сайт Дмитрия Лунева" />
+                <meta property="og:image"
+                      content="{{ get_static_file_url("logo-512x512.png") }}" />
+            {% endblock %}
+            {% block head_extra_meta %}{% endblock %}
+            <title>
+                {% block title %}{% endblock %}
+            - Мой сайт</title>
+            {% block head_links %}
+                <link rel="icon"
+                      type="image/x-icon"
+                      href="{{ get_static_file_url("favicon.ico") }}" />
+                <link rel="stylesheet"
+                      href="{{ get_static_file_url("vendor/bootstrap/5.3.8/bootstrap.min.css") }}" />
+                <link rel="stylesheet"
+                      href="{{ get_static_file_url("vendor/highlight.js/11.11.1/styles/default.min.css") }}" />
+                <link rel="stylesheet" href="{{ get_static_file_url("styles.css") }}" />
+            {% endblock %}
+            {% block head_extra_links %}{% endblock %}
+            {% block
+                head_scripts %}
+                <script src="{{ get_static_file_url('vendor/htmx/2.0.6/htmx.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/htmx-ext-json-enc/2.0.1/json-enc.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/hyperscript/0.9.14/hyperscript.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/highlight.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/python.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/javascript.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/css.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/bash.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/json.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/xml.min.js') }}"></script>
+                <script src="{{ get_static_file_url('vendor/highlight.js/11.11.1/languages/sql.min.js') }}"></script>
+                <script>
       document.addEventListener('DOMContentLoaded', function() {
         hljs.highlightAll();
       });
-    </script>
-    {% endblock %} {% block head_extra_scripts %}{% endblock %} {% endblock %}
-  </head>
-  <body
-    class="gradient-body d-flex flex-column min-vh-100"
-    _="
-        on load
-            if no localStorage's chosenTheme or localStorage's chosenTheme is 'NaN' or ['light', 'dark'] does not contains  localStorage's chosenTheme
-              set localStorage's chosenTheme to 'light'
-            end
-            if localStorage's chosenTheme is 'light'
-                add @data-bs-theme='light' to <:root/>
-            end
-            if localStorage's chosenTheme is 'dark'
-                add @data-bs-theme='dark' to <:root/>
-            end
-            if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN' or ['list', 'grid'] does not contains  localStorage's chosenLayout
-              set localStorage's chosenLayout to 'list'
-            end
-        end
-      "
-  >
-    <div id="alerts" class="alerts-section position-fixed top-0 end-0"></div>
-    <div id="navbar">{% include 'blocks/navbar.html' %}</div>
-    <div id="content" class="mx-4 my-4">{% block content %}{% endblock %}</div>
-    <div id="footer" class="mt-auto">
-      {% include 'blocks/footer.html' %}
-    </div>
-    <script src="{{ get_static_file_url('vendor/bootstrap/5.3.8/bootstrap.bundle.min.js') }}"></script>
-    <script>hljs.highlightAll();</script>
-  </body>
+                </script>
+            {% endblock %}
+            {% block head_extra_scripts %}{% endblock %}
+        {% endblock %}
+    </head>
+    <body class="gradient-body d-flex flex-column min-vh-100"
+          _=" on load if no localStorage's chosenTheme or localStorage's chosenTheme is 'NaN' or ['light', 'dark'] does not contains  localStorage's chosenTheme set localStorage's chosenTheme to 'light' end if localStorage's chosenTheme is 'light' add @data-bs-theme='light' to <:root/> end if localStorage's chosenTheme is 'dark' add @data-bs-theme='dark' to <:root/> end if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN' or ['list', 'grid'] does not contains  localStorage's chosenLayout set localStorage's chosenLayout to 'list' end end ">
+        <div id="alerts" class="alerts-section position-fixed top-0 end-0"></div>
+        <div id="navbar">{% include 'blocks/navbar.html' %}</div>
+        <div id="content" class="mx-4 my-4">
+            {% block content %}{% endblock %}
+        </div>
+        <div id="footer" class="mt-auto">{% include 'blocks/footer.html' %}</div>
+        <script src="{{ get_static_file_url('vendor/bootstrap/5.3.8/bootstrap.bundle.min.js') }}"></script>
+        <script>hljs.highlightAll();</script>
+    </body>
 </html>
