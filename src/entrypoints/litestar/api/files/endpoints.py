@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
-from litestar import get
+from litestar import Controller, get
 from litestar.params import Parameter
 
 from core.files.schemas import PresignPutObjectParams
@@ -10,25 +10,27 @@ from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
 from entrypoints.litestar.guards import admin_user_guard
 
 
-@get(
-    "/presign-put",
-    description="Получение предподписанной ссылки для загрузки медиа-файла.",
-    guards=[admin_user_guard],
-)
-async def presign_put_media_file(
-    content_type: Annotated[str, Parameter(query="contentType")],
-    use_case: FromDishka[AbstractPresignPutObjectUseCase],
-) -> FilePresignPutResponseSchema:
-    params = PresignPutObjectParams(
-        content_type=content_type,
-        folder="text-attachments",
-        namespace="media",
+class FilesController(Controller):
+    path = "/files"
+    tags = ["files"]
+    guards = [admin_user_guard]
+
+    @get(
+        "/presign-put",
+        description="Получение предподписанной ссылки для загрузки медиа-файла.",
     )
-    urls = await use_case.execute(params=params)
-    return FilePresignPutResponseSchema.from_schema(schema=urls)
+    async def presign_put_media_file(
+        self,
+        content_type: Annotated[str, Parameter(query="contentType")],
+        use_case: FromDishka[AbstractPresignPutObjectUseCase],
+    ) -> FilePresignPutResponseSchema:
+        params = PresignPutObjectParams(
+            content_type=content_type,
+            folder="text-attachments",
+            namespace="media",
+        )
+        urls = await use_case.execute(params=params)
+        return FilePresignPutResponseSchema.from_schema(schema=urls)
 
 
-api_router = DishkaRouter(
-    "/files",
-    route_handlers=[presign_put_media_file],
-)
+api_router = DishkaRouter("", route_handlers=[FilesController])

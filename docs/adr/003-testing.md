@@ -869,6 +869,7 @@ from core.domain.exceptions import EntityNotFoundError
 from core.enums import StatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
+
 class TestGetEntityAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:

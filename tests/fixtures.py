@@ -36,8 +36,10 @@ class ApiFixture:
     def _setup_api(
         self,
         client: TestClient,
+        no_auth_client: TestClient,
     ) -> None:
         self.api = APIHelper(client=client)
+        self.no_auth_api = APIHelper(client=no_auth_client)
 
 
 class StorageFixture:

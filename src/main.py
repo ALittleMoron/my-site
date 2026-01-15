@@ -3,26 +3,17 @@ from litestar import Litestar
 
 from config.loggers import logger
 from config.settings import settings
-from entrypoints.litestar.api.routers import api_router
-from entrypoints.litestar.cli.plugins import CLIPlugin
-from entrypoints.litestar.initializers import create_litestar
+from entrypoints.litestar.initializers import create_cli_app, create_litestar_app
 from entrypoints.litestar.lifespan import app_lifespan
-from entrypoints.litestar.views.routers import views_router
+from ioc.container import container
 
 
-def create_cli_app() -> Litestar:
-    return create_litestar(
-        route_handlers=[],
-        lifespan=[app_lifespan],
-        extra_plugins=[CLIPlugin()],
-    )
+def create_cli() -> Litestar:
+    return create_cli_app(lifespan=[app_lifespan])
 
 
 def create_app() -> Litestar:
-    return create_litestar(
-        route_handlers=[api_router, views_router],
-        lifespan=[app_lifespan],
-    )
+    return create_litestar_app(lifespan=[app_lifespan], container=container)
 
 
 if __name__ == "__main__":

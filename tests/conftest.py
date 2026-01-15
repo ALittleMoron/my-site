@@ -17,10 +17,11 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from config.settings import settings, Settings
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
 from db.utils import migrate, downgrade
-from entrypoints.litestar.api.routers import api_router
-from entrypoints.litestar.initializers import create_litestar
+from entrypoints.litestar.initializers import create_litestar_app
 from tests.mocks.providers.auth import MockAuthProvider
 from tests.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.mocks.providers.contacts import MockContactsProvider
@@ -65,14 +66,31 @@ async def container(
 
 @pytest.fixture
 def app(container: AsyncContainer) -> Litestar:
-    app = create_litestar(route_handlers=[api_router], lifespan=[])
+    app = create_litestar_app(lifespan=[], container=container)
     setup_dishka(container=container, app=app)
     return app
 
 
 @pytest.fixture
+def jwt_user() -> JwtUser:
+    return JwtUser(username="test", role=RoleEnum.USER)
+
+
+@pytest.fixture
+def jwt_admin() -> JwtUser:
+    return JwtUser(username="test", role=RoleEnum.ADMIN)
+
+
+@pytest.fixture
+def no_auth_client(app: Litestar) -> Generator[TestClient, None, None]:
+    with TestClient(app) as client:
+        yield client
+
+
+@pytest.fixture
 def client(app: Litestar) -> Generator[TestClient, None, None]:
     with TestClient(app) as client:
+        client.headers["Authorization"] = f"Bearer ANY"
         yield client
 
 

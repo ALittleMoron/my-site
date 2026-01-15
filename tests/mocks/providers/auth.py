@@ -31,6 +31,7 @@ class MockAuthProvider(Provider):
     ) -> None:
         super().__init__(scope=scope, component=component)
         self.settings = settings
+        self.user = JwtUser(username="test", role=RoleEnum.ADMIN)
 
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> PasswordHasher:
@@ -43,7 +44,7 @@ class MockAuthProvider(Provider):
     async def provide_token_handler(self) -> TokenHandler:
         mock = Mock(spec=TokenHandler)
         mock.encode_token.return_value = "TOKEN".encode()
-        mock.decode_token.return_value = JwtUser(username="test", role=RoleEnum.ADMIN)
+        mock.decode_token.return_value = self.user
         return mock
 
     @provide(scope=Scope.APP)
@@ -59,4 +60,5 @@ class MockAuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_authenticate_use_case(self) -> AbstractAuthenticateUseCase:
         mock = Mock(spec=AbstractAuthenticateUseCase)
+        mock.execute.return_value = self.user
         return mock

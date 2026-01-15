@@ -1,7 +1,8 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
-from litestar import Litestar
+from dishka import AsyncContainer
+from litestar import Litestar, Router
 from litestar.config.response_cache import ResponseCacheConfig
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.logging import StructLoggingConfig
@@ -16,20 +17,22 @@ from litestar.static_files import create_static_files_router
 from litestar.stores.base import Store
 from litestar.stores.valkey import ValkeyStore
 from litestar.template import TemplateConfig
-from litestar.types import ControllerRouterHandler, Middleware
+from litestar.types import Middleware
 from litestar_htmx import HTMXPlugin
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from config import loggers
 from config.constants import constants
 from config.settings import settings
+from entrypoints.litestar.api.routers import api_router
 from entrypoints.litestar.auth import AuthenticationMiddleware
+from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
 from entrypoints.litestar.template_callables import register_template_callables
-from ioc.container import container
+from entrypoints.litestar.views.routers import views_router
 
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
 
@@ -91,7 +94,7 @@ def create_plugins() -> list[PluginProtocol]:
     ]
 
 
-def create_middlewares() -> list[Middleware]:
+def create_middlewares(container: AsyncContainer) -> list[Middleware]:
     return [
         RequestIdLoggingMiddleware(),
         LogExceptionMiddleware(),
@@ -105,22 +108,40 @@ def create_middlewares() -> list[Middleware]:
     ]
 
 
-def create_litestar(
-    route_handlers: Sequence[ControllerRouterHandler],
-    lifespan: Lifespan,
-    extra_plugins: Sequence[PluginProtocol] | None = None,
-    extra_middlewares: Sequence[Middleware] | None = None,
-) -> Litestar:
-    route_handlers_list = list(route_handlers)
+def create_routers() -> list[Router]:
+    routers = [api_router, views_router]
     if settings.app.debug:
-        route_handlers_list.append(
+        routers.append(
             create_static_files_router(
                 path="/static",
                 directories=[constants.path.src_dir / "static"],
             ),
         )
+    return routers
+
+
+def create_cli_app(
+    lifespan: Lifespan,
+) -> Litestar:
     return Litestar(
-        route_handlers=route_handlers_list,
+        lifespan=lifespan,
+        debug=settings.app.debug,
+        exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
+        stores=create_stores(),
+        plugins=[CLIPlugin()],
+        template_config=create_template_config(),
+        openapi_config=create_openapi_config(),
+    )
+
+
+def create_litestar_app(
+    lifespan: Lifespan,
+    container: AsyncContainer,
+    extra_plugins: Sequence[PluginProtocol] | None = None,
+    extra_middlewares: Sequence[Middleware] | None = None,
+) -> Litestar:
+    return Litestar(
+        route_handlers=create_routers(),
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
@@ -128,7 +149,7 @@ def create_litestar(
         response_cache_config=(
             ResponseCacheConfig(store="litestar_cache") if settings.app.use_cache else None
         ),
-        middleware=[*create_middlewares(), *(extra_middlewares or [])],
+        middleware=[*create_middlewares(container), *(extra_middlewares or [])],
         plugins=[*create_plugins(), *(extra_plugins or [])],
         template_config=create_template_config(),
         openapi_config=create_openapi_config(),
