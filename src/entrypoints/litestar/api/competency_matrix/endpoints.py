@@ -25,7 +25,6 @@ class CompetencyMatrixController(Controller):
         "/items",
         description="Получение списка вопросов по матрице компетенций.",
         cache=settings.app.get_cache_duration(60),  # 1 минута
-        exclude_from_auth=True,
     )
     async def list_competency_matrix_items_handler(
         self,
@@ -39,7 +38,6 @@ class CompetencyMatrixController(Controller):
         "/items/{pk:int}",
         description="Получение подробной информации о вопросе из матрицы компетенций.",
         cache=settings.app.get_cache_duration(15),  # 15 секунд
-        exclude_from_auth=True,
     )
     async def get_competency_matrix_item_handler(
         self,
@@ -57,7 +55,6 @@ class CompetencyMatrixController(Controller):
             "чтобы получить вопросы по нужному листу."
         ),
         cache=settings.app.get_cache_duration(120),  # 2 минуты
-        exclude_from_auth=True,
     )
     async def list_competency_matrix_sheet_handler(
         self,

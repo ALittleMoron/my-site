@@ -25,7 +25,6 @@ class ContactsController(Controller):
         status_code=status.HTTP_204_NO_CONTENT,
         description="Создание заявки на то, чтобы связаться со мной",
         middleware=middleware,
-        exclude_from_auth=True,
     )
     async def contact_me_request(
         self,

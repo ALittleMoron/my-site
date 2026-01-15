@@ -4,7 +4,7 @@ import pytest
 from litestar.middleware import AuthenticationResult
 
 from core.auth.enums import RoleEnum
-from core.auth.exceptions import UnauthorizedError
+from core.auth.schemas import JwtUser
 from entrypoints.litestar.auth import AuthenticationMiddleware
 from tests.fixtures import ContainerFixture, FactoryFixture
 
@@ -23,14 +23,14 @@ class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
     async def test_authenticate_no_token(self) -> None:
         connection_mock = Mock()
         connection_mock.headers = {}
-        with pytest.raises(UnauthorizedError):
-            await self.middleware.authenticate_request(connection=connection_mock)
+        result = await self.middleware.authenticate_request(connection=connection_mock)
+        assert result == AuthenticationResult(user=JwtUser.anonymous(), auth=None)
 
     async def test_authenticate_token_not_startswith_prefix(self) -> None:
         connection_mock = Mock()
         connection_mock.headers = {"Authorization": "INVALID token"}
-        with pytest.raises(UnauthorizedError):
-            await self.middleware.authenticate_request(connection=connection_mock)
+        result = await self.middleware.authenticate_request(connection=connection_mock)
+        assert result == AuthenticationResult(user=JwtUser.anonymous(), auth=None)
 
     async def test_authenticate(self) -> None:
         self.use_case.execute.return_value = self.factory.core.jwt_user(

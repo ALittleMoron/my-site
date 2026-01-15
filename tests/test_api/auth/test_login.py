@@ -20,5 +20,5 @@ class TestLoginAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.execute.assert_called_once_with(
             username="USERNAME",
             password="PASSWORD",
-            required_role=RoleEnum.USER,
+            required_role=RoleEnum.ADMIN,
         )

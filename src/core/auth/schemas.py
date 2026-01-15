@@ -16,6 +16,10 @@ class BaseUser:
     role: RoleEnum
 
     @property
+    def is_anon(self) -> bool:
+        return self.role == RoleEnum.ANON
+
+    @property
     def is_admin(self) -> bool:
         return self.role == RoleEnum.ADMIN
 
@@ -26,6 +30,8 @@ class BaseUser:
     def has_role(self, role: RoleEnum) -> bool:
         if self.role == RoleEnum.ADMIN:
             return True
+        if self.role == RoleEnum.USER:
+            return role in {RoleEnum.ANON, RoleEnum.USER}
         return self.role == role
 
 
@@ -52,3 +58,7 @@ class JwtUser(BaseUser):
             username=user.username,
             role=user.role,
         )
+
+    @classmethod
+    def anonymous(cls) -> "JwtUser":
+        return cls(username="anonymous", role=RoleEnum.ANON)

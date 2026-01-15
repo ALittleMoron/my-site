@@ -21,7 +21,6 @@ class AuthController(Controller):
             "дальнейшем будет использоваться server-side сессия, а токен можно будет "
             "перезапросить новый по сессии"
         ),
-        exclude_from_auth=True,
     )
     async def login_handler(
         self,
@@ -31,7 +30,7 @@ class AuthController(Controller):
         token = await use_case.execute(
             username=data.username,
             password=data.password,
-            required_role=RoleEnum.USER,
+            required_role=RoleEnum.ADMIN,  # NOTE: пока только админы могут логиниться
         )
         return AccessTokenResponseSchema.from_domain_schema(schema=token)
 

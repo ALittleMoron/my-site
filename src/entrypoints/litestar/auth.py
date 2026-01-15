@@ -49,11 +49,16 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
         self.container = container
 
     async def authenticate_request(self, connection: ASGIConnection) -> AuthenticationResult:
+        anon_result = AuthenticationResult(user=JwtUser.anonymous(), auth=None)
         token: str | None = connection.headers.get(self.token_header_name)
         if not token or not token.startswith(self.token_prefix):
-            raise UnauthorizedError
+            return anon_result
         clear_token = token.split(self.token_prefix)[-1].strip()
         async with self.container() as request_container:
             use_case = await request_container.get(AbstractAuthenticateUseCase)
-            user = await use_case.execute(token=clear_token, required_role=RoleEnum.USER)
+            try:
+                # NOTE: пока только админы могут логиниться
+                user = await use_case.execute(token=clear_token, required_role=RoleEnum.ADMIN)
+            except UnauthorizedError:
+                return anon_result
         return AuthenticationResult(user=JwtUser.from_user(user), auth=token)

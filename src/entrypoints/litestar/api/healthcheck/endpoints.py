@@ -13,7 +13,6 @@ class HealthcheckController(Controller):
         summary="Базовая проверка",
         description="Базовая проверка работоспособности приложения (Ответ 200 = живой)",
         cache=settings.app.get_cache_duration(1),  # 1 секунда
-        exclude_from_auth=True,
     )
     async def health(self) -> Response:
         return Response(content="", status_code=status.HTTP_200_OK)
