@@ -30,7 +30,7 @@ class FilesController(Controller):
             namespace="media",
         )
         urls = await use_case.execute(params=params)
-        return FilePresignPutResponseSchema.from_schema(schema=urls)
+        return FilePresignPutResponseSchema.from_domain_schema(schema=urls)
 
 
 api_router = DishkaRouter("", route_handlers=[FilesController])

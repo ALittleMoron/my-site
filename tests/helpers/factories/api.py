@@ -16,3 +16,7 @@ class ApiFactoryHelper:
             "telegram": telegram,
             "message": message,
         }
+
+    @classmethod
+    def login_request(cls, username: str = "TEST", password: str = "TEST") -> dict[str, Any]:
+        return {"username": username, "password": password}

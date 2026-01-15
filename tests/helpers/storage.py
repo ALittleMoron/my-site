@@ -21,7 +21,7 @@ class StorageHelper:
         contact_me = await self.session.scalar(query)
         if contact_me is None:
             raise ContactMeRequestNotFoundError
-        return contact_me.to_schema()
+        return contact_me.to_domain_schema()
 
     async def create_competency_matrix_item(
         self,
@@ -54,13 +54,13 @@ class StorageHelper:
         return db_users
 
     async def create_blog_post(self, blog_post: BlogPost) -> BlogPostModel:
-        db_blog_post = BlogPostModel.from_schema(post=blog_post)
+        db_blog_post = BlogPostModel.from_domain_schema(post=blog_post)
         self.session.add(db_blog_post)
         await self.session.flush()
         return db_blog_post
 
     async def create_blog_posts(self, blog_posts: list[BlogPost]) -> list[BlogPostModel]:
-        db_blog_posts = [BlogPostModel.from_schema(post=post) for post in blog_posts]
+        db_blog_posts = [BlogPostModel.from_domain_schema(post=post) for post in blog_posts]
         self.session.add_all(db_blog_posts)
         await self.session.flush()
         return db_blog_posts

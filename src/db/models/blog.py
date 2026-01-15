@@ -30,7 +30,7 @@ class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
         return f'Blog post "{self.title}"'
 
     @classmethod
-    def from_schema(cls, post: BlogPost) -> Self:
+    def from_domain_schema(cls, post: BlogPost) -> Self:
         return cls(
             id=post.id,
             title=post.title,
@@ -42,7 +42,7 @@ class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
             updated_at=post.updated_at,
         )
 
-    def to_schema(self) -> BlogPost:
+    def to_domain_schema(self) -> BlogPost:
         return BlogPost(
             id=self.id,
             title=self.title,

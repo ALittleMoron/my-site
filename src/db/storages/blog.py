@@ -21,14 +21,14 @@ class BlogDatabaseStorage(BlogStorage):
         post_model = await self.session.scalar(query)
         if post_model is None:
             raise BlogPostNotFoundError
-        return post_model.to_schema()
+        return post_model.to_domain_schema()
 
     async def get_post_by_id(self, post_id: UUID) -> BlogPost:
         query = select(BlogPostModel).where(BlogPostModel.id == post_id)
         post_model = await self.session.scalar(query)
         if post_model is None:
             raise BlogPostNotFoundError
-        return post_model.to_schema()
+        return post_model.to_domain_schema()
 
     async def list_posts(self, filters: BlogPostFilters) -> BlogPostList:
         query = (
@@ -52,7 +52,7 @@ class BlogDatabaseStorage(BlogStorage):
         post_models = await self.session.scalars(query)
 
         return BlogPostList(
-            posts=[post_model.to_schema() for post_model in post_models],
+            posts=[post_model.to_domain_schema() for post_model in post_models],
             total_count=total_count,
             total_pages=ceil(total_count / filters.page_size) if total_count > 0 else 0,
         )

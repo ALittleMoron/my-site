@@ -1,5 +1,6 @@
 from litestar import Router
 
+from entrypoints.litestar.api.auth.endpoints import api_router as auth_router
 from entrypoints.litestar.api.competency_matrix.endpoints import (
     api_router as competency_matrix_router,
 )
@@ -14,6 +15,7 @@ api_router = Router(
         competency_matrix_router,
         contacts_router,
         files_router,
+        auth_router,
     ],
     tags=["api"],
 )

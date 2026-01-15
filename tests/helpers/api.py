@@ -29,3 +29,6 @@ class APIHelper:
             f"/api/files/presign-put",
             params={"contentType": content_type},
         )
+
+    def post_login(self, data: dict[str, Any]) -> Response:
+        return self.client.post("/api/auth/login", json=data)

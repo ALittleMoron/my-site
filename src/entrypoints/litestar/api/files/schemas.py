@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field, HttpUrl
 
@@ -25,7 +25,7 @@ class FilePresignPutResponseSchema(CamelCaseSchema):
     ]
 
     @classmethod
-    def from_schema(cls, *, schema: PresignPutObject) -> "FilePresignPutResponseSchema":
+    def from_domain_schema(cls, *, schema: PresignPutObject) -> Self:
         return cls(
             upload_url=HttpUrl(schema.upload_url),
             access_url=HttpUrl(schema.access_url),

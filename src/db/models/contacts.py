@@ -1,3 +1,5 @@
+from typing import Self
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.ids import UUIDMixin
@@ -15,7 +17,7 @@ class ContactMeModel(Base, UUIDMixin):
     message: Mapped[str] = mapped_column()
 
     @classmethod
-    def from_schema(cls, form: ContactMe) -> "ContactMeModel":
+    def from_domain_schema(cls, form: ContactMe) -> Self:
         return cls(
             id=form.id,
             name=form.name,
@@ -24,7 +26,7 @@ class ContactMeModel(Base, UUIDMixin):
             message=form.message,
         )
 
-    def to_schema(self) -> ContactMe:
+    def to_domain_schema(self) -> ContactMe:
         return ContactMe(
             id=self.id,
             name=self.name,

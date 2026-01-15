@@ -12,6 +12,6 @@ class ContactMeDatabaseStorage(ContactMeStorage):
     session: AsyncSession
 
     async def create_contact_me_request(self, form: ContactMe) -> None:
-        contact_me_model = ContactMeModel.from_schema(form=form)
+        contact_me_model = ContactMeModel.from_domain_schema(form=form)
         self.session.add(contact_me_model)
         await self.session.flush()
