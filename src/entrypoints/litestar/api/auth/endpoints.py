@@ -6,7 +6,8 @@ from litestar import Controller, post
 from litestar.params import Body
 
 from core.auth.enums import RoleEnum
-from core.auth.use_cases import AbstractLoginUseCase
+from core.auth.types import Token
+from core.auth.use_cases import AbstractLoginUseCase, AbstractLogoutUseCase
 from entrypoints.litestar.api.auth.schemas import AccessTokenResponseSchema, LoginRequestSchema
 
 
@@ -33,6 +34,18 @@ class AuthController(Controller):
             required_role=RoleEnum.ADMIN,  # NOTE: пока только админы могут логиниться
         )
         return AccessTokenResponseSchema.from_domain_schema(schema=token)
+
+    @post(
+        "/logout",
+        name="auth.logout",
+        description="Эндпоинт для выхода из системы. Ничего не делает",
+    )
+    async def logout_handler(
+        self,
+        token: FromDishka[Token],
+        use_case: FromDishka[AbstractLogoutUseCase],
+    ) -> None:
+        await use_case.execute(token=token)
 
 
 api_router = DishkaRouter("", route_handlers=[AuthController])

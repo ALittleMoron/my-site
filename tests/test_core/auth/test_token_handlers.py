@@ -9,6 +9,7 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.auth.token_handlers import TokenHandler, PasetoTokenHandler
+from core.auth.types import Token
 from core.schemas import Secret
 from tests.mocks.providers.auth import test_public_key_pem, test_private_key_pem
 
@@ -47,7 +48,7 @@ class TestPasetoTokenHandler:
     def test_decode_token_not_valid_payload(self) -> None:
         token = pyseto.encode(key=self.auth_handler._create_secret_key(), payload={"test": "test"})
         with pytest.raises(UnauthorizedError):
-            self.auth_handler.decode_token(token)
+            self.auth_handler.decode_token(Token(token))
 
     @pytest.mark.parametrize(
         "error", [pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError]
@@ -59,14 +60,14 @@ class TestPasetoTokenHandler:
         )
         with patch("pyseto.decode", side_effect=error):
             with pytest.raises(UnauthorizedError):
-                self.auth_handler.decode_token(token)
+                self.auth_handler.decode_token(Token(token))
 
     def test_decode_token(self) -> None:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
             payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
         )
-        decoded_token = self.auth_handler.decode_token(token)
+        decoded_token = self.auth_handler.decode_token(Token(token))
         assert decoded_token.to_dict() == {
             "username": "TEST",
             "role": RoleEnum.ADMIN,

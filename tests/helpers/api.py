@@ -32,3 +32,6 @@ class APIHelper:
 
     def post_login(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/auth/login", json=data)
+
+    def post_logout(self) -> Response:
+        return self.client.post("/api/auth/logout")

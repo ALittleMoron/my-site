@@ -8,7 +8,11 @@ from dishka import AsyncContainer
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
-from core.auth.use_cases import AbstractLoginUseCase, AbstractAuthenticateUseCase
+from core.auth.use_cases import (
+    AbstractLoginUseCase,
+    AbstractAuthenticateUseCase,
+    AbstractLogoutUseCase,
+)
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
@@ -60,6 +64,10 @@ class IocContainerHelper:
 
     async def get_login_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractLoginUseCase)
+        return cast(Mock, use_case)
+
+    async def get_logout_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractLogoutUseCase)
         return cast(Mock, use_case)
 
     async def get_authenticate_use_case(self) -> Mock:

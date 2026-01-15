@@ -11,6 +11,7 @@ from litestar.types import ASGIApp, Method, Scopes
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
+from core.auth.types import Token
 from core.auth.use_cases import AbstractAuthenticateUseCase
 
 
@@ -53,7 +54,7 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
         token: str | None = connection.headers.get(self.token_header_name)
         if not token or not token.startswith(self.token_prefix):
             return anon_result
-        clear_token = token.split(self.token_prefix)[-1].strip()
+        clear_token = Token(token.split(self.token_prefix)[-1].strip().encode())
         async with self.container() as request_container:
             use_case = await request_container.get(AbstractAuthenticateUseCase)
             try:

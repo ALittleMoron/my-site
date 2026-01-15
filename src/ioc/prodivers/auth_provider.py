@@ -1,21 +1,33 @@
 from argon2 import PasswordHasher as CryptContext
 from dishka import Provider, Scope, provide
+from litestar import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
 from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
+from core.auth.types import RawToken, Token
 from core.auth.use_cases import (
     AbstractAuthenticateUseCase,
     AbstractLoginUseCase,
+    AbstractLogoutUseCase,
     AuthenticateUseCase,
     LoginUseCase,
+    LogoutUseCase,
 )
 from db.storages.auth import AuthDatabaseStorage
 
 
 class AuthProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    async def raw_token(self, request: Request) -> RawToken:
+        return RawToken(request.headers.get(settings.auth.token_header_name, ""))
+
+    @provide(scope=Scope.REQUEST)
+    async def token(self, raw_token: RawToken) -> Token:
+        return Token(raw_token.split(settings.auth.token_prefix)[-1].strip().encode())
+
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> PasswordHasher:
         return Argon2PasswordHasher(context=CryptContext())
@@ -48,3 +60,7 @@ class AuthProvider(Provider):
         storage: AuthStorage,
     ) -> AbstractAuthenticateUseCase:
         return AuthenticateUseCase(token_handler=token_handler, user_storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_logout_use_case(self) -> AbstractLogoutUseCase:
+        return LogoutUseCase()

@@ -12,16 +12,17 @@ from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
+from core.auth.types import Token
 from core.schemas import Secret
 
 
 class TokenHandler(ABC):
     @abstractmethod
-    def decode_token(self, token: bytes) -> JwtUser:
+    def decode_token(self, token: Token) -> JwtUser:
         raise NotImplementedError
 
     @abstractmethod
-    def encode_token(self, payload: JwtUser) -> bytes:
+    def encode_token(self, payload: JwtUser) -> Token:
         raise NotImplementedError
 
     @staticmethod
@@ -72,7 +73,7 @@ class PasetoTokenHandler(TokenHandler):
         ).isoformat()
         return payload_dict
 
-    def decode_token(self, token: bytes) -> JwtUser:
+    def decode_token(self, token: Token) -> JwtUser:
         try:
             decoded = pyseto.decode(keys=self._create_public_key(), token=token).payload
         except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError) as err:
@@ -84,8 +85,10 @@ class PasetoTokenHandler(TokenHandler):
         logger.error(event="Decoded payload is not valid", payload=payload_dict)
         raise UnauthorizedError
 
-    def encode_token(self, payload: JwtUser) -> bytes:
-        return pyseto.encode(
-            key=self._create_secret_key(),
-            payload=self.prepare_payload(payload),
+    def encode_token(self, payload: JwtUser) -> Token:
+        return Token(
+            pyseto.encode(
+                key=self._create_secret_key(),
+                payload=self.prepare_payload(payload),
+            ),
         )

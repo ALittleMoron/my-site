@@ -5,9 +5,10 @@ from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import JwtUser, Token, User
+from core.auth.schemas import JwtUser, User
 from core.auth.storages import AuthStorage, UserAuthStorage
 from core.auth.token_handlers import TokenHandler
+from core.auth.types import Token
 from core.use_cases import UseCase
 
 
@@ -47,12 +48,12 @@ class LoginUseCase(AbstractLoginUseCase):
                 username=username,
                 password_hash=self.hasher.hash_password(password),
             )
-        return Token(value=self.token_handler.encode_token(payload=JwtUser.from_user(user=user)))
+        return Token(self.token_handler.encode_token(payload=JwtUser.from_user(user=user)))
 
 
 class AbstractAuthenticateUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(self, token: str, required_role: RoleEnum) -> User:
+    async def execute(self, token: Token, required_role: RoleEnum) -> User:
         raise NotImplementedError
 
 
@@ -61,8 +62,8 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
     token_handler: TokenHandler
     user_storage: UserAuthStorage
 
-    async def execute(self, token: str, required_role: RoleEnum) -> User:
-        payload = self.token_handler.decode_token(token.encode())
+    async def execute(self, token: Token, required_role: RoleEnum) -> User:
+        payload = self.token_handler.decode_token(token)
         try:
             user = await self.user_storage.get_user_by_username(username=payload.username)
         except UserNotFoundError as exc:
@@ -72,3 +73,15 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
             logger.warning(f"User has no role {required_role.value}", username=user.username)
             raise ForbiddenError
         return user
+
+
+class AbstractLogoutUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, token: Token) -> None:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class LogoutUseCase(AbstractLogoutUseCase):
+    async def execute(self, token: Token) -> None:
+        pass

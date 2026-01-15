@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
 from config.settings import settings, Settings
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
+from core.auth.types import RawToken
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel, BlogPostModel
 from db.utils import migrate, downgrade
 from entrypoints.litestar.initializers import create_litestar_app
@@ -46,9 +47,26 @@ def random_suffix(global_random_uuid: uuid.UUID) -> str:
     return global_random_uuid.hex[:8]
 
 
+@pytest.fixture
+def jwt_user() -> JwtUser:
+    return JwtUser(username="test", role=RoleEnum.USER)
+
+
+@pytest.fixture
+def jwt_admin() -> JwtUser:
+    return JwtUser(username="test", role=RoleEnum.ADMIN)
+
+
+@pytest.fixture
+def raw_token() -> RawToken:
+    return RawToken("Bearer token")
+
+
 @pytest_asyncio.fixture(loop_scope="function")
 async def container(
     test_settings: Settings,
+    jwt_admin: JwtUser,
+    raw_token: RawToken,
     global_random_uuid: uuid.UUID,
     random_suffix: str,
 ) -> AsyncGenerator[AsyncContainer, None]:
@@ -58,7 +76,7 @@ async def container(
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),
-        MockAuthProvider(settings=test_settings),
+        MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),
     )
     yield container
     await container.close()
@@ -69,16 +87,6 @@ def app(container: AsyncContainer) -> Litestar:
     app = create_litestar_app(lifespan=[], container=container)
     setup_dishka(container=container, app=app)
     return app
-
-
-@pytest.fixture
-def jwt_user() -> JwtUser:
-    return JwtUser(username="test", role=RoleEnum.USER)
-
-
-@pytest.fixture
-def jwt_admin() -> JwtUser:
-    return JwtUser(username="test", role=RoleEnum.ADMIN)
 
 
 @pytest.fixture

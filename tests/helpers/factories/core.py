@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime, UTC
 
 from core.auth.enums import RoleEnum
-from core.auth.schemas import User, JwtUser, Token
+from core.auth.schemas import User, JwtUser
+from core.auth.types import Token
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -174,4 +175,4 @@ class CoreFactoryHelper:
 
     @classmethod
     def token(cls, value: bytes) -> Token:
-        return Token(value=value)
+        return Token(value)

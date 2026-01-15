@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from core.auth.schemas import Token
+from core.auth.types import Token
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 PASETO_TOKEN_EXAMPLE = (
@@ -25,7 +25,7 @@ class AccessTokenResponseSchema(CamelCaseSchema):
 
     @classmethod
     def from_domain_schema(cls, *, schema: Token) -> Self:
-        return cls(access_token=schema.value.decode())
+        return cls(access_token=schema.decode())
 
 
 class LoginRequestSchema(CamelCaseSchema):

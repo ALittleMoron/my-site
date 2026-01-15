@@ -3,6 +3,7 @@ import pytest_asyncio
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError, UserNotFoundError, ForbiddenError
+from core.auth.types import Token
 from core.auth.use_cases import AuthenticateUseCase
 from tests.fixtures import FactoryFixture, ContainerFixture
 
@@ -20,7 +21,10 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
     async def test_authenticate_token_decode_error(self) -> None:
         self.token_handler.decode_token.side_effect = UnauthorizedError
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(token="invalid_token", required_role=RoleEnum.ADMIN)
+            await self.use_case.execute(
+                token=Token("invalid_token".encode()),
+                required_role=RoleEnum.ADMIN,
+            )
         self.token_handler.decode_token.assert_called_once_with("invalid_token".encode())
 
     async def test_authenticate_user_not_found(self) -> None:
@@ -30,7 +34,10 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
+            await self.use_case.execute(
+                token=Token("valid_token".encode()),
+                required_role=RoleEnum.ADMIN,
+            )
         self.storage.get_user_by_username.assert_called_once_with(username="test")
 
     async def test_authenticate_user_not_has_role(self) -> None:
@@ -44,7 +51,10 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.USER,
         )
         with pytest.raises(ForbiddenError):
-            await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
+            await self.use_case.execute(
+                token=Token("valid_token".encode()),
+                required_role=RoleEnum.ADMIN,
+            )
 
     async def test_authenticate(self) -> None:
         self.storage.get_user_by_username.return_value = self.factory.core.user(
@@ -57,7 +67,10 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         self.token_handler.encode_token.return_value = "NEW_TOKEN".encode()
-        user = await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
+        user = await self.use_case.execute(
+            token=Token("valid_token".encode()),
+            required_role=RoleEnum.ADMIN,
+        )
         assert user == self.factory.core.user(
             username="test",
             password_hash="test",
