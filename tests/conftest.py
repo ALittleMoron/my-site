@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import (
 from config.settings import settings, Settings
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
-from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel
+from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel, BlogPostModel
 from db.utils import migrate, downgrade
 from entrypoints.litestar.initializers import create_litestar_app
 from tests.mocks.providers.auth import MockAuthProvider
@@ -119,6 +119,7 @@ async def clear_tables(engine: AsyncEngine) -> None:
         await conn.execute(delete(UserModel))
         await conn.execute(delete(ExternalResourceModel))
         await conn.execute(delete(CompetencyMatrixItemModel))
+        await conn.execute(delete(BlogPostModel))
 
 
 @pytest_asyncio.fixture
