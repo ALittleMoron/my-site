@@ -20,6 +20,7 @@ async def homepage_handler() -> Response[Any]:
     "/favicon.ico",
     media_type=MediaType.TEXT,
     cache=settings.app.get_cache_duration(CACHE_FOREVER),
+    exclude_from_auth=True,
 )
 async def favicon_redirect_handler() -> Response[Any]:
     return Redirect(path=settings.get_minio_object_url(bucket="static", object_path="favicon.ico"))
@@ -29,6 +30,7 @@ async def favicon_redirect_handler() -> Response[Any]:
     "/robots.txt",
     media_type=MediaType.TEXT,
     cache=settings.app.get_cache_duration(CACHE_FOREVER),
+    exclude_from_auth=True,
 )
 async def robots_txt_handler() -> str:
     return (
@@ -45,6 +47,7 @@ async def robots_txt_handler() -> str:
     name="sitemap-xml-handler",
     media_type=MediaType.XML,
     cache=settings.app.get_cache_duration(CACHE_FOREVER),
+    exclude_from_auth=True,
 )
 async def sitemap_xml_handler(request: Request) -> str:
     url_template = (
@@ -75,6 +78,7 @@ async def sitemap_xml_handler(request: Request) -> str:
     "/sitemap",
     name="sitemap-handler",
     cache=settings.app.get_cache_duration(120),  # 2 минуты
+    exclude_from_auth=True,
 )
 async def sitemap_handler() -> Template:
     return HTMXTemplate(template_name="sitemap/index.html")
@@ -85,6 +89,7 @@ async def sitemap_handler() -> Template:
     name="chrome-devtools-handler",
     media_type=MediaType.JSON,
     cache=settings.app.get_cache_duration(CACHE_FOREVER),
+    exclude_from_auth=True,
 )
 async def chrome_devtools_handler() -> Response[Any]:
     return Response[Any](

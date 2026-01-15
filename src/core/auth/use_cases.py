@@ -3,9 +3,9 @@ from dataclasses import dataclass
 
 from config.loggers import logger
 from core.auth.enums import RoleEnum
-from core.auth.exceptions import UnauthorizedError, UserNotFoundError
+from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import JwtUser
+from core.auth.schemas import JwtUser, Token, User
 from core.auth.storages import AuthStorage, UserAuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.use_cases import UseCase
@@ -13,7 +13,7 @@ from core.use_cases import UseCase
 
 class AbstractLoginUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(self, username: str, password: str, required_role: RoleEnum) -> bytes | None:
+    async def execute(self, username: str, password: str, required_role: RoleEnum) -> Token:
         raise NotImplementedError
 
 
@@ -23,15 +23,15 @@ class LoginUseCase(AbstractLoginUseCase):
     token_handler: TokenHandler
     storage: AuthStorage
 
-    async def execute(self, username: str, password: str, required_role: RoleEnum) -> bytes | None:
+    async def execute(self, username: str, password: str, required_role: RoleEnum) -> Token:
         try:
             user = await self.storage.get_user_by_username(username=username)
-        except UserNotFoundError:
+        except UserNotFoundError as exc:
             logger.warning(event="No user in db from username form field", username=username)
-            return None
+            raise UnauthorizedError from exc
         if not user.has_role(role=required_role):
             logger.warning(f"User has no role {required_role.value}", username=user.username)
-            return None
+            raise ForbiddenError
         verified, need_rehash = self.hasher.verify_password(
             plain_password=password,
             hashed_password=user.password_hash.get_secret_value(),
@@ -41,18 +41,18 @@ class LoginUseCase(AbstractLoginUseCase):
                 "incorrect credentials (passwords not suit)",
                 username=user.username,
             )
-            return None
+            raise UnauthorizedError
         if need_rehash:
             await self.storage.update_user_password_hash(
                 username=username,
                 password_hash=self.hasher.hash_password(password),
             )
-        return self.token_handler.encode_token(payload=JwtUser.from_user(user=user))
+        return Token(value=self.token_handler.encode_token(payload=JwtUser.from_user(user=user)))
 
 
 class AbstractAuthenticateUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(self, token: str, required_role: RoleEnum) -> bytes | None:
+    async def execute(self, token: str, required_role: RoleEnum) -> User:
         raise NotImplementedError
 
 
@@ -61,17 +61,14 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
     token_handler: TokenHandler
     user_storage: UserAuthStorage
 
-    async def execute(self, token: str, required_role: RoleEnum) -> bytes | None:
-        try:
-            payload = self.token_handler.decode_token(token.encode())
-        except UnauthorizedError:
-            return None
+    async def execute(self, token: str, required_role: RoleEnum) -> User:
+        payload = self.token_handler.decode_token(token.encode())
         try:
             user = await self.user_storage.get_user_by_username(username=payload.username)
-        except UserNotFoundError:
+        except UserNotFoundError as exc:
             logger.warning(event="No user in db from token payload", payload=payload)
-            return None
+            raise UnauthorizedError from exc
         if not user.has_role(role=required_role):
             logger.warning(f"User has no role {required_role.value}", username=user.username)
-            return None
-        return self.token_handler.encode_token(payload=JwtUser.from_user(user=user))
+            raise ForbiddenError
+        return user

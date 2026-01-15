@@ -77,6 +77,8 @@ class _AuthSettings(_ProjectBaseSettings):
     public_key: SecretStrExtended
     private_key: SecretStrExtended
     token_expire_seconds: int = 60 * 60 * 24 * 2
+    token_header_name: str = "Authorization"  # noqa: S105
+    token_prefix: str = "Bearer"  # noqa: S105
 
 
 class _MinioSettings(_ProjectBaseSettings):

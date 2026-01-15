@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
-from core.auth.exceptions import UnauthorizedError, UserNotFoundError
+from core.auth.exceptions import UnauthorizedError, UserNotFoundError, ForbiddenError
 from core.auth.use_cases import AuthenticateUseCase
 from tests.fixtures import FactoryFixture, ContainerFixture
 
@@ -19,8 +19,8 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
 
     async def test_authenticate_token_decode_error(self) -> None:
         self.token_handler.decode_token.side_effect = UnauthorizedError
-        token = await self.use_case.execute(token="invalid_token", required_role=RoleEnum.ADMIN)
-        assert token is None
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.execute(token="invalid_token", required_role=RoleEnum.ADMIN)
         self.token_handler.decode_token.assert_called_once_with("invalid_token".encode())
 
     async def test_authenticate_user_not_found(self) -> None:
@@ -29,33 +29,22 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             username="test",
             role=RoleEnum.ADMIN,
         )
-        token = await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
-        assert token is None
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
         self.storage.get_user_by_username.assert_called_once_with(username="test")
 
-    @pytest.mark.parametrize(
-        ["required_role", "user_role"],
-        [
-            (RoleEnum.ADMIN, RoleEnum.USER),
-            (RoleEnum.USER, RoleEnum.ADMIN),
-        ],
-    )
-    async def test_authenticate_user_not_has_role(
-        self,
-        required_role: RoleEnum,
-        user_role: RoleEnum,
-    ) -> None:
+    async def test_authenticate_user_not_has_role(self) -> None:
         self.storage.get_user_by_username.return_value = self.factory.core.user(
             username="test",
             password_hash="test",
-            role=user_role,
+            role=RoleEnum.USER,
         )
         self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
             username="test",
-            role=user_role,
+            role=RoleEnum.USER,
         )
-        token = await self.use_case.execute(token="valid_token", required_role=required_role)
-        assert token is None
+        with pytest.raises(ForbiddenError):
+            await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
 
     async def test_authenticate(self) -> None:
         self.storage.get_user_by_username.return_value = self.factory.core.user(
@@ -68,5 +57,9 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         self.token_handler.encode_token.return_value = "NEW_TOKEN".encode()
-        token = await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
-        assert token == "NEW_TOKEN".encode()
+        user = await self.use_case.execute(token="valid_token", required_role=RoleEnum.ADMIN)
+        assert user == self.factory.core.user(
+            username="test",
+            password_hash="test",
+            role=RoleEnum.ADMIN,
+        )

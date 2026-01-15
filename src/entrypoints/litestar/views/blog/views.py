@@ -11,6 +11,7 @@ from config.settings import settings
     description="Отображение раздела блога",
     name="blog-index-handler",
     cache=settings.app.get_cache_duration(600),  # 10 минут
+    exclude_from_auth=True,
 )
 async def blog_handler() -> Template:
     return HTMXTemplate(template_name="blog/index.html")

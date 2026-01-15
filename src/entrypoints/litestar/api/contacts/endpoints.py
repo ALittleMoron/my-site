@@ -22,6 +22,7 @@ middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else 
     status_code=status.HTTP_204_NO_CONTENT,
     description="Создание заявки на то, чтобы связаться со мной",
     middleware=middleware,
+    exclude_from_auth=True,
 )
 async def contact_me_request(
     contact_me_id: FromDishka[uuid.UUID],

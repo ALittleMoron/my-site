@@ -22,6 +22,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     "/items",
     description="Получение списка вопросов по матрице компетенций.",
     cache=settings.app.get_cache_duration(60),  # 1 минута
+    exclude_from_auth=True,
 )
 async def list_competency_matrix_items_handler(
     sheet_name: Annotated[str, Parameter(query="sheetName")],
@@ -35,6 +36,7 @@ async def list_competency_matrix_items_handler(
     "/items/{pk:int}",
     description="Получение подробной информации о вопросе из матрицы компетенций.",
     cache=settings.app.get_cache_duration(15),  # 15 секунд
+    exclude_from_auth=True,
 )
 async def get_competency_matrix_item_handler(
     pk: int,
@@ -52,6 +54,7 @@ async def get_competency_matrix_item_handler(
         "чтобы получить вопросы по нужному листу."
     ),
     cache=settings.app.get_cache_duration(120),  # 2 минуты
+    exclude_from_auth=True,
 )
 async def list_competency_matrix_sheet_handler(
     use_case: FromDishka[AbstractListSheetsUseCase],

@@ -24,6 +24,7 @@ middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else 
     description="Создание заявки на то, чтобы связаться со мной",
     middleware=middleware,
     name="contact-me-request",
+    exclude_from_auth=True,
 )
 async def contact_me_request(
     data: Annotated[ContactMeRequest, Body()],

@@ -1,0 +1,58 @@
+from collections.abc import Sequence
+
+from dishka import AsyncContainer
+from litestar.connection import ASGIConnection
+from litestar.middleware import (
+    AbstractAuthenticationMiddleware,
+    AuthenticationResult,
+)
+from litestar.types import ASGIApp, Method, Scopes
+
+from core.auth.enums import RoleEnum
+from core.auth.exceptions import UnauthorizedError
+from core.auth.schemas import JwtUser
+from core.auth.use_cases import AuthenticateUseCase
+
+
+class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
+    __slots__ = (
+        "app",
+        "container",
+        "exclude",
+        "exclude_http_methods",
+        "exclude_opt_key",
+        "scopes",
+        "token_header_name",
+        "token_prefix",
+    )
+
+    def __init__(  # noqa: PLR0913
+        self,
+        app: ASGIApp,
+        token_header_name: str,
+        token_prefix: str,
+        container: AsyncContainer,
+        exclude: str | list[str] | None = None,
+        exclude_from_auth_key: str = "exclude_from_auth",
+        exclude_http_methods: Sequence[Method] | None = None,
+        scopes: Scopes | None = None,
+    ) -> None:
+        super().__init__(
+            app=app,
+            exclude=exclude,
+            exclude_from_auth_key=exclude_from_auth_key,
+            exclude_http_methods=exclude_http_methods,
+            scopes=scopes,
+        )
+        self.token_header_name = token_header_name
+        self.token_prefix = token_prefix
+        self.container = container
+
+    async def authenticate_request(self, connection: ASGIConnection) -> AuthenticationResult:
+        token: str | None = connection.headers.get(self.token_header_name)
+        if not token or not token.startswith(self.token_prefix):
+            raise UnauthorizedError
+        async with self.container() as request_container:
+            use_case = await request_container.get(AuthenticateUseCase)
+            user = await use_case.execute(token=token, required_role=RoleEnum.USER)
+        return AuthenticationResult(user=JwtUser.from_user(user), auth=token)

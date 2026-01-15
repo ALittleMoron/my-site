@@ -11,6 +11,7 @@ from config.settings import settings
     description="Отображение раздела Обо мне",
     name="about-me-index-handler",
     cache=settings.app.get_cache_duration(600),  # 10 минут
+    exclude_from_auth=True,
 )
 async def about_me_handler() -> Template:
     return HTMXTemplate(template_name="about_me/index.html")

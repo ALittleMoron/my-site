@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, UTC
 
 from core.auth.enums import RoleEnum
-from core.auth.schemas import User, JwtUser
+from core.auth.schemas import User, JwtUser, Token
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -171,3 +171,7 @@ class CoreFactoryHelper:
         access_url: str = "http://localhost/access_url",
     ) -> PresignPutObject:
         return PresignPutObject(upload_url=upload_url, access_url=access_url)
+
+    @classmethod
+    def token(cls, value: bytes) -> Token:
+        return Token(value=value)

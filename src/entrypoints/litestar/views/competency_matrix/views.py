@@ -26,6 +26,7 @@ from entrypoints.litestar.views.competency_matrix.dependencies import (
     description="Отображение списка листов матрицы компетенций",
     name="competency-matrix-sheets-list-handler",
     cache=settings.app.get_cache_duration(120),  # 2 минуты
+    exclude_from_auth=True,
 )
 async def sheets_handler(
     context_converter: FromDishka[CompetencyMatrixContextConverter],
@@ -44,6 +45,7 @@ async def sheets_handler(
     name="competency-matrix-items-list-handler",
     cache=settings.app.get_cache_duration(60),  # 1 минута
     dependencies={"template_name": Provide(template_name_by_layout_dependency)},
+    exclude_from_auth=True,
 )
 async def matrix_elements_handler(
     sheet: SheetName,
@@ -63,6 +65,7 @@ async def matrix_elements_handler(
     description="Получение подробной информации о вопросе из матрицы компетенций.",
     name="competency-matrix-item-detail-handler",
     cache=settings.app.get_cache_duration(15),  # 15 секунд
+    exclude_from_auth=True,
 )
 async def get_competency_matrix_item_detail_handler(
     pk: int,
@@ -86,6 +89,7 @@ async def get_competency_matrix_item_detail_handler(
     description="Отображение домашней страницы матрицы компетенций",
     name="competency-matrix-questions-handler",
     cache=settings.app.get_cache_duration(600),  # 10 минут
+    exclude_from_auth=True,
 )
 async def competency_matrix_handler() -> Template:
     return HTMXTemplate(template_name="competency_matrix/index.html")

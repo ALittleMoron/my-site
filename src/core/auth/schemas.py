@@ -6,6 +6,11 @@ from core.schemas import Secret
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class Token:
+    value: bytes
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BaseUser:
     username: str
     role: RoleEnum
@@ -19,6 +24,8 @@ class BaseUser:
         return self.role == RoleEnum.USER
 
     def has_role(self, role: RoleEnum) -> bool:
+        if self.role == RoleEnum.ADMIN:
+            return True
         return self.role == role
 
 

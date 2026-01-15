@@ -7,11 +7,13 @@ from litestar.params import Parameter
 from core.files.schemas import PresignPutObjectParams
 from core.files.use_cases import AbstractPresignPutObjectUseCase
 from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
+from entrypoints.litestar.guards import admin_user_guard
 
 
 @get(
     "/presign-put",
     description="Получение предподписанной ссылки для загрузки медиа-файла.",
+    guards=[admin_user_guard],
 )
 async def presign_put_media_file(
     content_type: Annotated[str, Parameter(query="contentType")],
