@@ -4,6 +4,7 @@ from litestar import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
+from core.account.storages import UserAccountStorage
 from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
@@ -49,17 +50,23 @@ class AuthProvider(Provider):
         self,
         hasher: PasswordHasher,
         token_handler: TokenHandler,
-        storage: AuthStorage,
+        auth_storage: AuthStorage,
+        user_storage: UserAccountStorage,
     ) -> AbstractLoginUseCase:
-        return LoginUseCase(hasher=hasher, token_handler=token_handler, storage=storage)
+        return LoginUseCase(
+            hasher=hasher,
+            token_handler=token_handler,
+            auth_storage=auth_storage,
+            user_storage=user_storage,
+        )
 
     @provide(scope=Scope.REQUEST)
     async def provide_authenticate_use_case(
         self,
         token_handler: TokenHandler,
-        storage: AuthStorage,
+        user_storage: UserAccountStorage,
     ) -> AbstractAuthenticateUseCase:
-        return AuthenticateUseCase(token_handler=token_handler, user_storage=storage)
+        return AuthenticateUseCase(token_handler=token_handler, user_storage=user_storage)
 
     @provide(scope=Scope.REQUEST)
     async def provide_logout_use_case(self) -> AbstractLogoutUseCase:

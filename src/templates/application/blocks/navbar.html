@@ -58,7 +58,7 @@
             </li>
         </ul>
     </div>
-    <div class="d-inline justify-content-end">
+    <div class="d-flex align-items-center justify-content-end">
         <button id="theme-switcher-button"
                 class="btn link-inactive px-0 px-lg-2 py-2 dropdown-toggle"
                 type="button"
@@ -108,5 +108,10 @@
                 </button>
             </li>
         </ul>
+        <div class="d-inline-flex align-items-center gap-2"
+             id="navbar_account_info"
+             hx-get="{{ url_for("navbar-account-info-handler") }}"
+             hx-trigger="load"
+             hx-swap="innerHTML"></div>
     </div>
 </nav>

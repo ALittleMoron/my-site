@@ -23,6 +23,7 @@ from core.auth.types import RawToken
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel, BlogPostModel
 from db.utils import migrate, downgrade
 from entrypoints.litestar.initializers import create_litestar_app
+from tests.mocks.providers.account import MockUserAccountProvider
 from tests.mocks.providers.auth import MockAuthProvider
 from tests.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.mocks.providers.contacts import MockContactsProvider
@@ -76,6 +77,7 @@ async def container(
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),
+        MockUserAccountProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),
     )
     yield container

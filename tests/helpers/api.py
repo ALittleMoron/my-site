@@ -35,3 +35,6 @@ class APIHelper:
 
     def post_logout(self) -> Response:
         return self.client.post("/api/auth/logout")
+
+    def get_get_base_current_user_account(self) -> Response:
+        return self.client.get("/api/account/base")

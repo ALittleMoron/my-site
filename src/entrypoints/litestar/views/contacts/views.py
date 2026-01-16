@@ -27,7 +27,6 @@ class ContactsViewController(Controller):
         description="Создание заявки на то, чтобы связаться со мной",
         middleware=middleware,
         name="contact-me-request",
-        exclude_from_auth=True,
     )
     async def contact_me_request(
         self,

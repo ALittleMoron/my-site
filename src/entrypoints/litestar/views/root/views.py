@@ -4,25 +4,27 @@ from typing import Any
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, get, status_codes
 from litestar.config.response_cache import CACHE_FOREVER
+from litestar.datastructures import State
 from litestar.enums import MediaType
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Redirect, Response, Template
 
 from config.settings import settings
+from core.auth.schemas import JwtUser
+from core.auth.types import Token
 
 
 class RootViewController(Controller):
     path = ""
 
     @get("/")
-    async def homepage_handler(self) -> Response[Any]:
-        return Redirect(path="/about-me/")
+    async def homepage_handler(self, request: Request) -> Response[Any]:
+        return Redirect(path=request.url_for("about-me-index-handler"))
 
     @get(
         "/favicon.ico",
         media_type=MediaType.TEXT,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
-        exclude_from_auth=True,
     )
     async def favicon_redirect_handler(self) -> Response[Any]:
         return Redirect(
@@ -33,7 +35,6 @@ class RootViewController(Controller):
         "/robots.txt",
         media_type=MediaType.TEXT,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
-        exclude_from_auth=True,
     )
     async def robots_txt_handler(self) -> str:
         return (
@@ -49,9 +50,8 @@ class RootViewController(Controller):
         name="sitemap-xml-handler",
         media_type=MediaType.XML,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
-        exclude_from_auth=True,
     )
-    async def sitemap_xml_handler(self, request: Request) -> str:
+    async def sitemap_xml_handler(self, request: Request[JwtUser, Token, State]) -> str:
         url_template = (
             "<url>"
             "<loc>{loc}</loc>"
@@ -79,7 +79,6 @@ class RootViewController(Controller):
         "/sitemap",
         name="sitemap-handler",
         cache=settings.app.get_cache_duration(120),  # 2 минуты
-        exclude_from_auth=True,
     )
     async def sitemap_handler(self) -> Template:
         return HTMXTemplate(template_name="sitemap/index.html")
@@ -89,7 +88,6 @@ class RootViewController(Controller):
         name="chrome-devtools-handler",
         media_type=MediaType.JSON,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
-        exclude_from_auth=True,
     )
     async def chrome_devtools_handler(self) -> Response[Any]:
         return Response[Any](

@@ -1,23 +1,41 @@
-<div id="error-modal"
+<div id="login-modal"
      class="modal force-display-block"
      style="background-color: rgba(0, 0, 0, 0.5)">
-    <div class="modal-dialog">
-        <div class="modal-content" style="z-index: 1066">
+    <form hx-post="{{ url_for("login-api-handler") }}"
+          hx-swap="none"
+          hx-ext="json-enc"
+          hx-encoding="json"
+          _=" on htmx:afterRequest if event.detail.xhr.status is 200 set data to JSON.parse(event.detail.xhr.responseText) set localStorage's accessToken to data.accessToken call htmx.ajax('GET', '{{ url_for("navbar-account-info-handler") }}', '#navbar_account_info') remove #login-modal end "
+          class="modal-dialog">
+        <div class="modal-content" style="z-index: 1067">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    {% block modal_title %}Что-то пошло не так{% endblock %}
-                </h5>
+                <h5 class="modal-title">Вход в систему</h5>
                 <button type="button"
                         class="btn-close"
                         aria-label="Close"
-                        _="on click remove #error-modal"></button>
+                        _="on click remove #login-modal"></button>
             </div>
             <div class="modal-body">
-                {% block modal_body %}{% endblock %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Имя пользователя</label>
+                    <input name="username"
+                           type="text"
+                           class="form-control"
+                           id="username"
+                           required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input name="password"
+                           type="password"
+                           class="form-control"
+                           id="password"
+                           required>
+                </div>
             </div>
             <div class="modal-footer">
-                {% block modal_footer %}{% endblock %}
+                <button type="submit" class="btn button-active">Войти</button>
             </div>
         </div>
-    </div>
+    </form>
 </div>

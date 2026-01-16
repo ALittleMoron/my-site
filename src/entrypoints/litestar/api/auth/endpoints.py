@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Controller, post
+from litestar import Controller, post, status_codes
 from litestar.params import Body
 
 from core.auth.enums import RoleEnum
@@ -17,12 +17,13 @@ class AuthApiController(Controller):
 
     @post(
         "/login",
-        name="auth.login",
+        name="login-api-handler",
         description=(
             "Эндпоинт для входа в систему. Создает токен PASETO и возвращает его. В "
             "дальнейшем будет использоваться server-side сессия, а токен можно будет "
             "перезапросить новый по сессии"
         ),
+        status_code=status_codes.HTTP_200_OK,
     )
     async def login(
         self,
@@ -38,8 +39,9 @@ class AuthApiController(Controller):
 
     @post(
         "/logout",
-        name="auth.logout",
+        name="logout-api-handler",
         description="Эндпоинт для выхода из системы. Ничего не делает",
+        status_code=status_codes.HTTP_200_OK,
     )
     async def logout(
         self,
