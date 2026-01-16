@@ -11,8 +11,9 @@ from core.auth.use_cases import AbstractLoginUseCase, AbstractLogoutUseCase
 from entrypoints.litestar.api.auth.schemas import AccessTokenResponseSchema, LoginRequestSchema
 
 
-class AuthController(Controller):
+class AuthApiController(Controller):
     path = "/auth"
+    tags = ["auth"]
 
     @post(
         "/login",
@@ -23,7 +24,7 @@ class AuthController(Controller):
             "перезапросить новый по сессии"
         ),
     )
-    async def login_handler(
+    async def login(
         self,
         data: Annotated[LoginRequestSchema, Body()],
         use_case: FromDishka[AbstractLoginUseCase],
@@ -40,7 +41,7 @@ class AuthController(Controller):
         name="auth.logout",
         description="Эндпоинт для выхода из системы. Ничего не делает",
     )
-    async def logout_handler(
+    async def logout(
         self,
         token: FromDishka[Token],
         use_case: FromDishka[AbstractLogoutUseCase],
@@ -48,4 +49,4 @@ class AuthController(Controller):
         await use_case.execute(token=token)
 
 
-api_router = DishkaRouter("", route_handlers=[AuthController])
+api_router = DishkaRouter("", route_handlers=[AuthApiController])

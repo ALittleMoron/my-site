@@ -1,23 +1,23 @@
 from dishka.integrations.litestar import DishkaRouter
-from litestar import get
+from litestar import Controller, get
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
 from config.settings import settings
 
 
-@get(
-    "",
-    description="Отображение раздела блога",
-    name="blog-index-handler",
-    cache=settings.app.get_cache_duration(600),  # 10 минут
-    exclude_from_auth=True,
-)
-async def blog_handler() -> Template:
-    return HTMXTemplate(template_name="blog/index.html")
+class BlogViewController(Controller):
+    path = "/blog"
+
+    @get(
+        "",
+        description="Отображение раздела блога",
+        name="blog-index-handler",
+        cache=settings.app.get_cache_duration(600),  # 10 минут
+        exclude_from_auth=True,
+    )
+    async def blog(self) -> Template:
+        return HTMXTemplate(template_name="blog/index.html")
 
 
-router = DishkaRouter(
-    "/blog",
-    route_handlers=[blog_handler],
-)
+router = DishkaRouter("", route_handlers=[BlogViewController])

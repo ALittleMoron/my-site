@@ -18,15 +18,16 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
 )
 
 
-class CompetencyMatrixController(Controller):
+class CompetencyMatrixApiController(Controller):
     path = "/competency-matrix"
+    tags = ["competency matrix"]
 
     @get(
         "/items",
         description="Получение списка вопросов по матрице компетенций.",
         cache=settings.app.get_cache_duration(60),  # 1 минута
     )
-    async def list_competency_matrix_items_handler(
+    async def list_competency_matrix_items(
         self,
         sheet_name: Annotated[str, Parameter(query="sheetName")],
         use_case: FromDishka[AbstractListItemsUseCase],
@@ -39,7 +40,7 @@ class CompetencyMatrixController(Controller):
         description="Получение подробной информации о вопросе из матрицы компетенций.",
         cache=settings.app.get_cache_duration(15),  # 15 секунд
     )
-    async def get_competency_matrix_item_handler(
+    async def get_competency_matrix_item(
         self,
         pk: int,
         use_case: FromDishka[AbstractGetItemUseCase],
@@ -56,7 +57,7 @@ class CompetencyMatrixController(Controller):
         ),
         cache=settings.app.get_cache_duration(120),  # 2 минуты
     )
-    async def list_competency_matrix_sheet_handler(
+    async def list_competency_matrix_sheet(
         self,
         use_case: FromDishka[AbstractListSheetsUseCase],
     ) -> CompetencyMatrixSheetsListSchema:
@@ -64,4 +65,4 @@ class CompetencyMatrixController(Controller):
         return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
 
 
-api_router = DishkaRouter("", route_handlers=[CompetencyMatrixController])
+api_router = DishkaRouter("", route_handlers=[CompetencyMatrixApiController])

@@ -10,7 +10,7 @@ from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
 from entrypoints.litestar.guards import admin_user_guard
 
 
-class FilesController(Controller):
+class FilesApiController(Controller):
     path = "/files"
     tags = ["files"]
     guards = [admin_user_guard]
@@ -33,4 +33,4 @@ class FilesController(Controller):
         return FilePresignPutResponseSchema.from_domain_schema(schema=urls)
 
 
-api_router = DishkaRouter("", route_handlers=[FilesController])
+api_router = DishkaRouter("", route_handlers=[FilesApiController])

@@ -17,8 +17,9 @@ rate_limit_config = RateLimitConfig(rate_limit=rate_limit)
 middleware = [rate_limit_config.middleware] if settings.app.use_rate_limit else []
 
 
-class ContactsController(Controller):
+class ContactsApiController(Controller):
     path = "/contacts"
+    tags = ["contacts"]
 
     @post(
         "",
@@ -35,4 +36,4 @@ class ContactsController(Controller):
         await use_case.execute(form=data.to_schema(contact_me_id=contact_me_id))
 
 
-api_router = DishkaRouter("", route_handlers=[ContactsController])
+api_router = DishkaRouter("", route_handlers=[ContactsApiController])
