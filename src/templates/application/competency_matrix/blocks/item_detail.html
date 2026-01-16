@@ -1,4 +1,4 @@
-<div id="item-detail-{{ item_id }}"
+<div id="item-detail-{{ item.id }}"
      class="modal force-display-block"
      style="background-color: rgba(0, 0, 0, 0.5)"
      _="on load hljs.highlightAll()">
@@ -8,22 +8,22 @@
                 <button type="button"
                         class="btn-close"
                         aria-label="Close"
-                        _="on click remove #item-detail-{{ item_id }}"></button>
+                        _="on click remove #item-detail-{{ item.id }}"></button>
             </div>
             <div class="modal-body">
                 <h2>Вопрос:</h2>
-                <p>{{ question }}</p>
+                <p>{{ item.question }}</p>
                 <hr>
                 <h2>Ответ:</h2>
-                <p>{{ markdown_to_html(answer) |safe }}</p>
+                <p>{{ markdown_to_html(item.answer) |safe }}</p>
                 <hr>
                 <h2>Ответ, который ожидается на собеседовании:</h2>
-                <p>{{ markdown_to_html(interview_expected_answer) |safe }}</p>
+                <p>{{ markdown_to_html(item.interview_expected_answer) |safe }}</p>
                 {% if resources %}
                     <hr>
                     <h2>Внешние ресурсы:</h2>
                     <ul class="list-unstyled">
-                        {% for resource in resources %}
+                        {% for resource in item.resources %}
                             <li class="mt-2">
                                 <span>
                                     <a class="p-0 text-body-secondary link-active" href="{{ resource.url }}">{{ resource.name }}</a>
@@ -34,6 +34,17 @@
                     </ul>
                 {% endif %}
             </div>
+            {% if request.user.is_admin %}
+                <div class="modal-footer">
+                    {% if item.publish_status == 'Published' %}
+                        <button class="btn button-inactive">В черновик</button>
+                    {% elif item.publish_status == 'Draft' %}
+                        <button class="btn button-inactive">Опубликовать</button>
+                    {% endif %}
+                    <button class="btn button-inactive">Отредактировать</button>
+                    <button class="btn btn-danger">Удалить</button>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

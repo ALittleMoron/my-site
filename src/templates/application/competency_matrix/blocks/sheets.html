@@ -4,7 +4,7 @@
             <button id="sheet-button-{{ loop.index }}"
                     class="btn btn-success button-inactive rounded rounded-3"
                     hx-get="{{ url_for("competency-matrix-items-list-handler") }}"
-                    hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list'}"
+                    hx-vals="js:{sheetName: '{{ item }}', layout: localStorage.getItem('chosenLayout') || 'list', onlyPublished: (localStorage.getItem('allChosen') === 'true' ? 'false' : 'true')}"
                     hx-trigger="click"
                     hx-target="#competency_matrix_elements"
                     hx-swap="innerHTML"

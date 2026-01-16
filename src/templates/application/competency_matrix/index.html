@@ -13,7 +13,9 @@
 {% block title %}Вопросы{% endblock %}
 {% block content %}
     <h1 class="fw-bold" style="margin-top: 5rem">Матрица компетенций</h1>
-    {% include 'competency_matrix/blocks/filters.html' %}
+    <div hx-get="{{ url_for("competency-matrix-filters-block-handler") }}"
+         hx-trigger="load delay:0.05s"
+         hx-swap="outerHTML"></div>
     <div hx-get="{{ url_for("competency-matrix-sheets-list-handler") }}"
          hx-trigger="load delay:0.25s"
          hx-swap="outerHTML"

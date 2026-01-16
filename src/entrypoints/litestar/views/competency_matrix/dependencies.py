@@ -38,6 +38,18 @@ SheetName = Annotated[
         ],
     ),
 ]
+OnlyPublished = Annotated[
+    bool,
+    Parameter(
+        query="onlyPublished",
+        required=False,
+        description="Показывать только опубликованные элементы",
+        examples=[
+            Example(summary="Пример 1", value="true"),
+            Example(summary="Пример 2", value="false"),
+        ],
+    ),
+]
 
 
 async def template_name_by_layout_dependency(layout: Layout) -> str:

@@ -26,6 +26,20 @@
         </div>
         <div class="col"></div>
         <div class="col-3 d-flex justify-content-end">
+            {% if request.user.is_admin %}
+                <div class="btn-group me-3">
+                    <button id="all-button"
+                            class="btn btn-success button-inactive"
+                            _=" on load if localStorage's allChosen is 'true' add .button-active remove .button-inactive end end on click remove .button-inactive then add .button-active then remove .button-active .button-inactive from #only-published-button then add .button-inactive to #only-published-button then set localStorage's allChosen to 'true' then call switchItemsAllVisible(true) end ">
+                        Все
+                    </button>
+                    <button id="only-published-button"
+                            class="btn btn-success button-inactive"
+                            _=" on load if localStorage's allChosen is 'false' add .button-active remove .button-inactive end end on click remove .button-inactive then add .button-active then remove .button-active .button-inactive from #all-button then add .button-inactive to #all-button then set localStorage's allChosen to 'false' then call switchItemsAllVisible(false) end">
+                        Опубликованные
+                    </button>
+                </div>
+            {% endif %}
             <div class="btn-group">
                 <button id="layout-button-list"
                         class="btn btn-success button-inactive"
@@ -77,15 +91,32 @@
 function switchLayout(layout) {
   // Получаем текущий sheetName из URL или из localStorage
   const urlParams = new URLSearchParams(window.location.search);
+  const localStorageKey = localStorage.getItem('allChosen') === 'true' ? 'false' : '';
+  const onlyPublished = urlParams.get('onlyPublished') || localStorageKey || 'true';
   const sheetName = urlParams.get('sheetName') || localStorage.getItem('chosenSheet') || 'Python';
   
   // Создаем URL для запроса с новым layout
-  const url = `/competency-matrix/items?sheetName=${encodeURIComponent(sheetName)}&layout=${layout}`;
+  const url = `/competency-matrix/items?sheetName=${encodeURIComponent(sheetName)}&layout=${layout}&onlyPublished=${onlyPublished}`;
   
   // Обновляем контент через HTMX
   htmx.ajax('GET', url, {
     target: '#competency_matrix_elements',
     swap: 'innerHTML'
   });
+}
+function switchItemsAllVisible(visible) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const onlyPublished = visible ? 'false' : 'true';
+    const sheetName = urlParams.get('sheetName') || localStorage.getItem('chosenSheet') || 'Python';
+    const layout = localStorage.getItem('chosenLayout') || 'list';
+
+    // Создаем URL для запроса с новым layout
+    const url = `/competency-matrix/items?sheetName=${encodeURIComponent(sheetName)}&layout=${layout}&onlyPublished=${onlyPublished}`;
+
+    // Обновляем контент через HTMX
+    htmx.ajax('GET', url, {
+        target: '#competency_matrix_elements',
+        swap: 'innerHTML'
+    });
 }
 </script>

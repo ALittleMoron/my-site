@@ -1,11 +1,14 @@
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Controller, get
+from litestar import Controller, Request, get
+from litestar.datastructures import State
 from litestar.di import Provide
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template
 
 from config.settings import settings
+from core.auth.schemas import JwtUser
+from core.auth.types import Token
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
@@ -16,6 +19,7 @@ from entrypoints.litestar.views.competency_matrix.context_converters import (
     CompetencyMatrixContextConverter,
 )
 from entrypoints.litestar.views.competency_matrix.dependencies import (
+    OnlyPublished,
     SheetName,
     template_name_by_layout_dependency,
 )
@@ -23,6 +27,15 @@ from entrypoints.litestar.views.competency_matrix.dependencies import (
 
 class CompetencyMatrixViewController(Controller):
     path = "/competency-matrix"
+
+    @get(
+        "/filters-block",
+        description="Отображение блока фильтров",
+        name="competency-matrix-filters-block-handler",
+        cache=settings.app.get_cache_duration(120),  # 2 минуты
+    )
+    async def filters_block(self) -> Template:
+        return HTMXTemplate(template_name="competency_matrix/blocks/filters.html")
 
     @get(
         "/sheets",
@@ -48,14 +61,18 @@ class CompetencyMatrixViewController(Controller):
         cache=settings.app.get_cache_duration(60),  # 1 минута
         dependencies={"template_name": Provide(template_name_by_layout_dependency)},
     )
-    async def matrix_elements(
+    async def matrix_elements(  # noqa: PLR0913
         self,
+        request: Request[JwtUser, Token, State],
         sheet: SheetName,
+        only_published: OnlyPublished,
         template_name: str,
         context_converter: FromDishka[CompetencyMatrixContextConverter],
         use_case: FromDishka[AbstractListItemsUseCase],
     ) -> Template:
-        items = await use_case.execute(sheet_name=sheet, only_published=True)
+        if not request.user.is_admin and not only_published:
+            only_published = True
+        items = await use_case.execute(sheet_name=sheet, only_published=only_published)
         return HTMXTemplate(
             template_name=template_name,
             context=context_converter.context_from_competency_matrix_items(

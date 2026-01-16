@@ -15,25 +15,7 @@ class CompetencyMatrixContextConverter:
         self,
         item: CompetencyMatrixItem,
     ) -> dict[str, Any]:
-        return {
-            "item_id": item.id,
-            "question": item.question,
-            "answer": item.answer,
-            "interview_expected_answer": item.interview_expected_answer,
-            "sheet": item.sheet,
-            "grade": item.grade,
-            "section": item.section,
-            "subsection": item.subsection,
-            "resources": [
-                {
-                    "id": resource.id,
-                    "name": resource.name,
-                    "url": resource.url,
-                    "context": resource.context,
-                }
-                for resource in item.resources
-            ],
-        }
+        return {"item": item}
 
     def context_from_competency_matrix_items(
         self,

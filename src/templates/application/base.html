@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"
       data-bs-theme="dark"
-      _=" on load if no localStorage's chosenTheme or localStorage's chosenTheme is 'NaN' or ['light', 'dark'] does not contains  localStorage's chosenTheme set localStorage's chosenTheme to 'light' end if localStorage's chosenTheme is 'light' add @data-bs-theme='light' to <:root/> end if localStorage's chosenTheme is 'dark' add @data-bs-theme='dark' to <:root/> end if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN' or ['list', 'grid'] does not contains  localStorage's chosenLayout set localStorage's chosenLayout to 'list' end end on htmx:afterRequest if event.detail.xhr.status is 401 if #login-button trigger click on #login-button end end end ">
+      _="on load if no localStorage's allChosen or localStorage's allChosen is 'NaN' or ['true', 'false'] does not contains localStorage's allChosen set localStorage's allChosen to 'false' end if no localStorage's chosenTheme or localStorage's chosenTheme is 'NaN' or ['light', 'dark'] does not contains  localStorage's chosenTheme set localStorage's chosenTheme to 'light' end if localStorage's chosenTheme is 'light' add @data-bs-theme='light' to <:root/> end if localStorage's chosenTheme is 'dark' add @data-bs-theme='dark' to <:root/> end if no localStorage's chosenLayout or localStorage's chosenLayout is 'NaN' or ['list', 'grid'] does not contains  localStorage's chosenLayout set localStorage's chosenLayout to 'list' end end on htmx:afterRequest if event.detail.xhr.status is 401 if #login-button trigger click on #login-button end end end ">
     <head>
         {% block head %}
             {% block head_meta %}
