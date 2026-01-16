@@ -1,7 +1,7 @@
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, get
 from litestar.datastructures import State
-from litestar_htmx import HTMXTemplate, ClientRedirect
+from litestar_htmx import ClientRedirect, HTMXTemplate
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
