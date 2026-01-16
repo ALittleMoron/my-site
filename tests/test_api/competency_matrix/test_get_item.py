@@ -54,6 +54,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "subsection": "Функции",
             "section": "Основы",
             "sheet": "Python",
+            "publishStatus": "Published",
             "resources": [
                 {
                     "id": 1,

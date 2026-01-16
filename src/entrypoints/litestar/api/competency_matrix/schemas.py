@@ -144,6 +144,17 @@ class CompetencyMatrixItemDetailSchema(CompetencyMatrixItemSchema):
             examples=["Магические методы", "Концепция асинхронности"],
         ),
     ]
+    publish_status: Annotated[
+        str,
+        Field(
+            title="Статус публикации",
+            description=(
+                "Статус публикации вопроса (draft, published). Администратор может видеть все "
+                "вопросы, включая draft."
+            ),
+            examples=["draft", "published"],
+        ),
+    ]
     resources: Annotated[
         list[ResourceSchema],
         Field(
@@ -163,6 +174,7 @@ class CompetencyMatrixItemDetailSchema(CompetencyMatrixItemSchema):
             grade=schema.grade,
             section=schema.section,
             subsection=schema.subsection,
+            publish_status=schema.publish_status,
             resources=[
                 ResourceSchema.from_domain_schema(schema=resource) for resource in schema.resources
             ],
