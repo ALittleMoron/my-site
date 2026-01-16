@@ -27,7 +27,6 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def list_competency_matrix_items(self, sheet_name: str) -> list[CompetencyMatrixItem]:
         stmt = select(CompetencyMatrixItemModel).where(
-            CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED,
             func.lower(CompetencyMatrixItemModel.sheet) == sheet_name.lower(),
         )
         items = await self.session.scalars(stmt)
@@ -36,10 +35,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def get_competency_matrix_item(self, item_id: int) -> CompetencyMatrixItem:
         stmt = (
             select(CompetencyMatrixItemModel)
-            .where(
-                CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED,
-                CompetencyMatrixItemModel.id == item_id,
-            )
+            .where(CompetencyMatrixItemModel.id == item_id)
             .options(selectinload(CompetencyMatrixItemModel.resources))
         )
         item = await self.session.scalar(stmt)

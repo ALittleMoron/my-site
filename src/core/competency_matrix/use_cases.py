@@ -19,13 +19,23 @@ class AbstractListSheetsUseCase(UseCase, ABC):
 
 class AbstractListItemsUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
+    async def execute(
+        self,
+        *,
+        sheet_name: str,
+        only_published: bool,
+    ) -> CompetencyMatrixItems:
         raise NotImplementedError
 
 
 class AbstractGetItemUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(self, item_id: int) -> CompetencyMatrixItem:
+    async def execute(
+        self,
+        *,
+        item_id: int,
+        only_published: bool,
+    ) -> CompetencyMatrixItem:
         raise NotImplementedError
 
 
@@ -42,17 +52,28 @@ class ListSheetsUseCase(AbstractListSheetsUseCase):
 class ListItemsUseCase(AbstractListItemsUseCase):
     storage: CompetencyMatrixStorage
 
-    async def execute(self, sheet_name: str) -> CompetencyMatrixItems:
+    async def execute(
+        self,
+        *,
+        sheet_name: str,
+        only_published: bool,
+    ) -> CompetencyMatrixItems:
         items = await self.storage.list_competency_matrix_items(sheet_name=sheet_name)
-        return CompetencyMatrixItems(values=items)
+        matrix = CompetencyMatrixItems(values=items)
+        return matrix.only_available() if only_published else matrix
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class GetItemUseCase(AbstractGetItemUseCase):
     storage: CompetencyMatrixStorage
 
-    async def execute(self, item_id: int) -> CompetencyMatrixItem:
+    async def execute(
+        self,
+        *,
+        item_id: int,
+        only_published: bool,
+    ) -> CompetencyMatrixItem:
         item = await self.storage.get_competency_matrix_item(item_id=item_id)
-        if not item.is_available():
+        if only_published and not item.is_available():
             raise CompetencyMatrixItemNotFoundError
         return item

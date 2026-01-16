@@ -14,7 +14,22 @@ class TestListItemsUseCase(FactoryFixture):
         self.storage = Mock(spec=CompetencyMatrixStorage)
         self.use_case = ListItemsUseCase(storage=self.storage)
 
-    async def test(self) -> None:
+    async def test_not_available(self) -> None:
+        self.storage.list_competency_matrix_items.return_value = [
+            self.factory.core.competency_matrix_item(
+                item_id=1,
+                question="1",
+                publish_status=PublishStatusEnum.DRAFT,
+                sheet="Python",
+                grade="",
+                section="",
+                subsection="",
+            ),
+        ]
+        items = await self.use_case.execute(sheet_name="Python", only_published=True)
+        assert items.values == []
+
+    async def test_available(self) -> None:
         self.storage.list_competency_matrix_items.return_value = [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -26,7 +41,7 @@ class TestListItemsUseCase(FactoryFixture):
                 subsection="1",
             ),
         ]
-        items = await self.use_case.execute(sheet_name="Python")
+        items = await self.use_case.execute(sheet_name="Python", only_published=True)
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -36,5 +51,30 @@ class TestListItemsUseCase(FactoryFixture):
                 grade="1",
                 section="1",
                 subsection="1",
+            ),
+        ]
+
+    async def test_availability_skip(self) -> None:
+        self.storage.list_competency_matrix_items.return_value = [
+            self.factory.core.competency_matrix_item(
+                item_id=1,
+                question="1",
+                publish_status=PublishStatusEnum.DRAFT,
+                sheet="Python",
+                grade="",
+                section="",
+                subsection="",
+            ),
+        ]
+        items = await self.use_case.execute(sheet_name="Python", only_published=False)
+        assert items.values == [
+            self.factory.core.competency_matrix_item(
+                item_id=1,
+                question="1",
+                publish_status=PublishStatusEnum.DRAFT,
+                sheet="Python",
+                grade="",
+                section="",
+                subsection="",
             ),
         ]

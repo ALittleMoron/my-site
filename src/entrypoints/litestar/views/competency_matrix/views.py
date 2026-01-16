@@ -55,7 +55,7 @@ class CompetencyMatrixViewController(Controller):
         context_converter: FromDishka[CompetencyMatrixContextConverter],
         use_case: FromDishka[AbstractListItemsUseCase],
     ) -> Template:
-        items = await use_case.execute(sheet_name=sheet)
+        items = await use_case.execute(sheet_name=sheet, only_published=True)
         return HTMXTemplate(
             template_name=template_name,
             context=context_converter.context_from_competency_matrix_items(
@@ -77,7 +77,7 @@ class CompetencyMatrixViewController(Controller):
         context_converter: FromDishka[CompetencyMatrixContextConverter],
     ) -> Template:
         try:
-            item = await use_case.execute(item_id=pk)
+            item = await use_case.execute(item_id=pk, only_published=True)
         except CompetencyMatrixItemNotFoundError:
             return HTMXTemplate(
                 template_name="competency_matrix/error_modal_item_not_found.html",

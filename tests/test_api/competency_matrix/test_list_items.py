@@ -39,7 +39,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "sheet": "Java",
             "sections": [],
         }
-        self.use_case.execute.assert_called_once_with(sheet_name="Java")
+        self.use_case.execute.assert_called_once_with(sheet_name="Java", only_published=True)
 
     def test_list(self) -> None:
         self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
@@ -76,4 +76,4 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.execute.assert_called_once_with(sheet_name="Python")
+        self.use_case.execute.assert_called_once_with(sheet_name="Python", only_published=True)

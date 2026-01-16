@@ -15,11 +15,21 @@ class APIHelper:
     def get_competency_matrix_sheets(self) -> Response:
         return self.client.get("/api/competency-matrix/sheets")
 
-    def get_competency_matrix_items(self, sheet_name: str = "") -> Response:
-        return self.client.get(f"/api/competency-matrix/items", params={"sheetName": sheet_name})
+    def get_competency_matrix_items(
+        self,
+        sheet_name: str = "",
+        only_published: bool = True,
+    ) -> Response:
+        return self.client.get(
+            f"/api/competency-matrix/items",
+            params={"sheetName": sheet_name, "onlyPublished": only_published},
+        )
 
-    def get_competency_matrix_item(self, item_id: int) -> Response:
-        return self.client.get(f"/api/competency-matrix/items/{item_id}")
+    def get_competency_matrix_item(self, item_id: int, only_published: bool = True) -> Response:
+        return self.client.get(
+            f"/api/competency-matrix/items/{item_id}",
+            params={"onlyPublished": only_published},
+        )
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)

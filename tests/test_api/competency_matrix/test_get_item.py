@@ -63,4 +63,4 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 }
             ],
         }
-        self.use_case.execute.assert_called_once_with(item_id=1)
+        self.use_case.execute.assert_called_once_with(item_id=1, only_published=True)
