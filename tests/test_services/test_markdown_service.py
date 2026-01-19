@@ -1,5 +1,6 @@
 import pytest
 
+from entrypoints.litestar.template_callables import markdown_to_html
 from services.markdown import MarkdownItService
 
 
@@ -51,8 +52,6 @@ class TestMarkdownItService:
 
 class TestMarkdownTemplateCallable:
     def test_markdown_to_html_basic(self) -> None:
-        from entrypoints.litestar.template_callables import markdown_to_html
-
         result = markdown_to_html(
             ctx={},
             text="# Test\n\nThis is **bold** text.",
@@ -62,32 +61,13 @@ class TestMarkdownTemplateCallable:
         assert '<strong class="fw-bold">bold</strong>' in result
 
     def test_markdown_to_html_empty_text(self) -> None:
-        from entrypoints.litestar.template_callables import markdown_to_html
-
-        result = markdown_to_html(
-            ctx={},
-            text="",
-        )
-
+        result = markdown_to_html(ctx={}, text="")
         assert result == ""
 
     def test_markdown_to_html_none_text(self) -> None:
-        from entrypoints.litestar.template_callables import markdown_to_html
-
-        result = markdown_to_html(
-            ctx={},
-            text="",  # Пустая строка вместо None
-        )
-
+        result = markdown_to_html(ctx={}, text="")
         assert result == ""
 
     def test_markdown_to_html_none_text_actual(self) -> None:
-        from entrypoints.litestar.template_callables import markdown_to_html
-
-        # Тестируем реальное поведение с None
-        result = markdown_to_html(
-            ctx={},
-            text=None,  # type: ignore[arg-type]
-        )
-
+        result = markdown_to_html(ctx={}, text=None)  # type: ignore[arg-type]
         assert result == ""
