@@ -14,14 +14,17 @@ from core.auth.use_cases import (
     AbstractAuthenticateUseCase,
     AbstractLogoutUseCase,
 )
+from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
+    AbstractUpsertItemUseCase,
 )
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import AbstractPresignPutObjectUseCase
+from core.types import IntId
 
 
 @dataclass(kw_only=True)
@@ -31,6 +34,15 @@ class IocContainerHelper:
     # COMMON
     async def get_random_uuid(self) -> uuid.UUID:
         return await self.container.get(uuid.UUID)
+
+    async def get_random_int(self) -> IntId:
+        return await self.container.get(IntId)
+
+    async def get_item_id_generator(self) -> ItemIdGenerator:
+        return await self.container.get(ItemIdGenerator)
+
+    async def get_resource_id_generator(self) -> ResourceIdGenerator:
+        return await self.container.get(ResourceIdGenerator)
 
     # CONTACTS
     async def get_create_contact_me_request_use_case(self) -> Mock:
@@ -48,6 +60,10 @@ class IocContainerHelper:
 
     async def get_list_sheets_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractListSheetsUseCase)
+        return cast(Mock, use_case)
+
+    async def get_upsert_item_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractUpsertItemUseCase)
         return cast(Mock, use_case)
 
     # AUTH

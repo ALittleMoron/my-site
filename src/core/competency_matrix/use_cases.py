@@ -5,6 +5,8 @@ from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItems,
+    CompetencyMatrixItemUpsertParams,
+    ExternalResources,
     Sheets,
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
@@ -36,6 +38,12 @@ class AbstractGetItemUseCase(UseCase, ABC):
         item_id: int,
         only_published: bool,
     ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+
+class AbstractUpsertItemUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, *, params: CompetencyMatrixItemUpsertParams) -> CompetencyMatrixItem:
         raise NotImplementedError
 
 
@@ -77,3 +85,20 @@ class GetItemUseCase(AbstractGetItemUseCase):
         if only_published and not item.is_available():
             raise CompetencyMatrixItemNotFoundError
         return item
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class UpsertItemUseCase(AbstractUpsertItemUseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self, *, params: CompetencyMatrixItemUpsertParams) -> CompetencyMatrixItem:
+        resource_ids_to_assign = params.get_resource_ids_to_assign()
+        resources = (
+            await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
+            if resource_ids_to_assign
+            else ExternalResources(values=[])
+        )
+        if not resources.all_resources_exists_by_ids(ids=set(resource_ids_to_assign)):
+            raise CompetencyMatrixItemNotFoundError
+        item = params.to_item(resources=resources)
+        return await self.storage.upsert_competency_matrix_item(item=item)

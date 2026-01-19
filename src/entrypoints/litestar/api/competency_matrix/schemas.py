@@ -4,24 +4,20 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
+from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItems,
+    CompetencyMatrixItemUpsertParams,
     ExternalResource,
     Sheets,
 )
+from core.enums import PublishStatusEnum
+from core.types import IntId
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
-class ResourceSchema(CamelCaseSchema):
-    id: Annotated[
-        int,
-        Field(
-            title="Идентификатор",
-            description="Идентификатор ресурса для дополнительного изучения.",
-            examples=[1, 2, 3],
-        ),
-    ]
+class BaseResourceSchema(CamelCaseSchema):
     name: Annotated[
         str,
         Field(
@@ -50,6 +46,22 @@ class ResourceSchema(CamelCaseSchema):
         ),
     ]
 
+
+class ResourceRequestSchema(BaseResourceSchema):
+    def to_schema(self, resource_id: IntId) -> ExternalResource:
+        return ExternalResource(id=resource_id, name=self.name, url=self.url, context=self.context)
+
+
+class ResourceSchema(BaseResourceSchema):
+    id: Annotated[
+        int,
+        Field(
+            title="Идентификатор",
+            description="Идентификатор ресурса для дополнительного изучения.",
+            examples=[1, 2, 3],
+        ),
+    ]
+
     @classmethod
     def from_domain_schema(cls, *, schema: ExternalResource) -> Self:
         return cls(
@@ -60,7 +72,7 @@ class ResourceSchema(CamelCaseSchema):
         )
 
 
-class CompetencyMatrixItemSchema(CamelCaseSchema):
+class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
     id: Annotated[
         int,
         Field(
@@ -87,7 +99,7 @@ class CompetencyMatrixItemSchema(CamelCaseSchema):
         return cls(id=schema.id, question=schema.question)
 
 
-class CompetencyMatrixItemDetailSchema(CompetencyMatrixItemSchema):
+class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
     answer: Annotated[
         str,
         Field(
@@ -145,14 +157,14 @@ class CompetencyMatrixItemDetailSchema(CompetencyMatrixItemSchema):
         ),
     ]
     publish_status: Annotated[
-        str,
+        PublishStatusEnum,
         Field(
             title="Статус публикации",
             description=(
                 "Статус публикации вопроса (draft, published). Администратор может видеть все "
                 "вопросы, включая draft."
             ),
-            examples=["draft", "published"],
+            examples=[PublishStatusEnum.DRAFT, PublishStatusEnum.PUBLISHED],
         ),
     ]
     resources: Annotated[
@@ -181,7 +193,129 @@ class CompetencyMatrixItemDetailSchema(CompetencyMatrixItemSchema):
         )
 
 
-class CompetencyMatrixGroupedGradesSchema(CamelCaseSchema):
+class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
+    question: Annotated[
+        str,
+        Field(
+            title="Вопрос",
+            description="Вопрос в матрице компетенций",
+            examples=[
+                "что такое и зачем нужен Pep8?",
+                "Что такое Mixin? Какие плюсы и минусы есть у такого подхода к наследованию?",
+                "range - это итератор?",
+            ],
+        ),
+    ]
+    answer: Annotated[
+        str,
+        Field(
+            title="Ответ",
+            description="Ответ на вопрос",
+            examples=[
+                "Pep8 - это стандарт написания кода на Python",
+                "Mixin - это механизм множественного наследования, позволяющий...",
+                "range - это не итератор, но lazy iterable",
+            ],
+        ),
+    ]
+    interview_expected_answer: Annotated[
+        str,
+        Field(
+            title="Ожидаемый ответ",
+            description="Ответ, который ожидает услышать интервьюер. Содержит также пояснения.",
+            examples=[
+                "... Интервьюер ожидает услышать также, пишете ли вы код по Pep8 или нет.",
+                "... По хорошему, нужно сказать, что вы стараетесь не использовать миксины.",
+                "... Интервьюер хочет понять, как глубоко вы понимаете встроенные типы данных.",
+            ],
+        ),
+    ]
+    sheet: Annotated[
+        str,
+        Field(
+            title="Лист",
+            description="Наименование листа, на котором располагается вопрос",
+            examples=["Python", "SQL"],
+        ),
+    ]
+    grade: Annotated[
+        str,
+        Field(
+            title="Компетенция",
+            description="Категория компетенции вопроса (Для какого грейда этот вопрос)",
+            examples=["Junior", "Middle"],
+        ),
+    ]
+    section: Annotated[
+        str,
+        Field(
+            title="Раздел",
+            description="Наименование раздела вопроса",
+            examples=["ООП", "Asyncio"],
+        ),
+    ]
+    subsection: Annotated[
+        str,
+        Field(
+            title="Подраздел",
+            description="Наименование подраздела вопроса",
+            examples=["Магические методы", "Концепция асинхронности"],
+        ),
+    ]
+    publish_status: Annotated[
+        PublishStatusEnum,
+        Field(
+            title="Статус публикации",
+            description=(
+                "Статус публикации вопроса (draft, published). Администратор может видеть все "
+                "вопросы, включая draft."
+            ),
+            examples=[PublishStatusEnum.DRAFT, PublishStatusEnum.PUBLISHED],
+        ),
+    ]
+    resources: Annotated[
+        list[int | ResourceRequestSchema],
+        Field(
+            title="Ресурсы",
+            description="Список ресурсов для дополнительного изучения",
+        ),
+    ]
+
+    def to_schema(
+        self,
+        item_id_generator: IntId | ItemIdGenerator,
+        resource_id_generator: IntId | ResourceIdGenerator,
+    ) -> CompetencyMatrixItemUpsertParams:
+        return CompetencyMatrixItemUpsertParams(
+            id=(
+                item_id_generator.get_next()
+                if isinstance(item_id_generator, ItemIdGenerator)
+                else item_id_generator
+            ),
+            question=self.question,
+            answer=self.answer,
+            interview_expected_answer=self.interview_expected_answer,
+            sheet=self.sheet,
+            grade=self.grade,
+            section=self.section,
+            subsection=self.subsection,
+            publish_status=self.publish_status,
+            resources=[
+                IntId(resource)
+                if isinstance(resource, int)
+                else resource.to_schema(
+                    resource_id=(
+                        resource_id_generator.get_next()
+                        if isinstance(resource_id_generator, ResourceIdGenerator)
+                        else resource_id_generator
+                    ),
+                )
+                for resource in self.resources
+            ],
+        )
+
+
+class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
     grade: Annotated[
         str,
         Field(
@@ -191,7 +325,7 @@ class CompetencyMatrixGroupedGradesSchema(CamelCaseSchema):
         ),
     ]
     items: Annotated[
-        list[CompetencyMatrixItemSchema],
+        list[CompetencyMatrixItemResponseSchema],
         Field(
             title="Список",
             description="Список вопросов в матрице компетенций",
@@ -202,11 +336,13 @@ class CompetencyMatrixGroupedGradesSchema(CamelCaseSchema):
     def from_domain_schema(cls, *, grade: str, items: Iterable[CompetencyMatrixItem]) -> Self:
         return cls(
             grade=grade,
-            items=[CompetencyMatrixItemSchema.from_domain_schema(schema=item) for item in items],
+            items=[
+                CompetencyMatrixItemResponseSchema.from_domain_schema(schema=item) for item in items
+            ],
         )
 
 
-class CompetencyMatrixGroupedSubsectionsSchema(CamelCaseSchema):
+class CompetencyMatrixGroupedSubsectionsResponseSchema(CamelCaseSchema):
     subsection: Annotated[
         str,
         Field(
@@ -216,7 +352,7 @@ class CompetencyMatrixGroupedSubsectionsSchema(CamelCaseSchema):
         ),
     ]
     grades: Annotated[
-        list[CompetencyMatrixGroupedGradesSchema],
+        list[CompetencyMatrixGroupedGradesResponseSchema],
         Field(
             title="Список",
             description="Список грейдов матрицы со списками вопросов в каждом",
@@ -228,7 +364,7 @@ class CompetencyMatrixGroupedSubsectionsSchema(CamelCaseSchema):
         return cls(
             subsection=subsection,
             grades=[
-                CompetencyMatrixGroupedGradesSchema.from_domain_schema(
+                CompetencyMatrixGroupedGradesResponseSchema.from_domain_schema(
                     grade=grade,
                     items=list(grade_items),
                 )
@@ -237,7 +373,7 @@ class CompetencyMatrixGroupedSubsectionsSchema(CamelCaseSchema):
         )
 
 
-class CompetencyMatrixGroupedSectionsSchema(CamelCaseSchema):
+class CompetencyMatrixGroupedSectionsResponseSchema(CamelCaseSchema):
     section: Annotated[
         str,
         Field(
@@ -247,7 +383,7 @@ class CompetencyMatrixGroupedSectionsSchema(CamelCaseSchema):
         ),
     ]
     subsections: Annotated[
-        list[CompetencyMatrixGroupedSubsectionsSchema],
+        list[CompetencyMatrixGroupedSubsectionsResponseSchema],
         Field(
             title="Список",
             description="Список подразделов матрицы со списками грейдов в каждом",
@@ -259,7 +395,7 @@ class CompetencyMatrixGroupedSectionsSchema(CamelCaseSchema):
         return cls(
             section=section,
             subsections=[
-                CompetencyMatrixGroupedSubsectionsSchema.from_domain_schema(
+                CompetencyMatrixGroupedSubsectionsResponseSchema.from_domain_schema(
                     subsection=subsection,
                     items=list(items),
                 )
@@ -268,7 +404,7 @@ class CompetencyMatrixGroupedSectionsSchema(CamelCaseSchema):
         )
 
 
-class CompetencyMatrixItemsListSchema(CamelCaseSchema):
+class CompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
     sheet: Annotated[
         str,
         Field(
@@ -278,7 +414,7 @@ class CompetencyMatrixItemsListSchema(CamelCaseSchema):
         ),
     ]
     sections: Annotated[
-        list[CompetencyMatrixGroupedSectionsSchema],
+        list[CompetencyMatrixGroupedSectionsResponseSchema],
         Field(
             title="Список",
             description="Список разделов матрицы со списками подразделов в каждом",
@@ -295,7 +431,7 @@ class CompetencyMatrixItemsListSchema(CamelCaseSchema):
             if sheet_name != sheet:
                 continue
             sections = [
-                CompetencyMatrixGroupedSectionsSchema.from_domain_schema(
+                CompetencyMatrixGroupedSectionsResponseSchema.from_domain_schema(
                     section=section,
                     items=list(section_items),
                 )
@@ -305,7 +441,7 @@ class CompetencyMatrixItemsListSchema(CamelCaseSchema):
         return cls.empty(sheet=sheet)
 
 
-class CompetencyMatrixSheetsListSchema(CamelCaseSchema):
+class CompetencyMatrixSheetsListResponseSchema(CamelCaseSchema):
     sheets: Annotated[
         list[str],
         Field(

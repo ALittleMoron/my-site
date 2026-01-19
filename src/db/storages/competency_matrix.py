@@ -1,14 +1,15 @@
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import ARRAY, Integer, bindparam, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from core.competency_matrix.schemas import CompetencyMatrixItem
+from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResources
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
-from db.models import CompetencyMatrixItemModel
+from core.types import IntId
+from db.models import CompetencyMatrixItemModel, ExternalResourceModel
 
 
 @dataclass(kw_only=True)
@@ -42,3 +43,26 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         if item is None:
             raise CompetencyMatrixItemNotFoundError
         return item.to_domain_schema(include_relationships=True)
+
+    async def upsert_competency_matrix_item(
+        self,
+        item: CompetencyMatrixItem,
+    ) -> CompetencyMatrixItem:
+        item_model = await self.session.merge(
+            CompetencyMatrixItemModel.from_domain_schema(item=item),
+        )
+        await self.session.flush()
+        return item_model.to_domain_schema(include_relationships=True)
+
+    async def get_resources_by_ids(
+        self,
+        resource_ids: list[IntId],
+    ) -> ExternalResources:
+        ids = bindparam("ids", value=resource_ids, type_=ARRAY(Integer))
+        cte = select(func.unnest(ids).label("resource_id")).cte("ids")
+        stmt = select(ExternalResourceModel).join(
+            cte,
+            ExternalResourceModel.id == cte.c.resource_id,
+        )
+        resources = await self.session.scalars(stmt)
+        return ExternalResources(values=[resource.to_domain_schema() for resource in resources])

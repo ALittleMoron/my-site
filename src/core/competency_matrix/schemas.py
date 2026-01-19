@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from core.enums import PublishStatusEnum
 from core.schemas import ValuedDataclass
+from core.types import IntId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -13,19 +14,25 @@ class Subsections(ValuedDataclass[str]): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ExternalResource:
-    id: int
+class BaseExternalResource:
     name: str
     url: str
     context: str = ""
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class ExternalResources(ValuedDataclass[ExternalResource]): ...
+class ExternalResource(BaseExternalResource):
+    id: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class CompetencyMatrixItem:
+class ExternalResources(ValuedDataclass[ExternalResource]):
+    def all_resources_exists_by_ids(self, ids: set[IntId]) -> bool:
+        return ids.difference({resource.id for resource in self.values}) == set()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BaseCompetencyMatrixItem:
     id: int
     question: str
     publish_status: PublishStatusEnum
@@ -35,7 +42,6 @@ class CompetencyMatrixItem:
     grade: str
     section: str
     subsection: str
-    resources: ExternalResources
 
     def is_available(self) -> bool:
         return all(
@@ -46,6 +52,36 @@ class CompetencyMatrixItem:
                 self.section != "",
                 self.subsection != "",
             ],
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItem(BaseCompetencyMatrixItem):
+    resources: ExternalResources
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
+    resources: list[IntId | ExternalResource]
+
+    def get_external_resources(self) -> list[ExternalResource]:
+        return [resource for resource in self.resources if isinstance(resource, ExternalResource)]
+
+    def get_resource_ids_to_assign(self) -> list[IntId]:
+        return [resource for resource in self.resources if isinstance(resource, int)]
+
+    def to_item(self, resources: ExternalResources) -> "CompetencyMatrixItem":
+        return CompetencyMatrixItem(
+            id=self.id,
+            question=self.question,
+            publish_status=self.publish_status,
+            answer=self.answer,
+            interview_expected_answer=self.interview_expected_answer,
+            sheet=self.sheet,
+            grade=self.grade,
+            section=self.section,
+            subsection=self.subsection,
+            resources=resources.extends(self.get_external_resources()),
         )
 
 

@@ -2,24 +2,29 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Controller, Request, get
+from litestar import Controller, Request, get, post, put
 from litestar.datastructures import State
-from litestar.params import Parameter
+from litestar.params import Body, Parameter
 
 from config.settings import settings
 from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
+from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
+    AbstractUpsertItemUseCase,
 )
+from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.schemas import (
-    CompetencyMatrixItemDetailSchema,
-    CompetencyMatrixItemsListSchema,
-    CompetencyMatrixSheetsListSchema,
+    CompetencyMatrixItemDetailResponseSchema,
+    CompetencyMatrixItemRequestSchema,
+    CompetencyMatrixItemsListResponseSchema,
+    CompetencyMatrixSheetsListResponseSchema,
 )
+from entrypoints.litestar.guards import admin_user_guard
 
 
 class CompetencyMatrixApiController(Controller):
@@ -37,14 +42,37 @@ class CompetencyMatrixApiController(Controller):
         sheet_name: Annotated[str, Parameter(query="sheetName")],
         use_case: FromDishka[AbstractListItemsUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
-    ) -> CompetencyMatrixItemsListSchema:
+    ) -> CompetencyMatrixItemsListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
         items = await use_case.execute(
             sheet_name=sheet_name,
             only_published=only_published,
         )
-        return CompetencyMatrixItemsListSchema.from_domain_schema(sheet=sheet_name, schema=items)
+        return CompetencyMatrixItemsListResponseSchema.from_domain_schema(
+            sheet=sheet_name,
+            schema=items,
+        )
+
+    @post(
+        "/items",
+        description="Создание вопроса в матрице компетенций.",
+        guards=[admin_user_guard],
+    )
+    async def create_competency_matrix_item(
+        self,
+        item_id_generator: FromDishka[ItemIdGenerator],
+        resource_id_generator: FromDishka[ResourceIdGenerator],
+        data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
+        use_case: FromDishka[AbstractUpsertItemUseCase],
+    ) -> CompetencyMatrixItemDetailResponseSchema:
+        item = await use_case.execute(
+            params=data.to_schema(
+                item_id_generator=item_id_generator,
+                resource_id_generator=resource_id_generator,
+            ),
+        )
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
 
     @get(
         "/items/{pk:int}",
@@ -57,11 +85,31 @@ class CompetencyMatrixApiController(Controller):
         pk: int,
         use_case: FromDishka[AbstractGetItemUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
-    ) -> CompetencyMatrixItemDetailSchema:
+    ) -> CompetencyMatrixItemDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
         item = await use_case.execute(item_id=pk, only_published=only_published)
-        return CompetencyMatrixItemDetailSchema.from_domain_schema(schema=item)
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
+
+    @put(
+        "/items/{pk:int}",
+        description="Обновление вопроса в матрице компетенций.",
+        guards=[admin_user_guard],
+    )
+    async def update_competency_matrix_item(
+        self,
+        pk: int,
+        resource_id_generator: FromDishka[ResourceIdGenerator],
+        data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
+        use_case: FromDishka[AbstractUpsertItemUseCase],
+    ) -> CompetencyMatrixItemDetailResponseSchema:
+        item = await use_case.execute(
+            params=data.to_schema(
+                item_id_generator=IntId(pk),
+                resource_id_generator=resource_id_generator,
+            ),
+        )
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
 
     @get(
         "/sheets",
@@ -75,9 +123,9 @@ class CompetencyMatrixApiController(Controller):
     async def list_competency_matrix_sheet(
         self,
         use_case: FromDishka[AbstractListSheetsUseCase],
-    ) -> CompetencyMatrixSheetsListSchema:
+    ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.execute()
-        return CompetencyMatrixSheetsListSchema.from_domain_schema(schema=sheets)
+        return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(schema=sheets)
 
 
 api_router = DishkaRouter("", route_handlers=[CompetencyMatrixApiController])

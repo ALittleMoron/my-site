@@ -1,3 +1,4 @@
+import random
 import uuid
 from collections.abc import Generator
 from typing import AsyncGenerator
@@ -20,6 +21,7 @@ from config.settings import settings, Settings
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.auth.types import RawToken
+from core.types import IntId
 from db.models import CompetencyMatrixItemModel, ExternalResourceModel, UserModel, BlogPostModel
 from db.utils import migrate, downgrade
 from entrypoints.litestar.initializers import create_litestar_app
@@ -31,9 +33,14 @@ from tests.mocks.providers.files import MockFilesProvider
 from tests.mocks.providers.general import MockGeneralProvider
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def global_random_uuid() -> uuid.UUID:
     return uuid.uuid4()
+
+
+@pytest.fixture
+def global_random_int() -> IntId:
+    return IntId(random.randint(-10000000, 10000000))
 
 
 @pytest.fixture(scope="session")
@@ -69,11 +76,12 @@ async def container(
     jwt_admin: JwtUser,
     raw_token: RawToken,
     global_random_uuid: uuid.UUID,
+    global_random_int: IntId,
     random_suffix: str,
 ) -> AsyncGenerator[AsyncContainer, None]:
     container = make_async_container(
         LitestarProvider(),
-        MockGeneralProvider(uuid_=global_random_uuid),
+        MockGeneralProvider(uuid_=global_random_uuid, int_=global_random_int),
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
         MockContactsProvider(),

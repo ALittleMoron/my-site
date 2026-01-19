@@ -31,6 +31,12 @@ class APIHelper:
             params={"onlyPublished": only_published},
         )
 
+    async def post_create_item(self, data: dict[str, Any]) -> Response:
+        return self.client.post(f"/api/competency-matrix/items", json=data)
+
+    async def put_update_item(self, pk: int, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/competency-matrix/items/{pk}", json=data)
+
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)
 

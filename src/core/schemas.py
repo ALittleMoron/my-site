@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import Self
 
 
 @dataclass(kw_only=False, frozen=True, slots=True)
@@ -19,6 +20,9 @@ class Secret[T]:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ValuedDataclass[T]:
     values: list[T]
+
+    def extends(self, other: list[T]) -> Self:
+        return self.__class__(values=self.values + other)
 
     def __len__(self) -> int:
         return len(self.values)

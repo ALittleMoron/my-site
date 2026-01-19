@@ -11,17 +11,19 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     Sheets,
     ExternalResources,
+    CompetencyMatrixItemUpsertParams,
 )
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObjectParams, PresignPutObject
 from core.files.types import Namespace
 from core.schemas import Secret
+from core.types import IntId
 
 
 class CoreFactoryHelper:
     @classmethod
-    def resource(
+    def external_resource(
         cls,
         resource_id: int,
         name: str = "RESOURCE",
@@ -34,6 +36,13 @@ class CoreFactoryHelper:
             url=url,
             context=context,
         )
+
+    @classmethod
+    def external_resources(
+        cls,
+        values: list[ExternalResource] | None = None,
+    ) -> ExternalResources:
+        return ExternalResources(values=values or [])
 
     @classmethod
     def competency_matrix_item(
@@ -60,6 +69,33 @@ class CoreFactoryHelper:
             section=section,
             subsection=subsection,
             resources=ExternalResources(values=resources or []),
+        )
+
+    @classmethod
+    def competency_matrix_item_upsert_params(
+        cls,
+        item_id: int,
+        question: str = "QUESTION",
+        publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
+        answer: str = "Answer",
+        interview_expected_answer: str = "Answer",
+        sheet: str = "Sheet",
+        grade: str = "Junior",
+        section: str = "Section",
+        subsection: str = "Subsection",
+        resources: list[IntId | ExternalResource] | None = None,
+    ) -> CompetencyMatrixItemUpsertParams:
+        return CompetencyMatrixItemUpsertParams(
+            id=item_id,
+            question=question,
+            publish_status=publish_status,
+            answer=answer,
+            interview_expected_answer=interview_expected_answer,
+            sheet=sheet,
+            grade=grade,
+            section=section,
+            subsection=subsection,
+            resources=resources or [],
         )
 
     @classmethod
@@ -176,3 +212,7 @@ class CoreFactoryHelper:
     @classmethod
     def token(cls, value: bytes) -> Token:
         return Token(value)
+
+    @classmethod
+    def int_id(cls, value: int) -> IntId:
+        return IntId(value)

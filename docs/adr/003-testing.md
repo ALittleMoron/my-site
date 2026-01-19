@@ -285,6 +285,7 @@ class TestGetEntityUseCase(FactoryFixture):
 - Проверка правильности вызовов Use Cases
 
 **Пример API теста:**
+
 ```python
 # tests/api_tests/domain/test_get_entity.py
 class TestGetEntityAPI(ContainerFixture, ApiFixture, FactoryFixture):
@@ -317,7 +318,7 @@ class TestGetEntityAPI(ContainerFixture, ApiFixture, FactoryFixture):
             section="Section",
             subsection="Subsection",
             resources=[
-                self.factory.core.resource(
+                self.factory.core.external_resource(
                     resource_id=1,
                     name="resource",
                     url="http://example.com",
@@ -906,7 +907,7 @@ class TestGetEntityAPI(ContainerFixture, ApiFixture, FactoryFixture):
             section="Section",
             subsection="Subsection",
             resources=[
-                self.factory.core.resource(
+                self.factory.core.external_resource(
                     resource_id=1,
                     name="resource",
                     url="http://example.com",

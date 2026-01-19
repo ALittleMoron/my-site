@@ -35,7 +35,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             section="Основы",
             sheet="Python",
             resources=[
-                self.factory.core.resource(
+                self.factory.core.external_resource(
                     resource_id=1,
                     name="resource",
                     url="http://example.com",

@@ -6,10 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.schemas import User
 from core.blog.schemas import BlogPost
-from core.competency_matrix.schemas import CompetencyMatrixItem
+from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
-from db.models import CompetencyMatrixItemModel, UserModel, ContactMeModel, BlogPostModel
+from db.models import (
+    CompetencyMatrixItemModel,
+    UserModel,
+    ContactMeModel,
+    BlogPostModel,
+    ExternalResourceModel,
+)
 
 
 @dataclass(kw_only=True)
@@ -64,3 +70,20 @@ class StorageHelper:
         self.session.add_all(db_blog_posts)
         await self.session.flush()
         return db_blog_posts
+
+    async def create_external_resource(self, resource: ExternalResource) -> ExternalResourceModel:
+        db_resource_model = ExternalResourceModel.from_domain_schema(schema=resource)
+        self.session.add(db_resource_model)
+        await self.session.flush()
+        return db_resource_model
+
+    async def create_external_resources(
+        self,
+        resources: list[ExternalResource],
+    ) -> list[ExternalResourceModel]:
+        db_resource_models = [
+            ExternalResourceModel.from_domain_schema(schema=resource) for resource in resources
+        ]
+        self.session.add_all(db_resource_models)
+        await self.session.flush()
+        return db_resource_models
