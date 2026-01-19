@@ -31,7 +31,7 @@ class CoreFactoryHelper:
         context: str = "Context",
     ) -> ExternalResource:
         return ExternalResource(
-            id=resource_id,
+            id=cls.int_id(resource_id),
             name=name,
             url=url,
             context=context,
@@ -59,7 +59,7 @@ class CoreFactoryHelper:
         resources: list[ExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
-            id=item_id,
+            id=cls.int_id(item_id),
             question=question,
             publish_status=publish_status,
             answer=answer,
@@ -86,7 +86,7 @@ class CoreFactoryHelper:
         resources: list[IntId | ExternalResource] | None = None,
     ) -> CompetencyMatrixItemUpsertParams:
         return CompetencyMatrixItemUpsertParams(
-            id=item_id,
+            id=cls.int_id(item_id),
             question=question,
             publish_status=publish_status,
             answer=answer,

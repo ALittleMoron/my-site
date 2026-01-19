@@ -75,10 +75,10 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
 
     async def test_get_competency_matrix_item_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.storage.get_competency_matrix_item(item_id=-1)
+            await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(-1))
 
     async def test_get_competency_matrix_item_found(self) -> None:
-        item = await self.storage.get_competency_matrix_item(item_id=1)
+        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(1))
         assert item == self.factory.core.competency_matrix_item(
             item_id=1,
             question="1",

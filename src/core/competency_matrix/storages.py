@@ -14,7 +14,7 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_competency_matrix_item(self, item_id: int) -> CompetencyMatrixItem:
+    async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
         raise NotImplementedError
 
     @abstractmethod

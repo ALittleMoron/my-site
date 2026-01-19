@@ -22,7 +22,7 @@ class BaseExternalResource:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ExternalResource(BaseExternalResource):
-    id: int
+    id: IntId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -33,7 +33,7 @@ class ExternalResources(ValuedDataclass[ExternalResource]):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class BaseCompetencyMatrixItem:
-    id: int
+    id: IntId
     question: str
     publish_status: PublishStatusEnum
     answer: str

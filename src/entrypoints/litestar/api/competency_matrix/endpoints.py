@@ -81,14 +81,14 @@ class CompetencyMatrixApiController(Controller):
     )
     async def get_competency_matrix_item(
         self,
-        request: Request[JwtUser, Token, State],
         pk: int,
+        request: Request[JwtUser, Token, State],
         use_case: FromDishka[AbstractGetItemUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
     ) -> CompetencyMatrixItemDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
-        item = await use_case.execute(item_id=pk, only_published=only_published)
+        item = await use_case.execute(item_id=IntId(pk), only_published=only_published)
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
 
     @put(

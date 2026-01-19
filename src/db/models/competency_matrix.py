@@ -7,6 +7,7 @@ from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from core.enums import PublishStatusEnum
+from core.types import IntId
 from db.models.base import Base
 from db.models.mixins.publish import PublishMixin
 
@@ -54,7 +55,7 @@ class ExternalResourceModel(Base, IntegerIDMixin):
 
     def to_domain_schema(self) -> ExternalResource:
         return ExternalResource(
-            id=self.id,
+            id=IntId(self.id),
             name=self.name,
             url=self.url,
             context=self.context,
@@ -128,7 +129,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
 
     def to_domain_schema(self, *, include_relationships: bool) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
-            id=self.pk,
+            id=IntId(self.pk),
             question=self.question,
             answer=self.answer,
             publish_status=PublishStatusEnum(self.publish_status),

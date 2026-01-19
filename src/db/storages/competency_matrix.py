@@ -33,7 +33,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         items = await self.session.scalars(stmt)
         return [item.to_domain_schema(include_relationships=False) for item in items]
 
-    async def get_competency_matrix_item(self, item_id: int) -> CompetencyMatrixItem:
+    async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
         stmt = (
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.id == item_id)

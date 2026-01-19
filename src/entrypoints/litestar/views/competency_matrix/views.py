@@ -15,6 +15,7 @@ from core.competency_matrix.use_cases import (
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
 )
+from core.types import IntId
 from entrypoints.litestar.views.competency_matrix.context_converters import (
     CompetencyMatrixContextConverter,
 )
@@ -94,7 +95,7 @@ class CompetencyMatrixViewController(Controller):
         context_converter: FromDishka[CompetencyMatrixContextConverter],
     ) -> Template:
         try:
-            item = await use_case.execute(item_id=pk, only_published=True)
+            item = await use_case.execute(item_id=IntId(pk), only_published=True)
         except CompetencyMatrixItemNotFoundError:
             return HTMXTemplate(
                 template_name="competency_matrix/error_modal_item_not_found.html",
