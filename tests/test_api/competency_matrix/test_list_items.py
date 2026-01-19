@@ -1,5 +1,5 @@
 import pytest_asyncio
-from verbose_http_exceptions import status
+from httpx import codes
 
 from core.enums import PublishStatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
@@ -34,7 +34,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ]
         )
         response = self.api.get_competency_matrix_items(sheet_name="Java")
-        assert response.status_code == status.HTTP_200_OK, response.content
+        assert response.status_code == codes.OK, response.content
         assert response.json() == {
             "sheet": "Java",
             "sections": [],
@@ -56,7 +56,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ]
         )
         response = self.api.get_competency_matrix_items(sheet_name="Python")
-        assert response.status_code == status.HTTP_200_OK, response.content
+        assert response.status_code == codes.OK, response.content
         assert response.json() == {
             "sheet": "Python",
             "sections": [

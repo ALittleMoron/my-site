@@ -8,11 +8,13 @@ from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
+    AbstractPublishSwitchItemUseCase,
     AbstractUpsertItemUseCase,
     DeleteItemUseCase,
     GetItemUseCase,
     ListItemsUseCase,
     ListSheetsUseCase,
+    PublishSwitchItemUseCase,
     UpsertItemUseCase,
 )
 from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
@@ -75,3 +77,10 @@ class CompetencyMatrixProvider(Provider):
         storage: CompetencyMatrixStorage,
     ) -> AbstractDeleteItemUseCase:
         return DeleteItemUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_publish_switch_item_use_case(
+        self,
+        storage: CompetencyMatrixStorage,
+    ) -> AbstractPublishSwitchItemUseCase:
+        return PublishSwitchItemUseCase(storage=storage)

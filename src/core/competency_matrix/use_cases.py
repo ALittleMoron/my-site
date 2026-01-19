@@ -10,6 +10,7 @@ from core.competency_matrix.schemas import (
     Sheets,
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
+from core.enums import PublishStatusEnum
 from core.types import IntId
 from core.use_cases import UseCase
 
@@ -117,3 +118,19 @@ class DeleteItemUseCase(AbstractDeleteItemUseCase):
 
     async def execute(self, *, item_id: IntId) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)
+
+
+class AbstractPublishSwitchItemUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, *, item_id: IntId, publish_status: PublishStatusEnum) -> None:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class PublishSwitchItemUseCase(AbstractPublishSwitchItemUseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self, *, item_id: IntId, publish_status: PublishStatusEnum) -> None:
+        item = await self.storage.get_competency_matrix_item(item_id=item_id)
+        item.set_publish_status(status=publish_status)
+        await self.storage.upsert_competency_matrix_item(item=item)

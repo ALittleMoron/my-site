@@ -25,9 +25,9 @@ class APIHelper:
             params={"sheetName": sheet_name, "onlyPublished": only_published},
         )
 
-    def get_competency_matrix_item(self, item_id: int, only_published: bool = True) -> Response:
+    def get_competency_matrix_item(self, pk: int, only_published: bool = True) -> Response:
         return self.client.get(
-            f"/api/competency-matrix/items/{item_id}",
+            f"/api/competency-matrix/items/{pk}",
             params={"onlyPublished": only_published},
         )
 
@@ -39,6 +39,12 @@ class APIHelper:
 
     def delete_item(self, pk: int) -> Response:
         return self.client.delete(f"/api/competency-matrix/items/{pk}")
+
+    def post_set_draft_status_to_item(self, pk: int) -> Response:
+        return self.client.post(f"/api/competency-matrix/items/{pk}/set-draft")
+
+    def post_set_published_status_to_item(self, pk: int) -> Response:
+        return self.client.post(f"/api/competency-matrix/items/{pk}/set-published")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)

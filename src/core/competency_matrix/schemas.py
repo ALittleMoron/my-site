@@ -31,7 +31,7 @@ class ExternalResources(ValuedDataclass[ExternalResource]):
         return ids.difference({resource.id for resource in self.values}) == set()
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class BaseCompetencyMatrixItem:
     id: IntId
     question: str
@@ -55,12 +55,15 @@ class BaseCompetencyMatrixItem:
         )
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItem(BaseCompetencyMatrixItem):
     resources: ExternalResources
 
+    def set_publish_status(self, status: PublishStatusEnum) -> None:
+        self.publish_status = status
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+
+@dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
     resources: list[IntId | ExternalResource]
 

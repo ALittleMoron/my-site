@@ -1,5 +1,5 @@
 import pytest_asyncio
-from verbose_http_exceptions import status
+from httpx import codes
 
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
@@ -12,5 +12,5 @@ class TestSheetsAPI(ContainerFixture, FactoryFixture, ApiFixture):
     def test_list(self) -> None:
         self.use_case.execute.return_value = self.factory.core.sheets(values=["Python", "SQL"])
         response = self.api.get_competency_matrix_sheets()
-        assert response.status_code == status.HTTP_200_OK, response.content
+        assert response.status_code == codes.OK, response.content
         assert response.json() == {"sheets": ["Python", "SQL"]}

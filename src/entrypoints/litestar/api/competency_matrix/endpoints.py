@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Controller, Request, delete, get, post, put
+from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.params import Body, Parameter
 
@@ -16,8 +16,10 @@ from core.competency_matrix.use_cases import (
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
+    AbstractPublishSwitchItemUseCase,
     AbstractUpsertItemUseCase,
 )
+from core.enums import PublishStatusEnum
 from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
@@ -116,6 +118,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/{pk:int}",
         description="Удаление вопроса в матрице компетенций.",
         guards=[admin_user_guard],
+        status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_competency_matrix_item(
         self,
@@ -123,6 +126,32 @@ class CompetencyMatrixApiController(Controller):
         use_case: FromDishka[AbstractDeleteItemUseCase],
     ) -> None:
         await use_case.execute(item_id=IntId(pk))
+
+    @post(
+        "/items/{pk:int}/set-draft",
+        description='Установка статуса "Черновик" на вопрос в матрице компетенций.',
+        guards=[admin_user_guard],
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def set_draft_status_to_competency_matrix_item(
+        self,
+        pk: int,
+        use_case: FromDishka[AbstractPublishSwitchItemUseCase],
+    ) -> None:
+        await use_case.execute(item_id=IntId(pk), publish_status=PublishStatusEnum.DRAFT)
+
+    @post(
+        "/items/{pk:int}/set-published",
+        description='Установка статуса "Опубликовано" на вопрос в матрице компетенций.',
+        guards=[admin_user_guard],
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def set_published_status_to_competency_matrix_item(
+        self,
+        pk: int,
+        use_case: FromDishka[AbstractPublishSwitchItemUseCase],
+    ) -> None:
+        await use_case.execute(item_id=IntId(pk), publish_status=PublishStatusEnum.PUBLISHED)
 
     @get(
         "/sheets",

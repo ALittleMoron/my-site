@@ -1,5 +1,5 @@
 import pytest_asyncio
-from verbose_http_exceptions import status
+from httpx import codes
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.enums import PublishStatusEnum
@@ -13,8 +13,8 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
     def test_get_competency_matrix_item_not_found(self) -> None:
         self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()
-        response = self.api.get_competency_matrix_item(item_id=-100)
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        response = self.api.get_competency_matrix_item(pk=-100)
+        assert response.status_code == codes.NOT_FOUND
         assert response.json() == {
             "code": "client_error",
             "type": "not_found",
@@ -43,8 +43,8 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 ),
             ],
         )
-        response = self.api.get_competency_matrix_item(item_id=1)
-        assert response.status_code == status.HTTP_200_OK
+        response = self.api.get_competency_matrix_item(pk=1)
+        assert response.status_code == codes.OK
         assert response.json() == {
             "id": 1,
             "question": "Как написать свою функцию?",

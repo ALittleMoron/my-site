@@ -21,6 +21,7 @@ from core.competency_matrix.use_cases import (
     AbstractListSheetsUseCase,
     AbstractUpsertItemUseCase,
     AbstractDeleteItemUseCase,
+    AbstractPublishSwitchItemUseCase,
 )
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from core.files.file_name_generators import FileNameGenerator
@@ -69,6 +70,10 @@ class IocContainerHelper:
 
     async def get_delete_item_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractDeleteItemUseCase)
+        return cast(Mock, use_case)
+
+    async def get_publish_switch_item_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractPublishSwitchItemUseCase)
         return cast(Mock, use_case)
 
     # AUTH
