@@ -103,3 +103,17 @@ class UpsertItemUseCase(AbstractUpsertItemUseCase):
             raise CompetencyMatrixItemNotFoundError
         item = params.to_item(resources=resources)
         return await self.storage.upsert_competency_matrix_item(item=item)
+
+
+class AbstractDeleteItemUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, *, item_id: IntId) -> None:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class DeleteItemUseCase(AbstractDeleteItemUseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self, *, item_id: IntId) -> None:
+        await self.storage.delete_competency_matrix_item(item_id=item_id)

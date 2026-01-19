@@ -66,3 +66,11 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         )
         resources = await self.session.scalars(stmt)
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
+
+    async def delete_competency_matrix_item(self, item_id: IntId) -> None:
+        stmt = select(CompetencyMatrixItemModel).where(CompetencyMatrixItemModel.id == item_id)
+        item = await self.session.scalar(stmt)
+        if item is None:
+            raise CompetencyMatrixItemNotFoundError
+        await self.session.delete(item)
+        await self.session.flush()

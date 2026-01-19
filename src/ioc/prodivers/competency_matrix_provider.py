@@ -4,10 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import (
+    AbstractDeleteItemUseCase,
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
     AbstractUpsertItemUseCase,
+    DeleteItemUseCase,
     GetItemUseCase,
     ListItemsUseCase,
     ListSheetsUseCase,
@@ -66,3 +68,10 @@ class CompetencyMatrixProvider(Provider):
         storage: CompetencyMatrixStorage,
     ) -> AbstractUpsertItemUseCase:
         return UpsertItemUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_delete_item_use_case(
+        self,
+        storage: CompetencyMatrixStorage,
+    ) -> AbstractDeleteItemUseCase:
+        return DeleteItemUseCase(storage=storage)

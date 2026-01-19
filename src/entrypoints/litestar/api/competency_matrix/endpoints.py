@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
-from litestar import Controller, Request, get, post, put
+from litestar import Controller, Request, delete, get, post, put
 from litestar.datastructures import State
 from litestar.params import Body, Parameter
 
@@ -12,6 +12,7 @@ from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import (
+    AbstractDeleteItemUseCase,
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
@@ -110,6 +111,18 @@ class CompetencyMatrixApiController(Controller):
             ),
         )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
+
+    @delete(
+        "/items/{pk:int}",
+        description="Удаление вопроса в матрице компетенций.",
+        guards=[admin_user_guard],
+    )
+    async def delete_competency_matrix_item(
+        self,
+        pk: int,
+        use_case: FromDishka[AbstractDeleteItemUseCase],
+    ) -> None:
+        await use_case.execute(item_id=IntId(pk))
 
     @get(
         "/sheets",

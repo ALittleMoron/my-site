@@ -31,11 +31,14 @@ class APIHelper:
             params={"onlyPublished": only_published},
         )
 
-    async def post_create_item(self, data: dict[str, Any]) -> Response:
+    def post_create_item(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/competency-matrix/items", json=data)
 
-    async def put_update_item(self, pk: int, data: dict[str, Any]) -> Response:
+    def put_update_item(self, pk: int, data: dict[str, Any]) -> Response:
         return self.client.put(f"/api/competency-matrix/items/{pk}", json=data)
+
+    def delete_item(self, pk: int) -> Response:
+        return self.client.delete(f"/api/competency-matrix/items/{pk}")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)

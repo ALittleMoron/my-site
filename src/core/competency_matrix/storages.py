@@ -30,3 +30,7 @@ class CompetencyMatrixStorage(ABC):
         resource_ids: list[IntId],
     ) -> ExternalResources:
         raise NotImplementedError
+
+    @abstractmethod
+    async def delete_competency_matrix_item(self, item_id: IntId) -> None:
+        raise NotImplementedError

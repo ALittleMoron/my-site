@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel as camel_case
 from pydantic.alias_generators import to_snake as snake_case
 
@@ -17,3 +19,14 @@ class SnakeCaseSchema(BaseModel):
         from_attributes=True,
         populate_by_name=True,
     )
+
+
+class DetailResponseSchema(CamelCaseSchema):
+    detail: Annotated[
+        str,
+        Field(
+            title="Сообщение",
+            description="Детальное описание результата операции",
+            examples=["Операция выполнена успешно"],
+        ),
+    ]

@@ -232,3 +232,34 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 context="CONTEXT 101",
             ),
         ]
+
+    async def test_delete_found(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    question="1",
+                    answer="Answer 1",
+                    interview_expected_answer="Expected answer 1",
+                    sheet="Python",
+                    grade="Middle+",
+                    section="SECTION 1",
+                    subsection="SUBSECTION 1",
+                    resources=[
+                        self.factory.core.external_resource(
+                            resource_id=10,
+                            name="NAME 1",
+                            url="https://example1.com",
+                            context="CONTEXT 1",
+                        ),
+                    ],
+                ),
+            ]
+        )
+        await self.storage.delete_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+
+    async def test_delete_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.delete_competency_matrix_item(item_id=self.factory.core.int_id(3))

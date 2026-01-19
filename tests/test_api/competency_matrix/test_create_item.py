@@ -12,7 +12,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     async def setup(self) -> None:
         self.use_case = await self.container.get_upsert_item_use_case()
 
-    async def test_create_item(self) -> None:
+    def test_create_item(self) -> None:
         self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="question 1",
@@ -32,7 +32,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 )
             ],
         )
-        response = await self.api.post_create_item(
+        response = self.api.post_create_item(
             data={
                 "question": "question 1",
                 "answer": "answer 1",
