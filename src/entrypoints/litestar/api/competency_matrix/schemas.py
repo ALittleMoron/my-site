@@ -10,6 +10,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     CompetencyMatrixItemUpsertParams,
     ExternalResource,
+    ExternalResources,
     Sheets,
 )
 from core.enums import PublishStatusEnum
@@ -52,7 +53,7 @@ class ResourceRequestSchema(BaseResourceSchema):
         return ExternalResource(id=resource_id, name=self.name, url=self.url, context=self.context)
 
 
-class ResourceSchema(BaseResourceSchema):
+class ResourceResponseSchema(BaseResourceSchema):
     id: Annotated[
         int,
         Field(
@@ -168,7 +169,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         ),
     ]
     resources: Annotated[
-        list[ResourceSchema],
+        list[ResourceResponseSchema],
         Field(
             title="Ресурсы",
             description="Список ресурсов для дополнительного изучения",
@@ -188,7 +189,8 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
             subsection=schema.subsection,
             publish_status=schema.publish_status,
             resources=[
-                ResourceSchema.from_domain_schema(schema=resource) for resource in schema.resources
+                ResourceResponseSchema.from_domain_schema(schema=resource)
+                for resource in schema.resources
             ],
         )
 
@@ -454,3 +456,22 @@ class CompetencyMatrixSheetsListResponseSchema(CamelCaseSchema):
     @classmethod
     def from_domain_schema(cls, *, schema: Sheets) -> Self:
         return cls(sheets=schema.values)
+
+
+class CompetencyMatrixResourcesResponseSchema(CamelCaseSchema):
+    resources: Annotated[
+        list[ResourceResponseSchema],
+        Field(
+            title="Ресурсы",
+            description="Список ресурсов для дополнительного изучения",
+        ),
+    ]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: ExternalResources) -> Self:
+        return cls(
+            resources=[
+                ResourceResponseSchema.from_domain_schema(schema=resource)
+                for resource in schema.values
+            ],
+        )

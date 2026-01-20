@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import ARRAY, Integer, bindparam, func, select
+from sqlalchemy import ARRAY, Integer, bindparam, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -74,3 +74,13 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             raise CompetencyMatrixItemNotFoundError
         await self.session.delete(item)
         await self.session.flush()
+
+    async def search_competency_matrix_resources(self, search_name: str) -> ExternalResources:
+        stmt = select(ExternalResourceModel).where(
+            or_(
+                func.lower(ExternalResourceModel.name).ilike(f"%{search_name}%"),
+                func.lower(ExternalResourceModel.url).ilike(f"%{search_name}%"),
+            ),
+        )
+        resources = await self.session.scalars(stmt)
+        return ExternalResources(values=[resource.to_domain_schema() for resource in resources])

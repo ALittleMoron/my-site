@@ -11,6 +11,7 @@ from core.competency_matrix.use_cases import (
     AbstractUpsertItemUseCase,
     AbstractDeleteItemUseCase,
     AbstractPublishSwitchItemUseCase,
+    AbstractFindResourcesUseCase,
 )
 
 item_id_generator = count(1)
@@ -58,4 +59,9 @@ class MockCompetencyMatrixProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_publish_switch_item_use_case(self) -> AbstractPublishSwitchItemUseCase:
         mock = Mock(spec=AbstractPublishSwitchItemUseCase)
+        return mock
+
+    @provide(scope=Scope.APP)
+    async def provide_search_resources_use_case(self) -> AbstractFindResourcesUseCase:
+        mock = Mock(spec=AbstractFindResourcesUseCase)
         return mock

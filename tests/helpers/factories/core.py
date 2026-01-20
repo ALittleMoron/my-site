@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, UTC
+from typing import Any
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import User, JwtUser
@@ -18,7 +19,7 @@ from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObjectParams, PresignPutObject
 from core.files.types import Namespace
 from core.schemas import Secret
-from core.types import IntId
+from core.types import IntId, SearchName
 
 
 class CoreFactoryHelper:
@@ -216,3 +217,7 @@ class CoreFactoryHelper:
     @classmethod
     def int_id(cls, value: int) -> IntId:
         return IntId(value)
+
+    @classmethod
+    def search_name(cls, value: Any) -> SearchName:
+        return SearchName(value)

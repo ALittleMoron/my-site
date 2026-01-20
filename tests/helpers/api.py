@@ -12,6 +12,12 @@ class APIHelper:
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
+    def get_search_competency_matrix_resources(self, search_name: str) -> Response:
+        return self.client.get(
+            "/api/competency-matrix/resources/search",
+            params={"searchName": search_name},
+        )
+
     def get_competency_matrix_sheets(self) -> Response:
         return self.client.get("/api/competency-matrix/sheets")
 
@@ -27,7 +33,7 @@ class APIHelper:
 
     def get_competency_matrix_item(self, pk: int, only_published: bool = True) -> Response:
         return self.client.get(
-            f"/api/competency-matrix/items/{pk}",
+            f"/api/competency-matrix/items/detail/{pk}",
             params={"onlyPublished": only_published},
         )
 
@@ -35,16 +41,16 @@ class APIHelper:
         return self.client.post(f"/api/competency-matrix/items", json=data)
 
     def put_update_item(self, pk: int, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/competency-matrix/items/{pk}", json=data)
+        return self.client.put(f"/api/competency-matrix/items/detail/{pk}", json=data)
 
     def delete_item(self, pk: int) -> Response:
-        return self.client.delete(f"/api/competency-matrix/items/{pk}")
+        return self.client.delete(f"/api/competency-matrix/items/detail/{pk}")
 
     def post_set_draft_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/competency-matrix/items/{pk}/set-draft")
+        return self.client.post(f"/api/competency-matrix/items/detail/{pk}/set-draft")
 
     def post_set_published_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/competency-matrix/items/{pk}/set-published")
+        return self.client.post(f"/api/competency-matrix/items/detail/{pk}/set-published")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post(f"/api/contacts", json=data)

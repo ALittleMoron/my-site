@@ -5,12 +5,14 @@ from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerat
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import (
     AbstractDeleteItemUseCase,
+    AbstractFindResourcesUseCase,
     AbstractGetItemUseCase,
     AbstractListItemsUseCase,
     AbstractListSheetsUseCase,
     AbstractPublishSwitchItemUseCase,
     AbstractUpsertItemUseCase,
     DeleteItemUseCase,
+    FindResourcesUseCase,
     GetItemUseCase,
     ListItemsUseCase,
     ListSheetsUseCase,
@@ -84,3 +86,10 @@ class CompetencyMatrixProvider(Provider):
         storage: CompetencyMatrixStorage,
     ) -> AbstractPublishSwitchItemUseCase:
         return PublishSwitchItemUseCase(storage=storage)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_search_resources_use_case(
+        self,
+        storage: CompetencyMatrixStorage,
+    ) -> AbstractFindResourcesUseCase:
+        return FindResourcesUseCase(storage=storage)

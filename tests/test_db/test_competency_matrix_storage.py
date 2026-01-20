@@ -263,3 +263,31 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
     async def test_delete_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.storage.delete_competency_matrix_item(item_id=self.factory.core.int_id(3))
+
+    async def test_search_competency_matrix_resources(self) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=100,
+                    name="NAMED 100",
+                    url="https://example100.com",
+                    context="CONTEXT 100",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=101,
+                    name="NAMED 101",
+                    url="https://example101.com",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=102,
+                    name="NOT HAS N*MED",
+                    url="https://example102.com",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="named",
+        )
+        assert len(resources) == 2
+        assert resources[0].name == "NAMED 100"
+        assert resources[1].name == "NAMED 101"

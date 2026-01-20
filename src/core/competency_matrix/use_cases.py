@@ -11,7 +11,7 @@ from core.competency_matrix.schemas import (
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
-from core.types import IntId
+from core.types import IntId, SearchName
 from core.use_cases import UseCase
 
 
@@ -134,3 +134,19 @@ class PublishSwitchItemUseCase(AbstractPublishSwitchItemUseCase):
         item = await self.storage.get_competency_matrix_item(item_id=item_id)
         item.set_publish_status(status=publish_status)
         await self.storage.upsert_competency_matrix_item(item=item)
+
+
+class AbstractFindResourcesUseCase(UseCase, ABC):
+    @abstractmethod
+    async def execute(self, *, search_name: SearchName) -> ExternalResources:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class FindResourcesUseCase(AbstractFindResourcesUseCase):
+    storage: CompetencyMatrixStorage
+
+    async def execute(self, *, search_name: SearchName) -> ExternalResources:
+        return await self.storage.search_competency_matrix_resources(
+            search_name=search_name.cleaned,
+        )

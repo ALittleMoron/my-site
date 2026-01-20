@@ -9,7 +9,6 @@ Layout = Annotated[
     str,
     Parameter(
         query="layout",
-        default="list",
         required=False,
         description="Способ отображения элементов матрицы компетенций",
         examples=[
@@ -52,7 +51,7 @@ OnlyPublished = Annotated[
 ]
 
 
-async def template_name_by_layout_dependency(layout: Layout) -> str:
+async def template_name_by_layout_dependency(layout: Layout = "list") -> str:
     _layout = (
         CompetencyMatrixLayoutEnum(layout)
         if layout in CompetencyMatrixLayoutEnum

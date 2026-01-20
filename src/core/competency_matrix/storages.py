@@ -34,3 +34,10 @@ class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def delete_competency_matrix_item(self, item_id: IntId) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    async def search_competency_matrix_resources(
+        self,
+        search_name: str,
+    ) -> ExternalResources:
+        raise NotImplementedError
