@@ -15,7 +15,7 @@
     <a href="#" class="nav-link p-0 link-colored"><small>{{ request.user.username }}</small></a>
     <button class="btn link-inactive px-0 px-lg-2 py-2 ms-1"
             hx-get="{{ url_for("logout-handler") }}"
-            _="on click set localStorage's accessToken to null on htmx:afterRequest">
+            _="on click set localStorage's accessToken to null">
         <svg xmlns="http://www.w3.org/2000/svg"
              width="24"
              height="24"

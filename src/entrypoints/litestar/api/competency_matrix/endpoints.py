@@ -44,6 +44,7 @@ class CompetencyMatrixApiController(Controller):
             "чтобы получить вопросы по нужному листу."
         ),
         cache=settings.app.get_cache_duration(120),  # 2 минуты
+        name="competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def list_competency_matrix_sheet(
@@ -57,6 +58,7 @@ class CompetencyMatrixApiController(Controller):
         "/resources/search",
         description="Поиск вопросов по матрице компетенций по названию и url.",
         cache=settings.app.get_cache_duration(10),  # 10 секунд
+        name="competency-matrix-resources-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def search_competency_matrix_resources(
@@ -71,6 +73,7 @@ class CompetencyMatrixApiController(Controller):
         "/items",
         description="Получение списка вопросов по матрице компетенций.",
         cache=settings.app.get_cache_duration(60),  # 1 минута
+        name="competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def list_competency_matrix_items(
@@ -95,6 +98,7 @@ class CompetencyMatrixApiController(Controller):
         "/items",
         description="Создание вопроса в матрице компетенций.",
         guards=[admin_user_guard],
+        name="competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_competency_matrix_item(
@@ -116,6 +120,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/detail/{pk:int}",
         description="Получение подробной информации о вопросе из матрицы компетенций.",
         cache=settings.app.get_cache_duration(15),  # 15 секунд
+        name="competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def get_competency_matrix_item(
@@ -134,6 +139,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/detail/{pk:int}",
         description="Обновление вопроса в матрице компетенций.",
         guards=[admin_user_guard],
+        name="competency-matrix-item-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_competency_matrix_item(
@@ -155,6 +161,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/detail/{pk:int}",
         description="Удаление вопроса в матрице компетенций.",
         guards=[admin_user_guard],
+        name="competency-matrix-item-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_competency_matrix_item(
@@ -168,6 +175,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/detail/{pk:int}/set-draft",
         description='Установка статуса "Черновик" на вопрос в матрице компетенций.',
         guards=[admin_user_guard],
+        name="competency-matrix-item-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def set_draft_status_to_competency_matrix_item(
@@ -181,6 +189,7 @@ class CompetencyMatrixApiController(Controller):
         "/items/detail/{pk:int}/set-published",
         description='Установка статуса "Опубликовано" на вопрос в матрице компетенций.',
         guards=[admin_user_guard],
+        name="competency-matrix-item-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def set_published_status_to_competency_matrix_item(

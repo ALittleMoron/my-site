@@ -91,15 +91,16 @@ class CompetencyMatrixViewController(Controller):
     async def get_competency_matrix_item_detail(
         self,
         pk: int,
+        request: Request[JwtUser, Token, State],
         use_case: FromDishka[AbstractGetItemUseCase],
         context_converter: FromDishka[CompetencyMatrixContextConverter],
     ) -> Template:
+        only_published = not request.user.is_admin
         try:
-            item = await use_case.execute(item_id=IntId(pk), only_published=True)
+            item = await use_case.execute(item_id=IntId(pk), only_published=only_published)
         except CompetencyMatrixItemNotFoundError:
-            return HTMXTemplate(
-                template_name="competency_matrix/error_modal_item_not_found.html",
-            )
+            template_name = "competency_matrix/blocks/error_modal_item_not_found.html"
+            return HTMXTemplate(template_name=template_name)
         return HTMXTemplate(
             template_name="competency_matrix/blocks/item_detail.html",
             context=context_converter.context_from_competency_matrix_item(item=item),

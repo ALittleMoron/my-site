@@ -37,12 +37,25 @@
             {% if request.user.is_admin %}
                 <div class="modal-footer">
                     {% if item.publish_status == 'Published' %}
-                        <button class="btn button-inactive">В черновик</button>
+                        <button class="btn button-inactive"
+                                hx-post="{{ url_for('competency-matrix-item-set-draft-api-handler', pk=item.id) }}"
+                                _="on htmx:afterRequest if event.detail.xhr.status is 204 remove #item-detail-{{ item.id }} then trigger click on #matrix-item-{{ item.id }} end end">
+                            В черновик
+                        </button>
                     {% elif item.publish_status == 'Draft' %}
-                        <button class="btn button-inactive">Опубликовать</button>
+                        <button class="btn button-inactive"
+                                hx-post="{{ url_for('competency-matrix-item-set-published-api-handler', pk=item.id) }}"
+                                _="on htmx:afterRequest if event.detail.xhr.status is 204 remove #item-detail-{{ item.id }} then trigger click on #matrix-item-{{ item.id }} end end">
+                            Опубликовать
+                        </button>
                     {% endif %}
                     <button class="btn button-inactive">Отредактировать</button>
-                    <button class="btn btn-danger">Удалить</button>
+                    <button class="btn btn-danger"
+                            hx-delete="{{ url_for('competency-matrix-item-delete-api-handler', pk=item.id) }}"
+                            hx-vals="js:{onlyPublished: (localStorage.getItem('allChosen') === 'true' ? 'false' : 'true')}"
+                            _="on htmx:afterRequest if event.detail.xhr.status is 204 remove #item-detail-{{ item.id }} then reload() the location of the window end">
+                        Удалить
+                    </button>
                 </div>
             {% endif %}
         </div>
