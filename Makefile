@@ -8,9 +8,14 @@ run:
 	chmod +x ./docker/run.sh
 	./docker/run.sh
 
+.PHONY: stop
+stop:
+	docker compose stop
+	docker compose down
+
 .PHONY: start_app
 start_app:
-	PYTHONPATH=src uv run uvicorn src.main:create_app --port 8000 --host 0.0.0.0 --log-config uvicorn_logger.json
+	PYTHONPATH=src uv run uvicorn src.main:create_app --port 8080 --host 0.0.0.0
 
 .PHONY: start_local_app
 start_local_app:

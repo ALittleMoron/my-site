@@ -36,7 +36,7 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
         exclude: str | list[str] | None = None,
         exclude_from_auth_key: str = "exclude_from_auth",
         exclude_http_methods: Sequence[Method] | None = None,
-        scopes: Scopes | None = None,
+        scopes: "Scopes | None" = None,
     ) -> None:
         super().__init__(
             app=app,

@@ -10,7 +10,7 @@ from db.utils import migrate
 
 
 def init_sentry() -> None:
-    if settings.app.debug:
+    if not settings.sentry.use:
         # NOTE: просто не надо во время локальной разработки срать в sentry. На проде можно
         #
         # debug использую, потому что у меня нет много окружений. Только прод и локальный запуск.

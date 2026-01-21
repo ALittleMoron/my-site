@@ -19,7 +19,7 @@ async def create_admin_command(username: str, password: str) -> None:
                 password_hash=hashed_password,
                 role=RoleEnum.ADMIN,
             )
-            session.add(admin)
+            await session.merge(admin)
             await session.commit()
         except SQLAlchemyError:
             msg = "Ошибка базы данных"

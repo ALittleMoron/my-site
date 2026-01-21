@@ -99,6 +99,7 @@ class _MinioSettings(_ProjectBaseSettings):
 class _SentrySettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="SENTRY_")
 
+    use: bool = True
     dsn: str = ""
 
 
@@ -136,7 +137,7 @@ class Settings:
         base_url = (
             f"{url_schema}://{self.minio.endpoint}"
             if self.app.debug and self.app.is_local_domain
-            else f"{url_schema}://{self.app.domain}"
+            else f"{url_schema}://s3.{self.app.domain}"
         )
         return f"{base_url}/{bucket}/{object_path.removeprefix('/')}"
 

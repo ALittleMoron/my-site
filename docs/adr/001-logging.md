@@ -86,7 +86,7 @@ Sentry инициализируется в файле `src/config/initializers.p
 
 ```python
 def init_sentry() -> None:
-    if settings.app.debug:
+    if settings.sentry.use:
         # Отключен в debug режиме для избежания спама
         return
     

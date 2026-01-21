@@ -1,4 +1,4 @@
 FROM nginx:1.29.4-alpine
 
-RUN rm /etc/nginx/conf.d/default.conf
-COPY docker/nginx/nginx.conf /etc/nginx/conf.d
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
