@@ -1,3 +1,5 @@
+from typing import Generator
+
 import pytest
 
 from config.settings import Settings
@@ -5,9 +7,14 @@ from config.settings import Settings
 
 class TestSettings:
     @pytest.fixture(autouse=True)
-    def setup(self, test_settings: Settings) -> None:
+    def setup(self, test_settings: Settings) -> Generator[None, None, None]:
         self.settings = test_settings
+        orig = self.settings.app.domain
         self.settings.app.domain = "alittlemoron.ru"
+        self.settings.app.use_https = True
+        yield
+        self.settings.app.domain = orig
+        self.settings.app.use_https = False
 
     def test_base_url(self) -> None:
         assert self.settings.base_url == "https://alittlemoron.ru"
@@ -15,13 +22,13 @@ class TestSettings:
     def test_get_minio_object_url(self) -> None:
         assert (
             self.settings.get_minio_object_url(bucket="media", object_path="test.txt")
-            == "https://alittlemoron.ru/media/test.txt"
+            == "https://s3.alittlemoron.ru/media/test.txt"
         )
 
     def test_get_minio_object_url_object_path_startswith_slash(self) -> None:
         assert (
             self.settings.get_minio_object_url(bucket="media", object_path="/test.txt")
-            == "https://alittlemoron.ru/media/test.txt"
+            == "https://s3.alittlemoron.ru/media/test.txt"
         )
 
     def test_valkey_get_url(self) -> None:
