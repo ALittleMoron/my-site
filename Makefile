@@ -5,8 +5,8 @@ LITESTAR_CLI_APP := "src.main:create_cli"
 
 .PHONY: run
 run:
-	chmod +x ./docker/scripts/run.sh
-	./docker/scripts/run.sh
+	chmod +x ./docker/run.sh
+	./docker/run.sh
 
 .PHONY: start_app
 start_app:

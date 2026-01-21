@@ -1,0 +1,8 @@
+docker-compose.yml
+.env.example
+.coverage
+coverage.xml
+.vscode
+docs
+.venv
+.github

@@ -14,10 +14,9 @@ if ! command -v docker-compose &> /dev/null; then
 fi
 
 # Read .env file and export variables
-export $(grep -v '^#' .env | xargs -0)
+set -a
+source .env
+set +a
 
 # Run docker-compose up with build option
-docker compose up -d postgres minio postgresql_backup_ui
-docker compose ps
-docker compose pull
-docker compose up -d --no-deps --remove-orphans application admin nginx
+docker compose up --build -d
