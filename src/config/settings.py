@@ -21,7 +21,7 @@ class _ProjectBaseSettings(BaseSettings):
 class _AppSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
-    schema: Literal["http","https"] = "http"
+    url_schema: Literal["http", "https"] = "http"
     debug: bool = True
     secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
     domain: str = "localhost"
@@ -132,13 +132,13 @@ class Settings:
     @property
     def base_url(self) -> str:
         postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
-        return f"{self.app.schema}://{self.app.domain}{postfix}"
+        return f"{self.app.url_schema}://{self.app.domain}{postfix}"
 
     def get_minio_object_url(self, object_path: str, bucket: Namespace) -> str:
         base_url = (
-            f"{self.app.schema}://{self.minio.endpoint}"
+            f"{self.app.url_schema}://{self.minio.endpoint}"
             if self.app.debug and self.app.is_local_domain
-            else f"{self.app.schema}://s3.{self.app.domain}"
+            else f"{self.app.url_schema}://s3.{self.app.domain}"
         )
         return f"{base_url}/{bucket}/{object_path.removeprefix('/')}"
 
