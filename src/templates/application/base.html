@@ -19,6 +19,8 @@
                 {% block title %}{% endblock %}
             - Мой сайт</title>
             {% block head_links %}
+                <link rel="canonical"
+                      href="https://{{ get_settings().app.domain }}{{ request.url.path }}" />
                 <link rel="icon"
                       type="image/x-icon"
                       href="{{ get_static_file_url("favicon.ico") }}" />

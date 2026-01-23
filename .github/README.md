@@ -58,16 +58,35 @@ git clone git@github.com:ALittleMoron/my-site.git
 cd my-site
 ```
 
-2. Make .env file
+2. Make `.env` file
 ```bash
 cp .env.example .env
 ```
 
-3. Change .env file variables to yours
+3. Create your certs for `nginx` (optional for local development)
 
-4. Run Makefile
+```bash
+mkcert -install
+mkcert \
+  <your-domain> \
+  s3.<your-domain> \
+  s3-panel.<your-domain> \
+  backup.<your-domain>
+mv <your-domain>.pem ./docker/nginx/certs/
+mv <your-domain>-key.pem ./docker/nginx/certs/
+```
+
+4. Change `.env` file variables to yours
+
+5. Run docker compose via `Makefile`
 ```bash
 make run
+```
+
+6. Or run local app
+
+```bash
+make start_local
 ```
 
 ## ⚙️ Endpoints

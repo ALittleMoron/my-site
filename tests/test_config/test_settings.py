@@ -11,10 +11,10 @@ class TestSettings:
         self.settings = test_settings
         orig = self.settings.app.domain
         self.settings.app.domain = "alittlemoron.ru"
-        self.settings.app.use_https = True
+        self.settings.app.schema = "https"
         yield
         self.settings.app.domain = orig
-        self.settings.app.use_https = False
+        self.settings.app.schema = "http"
 
     def test_base_url(self) -> None:
         assert self.settings.base_url == "https://alittlemoron.ru"

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from litestar.config.response_cache import CACHE_FOREVER
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,7 +21,7 @@ class _ProjectBaseSettings(BaseSettings):
 class _AppSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
-    use_https: bool = False
+    schema: Literal["http","https"] = "http"
     debug: bool = True
     secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
     domain: str = "localhost"
@@ -129,16 +131,14 @@ class Settings:
 
     @property
     def base_url(self) -> str:
-        url_schema = "https" if self.app.use_https else "http"
         postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
-        return f"{url_schema}://{self.app.domain}{postfix}"
+        return f"{self.app.schema}://{self.app.domain}{postfix}"
 
     def get_minio_object_url(self, object_path: str, bucket: Namespace) -> str:
-        url_schema = "https" if self.app.use_https else "http"
         base_url = (
-            f"{url_schema}://{self.minio.endpoint}"
+            f"{self.app.schema}://{self.minio.endpoint}"
             if self.app.debug and self.app.is_local_domain
-            else f"{url_schema}://s3.{self.app.domain}"
+            else f"{self.app.schema}://s3.{self.app.domain}"
         )
         return f"{base_url}/{bucket}/{object_path.removeprefix('/')}"
 

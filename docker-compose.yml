@@ -66,13 +66,38 @@ services:
 #    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_nginx:latest
     image: my_site_nginx:latest
     container_name: my_site_nginx
+    volumes:
+      - ./docker/nginx/certs:/certs
     environment:
       - APP_DOMAIN=${APP_DOMAIN}
+      - SSL_CERT=${SSL_CERT}
+      - SSL_KEY=${SSL_KEY}
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - backend
+      - certbot
+    networks:
+      - app-network
+
+  certbot:
+    image: certbot/certbot:v5.2.2
+    container_name: my_site_certbot
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    command: >
+      certonly
+      --webroot
+      --webroot-path=/var/www/certbot
+      --email ${LE_EMAIL}
+      --agree-tos
+      --no-eff-email
+      -d ${APP_DOMAIN}
+      -d s3.${APP_DOMAIN}
+      -d s3-panel.${APP_DOMAIN}
+      -d backup.${APP_DOMAIN}
     networks:
       - app-network
 
@@ -99,3 +124,5 @@ volumes:
   minio_data:
   databasus_data:
   valkey_data:
+  letsencrypt:
+  certbot-www:

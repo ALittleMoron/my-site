@@ -66,12 +66,32 @@ cd my-site
 cp .env.example .env
 ```
 
-3. Изменить переменные в `.env` под свои значения
+3. Сгенерируйте сертификаты для `nginx` (опционально для локального запуска)
 
-4. Запустить с помощью `Makefile`
+```bash
+mkcert -install
+mkcert \
+  <your-domain> \
+  s3.<your-domain> \
+  s3-panel.<your-domain> \
+  backup.<your-domain>
+mv <your-domain>.pem ./docker/nginx/certs/
+mv <your-domain>-key.pem ./docker/nginx/certs/
+```
+
+4. Изменить переменные в `.env` под свои значения
+
+5. Запустите docker-compose через `Makefile`
 ```bash
 make run
 ```
+
+6. Или запустите локально через `uvicorn`
+
+```bash
+make start_local
+```
+
 
 ## ⚙️ Важные ссылки
 
