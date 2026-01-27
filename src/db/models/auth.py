@@ -4,12 +4,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.auth.enums import RoleEnum
 from core.auth.schemas import User
 from core.schemas import Secret
-from db.models.base import Base
+from db.models.base import BaseModel
 
 
-class UserModel(Base):
-    __tablename__ = "users"
-
+class UserModel(BaseModel):
     username: Mapped[str] = mapped_column(
         String(255),
         doc="Имя пользователя",
@@ -20,7 +18,7 @@ class UserModel(Base):
         doc="Зашифрованный парользо пользователя",
     )
     role: Mapped[RoleEnum] = mapped_column(
-        Enum(RoleEnum, native_enum=False, length=10),
+        Enum(RoleEnum, native_enum=False, length=10, name="role_enum"),
         doc="Роль пользователя",
     )
 

@@ -1,6 +1,7 @@
 import pytest_asyncio
 from httpx import codes
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.enums import PublishStatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
@@ -30,7 +31,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             publish_status=PublishStatusEnum.PUBLISHED,
             answer="Просто берёшь и пишешь!",
             interview_expected_answer="Пиши!",
-            grade="Junior",
+            grade=GradeEnum.JUNIOR,
             subsection="Функции",
             section="Основы",
             sheet="Python",

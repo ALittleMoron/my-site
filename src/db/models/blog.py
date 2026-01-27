@@ -6,12 +6,11 @@ from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.mixins.ids import UUIDMixin
 
 from core.blog.schemas import BlogPost
+from db.models import BaseModel
 from db.models.mixins.publish import PublishMixin
 
 
-class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
-    __tablename__ = "blog_posts"
-
+class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
     title: Mapped[str] = mapped_column(
         String(length=255),
         doc="Title of the blog post",
@@ -23,6 +22,7 @@ class BlogPostModel(PublishMixin, UUIDMixin, AuditMixin):
     slug: Mapped[str] = mapped_column(
         String(length=255),
         unique=True,
+        index=True,
         doc="URL slug for the blog post",
     )
 

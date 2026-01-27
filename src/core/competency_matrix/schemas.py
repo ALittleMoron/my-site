@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from core.competency_matrix.enums import GradeEnum
 from core.enums import PublishStatusEnum
 from core.schemas import ValuedDataclass
 from core.types import IntId
@@ -39,7 +40,7 @@ class BaseCompetencyMatrixItem:
     answer: str
     interview_expected_answer: str
     sheet: str
-    grade: str
+    grade: GradeEnum | None
     section: str
     subsection: str
 
@@ -48,7 +49,7 @@ class BaseCompetencyMatrixItem:
             [
                 self.publish_status == PublishStatusEnum.PUBLISHED,
                 self.sheet != "",
-                self.grade != "",
+                self.grade is not None,
                 self.section != "",
                 self.subsection != "",
             ],
@@ -65,6 +66,7 @@ class CompetencyMatrixItem(BaseCompetencyMatrixItem):
 
 @dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
+    grade: GradeEnum
     resources: list[IntId | ExternalResource]
 
     def get_external_resources(self) -> list[ExternalResource]:

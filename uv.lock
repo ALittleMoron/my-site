@@ -1075,7 +1075,7 @@ requires-dist = [
     { name = "sentry-sdk", extras = ["litestar"], specifier = ">=2.47.0" },
     { name = "sniffio", specifier = ">=1.3.1" },
     { name = "sqlalchemy", extras = ["asyncio", "mypy"], specifier = ">=2.0.45" },
-    { name = "sqlalchemy-dev-utils", specifier = ">=1.3.1" },
+    { name = "sqlalchemy-dev-utils", specifier = ">=1.4.0" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "uvicorn", specifier = ">=0.38.0" },
     { name = "verbose-http-exceptions", extras = ["litestar"], specifier = ">=3.0.0" },
@@ -1765,15 +1765,15 @@ mypy = [
 
 [[package]]
 name = "sqlalchemy-dev-utils"
-version = "1.3.1"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-dev-utils" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/a9/48142d59b3386e2276f8184fad6364ace9e3a2c6c7c6b82c5ed9ccb14be9/sqlalchemy_dev_utils-1.3.1.tar.gz", hash = "sha256:e7832e295dc3b5ca66d8013aab0f3882a3ed35fe76d5073d1773aa0d387b0c8a", size = 24158, upload-time = "2025-04-14T12:40:32.76Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/83/99/e442a7469bf1697ea665c10fadfb02620f08323056ed0598f771529f654e/sqlalchemy_dev_utils-1.4.0.tar.gz", hash = "sha256:1beaa6c7924237290a5ecf1d169bce4d1460a4ff706e000e9248a773353716c8", size = 24055, upload-time = "2026-01-27T13:08:22.43Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/7b/df902a232862d92df22bbbf854ecf9121a0e7c9106a4fb77cc77ab210e31/sqlalchemy_dev_utils-1.3.1-py3-none-any.whl", hash = "sha256:029a41e7648839542d131e052db9eba155e314c6f551fbc3e8c586ddc5828a72", size = 20769, upload-time = "2025-04-14T12:40:31.699Z" },
+    { url = "https://files.pythonhosted.org/packages/af/50/878fd5b8cc428a61878f8e39b534afde6eee4c86a67832310cc1f6327096/sqlalchemy_dev_utils-1.4.0-py3-none-any.whl", hash = "sha256:5bee6d6bbf7b8af207290ac609048962c2d2b1ce70e31a605052698b3712d774", size = 20797, upload-time = "2026-01-27T13:08:21.594Z" },
 ]
 
 [[package]]

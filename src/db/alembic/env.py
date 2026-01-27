@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, TypeAlias
 from alembic import context
 from sqlalchemy import pool, engine_from_config
 
-import db.models.base
 from config.settings import settings
+from db.models import BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database.url.get_secret_value())
-target_metadata = db.models.base.Base.metadata
+target_metadata = BaseModel.metadata
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

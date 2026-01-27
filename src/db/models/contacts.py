@@ -5,12 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.ids import UUIDMixin
 
 from core.contacts.schemas import ContactMe
-from db.models.base import Base
+from db.models.base import BaseModel
 
 
-class ContactMeModel(Base, UUIDMixin):
-    __tablename__ = "mentoring_contact_me"
-
+class ContactMeModel(UUIDMixin, BaseModel):
     name: Mapped[str | None] = mapped_column(String(length=255))
     email: Mapped[str | None] = mapped_column(String(length=255))
     telegram: Mapped[str | None] = mapped_column(String(length=256))

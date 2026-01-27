@@ -168,5 +168,5 @@
 - [ ] Упростить BootstrapRenderer
 - [x] Добавить pre-commit hooks (ruff, mypy, pytest)
 - [x] Вынести cli в отдельную точку запуска (из main.py)
-- [ ] Использовать GradeEnum в API и core-слое.
+- [x] Использовать GradeEnum в API и core-слое.
 - [ ] Переписать NewType на обычные классы.

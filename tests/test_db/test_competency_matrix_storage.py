@@ -2,6 +2,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.types import IntId
 from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
@@ -20,7 +21,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
-                    grade="Middle+",
+                    grade=GradeEnum.MIDDLE_PLUS,
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
@@ -38,7 +39,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     answer="Answer 2",
                     interview_expected_answer="Expected answer 2",
                     sheet="SQL",
-                    grade="Senior",
+                    grade=GradeEnum.SENIOR,
                     section="SECTION 2",
                     subsection="SUBSECTION 2",
                     resources=[
@@ -66,7 +67,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 answer="Answer 1",
                 interview_expected_answer="Expected answer 1",
                 sheet="Python",
-                grade="Middle+",
+                grade=GradeEnum.MIDDLE_PLUS,
                 section="SECTION 1",
                 subsection="SUBSECTION 1",
                 resources=[],
@@ -85,7 +86,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             answer="Answer 1",
             interview_expected_answer="Expected answer 1",
             sheet="Python",
-            grade="Middle+",
+            grade=GradeEnum.MIDDLE_PLUS,
             section="SECTION 1",
             subsection="SUBSECTION 1",
             resources=[
@@ -106,7 +107,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 answer="Answer 1",
                 interview_expected_answer="Expected answer 1",
                 sheet="Python",
-                grade="Middle+",
+                grade=GradeEnum.MIDDLE_PLUS,
                 section="SECTION 1",
                 subsection="SUBSECTION 1",
                 resources=[
@@ -125,7 +126,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             answer="Answer 1",
             interview_expected_answer="Expected answer 1",
             sheet="Python",
-            grade="Middle+",
+            grade=GradeEnum.MIDDLE_PLUS,
             section="SECTION 1",
             subsection="SUBSECTION 1",
             resources=[
@@ -147,7 +148,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
-                    grade="Middle+",
+                    grade=GradeEnum.MIDDLE_PLUS,
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
@@ -168,7 +169,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 answer="Answer 3",
                 interview_expected_answer="Expected answer 3",
                 sheet="Python 2",
-                grade="Senior",
+                grade=GradeEnum.SENIOR,
                 section="SECTION 3",
                 subsection="SUBSECTION 3",
                 resources=[
@@ -187,7 +188,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             answer="Answer 3",
             interview_expected_answer="Expected answer 3",
             sheet="Python 2",
-            grade="Senior",
+            grade=GradeEnum.SENIOR,
             section="SECTION 3",
             subsection="SUBSECTION 3",
             resources=[
@@ -242,7 +243,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
-                    grade="Middle+",
+                    grade=GradeEnum.MIDDLE_PLUS,
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[

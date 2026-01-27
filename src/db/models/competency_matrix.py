@@ -8,26 +8,11 @@ from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from core.enums import PublishStatusEnum
 from core.types import IntId
-from db.models.base import Base
+from db.models.base import BaseModel
 from db.models.mixins.publish import PublishMixin
 
 
-class ResourceToItemSecondaryModel(Base, IntegerIDMixin):
-    __tablename__ = "resource_to_item_secondary"
-
-    item_id: Mapped[int] = mapped_column(
-        ForeignKey("competency_matrix_items.id", ondelete="CASCADE"),
-        doc="Идентификатор элемента матрицы компетенций",
-    )
-    resource_id: Mapped[int] = mapped_column(
-        ForeignKey("competency_matrix_resources.id", ondelete="CASCADE"),
-        doc="Идентификатор внешнего ресурса",
-    )
-
-
-class ExternalResourceModel(Base, IntegerIDMixin):
-    __tablename__ = "competency_matrix_resources"
-
+class ExternalResourceModel(IntegerIDMixin, BaseModel):
     name: Mapped[str] = mapped_column(
         String(length=255),
         doc="Название ресурса",
@@ -62,9 +47,7 @@ class ExternalResourceModel(Base, IntegerIDMixin):
         )
 
 
-class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
-    __tablename__ = "competency_matrix_items"
-
+class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
     question: Mapped[str] = mapped_column(
         String(length=255),
         doc="Вопрос",
@@ -90,21 +73,16 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
         doc="Подраздел",
     )
     grade: Mapped[GradeEnum] = mapped_column(
-        Enum(GradeEnum, native_enum=False, length=11),
+        Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
         doc="Уровень компетенции",
     )
 
     resources: Mapped[list[ExternalResourceModel]] = relationship(
         doc="Внешние ресурсы",
-        secondary="resource_to_item_secondary",
+        secondary="competency_matrix__resource_to_item_secondary_model",
     )
 
-    __table_args__ = (
-        Index(
-            "cmi_sheet_idx",
-            func.lower("sheet"),
-        ),
-    )
+    __table_args__ = (Index("cmi_sheet_idx", func.lower("sheet")),)
 
     def __str__(self) -> str:
         return f"[{self.section} - {self.subsection}] {self.question}"
@@ -146,3 +124,14 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin):
                 ),
             ),
         )
+
+
+class ResourceToItemSecondaryModel(IntegerIDMixin, BaseModel):
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey(CompetencyMatrixItemModel.id, ondelete="CASCADE"),
+        doc="Идентификатор элемента матрицы компетенций",
+    )
+    resource_id: Mapped[int] = mapped_column(
+        ForeignKey(ExternalResourceModel.id, ondelete="CASCADE"),
+        doc="Идентификатор внешнего ресурса",
+    )

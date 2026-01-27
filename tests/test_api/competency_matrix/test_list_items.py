@@ -1,6 +1,7 @@
 import pytest_asyncio
 from httpx import codes
 
+from core.competency_matrix.enums import GradeEnum
 from core.enums import PublishStatusEnum
 from tests.fixtures import ApiFixture, FactoryFixture, ContainerFixture
 
@@ -17,7 +18,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     item_id=1,
                     question="Как написать свою функцию?",
                     publish_status=PublishStatusEnum.PUBLISHED,
-                    grade="Junior",
+                    grade=GradeEnum.JUNIOR,
                     subsection="Функции",
                     section="Основы",
                     sheet="Python",
@@ -26,7 +27,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     item_id=2,
                     question="Как написать свою функцию?",
                     publish_status=PublishStatusEnum.PUBLISHED,
-                    grade="Junior",
+                    grade=GradeEnum.JUNIOR,
                     subsection="Функции",
                     section="Основы",
                     sheet="JavaScript",
@@ -48,7 +49,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     item_id=1,
                     question="Как написать свою функцию?",
                     publish_status=PublishStatusEnum.PUBLISHED,
-                    grade="Junior",
+                    grade=GradeEnum.JUNIOR,
                     subsection="Функции",
                     section="Основы",
                     sheet="Python",

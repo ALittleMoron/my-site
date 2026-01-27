@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import ListItemsUseCase
 from core.enums import PublishStatusEnum
@@ -21,7 +22,7 @@ class TestListItemsUseCase(FactoryFixture):
                 question="1",
                 publish_status=PublishStatusEnum.DRAFT,
                 sheet="Python",
-                grade="",
+                grade=None,
                 section="",
                 subsection="",
             ),
@@ -36,7 +37,7 @@ class TestListItemsUseCase(FactoryFixture):
                 question="1",
                 publish_status=PublishStatusEnum.PUBLISHED,
                 sheet="Python",
-                grade="1",
+                grade=GradeEnum.JUNIOR,
                 section="1",
                 subsection="1",
             ),
@@ -48,7 +49,7 @@ class TestListItemsUseCase(FactoryFixture):
                 question="1",
                 publish_status=PublishStatusEnum.PUBLISHED,
                 sheet="Python",
-                grade="1",
+                grade=GradeEnum.JUNIOR,
                 section="1",
                 subsection="1",
             ),
@@ -61,7 +62,7 @@ class TestListItemsUseCase(FactoryFixture):
                 question="1",
                 publish_status=PublishStatusEnum.DRAFT,
                 sheet="Python",
-                grade="",
+                grade=None,
                 section="",
                 subsection="",
             ),
@@ -73,7 +74,7 @@ class TestListItemsUseCase(FactoryFixture):
                 question="1",
                 publish_status=PublishStatusEnum.DRAFT,
                 sheet="Python",
-                grade="",
+                grade=None,
                 section="",
                 subsection="",
             ),

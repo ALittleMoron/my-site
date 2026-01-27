@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import UpsertItemUseCase
@@ -90,7 +91,7 @@ class TestUpsertItemUseCase(FactoryFixture):
             question="2",
             publish_status=PublishStatusEnum.DRAFT,
             sheet="Python",
-            grade="",
+            grade=GradeEnum.JUNIOR,
             section="",
             subsection="",
             resources=[
@@ -114,7 +115,7 @@ class TestUpsertItemUseCase(FactoryFixture):
                 question="2",
                 publish_status=PublishStatusEnum.DRAFT,
                 sheet="Python",
-                grade="",
+                grade=GradeEnum.JUNIOR,
                 section="",
                 subsection="",
                 resources=[

@@ -6,6 +6,7 @@ from core.auth.enums import RoleEnum
 from core.auth.schemas import User, JwtUser
 from core.auth.types import Token
 from core.blog.schemas import BlogPost, BlogPostList
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItems,
@@ -54,7 +55,7 @@ class CoreFactoryHelper:
         answer: str = "Answer",
         interview_expected_answer: str = "Answer",
         sheet: str = "Sheet",
-        grade: str = "Junior",
+        grade: GradeEnum | None = GradeEnum.JUNIOR,
         section: str = "Section",
         subsection: str = "Subsection",
         resources: list[ExternalResource] | None = None,
@@ -81,7 +82,7 @@ class CoreFactoryHelper:
         answer: str = "Answer",
         interview_expected_answer: str = "Answer",
         sheet: str = "Sheet",
-        grade: str = "Junior",
+        grade: GradeEnum = GradeEnum.JUNIOR,
         section: str = "Section",
         subsection: str = "Subsection",
         resources: list[IntId | ExternalResource] | None = None,

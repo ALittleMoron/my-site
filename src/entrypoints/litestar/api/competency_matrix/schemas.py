@@ -4,6 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -134,7 +135,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         ),
     ]
     grade: Annotated[
-        str,
+        GradeEnum | None,
         Field(
             title="Компетенция",
             description="Категория компетенции вопроса (Для какого грейда этот вопрос)",
@@ -241,7 +242,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
         ),
     ]
     grade: Annotated[
-        str,
+        GradeEnum,
         Field(
             title="Компетенция",
             description="Категория компетенции вопроса (Для какого грейда этот вопрос)",
@@ -319,7 +320,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
 class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
     grade: Annotated[
-        str,
+        GradeEnum,
         Field(
             title="Компетенция",
             description="Категория компетенции вопроса (Для какого грейда этот вопрос)",
@@ -335,7 +336,7 @@ class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
     ]
 
     @classmethod
-    def from_domain_schema(cls, *, grade: str, items: Iterable[CompetencyMatrixItem]) -> Self:
+    def from_domain_schema(cls, *, grade: GradeEnum, items: Iterable[CompetencyMatrixItem]) -> Self:
         return cls(
             grade=grade,
             items=[

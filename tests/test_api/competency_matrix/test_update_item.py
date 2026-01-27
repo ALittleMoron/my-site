@@ -3,6 +3,7 @@ from unittest.mock import ANY
 import pytest_asyncio
 from httpx import codes
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.enums import PublishStatusEnum
 from tests.fixtures import ContainerFixture, ApiFixture, FactoryFixture
@@ -53,7 +54,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             answer="answer 1",
             interview_expected_answer="interview expected answer 1",
             sheet="Python",
-            grade="Junior",
+            grade=GradeEnum.JUNIOR,
             section="Section",
             subsection="Subsection",
             publish_status=PublishStatusEnum.DRAFT,
@@ -95,7 +96,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 answer="answer 1",
                 interview_expected_answer="interview expected answer 1",
                 sheet="Python",
-                grade="Junior",
+                grade=GradeEnum.JUNIOR,
                 section="Section",
                 subsection="Subsection",
                 publish_status=PublishStatusEnum.DRAFT,
