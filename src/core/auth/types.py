@@ -1,4 +1,6 @@
-from typing import NewType
+class RawToken(str):
+    __slots__ = ()
 
-RawToken = NewType("RawToken", str)
-Token = NewType("Token", bytes)
+
+class Token(bytes):
+    __slots__ = ()
