@@ -3,13 +3,9 @@ from litestar import Litestar
 
 from config.loggers import logger
 from config.settings import settings
-from entrypoints.litestar.initializers import create_cli_app, create_litestar_app
+from entrypoints.litestar.initializers import create_litestar_app
 from entrypoints.litestar.lifespan import app_lifespan
 from ioc.container import container
-
-
-def create_cli() -> Litestar:
-    return create_cli_app(lifespan=[app_lifespan])
 
 
 def create_app() -> Litestar:

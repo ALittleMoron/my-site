@@ -1,6 +1,4 @@
-from typing import NewType
-
-IntId = NewType("IntId", int)
+class IntId(int): ...
 
 
 class SearchName(str):

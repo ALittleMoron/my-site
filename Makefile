@@ -1,7 +1,7 @@
 NAME := src
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
-LITESTAR_CLI_APP := "src.main:create_cli"
+LITESTAR_CLI_APP := "src.cli:create_cli"
 
 .PHONY: run
 run:

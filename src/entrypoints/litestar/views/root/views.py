@@ -51,7 +51,7 @@ class RootViewController(Controller):
         media_type=MediaType.XML,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
     )
-    async def sitemap_xml_handler(self, request: Request[JwtUser, Token, State]) -> str:
+    async def sitemap_xml_handler(self, request: Request[JwtUser, Token | None, State]) -> str:
         url_template = (
             "<url>"
             "<loc>{loc}</loc>"

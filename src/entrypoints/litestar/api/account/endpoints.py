@@ -21,7 +21,7 @@ class AccountApiController(Controller):
     )
     async def get_base_current_user_account(
         self,
-        request: Request[JwtUser, Token, State],
+        request: Request[JwtUser, Token | None, State],
     ) -> GetBaseCurrentUserAccountResponseSchema:
         return GetBaseCurrentUserAccountResponseSchema.from_domain_schema(schema=request.user)
 

@@ -73,7 +73,7 @@ class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
     def get_resource_ids_to_assign(self) -> list[IntId]:
         return [resource for resource in self.resources if isinstance(resource, int)]
 
-    def to_item(self, resources: ExternalResources) -> "CompetencyMatrixItem":
+    def to_item(self, resources: ExternalResources) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=self.id,
             question=self.question,
@@ -90,5 +90,5 @@ class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItems(ValuedDataclass[CompetencyMatrixItem]):
-    def only_available(self) -> "CompetencyMatrixItems":
+    def only_available(self) -> CompetencyMatrixItems:
         return CompetencyMatrixItems(values=[item for item in self if item.is_available()])

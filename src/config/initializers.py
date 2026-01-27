@@ -38,18 +38,38 @@ def check_certs_exists() -> None:
 async def monitor_event_loop_lag(loop: asyncio.AbstractEventLoop) -> None:
     start = loop.time()
     sleep_interval = 1
+    current_coro_name = "monitor_event_loop_lag"
+    coro_name = "RequestResponseCycle.run_asgi"
+    not_detected_code = "NOT_DETECTED"
 
     while loop.is_running():
         await asyncio.sleep(sleep_interval)
         diff = loop.time() - start
         lag = diff - sleep_interval
         if lag > 1:
-            coro_names = {
-                task._coro.cr_code.co_qualname  # type: ignore[attr-defined]  # noqa: SLF001
+            coros = {
+                task._coro.cr_code.co_qualname: task  # type: ignore[attr-defined]  # noqa: SLF001
                 for task in asyncio.all_tasks(loop)
-                if task._coro.cr_code.co_name != "monitor_event_loop_lag"  # type: ignore[attr-defined]  # noqa: SLF001
+                if task._coro.cr_code.co_name != current_coro_name  # type: ignore[attr-defined]  # noqa: SLF001
             }
-            logger.warn("Event loop has lag", lag=lag, coroutine_names=coro_names)
+            coro_names = ", ".join(coros.keys())
+            call_graph = (
+                asyncio.format_call_graph(coros[coro_name])
+                if coro_name in coros
+                else not_detected_code
+            )
+            if call_graph == not_detected_code:
+                msg = (
+                    "Call graph with running endpoint not detected. "
+                    "Maybe it changed due to framework update"
+                )
+                logger.warning(msg, all_coros=coro_names)
+            logger.warning(
+                "Event loop has lag",
+                lag=lag,
+                coroutine_names=coro_names,
+                call_graph=call_graph,
+            )
         start = loop.time()
 
 

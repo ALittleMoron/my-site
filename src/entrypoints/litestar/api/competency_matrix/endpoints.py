@@ -78,7 +78,7 @@ class CompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_items(
         self,
-        request: Request[JwtUser, Token, State],
+        request: Request[JwtUser, Token | None, State],
         sheet_name: Annotated[str, Parameter(query="sheetName")],
         use_case: FromDishka[AbstractListItemsUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
@@ -126,7 +126,7 @@ class CompetencyMatrixApiController(Controller):
     async def get_competency_matrix_item(
         self,
         pk: int,
-        request: Request[JwtUser, Token, State],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractGetItemUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
     ) -> CompetencyMatrixItemDetailResponseSchema:

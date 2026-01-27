@@ -41,19 +41,19 @@ class JwtUser(BaseUser):
         return {"username": self.username, "role": self.role.value}
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "JwtUser":
+    def from_dict(cls, payload: dict[str, Any]) -> JwtUser:
         return cls(
             username=payload["username"],
             role=RoleEnum(payload["role"]),
         )
 
     @classmethod
-    def from_user(cls, user: User) -> "JwtUser":
+    def from_user(cls, user: User) -> JwtUser:
         return cls(
             username=user.username,
             role=user.role,
         )
 
     @classmethod
-    def anonymous(cls) -> "JwtUser":
+    def anonymous(cls) -> JwtUser:
         return cls(username="anonymous", role=RoleEnum.ANON)

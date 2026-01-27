@@ -15,7 +15,10 @@ class AuthViewController(Controller):
         description="Страница авторизации",
         name="login-form-handler",
     )
-    async def login(self, request: Request[JwtUser, Token, State]) -> HTMXTemplate | ClientRedirect:
+    async def login(
+        self,
+        request: Request[JwtUser, Token | None, State],
+    ) -> HTMXTemplate | ClientRedirect:
         if request.user.is_anon:
             return HTMXTemplate(
                 re_swap="afterbegin",

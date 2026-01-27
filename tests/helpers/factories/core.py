@@ -26,13 +26,13 @@ class CoreFactoryHelper:
     @classmethod
     def external_resource(
         cls,
-        resource_id: int,
+        resource_id: Any,
         name: str = "RESOURCE",
         url: str = "https://example.com",
         context: str = "Context",
     ) -> ExternalResource:
         return ExternalResource(
-            id=cls.int_id(resource_id),
+            id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
             name=name,
             url=url,
             context=context,

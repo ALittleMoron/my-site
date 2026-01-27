@@ -3,7 +3,7 @@ name = "my-site-backend"
 version = "1.0.0"
 description = "My site backend"
 authors = [{ name = "Dmitriy Lunev", email = "d.lunev.dev@gmail.com" }]
-requires-python = ">=3.13"
+requires-python = "==3.14.*,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
@@ -38,6 +38,7 @@ dev = [
     "httpx>=0.28.1",
     "mimesis>=18.0.0",
     "mypy>=1.19.0",
+    "pre-commit>=4.5.1",
     "pytest==9.0.2",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.0.0",
@@ -74,6 +75,9 @@ lint.ignore = [
     "FIX",
     "TD002",
     "TD003",
+    "TC003",
+    "TC002",
+    "TC001",
 ]
 line-length = 100
 exclude = [

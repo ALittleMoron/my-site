@@ -64,7 +64,7 @@ class CompetencyMatrixViewController(Controller):
     )
     async def matrix_elements(  # noqa: PLR0913
         self,
-        request: Request[JwtUser, Token, State],
+        request: Request[JwtUser, Token | None, State],
         sheet: SheetName,
         only_published: OnlyPublished,
         template_name: str,
@@ -91,7 +91,7 @@ class CompetencyMatrixViewController(Controller):
     async def get_competency_matrix_item_detail(
         self,
         pk: int,
-        request: Request[JwtUser, Token, State],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractGetItemUseCase],
         context_converter: FromDishka[CompetencyMatrixContextConverter],
     ) -> Template:
