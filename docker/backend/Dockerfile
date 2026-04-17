@@ -14,7 +14,7 @@ FROM astral/uv:python3.14ixie-slim
 ENV CUSTOM_USER=python-user
 ENV APP_PATH=/project
 ENV UV_CACHE_DIR=/project/.cache/uv
-ENV PYTHONPATH=$APP_PATH/src
+ENV PYTHONPATH=$APP_PATH/backend
 ENV PATH=$APP_PATH/.venv/bin:${PATH}
 
 RUN groupadd $CUSTOM_USER \

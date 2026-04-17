@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(pytest *)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run pytest *)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run ruff *)",
+      "Bash(ruff check:*)",
+      "Bash(ruff check *)",
+      "Bash(ruff format:*)",
+      "Bash(ruff format *)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv run mypy *)",
+      "Bash(mypy:*)",
+      "Bash(mypy *)",
+      "Bash(uv run alembic:*)",
+      "Bash(uv run alembic *)",
+      "Bash(alembic:*)",
+      "Bash(alembic *)",
+      "Bash(docker compose:*)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose:*)",
+      "Bash(docker-compose *)",
+      "Bash(make test-unit*)",
+      "Bash(make test-integration*)",
+      "Bash(make tests*)",
+      "Bash(make types*)",
+      "Bash(make ruff-check*)",
+      "Bash(make fix*)",
+      "Bash(make quality*)",
+      "Bash(make migrate*)",
+      "Bash(make downgrade*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git blame*)",
+      "Bash(git grep*)",
+      "Read",
+      "Edit",
+      "Write"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/data/code/repositories/mysite/my-site/.claude/hooks/lint-on-edit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

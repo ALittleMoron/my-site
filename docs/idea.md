@@ -1,61 +1,45 @@
-# Идея личного сайта
+# Personal Site Concept
 
-## Концепция
+## Concept
 
-Личный сайт-портфолио с блогом и интерактивной матрицей компетенций.  
-Демонстрация технических навыков через Clean Architecture, HTMX и современный стек DevOps.
+Personal portfolio site with a blog and an interactive competency matrix.
+Demonstrates technical skills through Clean Architecture, HTMX, and a modern DevOps stack.
 
-## Аудитория
+## Audience
 
-- Потенциальные работодатели и рекрутеры
-- Коллеги и единомышленники в IT
-- Сам автор (как база знаний и блог)
+- Potential employers and recruiters
+- Colleagues and like-minded people in IT
+- The author himself (as a knowledge base and blog)
 
-## Что не буду делать точно
+## Non-goals (will not build)
 
-- Платный функционал. Вся функциональность будет бесплатной.
-- Сложная система ролей и прав доступа. Никаких ролей модераторов, админов и так далее. Будут
-  только авторизованные пользователи и неавторизованные. Админом буду только Я.
-- Сложные интеграции с внешними сервисами (CRM, ERP и так далее).
-- Сложные системы уведомлений (email, SMS и так далее). Можно будет подписаться на рассылку о новых
-  постах в блоге, обновлении матрицы компетенций, выход новых этапов курсов, но не более того.
-  Спам, рассылки и промо — тоже мимо.
-- Мобильное приложение. Сайт будет адаптивным и удобным для использования на мобильных устройствах,
-  но отдельного мобильного приложения не будет.
-- Геймификация. Никаких баллов, уровней, достижений и так далее. Фокус будет на обучении и развитии
-  компетенций, а не на игровой механике. Максимум — прогресс выполнения.
-- Социальные функции. Никаких комментариев, подписок и так далее. Фокус будет на контенте и
-  обучении, а не на социальных взаимодействиях.
-- Сложные системы аналитики. Будет базовая аналитика для отслеживания поведения пользователей на
-  сайте, но не более того.
-- Персонализация контента. Контент будет одинаковым для всех пользователей, без учета их
-  предпочтений и истории просмотров.
+- Paid features. All functionality will be free.
+- Complex role/permission system. No moderator or multi-admin roles. Only authenticated users and guests. I am the only admin.
+- Complex third-party integrations (CRM, ERP, etc.).
+- Complex notification systems (email, SMS, etc.). A subscription to new blog posts, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
+- Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.
+- Gamification. No points, levels, or achievements. Focus is on learning and skill development, not game mechanics. Progress tracking at most.
+- Social features. No comments, follows, or feeds. Focus is on content and learning, not social interaction.
+- Complex analytics. Basic user behaviour analytics is fine — nothing beyond that.
+- Content personalisation. Content is the same for all users, regardless of preferences or history.
 
-## Риски
+## Risks
 
-- Контент может разрастаться. Потенциально сайт может быть перегружен контентом, что усложнит
-  навигацию и поиск нужной информации.
-- Поддержка актуальности контента. Требуется регулярное обновление информации в блоге и матрице
-  компетенций, что может быть трудоемким.
+- Content may grow uncontrollably. The site could become overloaded with content, making navigation and search harder.
+- Keeping content up to date. The blog and competency matrix require regular updates, which can be time-consuming.
 
-## Основные функции
+## Core features
 
-1. **Матрица компетенций**  
-   - интерактивные вопросы/ответы  
-   - фильтрация по темам  
-   - подсказки и советы  
-2. **Блог**  
-   - rich text editor  
-   - поддержка Markdown  
-3. **Контакты** — форма обратной связи  
-4. **Админка** — управление контентом через тот же фронтенд, без отдельной админки
+1. **Competency matrix** — interactive Q&A, topic filtering, hints and tips
+2. **Blog** — rich text editor, Markdown support
+3. **Contacts** — feedback form
+4. **Admin panel** — content management through the main frontend, no separate admin UI
 
-## Особенности
+## Highlights
 
-- Clean Architecture + лучшие практики
-- Интерактивная матрица компетенций
+- Clean Architecture + best practices
+- Interactive competency matrix
 
-## Цель
+## Goal
 
-Портфолио для потенциальных работодателей и коллег в IT. Дополнительно — база знаний и блог
-для саморазвития.
+Portfolio for potential employers and IT colleagues. Also a personal knowledge base and blog for self-development.

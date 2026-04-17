@@ -94,17 +94,12 @@ exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/**/*.py" = ["PD"]
-"src/tests/**/*.py" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
-"src/tests/conftest.py" = ["ARG001", "ANN401"]
-"src/tests/mocks/**/*.py" = ["ARG002", "ARG003"]
-"src/tests/**/helper.py" = ["PLR0913", "ANN401"]
-"src/tests/helpers/*.py" = ["PLR0913", "ANN401"]
-"src/tests/types.py" = ["ANN"]
-"src/app/config/*.py" = ["ANN401"]
-"src/api/schemas.py" = ["ARG002", "ANN003", "A003", "ANN401"]
-"src/api/*/endpoints.py" = ["ARG001", "PLR0913"]
-"src/api/**/*.py" = ["N803"]
+"backend/**/*.py" = ["PD"]
+"tests/**/*.py" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
+"tests/conftest.py" = ["ARG001", "ANN401"]
+"tests/unit/conftest.py" = ["ARG001", "ANN401"]
+"tests/unit/mocks/**/*.py" = ["ARG002", "ARG003"]
+"tests/helpers/*.py" = ["PLR0913", "ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -120,7 +115,7 @@ classmethod-decorators = [
 ]
 
 [tool.mypy]
-mypy_path = ["src"]
+mypy_path = ["backend"]
 plugins = ["pydantic.mypy"]
 follow_imports = "silent"
 strict = true
@@ -170,7 +165,7 @@ multi_line_output = 3
 
 [tool.coverage]
 [tool.coverage.run]
-source = ["src"]
+source = ["backend"]
 branch = true
 
 [tool.coverage.report]
@@ -187,9 +182,9 @@ exclude_lines = [
     "raise AssertionError",
 ]
 omit = [
-    "src/main.py",
-    "src/db/alembic/**",
-    "src/db/meta.py",
+    "backend/main.py",
+    "backend/db/alembic/**",
+    "backend/db/meta.py",
 ]
 
 [tool.pytest.ini_options]
@@ -198,7 +193,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.behave]
-paths = ["src/tests/bdd"]
+paths = ["tests/bdd"]
 
 [tool.bandit]
 exclude = ['tests']

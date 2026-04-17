@@ -1,287 +1,282 @@
 # TODOs
 
-## Этапы разработки
+## Development Stages
 
-### ЭТАП 1 — Минимально жизнеспособный продукт (MVP)
+### STAGE 1 — Minimum Viable Product (MVP)
 
-- [x] Список матрицы компетенций в виде сетки и списка
-- [x] Раздел "обо мне"
-- [x] Возможность связаться со мной
-- [x] Блог (без АПИ, только core-функционал)
-- [x] Админка на SQLAdmin
+- [x] Competency matrix list as grid and list views
+- [x] About me section
+- [x] Contact form
+- [x] Blog (no API, core functionality only)
+- [x] Admin panel via SQLAdmin
 
-- [x] Добавить Databasus для бэкапа базы данных
-- [x] Настроить letsencrypt
-- [x] Убрать password_hash из доменной модели User
-- [x] Убрать информацию о менторстве. Раздел "обо мне" оставить.
-- [x] Починить статику на minio и сервисе backup'ов.
-- [x] (SEO) Добавить ссылку canonical
-- [x] Провалидировать css (сделать упор на override переменных bootstrap)
-- [x] Перенести bootstrap (и все остальные файлы, по необходимости) в папку со статикой
-- [x] Переделать админку на litestar
-  - [x] Вычистить SQLAdmin
-    - [x] Удалить запуск админки (docker, create_admin + Makefile)
-    - [x] Перенести /presign-put в litestar ручку.
-    - [x] Перенести apply_template_callables в litestar
-    - [x] Убрать ненужные настройки из litestar (админка, auth)
-    - [x] Убрать использование админки в коде
-    - [x] Убрать зависимости от sqladmin из uv
-  - [x] Редактирование матрицы компетенций прямо на сайте (не полная)
-    - [x] (BACK) Фильтр опубликованности вопросов матрицы компетенций (только для админа)
-    - [x] (FRONT) Тумблер переключения режима вывода списка вопросов: только опубликованные и все
-    - [x] (BACK) Расширенный ответ по деталке вопроса матрицы компетенций (дополнительно статус вопроса)
-    - [x] (BACK) CRUD для вопросов матрицы компетенций (включая вложенные сущности) + guard
+- [x] Add Databasus for database backups
+- [x] Configure Let's Encrypt
+- [x] Remove password_hash from the User domain model
+- [x] Remove mentorship section. Keep "about me".
+- [x] Fix static files on MinIO and the backup service.
+- [x] (SEO) Add canonical link
+- [x] Validate CSS (focus on overriding Bootstrap variables)
+- [x] Move Bootstrap (and other files as needed) to the static folder
+- [x] Rebuild admin panel on Litestar
+  - [x] Remove SQLAdmin
+    - [x] Remove admin startup (docker, create_admin + Makefile)
+    - [x] Move /presign-put to a Litestar handler
+    - [x] Move apply_template_callables to Litestar
+    - [x] Remove unused Litestar settings (admin, auth)
+    - [x] Remove admin usage from code
+    - [x] Remove sqladmin dependencies from uv
+  - [x] Edit competency matrix directly on the site (partial)
+    - [x] (BACK) Published filter for matrix questions (admin only)
+    - [x] (FRONT) Toggle for question list view: published only vs all
+    - [x] (BACK) Extended detail response for matrix questions (includes question status)
+    - [x] (BACK) CRUD for matrix questions (including nested entities) + guard
       - [x] Create
       - [x] Update
       - [x] Delete
-      - [x] Опубликовать
-      - [x] Снять с публикации
-    - [x] (BACK) guard на /api/files/presign-put
-    - [x] (FRONT) Кнопка удаления вопроса на деталке вопроса
-    - [x] (FRONT) Кнопка Опубликовать/снять с публикации (в зависимости от статуса)
-  - [x] базовая авторизация и проверка прав на редактирование (PASETO без сессии. Сессия потом)
-    - [x] (FRONT) Страница логина с кнопкой логина на главной (пока скрыть)
-    - [x] (BACK) логика логина
-    - [x] (FRONT) кнопка логаута на главной (пока скрыть)
-    - [x] (BACK) логика логаута (ничего не делает)
-    - [x] (BACK) guard на проверку авторизации (пока только админы могут войти)
-    - [x] (BACK) Сделать анонимного пользователя
-- [x] Провести смоук-тест
-  - [x] Поиск по матрице компетенций должен работать, как и прежде: поиск, layout.
-  - [x] Модалка вопроса матрицы компетенций должна открываться, блоки с кодом должны форматироваться
-  - [x] Запустить docker-compose и проверить работу смежных сервисов
-- [ ] Деплой на удалённый сервер
-  - [ ] Выбрать хостинг
-  - [ ] Прокинуть недостающие секреты
-  - [ ] Переделать деплой на coolify 
-    - [ ] Установить coolify
-    - [ ] Разделить production и local Docker Compose
-    - [ ] Настроить проект по [статье отсюда](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
-  - [ ] Провести деплой строго из GitHub workflow
-  - [ ] После деплоя зайти на торчащие наружу сервисы и проверить авторизацию
-    - [ ] Админка MinIO
+      - [x] Publish
+      - [x] Unpublish
+    - [x] (BACK) Guard on /api/files/presign-put
+    - [x] (FRONT) Delete button on question detail
+    - [x] (FRONT) Publish/Unpublish button (depending on status)
+  - [x] Basic auth and edit permissions (PASETO without sessions. Sessions later)
+    - [x] (FRONT) Login page with login button on main page (hidden for now)
+    - [x] (BACK) Login logic
+    - [x] (FRONT) Logout button on main page (hidden for now)
+    - [x] (BACK) Logout logic (no-op for now)
+    - [x] (BACK) Auth guard (only admins can log in for now)
+    - [x] (BACK) Anonymous user
+- [x] Smoke test
+  - [x] Competency matrix search works as before: search, layout
+  - [x] Matrix question modal opens, code blocks render correctly
+  - [x] Run docker-compose and verify related services
+- [ ] Deploy to remote server
+  - [ ] Choose hosting
+  - [ ] Wire up missing secrets
+  - [ ] Migrate deployment to Coolify
+    - [ ] Install Coolify
+    - [ ] Separate production and local Docker Compose
+    - [ ] Configure project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
+  - [ ] Run deployment strictly from GitHub workflow
+  - [ ] After deploy, log in to exposed services and verify auth
+    - [ ] MinIO admin panel
     - [ ] Databasus
 
-### ЭТАП 1.5 — Улучшения MVP, доработка текущего функционала
+### STAGE 1.5 — MVP Improvements
 
-- [ ] (SEO) Добавить ссылку schemaMarkup
-- [ ] Проверить оптимизацию сайта
-  - [ ] Сделать нагрузочное тестирование (locust)
-  - [ ] Проверить сайт через Lighthouse. Поправить ошибки и улучшить показатели
-- [ ] Сделать закрытое тестирование MVP с реальными пользователями (друзья, коллеги). Собрать фидбек и
-  исправить критичные баги.
-- [ ] Добавить базовую аналитику (Matomo) для отслеживания поведения пользователей на сайте.
-- [ ] Оптимизировать время загрузки страниц (минификация CSS и JS, оптимизация изображений).
-      Возможно, нужно вынести статику на CDN.
-- [ ] Перенести матрицу компетенций из Google Docs в базу данных.
-- [ ] Аудит безопасности MVP. Проверить на уязвимости и исправить найденные проблемы.
-  - [x] Найти checklist по безопасности веб-приложений и пройтись по нему.
-  - [ ] Сформировать модель угроз (кто атакующий, что хотят и т.д.). Записать в docs файл.
-  - [ ] HTTP заголовки безопасности. в ответах есть нужные header'ы
+- [ ] (SEO) Add schemaMarkup link
+- [ ] Check site performance
+  - [ ] Load testing (Locust)
+  - [ ] Lighthouse audit — fix errors and improve scores
+- [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
+- [ ] Add basic analytics (Matomo) for user behaviour tracking.
+- [ ] Optimise page load times (CSS/JS minification, image optimisation). Consider CDN for static files.
+- [ ] Migrate competency matrix from Google Docs to database.
+- [ ] MVP security audit. Check for vulnerabilities and fix found issues.
+  - [x] Find a web application security checklist and go through it.
+  - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
+  - [ ] HTTP security headers in responses
     - [ ] Strict-Transport-Security
     - [ ] X-Content-Type-Options: nosniff
     - [ ] X-Frame-Options: DENY
     - [ ] Referrer-Policy: no-referrer
     - [ ] Content-Security-Policy
   - [ ] CSRF
-    - [ ] Все POST/PUT/PATCH/DELETE защищены от CSRF
-    - [ ] CSRF-токен в cookie + header
-    - [ ] CSRF проверяется на сервере
-  - [ ] HTTPS и TLS
-    - [ ] Всё редиректится на HTTPS
-    - [ ] HTTP вообще не обслуживается
+    - [ ] All POST/PUT/PATCH/DELETE protected from CSRF
+    - [ ] CSRF token in cookie + header
+    - [ ] CSRF verified on server
+  - [ ] HTTPS and TLS
+    - [ ] Everything redirects to HTTPS
+    - [ ] HTTP not served at all
     - [ ] TLS ≥ 1.2
-    - [ ] Certbot обновляется автоматически
-    - [ ] Нет внутренних сервисов, торчащих наружу
+    - [ ] Certbot auto-renews
+    - [ ] No internal services exposed to the public
   - [ ] XSS
-    - [ ] Все пользовательские данные экранируются
-    - [ ] Нет `| safe` без 100% уверенности
-    - [ ] Нельзя сохранить <script> в БД и потом отрендерить. Проверить БД на наличие таких блоков.
-    - [ ] Используется CSP
-  - [ ] Пароли никогда не логируются
-  - [ ] Хеширование: используется уникальная соль
-  - [ ] Каждый защищённый handler проверяет пользователя (guard'ы там, где нужны)
-  - [ ] Нет логики «если не админ — не показываем кнопку» (Подумать, как это исправить)
-  - [ ] Есть все проверки на бэке. Можно дублировать на фронт, но нет ситуации, когда проверка
-    ТОЛЬКО на фронте
-  - [ ] Docker и инфраструктура
-    - [ ] Приложение работает с `read_only: true`
-    - [ ] Writable только для `/tmp` и явно нужных `volumes:`
-    - [ ] Нет записи в `/etc`, `/usr`, `/bin`
-    - [ ] Нет bind mount'ов вида: `- ./:/app`
-    - [ ] Контейнеры не работают под root
-    - [ ] UID/GID не 0
-    - [ ] Нет sudo внутри контейнера
-    - [ ] Используются user-defined networks
-    - [ ] В public торчит только nginx
-    - [ ] Нет хардкода IP
-    - [ ] Сервисы доступны только по имени сети
-    - [ ] Нет обращения по localhost
-    - [ ] Нет чувствительных данных в `docker inspect`
-    - [ ] Логи не пишутся в файлы внутри контейнера
-    - [ ] Есть log rotation
-    - [ ] У всех сервисов есть healthcheck
-    - [ ] Nginx не шлёт трафик в unhealthy backend
-    - [ ] Restart policy адекватная
-    - [ ] Версии образов чётко зафиксированы
-    - [ ] Нет latest
-    - [ ] Образы обновляются
-    - [ ] Минимальное количество пакетов
-    - [ ] Nginx не root
-    - [ ] У nginx нет прав на запись
-    - [ ] Нет `proxy_pass` на localhost
-    - [ ] Нет `network_mode: host`
-    - [ ] Нет `privileged: true`
-    - [ ] Нет проброса `/var/run/docker.sock`
-    - [ ] Нет cap_add без крайней необходимости
-    - [ ] Нет `devices:` без реальной необходимости
-    - [ ] `cap_drop: [ALL]` где возможно
-    - [ ] Секреты не в образах
-    - [ ] Инфраструктурные сервисы не проброшены наружу
+    - [ ] All user-supplied data is escaped
+    - [ ] No `| safe` without 100% certainty
+    - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
+    - [ ] CSP in place
+  - [ ] Passwords never logged
+  - [ ] Hashing: unique salt used
+  - [ ] Every protected handler checks the user (guards where needed)
+  - [ ] No "hide button if not admin" logic without backend enforcement
+  - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
+  - [ ] Docker and infrastructure
+    - [ ] App runs with `read_only: true`
+    - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
+    - [ ] No writes to `/etc`, `/usr`, `/bin`
+    - [ ] No bind mounts like: `- ./:/app`
+    - [ ] Containers do not run as root
+    - [ ] UID/GID not 0
+    - [ ] No sudo inside containers
+    - [ ] User-defined networks used
+    - [ ] Only nginx exposed to public
+    - [ ] No hardcoded IPs
+    - [ ] Services accessible only by network name
+    - [ ] No localhost references between services
+    - [ ] No sensitive data in `docker inspect`
+    - [ ] Logs not written to files inside containers
+    - [ ] Log rotation in place
+    - [ ] All services have healthchecks
+    - [ ] Nginx does not forward traffic to unhealthy backend
+    - [ ] Adequate restart policy
+    - [ ] Image versions pinned
+    - [ ] No `latest` tags
+    - [ ] Images updated regularly
+    - [ ] Minimal packages
+    - [ ] Nginx not root
+    - [ ] Nginx has no write access
+    - [ ] No `proxy_pass` to localhost
+    - [ ] No `network_mode: host`
+    - [ ] No `privileged: true`
+    - [ ] No `/var/run/docker.sock` bind mount
+    - [ ] No `cap_add` unless strictly necessary
+    - [ ] No `devices:` unless strictly necessary
+    - [ ] `cap_drop: [ALL]` where possible
+    - [ ] No secrets in images
+    - [ ] Infrastructure services not exposed externally
       - [ ] PostgreSQL
       - [ ] Valkey
-    - [ ] Postgres, Valkey, MinIO не имеют ports
-    - [ ] MinIO закрыт под auth
-    - [ ] Databasus закрыт под auth
-    - [ ] `.env` не в git
-    - [ ] Нет секретов в логах
-    - [ ] Все ключи длинные и случайные
-    - [ ] не показывают stacktrace пользователю
-    - [ ] На хосте включён firewall (ufw/iptables)
-    - [ ] Открыты только 80 и 443
-    - [ ] ssh только по ключу. Вход по паролю выключен
-  - [ ] Rate limiting и защита от ботов
-    - [ ] Rate limit на логин, регистрацию и сброс пароля
-    - [ ] Ограничение по IP / fingerprint
-    - [ ] Нет бесконечных запросов к тяжёлым эндпоинтам
-  - [ ] Backup & восстановление
-    - [ ] Бэкапы зашифрованы
-    - [ ] Бэкапы недоступны публично
-    - [ ] Ты проверял восстановление
-    - [ ] Нет доступа к backup-панели без auth
-  - [] Supply chain
-    - [ ] Фиксированные версии зависимостей
-    - [ ] Регулярно обновляешь зависимости
-    - [ ] Нет pip install из сомнительных источников 
+    - [ ] Postgres, Valkey, MinIO have no `ports`
+    - [ ] MinIO protected by auth
+    - [ ] Databasus protected by auth
+    - [ ] `.env` not in git
+    - [ ] No secrets in logs
+    - [ ] All keys long and random
+    - [ ] No stacktrace shown to users
+    - [ ] Firewall enabled on host (ufw/iptables)
+    - [ ] Only ports 80 and 443 open
+    - [ ] SSH by key only. Password login disabled.
+  - [ ] Rate limiting and bot protection
+    - [ ] Rate limit on login, registration, and password reset
+    - [ ] IP / fingerprint-based limiting
+    - [ ] No unlimited requests to heavy endpoints
+  - [ ] Backup & recovery
+    - [ ] Backups encrypted
+    - [ ] Backups not publicly accessible
+    - [ ] Restore tested
+    - [ ] No access to backup panel without auth
+  - [ ] Supply chain
+    - [ ] Dependency versions pinned
+    - [ ] Dependencies updated regularly
+    - [ ] No pip install from untrusted sources
 
-### ЭТАП 2 — Инфраструктура
+### STAGE 2 — Infrastructure
 
-- [ ] Dependency scanning (Safety, Bandit, trivy)
-- [ ] VPN для доступа к внутренним системам
-- [ ] Подключить dependabot'а к репозиторию
-- [ ] Нужно защитить сайт от ботов
-- [ ] Вынести миграцию из app_lifespan в отдельную таску (можно в docker-compose)
-- [ ] Заменить uvicorn на granian
-- [ ] Аудит безопасности
-    - [ ] У обычных пользователей нет доступа к внутренним системам без VPN.
+- [ ] Dependency scanning (Safety, Bandit, Trivy)
+- [ ] VPN for accessing internal systems
+- [ ] Add Dependabot to the repository
+- [ ] Bot protection for the site
+- [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
+- [ ] Replace uvicorn with Granian
+- [ ] Security audit
+    - [ ] Regular users cannot access internal systems without VPN.
 
-### ЭТАП 3 — Трассировки и мониторинг
+### STAGE 3 — Tracing and Monitoring
 
-- [ ] Алерты об ошибках в телеграм-бота
-- [ ] Подключить Grafana + Prometheus + Loki
-- [ ] Подключить сервис мониторинга состояния контейнеров
-    - [ ] Слать уведомления при падении контейнеров
-    - [ ] Слать уведомления при высоком использовании ресурсов (CPU, RAM)
-- [ ] Аудит безопасности
+- [ ] Error alerts to Telegram bot
+- [ ] Set up Grafana + Prometheus + Loki
+- [ ] Set up container health monitoring service
+    - [ ] Send notifications on container crash
+    - [ ] Send notifications on high resource usage (CPU, RAM)
+- [ ] Security audit
     - [ ] WIP
 
-### ЭТАП 4 — Frontend
+### STAGE 4 — Frontend
 
-- [ ] Соглашение на использование cookies.
-- [ ] Перейти на полноценный frontend-framework (angular, скорее всего)
-- [ ] Поправить поиск вопросов на фронте: нужно, чтобы удалялись также пустые разделы
-- [ ] Сделать текст выделения на сайте в цвет темы.
-- [ ] Добавить больше обратной связи при запросах в API (нотификации, ошибки и т.д.)
-- [ ] Добавление и редактирование вопросов матрицы компетенций
-    - [ ] Поиск по существующим внешним ресурсам
-    - [ ] Режим редактирования конкретного вопроса (кнопка и форма на деталке вопроса)
-    - [ ] Кнопка и форма добавления вопроса в нужном разделе матрицы компетенций
-    - [ ] ToastUI должен работать, как и прежде: загрузка файлов через /presign-put, отображение
-      загруженных файлов, редактирование контента, сохранение контента.
-- [ ] Аудит безопасности
-  - [ ] редактировать, добавлять и удалять вопросы матрицы может только администратор
+- [ ] Cookie consent
+- [ ] Migrate to a full frontend framework (Angular, most likely)
+- [ ] Fix question search on frontend: empty sections should also be removed
+- [ ] Make text selection colour match the site theme
+- [ ] Add more feedback during API requests (notifications, errors, etc.)
+- [ ] Add and edit competency matrix questions
+    - [ ] Search through existing external resources
+    - [ ] Edit mode for a specific question (button and form on question detail)
+    - [ ] Button and form for adding a question to a matrix section
+    - [ ] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
+- [ ] Security audit
+  - [ ] Only admins can edit, add, and delete matrix questions
 
-### ЭТАП 5 — Блог и Flashcards
+### STAGE 5 — Blog and Flashcards
 
-- [ ] Создание карточек из матрицы компетенций (stateless — без сохранения, перезапуск = новый набор
-  карточек)
-- [ ] Создание самописных карточек
-- [ ] экспорт карточек пользователя в .apkg формат
+- [ ] Create flashcards from competency matrix (stateless — no persistence, restart = new set)
+- [ ] Create custom flashcards
+- [ ] Export user flashcards to .apkg format
 
-- [ ] Вывод постов по дате публикации
-- [ ] Фильтры постов по тэгам и дате
-- [ ] Поиск постов по названию и контенту
-- [ ] Реакции на посты
+- [ ] Show posts sorted by publication date
+- [ ] Post filters by tags and date
+- [ ] Search posts by title and content
+- [ ] Post reactions
 
-### ЭТАП 6 — Авторизация и Пользователи
+### STAGE 6 — Auth and Users
 
-- [ ] Доработка аутентификация пользователей (возможно, через OAuth2)
-  - [ ] (FRONT) Кнопка и форма регистрации
-  - [ ] (BACK) Логика регистрации
-  - [ ] (FRONT) Кнопка и форма восстановления пароля (Просто подтверждение с отправкой на почту)
-  - [ ] (BACK) Логика восстановления пароля
-  - [ ] (BACK) добавление cookie сессии (при логине/регистрации и удаление при логауте)
-- [ ] Политика конфидекиальности
-- [ ] пользовательское соглашение
-- [ ] Согласие на обработку персональных данных
-- [ ] Восстановление пароля
-- [ ] Подтверждение пароля
-- [ ] Создание Flashcards из матрицы компетенций (stateful — сохранение на пользователя)
-- [ ] Возможность оставить комментарии к постам в блоге
-- [ ] 2FA/MFA для пользователей
-- [ ] Профиль пользователя
-  - [ ] статистика прохождения курсов
-  - [ ] изменение личных данных
-  - [ ] настройки уведомлений
-  - [ ] просмотр сохранённых карточек flashcards
-  - [ ] Список устройств, с которых был выполнен вход в аккаунт
-- [ ] Аудит безопасности
-  - [ ] Пользователь не может взаимодействовать с чужими профилями. Только смотреть.
-  - [ ] Нет токенов в localStorage
-  - [ ] Авторизация основана на безопасных cookies: HttpOnly, Secure, SameSite=Lax
-  - [ ] Есть ротация сессий при логине
-  - [ ] Есть инвалидация сессии при логауте
-  - [ ] Истекшие сессии реально удаляются / не принимаются
+- [ ] User authentication improvements (possibly via OAuth2)
+  - [ ] (FRONT) Register button and form
+  - [ ] (BACK) Registration logic
+  - [ ] (FRONT) Password recovery button and form (simple confirmation email)
+  - [ ] (BACK) Password recovery logic
+  - [ ] (BACK) Add session cookie (set on login/register, delete on logout)
+- [ ] Privacy policy
+- [ ] Terms of service
+- [ ] Personal data processing consent
+- [ ] Password recovery
+- [ ] Password confirmation
+- [ ] Flashcards from competency matrix (stateful — saved per user)
+- [ ] Comments on blog posts
+- [ ] 2FA/MFA for users
+- [ ] User profile
+  - [ ] Course completion statistics
+  - [ ] Edit personal details
+  - [ ] Notification settings
+  - [ ] Saved flashcard list
+  - [ ] List of devices where the account was logged in
+- [ ] Security audit
+  - [ ] Users cannot interact with other users' profiles. Read-only.
+  - [ ] No tokens in localStorage
+  - [ ] Auth based on secure cookies: HttpOnly, Secure, SameSite=Lax
+  - [ ] Session rotation on login
+  - [ ] Session invalidation on logout
+  - [ ] Expired sessions actually deleted / not accepted
 
-### ЭТАП 7 — Доработка матрицы и Курсы
+### STAGE 7 — Matrix Improvements and Courses
 
-- [ ] Добавить отдельный список-очередь для вопросов, которые я хочу добавить в матрицу компетенций
-- [ ] Создание шага материала курса (может включать видео, текст, картинки, файлы, тесты)
-- [ ] playground для тестов курса
-- [ ] Создание курсов, включающих в себя шаги материала курса
-- [ ] Привязка курсов к матрице компетенций
-- [ ] Просмотр доступных курсов
-- [ ] Возможность предложить свой вопрос для матрицы компетенций
-- [ ] Возможность отправить информацию об опечатке в матрице компетенций
-- [ ] Аудит безопасности
-  - [ ] Пользователь не может редактировать прогресс прохождения курса другого пользователя
+- [ ] Add a separate queue list for questions I want to add to the matrix
+- [ ] Create course material step (can include video, text, images, files, tests)
+- [ ] Playground for course tests
+- [ ] Create courses consisting of material steps
+- [ ] Link courses to competency matrix
+- [ ] Browse available courses
+- [ ] Ability to suggest a question for the competency matrix
+- [ ] Ability to report a typo in the competency matrix
+- [ ] Security audit
+  - [ ] User cannot edit another user's course progress
 
-### ЭТАП 8 — Безопасность
+### STAGE 8 — Security
 
 - [ ] OWASP Top 10 compliance check
-- [ ] Возможно, есть AI-агент для поиска уязвимостей в приложении. Поискать и попробовать
-- [ ] Повторный аудит безопасности. Взять все вышеуказанные аудиты безопасности и повторить их.
+- [ ] Check for AI-based vulnerability scanning tools. Try one.
+- [ ] Full re-audit. Take all the security audits above and repeat them.
 
-### Задачи вне этапов (можно сделать в любой момент)
+### Out-of-stage tasks (can be done at any time)
 
-- [ ] Разделить монорепозиторий на отдельные репозитории: front, back, infra.
-- [ ] Локализация интерфейса и данных
+- [ ] Split monorepo into separate repos: front, back, infra.
+- [ ] UI localisation
+- [ ] Migrate from Makefile to Just
 
-## Ошибки
+## Bugs
 
-- [ ] Поиск не работает в режиме "таблица"
-- [ ] Поиск по ресурсам работает неоптимально. Нужно подключить полнотекстовый поиск с помощью
-  [sqlalchemy-searchable](https://sqlalchemy-searchable.readthedocs.io/en/latest/quickstart.html)
+- [ ] Search does not work in "table" view mode
+- [ ] Resource search is suboptimal. Connect full-text search via [sqlalchemy-searchable](https://sqlalchemy-searchable.readthedocs.io/en/latest/quickstart.html)
 
-## Документация
+## Documentation
 
-- [ ] Вынести параметры в АПИ и добавить к ним примеры и другие поля.
-- [ ] Удалить ADR, заменить на .claude. Можно оставить 
+- [ ] Add parameter details to API and include examples and other fields.
+- [ ] Remove ADR, replace with .claude. Can keep.
 
-## Рефакторинг
+## Refactoring
 
-- [ ] Упростить BootstrapRenderer
-- [x] Добавить pre-commit hooks (ruff, mypy, pytest)
-- [x] Вынести cli в отдельную точку запуска (из main.py)
-- [x] Использовать GradeEnum в API и core-слое.
-- [x] Переписать NewType на обычные классы.
+- [ ] Simplify BootstrapRenderer
+- [x] Add pre-commit hooks (ruff, mypy, pytest)
+- [x] Move CLI to a separate entry point (from main.py)
+- [x] Use GradeEnum in API and core layer.
+- [x] Rewrite NewType as regular classes.

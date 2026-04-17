@@ -1,7 +1,7 @@
-NAME := src
+NAME := backend
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
-LITESTAR_CLI_APP := "src.cli:create_cli"
+LITESTAR_CLI_APP := "backend.cli:create_cli"
 
 .PHONY: run
 run:
@@ -15,15 +15,15 @@ stop:
 
 .PHONY: start_app
 start_app:
-	PYTHONPATH=src uv run uvicorn src.main:create_app --port 8080 --host 0.0.0.0
+	PYTHONPATH=backend uv run uvicorn backend.main:create_app --port 8080 --host 0.0.0.0
 
 .PHONY: start_local_app
 start_local_app:
-	PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run src/main.py
+	PYTHONPATH=backend APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run backend/main.py
 
 .PHONY: cli
 cli:
-	PYTHONPATH=src LITESTAR_APP=$(LITESTAR_CLI_APP) uv run litestar $(command)
+	PYTHONPATH=backend LITESTAR_APP=$(LITESTAR_CLI_APP) uv run litestar $(command)
 
 .PHONY: collectstatic
 collectstatic:
@@ -36,17 +36,17 @@ initbuckets:
 .PHONY: revision
 revision:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c src/db/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
+	$(UV) run alembic -c backend/db/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
 
 .PHONY: migrate
 migrate:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c src/db/alembic/alembic.ini upgrade head
+	$(UV) run alembic -c backend/db/alembic/alembic.ini upgrade head
 
 .PHONY: downgrade
 downgrade:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c src/db/alembic/alembic.ini downgrade -1
+	$(UV) run alembic -c backend/db/alembic/alembic.ini downgrade -1
 
 .PHONY: install
 install:
@@ -88,6 +88,13 @@ fix:
 	$(UV) run ruff format $(TESTS) --config ./pyproject.toml
 	$(UV) run ruff format $(NAME) --config ./pyproject.toml
 
+# Usage: make lint-file file=backend/core/blog/use_cases.py
+.PHONY: lint-file
+lint-file:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) run ruff check --fix $(file) --config ./pyproject.toml
+	$(UV) run ruff format $(file) --config ./pyproject.toml
+
 .PHONY: ruff-check
 ruff-check:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
@@ -96,14 +103,24 @@ ruff-check:
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/
+
+.PHONY: test-unit
+test-unit:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/unit/
+
+.PHONY: test-integration
+test-integration:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/integration/
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage run -m pytest -vvv
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage xml
-	PYTHONPATH=src APP_USE_CACHE=false $(UV) run coverage report --fail-under=60
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage run -m pytest tests/
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage xml
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage report --fail-under=60
 
 .PHONY: quality
 quality:
