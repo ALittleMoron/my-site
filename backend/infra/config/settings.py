@@ -1,8 +1,8 @@
 from typing import Literal
 
-from config.constants import constants
 from core.files.types import Namespace
 from core.schemas import Secret
+from infra.config.constants import constants
 from litestar.config.response_cache import CACHE_FOREVER
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict

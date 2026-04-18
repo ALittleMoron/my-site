@@ -1,9 +1,9 @@
 import uvicorn
-from config.loggers import logger
-from config.settings import settings
 from entrypoints.litestar.initializers import create_litestar_app
 from entrypoints.litestar.lifespan import app_lifespan
-from ioc.container import container
+from infra.config.loggers import logger
+from infra.config.settings import settings
+from infra.ioc.container import container
 from litestar import Litestar
 
 

@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from config.settings import settings
 from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
@@ -26,6 +25,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixSheetsListResponseSchema,
 )
 from entrypoints.litestar.guards import admin_user_guard
+from infra.config.settings import settings
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.params import Body, Parameter

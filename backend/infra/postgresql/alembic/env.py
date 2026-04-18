@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, TypeAlias
 from alembic import context
 from sqlalchemy import pool, engine_from_config
 
-from config.settings import settings
+from infra.config.settings import settings
 from infra.postgresql.models import BaseModel
 
 if TYPE_CHECKING:

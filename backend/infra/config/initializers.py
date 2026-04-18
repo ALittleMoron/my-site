@@ -2,8 +2,8 @@ import asyncio
 
 import pem
 import sentry_sdk
-from config.loggers import logger
-from config.settings import settings
+from infra.config.loggers import logger
+from infra.config.settings import settings
 from infra.postgresql.utils import migrate
 from sentry_sdk.integrations.litestar import LitestarIntegration
 

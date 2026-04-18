@@ -1,12 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
-from config.constants import constants
-from config.settings import settings
 from core.files.file_name_generators import FileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.use_cases import UseCase
+from infra.config.constants import constants
+from infra.config.settings import settings
 
 
 class AbstractPresignPutObjectUseCase(UseCase, metaclass=ABCMeta):

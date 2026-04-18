@@ -1,5 +1,4 @@
 from argon2 import PasswordHasher as CryptContext
-from config.settings import settings
 from core.account.storages import UserAccountStorage
 from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
 from core.auth.storages import AuthStorage
@@ -14,6 +13,7 @@ from core.auth.use_cases import (
     LogoutUseCase,
 )
 from dishka import Provider, Scope, provide
+from infra.config.settings import settings
 from infra.postgresql.storages.auth import AuthDatabaseStorage
 from litestar import Request
 from sqlalchemy.ext.asyncio import AsyncSession

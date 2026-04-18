@@ -7,7 +7,7 @@ from miniopy_async.error import MinioException
 
 from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
 from core.files.schemas import FileUploadResult
-from file_storages.minio import MinioFileStorage
+from infra.minio.file_storages import MinioFileStorage
 
 
 class TestMinioFileStorage:
@@ -32,7 +32,7 @@ class TestMinioFileStorage:
         self.mock_minio_client.make_bucket.assert_called_once_with(bucket_name=bucket_name)
         self.mock_minio_client.set_bucket_policy.assert_called_once()
 
-    @patch("file_storages.minio.settings")
+    @patch("infra.minio.file_storages.settings")
     async def test_upload_file_success(self, mock_settings: Mock) -> None:
         mock_settings.get_minio_object_url.return_value = "http://localhost/media/test.txt"
         file_data = BytesIO(b"test content")

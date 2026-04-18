@@ -4,8 +4,8 @@ from collections.abc import Generator
 
 import pytest
 
-from config.settings import Settings, settings
 from core.types import IntId
+from infra.config.settings import Settings, settings
 
 
 @pytest.fixture

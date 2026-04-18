@@ -3,7 +3,7 @@ from typing import Literal
 
 
 class _PathConstants:
-    src_dir: Path = Path(__file__).resolve().parent.parent
+    src_dir: Path = Path(__file__).resolve().parent.parent.parent
     root_dir: Path = src_dir.parent
     env_file: Path = root_dir / ".env"
     infra_dir: Path = src_dir / "infra"

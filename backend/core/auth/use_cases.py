@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from config.loggers import logger
 from core.account.storages import UserAccountStorage
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
@@ -11,6 +10,7 @@ from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
 from core.use_cases import UseCase
+from infra.config.loggers import logger
 
 
 class AbstractLoginUseCase(UseCase, ABC):

@@ -3,7 +3,7 @@ from core.files.file_storages import FileStorage
 from entrypoints.litestar.cli.commands.admin import create_admin_command
 from entrypoints.litestar.cli.commands.files import collect_static
 from entrypoints.litestar.cli.utils import run_sync
-from ioc.container import container
+from infra.ioc.container import container
 from litestar import Litestar
 from litestar.plugins import CLIPluginProtocol
 

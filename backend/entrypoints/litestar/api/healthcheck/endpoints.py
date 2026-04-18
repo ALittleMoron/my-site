@@ -1,5 +1,5 @@
-from config.settings import settings
 from dishka.integrations.litestar import DishkaRouter
+from infra.config.settings import settings
 from litestar import Controller, Response, get
 from verbose_http_exceptions import status
 

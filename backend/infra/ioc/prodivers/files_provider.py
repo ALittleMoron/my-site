@@ -1,9 +1,9 @@
-from config.settings import settings
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import AbstractPresignPutObjectUseCase, PresignPutObjectUseCase
 from dishka import Provider, Scope, provide
-from file_storages.minio import MinioFileStorage
+from infra.config.settings import settings
+from infra.minio.file_storages import MinioFileStorage
 from miniopy_async.api import Minio
 
 

@@ -1,12 +1,12 @@
 import uuid
 from typing import Annotated
 
-from config.settings import settings
 from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from entrypoints.litestar.views.contacts.context_converters import ContactsContextConverter
 from entrypoints.litestar.views.contacts.schemas import ContactMeRequest
+from infra.config.settings import settings
 from litestar import Controller, post
 from litestar.middleware.rate_limit import DurationUnit, RateLimitConfig
 from litestar.params import Body

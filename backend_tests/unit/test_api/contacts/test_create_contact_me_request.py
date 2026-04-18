@@ -1,8 +1,8 @@
 import pytest_asyncio
 from verbose_http_exceptions import status
 
-from config.settings import Settings
 from backend_tests.unit.fixtures import ApiFixture, FactoryFixture, ContainerFixture
+from infra.config.settings import Settings
 
 
 class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):

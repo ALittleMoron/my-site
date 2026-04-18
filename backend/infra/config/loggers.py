@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import ecs_logging
 import structlog
-from config.settings import settings
+from infra.config.settings import settings
 from structlog.typing import BindableLogger, Processor, WrappedLogger
 
 processors: list[Processor] = [

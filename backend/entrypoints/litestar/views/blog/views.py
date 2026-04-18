@@ -1,5 +1,5 @@
-from config.settings import settings
 from dishka.integrations.litestar import DishkaRouter
+from infra.config.settings import settings
 from litestar import Controller, get
 from litestar.plugins.htmx import HTMXTemplate
 from litestar.response import Template

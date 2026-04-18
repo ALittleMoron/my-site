@@ -1,7 +1,7 @@
 import uuid
 
 import structlog.contextvars
-from config.loggers import logger
+from infra.config.loggers import logger
 from litestar.middleware import ASGIMiddleware
 from litestar.types import ASGIApp, Receive, Scope, Send
 

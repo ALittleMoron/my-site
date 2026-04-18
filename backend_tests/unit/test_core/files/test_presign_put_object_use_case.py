@@ -4,11 +4,11 @@ from unittest.mock import Mock, patch
 import pytest
 import pytest_asyncio
 
-from config.settings import Settings
+from backend_tests.unit.fixtures import FactoryFixture, ContainerFixture
 from core.files.exceptions import ContentTypeNotAllowedError
 from core.files.file_storages import FileStorage
 from core.files.use_cases import PresignPutObjectUseCase
-from backend_tests.unit.fixtures import FactoryFixture, ContainerFixture
+from infra.config.settings import Settings
 
 
 class TestPresignPutObjectUseCase(FactoryFixture, ContainerFixture):

@@ -1,10 +1,10 @@
 import io
 import mimetypes
 
-from config.constants import constants
-from config.loggers import logger
 from core.files.exceptions import FileStorageInternalError
 from core.files.file_storages import FileStorage
+from infra.config.constants import constants
+from infra.config.loggers import logger
 
 
 async def collect_static(file_storage: FileStorage) -> None:

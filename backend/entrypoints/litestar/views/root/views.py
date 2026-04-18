@@ -1,10 +1,10 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from config.settings import settings
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from dishka.integrations.litestar import DishkaRouter
+from infra.config.settings import settings
 from litestar import Controller, Request, get, status_codes
 from litestar.config.response_cache import CACHE_FOREVER
 from litestar.datastructures import State

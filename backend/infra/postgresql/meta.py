@@ -1,4 +1,4 @@
-from config.settings import settings
+from infra.config.settings import settings
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,

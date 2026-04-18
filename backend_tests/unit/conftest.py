@@ -8,18 +8,18 @@ from dishka.integrations.litestar import LitestarProvider, setup_dishka
 from litestar import Litestar
 from litestar.testing import TestClient
 
-from config.settings import Settings
-from core.auth.enums import RoleEnum
-from core.auth.schemas import JwtUser
-from core.auth.types import RawToken
-from core.types import IntId
-from entrypoints.litestar.initializers import create_litestar_app
 from backend_tests.unit.mocks.providers.account import MockUserAccountProvider
 from backend_tests.unit.mocks.providers.auth import MockAuthProvider
 from backend_tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from backend_tests.unit.mocks.providers.contacts import MockContactsProvider
 from backend_tests.unit.mocks.providers.files import MockFilesProvider
 from backend_tests.unit.mocks.providers.general import MockGeneralProvider
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
+from core.auth.types import RawToken
+from core.types import IntId
+from entrypoints.litestar.initializers import create_litestar_app
+from infra.config.settings import Settings
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from typing import Generator
 
 import pytest
 
-from config.settings import Settings
+from infra.config.settings import Settings
 
 
 class TestSettings:

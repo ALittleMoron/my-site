@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from config.settings import Settings, settings
+from infra.config.settings import Settings, settings
 from infra.postgresql.models import (
     BlogPostModel,
     CompetencyMatrixItemModel,

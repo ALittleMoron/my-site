@@ -7,12 +7,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pyseto
-from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.schemas import Secret
+from infra.config.loggers import logger
 
 
 class TokenHandler(ABC):

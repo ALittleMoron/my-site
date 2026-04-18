@@ -1,7 +1,7 @@
 from alembic.command import downgrade as alembic_downgrade
 from alembic.command import upgrade as alembic_upgrade
 from alembic.config import Config
-from config.constants import constants
+from infra.config.constants import constants
 
 
 def migrate(revision: str) -> None:

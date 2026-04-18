@@ -1,9 +1,9 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from config.initializers import before_app_create
 from dishka.integrations.litestar import setup_dishka as setup_dishka_litestar
-from ioc.container import container
+from infra.config.initializers import before_app_create
+from infra.ioc.container import container
 from litestar import Litestar
 
 

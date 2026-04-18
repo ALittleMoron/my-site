@@ -4,12 +4,12 @@ from datetime import timedelta
 from io import BytesIO
 from typing import Any
 
-from config.loggers import logger
-from config.settings import settings
 from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
 from core.files.file_storages import FileStorage
 from core.files.schemas import FileUploadResult
 from core.files.types import Namespace
+from infra.config.loggers import logger
+from infra.config.settings import settings
 from miniopy_async.api import Minio
 from miniopy_async.error import MinioException
 

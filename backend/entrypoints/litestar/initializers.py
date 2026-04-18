@@ -1,9 +1,6 @@
 from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
-from config import loggers
-from config.constants import constants
-from config.settings import settings
 from dishka import AsyncContainer
 from entrypoints.litestar.api.routers import api_router
 from entrypoints.litestar.auth import AuthenticationMiddleware
@@ -14,6 +11,9 @@ from entrypoints.litestar.middlewares.logging import (
 )
 from entrypoints.litestar.template_callables import register_template_callables
 from entrypoints.litestar.views.routers import views_router
+from infra.config import loggers
+from infra.config.constants import constants
+from infra.config.settings import settings
 from litestar import Litestar, Router
 from litestar.config.response_cache import ResponseCacheConfig
 from litestar.contrib.jinja import JinjaTemplateEngine

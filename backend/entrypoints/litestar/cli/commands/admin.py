@@ -1,8 +1,8 @@
-from config.loggers import logger
 from core.auth.enums import RoleEnum
 from core.auth.password_hashers import PasswordHasher
+from infra.config.loggers import logger
+from infra.ioc.container import container
 from infra.postgresql.models import UserModel
-from ioc.container import container
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 

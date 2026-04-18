@@ -1,4 +1,3 @@
-from config.settings import settings
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
@@ -18,6 +17,7 @@ from entrypoints.litestar.views.competency_matrix.dependencies import (
     SheetName,
     template_name_by_layout_dependency,
 )
+from infra.config.settings import settings
 from litestar import Controller, Request, get
 from litestar.datastructures import State
 from litestar.di import Provide

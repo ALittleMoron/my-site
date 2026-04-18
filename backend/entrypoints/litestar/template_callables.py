@@ -1,8 +1,8 @@
 from collections.abc import Mapping
 from typing import Any
 
-from config.constants import constants
-from config.settings import settings
+from infra.config.constants import constants
+from infra.config.settings import settings
 from litestar.contrib.jinja import JinjaTemplateEngine
 from services.markdown import MarkdownItService
 

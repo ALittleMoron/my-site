@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 from dishka import Provider, BaseScope, Component, provide, Scope
 
-from config.settings import Settings
 from core.auth.password_hashers import PasswordHasher
 from core.auth.schemas import JwtUser
 from core.auth.storages import AuthStorage
@@ -13,6 +12,7 @@ from core.auth.use_cases import (
     AbstractAuthenticateUseCase,
     AbstractLogoutUseCase,
 )
+from infra.config.settings import Settings
 
 test_public_key_pem = """\
 -----BEGIN PUBLIC KEY-----

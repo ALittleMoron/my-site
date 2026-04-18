@@ -2,9 +2,9 @@ import html
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from config.constants import constants
-from config.loggers import logger
 from core.markdown.services import MarkdownService
+from infra.config.constants import constants
+from infra.config.loggers import logger
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
