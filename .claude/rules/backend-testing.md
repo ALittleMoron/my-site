@@ -54,8 +54,7 @@ make tests-coverage      # all + coverage report
 
 ## Coverage target
 
-**95%** — driven by unit tests. Integration tests don't count toward this.
-Current threshold in pyproject.toml: 60% (temporary, raise as unit tests grow).
+**95%** — driven by unit tests and database integration tests.
 
 Core layer should be 100% coverage.
 

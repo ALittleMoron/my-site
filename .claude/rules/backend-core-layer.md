@@ -8,7 +8,7 @@ paths:
 ## Strict import rules — NEVER violate
 
 - `backend/core/**` — NO imports from: sqlalchemy, litestar, dishka, miniopy, pyseto, structlog, sentry_sdk or any third-party packages
-- `backend/core/**` — NO imports from: `infra/postgresql/`, `entrypoints/`, `ioc/`, `file_storages/` or any outer layers
+- `backend/core/**` — NO imports from: `infra/postgresql/`, `entrypoints/`, `infra/ioc/`, `infra/minio` or any outer layers
 
 ## Shared core files (`backend/core/`)
 
