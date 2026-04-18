@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: docker/backend/Dockerfile
+      dockerfile: infra/backend/Dockerfile
 #    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_backend:latest
     image: my_site_backend:latest
     container_name: my_site_backend
@@ -62,12 +62,12 @@ services:
   nginx:
     build:
       context: .
-      dockerfile: docker/nginx/Dockerfile
+      dockerfile: infra/nginx/Dockerfile
 #    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_nginx:latest
     image: my_site_nginx:latest
     container_name: my_site_nginx
     volumes:
-      - ./docker/nginx/certs:/certs
+      - ./infra/nginx/certs:/certs
     environment:
       - APP_DOMAIN=${APP_DOMAIN}
       - SSL_CERT=${SSL_CERT}

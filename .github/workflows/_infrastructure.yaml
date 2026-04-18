@@ -57,7 +57,7 @@ jobs:
           switches: -avzr --delete --exclude '.git' --exclude 'node_modules' --exclude '.venv'
           path: |
             docker-compose.yaml
-            docker/
+            infra/
             .env
           remote_path: ${{ secrets.REMOTE_PATH }}
           remote_host: ${{ secrets.REMOTE_HOST }}

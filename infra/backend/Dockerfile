@@ -34,4 +34,4 @@ COPY . ./
 USER $CUSTOM_USER:$CUSTOM_USER
 
 EXPOSE 8080
-CMD ["sh", "./docker/backend/start_application.sh"]
+CMD ["sh", "./infra/backend/start_application.sh"]

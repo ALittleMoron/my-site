@@ -35,7 +35,7 @@ My site with blog, mentoring things and others.
 
 ```
 my-site/
-├── docker/       # Docker configuration files (scripts, Dockerfile, nginx conf, etc.)
+├── infra/       # Infra configuration files (scripts, Dockerfile, nginx conf, etc.)
 ├── src/          # Source code
 ├── tests/        # Project autotests
 ├── .env.example  # Example of project envs
@@ -72,8 +72,8 @@ mkcert \
   s3.<your-domain> \
   s3-panel.<your-domain> \
   backup.<your-domain>
-mv <your-domain>.pem ./docker/nginx/certs/
-mv <your-domain>-key.pem ./docker/nginx/certs/
+mv <your-domain>.pem ./infra/nginx/certs/
+mv <your-domain>-key.pem ./infra/nginx/certs/
 ```
 
 4. Change `.env` file variables to yours

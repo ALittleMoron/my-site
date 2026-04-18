@@ -38,7 +38,7 @@ Rendering). Мой сайт с блогом, матрицей компетенц
 
 ```
 my-site/
-├── docker/ # Файлы конфигурации Docker (скрипты, Dockerfile, конфиги nginx и др.)
+├── infra/ # Файлы конфигурации инфраструктуры (скрипты, Dockerfile, конфиги nginx и др.)
 ├── src/ # Исходный код
 ├── tests/ # Автотесты проекта
 ├── .env.example # Пример файла окружения
@@ -75,8 +75,8 @@ mkcert \
   s3.<your-domain> \
   s3-panel.<your-domain> \
   backup.<your-domain>
-mv <your-domain>.pem ./docker/nginx/certs/
-mv <your-domain>-key.pem ./docker/nginx/certs/
+mv <your-domain>.pem ./infra/nginx/certs/
+mv <your-domain>-key.pem ./infra/nginx/certs/
 ```
 
 4. Изменить переменные в `.env` под свои значения

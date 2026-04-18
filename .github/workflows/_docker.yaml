@@ -26,7 +26,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/backend/admin.Dockerfile
+          file: ./infra/backend/admin.Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/my_site_postgres:latest
@@ -36,7 +36,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/backend/application.Dockerfile
+          file: ./infra/backend/application.Dockerfile
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./docker/backend/admin.Dockerfile
+          file: ./infra/backend/admin.Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/my_site_admin:latest

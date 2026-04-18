@@ -5,8 +5,8 @@ LITESTAR_CLI_APP := "backend.cli:create_cli"
 
 .PHONY: run
 run:
-	chmod +x ./docker/run.sh
-	./docker/run.sh
+	chmod +x ./infra/run.sh
+	./infra/run.sh
 
 .PHONY: stop
 stop:
