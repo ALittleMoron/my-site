@@ -35,12 +35,12 @@ My site with blog, mentoring things and others.
 
 ```
 my-site/
-├── infra/       # Infra configuration files (scripts, Dockerfile, nginx conf, etc.)
-├── src/          # Source code
-├── backend_tests/        # Project autotests
-├── .env.example  # Example of project envs
+├── infra/         # Infra configuration files (scripts, Dockerfile, nginx conf, etc.)
+├── backend/       # Backend source code
+├── backend_tests/ # Project autotests
+├── .env.example   # Example of project envs
 ├── ...
-└── README.md     # Project readme (current file)
+└── README.md      # Project readme (current file)
 ```
 
 ## ✨ Features
