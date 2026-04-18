@@ -20,8 +20,8 @@ Demonstrates technical skills through Clean Architecture, HTMX, and a modern Dev
 - Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.
 - Gamification. No points, levels, or achievements. Focus is on learning and skill development, not game mechanics. Progress tracking at most.
 - Social features. No comments, follows, or feeds. Focus is on content and learning, not social interaction.
-- Complex analytics. Basic user behaviour analytics is fine — nothing beyond that.
-- Content personalisation. Content is the same for all users, regardless of preferences or history.
+- Complex analytics. Basic user behavior analytics are fine — nothing beyond that.
+- Content personalization. Content is the same for all users, regardless of preferences or history.
 
 ## Risks
 
@@ -30,16 +30,16 @@ Demonstrates technical skills through Clean Architecture, HTMX, and a modern Dev
 
 ## Core features
 
-1. **Competency matrix** — interactive Q&A, topic filtering, hints and tips
+1. **Competency matrix** — interactive Q&A, topic filtering, hints, and tips
 2. **Blog** — rich text editor, Markdown support
 3. **Contacts** — feedback form
 4. **Admin panel** — content management through the main frontend, no separate admin UI
 
 ## Highlights
 
-- Clean Architecture + best practices
+- Clean Architecture and best practices
 - Interactive competency matrix
 
 ## Goal
 
-Portfolio for potential employers and IT colleagues. Also a personal knowledge base and blog for self-development.
+Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and blog for self-development.

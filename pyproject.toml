@@ -87,19 +87,19 @@ exclude = [
     ".eggs",
     "*.egg",
     "dist",
-    "tests/fixtures/**",
-    "tests/**/snapshots/**",
+    "backend_tests/fixtures/**",
+    "backend_tests/**/snapshots/**",
     "alembic",
     "airich",
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "backend/**/*.py" = ["PD"]
-"tests/**/*.py" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
-"tests/conftest.py" = ["ARG001", "ANN401"]
-"tests/unit/conftest.py" = ["ARG001", "ANN401"]
-"tests/unit/mocks/**/*.py" = ["ARG002", "ARG003"]
-"tests/helpers/*.py" = ["PLR0913", "ANN401"]
+"backend_tests/**/*.py" = ["S101", "FBT", "ARG002", "PT004", "ANN201", "PLR2004"]
+"backend_tests/conftest.py" = ["ARG001", "ANN401"]
+"backend_tests/unit/conftest.py" = ["ARG001", "ANN401"]
+"backend_tests/unit/mocks/**/*.py" = ["ARG002", "ARG003"]
+"backend_tests/helpers/*.py" = ["PLR0913", "ANN401"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -193,7 +193,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.behave]
-paths = ["tests/bdd"]
+paths = ["backend_tests/bdd"]
 
 [tool.bandit]
 exclude = ['tests']

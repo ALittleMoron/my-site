@@ -13,9 +13,9 @@
 - [x] Add Databasus for database backups
 - [x] Configure Let's Encrypt
 - [x] Remove password_hash from the User domain model
-- [x] Remove mentorship section. Keep "about me".
+- [x] Remove the mentorship section. Keep "about me".
 - [x] Fix static files on MinIO and the backup service.
-- [x] (SEO) Add canonical link
+- [x] (SEO) Add a canonical link
 - [x] Validate CSS (focus on overriding Bootstrap variables)
 - [x] Move Bootstrap (and other files as needed) to the static folder
 - [x] Rebuild admin panel on Litestar
@@ -40,9 +40,9 @@
     - [x] (FRONT) Delete button on question detail
     - [x] (FRONT) Publish/Unpublish button (depending on status)
   - [x] Basic auth and edit permissions (PASETO without sessions. Sessions later)
-    - [x] (FRONT) Login page with login button on main page (hidden for now)
+    - [x] (FRONT) Login page with login button on the main page (hidden for now)
     - [x] (BACK) Login logic
-    - [x] (FRONT) Logout button on main page (hidden for now)
+    - [x] (FRONT) Logout button on the main page (hidden for now)
     - [x] (BACK) Logout logic (no-op for now)
     - [x] (BACK) Auth guard (only admins can log in for now)
     - [x] (BACK) Anonymous user
@@ -50,15 +50,15 @@
   - [x] Competency matrix search works as before: search, layout
   - [x] Matrix question modal opens, code blocks render correctly
   - [x] Run docker-compose and verify related services
-- [ ] Deploy to remote server
+- [ ] Deploy to a remote server
   - [ ] Choose hosting
   - [ ] Wire up missing secrets
   - [ ] Migrate deployment to Coolify
     - [ ] Install Coolify
     - [ ] Separate production and local Docker Compose
-    - [ ] Configure project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
-  - [ ] Run deployment strictly from GitHub workflow
-  - [ ] After deploy, log in to exposed services and verify auth
+    - [ ] Configure the project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
+  - [ ] Run deployment strictly from the GitHub workflow
+  - [ ] After deployment, log in to exposed services and verify auth
     - [ ] MinIO admin panel
     - [ ] Databasus
 
@@ -67,11 +67,11 @@
 - [ ] (SEO) Add schemaMarkup link
 - [ ] Check site performance
   - [ ] Load testing (Locust)
-  - [ ] Lighthouse audit — fix errors and improve scores
+  - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
-- [ ] Add basic analytics (Matomo) for user behaviour tracking.
-- [ ] Optimise page load times (CSS/JS minification, image optimisation). Consider CDN for static files.
-- [ ] Migrate competency matrix from Google Docs to database.
+- [ ] Add basic analytics (Matomo) for user behavior tracking.
+- [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
+- [ ] Migrate competency matrix from Google Docs to a database.
 - [ ] MVP security audit. Check for vulnerabilities and fix found issues.
   - [x] Find a web application security checklist and go through it.
   - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
@@ -82,15 +82,15 @@
     - [ ] Referrer-Policy: no-referrer
     - [ ] Content-Security-Policy
   - [ ] CSRF
-    - [ ] All POST/PUT/PATCH/DELETE protected from CSRF
+    - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
     - [ ] CSRF token in cookie + header
     - [ ] CSRF verified on server
   - [ ] HTTPS and TLS
     - [ ] Everything redirects to HTTPS
-    - [ ] HTTP not served at all
+    - [ ] HTTP isn’t served at all
     - [ ] TLS ≥ 1.2
     - [ ] Certbot auto-renews
-    - [ ] No internal services exposed to the public
+    - [ ] No internal services are exposed to the public
   - [ ] XSS
     - [ ] All user-supplied data is escaped
     - [ ] No `| safe` without 100% certainty
@@ -110,15 +110,15 @@
     - [ ] UID/GID not 0
     - [ ] No sudo inside containers
     - [ ] User-defined networks used
-    - [ ] Only nginx exposed to public
+    - [ ] Only nginx exposed to the public
     - [ ] No hardcoded IPs
     - [ ] Services accessible only by network name
     - [ ] No localhost references between services
     - [ ] No sensitive data in `docker inspect`
-    - [ ] Logs not written to files inside containers
+    - [ ] Logs aren’t written to files inside containers
     - [ ] Log rotation in place
-    - [ ] All services have healthchecks
-    - [ ] Nginx does not forward traffic to unhealthy backend
+    - [ ] All services have health checks
+    - [ ] Nginx does not forward traffic to an unhealthy backend
     - [ ] Adequate restart policy
     - [ ] Image versions pinned
     - [ ] No `latest` tags
@@ -134,7 +134,7 @@
     - [ ] No `devices:` unless strictly necessary
     - [ ] `cap_drop: [ALL]` where possible
     - [ ] No secrets in images
-    - [ ] Infrastructure services not exposed externally
+    - [ ] Infrastructure services are not exposed externally
       - [ ] PostgreSQL
       - [ ] Valkey
     - [ ] Postgres, Valkey, MinIO have no `ports`
@@ -142,10 +142,10 @@
     - [ ] Databasus protected by auth
     - [ ] `.env` not in git
     - [ ] No secrets in logs
-    - [ ] All keys long and random
+    - [ ] All keys are long and random
     - [ ] No stacktrace shown to users
     - [ ] Firewall enabled on host (ufw/iptables)
-    - [ ] Only ports 80 and 443 open
+    - [ ] Only ports 80 and 443 are open
     - [ ] SSH by key only. Password login disabled.
   - [ ] Rate limiting and bot protection
     - [ ] Rate limit on login, registration, and password reset
@@ -153,9 +153,9 @@
     - [ ] No unlimited requests to heavy endpoints
   - [ ] Backup & recovery
     - [ ] Backups encrypted
-    - [ ] Backups not publicly accessible
+    - [ ] Backups are not publicly accessible
     - [ ] Restore tested
-    - [ ] No access to backup panel without auth
+    - [ ] No access to back up a panel without auth
   - [ ] Supply chain
     - [ ] Dependency versions pinned
     - [ ] Dependencies updated regularly
@@ -176,8 +176,8 @@
 
 - [ ] Error alerts to Telegram bot
 - [ ] Set up Grafana + Prometheus + Loki
-- [ ] Set up container health monitoring service
-    - [ ] Send notifications on container crash
+- [ ] Set up a container health monitoring service
+    - [ ] Send notifications on a container crash
     - [ ] Send notifications on high resource usage (CPU, RAM)
 - [ ] Security audit
     - [ ] WIP
@@ -186,7 +186,7 @@
 
 - [ ] Cookie consent
 - [ ] Migrate to a full frontend framework (Angular, most likely)
-- [ ] Fix question search on frontend: empty sections should also be removed
+- [ ] Fix question search on the frontend: empty sections should also be removed
 - [ ] Make text selection colour match the site theme
 - [ ] Add more feedback during API requests (notifications, errors, etc.)
 - [ ] Add and edit competency matrix questions
@@ -241,7 +241,7 @@
 ### STAGE 7 — Matrix Improvements and Courses
 
 - [ ] Add a separate queue list for questions I want to add to the matrix
-- [ ] Create course material step (can include video, text, images, files, tests)
+- [ ] Create a course material step (can include video, text, images, files, tests)
 - [ ] Playground for course tests
 - [ ] Create courses consisting of material steps
 - [ ] Link courses to competency matrix
@@ -270,7 +270,7 @@
 
 ## Documentation
 
-- [ ] Add parameter details to API and include examples and other fields.
+- [ ] Add parameter details to the API and include examples and other fields.
 - [ ] Remove ADR, replace with .claude. Can keep.
 
 ## Refactoring

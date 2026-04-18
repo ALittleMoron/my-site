@@ -1,5 +1,5 @@
 NAME := backend
-TESTS := tests
+TESTS := backend_tests
 UV := $(shell command -v uv 2> /dev/null)
 LITESTAR_CLI_APP := "backend.cli:create_cli"
 
@@ -103,22 +103,22 @@ ruff-check:
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/
 
 .PHONY: test-unit
 test-unit:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/unit/
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/unit/
 
 .PHONY: test-integration
 test-integration:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x tests/integration/
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/integration/
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage run -m pytest tests/
+	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage run -m pytest $(TESTS)/
 	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage xml
 	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage report --fail-under=60
 
