@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from core.auth.exceptions import UserNotFoundError
 from core.auth.storages import AuthStorage
-from db.models import UserModel
+from infra.postgresql.models import UserModel
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 

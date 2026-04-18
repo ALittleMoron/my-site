@@ -2,11 +2,11 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend_tests.fixtures import FactoryFixture, StorageFixture
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.types import IntId
-from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
-from backend_tests.fixtures import FactoryFixture, StorageFixture
+from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 
 
 class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):

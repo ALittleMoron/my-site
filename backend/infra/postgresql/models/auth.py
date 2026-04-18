@@ -1,7 +1,7 @@
 from core.auth.enums import RoleEnum
 from core.auth.schemas import User
 from core.schemas import Secret
-from db.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel
 from sqlalchemy import Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 

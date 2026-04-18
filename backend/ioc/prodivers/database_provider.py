@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterable
 
-from db.meta import sessionmaker
 from dishka import Provider, Scope, provide
+from infra.postgresql.meta import sessionmaker
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )

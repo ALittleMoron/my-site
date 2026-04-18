@@ -25,7 +25,7 @@
 | Layer | Path | Responsibility                                       |
 |---|---|------------------------------------------------------|
 | Domain | `backend/core/` | Business logic. Pure Python only.                    |
-| Persistence | `backend/db/` | SQLAlchemy models + concrete storage implementations |
+| Persistence | `backend/infra/postgresql/` | SQLAlchemy models + concrete storage implementations |
 | Interface | `backend/entrypoints/litestar/` | HTTP handlers, views, auth middleware                |
 | DI | `backend/ioc/` | Dishka providers. Wiring only, no logic              |
 | Config | `backend/config/` | Pydantic settings, logging setup                     |
@@ -33,8 +33,8 @@
 
 ### Strict import rules — NEVER violate
 
-- `backend/entrypoints/**` — NO direct imports from `db/`. Only through `core/` abstractions via DI
-- `backend/db/storages/**` — MUST implement the ABC defined in the corresponding `core/<domain>/storages.py`
+- `backend/entrypoints/**` — NO direct imports from `infra/postgresql/`. Only through `core/` abstractions via DI
+- `backend/infra/postgresql/storages/**` — MUST implement the ABC defined in the corresponding `core/<domain>/storages.py`
 - `backend/ioc/**` — wiring only; importing and instantiating providers is the only job
 
 Note: the providers directory in `backend/ioc/` is misspelled as `prodivers/` in the codebase.

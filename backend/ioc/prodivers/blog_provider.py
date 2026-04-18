@@ -5,8 +5,8 @@ from core.blog.use_cases import (
     GetBlogPostUseCase,
     ListBlogPostsUseCase,
 )
-from db.storages.blog import BlogDatabaseStorage
 from dishka import Provider, Scope, provide
+from infra.postgresql.storages.blog import BlogDatabaseStorage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

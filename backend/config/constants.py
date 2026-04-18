@@ -6,7 +6,8 @@ class _PathConstants:
     src_dir: Path = Path(__file__).resolve().parent.parent
     root_dir: Path = src_dir.parent
     env_file: Path = root_dir / ".env"
-    alembic_dir: Path = src_dir / "db" / "alembic"
+    infra_dir: Path = src_dir / "infra"
+    alembic_dir: Path = infra_dir / "postgresql" / "alembic"
     static_dir: Path = src_dir / "static"
     template_dir: Path = src_dir / "templates"
 

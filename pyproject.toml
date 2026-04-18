@@ -183,8 +183,8 @@ exclude_lines = [
 ]
 omit = [
     "backend/main.py",
-    "backend/db/alembic/**",
-    "backend/db/meta.py",
+    "backend/infra/postgresql/alembic/**",
+    "backend/infra/postgresql/meta.py",
 ]
 
 [tool.pytest.ini_options]

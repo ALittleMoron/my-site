@@ -11,8 +11,13 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from config.settings import Settings, settings
-from db.models import BlogPostModel, CompetencyMatrixItemModel, ExternalResourceModel, UserModel
-from db.utils import downgrade, migrate
+from infra.postgresql.models import (
+    BlogPostModel,
+    CompetencyMatrixItemModel,
+    ExternalResourceModel,
+    UserModel,
+)
+from infra.postgresql.utils import downgrade, migrate
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session")

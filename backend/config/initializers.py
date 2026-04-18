@@ -4,7 +4,7 @@ import pem
 import sentry_sdk
 from config.loggers import logger
 from config.settings import settings
-from db.utils import migrate
+from infra.postgresql.utils import migrate
 from sentry_sdk.integrations.litestar import LitestarIntegration
 
 

@@ -1,8 +1,8 @@
 from typing import Self
 
 from core.blog.schemas import BlogPost
-from db.models import BaseModel
-from db.models.mixins.publish import PublishMixin
+from infra.postgresql.models import BaseModel
+from infra.postgresql.models.mixins.publish import PublishMixin
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UserNotFoundError
-from db.storages.users import UserAccountDatabaseStorage
+from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from backend_tests.fixtures import FactoryFixture, StorageFixture
 
 

@@ -5,7 +5,7 @@ from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResourc
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
 from core.types import IntId
-from db.models import CompetencyMatrixItemModel, ExternalResourceModel
+from infra.postgresql.models import CompetencyMatrixItemModel, ExternalResourceModel
 from sqlalchemy import ARRAY, Integer, bindparam, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

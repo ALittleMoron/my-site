@@ -1,7 +1,7 @@
 from typing import Self
 
 from core.contacts.schemas import ContactMe
-from db.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.ids import UUIDMixin

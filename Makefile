@@ -36,17 +36,17 @@ initbuckets:
 .PHONY: revision
 revision:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/db/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
+	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
 
 .PHONY: migrate
 migrate:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/db/alembic/alembic.ini upgrade head
+	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini upgrade head
 
 .PHONY: downgrade
 downgrade:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/db/alembic/alembic.ini downgrade -1
+	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini downgrade -1
 
 .PHONY: install
 install:

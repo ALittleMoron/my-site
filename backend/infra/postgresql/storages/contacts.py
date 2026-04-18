@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from core.contacts.schemas import ContactMe
 from core.contacts.storages import ContactMeStorage
-from db.models import ContactMeModel
+from infra.postgresql.models import ContactMeModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

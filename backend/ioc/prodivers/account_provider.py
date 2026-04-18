@@ -1,6 +1,6 @@
 from core.account.storages import UserAccountStorage
-from db.storages.users import UserAccountDatabaseStorage
 from dishka import Provider, Scope, provide
+from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

@@ -16,11 +16,11 @@ from core.competency_matrix.use_cases import (
     PublishSwitchItemUseCase,
     UpsertItemUseCase,
 )
-from db.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from dishka import Provider, Scope, provide
 from entrypoints.litestar.views.competency_matrix.context_converters import (
     CompetencyMatrixContextConverter,
 )
+from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

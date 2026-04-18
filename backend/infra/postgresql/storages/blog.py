@@ -6,7 +6,7 @@ from core.blog.exceptions import BlogPostNotFoundError
 from core.blog.schemas import BlogPost, BlogPostFilters, BlogPostList
 from core.blog.storages import BlogStorage
 from core.enums import PublishStatusEnum
-from db.models import BlogPostModel
+from infra.postgresql.models import BlogPostModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 

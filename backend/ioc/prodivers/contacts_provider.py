@@ -3,9 +3,9 @@ from core.contacts.use_cases import (
     AbstractCreateContactMeRequestUseCase,
     CreateContactMeRequestUseCase,
 )
-from db.storages.contacts import ContactMeDatabaseStorage
 from dishka import Provider, Scope, provide
 from entrypoints.litestar.views.contacts.context_converters import ContactsContextConverter
+from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

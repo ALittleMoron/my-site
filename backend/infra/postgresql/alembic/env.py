@@ -5,7 +5,7 @@ from alembic import context
 from sqlalchemy import pool, engine_from_config
 
 from config.settings import settings
-from db.models import BaseModel
+from infra.postgresql.models import BaseModel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -13,8 +13,8 @@ from core.auth.use_cases import (
     LoginUseCase,
     LogoutUseCase,
 )
-from db.storages.auth import AuthDatabaseStorage
 from dishka import Provider, Scope, provide
+from infra.postgresql.storages.auth import AuthDatabaseStorage
 from litestar import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 

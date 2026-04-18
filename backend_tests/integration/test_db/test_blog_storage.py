@@ -5,11 +5,11 @@ from zoneinfo import ZoneInfo
 import pytest
 import pytest_asyncio
 
+from backend_tests.fixtures import StorageFixture, FactoryFixture
 from core.blog.exceptions import BlogPostNotFoundError
 from core.blog.schemas import BlogPostFilters
 from core.enums import PublishStatusEnum
-from db.storages.blog import BlogDatabaseStorage
-from backend_tests.fixtures import StorageFixture, FactoryFixture
+from infra.postgresql.storages.blog import BlogDatabaseStorage
 
 
 class TestBlogDatabaseStorage(StorageFixture, FactoryFixture):

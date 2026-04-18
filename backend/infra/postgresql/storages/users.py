@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from core.account.storages import UserAccountStorage
 from core.auth.exceptions import UserNotFoundError
 from core.auth.schemas import User
-from db.models import UserModel
+from infra.postgresql.models import UserModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -4,8 +4,8 @@ from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource, ExternalResources
 from core.enums import PublishStatusEnum
 from core.types import IntId
-from db.models.base import BaseModel
-from db.models.mixins.publish import PublishMixin
+from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.publish import PublishMixin
 from sqlalchemy import Enum, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin

@@ -3,8 +3,8 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.storages.contacts import ContactMeDatabaseStorage
 from backend_tests.fixtures import FactoryFixture, StorageFixture
+from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 
 
 class TestContactMeStorage(FactoryFixture, StorageFixture):

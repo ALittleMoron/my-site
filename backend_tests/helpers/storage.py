@@ -9,7 +9,7 @@ from core.blog.schemas import BlogPost
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
-from db.models import (
+from infra.postgresql.models import (
     CompetencyMatrixItemModel,
     UserModel,
     ContactMeModel,
