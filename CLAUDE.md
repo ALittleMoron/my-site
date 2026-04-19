@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-## Project: Portfolio/blog site
+## Project
+
+Portfolio/blog site and knowledge database
 
 ## Stack
 
@@ -17,24 +19,3 @@
 ## General rules
 
 - Always use Context7 when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
-
-## Architecture
-
-### Layers
-
-| Layer | Path | Responsibility                                       |
-|---|---|------------------------------------------------------|
-| Domain | `backend/core/` | Business logic. Pure Python only.                    |
-| Persistence | `backend/infra/postgresql/` | SQLAlchemy models + concrete storage implementations |
-| Interface | `backend/entrypoints/litestar/` | HTTP handlers, views, auth middleware                |
-| DI | `backend/ioc/` | Dishka providers. Wiring only, no logic              |
-| Config | `backend/config/` | Pydantic settings, logging setup                     |
-| File storage | `backend/file_storages/` | files adapter (MinIO, local files, etc.)             |
-
-### Strict import rules — NEVER violate
-
-- `backend/entrypoints/**` — NO direct imports from `infra/postgresql/`. Only through `core/` abstractions via DI
-- `backend/infra/postgresql/storages/**` — MUST implement the ABC defined in the corresponding `core/<domain>/storages.py`
-- `backend/ioc/**` — wiring only; importing and instantiating providers is the only job
-
-Note: the providers directory in `backend/ioc/` is misspelled as `prodivers/` in the codebase.
