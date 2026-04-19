@@ -121,4 +121,4 @@ certs
 
 # Cursor
 .cursor/
-!.cursor/rules/
+!.cursor/rules/.worktrees/
