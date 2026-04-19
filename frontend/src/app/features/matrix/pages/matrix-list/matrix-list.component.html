@@ -1,0 +1,45 @@
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h4 mb-0">Competency Matrix</h1>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      (click)="toggleLayout()"
+      [attr.aria-label]="layoutMode() === 'list' ? 'Switch to grid view' : 'Switch to list view'"
+    >
+      {{ layoutMode() === 'list' ? 'Grid view' : 'List view' }}
+    </button>
+  </div>
+
+  <div class="mb-4">
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Search questions…"
+      [formControl]="searchControl"
+      aria-label="Search questions"
+    />
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (error()) {
+    <app-error-message [error]="error()!" (retry)="load(searchControl.value)" />
+  } @else if (isEmpty()) {
+    <app-empty-state message="No questions found. Try a different search." />
+  } @else {
+    <div
+      [class]="
+        layoutMode() === 'grid'
+          ? 'row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3'
+          : 'd-flex flex-column gap-2'
+      "
+    >
+      @for (question of questions(); track question.id) {
+        <div [class]="layoutMode() === 'grid' ? 'col' : ''">
+          <app-matrix-question-card [question]="question" />
+        </div>
+      }
+    </div>
+  }
+</div>
