@@ -2,7 +2,7 @@
 
 ## Development Stages
 
-### STAGE 1 — Minimum Viable Product (MVP)
+### Minimum Viable Product (MVP)
 
 - [x] Competency matrix list as grid and list views
 - [x] About me section
@@ -50,19 +50,8 @@
   - [x] Competency matrix search works as before: search, layout
   - [x] Matrix question modal opens, code blocks render correctly
   - [x] Run docker-compose and verify related services
-- [ ] Deploy to a remote server
-  - [ ] Choose hosting
-  - [ ] Wire up missing secrets
-  - [ ] Migrate deployment to Coolify
-    - [ ] Install Coolify
-    - [ ] Separate production and local Docker Compose
-    - [ ] Configure the project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
-  - [ ] Run deployment strictly from the GitHub workflow
-  - [ ] After deployment, log in to exposed services and verify auth
-    - [ ] MinIO admin panel
-    - [ ] Databasus
 
-### STAGE 1.5 — MVP Improvements
+### MVP Improvements
 
 - [ ] (SEO) Add schemaMarkup link
 - [ ] Check site performance
@@ -160,8 +149,19 @@
     - [ ] Dependency versions pinned
     - [ ] Dependencies updated regularly
     - [ ] No pip install from untrusted sources
+- [ ] Deploy to a remote server
+  - [ ] Choose hosting
+  - [ ] Wire up missing secrets
+  - [ ] Migrate deployment to Coolify
+    - [ ] Install Coolify
+    - [ ] Separate production and local Docker Compose
+    - [ ] Configure the project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
+  - [ ] Run deployment strictly from the GitHub workflow
+  - [ ] After deployment, log in to exposed services and verify auth
+    - [ ] MinIO admin panel
+    - [ ] Databasus
 
-### STAGE 2 — Infrastructure
+### Security and Infrastructure
 
 - [ ] Dependency scanning (Safety, Bandit, Trivy)
 - [ ] VPN for accessing internal systems
@@ -169,10 +169,12 @@
 - [ ] Bot protection for the site
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
+- [ ] OWASP Top 10 compliance check
+- [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
     - [ ] Regular users cannot access internal systems without VPN.
 
-### STAGE 3 — Tracing and Monitoring
+### Tracing and Monitoring
 
 - [ ] Error alerts to Telegram bot
 - [ ] Set up Grafana + Prometheus + Loki
@@ -180,9 +182,9 @@
     - [ ] Send notifications on a container crash
     - [ ] Send notifications on high resource usage (CPU, RAM)
 - [ ] Security audit
-    - [ ] WIP
+    - [ ] Regular users cannot access Grafana systems without VPN.
 
-### STAGE 4 — Frontend
+### Frontend
 
 - [ ] Cookie consent
 - [ ] Migrate to a full frontend framework (Angular, most likely)
@@ -197,18 +199,67 @@
 - [ ] Security audit
   - [ ] Only admins can edit, add, and delete matrix questions
 
-### STAGE 5 — Blog and Flashcards
+### Notes
+
+- [ ] Hide/Publish notes
+- [ ] Show notes sorted by publication date
+- [ ] Show notes in a side panel with a tree view
+- [ ] Filters by tags, categories, and date
+- [ ] Search notes by title and content
+- [ ] Obsidian-like note editor
+    - [ ] Rich text editor
+    - [ ] Tags
+    - [ ] Attachments
+    - [ ] links with other notes with `[[note]]` syntax
+    - [ ] Properties
+- [ ] Security audit
+  - [ ] Only admins can edit, add, and delete posts
+  - [ ] Regular users cannot view hidden posts
+
+### Knowledge database
+
+Knowledge database is a collection of knowledge items of two types: general and specific.
+
+General knowledge item has common CRUD logic and looks the same as notes. A specific knowledge item has additional fields and has its own logic.
+
+- [ ] Dashboard
+  - [ ] Important info (in-dashboard CRUD – only text items)
+  - [ ] dates and birthdays (current and next month)
+  - [ ] recently changed files
+  - [ ] statistics
+- [ ] General Knowledge item
+  - [ ] folders and subfolders
+  - [ ] Hide/Publish items
+  - [ ] CRUD with a rich text editor
+- [ ] Specific Knowledge item
+  - [ ] Shared logic
+    - [ ] Hide/Publish the entire category
+    - [ ] CRUD with a rich text editor
+    - [ ] Tags
+    - [ ] Attachments
+  - [ ] Books
+  - [ ] Companies
+  - [ ] Dates
+  - [ ] Offers
+  - [ ] OS
+  - [ ] People
+  - [ ] Places
+  - [ ] Projects
+  - [ ] Prompts
+  - [ ] Recipes
+  - [ ] Software
+  - [ ] Techchecks
+  - [ ] Techniques
+  - [ ] Technologies
+- [ ] Export Obsidian vault to knowledge database
+
+# Flashcards
 
 - [ ] Create flashcards from competency matrix (stateless — no persistence, restart = new set)
 - [ ] Create custom flashcards
 - [ ] Export user flashcards to .apkg format
 
-- [ ] Show posts sorted by publication date
-- [ ] Post filters by tags and date
-- [ ] Search posts by title and content
-- [ ] Post reactions
-
-### STAGE 6 — Auth and Users
+### Auth and Users
 
 - [ ] User authentication improvements (possibly via OAuth2)
   - [ ] (FRONT) Register button and form
@@ -238,26 +289,23 @@
   - [ ] Session invalidation on logout
   - [ ] Expired sessions actually deleted / not accepted
 
-### STAGE 7 — Matrix Improvements and Courses
+### Competency Matrix Improvements
 
 - [ ] Add a separate queue list for questions I want to add to the matrix
+- [ ] Ability to suggest a question for the competency matrix
+- [ ] Ability to report a typo in the competency matrix
+
+### Courses
+
+- [ ] Link courses to competency matrix
+- [ ] Browse available courses
 - [ ] Create a course material step (can include video, text, images, files, tests)
 - [ ] Playground for course tests
 - [ ] Create courses consisting of material steps
-- [ ] Link courses to competency matrix
-- [ ] Browse available courses
-- [ ] Ability to suggest a question for the competency matrix
-- [ ] Ability to report a typo in the competency matrix
 - [ ] Security audit
-  - [ ] User cannot edit another user's course progress
+    - [ ] User cannot edit another user's course progress
 
-### STAGE 8 — Security
-
-- [ ] OWASP Top 10 compliance check
-- [ ] Check for AI-based vulnerability scanning tools. Try one.
-- [ ] Full re-audit. Take all the security audits above and repeat them.
-
-### Out-of-stage tasks (can be done at any time)
+### Other tasks
 
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [ ] UI localisation
@@ -271,7 +319,6 @@
 ## Documentation
 
 - [ ] Add parameter details to the API and include examples and other fields.
-- [ ] Remove ADR, replace with .claude. Can keep.
 
 ## Refactoring
 
@@ -280,3 +327,5 @@
 - [x] Move CLI to a separate entry point (from main.py)
 - [x] Use GradeEnum in API and core layer.
 - [x] Rewrite NewType as regular classes.
+- [ ] Unite use-cases into a single class (separated by domain).
+- [ ] Unite all repositories to the "unit of work" pattern.
