@@ -1,5 +1,8 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
-import { ApiError } from '../../../core/models/api-error.model';
+
+export interface ErrorDisplay {
+  message: string;
+}
 
 @Component({
   selector: 'app-error-message',
@@ -15,6 +18,6 @@ import { ApiError } from '../../../core/models/api-error.model';
   `,
 })
 export class ErrorMessageComponent {
-  readonly error = input.required<ApiError>();
+  readonly error = input.required<ErrorDisplay>();
   readonly retry = output<void>();
 }
