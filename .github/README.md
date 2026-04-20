@@ -27,15 +27,14 @@ My site with blog, mentoring things and others.
 ## 📖 Documentation
 
 - [Project idea](../docs/idea.md)  
-- [Project vision](../docs/vision.md) 
-- [Domain entities](../docs/domain.md)
-- [ADR folder](../docs/adr/)
+- [Project TODOs](../docs/TODO.md)
 
 ## 📂 Project Structure
 
 ```
 my-site/
 ├── infra/         # Infra configuration files (scripts, Dockerfile, nginx conf, etc.)
+├── frontend/      # Frontend source code
 ├── backend/       # Backend source code
 ├── backend_tests/ # Project autotests
 ├── .env.example   # Example of project envs
