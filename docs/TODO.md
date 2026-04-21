@@ -61,94 +61,7 @@
 - [ ] Add basic analytics (Matomo) for user behavior tracking.
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
-- [ ] MVP security audit. Check for vulnerabilities and fix found issues.
-  - [x] Find a web application security checklist and go through it.
-  - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
-  - [ ] HTTP security headers in responses
-    - [ ] Strict-Transport-Security
-    - [ ] X-Content-Type-Options: nosniff
-    - [ ] X-Frame-Options: DENY
-    - [ ] Referrer-Policy: no-referrer
-    - [ ] Content-Security-Policy
-  - [ ] CSRF
-    - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
-    - [ ] CSRF token in cookie + header
-    - [ ] CSRF verified on server
-  - [ ] HTTPS and TLS
-    - [ ] Everything redirects to HTTPS
-    - [ ] HTTP isn’t served at all
-    - [ ] TLS ≥ 1.2
-    - [ ] Certbot auto-renews
-    - [ ] No internal services are exposed to the public
-  - [ ] XSS
-    - [ ] All user-supplied data is escaped
-    - [ ] No `| safe` without 100% certainty
-    - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
-    - [ ] CSP in place
-  - [ ] Passwords never logged
-  - [ ] Hashing: unique salt used
-  - [ ] Every protected handler checks the user (guards where needed)
-  - [ ] No "hide button if not admin" logic without backend enforcement
-  - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
-  - [ ] Docker and infrastructure
-    - [ ] App runs with `read_only: true`
-    - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
-    - [ ] No writes to `/etc`, `/usr`, `/bin`
-    - [ ] No bind mounts like: `- ./:/app`
-    - [ ] Containers do not run as root
-    - [ ] UID/GID not 0
-    - [ ] No sudo inside containers
-    - [ ] User-defined networks used
-    - [ ] Only nginx exposed to the public
-    - [ ] No hardcoded IPs
-    - [ ] Services accessible only by network name
-    - [ ] No localhost references between services
-    - [ ] No sensitive data in `docker inspect`
-    - [ ] Logs aren’t written to files inside containers
-    - [ ] Log rotation in place
-    - [ ] All services have health checks
-    - [ ] Nginx does not forward traffic to an unhealthy backend
-    - [ ] Adequate restart policy
-    - [ ] Image versions pinned
-    - [ ] No `latest` tags
-    - [ ] Images updated regularly
-    - [ ] Minimal packages
-    - [ ] Nginx not root
-    - [ ] Nginx has no write access
-    - [ ] No `proxy_pass` to localhost
-    - [ ] No `network_mode: host`
-    - [ ] No `privileged: true`
-    - [ ] No `/var/run/docker.sock` bind mount
-    - [ ] No `cap_add` unless strictly necessary
-    - [ ] No `devices:` unless strictly necessary
-    - [ ] `cap_drop: [ALL]` where possible
-    - [ ] No secrets in images
-    - [ ] Infrastructure services are not exposed externally
-      - [ ] PostgreSQL
-      - [ ] Valkey
-    - [ ] Postgres, Valkey, MinIO have no `ports`
-    - [ ] MinIO protected by auth
-    - [ ] Databasus protected by auth
-    - [ ] `.env` not in git
-    - [ ] No secrets in logs
-    - [ ] All keys are long and random
-    - [ ] No stacktrace shown to users
-    - [ ] Firewall enabled on host (ufw/iptables)
-    - [ ] Only ports 80 and 443 are open
-    - [ ] SSH by key only. Password login disabled.
-  - [ ] Rate limiting and bot protection
-    - [ ] Rate limit on login, registration, and password reset
-    - [ ] IP / fingerprint-based limiting
-    - [ ] No unlimited requests to heavy endpoints
-  - [ ] Backup & recovery
-    - [ ] Backups encrypted
-    - [ ] Backups are not publicly accessible
-    - [ ] Restore tested
-    - [ ] No access to back up a panel without auth
-  - [ ] Supply chain
-    - [ ] Dependency versions pinned
-    - [ ] Dependencies updated regularly
-    - [ ] No pip install from untrusted sources
+- [ ] Move backend_tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
   - [ ] Choose hosting
   - [ ] Wire up missing secrets
@@ -172,7 +85,94 @@
 - [ ] OWASP Top 10 compliance check
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
+    - [x] Find a web application security checklist and go through it.
     - [ ] Regular users cannot access internal systems without VPN.
+    - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
+    - [ ] HTTP security headers in responses
+        - [ ] Strict-Transport-Security
+        - [ ] X-Content-Type-Options: nosniff
+        - [ ] X-Frame-Options: DENY
+        - [ ] Referrer-Policy: no-referrer
+        - [ ] Content-Security-Policy
+    - [ ] CSRF
+        - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
+        - [ ] CSRF token in cookie + header
+        - [ ] CSRF verified on server
+    - [ ] HTTPS and TLS
+        - [ ] Everything redirects to HTTPS
+        - [ ] HTTP isn’t served at all
+        - [ ] TLS ≥ 1.2
+        - [ ] Certbot auto-renews
+        - [ ] No internal services are exposed to the public
+    - [ ] XSS
+        - [ ] All user-supplied data is escaped
+        - [ ] No `| safe` without 100% certainty
+        - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
+        - [ ] CSP in place
+    - [ ] Passwords never logged
+    - [ ] Hashing: unique salt used
+    - [ ] Every protected handler checks the user (guards where needed)
+    - [ ] No "hide button if not admin" logic without backend enforcement
+    - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
+    - [ ] Docker and infrastructure
+        - [ ] App runs with `read_only: true`
+        - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
+        - [ ] No writes to `/etc`, `/usr`, `/bin`
+        - [ ] No bind mounts like: `- ./:/app`
+        - [ ] Containers do not run as root
+        - [ ] UID/GID not 0
+        - [ ] No sudo inside containers
+        - [ ] User-defined networks used
+        - [ ] Only nginx exposed to the public
+        - [ ] No hardcoded IPs
+        - [ ] Services accessible only by network name
+        - [ ] No localhost references between services
+        - [ ] No sensitive data in `docker inspect`
+        - [ ] Logs aren’t written to files inside containers
+        - [ ] Log rotation in place
+        - [ ] All services have health checks
+        - [ ] Nginx does not forward traffic to an unhealthy backend
+        - [ ] Adequate restart policy
+        - [ ] Image versions pinned
+        - [ ] No `latest` tags
+        - [ ] Images updated regularly
+        - [ ] Minimal packages
+        - [ ] Nginx not root
+        - [ ] Nginx has no write access
+        - [ ] No `proxy_pass` to localhost
+        - [ ] No `network_mode: host`
+        - [ ] No `privileged: true`
+        - [ ] No `/var/run/docker.sock` bind mount
+        - [ ] No `cap_add` unless strictly necessary
+        - [ ] No `devices:` unless strictly necessary
+        - [ ] `cap_drop: [ALL]` where possible
+        - [ ] No secrets in images
+        - [ ] Infrastructure services are not exposed externally
+            - [ ] PostgreSQL
+            - [ ] Valkey
+        - [ ] Postgres, Valkey, MinIO have no `ports`
+        - [ ] MinIO protected by auth
+        - [ ] Databasus protected by auth
+        - [ ] `.env` not in git
+        - [ ] No secrets in logs
+        - [ ] All keys are long and random
+        - [ ] No stacktrace shown to users
+        - [ ] Firewall enabled on host (ufw/iptables)
+        - [ ] Only ports 80 and 443 are open
+        - [ ] SSH by key only. Password login disabled.
+    - [ ] Rate limiting and bot protection
+        - [ ] Rate limit on login, registration, and password reset
+        - [ ] IP / fingerprint-based limiting
+        - [ ] No unlimited requests to heavy endpoints
+    - [ ] Backup & recovery
+        - [ ] Backups encrypted
+        - [ ] Backups are not publicly accessible
+        - [ ] Restore tested
+        - [ ] No access to back up a panel without auth
+    - [ ] Supply chain
+        - [ ] Dependency versions pinned
+        - [ ] Dependencies updated regularly
+        - [ ] No pip install from untrusted sources
 
 ### Tracing and Monitoring
 
@@ -182,20 +182,43 @@
     - [ ] Send notifications on a container crash
     - [ ] Send notifications on high resource usage (CPU, RAM)
 - [ ] Security audit
-    - [ ] Regular users cannot access Grafana systems without VPN.
+    - [ ] Regular users cannot access Grafana without VPN.
 
 ### Frontend
 
 - [ ] Cookie consent
-- [ ] Migrate to a full frontend framework (Angular, most likely)
 - [ ] Fix question search on the frontend: empty sections should also be removed
 - [ ] Make text selection colour match the site theme
 - [ ] Add more feedback during API requests (notifications, errors, etc.)
+- [ ] Migrate to the Angular
+  - [ ] Base pages
+    - [ ] Header
+    - [ ] Footer
+    - [ ] all assets and scripts from minio to frontend nginx
+    - [ ] styles
+  - [ ] Competency matrix
+    - [ ] Question list
+    - [ ] Question detail
+  - [ ] About me
+    - [ ] landing
+    - [ ] Contact me form
+  - [ ] Auth and account
+    - [ ] Login modal
+    - [ ] Logout button
+    - [ ] navbar profile info
+  - [ ] Root
+    - [ ] favicon
+    - [ ] robots.txt
+    - [ ] sitemap page
+    - [ ] sitemap.xml
+    - [ ] /.well-known/appspecific/com.chrome.devtools.json
 - [ ] Add and edit competency matrix questions
-    - [ ] Search through existing external resources
-    - [ ] Edit mode for a specific question (button and form on question detail)
-    - [ ] Button and form for adding a question to a matrix section
-    - [ ] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
+  - [ ] Search through existing external resources
+  - [ ] Edit mode for a specific question (button and form on question detail)
+  - [ ] Button and form for adding a question to a matrix section
+  - [ ] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
+- [ ] "404" page 
+- [ ] Check for possible convert raw Markdown to HTML on the frontend side only
 - [ ] Security audit
   - [ ] Only admins can edit, add, and delete matrix questions
 
