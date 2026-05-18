@@ -6,4 +6,4 @@ repos:
         entry: make quality
         language: system
         pass_filenames: false
-        files: ^(backend|backend_tests)/.*\.py$
+        files: ^backend/(src|tests)/.*\.py$

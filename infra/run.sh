@@ -7,9 +7,9 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Check docker-compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "docker-compose application could not be found. Install it."
+# Check docker compose is installed
+if ! docker compose version &> /dev/null; then
+    echo "docker compose plugin could not be found. Install it."
     exit 1
 fi
 

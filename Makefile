@@ -1,7 +1,12 @@
-NAME := backend
-TESTS := backend_tests
+BACKEND_DIR := backend
+NAME := src
+TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
-LITESTAR_CLI_APP := "backend.cli:create_cli"
+UV_RUN := $(UV) --directory $(BACKEND_DIR) run
+LITESTAR_CLI_APP := "cli:create_cli"
+PYTHONPATH := src
+ALEMBIC_CONFIG := src/infra/postgresql/alembic/alembic.ini
+LINT_FILE := $(patsubst $(BACKEND_DIR)/%,%,$(file))
 
 .PHONY: run
 run:
@@ -15,15 +20,15 @@ stop:
 
 .PHONY: start_app
 start_app:
-	PYTHONPATH=backend uv run uvicorn backend.main:create_app --port 8080 --host 0.0.0.0
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) uvicorn main:create_app --port 8080 --host 0.0.0.0
 
 .PHONY: start_local_app
 start_local_app:
-	PYTHONPATH=backend APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost uv run backend/main.py
+	PYTHONPATH=$(PYTHONPATH) APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost $(UV_RUN) python src/main.py
 
 .PHONY: cli
 cli:
-	PYTHONPATH=backend LITESTAR_APP=$(LITESTAR_CLI_APP) uv run litestar $(command)
+	PYTHONPATH=$(PYTHONPATH) LITESTAR_APP=$(LITESTAR_CLI_APP) $(UV_RUN) litestar $(command)
 
 .PHONY: collectstatic
 collectstatic:
@@ -36,27 +41,27 @@ initbuckets:
 .PHONY: revision
 revision:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
 
 .PHONY: migrate
 migrate:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini upgrade head
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) upgrade head
 
 .PHONY: downgrade
 downgrade:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run alembic -c backend/infra/postgresql/alembic/alembic.ini downgrade -1
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) downgrade -1
 
 .PHONY: install
 install:
-	@if [ -z $(UV) ]; then echo "PDM could not be found."; exit 2; fi
-	$(UV) sync --locked --all-extras
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) --directory $(BACKEND_DIR) sync --locked --all-extras
 
 .PHONY: shell
 shell:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run ipython --no-confirm-exit --no-banner --quick \
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) ipython --no-confirm-exit --no-banner --quick \
 	--InteractiveShellApp.extensions="autoreload" \
 	--InteractiveShellApp.exec_lines="%autoreload 2"
 
@@ -67,60 +72,60 @@ clean:
 .PHONY: types
 types:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(NAME)
-	$(UV) run mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(TESTS)
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(NAME)
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(TESTS)
 
 .PHONY: bandit
 bandit:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run bandit --configfile ./pyproject.toml -r ./$(NAME)
+	$(UV_RUN) bandit --configfile ./pyproject.toml -r ./$(NAME)
 
 .PHONY: vulture
 vulture:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run vulture $(NAME) --min-confidence 100
+	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) vulture $(NAME) --min-confidence 100
 
 .PHONY: fix
 fix:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run djlint "$(NAME)/templates" --reformat
-	$(UV) run djlint "$(NAME)/static" --reformat
-	$(UV) run ruff format $(TESTS) --config ./pyproject.toml
-	$(UV) run ruff format $(NAME) --config ./pyproject.toml
+	$(UV_RUN) djlint "$(NAME)/templates" --reformat
+	$(UV_RUN) djlint "$(NAME)/static" --reformat
+	$(UV_RUN) ruff format $(TESTS) --config ./pyproject.toml
+	$(UV_RUN) ruff format $(NAME) --config ./pyproject.toml
 
-# Usage: make lint-file file=backend/core/blog/use_cases.py
+# Usage: make lint-file file=backend/src/core/blog/use_cases.py
 .PHONY: lint-file
 lint-file:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run ruff check --fix $(file) --config ./pyproject.toml
-	$(UV) run ruff format $(file) --config ./pyproject.toml
+	$(UV_RUN) ruff check --fix $(LINT_FILE) --config ./pyproject.toml
+	$(UV_RUN) ruff format $(LINT_FILE) --config ./pyproject.toml
 
 .PHONY: ruff-check
 ruff-check:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) run ruff check $(NAME) --fix
+	$(UV_RUN) ruff check $(NAME) $(TESTS) --fix
 
 .PHONY: tests
 tests:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/
 
 .PHONY: test-unit
 test-unit:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/unit/
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/unit/
 
 .PHONY: test-integration
 test-integration:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run pytest --durations=10 -vvv -x $(TESTS)/integration/
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/integration/
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage run -m pytest $(TESTS)/
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage xml
-	PYTHONPATH=backend APP_USE_CACHE=false $(UV) run coverage report --fail-under=60
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage run -m pytest $(TESTS)/
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage xml
+	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage report --fail-under=60
 
 .PHONY: quality
 quality:

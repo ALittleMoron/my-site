@@ -29,7 +29,7 @@ jobs:
       - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
-          python-version-file: "pyproject.toml"
+          python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
         uses: astral-sh/setup-uv@v6
       - name: "Install the project dependencies"
@@ -52,7 +52,7 @@ jobs:
       - name: "Coverage Badge"
         run: |
           pip install -U genbadge defusedxml
-          genbadge coverage -i  coverage.xml -o .github/badges/coverage.svg
+          genbadge coverage -i backend/coverage.xml -o .github/badges/coverage.svg
       - name: "Verify Changed files"
         uses: tj-actions/verify-changed-files@v16
         id: verify-changed-files

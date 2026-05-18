@@ -61,7 +61,7 @@
 - [ ] Add basic analytics (Matomo) for user behavior tracking.
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
-- [ ] Move backend_tests to backend and create a src subfolder for backend
+- [x] Move tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
   - [ ] Choose hosting
   - [ ] Wire up missing secrets

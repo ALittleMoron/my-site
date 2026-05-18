@@ -1,10 +1,9 @@
 services:
   backend:
     build:
-      context: .
-      dockerfile: infra/backend/Dockerfile
-#    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_backend:latest
-    image: my_site_backend:latest
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
     container_name: my_site_backend
     env_file:
       - .env
@@ -63,7 +62,6 @@ services:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
-#    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_nginx:latest
     image: my_site_nginx:latest
     container_name: my_site_nginx
     volumes:
