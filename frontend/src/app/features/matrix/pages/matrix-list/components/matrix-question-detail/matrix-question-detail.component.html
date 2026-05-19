@@ -1,0 +1,73 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (error()) {
+  <app-error-message [error]="error()!" />
+} @else if (question()) {
+  <div class="question-detail">
+    <h2 class="h5">Вопрос:</h2>
+    <p>{{ question()!.question }}</p>
+
+    <hr />
+
+    <h2 class="h5">Ответ:</h2>
+    <div [innerHTML]="answerHtml()"></div>
+
+    <hr />
+
+    <h2 class="h5">Ответ, который ожидается на собеседовании:</h2>
+    <div [innerHTML]="interviewAnswerHtml()"></div>
+
+    @if (question()!.resources.length > 0) {
+      <hr />
+      <h2 class="h5">Внешние ресурсы:</h2>
+      <ul class="list-unstyled">
+        @for (resource of question()!.resources; track resource.id) {
+          <li class="mt-2">
+            <a
+              class="text-body-secondary link-active"
+              [href]="resource.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ resource.name }}
+            </a>
+            @if (resource.context) {
+              <p class="mb-0 small text-muted">{{ resource.context }}</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (isAdmin()) {
+      <hr />
+      <div class="d-flex gap-2 mt-2">
+        @if (isDraft()) {
+          <button
+            type="button"
+            class="btn btn-sm btn-success"
+            (click)="publish.emit()"
+          >
+            Опубликовать
+          </button>
+        }
+        @if (isPublished()) {
+          <button
+            type="button"
+            class="btn btn-sm btn-warning"
+            (click)="unpublish.emit()"
+          >
+            Снять с публикации
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn-sm btn-danger"
+          (click)="delete.emit()"
+        >
+          Удалить
+        </button>
+      </div>
+    }
+  </div>
+}

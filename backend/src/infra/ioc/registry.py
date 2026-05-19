@@ -11,7 +11,6 @@ from infra.ioc.prodivers.contacts_provider import ContactsProvider
 from infra.ioc.prodivers.database_provider import DatabaseProvider
 from infra.ioc.prodivers.files_provider import FilesProvider
 from infra.ioc.prodivers.general_provider import GeneralProvider
-from infra.ioc.prodivers.markdown_provider import MarkdownProvider
 
 
 def get_providers() -> Iterable[Provider]:
@@ -20,7 +19,6 @@ def get_providers() -> Iterable[Provider]:
         FilesProvider(),
         DatabaseProvider(),
         LitestarProvider(),
-        MarkdownProvider(),
         CompetencyMatrixProvider(),
         UserAccountProvider(),
         AuthProvider(),

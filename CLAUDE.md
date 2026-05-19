@@ -14,7 +14,8 @@ Portfolio/blog site and knowledge database
 - File storage: MinIO (miniopy-async)
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK
-- Frontend: HTMX 2 + Jinja2 + Bootstrap 5 + Hyperscript (→ Angular, planned)
+- Frontend: Angular 19 SPA + Bootstrap 5, served by a frontend-owned nginx image
+- Edge: nginx reverse proxy for TLS, `/api/*`, frontend, MinIO, and backup UI routing
 
 ## General rules
 

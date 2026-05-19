@@ -6,51 +6,49 @@
 |----------|------------|
 | Покрытие | ![coverage](./badges/coverage.svg) |
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
-| База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
-| Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
+| База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
+| Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
+| Тестирование | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
-| Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
+| Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
 | Логирование | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
 | Архитектура | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
 | Инструменты | ![uv](./badges/uv.svg) ![uvicorn](./badges/uvicorn.svg) |
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
-> [!WARNING]
-> Значок coverage показывает процент покрытия всего проекта.  
-> Нужно иметь в виду, что если процент низкий, то это не значит, что проект покрыт слабо, а
-> следовательно плохо написан. Я пока не писал тесты на фронтенд, а он является весомой частью
-> проекта, правда протестировать его получится только каким-нибудь selenium. Когда я перепишу фронт
-> с HTMX + HyperScript на какой-нибудь модный frontend-framework, тогда coverage backend-части
-> вырастет весомо. Так и с некоторыми другими частями проекта. Core функционал протестирован на 95+
-> процентов.
+> [!NOTE]
+> Coverage badge отражает покрытие только backend-части (Python).
+> Frontend покрыт unit-тестами на Jest (отдельная CI job).
 
-Веб-приложение с **Litestar** в качестве backend и **HTMX** в качестве frontend (Server Side
-Rendering). Мой сайт с блогом, матрицей компетенций, материалами по менторству и другими вещами.
+Личный сайт с REST API на **Litestar** и SPA-фронтендом на **Angular 19**.
+Матрица компетенций, блог, форма обратной связи и панель администратора.
 
 ## 📖 Документация
 
 - [Идея проекта](../docs/idea.md)  
-- [Что нужно сделать для проекта](../docs/TODO.md)
+- [Что нужно сделать](../docs/TODO.md)
 
 ## 📂 Структура проекта
 
 ```
 my-site/
-├── infra/         # Файлы конфигурации инфраструктуры (скрипты, Dockerfile, конфиги nginx и др.)
-├── frontend/      # Исходный код frontend части приложения
-├── backend/       # Исходный код backend части приложения
-├── backend_tests/ # Автотесты проекта
-├── .env.example   # Пример файла окружения
-├── ...
-└── README.md      # Этот файл
+├── infra/          # nginx reverse proxy, скрипты запуска
+├── frontend/       # Angular 19 SPA (собственный nginx-образ)
+├── backend/        # Litestar API + доменная логика
+│   ├── src/        # Исходный код приложения
+│   └── tests/      # Backend-тесты (pytest)
+├── .env.example    # Пример переменных окружения
+└── docker-compose.yml
 ```
 
 ## ✨ Возможности
 
-- Матрица компетенций с вопросами и ответами  
-- Простой динамический фронтенд на HTMX  
-- API с документацией  
-- Тёмная тема интерфейса  
+- Матрица компетенций с вопросами, ответами и рендерингом Markdown
+- Angular SPA с тёмной/светлой темой и режимами списка/таблицы
+- REST API с документацией OpenAPI
+- Панель администратора: создание, редактирование, публикация вопросов
+- Форма обратной связи
+- Аутентификация на базе PASETO
 
 ## 🚀 Запуск
 
@@ -65,7 +63,7 @@ cd my-site
 cp .env.example .env
 ```
 
-3. Сгенерируйте сертификаты для `nginx` (опционально для локального запуска)
+3. Сгенерировать сертификаты для `nginx` (опционально для локального запуска):
 
 ```bash
 mkcert -install
@@ -78,19 +76,12 @@ mv <your-domain>.pem ./infra/nginx/certs/
 mv <your-domain>-key.pem ./infra/nginx/certs/
 ```
 
-4. Изменить переменные в `.env` под свои значения
+4. Обновить переменные в `.env`.
 
-5. Запустите docker-compose через `Makefile`
+5. Запустить через `Makefile`:
 ```bash
 make run
 ```
-
-6. Или запустите локально через `uvicorn`
-
-```bash
-make start_local
-```
-
 
 ## ⚙️ Важные ссылки
 
@@ -99,5 +90,14 @@ make start_local
 - Документация API: `http://localhost/api/docs`
 - OpenAPI спецификация: `http://localhost/api/docs/openapi.json`
 
-Другие ссылки см. в [docker-compose.yaml](../docker-compose.yml)
+Другие сервисы — в [docker-compose.yml](../docker-compose.yml).
 
+## 🧪 Тесты
+
+```bash
+make tests                     # все тесты (backend + frontend)
+make test-backend              # только backend (pytest)
+make test-backend-unit         # unit-тесты backend
+make test-backend-integration  # интеграционные тесты backend
+make test-frontend             # только frontend (jest)
+```

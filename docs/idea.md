@@ -3,7 +3,7 @@
 ## Concept
 
 Personal portfolio site with a blog and an interactive competency matrix.
-Demonstrates technical skills through Clean Architecture, HTMX, and a modern DevOps stack.
+Demonstrates technical skills through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
 
 ## Audience
 
@@ -39,6 +39,8 @@ Demonstrates technical skills through Clean Architecture, HTMX, and a modern Dev
 
 - Clean Architecture and best practices
 - Interactive competency matrix
+- Angular SPA frontend served as an independent Docker image
+- Infrastructure nginx kept as an edge reverse proxy for public routing and TLS
 
 ## Goal
 

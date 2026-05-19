@@ -1,0 +1,58 @@
+<div id="login-modal" class="modal force-display-block" style="background-color: rgba(0, 0, 0, 0.5)">
+  <form class="modal-dialog" [formGroup]="form" (ngSubmit)="login()" novalidate>
+    <div class="modal-content" style="z-index: 1067">
+      <div class="modal-header">
+        <h5 class="modal-title">Вход в систему</h5>
+        <button type="button" class="btn-close" aria-label="Закрыть" (click)="close()"></button>
+      </div>
+
+      <div class="modal-body">
+      @if (loginError()) {
+        <div class="alert alert-danger" role="alert" aria-live="polite">
+          {{ loginError() }}
+        </div>
+      }
+
+        <div class="mb-3">
+          <label for="username" class="form-label">Имя пользователя</label>
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            formControlName="username"
+            autocomplete="username"
+            aria-label="Имя пользователя"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label">Пароль</label>
+          <input
+            id="password"
+            type="password"
+            class="form-control"
+            formControlName="password"
+            autocomplete="current-password"
+            aria-label="Пароль"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="submit"
+          class="btn button-active"
+          [disabled]="form.invalid || submitting()"
+          aria-label="Войти"
+        >
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            Вход...
+          } @else {
+            Войти
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

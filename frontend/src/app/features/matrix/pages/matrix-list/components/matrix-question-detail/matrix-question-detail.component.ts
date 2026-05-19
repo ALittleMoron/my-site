@@ -1,0 +1,46 @@
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  output,
+  computed,
+} from '@angular/core';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
+import { ApiError } from '../../../../../../core/models/api-error.model';
+import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
+
+@Component({
+  selector: 'app-matrix-question-detail',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LoadingSpinnerComponent, ErrorMessageComponent],
+  templateUrl: './matrix-question-detail.component.html',
+})
+export class MatrixQuestionDetailComponent {
+  readonly question = input<MatrixQuestionDetail | null>(null);
+  readonly loading = input<boolean>(false);
+  readonly error = input<ApiError | null>(null);
+  readonly isAdmin = input.required<boolean>();
+
+  readonly publish = output<void>();
+  readonly unpublish = output<void>();
+  readonly delete = output<void>();
+
+  readonly answerHtml = computed<string>(() => {
+    const q = this.question();
+    if (!q?.answer) return '';
+    return DOMPurify.sanitize(marked.parse(q.answer, { async: false }));
+  });
+
+  readonly interviewAnswerHtml = computed<string>(() => {
+    const q = this.question();
+    if (!q?.interviewExpectedAnswer) return '';
+    return DOMPurify.sanitize(marked.parse(q.interviewExpectedAnswer, { async: false }));
+  });
+
+  readonly isDraft = computed<boolean>(() => this.question()?.publishStatus === 'Draft');
+  readonly isPublished = computed<boolean>(() => this.question()?.publishStatus === 'Published');
+}

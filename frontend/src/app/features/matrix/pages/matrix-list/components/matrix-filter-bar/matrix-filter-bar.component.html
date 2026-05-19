@@ -1,0 +1,84 @@
+<div class="card rounded-3 px-2 py-2 my-4">
+  <div class="row my-3 mx-1 align-items-center">
+    <div class="col-12 col-md-4">
+      <div class="input-group">
+        <span class="input-group-text bg-body" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          class="form-control form-bordered"
+          placeholder="Поиск навыков и вопросов"
+          aria-label="Поиск навыков и вопросов"
+          [value]="search()"
+          (input)="onSearchInput($event)"
+        />
+        @if (search()) {
+          <button
+            type="button"
+            class="btn btn-sm button-active"
+            aria-label="Очистить поиск"
+            (click)="clearSearch()"
+          >
+            Очистить
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="col d-flex justify-content-end align-items-center gap-3 mt-2 mt-md-0">
+      @if (isAdmin()) {
+        <div class="form-check form-switch mb-0">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="onlyPublishedToggle"
+            [checked]="onlyPublished()"
+            (change)="toggleOnlyPublished()"
+          />
+          <label class="form-check-label" for="onlyPublishedToggle">Только опубликованные</label>
+        </div>
+      }
+    </div>
+
+    <div class="col-auto d-flex justify-content-end align-items-center gap-2 mt-2 mt-md-0">
+      <div class="btn-group" role="group" aria-label="Layout switcher">
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.button-active]="isListMode()"
+          [class.button-inactive]="!isListMode()"
+          aria-label="List view"
+          (click)="setLayout('list')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+            <path d="M14 4h7"></path>
+            <path d="M14 9h7"></path>
+            <path d="M14 15h7"></path>
+            <path d="M14 20h7"></path>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.button-active]="isGridMode()"
+          [class.button-inactive]="!isGridMode()"
+          aria-label="Grid view"
+          (click)="setLayout('grid')"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+            <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+            <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

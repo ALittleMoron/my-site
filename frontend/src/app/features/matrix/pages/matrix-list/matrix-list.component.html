@@ -1,45 +1,84 @@
-<div class="container py-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">Competency Matrix</h1>
-    <button
-      type="button"
-      class="btn btn-outline-secondary btn-sm"
-      (click)="toggleLayout()"
-      [attr.aria-label]="layoutMode() === 'list' ? 'Switch to grid view' : 'Switch to list view'"
-    >
-      {{ layoutMode() === 'list' ? 'Grid view' : 'List view' }}
-    </button>
-  </div>
+<div class="container py-4 mt-5">
+  <h1 class="fw-bold mb-3">Матрица компетенций</h1>
 
-  <div class="mb-4">
-    <input
-      type="search"
-      class="form-control"
-      placeholder="Search questions…"
-      [formControl]="searchControl"
-      aria-label="Search questions"
+  @if (sheets().length > 0) {
+    <app-matrix-sheet-tabs
+      [sheets]="sheets()"
+      [selectedSheet]="selectedSheet()"
+      (sheetSelected)="selectSheet($event)"
     />
-  </div>
+  }
+
+  <app-matrix-filter-bar
+    [search]="search()"
+    [onlyPublished]="onlyPublished()"
+    [layoutMode]="layoutMode()"
+    [isAdmin]="isAdmin()"
+    (searchChange)="setSearch($event)"
+    (onlyPublishedChange)="setOnlyPublished($event)"
+    (layoutModeChange)="setLayoutMode($event)"
+  />
 
   @if (loading()) {
     <app-loading-spinner />
   } @else if (error()) {
-    <app-error-message [error]="error()!" (retry)="load(searchControl.value)" />
+    <app-error-message [error]="error()!" (retry)="loadSheets()" />
   } @else if (isEmpty()) {
-    <app-empty-state message="No questions found. Try a different search." />
-  } @else {
-    <div
-      [class]="
-        layoutMode() === 'grid'
-          ? 'row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3'
-          : 'd-flex flex-column gap-2'
-      "
-    >
-      @for (question of questions(); track question.id) {
-        <div [class]="layoutMode() === 'grid' ? 'col' : ''">
-          <app-matrix-question-card [question]="question" />
-        </div>
-      }
-    </div>
+    <app-empty-state message="Вопросы не найдены." />
+  } @else if (filteredQuestions()) {
+    @if (layoutMode() === 'list') {
+      <app-matrix-grouped-list
+        [questions]="filteredQuestions()!"
+        (questionSelected)="openDetail($event)"
+      />
+    } @else {
+      <app-matrix-grouped-grid
+        [questions]="filteredQuestions()!"
+        (questionSelected)="openDetail($event)"
+      />
+    }
   }
 </div>
+
+@if (detailVisible()) {
+  <div
+    class="modal d-block modal-backdrop-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Детализация вопроса"
+    (click)="closeDetail()"
+    (keyup.escape)="closeDetail()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered modal-lg"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Детализация вопроса</h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Закрыть"
+            (click)="closeDetail()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <app-matrix-question-detail
+            [question]="selectedQuestion()"
+            [loading]="detailLoading()"
+            [error]="detailError()"
+            [isAdmin]="isAdmin()"
+            (publish)="onPublish(selectedQuestion()!.id)"
+            (unpublish)="onUnpublish(selectedQuestion()!.id)"
+            (delete)="onDelete(selectedQuestion()!.id)"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+}

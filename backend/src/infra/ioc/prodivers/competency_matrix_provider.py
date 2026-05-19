@@ -19,9 +19,6 @@ from core.competency_matrix.use_cases import (
     PublishSwitchItemUseCase,
     UpsertItemUseCase,
 )
-from entrypoints.litestar.views.competency_matrix.context_converters import (
-    CompetencyMatrixContextConverter,
-)
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 
 
@@ -33,10 +30,6 @@ class CompetencyMatrixProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_resource_id_generator(self) -> ResourceIdGenerator:
         return ResourceIdGenerator()
-
-    @provide(scope=Scope.APP)
-    async def provide_context_converter(self) -> CompetencyMatrixContextConverter:
-        return CompetencyMatrixContextConverter()
 
     @provide(scope=Scope.REQUEST)
     async def provide_competency_matrix_storage(

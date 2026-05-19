@@ -6,15 +6,10 @@ from core.contacts.use_cases import (
     AbstractCreateContactMeRequestUseCase,
     CreateContactMeRequestUseCase,
 )
-from entrypoints.litestar.views.contacts.context_converters import ContactsContextConverter
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 
 
 class ContactsProvider(Provider):
-    @provide(scope=Scope.APP)
-    async def provide_context_converter(self) -> ContactsContextConverter:
-        return ContactsContextConverter()
-
     @provide(scope=Scope.REQUEST)
     async def provide_contact_me_storage(
         self,

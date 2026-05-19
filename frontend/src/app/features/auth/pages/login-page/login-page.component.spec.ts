@@ -1,0 +1,88 @@
+import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { LoginPageComponent } from './login-page.component';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+
+describe('LoginPageComponent', () => {
+  let fixture: ComponentFixture<LoginPageComponent>;
+  let component: LoginPageComponent;
+  let mockAuthService: { login: jest.Mock };
+  let mockAuthModalService: { closeLogin: jest.Mock };
+
+  beforeEach(async () => {
+    mockAuthService = { login: jest.fn() };
+    mockAuthModalService = { closeLogin: jest.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [LoginPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthModalService, useValue: mockAuthModalService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(LoginPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('renders username and password fields', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#login-modal')).not.toBeNull();
+    expect(compiled.querySelector('.modal.force-display-block')).not.toBeNull();
+    expect(compiled.querySelector('#username')).not.toBeNull();
+    expect(compiled.querySelector('#password')).not.toBeNull();
+  });
+
+  it('submit button is disabled when form is invalid', () => {
+    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+
+  it('submit button is enabled when form is valid', () => {
+    component.form.setValue({ username: 'admin', password: 'secret' });
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+  });
+
+  it('shows error message on login failure', () => {
+    mockAuthService.login.mockReturnValue(throwError(() => ({ message: 'Invalid credentials' })));
+    component.form.setValue({ username: 'admin', password: 'wrong' });
+    fixture.detectChanges();
+
+    component.login();
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('.alert-danger') as HTMLElement;
+    expect(alert).not.toBeNull();
+    expect(alert.textContent?.trim()).toBe('Invalid credentials');
+  });
+
+  it('does not show error message initially', () => {
+    const alert = fixture.nativeElement.querySelector('.alert-danger');
+    expect(alert).toBeNull();
+  });
+
+  it('calls authService.login with correct credentials', () => {
+    mockAuthService.login.mockReturnValue(of(undefined));
+    component.form.setValue({ username: 'admin', password: 'secret' });
+    fixture.detectChanges();
+
+    component.login();
+
+    expect(mockAuthService.login).toHaveBeenCalledWith('admin', 'secret');
+  });
+
+  it('closes modal after successful login', () => {
+    mockAuthService.login.mockReturnValue(of(undefined));
+    component.form.setValue({ username: 'admin', password: 'secret' });
+
+    component.login();
+
+    expect(mockAuthModalService.closeLogin).toHaveBeenCalled();
+  });
+});

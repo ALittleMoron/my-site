@@ -1,4 +1,5 @@
 BACKEND_DIR := backend
+FRONTEND_DIR := frontend
 NAME := src
 TESTS := tests
 UV := $(shell command -v uv 2> /dev/null)
@@ -88,8 +89,6 @@ vulture:
 .PHONY: fix
 fix:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) djlint "$(NAME)/templates" --reformat
-	$(UV_RUN) djlint "$(NAME)/static" --reformat
 	$(UV_RUN) ruff format $(TESTS) --config ./pyproject.toml
 	$(UV_RUN) ruff format $(NAME) --config ./pyproject.toml
 
@@ -106,19 +105,26 @@ ruff-check:
 	$(UV_RUN) ruff check $(NAME) $(TESTS) --fix
 
 .PHONY: tests
-tests:
+tests: test-backend test-frontend
+
+.PHONY: test-backend
+test-backend:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/
 
-.PHONY: test-unit
-test-unit:
+.PHONY: test-backend-unit
+test-backend-unit:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/unit/
 
-.PHONY: test-integration
-test-integration:
+.PHONY: test-backend-integration
+test-backend-integration:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/integration/
+
+.PHONY: test-frontend
+test-frontend:
+	cd $(FRONTEND_DIR) && npm test -- --watchAll=false
 
 .PHONY: tests-coverage
 tests-coverage:

@@ -16,6 +16,18 @@ services:
     networks:
       - app-network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: my_site_frontend:latest
+    container_name: my_site_frontend
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN}
+    restart: unless-stopped
+    networks:
+      - app-network
+
   valkey:
     image: valkey/valkey:9.0.1
     container_name: my_site_valkey
@@ -75,13 +87,15 @@ services:
       - "443:443"
     depends_on:
       - backend
-      - certbot
+      - frontend
     networks:
       - app-network
 
   certbot:
     image: certbot/certbot:v5.2.2
     container_name: my_site_certbot
+    profiles:
+      - letsencrypt
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot

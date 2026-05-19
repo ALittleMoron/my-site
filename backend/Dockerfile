@@ -5,6 +5,10 @@ ENV UV_VENV_PATH=/project/.venv
 
 WORKDIR $APP_PATH
 
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache --all-extras --no-install-project
 

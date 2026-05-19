@@ -1,4 +1,4 @@
-# My Personal Site 
+# My Personal Site
 
 [🇷🇺 Русская версия](./README_RU.md)
 
@@ -6,23 +6,22 @@
 |----------|--------------|
 | Coverage | ![coverage](./badges/coverage.svg) |
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
-| Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) ![sqladmin](./badges/sqladmin.svg) |
-| Frontend | ![htmx](./badges/htmx.svg) ![hyperscript](./badges/hyperscript.svg) ![bootstrap](./badges/bootstrap.svg) ![jinja](./badges/jinja.svg) |
+| Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
+| Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
+| Testing | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
-| Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![pytest](./badges/pytest.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
+| Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
 | Logging | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
 | Architecture | ![clean-architecture](./badges/clean-architecture.svg) ![type-safe](./badges/type-safe.svg) |
 | Tools | ![uv](./badges/uv.svg) ![uvicorn](./badges/uvicorn.svg) |
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
-> [!WARNING]
-> Coverage shows cover percents of entire project. That means, some parts of projects are not
-> covered yet, but it does not mean, that it is bad. For example, there is no coverage of endpoints
-> of templates (HTMX + HyperScript) or CLI. CLI I tested manually, frontend not tested yet. But
-> I will separate frontend and backend further.
+> [!NOTE]
+> Coverage badge reflects backend (Python) test coverage only.
+> Frontend is covered by Jest unit tests (separate CI job).
 
-A web application with a Litestar as backend with HTMX as frontend (Server Side Rendering). 
-My site with blog, mentoring things and others.
+A personal site with a Litestar REST API backend and an Angular 19 SPA frontend.
+Features a competency matrix, blog, contact form, and admin panel.
 
 ## 📖 Documentation
 
@@ -33,21 +32,23 @@ My site with blog, mentoring things and others.
 
 ```
 my-site/
-├── infra/         # Infra configuration files (scripts, Dockerfile, nginx conf, etc.)
-├── frontend/      # Frontend source code
-├── backend/       # Backend source code
-├── backend_tests/ # Project autotests
-├── .env.example   # Example of project envs
-├── ...
-└── README.md      # Project readme (current file)
+├── infra/          # nginx reverse proxy, run scripts
+├── frontend/       # Angular 19 SPA (served by its own nginx image)
+├── backend/        # Litestar API + domain logic
+│   ├── src/        # Application source
+│   └── tests/      # Backend tests (pytest)
+├── .env.example    # Example environment variables
+└── docker-compose.yml
 ```
 
 ## ✨ Features
 
-- Competency matrix with questions and answers
-- Simple dynamic frontend using HTMX
-- API with documentation
-- Dark theme UI
+- Competency matrix with questions, answers, and Markdown rendering
+- Angular SPA with dark/light theme and list/grid layouts
+- REST API with OpenAPI documentation
+- Admin panel: create, edit, publish/unpublish matrix questions
+- Contact form
+- PASETO-based authentication
 
 ## 🚀 Quick Start
 
@@ -57,12 +58,12 @@ git clone git@github.com:ALittleMoron/my-site.git
 cd my-site
 ```
 
-2. Make `.env` file
+2. Create `.env` file:
 ```bash
 cp .env.example .env
 ```
 
-3. Create your certs for `nginx` (optional for local development)
+3. Create certs for `nginx` (optional for local development):
 
 ```bash
 mkcert -install
@@ -75,25 +76,28 @@ mv <your-domain>.pem ./infra/nginx/certs/
 mv <your-domain>-key.pem ./infra/nginx/certs/
 ```
 
-4. Change `.env` file variables to yours
+4. Update `.env` with your values.
 
-5. Run docker compose via `Makefile`
+5. Run via `Makefile`:
 ```bash
 make run
 ```
 
-6. Or run local app
-
-```bash
-make start_local
-```
-
 ## ⚙️ Endpoints
 
-- Frontend runs on `http://localhost`
-- API runs on `http://localhost/api`
-- API documentation available at `http://localhost/api/docs`
-- OpenAPI specification available at `http://localhost/api/docs/openapi.json`
+- Frontend: `http://localhost`
+- API: `http://localhost/api`
+- API docs: `http://localhost/api/docs`
+- OpenAPI spec: `http://localhost/api/docs/openapi.json`
 
-For other routes see [docker-compose.yaml](../docker-compose.yml)
+See [docker-compose.yml](../docker-compose.yml) for all services.
 
+## 🧪 Tests
+
+```bash
+make tests                  # all tests (backend + frontend)
+make test-backend           # backend only (pytest)
+make test-backend-unit      # backend unit tests
+make test-backend-integration  # backend integration tests
+make test-frontend          # frontend only (jest)
+```

@@ -4,6 +4,7 @@ map $http_upgrade $connection_upgrade {
 }
 
 upstream backend { server backend:8080; }
+upstream frontend { server frontend:80; }
 upstream minio_api { server minio:9000; }
 upstream minio_panel { server minio:9001; }
 upstream databasus { server databasus:4005; }
@@ -88,8 +89,7 @@ server {
     }
 
     location / {
-        auth_basic off;
-        proxy_pass http://backend/;
+        proxy_pass http://frontend;
     }
 }
 

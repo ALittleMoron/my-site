@@ -1,0 +1,104 @@
+<nav class="navbar navbar-expand-lg nav nav-pills nav-blur fixed-top px-4 pt-1 pb-1 border-bottom">
+  <a class="navbar-brand fs-4 text-success fw-bold" routerLink="/">ALM</a>
+  <button
+    class="navbar-toggler"
+    type="button"
+    (click)="toggleNav()"
+    aria-controls="navbarContent"
+    [attr.aria-expanded]="isNavOpen()"
+    aria-label="Toggle navigation"
+  >
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="navbar-collapse" [class.collapse]="!isNavOpen()" id="navbarContent">
+    <div class="container-fluid">
+      <ul class="navbar-nav d-flex justify-content-center">
+        <li class="nav-item mx-3">
+          <a
+            class="nav-link link-colored"
+            routerLink="/about-me"
+            routerLinkActive="link-active"
+            aria-label="Обо мне"
+            (click)="closeNav()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="me-1"
+            >
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Обо мне</span>
+          </a>
+        </li>
+        <li class="nav-item mx-3">
+          <a
+            class="nav-link link-colored"
+            routerLink="/competency-matrix"
+            routerLinkActive="link-active"
+            aria-label="Матрица компетенций"
+            (click)="closeNav()"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="currentColor"
+              class="bi bi-mortarboard me-1"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917zM8 8.46 1.758 5.965 8 3.052l6.242 2.913z"
+              />
+              <path
+                d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"
+              />
+            </svg>
+            <span>Матрица компетенций</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="d-flex align-items-center justify-content-end gap-2">
+      <button
+        type="button"
+        class="btn button-inactive btn-sm"
+        (click)="toggle()"
+        aria-label="Toggle theme"
+      >
+        {{ toggleLabel() }}
+      </button>
+
+      @if (isLoggedIn()) {
+        <span class="text-body-secondary small" [attr.aria-label]="'Logged in as ' + username()">
+          {{ username() }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-outline-danger btn-sm"
+          (click)="logout()"
+          aria-label="Выйти"
+        >
+          Выйти
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="btn button-inactive btn-sm"
+          (click)="openLogin()"
+          aria-label="Войти"
+        >
+          Войти
+        </button>
+      }
+    </div>
+  </div>
+</nav>

@@ -41,7 +41,7 @@ class MinioFileStorage(FileStorage):
 
     @staticmethod
     def _ensure_valid_namespace(namespace: str) -> Namespace:
-        if namespace not in {"static", "media"}:
+        if namespace != "media":
             logger.error("Passed incorrect namespace:", bucket_name=namespace)
             raise NamespaceNotAllowedError(template_vars={"namespace": namespace})
         return namespace  # type: ignore[return-value]
@@ -98,8 +98,7 @@ class MinioFileStorage(FileStorage):
 
     async def init_storage(self) -> None:
         logger.info("Initializing storage")
-        for bucket_name in ["static", "media"]:
-            await self.ensure_namespace_exists(namespace=bucket_name)
+        await self.ensure_namespace_exists(namespace="media")
         logger.info("Storage initialized successfully")
 
     async def presign_put_object(

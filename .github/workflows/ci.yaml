@@ -5,6 +5,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality:
-    name: "Check project quality"
-    uses: ./.github/workflows/_quality.yaml
+  quality-backend:
+    name: "Backend quality"
+    uses: ./.github/workflows/_quality_backend.yaml
+
+  quality-frontend:
+    name: "Frontend quality"
+    uses: ./.github/workflows/_quality_frontend.yaml

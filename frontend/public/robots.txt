@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /about-me
+Allow: /competency-matrix
+Disallow: /
+Sitemap: /sitemap.xml

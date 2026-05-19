@@ -4,7 +4,6 @@ from contextlib import AbstractAsyncContextManager
 from dishka import AsyncContainer
 from litestar import Litestar, Router
 from litestar.config.response_cache import ResponseCacheConfig
-from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.logging import StructLoggingConfig
 from litestar.middleware import DefineMiddleware
 from litestar.middleware.logging import LoggingMiddlewareConfig
@@ -13,12 +12,9 @@ from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
 from litestar.plugins.pydantic import PydanticPlugin
 from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
-from litestar.static_files import create_static_files_router
 from litestar.stores.base import Store
 from litestar.stores.valkey import ValkeyStore
-from litestar.template import TemplateConfig
 from litestar.types import Middleware
-from litestar_htmx import HTMXPlugin
 from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from entrypoints.litestar.api.routers import api_router
@@ -28,8 +24,6 @@ from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
-from entrypoints.litestar.template_callables import register_template_callables
-from entrypoints.litestar.views.routers import views_router
 from infra.config import loggers
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -63,14 +57,6 @@ def create_openapi_config() -> OpenAPIConfig:
     )
 
 
-def create_template_config() -> TemplateConfig:
-    return TemplateConfig(
-        directory=constants.path.template_dir / "application",
-        engine=JinjaTemplateEngine,
-        engine_callback=register_template_callables,
-    )
-
-
 def create_plugins() -> list[PluginProtocol]:
     logging_config = StructLoggingConfig(
         log_exceptions="always",
@@ -80,7 +66,6 @@ def create_plugins() -> list[PluginProtocol]:
         cache_logger_on_first_use=loggers.cache_logger_on_first_use,
     )
     return [
-        HTMXPlugin(),
         StructlogPlugin(
             config=StructlogConfig(
                 structlog_logging_config=logging_config,
@@ -103,21 +88,13 @@ def create_middlewares(container: AsyncContainer) -> list[Middleware]:
             token_header_name=settings.auth.token_header_name,
             token_prefix=settings.auth.token_prefix,
             container=container,
-            exclude=["/api/docs", "/static"],
+            exclude=["/api/docs"],
         ),
     ]
 
 
 def create_routers() -> list[Router]:
-    routers = [api_router, views_router]
-    if settings.app.debug:
-        routers.append(
-            create_static_files_router(
-                path="/static",
-                directories=[constants.path.src_dir / "static"],
-            ),
-        )
-    return routers
+    return [api_router]
 
 
 def create_cli_app(
@@ -129,7 +106,6 @@ def create_cli_app(
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
         stores=create_stores(),
         plugins=[CLIPlugin()],
-        template_config=create_template_config(),
         openapi_config=create_openapi_config(),
     )
 
@@ -151,6 +127,5 @@ def create_litestar_app(
         ),
         middleware=[*create_middlewares(container), *(extra_middlewares or [])],
         plugins=[*create_plugins(), *(extra_plugins or [])],
-        template_config=create_template_config(),
         openapi_config=create_openapi_config(),
     )

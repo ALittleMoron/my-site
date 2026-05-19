@@ -17,7 +17,7 @@ class TestMinioFileStorage:
         self.storage = MinioFileStorage(client=self.mock_minio_client)
 
     async def test_ensure_bucket_exists_bucket_exists(self) -> None:
-        bucket_name = "static"
+        bucket_name = "media"
         self.mock_minio_client.bucket_exists.return_value = True
         await self.storage.ensure_namespace_exists(bucket_name)
         self.mock_minio_client.bucket_exists.assert_called_once_with(bucket_name)
@@ -46,25 +46,25 @@ class TestMinioFileStorage:
         result = await self.storage.upload_file(
             file_data=file_data,
             object_name=object_name,
-            namespace="static",
+            namespace="media",
             content_type=content_type,
         )
         expected_result = FileUploadResult(
             url="http://localhost/media/test.txt",
-            bucket="static",
+            bucket="media",
             object_name=object_name,
             size=12,
         )
         assert result == expected_result
         self.mock_minio_client.put_object.assert_called_once_with(
-            bucket_name="static",
+            bucket_name="media",
             object_name=object_name,
             data=file_data,
             length=12,
             content_type=content_type,
         )
         mock_settings.get_minio_object_url.assert_called_once_with(
-            bucket="static",
+            bucket="media",
             object_path=object_name,
         )
 
@@ -88,13 +88,11 @@ class TestMinioFileStorage:
             await self.storage.upload_file(
                 file_data=file_data,
                 object_name=object_name,
-                namespace="static",
+                namespace="media",
             )
 
     async def test_init_storage(self) -> None:
         with patch.object(self.storage, "ensure_namespace_exists") as mock_ensure:
             mock_ensure.return_value = None
             await self.storage.init_storage()
-            assert mock_ensure.call_count == 2
-            mock_ensure.assert_any_call(namespace="static")
-            mock_ensure.assert_any_call(namespace="media")
+            mock_ensure.assert_called_once_with(namespace="media")

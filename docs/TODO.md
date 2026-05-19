@@ -79,6 +79,12 @@
 - [ ] Dependency scanning (Safety, Bandit, Trivy)
 - [ ] VPN for accessing internal systems
 - [ ] Add Dependabot to the repository
+- [ ] Prepare repository split
+    - [x] Move Angular static serving into a frontend-owned Docker image
+    - [x] Keep infrastructure nginx as the edge reverse proxy
+    - [ ] Move backend, frontend, and infrastructure into separate repositories
+    - [ ] Configure independent image publishing for backend and frontend
+    - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
@@ -187,31 +193,91 @@
 ### Frontend
 
 - [ ] Cookie consent
-- [ ] Fix question search on the frontend: empty sections should also be removed
+- [x] Fix question search on the frontend: empty sections should also be removed
 - [ ] Make text selection colour match the site theme
 - [ ] Add more feedback during API requests (notifications, errors, etc.)
 - [ ] Migrate to the Angular
-  - [ ] Base pages
-    - [ ] Header
-    - [ ] Footer
-    - [ ] all assets and scripts from minio to frontend nginx
-    - [ ] styles
+  - [ ] Target architecture
+    - [x] Use Angular as an SPA served by frontend nginx
+    - [x] Keep Litestar as the backend API only (`/api/*`, `/api/docs`, service endpoints)
+    - [x] Configure nginx fallback to Angular `index.html` for frontend routes
+    - [x] Keep legacy Litestar/Jinja/HTMX views only during migration
+    - [x] Remove legacy views, templates, HTMX, Hyperscript, and template-only static files after parity
+  - [x] API contracts and client integration
+    - [x] Align Angular services with existing backend endpoints (`/api/competency-matrix/*`, `/api/contacts`, `/api/auth`, `/api/account`, `/api/files`)
+    - [x] Add DTO interfaces matching backend camelCase response aliases
+    - [x] Add explicit DTO -> UI model mapping functions in feature `models/`
+    - [x] Add frontend service tests for endpoint URLs, query params, and response mapping
+    - [x] Add missing backend API endpoints only where data currently exists only in Jinja templates
+    - [x] Keep feature services using `ApiClient`; do not inject raw `HttpClient` outside `core/http/`
+  - [ ] Frontend app shell
+    - [x] Route parity: `/about-me`, `/competency-matrix`, `/sitemap`, `/404`
+    - [x] Redirect `/` to `/about-me`
+    - [x] Header with current navigation and active route state
+    - [x] Footer with docs, source, sitemap, and social links
+    - [ ] Global alert/notification area for API success and error feedback
+    - [x] Theme service with `data-bs-theme`, localStorage persistence, and initial theme application
+    - [x] Layout preference service for competency matrix list/grid view
+    - [x] Move shared styles from `backend/src/static/styles.css` to Angular SCSS structure
+    - [x] Move public assets from `backend/src/static/` to `frontend/public/`
+  - [ ] SEO and root files
+    - [x] Page title and meta description per route
+    - [x] Open Graph and Twitter meta tags for public pages
+    - [ ] Canonical URL per route
+    - [x] favicon and icon variants
+    - [x] `robots.txt`
+    - [x] `sitemap.xml`
+    - [x] sitemap page
+    - [x] `/.well-known/appspecific/com.chrome.devtools.json`
   - [ ] Competency matrix
-    - [ ] Question list
-    - [ ] Question detail
-  - [ ] About me
-    - [ ] landing
-    - [ ] Contact me form
+    - [x] Sheets loading from `/api/competency-matrix/sheets`
+    - [x] Selected sheet persistence in localStorage
+    - [x] Question list/table from `/api/competency-matrix/items`
+    - [x] Preserve section -> subsection -> grade grouping
+    - [x] List layout
+    - [x] Grid/table layout
+    - [x] Search that hides empty sections and subsections
+    - [x] Admin-only published/all toggle using `onlyPublished`
+    - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
+    - [x] Markdown rendering for answers and resource context
+    - [ ] Code highlighting for Markdown code blocks
+    - [x] External resources list
+    - [x] Loading, empty, and error states for every API-backed view
+  - [x] About me
+    - [x] landing
+    - [x] Contact me form
+    - [x] Preserve current image and content assets
+    - [x] Typed reactive contact form
+    - [x] Client validation matching backend constraints
+    - [x] Backend validation error rendering, including nested errors
+    - [x] Success notification after request creation
   - [ ] Auth and account
-    - [ ] Login modal
-    - [ ] Logout button
-    - [ ] navbar profile info
-  - [ ] Root
-    - [ ] favicon
-    - [ ] robots.txt
-    - [ ] sitemap page
-    - [ ] sitemap.xml
-    - [ ] /.well-known/appspecific/com.chrome.devtools.json
+    - [x] Auth token storage strategy
+    - [x] HTTP interceptor that sends `Authorization: Bearer <token>`
+    - [ ] 401 handling that opens login flow or redirects to login state
+    - [x] Login modal
+    - [x] Logout button
+    - [x] navbar profile info
+    - [x] Current user loading from `/api/account/base`
+    - [x] Admin-only controls based on account role, with backend guards still enforced
+  - [ ] Deployment and legacy cleanup
+    - [ ] Build Angular in CI/CD
+    - [x] Build Angular as an independent frontend Docker image
+    - [x] Serve Angular static files from frontend nginx
+    - [x] Proxy `/api/*` and `/api/docs` from nginx to Litestar
+    - [ ] Smoke test direct route loads (`/about-me`, `/competency-matrix`, `/sitemap`)
+    - [ ] Smoke test browser refresh on Angular routes
+    - [x] Remove `views_router` from Litestar app after Angular parity
+    - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
+    - [x] Remove backend static vendor files replaced by Angular build assets
+  - [ ] Verification
+    - [x] Jest tests for page states: loading, error, empty, populated
+    - [x] Jest tests for presentational component inputs and outputs
+    - [x] Jest tests for services and DTO mapping
+    - [ ] Backend unit/integration tests for any changed or new API endpoint
+    - [ ] Manual parity checklist against former Litestar/Jinja/HTMX pages
+    - [ ] Lighthouse audit after migration
+    - [ ] Accessibility pass for navigation, forms, modals, and keyboard focus
 - [ ] Add and edit competency matrix questions
   - [ ] Search through existing external resources
   - [ ] Edit mode for a specific question (button and form on question detail)

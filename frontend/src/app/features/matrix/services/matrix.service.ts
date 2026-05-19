@@ -1,18 +1,52 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
-import { MatrixQuestion } from '../models/matrix-question.model';
+import {
+  MatrixItemDetailDto,
+  MatrixItemsListDto,
+  MatrixQuestionDetail,
+  MatrixQuestionList,
+  MatrixSheetsDto,
+  mapMatrixDetailDto,
+  mapMatrixListDto,
+} from '../models/matrix-question.model';
 
 @Injectable({ providedIn: 'root' })
 export class MatrixService {
   private readonly api = inject(ApiClient);
 
-  getQuestions(search?: string): Observable<MatrixQuestion[]> {
-    const params = search ? { search } : undefined;
-    return this.api.get<MatrixQuestion[]>('/api/matrix/questions', params);
+  getSheets(): Observable<string[]> {
+    return this.api
+      .get<MatrixSheetsDto>('/api/competency-matrix/sheets')
+      .pipe(map(dto => dto.sheets));
   }
 
-  getQuestion(id: string): Observable<MatrixQuestion> {
-    return this.api.get<MatrixQuestion>(`/api/matrix/questions/${id}`);
+  getQuestions(sheetName: string, onlyPublished: boolean): Observable<MatrixQuestionList> {
+    return this.api
+      .get<MatrixItemsListDto>('/api/competency-matrix/items', {
+        sheetName,
+        onlyPublished: String(onlyPublished),
+      })
+      .pipe(map(mapMatrixListDto));
+  }
+
+  getQuestion(id: number, onlyPublished: boolean): Observable<MatrixQuestionDetail> {
+    return this.api
+      .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, {
+        onlyPublished: String(onlyPublished),
+      })
+      .pipe(map(mapMatrixDetailDto));
+  }
+
+  publishQuestion(id: number): Observable<void> {
+    return this.api.post<void>(`/api/competency-matrix/items/detail/${id}/set-published`, {});
+  }
+
+  unpublishQuestion(id: number): Observable<void> {
+    return this.api.post<void>(`/api/competency-matrix/items/detail/${id}/set-draft`, {});
+  }
+
+  deleteQuestion(id: number): Observable<void> {
+    return this.api.delete<void>(`/api/competency-matrix/items/detail/${id}`);
   }
 }

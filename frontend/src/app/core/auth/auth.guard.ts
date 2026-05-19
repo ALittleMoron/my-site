@@ -1,4 +1,9 @@
-import { CanActivateFn } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from './auth.service';
 
-// Stub: always allows access. Replace with PASETO token validation when auth is implemented.
-export const authGuard: CanActivateFn = () => true;
+export const authGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isAdmin() || router.createUrlTree(['/about-me']);
+};

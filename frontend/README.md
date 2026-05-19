@@ -1,59 +1,60 @@
-# MySiteFrontend
+# My Site Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.24.
+Angular SPA for the personal site. The frontend is packaged as an independent Docker image and serves its compiled static files through its own nginx runtime.
+
+In the full application stack, infrastructure nginx remains the public edge proxy:
+
+- `/` is proxied to the frontend nginx container.
+- `/api/*` is proxied to the backend service.
+- TLS, public domains, MinIO, and backup UI routing stay in the infrastructure layer.
 
 ## Development server
 
 To start a local development server, run:
 
 ```bash
-ng serve
+npm start
 ```
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
 ## Building
 
-To build the project run:
-
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The production build is written to `dist/my-site-frontend/browser`.
+
+## Docker image
+
+Build the frontend image from this directory:
+
+```bash
+docker build -t my_site_frontend:latest .
+```
+
+The image uses:
+
+- `node:22-alpine` to install dependencies and run the Angular production build.
+- `nginx:1.29.4-alpine` to serve `/usr/share/nginx/html`.
+- `nginx.conf` for SPA fallback to `index.html`.
+- `docker-entrypoint.d/20-envsubst-sitemap.sh` to substitute `APP_DOMAIN` in `sitemap.xml` at container start.
+
+## Repository split boundary
+
+This directory is intended to become a standalone frontend repository later. Frontend-owned files should stay here, including Angular source code, public assets, the frontend Dockerfile, and frontend nginx config.
+
+The frontend should not own TLS, public domain routing, backend proxy rules, MinIO routing, or backup service routing. Those belong to the infrastructure repository.
 
 ## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
 ```bash
-ng test
+npm test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+## Linting
 
 ```bash
-ng e2e
+npm run lint
 ```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

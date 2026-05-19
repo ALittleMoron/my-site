@@ -8,8 +8,4 @@ export const matrixRoutes: Routes = [
         m => m.MatrixListComponent,
       ),
   },
-  {
-    path: ':id',
-    redirectTo: '',
-  },
 ];
