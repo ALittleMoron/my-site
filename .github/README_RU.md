@@ -4,7 +4,7 @@
 
 | Категория | Технологии |
 |----------|------------|
-| Покрытие | ![coverage](./badges/coverage.svg) |
+| Покрытие | Backend: ![coverage-backend](./badges/coverage-backend.svg) Frontend: ![coverage-frontend](./badges/coverage-frontend.svg) |
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
@@ -17,8 +17,7 @@
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!NOTE]
-> Coverage badge отражает покрытие только backend-части (Python).
-> Frontend покрыт unit-тестами на Jest (отдельная CI job).
+> Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Оба генерируются в отдельных CI job-ах.
 
 Личный сайт с REST API на **Litestar** и SPA-фронтендом на **Angular 19**.
 Матрица компетенций, блог, форма обратной связи и панель администратора.

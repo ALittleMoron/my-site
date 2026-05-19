@@ -20,6 +20,34 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
       - name: "Install frontend dependencies"
-        run: cd frontend && npm ci
-      - name: "Run frontend tests"
-        run: make test-frontend
+        run: make install-frontend
+      - name: "Format check"
+        run: make -C frontend format-check
+      - name: "Lint"
+        run: make -C frontend lint
+      - name: "Type check"
+        run: make -C frontend typecheck
+      - name: "Run frontend tests with coverage"
+        run: make tests-coverage-frontend
+      - name: "Coverage Badge"
+        run: |
+          pip install -U genbadge defusedxml
+          genbadge coverage -i frontend/coverage/cobertura-coverage.xml -o .github/badges/coverage-frontend.svg
+      - name: "Verify Changed files"
+        uses: tj-actions/verify-changed-files@v16
+        id: verify-changed-files
+        with:
+          files: .github/badges/coverage-frontend.svg
+      - name: "Commit files"
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .github/badges/coverage-frontend.svg
+          git commit -m "Updated .github/badges/coverage-frontend.svg - project coverage have changed"
+      - name: "Push changes"
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.github_token }}
+          branch: ${{ github.ref }}

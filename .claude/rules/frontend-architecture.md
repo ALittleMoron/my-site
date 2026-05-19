@@ -26,8 +26,16 @@ frontend/src/app/
 | Path | Responsibility |
 |---|---|
 | `core/http/api-client.service.ts` | Typed `HttpClient` wrapper, sets base URL |
+| `core/interceptors/auth.interceptor.ts` | Attaches PASETO token to outgoing requests |
 | `core/interceptors/error.interceptor.ts` | Maps `HttpErrorResponse` → `ApiError` |
-| `core/auth/auth.guard.ts` | Auth guard (`CanActivateFn`). Stub until PASETO auth implemented |
+| `core/auth/auth.service.ts` | Login/logout, `isAdmin()` signal, session state |
+| `core/auth/auth-token.service.ts` | Token read/write from `localStorage` |
+| `core/auth/auth-modal.service.ts` | Login modal open/close signal |
+| `core/auth/auth.guard.ts` | `CanActivateFn` — redirects to `/about-me` if not admin |
+| `core/layout/theme.service.ts` | Dark/light theme toggle, persists to `localStorage` |
+| `core/layout/layout-preferences.service.ts` | Layout state shared across shell components |
+| `core/seo/seo.service.ts` | Sets `<title>` and meta tags per route |
+| `core/error/global-error-handler.ts` | `ErrorHandler` impl — console in dev, Sentry in prod |
 | `core/models/api-error.model.ts` | `ApiError` interface matching backend `verbose_http_exceptions` shape |
 
 ## shared/ui/ rules
@@ -54,6 +62,17 @@ features/<name>/
 - Page components: smart — hold signals, inject services, handle loading/error/empty
 - Presentational components: dumb — `@Input()`/`@Output()` only, no injection
 
+## Existing features
+
+| Feature | Route | Notes |
+|---|---|---|
+| `about` | `/about-me` | Static page with contact form |
+| `auth` | `/login` | Login page, no guard |
+| `matrix` | `/competency-matrix` | Auth-guarded, filter/grid/detail |
+| `sitemap` | `/sitemap` | Static |
+| `not-found` | `/404` | Wildcard redirect target |
+| `shell` | n/a | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent` |
+
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`
@@ -64,9 +83,9 @@ features/<name>/
 ## app.config.ts
 
 Single place for all providers:
-- `provideRouter(routes, withComponentInputBinding())`
-- `provideHttpClient(withInterceptors([errorInterceptor]))`
-- Custom `ErrorHandler` (console in dev, Sentry in prod via `environment.production`)
+- `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' }))`
+- `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
+- `{ provide: ErrorHandler, useClass: GlobalErrorHandler }`
 
 No `AppModule`. No `NgModule` anywhere.
 

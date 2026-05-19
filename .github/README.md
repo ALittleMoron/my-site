@@ -4,7 +4,7 @@
 
 | Category | Technologies |
 |----------|--------------|
-| Coverage | ![coverage](./badges/coverage.svg) |
+| Coverage | Backend: ![coverage-backend](./badges/coverage-backend.svg) Frontend: ![coverage-frontend](./badges/coverage-frontend.svg) |
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
@@ -17,8 +17,7 @@
 | CI/CD | ![github-actions](./badges/github-actions.svg) |
 
 > [!NOTE]
-> Coverage badge reflects backend (Python) test coverage only.
-> Frontend is covered by Jest unit tests (separate CI job).
+> Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
 A personal site with a Litestar REST API backend and an Angular 19 SPA frontend.
 Features a competency matrix, blog, contact form, and admin panel.

@@ -1,6 +1,6 @@
 ---
 paths:
-  - "backend_tests/**/*.py"
+  - "backend/tests/**/*.py"
 ---
 
 # Backend testing rules
@@ -13,8 +13,8 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 
 | Type | Definition | Directory |
 |---|---|---|
-| **Unit** | Single layer in isolation. Uses mock storages/providers. | `backend_tests/unit/` |
-| **Integration** | DB storages + core together, no mocks. Happy path only. | `backend_tests/integration/` |
+| **Unit** | Single layer in isolation. Uses mock storages/providers. | `backend/tests/unit/` |
+| **Integration** | DB storages + core together, no mocks. Happy path only. | `backend/tests/integration/` |
 
 ### Unit tests
 
@@ -43,10 +43,10 @@ make tests-coverage      # all + coverage report
 
 ## Patterns
 
-- Shared fixtures: `backend_tests/fixtures.py` — `FactoryFixture`, `StorageFixture`
-- Unit-only fixtures: `backend_tests/unit/fixtures.py` — `ContainerFixture`, `ApiFixture` (re-exports `FactoryFixture`)
-- Mock providers for unit tests: `backend_tests/unit/mocks/providers/`
-- Test data factories in `backend_tests/helpers/factories/`: `CoreFactoryHelper` (domain objects), `ApiFactoryHelper` (request payloads) — plain Python, no Mimesis
+- Shared fixtures: `backend/tests/fixtures.py` — `FactoryFixture`, `StorageFixture`
+- Unit-only fixtures: `backend/tests/unit/fixtures.py` — `ContainerFixture`, `ApiFixture` (re-exports `FactoryFixture`)
+- Mock providers for unit tests: `backend/tests/unit/mocks/providers/`
+- Test data factories in `backend/tests/helpers/factories/`: `CoreFactoryHelper` (domain objects), `ApiFactoryHelper` (request payloads) — plain Python, no Mimesis
 - Access via `self.factory.core.*` / `self.factory.api.*` — inherit from `FactoryFixture`
 - Unit test mocking: `Mock(spec=SomeStorageABC)` from `unittest.mock`
 - API tests: inherit `ApiFixture` → `self.api.*` / `self.no_auth_api.*`
