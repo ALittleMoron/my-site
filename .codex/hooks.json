@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/Users/d.lunev/code/repositories/my-site/.codex/hooks/lint-on-edit.sh'"
+          }
+        ]
+      }
+    ]
+  }
+}
