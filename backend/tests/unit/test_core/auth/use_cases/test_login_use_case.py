@@ -5,18 +5,18 @@ import pytest_asyncio
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.schemas import JwtUser
-from core.auth.use_cases import LoginUseCase
+from core.auth.use_cases import AuthUseCase
 from tests.unit.fixtures import ContainerFixture, FactoryFixture
 
 
-class TestLoginUseCase(ContainerFixture, FactoryFixture):
+class TestAuthUseCase(ContainerFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.hasher = await self.container.get_hasher()
         self.token_handler = await self.container.get_token_handler()
         self.auth_storage = await self.container.get_auth_storage()
         self.user_storage = await self.container.get_user_storage()
-        self.use_case = LoginUseCase(
+        self.use_case = AuthUseCase(
             hasher=self.hasher,
             token_handler=self.token_handler,
             auth_storage=self.auth_storage,
@@ -26,7 +26,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
     async def test_login_user_not_found(self) -> None:
         self.user_storage.get_user_by_username.side_effect = UserNotFoundError
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(
+            await self.use_case.login(
                 username="test",
                 password="test",
                 required_role=RoleEnum.ADMIN,
@@ -39,7 +39,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.USER,
         )
         with pytest.raises(ForbiddenError):
-            await self.use_case.execute(
+            await self.use_case.login(
                 username="test",
                 password="test",
                 required_role=RoleEnum.ADMIN,
@@ -53,7 +53,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(
+            await self.use_case.login(
                 username="test",
                 password="test",
                 required_role=RoleEnum.ADMIN,
@@ -68,7 +68,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             password_hash="test",
             role=RoleEnum.ADMIN,
         )
-        token = await self.use_case.execute(
+        token = await self.use_case.login(
             username="test",
             password="test",
             required_role=RoleEnum.ADMIN,
@@ -87,7 +87,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             password_hash="test",
             role=RoleEnum.ADMIN,
         )
-        token = await self.use_case.execute(
+        token = await self.use_case.login(
             username="test",
             password="test",
             required_role=RoleEnum.ADMIN,

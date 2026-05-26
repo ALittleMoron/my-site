@@ -10,10 +10,10 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_get_item_use_case()
+        self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_get_competency_matrix_item_not_found(self) -> None:
-        self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()
+        self.use_case.get_item.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.get_competency_matrix_item(pk=-100)
         assert response.status_code == codes.NOT_FOUND
         assert response.json() == {
@@ -25,7 +25,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         }
 
     def test_get_competency_matrix_item(self) -> None:
-        self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
+        self.use_case.get_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="Как написать свою функцию?",
             publish_status=PublishStatusEnum.PUBLISHED,
@@ -65,4 +65,4 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.execute.assert_called_once_with(item_id=1, only_published=True)
+        self.use_case.get_item.assert_called_once_with(item_id=1, only_published=True)

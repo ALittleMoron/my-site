@@ -12,7 +12,7 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.auth.use_cases import AbstractAuthenticateUseCase
+from core.auth.use_cases import AbstractAuthUseCase
 
 
 class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
@@ -56,10 +56,10 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
             return anon_result
         clear_token = Token(token.split(self.token_prefix)[-1].strip().encode())
         async with self.container() as request_container:
-            use_case = await request_container.get(AbstractAuthenticateUseCase)
+            use_case = await request_container.get(AbstractAuthUseCase)
             try:
                 # NOTE: пока только админы могут логиниться
-                user = await use_case.execute(token=clear_token, required_role=RoleEnum.ADMIN)
+                user = await use_case.authenticate(token=clear_token, required_role=RoleEnum.ADMIN)
             except UnauthorizedError:
                 return anon_result
         return AuthenticationResult(user=JwtUser.from_user(user), auth=token)

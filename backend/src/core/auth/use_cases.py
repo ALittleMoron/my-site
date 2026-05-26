@@ -9,24 +9,31 @@ from core.auth.schemas import JwtUser, User
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
-from core.use_cases import UseCase
 from infra.config.loggers import logger
 
 
-class AbstractLoginUseCase(UseCase, ABC):
+class AbstractAuthUseCase(ABC):
     @abstractmethod
-    async def execute(self, username: str, password: str, required_role: RoleEnum) -> Token:
+    async def login(self, username: str, password: str, required_role: RoleEnum) -> Token:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def authenticate(self, token: Token, required_role: RoleEnum) -> User:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def logout(self, token: Token) -> None:
         raise NotImplementedError
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
-class LoginUseCase(AbstractLoginUseCase):
+class AuthUseCase(AbstractAuthUseCase):
     hasher: PasswordHasher
     token_handler: TokenHandler
     auth_storage: AuthStorage
     user_storage: UserAccountStorage
 
-    async def execute(self, username: str, password: str, required_role: RoleEnum) -> Token:
+    async def login(self, username: str, password: str, required_role: RoleEnum) -> Token:
         try:
             user = await self.user_storage.get_user_by_username(username=username)
         except UserNotFoundError as exc:
@@ -52,19 +59,7 @@ class LoginUseCase(AbstractLoginUseCase):
             )
         return Token(self.token_handler.encode_token(payload=JwtUser.from_user(user=user)))
 
-
-class AbstractAuthenticateUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, token: Token, required_role: RoleEnum) -> User:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class AuthenticateUseCase(AbstractAuthenticateUseCase):
-    token_handler: TokenHandler
-    user_storage: UserAccountStorage
-
-    async def execute(self, token: Token, required_role: RoleEnum) -> User:
+    async def authenticate(self, token: Token, required_role: RoleEnum) -> User:
         payload = self.token_handler.decode_token(token)
         try:
             user = await self.user_storage.get_user_by_username(username=payload.username)
@@ -76,14 +71,5 @@ class AuthenticateUseCase(AbstractAuthenticateUseCase):
             raise ForbiddenError
         return user
 
-
-class AbstractLogoutUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, token: Token) -> None:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class LogoutUseCase(AbstractLogoutUseCase):
-    async def execute(self, token: Token) -> None:
-        pass
+    async def logout(self, token: Token) -> None:
+        _ = token

@@ -12,27 +12,19 @@ from core.competency_matrix.schemas import (
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
 from core.types import IntId, SearchName
-from core.use_cases import UseCase
 
 
-class AbstractListSheetsUseCase(UseCase, ABC):
+class AbstractCompetencyMatrixUseCase(ABC):
     @abstractmethod
-    async def execute(self) -> Sheets:
+    async def list_sheets(self) -> Sheets:
         raise NotImplementedError
 
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class ListSheetsUseCase(AbstractListSheetsUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(self) -> Sheets:
-        sheets = await self.storage.list_sheets()
-        return Sheets(values=sheets)
-
-
-class AbstractListItemsUseCase(UseCase, ABC):
     @abstractmethod
-    async def execute(
+    async def find_resources(self, *, search_name: SearchName) -> ExternalResources:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_items(
         self,
         *,
         sheet_name: str,
@@ -40,12 +32,51 @@ class AbstractListItemsUseCase(UseCase, ABC):
     ) -> CompetencyMatrixItems:
         raise NotImplementedError
 
+    @abstractmethod
+    async def get_item(
+        self,
+        *,
+        item_id: IntId,
+        only_published: bool,
+    ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def upsert_item(
+        self,
+        *,
+        params: CompetencyMatrixItemUpsertParams,
+    ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_item(self, *, item_id: IntId) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def switch_item_publish_status(
+        self,
+        *,
+        item_id: IntId,
+        publish_status: PublishStatusEnum,
+    ) -> None:
+        raise NotImplementedError
+
 
 @dataclass(kw_only=True, slots=True, frozen=True)
-class ListItemsUseCase(AbstractListItemsUseCase):
+class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
     storage: CompetencyMatrixStorage
 
-    async def execute(
+    async def list_sheets(self) -> Sheets:
+        sheets = await self.storage.list_sheets()
+        return Sheets(values=sheets)
+
+    async def find_resources(self, *, search_name: SearchName) -> ExternalResources:
+        return await self.storage.search_competency_matrix_resources(
+            search_name=search_name.cleaned,
+        )
+
+    async def list_items(
         self,
         *,
         sheet_name: str,
@@ -55,23 +86,7 @@ class ListItemsUseCase(AbstractListItemsUseCase):
         matrix = CompetencyMatrixItems(values=items)
         return matrix.only_available() if only_published else matrix
 
-
-class AbstractGetItemUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(
-        self,
-        *,
-        item_id: IntId,
-        only_published: bool,
-    ) -> CompetencyMatrixItem:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class GetItemUseCase(AbstractGetItemUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(
+    async def get_item(
         self,
         *,
         item_id: IntId,
@@ -82,18 +97,11 @@ class GetItemUseCase(AbstractGetItemUseCase):
             raise CompetencyMatrixItemNotFoundError
         return item
 
-
-class AbstractUpsertItemUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, *, params: CompetencyMatrixItemUpsertParams) -> CompetencyMatrixItem:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class UpsertItemUseCase(AbstractUpsertItemUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(self, *, params: CompetencyMatrixItemUpsertParams) -> CompetencyMatrixItem:
+    async def upsert_item(
+        self,
+        *,
+        params: CompetencyMatrixItemUpsertParams,
+    ) -> CompetencyMatrixItem:
         resource_ids_to_assign = params.get_resource_ids_to_assign()
         resources = (
             await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
@@ -105,48 +113,15 @@ class UpsertItemUseCase(AbstractUpsertItemUseCase):
         item = params.to_item(resources=resources)
         return await self.storage.upsert_competency_matrix_item(item=item)
 
-
-class AbstractDeleteItemUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, *, item_id: IntId) -> None:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class DeleteItemUseCase(AbstractDeleteItemUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(self, *, item_id: IntId) -> None:
+    async def delete_item(self, *, item_id: IntId) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)
 
-
-class AbstractPublishSwitchItemUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, *, item_id: IntId, publish_status: PublishStatusEnum) -> None:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class PublishSwitchItemUseCase(AbstractPublishSwitchItemUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(self, *, item_id: IntId, publish_status: PublishStatusEnum) -> None:
+    async def switch_item_publish_status(
+        self,
+        *,
+        item_id: IntId,
+        publish_status: PublishStatusEnum,
+    ) -> None:
         item = await self.storage.get_competency_matrix_item(item_id=item_id)
         item.set_publish_status(status=publish_status)
         await self.storage.upsert_competency_matrix_item(item=item)
-
-
-class AbstractFindResourcesUseCase(UseCase, ABC):
-    @abstractmethod
-    async def execute(self, *, search_name: SearchName) -> ExternalResources:
-        raise NotImplementedError
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class FindResourcesUseCase(AbstractFindResourcesUseCase):
-    storage: CompetencyMatrixStorage
-
-    async def execute(self, *, search_name: SearchName) -> ExternalResources:
-        return await self.storage.search_competency_matrix_resources(
-            search_name=search_name.cleaned,
-        )

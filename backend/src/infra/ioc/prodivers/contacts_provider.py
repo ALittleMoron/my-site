@@ -2,10 +2,7 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.contacts.storages import ContactMeStorage
-from core.contacts.use_cases import (
-    AbstractCreateContactMeRequestUseCase,
-    CreateContactMeRequestUseCase,
-)
+from core.contacts.use_cases import AbstractContactsUseCase, ContactsUseCase
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 
 
@@ -18,8 +15,8 @@ class ContactsProvider(Provider):
         return ContactMeDatabaseStorage(session=session)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_create_contact_me_request_use_case(
+    async def provide_contacts_use_case(
         self,
         storage: ContactMeStorage,
-    ) -> AbstractCreateContactMeRequestUseCase:
-        return CreateContactMeRequestUseCase(storage=storage)
+    ) -> AbstractContactsUseCase:
+        return ContactsUseCase(storage=storage)

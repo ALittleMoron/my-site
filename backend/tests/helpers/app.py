@@ -9,24 +9,12 @@ from core.account.storages import UserAccountStorage
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
-from core.auth.use_cases import (
-    AbstractAuthenticateUseCase,
-    AbstractLoginUseCase,
-    AbstractLogoutUseCase,
-)
+from core.auth.use_cases import AbstractAuthUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
-from core.competency_matrix.use_cases import (
-    AbstractDeleteItemUseCase,
-    AbstractFindResourcesUseCase,
-    AbstractGetItemUseCase,
-    AbstractListItemsUseCase,
-    AbstractListSheetsUseCase,
-    AbstractPublishSwitchItemUseCase,
-    AbstractUpsertItemUseCase,
-)
-from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
+from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
+from core.contacts.use_cases import AbstractContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
-from core.files.use_cases import AbstractPresignPutObjectUseCase
+from core.files.use_cases import AbstractFilesUseCase
 from core.types import IntId
 
 
@@ -48,37 +36,13 @@ class IocContainerHelper:
         return await self.container.get(ResourceIdGenerator)
 
     # CONTACTS
-    async def get_create_contact_me_request_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractCreateContactMeRequestUseCase)
+    async def get_contacts_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractContactsUseCase)
         return cast("Mock", use_case)
 
     # COMPETENCY MATRIX
-    async def get_get_item_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractGetItemUseCase)
-        return cast("Mock", use_case)
-
-    async def get_list_items_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractListItemsUseCase)
-        return cast("Mock", use_case)
-
-    async def get_list_sheets_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractListSheetsUseCase)
-        return cast("Mock", use_case)
-
-    async def get_upsert_item_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractUpsertItemUseCase)
-        return cast("Mock", use_case)
-
-    async def get_delete_item_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractDeleteItemUseCase)
-        return cast("Mock", use_case)
-
-    async def get_publish_switch_item_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractPublishSwitchItemUseCase)
-        return cast("Mock", use_case)
-
-    async def get_search_resources_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractFindResourcesUseCase)
+    async def get_competency_matrix_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractCompetencyMatrixUseCase)
         return cast("Mock", use_case)
 
     # AUTH
@@ -94,16 +58,8 @@ class IocContainerHelper:
         storage = await self.container.get(AuthStorage)
         return cast("Mock", storage)
 
-    async def get_login_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractLoginUseCase)
-        return cast("Mock", use_case)
-
-    async def get_logout_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractLogoutUseCase)
-        return cast("Mock", use_case)
-
-    async def get_authenticate_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractAuthenticateUseCase)
+    async def get_auth_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractAuthUseCase)
         return cast("Mock", use_case)
 
     # USER
@@ -116,6 +72,6 @@ class IocContainerHelper:
         generator = await self.container.get(FileNameGenerator)
         return cast("Mock", generator)
 
-    async def get_presign_put_url_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractPresignPutObjectUseCase)
+    async def get_files_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractFilesUseCase)
         return cast("Mock", use_case)

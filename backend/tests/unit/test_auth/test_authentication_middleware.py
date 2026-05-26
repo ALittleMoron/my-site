@@ -13,7 +13,7 @@ from tests.unit.fixtures import ContainerFixture, FactoryFixture
 class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
     @pytest.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_authenticate_use_case()
+        self.use_case = await self.container.get_auth_use_case()
         self.middleware = AuthenticationMiddleware(
             app=Mock(),
             token_header_name="Authorization",
@@ -34,7 +34,7 @@ class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
         assert result == AuthenticationResult(user=JwtUser.anonymous(), auth=None)
 
     async def test_authenticate(self) -> None:
-        self.use_case.execute.return_value = self.factory.core.jwt_user(
+        self.use_case.authenticate.return_value = self.factory.core.jwt_user(
             username="test",
             role=RoleEnum.ADMIN,
         )

@@ -3,16 +3,16 @@ from unittest.mock import Mock
 import pytest
 
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.competency_matrix.use_cases import PublishSwitchItemUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
-class TestPublishSwitchItemUseCase(FactoryFixture):
+class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = PublishSwitchItemUseCase(storage=self.storage)
+        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_set_draft(self) -> None:
         self.storage.get_competency_matrix_item.return_value = (
@@ -21,7 +21,7 @@ class TestPublishSwitchItemUseCase(FactoryFixture):
                 publish_status=PublishStatusEnum.PUBLISHED,
             )
         )
-        await self.use_case.execute(
+        await self.use_case.switch_item_publish_status(
             item_id=self.factory.core.int_id(1),
             publish_status=PublishStatusEnum.DRAFT,
         )
@@ -42,7 +42,7 @@ class TestPublishSwitchItemUseCase(FactoryFixture):
                 publish_status=PublishStatusEnum.DRAFT,
             )
         )
-        await self.use_case.execute(
+        await self.use_case.switch_item_publish_status(
             item_id=self.factory.core.int_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )

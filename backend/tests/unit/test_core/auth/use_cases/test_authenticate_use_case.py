@@ -5,7 +5,7 @@ import pytest_asyncio
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.types import Token
-from core.auth.use_cases import AuthenticateUseCase
+from core.auth.use_cases import AuthUseCase
 from tests.unit.fixtures import ContainerFixture, FactoryFixture
 
 
@@ -14,7 +14,9 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         self.token_handler = await self.container.get_token_handler()
         self.user_storage = await self.container.get_user_storage()
-        self.use_case = AuthenticateUseCase(
+        self.use_case = AuthUseCase(
+            hasher=await self.container.get_hasher(),
+            auth_storage=await self.container.get_auth_storage(),
             token_handler=self.token_handler,
             user_storage=self.user_storage,
         )
@@ -22,7 +24,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
     async def test_authenticate_token_decode_error(self) -> None:
         self.token_handler.decode_token.side_effect = UnauthorizedError
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(
+            await self.use_case.authenticate(
                 token=Token(b"invalid_token"),
                 required_role=RoleEnum.ADMIN,
             )
@@ -35,7 +37,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         with pytest.raises(UnauthorizedError):
-            await self.use_case.execute(
+            await self.use_case.authenticate(
                 token=Token(b"valid_token"),
                 required_role=RoleEnum.ADMIN,
             )
@@ -52,7 +54,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.USER,
         )
         with pytest.raises(ForbiddenError):
-            await self.use_case.execute(
+            await self.use_case.authenticate(
                 token=Token(b"valid_token"),
                 required_role=RoleEnum.ADMIN,
             )
@@ -68,7 +70,7 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
             role=RoleEnum.ADMIN,
         )
         self.token_handler.encode_token.return_value = b"NEW_TOKEN"
-        user = await self.use_case.execute(
+        user = await self.use_case.authenticate(
             token=Token(b"valid_token"),
             required_role=RoleEnum.ADMIN,
         )

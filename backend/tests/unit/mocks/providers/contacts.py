@@ -2,12 +2,12 @@ from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide
 
-from core.contacts.use_cases import AbstractCreateContactMeRequestUseCase
+from core.contacts.use_cases import AbstractContactsUseCase
 
 
 class MockContactsProvider(Provider):
     @provide(scope=Scope.APP)
-    async def provide_create_contact_me_request_use_case(
+    async def provide_contacts_use_case(
         self,
-    ) -> AbstractCreateContactMeRequestUseCase:
-        return Mock(spec=AbstractCreateContactMeRequestUseCase)
+    ) -> AbstractContactsUseCase:
+        return Mock(spec=AbstractContactsUseCase)

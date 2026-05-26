@@ -8,14 +8,7 @@ from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
 from core.auth.types import RawToken, Token
-from core.auth.use_cases import (
-    AbstractAuthenticateUseCase,
-    AbstractLoginUseCase,
-    AbstractLogoutUseCase,
-    AuthenticateUseCase,
-    LoginUseCase,
-    LogoutUseCase,
-)
+from core.auth.use_cases import AbstractAuthUseCase, AuthUseCase
 from infra.config.settings import settings
 from infra.postgresql.storages.auth import AuthDatabaseStorage
 
@@ -46,28 +39,16 @@ class AuthProvider(Provider):
         return AuthDatabaseStorage(session=session)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_login_use_case(
+    async def provide_auth_use_case(
         self,
         hasher: PasswordHasher,
         token_handler: TokenHandler,
         auth_storage: AuthStorage,
         user_storage: UserAccountStorage,
-    ) -> AbstractLoginUseCase:
-        return LoginUseCase(
+    ) -> AbstractAuthUseCase:
+        return AuthUseCase(
             hasher=hasher,
             token_handler=token_handler,
             auth_storage=auth_storage,
             user_storage=user_storage,
         )
-
-    @provide(scope=Scope.REQUEST)
-    async def provide_authenticate_use_case(
-        self,
-        token_handler: TokenHandler,
-        user_storage: UserAccountStorage,
-    ) -> AbstractAuthenticateUseCase:
-        return AuthenticateUseCase(token_handler=token_handler, user_storage=user_storage)
-
-    @provide(scope=Scope.REQUEST)
-    async def provide_logout_use_case(self) -> AbstractLogoutUseCase:
-        return LogoutUseCase()

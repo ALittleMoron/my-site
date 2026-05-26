@@ -10,15 +10,7 @@ from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
-from core.competency_matrix.use_cases import (
-    AbstractDeleteItemUseCase,
-    AbstractFindResourcesUseCase,
-    AbstractGetItemUseCase,
-    AbstractListItemsUseCase,
-    AbstractListSheetsUseCase,
-    AbstractPublishSwitchItemUseCase,
-    AbstractUpsertItemUseCase,
-)
+from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from core.types import IntId, SearchName
 from entrypoints.litestar.api.competency_matrix.schemas import (
@@ -49,9 +41,9 @@ class CompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_sheet(
         self,
-        use_case: FromDishka[AbstractListSheetsUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixSheetsListResponseSchema:
-        sheets = await use_case.execute()
+        sheets = await use_case.list_sheets()
         return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(schema=sheets)
 
     @get(
@@ -64,9 +56,9 @@ class CompetencyMatrixApiController(Controller):
     async def search_competency_matrix_resources(
         self,
         search_name: Annotated[str, Parameter(query="searchName")],
-        use_case: FromDishka[AbstractFindResourcesUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixResourcesResponseSchema:
-        items = await use_case.execute(search_name=SearchName(search_name))
+        items = await use_case.find_resources(search_name=SearchName(search_name))
         return CompetencyMatrixResourcesResponseSchema.from_domain_schema(schema=items)
 
     @get(
@@ -80,12 +72,12 @@ class CompetencyMatrixApiController(Controller):
         self,
         request: Request[JwtUser, Token | None, State],
         sheet_name: Annotated[str, Parameter(query="sheetName")],
-        use_case: FromDishka[AbstractListItemsUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
     ) -> CompetencyMatrixItemsListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
-        items = await use_case.execute(
+        items = await use_case.list_items(
             sheet_name=sheet_name,
             only_published=only_published,
         )
@@ -106,9 +98,9 @@ class CompetencyMatrixApiController(Controller):
         item_id_generator: FromDishka[ItemIdGenerator],
         resource_id_generator: FromDishka[ResourceIdGenerator],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
-        use_case: FromDishka[AbstractUpsertItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixItemDetailResponseSchema:
-        item = await use_case.execute(
+        item = await use_case.upsert_item(
             params=data.to_schema(
                 item_id_generator=item_id_generator,
                 resource_id_generator=resource_id_generator,
@@ -127,12 +119,12 @@ class CompetencyMatrixApiController(Controller):
         self,
         pk: int,
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractGetItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
     ) -> CompetencyMatrixItemDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
-        item = await use_case.execute(item_id=IntId(pk), only_published=only_published)
+        item = await use_case.get_item(item_id=IntId(pk), only_published=only_published)
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
 
     @put(
@@ -147,9 +139,9 @@ class CompetencyMatrixApiController(Controller):
         pk: int,
         resource_id_generator: FromDishka[ResourceIdGenerator],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
-        use_case: FromDishka[AbstractUpsertItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixItemDetailResponseSchema:
-        item = await use_case.execute(
+        item = await use_case.upsert_item(
             params=data.to_schema(
                 item_id_generator=IntId(pk),
                 resource_id_generator=resource_id_generator,
@@ -167,9 +159,9 @@ class CompetencyMatrixApiController(Controller):
     async def delete_competency_matrix_item(
         self,
         pk: int,
-        use_case: FromDishka[AbstractDeleteItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
-        await use_case.execute(item_id=IntId(pk))
+        await use_case.delete_item(item_id=IntId(pk))
 
     @post(
         "/items/detail/{pk:int}/set-draft",
@@ -181,9 +173,12 @@ class CompetencyMatrixApiController(Controller):
     async def set_draft_status_to_competency_matrix_item(
         self,
         pk: int,
-        use_case: FromDishka[AbstractPublishSwitchItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
-        await use_case.execute(item_id=IntId(pk), publish_status=PublishStatusEnum.DRAFT)
+        await use_case.switch_item_publish_status(
+            item_id=IntId(pk),
+            publish_status=PublishStatusEnum.DRAFT,
+        )
 
     @post(
         "/items/detail/{pk:int}/set-published",
@@ -195,9 +190,12 @@ class CompetencyMatrixApiController(Controller):
     async def set_published_status_to_competency_matrix_item(
         self,
         pk: int,
-        use_case: FromDishka[AbstractPublishSwitchItemUseCase],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
-        await use_case.execute(item_id=IntId(pk), publish_status=PublishStatusEnum.PUBLISHED)
+        await use_case.switch_item_publish_status(
+            item_id=IntId(pk),
+            publish_status=PublishStatusEnum.PUBLISHED,
+        )
 
 
 api_router = DishkaRouter("", route_handlers=[CompetencyMatrixApiController])

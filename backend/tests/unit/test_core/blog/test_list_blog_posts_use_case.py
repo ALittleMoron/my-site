@@ -6,16 +6,16 @@ import pytest
 
 from core.blog.schemas import BlogPostFilters
 from core.blog.storages import BlogStorage
-from core.blog.use_cases import ListBlogPostsUseCase
+from core.blog.use_cases import BlogUseCase
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
-class TestListBlogPostsUseCase(FactoryFixture):
+class TestBlogUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=BlogStorage)
-        self.use_case = ListBlogPostsUseCase(storage=self.storage)
+        self.use_case = BlogUseCase(storage=self.storage)
 
     async def test_list_blog_posts(self) -> None:
         filters = BlogPostFilters(page=1, page_size=10, only_available=True)
@@ -35,7 +35,7 @@ class TestListBlogPostsUseCase(FactoryFixture):
             total_pages=1,
         )
 
-        result = await self.use_case.execute(filters=filters)
+        result = await self.use_case.list_blog_posts(filters=filters)
 
         assert result == self.factory.core.blog_post_list(
             posts=[

@@ -7,7 +7,7 @@ from litestar.params import Body
 
 from core.auth.enums import RoleEnum
 from core.auth.types import Token
-from core.auth.use_cases import AbstractLoginUseCase, AbstractLogoutUseCase
+from core.auth.use_cases import AbstractAuthUseCase
 from entrypoints.litestar.api.auth.schemas import AccessTokenResponseSchema, LoginRequestSchema
 
 
@@ -28,9 +28,9 @@ class AuthApiController(Controller):
     async def login(
         self,
         data: Annotated[LoginRequestSchema, Body()],
-        use_case: FromDishka[AbstractLoginUseCase],
+        use_case: FromDishka[AbstractAuthUseCase],
     ) -> AccessTokenResponseSchema:
-        token = await use_case.execute(
+        token = await use_case.login(
             username=data.username,
             password=data.password,
             required_role=RoleEnum.ADMIN,  # NOTE: пока только админы могут логиниться
@@ -46,9 +46,9 @@ class AuthApiController(Controller):
     async def logout(
         self,
         token: FromDishka[Token],
-        use_case: FromDishka[AbstractLogoutUseCase],
+        use_case: FromDishka[AbstractAuthUseCase],
     ) -> None:
-        await use_case.execute(token=token)
+        await use_case.logout(token=token)
 
 
 api_router = DishkaRouter("", route_handlers=[AuthApiController])

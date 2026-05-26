@@ -9,10 +9,10 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestDeleteItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_delete_item_use_case()
+        self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_delete_item_not_found(self) -> None:
-        self.use_case.execute.side_effect = CompetencyMatrixItemNotFoundError()
+        self.use_case.delete_item.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.delete_item(pk=self.factory.core.int_id(1))
         assert response.status_code == codes.NOT_FOUND
         assert response.json() == {
@@ -26,4 +26,4 @@ class TestDeleteItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_delete_item(self) -> None:
         response = self.api.delete_item(pk=self.factory.core.int_id(1))
         assert response.status_code == codes.NO_CONTENT
-        self.use_case.execute.assert_called_once_with(item_id=IntId(1))
+        self.use_case.delete_item.assert_called_once_with(item_id=IntId(1))

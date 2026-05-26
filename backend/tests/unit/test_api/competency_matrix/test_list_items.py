@@ -9,10 +9,10 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_list_items_use_case()
+        self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_list_not_correct_sheet_name(self) -> None:
-        self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
+        self.use_case.list_items.return_value = self.factory.core.competency_matrix_items(
             values=[
                 self.factory.core.competency_matrix_item(
                     item_id=1,
@@ -40,10 +40,10 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "sheet": "Java",
             "sections": [],
         }
-        self.use_case.execute.assert_called_once_with(sheet_name="Java", only_published=True)
+        self.use_case.list_items.assert_called_once_with(sheet_name="Java", only_published=True)
 
     def test_list(self) -> None:
-        self.use_case.execute.return_value = self.factory.core.competency_matrix_items(
+        self.use_case.list_items.return_value = self.factory.core.competency_matrix_items(
             values=[
                 self.factory.core.competency_matrix_item(
                     item_id=1,
@@ -77,4 +77,4 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.execute.assert_called_once_with(sheet_name="Python", only_published=True)
+        self.use_case.list_items.assert_called_once_with(sheet_name="Python", only_published=True)

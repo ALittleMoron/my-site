@@ -3,7 +3,7 @@ from miniopy_async.api import Minio
 
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
-from core.files.use_cases import AbstractPresignPutObjectUseCase, PresignPutObjectUseCase
+from core.files.use_cases import AbstractFilesUseCase, FilesUseCase
 from infra.config.settings import settings
 from infra.minio.file_storages import MinioFileStorage
 
@@ -27,12 +27,12 @@ class FilesProvider(Provider):
         return MinioFileStorage(client=minio_client)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_presign_put_object_use_case(
+    async def provide_files_use_case(
         self,
         file_storage: FileStorage,
         file_name_generator: FileNameGenerator,
-    ) -> AbstractPresignPutObjectUseCase:
-        return PresignPutObjectUseCase(
+    ) -> AbstractFilesUseCase:
+        return FilesUseCase(
             file_storage=file_storage,
             file_name_generator=file_name_generator,
         )

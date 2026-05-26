@@ -4,16 +4,16 @@ import pytest
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.competency_matrix.use_cases import ListItemsUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
-class TestListItemsUseCase(FactoryFixture):
+class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = ListItemsUseCase(storage=self.storage)
+        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_not_available(self) -> None:
         self.storage.list_competency_matrix_items.return_value = [
@@ -27,7 +27,7 @@ class TestListItemsUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.execute(sheet_name="Python", only_published=True)
+        items = await self.use_case.list_items(sheet_name="Python", only_published=True)
         assert items.values == []
 
     async def test_available(self) -> None:
@@ -42,7 +42,7 @@ class TestListItemsUseCase(FactoryFixture):
                 subsection="1",
             ),
         ]
-        items = await self.use_case.execute(sheet_name="Python", only_published=True)
+        items = await self.use_case.list_items(sheet_name="Python", only_published=True)
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -67,7 +67,7 @@ class TestListItemsUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.execute(sheet_name="Python", only_published=False)
+        items = await self.use_case.list_items(sheet_name="Python", only_published=False)
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,

@@ -5,16 +5,16 @@ import pytest
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.competency_matrix.use_cases import UpsertItemUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
-class TestUpsertItemUseCase(FactoryFixture):
+class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = UpsertItemUseCase(storage=self.storage)
+        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_no_resources_to_assign(self) -> None:
         params = self.factory.core.competency_matrix_item_upsert_params(
@@ -28,7 +28,7 @@ class TestUpsertItemUseCase(FactoryFixture):
                 ),
             ],
         )
-        await self.use_case.execute(params=params)
+        await self.use_case.upsert_item(params=params)
         self.storage.get_resources_by_ids.assert_not_called()
         self.storage.upsert_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(
@@ -63,7 +63,7 @@ class TestUpsertItemUseCase(FactoryFixture):
             ],
         )
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.use_case.execute(params=params)
+            await self.use_case.upsert_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )
@@ -105,7 +105,7 @@ class TestUpsertItemUseCase(FactoryFixture):
                 ),
             ],
         )
-        await self.use_case.execute(params=params)
+        await self.use_case.upsert_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )

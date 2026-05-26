@@ -11,10 +11,10 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.use_case = await self.container.get_upsert_item_use_case()
+        self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_create_item(self) -> None:
-        self.use_case.execute.return_value = self.factory.core.competency_matrix_item(
+        self.use_case.upsert_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="question 1",
             answer="answer 1",
@@ -54,7 +54,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 ],
             },
         )
-        self.use_case.execute.assert_called_once_with(
+        self.use_case.upsert_item.assert_called_once_with(
             params=self.factory.core.competency_matrix_item_upsert_params(
                 item_id=1,
                 question="question 1",

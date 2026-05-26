@@ -2,12 +2,7 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.blog.storages import BlogStorage
-from core.blog.use_cases import (
-    AbstractGetBlogPostUseCase,
-    AbstractListBlogPostsUseCase,
-    GetBlogPostUseCase,
-    ListBlogPostsUseCase,
-)
+from core.blog.use_cases import AbstractBlogUseCase, BlogUseCase
 from infra.postgresql.storages.blog import BlogDatabaseStorage
 
 
@@ -20,15 +15,8 @@ class BlogProvider(Provider):
         return BlogDatabaseStorage(session=session)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_get_blog_post_use_case(
+    async def provide_blog_use_case(
         self,
         storage: BlogStorage,
-    ) -> AbstractGetBlogPostUseCase:
-        return GetBlogPostUseCase(storage=storage)
-
-    @provide(scope=Scope.REQUEST)
-    async def provide_list_blog_posts_use_case(
-        self,
-        storage: BlogStorage,
-    ) -> AbstractListBlogPostsUseCase:
-        return ListBlogPostsUseCase(storage=storage)
+    ) -> AbstractBlogUseCase:
+        return BlogUseCase(storage=storage)

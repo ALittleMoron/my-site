@@ -5,16 +5,16 @@ import pytest
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.competency_matrix.use_cases import GetItemUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
-class TestGetItemUseCase(FactoryFixture):
+class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = GetItemUseCase(storage=self.storage)
+        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_not_available(self) -> None:
         item = self.factory.core.competency_matrix_item(
@@ -28,7 +28,7 @@ class TestGetItemUseCase(FactoryFixture):
         )
         self.storage.get_competency_matrix_item.return_value = item
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.use_case.execute(
+            await self.use_case.get_item(
                 item_id=self.factory.core.int_id(2),
                 only_published=True,
             )
@@ -44,7 +44,7 @@ class TestGetItemUseCase(FactoryFixture):
             subsection="1",
         )
         self.storage.get_competency_matrix_item.return_value = item
-        res_item = await self.use_case.execute(
+        res_item = await self.use_case.get_item(
             item_id=self.factory.core.int_id(1),
             only_published=True,
         )
@@ -61,7 +61,7 @@ class TestGetItemUseCase(FactoryFixture):
             subsection="",
         )
         self.storage.get_competency_matrix_item.return_value = item
-        res_item = await self.use_case.execute(
+        res_item = await self.use_case.get_item(
             item_id=self.factory.core.int_id(1),
             only_published=False,
         )

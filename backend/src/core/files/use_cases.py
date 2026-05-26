@@ -4,23 +4,22 @@ from dataclasses import dataclass
 from core.files.file_name_generators import FileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
-from core.use_cases import UseCase
 from infra.config.constants import constants
 from infra.config.settings import settings
 
 
-class AbstractPresignPutObjectUseCase(UseCase, metaclass=ABCMeta):
+class AbstractFilesUseCase(metaclass=ABCMeta):
     @abstractmethod
-    async def execute(self, params: PresignPutObjectParams) -> PresignPutObject:
+    async def presign_put_object(self, params: PresignPutObjectParams) -> PresignPutObject:
         raise NotImplementedError
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
-class PresignPutObjectUseCase(AbstractPresignPutObjectUseCase):
+class FilesUseCase(AbstractFilesUseCase):
     file_storage: FileStorage
     file_name_generator: FileNameGenerator
 
-    async def execute(self, params: PresignPutObjectParams) -> PresignPutObject:
+    async def presign_put_object(self, params: PresignPutObjectParams) -> PresignPutObject:
         params.validate_content_type(allowed_types=constants.files.allowed_to_upload_media_types)
         file_name = self.file_name_generator(
             folder=params.folder,

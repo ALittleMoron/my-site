@@ -6,7 +6,7 @@ from miniopy_async.api import Minio
 
 from core.files.file_name_generators import FileNameGenerator
 from core.files.file_storages import FileStorage
-from core.files.use_cases import AbstractPresignPutObjectUseCase
+from core.files.use_cases import AbstractFilesUseCase
 
 
 class MockFilesProvider(Provider):
@@ -34,5 +34,5 @@ class MockFilesProvider(Provider):
         return Mock(spec=FileStorage)
 
     @provide(scope=Scope.APP)
-    async def provide_presign_put_object_use_case(self) -> AbstractPresignPutObjectUseCase:
-        return Mock(spec=AbstractPresignPutObjectUseCase)
+    async def provide_files_use_case(self) -> AbstractFilesUseCase:
+        return Mock(spec=AbstractFilesUseCase)

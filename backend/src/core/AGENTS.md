@@ -15,7 +15,6 @@ Never violate these boundaries:
 Shared files can be used across all domains.
 
 ```text
-use_cases.py    # Base UseCase(ABC) — all use cases inherit from this
 schemas.py      # Shared domain schemas
 enums.py        # Shared enums
 types.py        # Shared type aliases

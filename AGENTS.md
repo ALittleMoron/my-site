@@ -26,4 +26,5 @@ Portfolio/blog site and knowledge database
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains and `/api/*`, while frontend nginx serves the SPA and falls back to `index.html`.
+- When a Superpowers plan is completed, remove the finished plan files from `docs/superpowers/plans/`.
 - More specific instructions live in nested `AGENTS.md` files under `backend/`, `backend/src/core/`, `backend/tests/`, `frontend/`, and `frontend/src/app/`.
