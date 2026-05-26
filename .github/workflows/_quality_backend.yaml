@@ -63,7 +63,7 @@ jobs:
       - name: "Coverage Badge"
         run: |
           pip install -U genbadge defusedxml
-          genbadge coverage -i backend/coverage.xml -o .github/badges/coverage-backend.svg
+          genbadge coverage -n backend -i backend/coverage.xml -o .github/badges/coverage-backend.svg
       - name: "Verify Changed files"
         uses: tj-actions/verify-changed-files@v16
         id: verify-changed-files

@@ -416,5 +416,5 @@ General knowledge item has common CRUD logic and looks the same as notes. A spec
 - [x] Move CLI to a separate entry point (from main.py)
 - [x] Use GradeEnum in API and core layer.
 - [x] Rewrite NewType as regular classes.
-- [ ] Unite use-cases into a single class (separated by domain).
+- [x] Unite use-cases into a single class (separated by domain).
 - [ ] Unite all repositories to the "unit of work" pattern.
