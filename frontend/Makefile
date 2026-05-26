@@ -1,6 +1,6 @@
 .PHONY: install
 install:
-	npm ci
+	npm ci --legacy-peer-deps
 
 .PHONY: test
 test:

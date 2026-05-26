@@ -41,5 +41,33 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.7.2",
     "typescript-eslint": "8.46.4"
+  },
+  "overrides": {
+    "@babel/plugin-transform-modules-systemjs": "7.29.7",
+    "@angular/cli": {
+      "pacote": "21.5.0"
+    },
+    "@tootallnate/once": "2.0.1",
+    "ajv": {
+      "fast-uri": "3.1.2"
+    },
+    "body-parser": {
+      "qs": "6.15.2"
+    },
+    "copy-webpack-plugin": {
+      "serialize-javascript": "7.0.5"
+    },
+    "express": {
+      "qs": "6.15.2"
+    },
+    "postcss": "8.5.15",
+    "sockjs": {
+      "uuid": "11.1.1"
+    },
+    "socks": {
+      "ip-address": "10.2.0"
+    },
+    "webpack-dev-server": "5.2.4",
+    "ws": "8.21.0"
   }
 }
