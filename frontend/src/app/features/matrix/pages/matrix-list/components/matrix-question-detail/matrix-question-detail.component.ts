@@ -1,10 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-  computed,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';

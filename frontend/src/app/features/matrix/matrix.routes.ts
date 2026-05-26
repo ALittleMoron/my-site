@@ -4,8 +4,6 @@ export const matrixRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./pages/matrix-list/matrix-list.component').then(
-        m => m.MatrixListComponent,
-      ),
+      import('./pages/matrix-list/matrix-list.component').then((m) => m.MatrixListComponent),
   },
 ];

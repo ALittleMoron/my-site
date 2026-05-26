@@ -34,10 +34,7 @@ describe('AboutPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AboutPageComponent],
-      providers: [
-        { provide: ContactService, useValue: contactService },
-        provideRouter([]),
-      ],
+      providers: [{ provide: ContactService, useValue: contactService }, provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AboutPageComponent);
@@ -48,14 +45,18 @@ describe('AboutPageComponent', () => {
   it('submit button is disabled when message is empty', () => {
     component.form.setValue({ name: '', email: '', telegram: '', message: '' });
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
   });
 
   it('submit button is enabled when message is filled', () => {
     component.form.setValue({ name: '', email: '', telegram: '', message: 'Hello' });
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
     expect(button.disabled).toBe(false);
   });
 

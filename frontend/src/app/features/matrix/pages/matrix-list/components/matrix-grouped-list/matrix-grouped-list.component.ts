@@ -1,9 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { MatrixQuestionList } from '../../../../models/matrix-question.model';
 
 @Component({

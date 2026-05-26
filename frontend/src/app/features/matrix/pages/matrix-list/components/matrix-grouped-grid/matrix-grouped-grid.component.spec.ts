@@ -47,7 +47,7 @@ describe('MatrixGroupedGridComponent', () => {
 
   it('should render grade headers', () => {
     const headers = el.querySelectorAll('th');
-    const headerText = Array.from(headers).map(h => h.textContent?.trim());
+    const headerText = Array.from(headers).map((h) => h.textContent?.trim());
     expect(headerText).toContain('Раздел');
     expect(headerText).toContain('Подраздел');
     expect(headerText).toContain('Junior');

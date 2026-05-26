@@ -18,7 +18,7 @@ export class MatrixService {
   getSheets(): Observable<string[]> {
     return this.api
       .get<MatrixSheetsDto>('/api/competency-matrix/sheets')
-      .pipe(map(dto => dto.sheets));
+      .pipe(map((dto) => dto.sheets));
   }
 
   getQuestions(sheetName: string, onlyPublished: boolean): Observable<MatrixQuestionList> {

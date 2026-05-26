@@ -17,14 +17,12 @@ export class SiteHeaderComponent {
   private readonly authModal = inject(AuthModalService);
 
   readonly isNavOpen = signal(false);
-  readonly toggleLabel = computed(() =>
-    this.themeService.theme() === 'light' ? 'Dark' : 'Light',
-  );
+  readonly toggleLabel = computed(() => (this.themeService.theme() === 'light' ? 'Dark' : 'Light'));
   readonly isLoggedIn = computed(() => this.authService.isLoggedIn());
   readonly username = computed(() => this.authService.currentUser()?.username ?? null);
 
   toggleNav(): void {
-    this.isNavOpen.update(v => !v);
+    this.isNavOpen.update((v) => !v);
   }
 
   closeNav(): void {

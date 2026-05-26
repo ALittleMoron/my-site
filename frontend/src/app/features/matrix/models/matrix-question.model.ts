@@ -91,13 +91,13 @@ export interface MatrixQuestionList {
 export function mapMatrixListDto(dto: MatrixItemsListDto): MatrixQuestionList {
   return {
     sheet: dto.sheet,
-    sections: dto.sections.map(section => ({
+    sections: dto.sections.map((section) => ({
       section: section.section,
-      subsections: section.subsections.map(subsection => ({
+      subsections: section.subsections.map((subsection) => ({
         subsection: subsection.subsection,
-        grades: subsection.grades.map(grade => ({
+        grades: subsection.grades.map((grade) => ({
           grade: grade.grade,
-          questions: grade.items.map(item => ({
+          questions: grade.items.map((item) => ({
             id: item.id,
             question: item.question,
           })),
@@ -118,7 +118,7 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
     section: dto.section,
     subsection: dto.subsection,
     publishStatus: dto.publishStatus,
-    resources: dto.resources.map(resource => ({
+    resources: dto.resources.map((resource) => ({
       id: resource.id,
       name: resource.name,
       url: resource.url,

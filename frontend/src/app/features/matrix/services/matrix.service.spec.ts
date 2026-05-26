@@ -21,11 +21,11 @@ describe('MatrixService', () => {
   it('loads sheets from the backend matrix endpoint', () => {
     let result: string[] | undefined;
 
-    service.getSheets().subscribe(sheets => {
+    service.getSheets().subscribe((sheets) => {
       result = sheets;
     });
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/competency-matrix/sheets'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/sheets'));
     expect(req.request.method).toBe('GET');
     req.flush({ sheets: ['Python', 'SQL'] });
 
@@ -36,12 +36,12 @@ describe('MatrixService', () => {
     let resultSheet: string | undefined;
     let firstQuestion: string | undefined;
 
-    service.getQuestions('Python', true).subscribe(list => {
+    service.getQuestions('Python', true).subscribe((list) => {
       resultSheet = list.sheet;
       firstQuestion = list.sections[0].subsections[0].grades[0].questions[0].question;
     });
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/competency-matrix/items'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
     expect(req.request.params.get('sheetName')).toBe('Python');
     expect(req.request.params.get('onlyPublished')).toBe('true');
     req.flush({
@@ -66,13 +66,11 @@ describe('MatrixService', () => {
   it('loads question detail from the backend detail endpoint', () => {
     let resultQuestion: string | undefined;
 
-    service.getQuestion(1, false).subscribe(question => {
+    service.getQuestion(1, false).subscribe((question) => {
       resultQuestion = question.question;
     });
 
-    const req = httpMock.expectOne(r =>
-      r.url.endsWith('/api/competency-matrix/items/detail/1'),
-    );
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
     expect(req.request.params.get('onlyPublished')).toBe('false');
     req.flush({
       id: 1,
@@ -97,7 +95,7 @@ describe('MatrixService', () => {
       completed = true;
     });
 
-    const req = httpMock.expectOne(r =>
+    const req = httpMock.expectOne((r) =>
       r.url.endsWith('/api/competency-matrix/items/detail/42/set-published'),
     );
     expect(req.request.method).toBe('POST');
@@ -113,7 +111,7 @@ describe('MatrixService', () => {
       completed = true;
     });
 
-    const req = httpMock.expectOne(r =>
+    const req = httpMock.expectOne((r) =>
       r.url.endsWith('/api/competency-matrix/items/detail/7/set-draft'),
     );
     expect(req.request.method).toBe('POST');
@@ -129,9 +127,7 @@ describe('MatrixService', () => {
       completed = true;
     });
 
-    const req = httpMock.expectOne(r =>
-      r.url.endsWith('/api/competency-matrix/items/detail/99'),
-    );
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/99'));
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
 

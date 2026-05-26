@@ -1,9 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { MatrixLayoutMode } from '../../../../../../core/layout/layout-preferences.service';
 
 @Component({

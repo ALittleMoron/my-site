@@ -43,30 +43,16 @@
       <hr />
       <div class="d-flex gap-2 mt-2">
         @if (isDraft()) {
-          <button
-            type="button"
-            class="btn btn-sm btn-success"
-            (click)="publish.emit()"
-          >
+          <button type="button" class="btn btn-sm btn-success" (click)="publish.emit()">
             Опубликовать
           </button>
         }
         @if (isPublished()) {
-          <button
-            type="button"
-            class="btn btn-sm btn-warning"
-            (click)="unpublish.emit()"
-          >
+          <button type="button" class="btn btn-sm btn-warning" (click)="unpublish.emit()">
             Снять с публикации
           </button>
         }
-        <button
-          type="button"
-          class="btn btn-sm btn-danger"
-          (click)="delete.emit()"
-        >
-          Удалить
-        </button>
+        <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">Удалить</button>
       </div>
     }
   </div>

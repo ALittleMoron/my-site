@@ -9,10 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatrixService } from '../../services/matrix.service';
-import {
-  MatrixQuestionDetail,
-  MatrixQuestionList,
-} from '../../models/matrix-question.model';
+import { MatrixQuestionDetail, MatrixQuestionList } from '../../models/matrix-question.model';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
@@ -78,32 +75,28 @@ export class MatrixListComponent implements OnInit {
     if (!term) return list;
 
     const sections = list.sections
-      .map(section => ({
+      .map((section) => ({
         ...section,
         subsections: section.subsections
-          .map(subsection => ({
+          .map((subsection) => ({
             ...subsection,
             grades: subsection.grades
-              .map(grade => ({
+              .map((grade) => ({
                 ...grade,
-                questions: grade.questions.filter(q =>
-                  q.question.toLowerCase().includes(term),
-                ),
+                questions: grade.questions.filter((q) => q.question.toLowerCase().includes(term)),
               }))
-              .filter(grade => grade.questions.length > 0),
+              .filter((grade) => grade.questions.length > 0),
           }))
-          .filter(subsection => subsection.grades.length > 0),
+          .filter((subsection) => subsection.grades.length > 0),
       }))
-      .filter(section => section.subsections.length > 0);
+      .filter((section) => section.subsections.length > 0);
 
     return { ...list, sections };
   });
 
   readonly isEmpty = computed(
     () =>
-      !this.loading() &&
-      !this.error() &&
-      (this.filteredQuestions()?.sections.length ?? 0) === 0,
+      !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
 
   ngOnInit(): void {
@@ -121,12 +114,11 @@ export class MatrixListComponent implements OnInit {
       .getSheets()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: sheets => {
+        next: (sheets) => {
           this.sheets.set(sheets);
           if (sheets.length > 0) {
             const saved = localStorage.getItem(CHOSEN_SHEET_KEY);
-            const initial =
-              saved && sheets.includes(saved) ? saved : sheets[0];
+            const initial = saved && sheets.includes(saved) ? saved : sheets[0];
             this.selectedSheet.set(initial);
             this.loadQuestions(initial);
           } else {
@@ -147,7 +139,7 @@ export class MatrixListComponent implements OnInit {
       .getQuestions(sheetName, this.onlyPublished())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: list => {
+        next: (list) => {
           this.questions.set(list);
           this.loading.set(false);
         },
@@ -189,7 +181,7 @@ export class MatrixListComponent implements OnInit {
       .getQuestion(id, this.onlyPublished())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: detail => {
+        next: (detail) => {
           this.selectedQuestion.set(detail);
           this.detailLoading.set(false);
         },

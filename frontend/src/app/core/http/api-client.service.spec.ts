@@ -19,9 +19,9 @@ describe('ApiClient', () => {
 
   it('should prepend base URL on GET', () => {
     let result: { id: string } | undefined;
-    service.get<{ id: string }>('/api/test').subscribe(r => (result = r));
+    service.get<{ id: string }>('/api/test').subscribe((r) => (result = r));
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/test'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/test'));
     expect(req.request.url).toContain('localhost:8000');
     req.flush({ id: '1' });
 
@@ -31,7 +31,7 @@ describe('ApiClient', () => {
   it('should pass query params on GET', () => {
     service.get<unknown>('/api/test', { search: 'foo' }).subscribe();
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/test'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/test'));
     expect(req.request.params.get('search')).toBe('foo');
     req.flush({});
   });
@@ -39,7 +39,7 @@ describe('ApiClient', () => {
   it('should send POST body', () => {
     service.post<unknown>('/api/test', { name: 'x' }).subscribe();
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/test'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/test'));
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ name: 'x' });
     req.flush({});

@@ -76,7 +76,9 @@
   background-color: var(--main-bg-color) !important;
   border-color: var(--secondary-component-color) !important;
   box-shadow: 1px 1px 0.15em rgba(243, 244, 246) !important;
-  transform: border-color .10s easy-in-out, box-shadow .10s easy-in-out !important;
+  transform:
+    border-color 0.1s easy-in-out,
+    box-shadow 0.1s easy-in-out !important;
 }
 
 .force-display-block {

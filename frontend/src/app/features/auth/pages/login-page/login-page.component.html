@@ -1,4 +1,8 @@
-<div id="login-modal" class="modal force-display-block" style="background-color: rgba(0, 0, 0, 0.5)">
+<div
+  id="login-modal"
+  class="modal force-display-block"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
   <form class="modal-dialog" [formGroup]="form" (ngSubmit)="login()" novalidate>
     <div class="modal-content" style="z-index: 1067">
       <div class="modal-header">
@@ -7,11 +11,11 @@
       </div>
 
       <div class="modal-body">
-      @if (loginError()) {
-        <div class="alert alert-danger" role="alert" aria-live="polite">
-          {{ loginError() }}
-        </div>
-      }
+        @if (loginError()) {
+          <div class="alert alert-danger" role="alert" aria-live="polite">
+            {{ loginError() }}
+          </div>
+        }
 
         <div class="mb-3">
           <label for="username" class="form-label">Имя пользователя</label>

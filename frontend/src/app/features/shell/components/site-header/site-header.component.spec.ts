@@ -12,8 +12,16 @@ describe('SiteHeaderComponent', () => {
   let el: HTMLElement;
   let themeSignal: ReturnType<typeof signal<ThemeName>>;
   let currentUserSignal: ReturnType<typeof signal<AccountInfo | null>>;
-  let mockThemeService: { theme: ReturnType<typeof signal<ThemeName>>; toggleTheme: jest.Mock; setTheme: jest.Mock };
-  let mockAuthService: { currentUser: ReturnType<typeof signal<AccountInfo | null>>; isLoggedIn: () => boolean; logout: jest.Mock };
+  let mockThemeService: {
+    theme: ReturnType<typeof signal<ThemeName>>;
+    toggleTheme: jest.Mock;
+    setTheme: jest.Mock;
+  };
+  let mockAuthService: {
+    currentUser: ReturnType<typeof signal<AccountInfo | null>>;
+    isLoggedIn: () => boolean;
+    logout: jest.Mock;
+  };
   let mockAuthModalService: { openLogin: jest.Mock };
 
   beforeEach(async () => {
@@ -52,13 +60,17 @@ describe('SiteHeaderComponent', () => {
 
   it('renders nav link to /about-me', () => {
     const links = el.querySelectorAll('a[routerLink]');
-    const hrefs = Array.from(links).map(a => a.getAttribute('routerLink') ?? a.getAttribute('href'));
+    const hrefs = Array.from(links).map(
+      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
+    );
     expect(hrefs).toContain('/about-me');
   });
 
   it('renders nav link to /competency-matrix', () => {
     const links = el.querySelectorAll('a[routerLink]');
-    const hrefs = Array.from(links).map(a => a.getAttribute('routerLink') ?? a.getAttribute('href'));
+    const hrefs = Array.from(links).map(
+      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
+    );
     expect(hrefs).toContain('/competency-matrix');
   });
 

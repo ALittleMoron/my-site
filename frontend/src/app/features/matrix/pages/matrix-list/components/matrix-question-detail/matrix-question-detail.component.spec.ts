@@ -13,9 +13,7 @@ const mockDetail: MatrixQuestionDetail = {
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
-  resources: [
-    { id: 10, name: 'MDN', url: 'https://mdn.io', context: 'See MDN docs' },
-  ],
+  resources: [{ id: 10, name: 'MDN', url: 'https://mdn.io', context: 'See MDN docs' }],
 };
 
 const mockError: ApiError = {
@@ -81,7 +79,9 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('error', null);
     fixture.componentRef.setInput('isAdmin', false);
     fixture.detectChanges();
-    const headings = Array.from(el.querySelectorAll('h2')).map(heading => heading.textContent?.trim());
+    const headings = Array.from(el.querySelectorAll('h2')).map((heading) =>
+      heading.textContent?.trim(),
+    );
     expect(headings).toContain('Вопрос:');
     expect(headings).toContain('Ответ:');
     expect(headings).toContain('Ответ, который ожидается на собеседовании:');
@@ -123,7 +123,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('isAdmin', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
-    expect(buttons.some(b => b.textContent?.includes('Удалить'))).toBe(true);
+    expect(buttons.some((b) => b.textContent?.includes('Удалить'))).toBe(true);
   });
 
   it('should show Снять с публикации button when isAdmin is true and question is Published', () => {
@@ -133,8 +133,8 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('isAdmin', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
-    expect(buttons.some(b => b.textContent?.includes('Снять с публикации'))).toBe(true);
-    expect(buttons.some(b => b.textContent?.includes('Опубликовать'))).toBe(false);
+    expect(buttons.some((b) => b.textContent?.includes('Снять с публикации'))).toBe(true);
+    expect(buttons.some((b) => b.textContent?.includes('Опубликовать'))).toBe(false);
   });
 
   it('should show Опубликовать button when isAdmin is true and question is Draft', () => {
@@ -144,8 +144,8 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('isAdmin', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
-    expect(buttons.some(b => b.textContent?.trim() === 'Опубликовать')).toBe(true);
-    expect(buttons.some(b => b.textContent?.includes('Снять с публикации'))).toBe(false);
+    expect(buttons.some((b) => b.textContent?.trim() === 'Опубликовать')).toBe(true);
+    expect(buttons.some((b) => b.textContent?.includes('Снять с публикации'))).toBe(false);
   });
 
   it('should emit publish output when Опубликовать is clicked', () => {
@@ -156,10 +156,14 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.detectChanges();
 
     let emitted = false;
-    fixture.componentInstance.publish.subscribe(() => { emitted = true; });
+    fixture.componentInstance.publish.subscribe(() => {
+      emitted = true;
+    });
 
     const buttons = Array.from(el.querySelectorAll('button'));
-    const publishBtn = buttons.find(b => b.textContent?.trim() === 'Опубликовать') as HTMLButtonElement;
+    const publishBtn = buttons.find(
+      (b) => b.textContent?.trim() === 'Опубликовать',
+    ) as HTMLButtonElement;
     publishBtn.click();
 
     expect(emitted).toBe(true);
@@ -173,10 +177,14 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.detectChanges();
 
     let emitted = false;
-    fixture.componentInstance.unpublish.subscribe(() => { emitted = true; });
+    fixture.componentInstance.unpublish.subscribe(() => {
+      emitted = true;
+    });
 
     const buttons = Array.from(el.querySelectorAll('button'));
-    const unpublishBtn = buttons.find(b => b.textContent?.includes('Снять с публикации')) as HTMLButtonElement;
+    const unpublishBtn = buttons.find((b) =>
+      b.textContent?.includes('Снять с публикации'),
+    ) as HTMLButtonElement;
     unpublishBtn.click();
 
     expect(emitted).toBe(true);
@@ -190,10 +198,12 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.detectChanges();
 
     let emitted = false;
-    fixture.componentInstance.delete.subscribe(() => { emitted = true; });
+    fixture.componentInstance.delete.subscribe(() => {
+      emitted = true;
+    });
 
     const buttons = Array.from(el.querySelectorAll('button'));
-    const deleteBtn = buttons.find(b => b.textContent?.trim() === 'Удалить') as HTMLButtonElement;
+    const deleteBtn = buttons.find((b) => b.textContent?.trim() === 'Удалить') as HTMLButtonElement;
     deleteBtn.click();
 
     expect(emitted).toBe(true);

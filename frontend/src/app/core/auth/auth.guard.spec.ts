@@ -11,10 +11,7 @@ describe('authGuard', () => {
 
   function runGuard(isAdmin: boolean): boolean | UrlTree {
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: mockAuthService(isAdmin) },
-      ],
+      providers: [provideRouter([]), { provide: AuthService, useValue: mockAuthService(isAdmin) }],
     });
     return TestBed.runInInjectionContext(() =>
       authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),

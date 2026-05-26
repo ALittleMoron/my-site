@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -39,20 +33,23 @@ export class LoginPageComponent {
     this.submitting.set(true);
     this.loginError.set(null);
 
-    this.authService.login(username, password).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.authModal.closeLogin();
-      },
-      error: (err: unknown) => {
-        this.submitting.set(false);
-        const message =
-          err !== null && typeof err === 'object' && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : 'Login failed. Please try again.';
-        this.loginError.set(message);
-      },
-    });
+    this.authService
+      .login(username, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.submitting.set(false);
+          this.authModal.closeLogin();
+        },
+        error: (err: unknown) => {
+          this.submitting.set(false);
+          const message =
+            err !== null && typeof err === 'object' && 'message' in err
+              ? String((err as { message: unknown }).message)
+              : 'Login failed. Please try again.';
+          this.loginError.set(message);
+        },
+      });
   }
 
   close(): void {

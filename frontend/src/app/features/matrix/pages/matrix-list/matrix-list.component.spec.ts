@@ -156,8 +156,8 @@ describe('MatrixListComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     const tabs = fixture.nativeElement.querySelectorAll('app-matrix-sheet-tabs button');
-    const pythonTab = Array.from(tabs).find((btn: unknown) =>
-      (btn as HTMLElement).textContent?.trim() === 'Python',
+    const pythonTab = Array.from(tabs).find(
+      (btn: unknown) => (btn as HTMLElement).textContent?.trim() === 'Python',
     ) as HTMLElement | undefined;
     expect(pythonTab).toBeTruthy();
     expect(pythonTab!.classList).toContain('button-active');
@@ -216,8 +216,8 @@ describe('MatrixListComponent', () => {
     component.search.set('closure');
     const filtered = component.filteredQuestions();
     expect(filtered).not.toBeNull();
-    const allQuestions = filtered!.sections.flatMap(s =>
-      s.subsections.flatMap(sub => sub.grades.flatMap(g => g.questions)),
+    const allQuestions = filtered!.sections.flatMap((s) =>
+      s.subsections.flatMap((sub) => sub.grades.flatMap((g) => g.questions)),
     );
     expect(allQuestions.length).toBe(1);
     expect(allQuestions[0].question).toBe('What is a closure?');

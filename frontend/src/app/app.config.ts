@@ -9,7 +9,11 @@ import { GlobalErrorHandler } from './core/error/global-error-handler';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' })),
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withInMemoryScrolling({ anchorScrolling: 'enabled' }),
+    ),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],

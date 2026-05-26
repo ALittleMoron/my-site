@@ -1,10 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-  computed,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import {
   MatrixQuestion,
   MatrixQuestionList,
@@ -57,8 +51,8 @@ export class MatrixGroupedGridComponent {
     for (const section of this.questions().sections) {
       for (let i = 0; i < section.subsections.length; i++) {
         const subsection = section.subsections[i];
-        const cells: GridCell[] = gradeList.map(gradeName => {
-          const gradeGroup = subsection.grades.find(g => g.grade === gradeName);
+        const cells: GridCell[] = gradeList.map((gradeName) => {
+          const gradeGroup = subsection.grades.find((g) => g.grade === gradeName);
           return { grade: gradeName, questions: gradeGroup ? gradeGroup.questions : [] };
         });
         result.push({

@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -25,8 +28,14 @@ export class AboutPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly form = new FormGroup({
-    name: new FormControl<string>('', { nonNullable: true, validators: [Validators.maxLength(255)] }),
-    email: new FormControl<string>('', { nonNullable: true, validators: [Validators.email, Validators.maxLength(255)] }),
+    name: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(255)],
+    }),
+    email: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.email, Validators.maxLength(255)],
+    }),
     telegram: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.minLength(2), Validators.maxLength(256)],

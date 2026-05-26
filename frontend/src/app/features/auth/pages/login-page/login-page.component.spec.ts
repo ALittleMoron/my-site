@@ -38,14 +38,18 @@ describe('LoginPageComponent', () => {
   });
 
   it('submit button is disabled when form is invalid', () => {
-    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
   });
 
   it('submit button is enabled when form is valid', () => {
     component.form.setValue({ username: 'admin', password: 'secret' });
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
     expect(button.disabled).toBe(false);
   });
 

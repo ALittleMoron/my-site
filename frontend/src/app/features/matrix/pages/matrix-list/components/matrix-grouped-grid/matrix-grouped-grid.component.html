@@ -13,7 +13,10 @@
       @for (row of rows(); track row.subsection) {
         <tr>
           @if (row.isFirstSubsection) {
-            <td [attr.rowspan]="row.sectionRowspan" class="p-3 fw-semibold align-middle competency-matrix-section-cell">
+            <td
+              [attr.rowspan]="row.sectionRowspan"
+              class="p-3 fw-semibold align-middle competency-matrix-section-cell"
+            >
               {{ row.section.section }}
             </td>
           }

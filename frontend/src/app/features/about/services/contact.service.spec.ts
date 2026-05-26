@@ -32,7 +32,7 @@ describe('ContactService', () => {
       completed = true;
     });
 
-    const req = httpMock.expectOne(r => r.url.endsWith('/api/contacts'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/contacts'));
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     req.flush(null, { status: 204, statusText: 'No Content' });
