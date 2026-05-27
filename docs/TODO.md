@@ -197,7 +197,7 @@
 - [ ] Make text selection colour match the site theme
 - [ ] Add more feedback during API requests (notifications, errors, etc.)
 - [ ] Migrate to the Angular
-  - [ ] Target architecture
+  - [x] Target architecture
     - [x] Use Angular as an SPA served by frontend nginx
     - [x] Keep Litestar as the backend API only (`/api/*`, `/api/docs`, service endpoints)
     - [x] Configure nginx fallback to Angular `index.html` for frontend routes
@@ -411,7 +411,7 @@ General knowledge item has common CRUD logic and looks the same as notes. A spec
 
 ## Refactoring
 
-- [ ] Simplify BootstrapRenderer
+- [x] Simplify BootstrapRenderer
 - [x] Add pre-commit hooks (ruff, mypy, pytest)
 - [x] Move CLI to a separate entry point (from main.py)
 - [x] Use GradeEnum in API and core layer.
