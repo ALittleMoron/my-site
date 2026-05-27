@@ -6,6 +6,7 @@ import { LayoutPreferencesService } from '../../../../core/layout/layout-prefere
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { MatrixQuestionDetail, MatrixQuestionList } from '../../models/matrix-question.model';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 
 const mockQuestionList: MatrixQuestionList = {
   sheet: 'JavaScript',
@@ -70,6 +71,7 @@ describe('MatrixListComponent', () => {
     isAdmin: ReturnType<typeof import('@angular/core').computed<boolean>>;
   };
   let isAdminSignal: ReturnType<typeof import('@angular/core').signal<boolean>>;
+  let notificationService: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
     matrixService = {
@@ -92,6 +94,10 @@ describe('MatrixListComponent', () => {
     authService = {
       isAdmin: computed(() => isAdminSignal()),
     };
+    notificationService = {
+      success: jest.fn(),
+      error: jest.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [MatrixListComponent],
@@ -99,6 +105,7 @@ describe('MatrixListComponent', () => {
         { provide: MatrixService, useValue: matrixService },
         { provide: LayoutPreferencesService, useValue: layoutPreferences },
         { provide: AuthService, useValue: authService },
+        { provide: NotificationService, useValue: notificationService },
       ],
     }).compileComponents();
 
@@ -309,6 +316,7 @@ describe('MatrixListComponent', () => {
     component.onPublish(1);
     expect(matrixService.publishQuestion).toHaveBeenCalledWith(1);
     expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(notificationService.success).toHaveBeenCalledWith('Вопрос опубликован.');
   });
 
   it('should call unpublishQuestion and reload questions on onUnpublish', () => {
@@ -317,6 +325,7 @@ describe('MatrixListComponent', () => {
     component.onUnpublish(1);
     expect(matrixService.unpublishQuestion).toHaveBeenCalledWith(1);
     expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(notificationService.success).toHaveBeenCalledWith('Вопрос снят с публикации.');
   });
 
   it('should call deleteQuestion, close detail, and reload questions on onDelete', () => {
@@ -329,6 +338,7 @@ describe('MatrixListComponent', () => {
     expect(matrixService.deleteQuestion).toHaveBeenCalledWith(1);
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeFalsy();
     expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(notificationService.success).toHaveBeenCalledWith('Вопрос удалён.');
   });
 
   it('should set error when publishQuestion fails', () => {
@@ -336,6 +346,7 @@ describe('MatrixListComponent', () => {
     matrixService.publishQuestion.mockReturnValue(throwError(() => mockError));
     component.onPublish(1);
     expect(component.error()).toEqual(mockError);
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось опубликовать вопрос.');
   });
 
   it('should set error when unpublishQuestion fails', () => {
@@ -343,6 +354,7 @@ describe('MatrixListComponent', () => {
     matrixService.unpublishQuestion.mockReturnValue(throwError(() => mockError));
     component.onUnpublish(1);
     expect(component.error()).toEqual(mockError);
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось снять вопрос с публикации.');
   });
 
   it('should set error when deleteQuestion fails', () => {
@@ -350,5 +362,6 @@ describe('MatrixListComponent', () => {
     matrixService.deleteQuestion.mockReturnValue(throwError(() => mockError));
     component.onDelete(1);
     expect(component.error()).toEqual(mockError);
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось удалить вопрос.');
   });
 });

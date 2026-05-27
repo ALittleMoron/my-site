@@ -97,6 +97,22 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(answerDiv?.innerHTML).toContain('<strong>');
   });
 
+  it('should render fenced code blocks with language and highlight classes', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', {
+      ...mockDetail,
+      answer: '```ts\nconst answer = 42;\n```',
+    });
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('isAdmin', false);
+    fixture.detectChanges();
+
+    const pre = el.querySelector('pre.markdown-code');
+    const code = el.querySelector('code.language-ts');
+    expect(pre).toBeTruthy();
+    expect(code?.textContent).toContain('const answer = 42;');
+  });
+
   it('should render resources', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);

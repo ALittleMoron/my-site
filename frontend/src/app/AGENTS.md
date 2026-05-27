@@ -22,20 +22,23 @@ Never violate these boundaries:
 
 ## `core/` Contents
 
-| Path                                        | Responsibility                                                        |
-| ------------------------------------------- | --------------------------------------------------------------------- |
-| `core/http/api-client.service.ts`           | Typed `HttpClient` wrapper, sets base URL                             |
-| `core/interceptors/auth.interceptor.ts`     | Attaches PASETO token to outgoing requests                            |
-| `core/interceptors/error.interceptor.ts`    | Maps `HttpErrorResponse` -> `ApiError`                                |
-| `core/auth/auth.service.ts`                 | Login/logout, `isAdmin()` signal, session state                       |
-| `core/auth/auth-token.service.ts`           | Token read/write from `localStorage`                                  |
-| `core/auth/auth-modal.service.ts`           | Login modal open/close signal                                         |
-| `core/auth/auth.guard.ts`                   | `CanActivateFn` — redirects to `/about-me` if not admin               |
-| `core/layout/theme.service.ts`              | Dark/light theme toggle, persists to `localStorage`                   |
-| `core/layout/layout-preferences.service.ts` | Layout state shared across shell components                           |
-| `core/seo/seo.service.ts`                   | Sets `<title>` and meta tags per route                                |
-| `core/error/global-error-handler.ts`        | `ErrorHandler` impl — console in dev, Sentry in prod                  |
-| `core/models/api-error.model.ts`            | `ApiError` interface matching backend `verbose_http_exceptions` shape |
+| Path                                         | Responsibility                                                        |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                             |
+| `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                            |
+| `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                |
+| `core/auth/auth.service.ts`                  | Login/logout, `isAdmin()` signal, session state                       |
+| `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
+| `core/auth/auth-token.service.ts`            | Token read/write from `localStorage`                                  |
+| `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                         |
+| `core/auth/auth.guard.ts`                    | `CanActivateFn` — redirects to `/about-me` if not admin               |
+| `core/layout/theme.service.ts`               | Dark/light theme toggle, persists to `localStorage`                   |
+| `core/layout/layout-preferences.service.ts`  | Layout state shared across shell components                           |
+| `core/seo/seo.service.ts`                    | Sets `<title>` and meta tags per route                                |
+| `core/notifications/notification.service.ts` | App-wide transient success/error notifications                        |
+| `core/privacy/consent.service.ts`            | Frontend-only local consent persistence                               |
+| `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
+| `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
 
 ## `shared/ui/` Rules
 
@@ -113,5 +116,5 @@ interface ApiError {
 - Repository classes that only proxy `ApiClient`
 - Abstract base components
 - Facades over services
-- Global notification/toast service (until 2+ features need it)
+- Additional global state services unless 2+ features already need them
 - Premature generic abstractions

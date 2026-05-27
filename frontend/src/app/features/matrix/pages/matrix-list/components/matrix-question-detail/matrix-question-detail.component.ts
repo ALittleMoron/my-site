@@ -26,15 +26,21 @@ export class MatrixQuestionDetailComponent {
   readonly answerHtml = computed<string>(() => {
     const q = this.question();
     if (!q?.answer) return '';
-    return DOMPurify.sanitize(marked.parse(q.answer, { async: false }));
+    return renderMarkdown(q.answer);
   });
 
   readonly interviewAnswerHtml = computed<string>(() => {
     const q = this.question();
     if (!q?.interviewExpectedAnswer) return '';
-    return DOMPurify.sanitize(marked.parse(q.interviewExpectedAnswer, { async: false }));
+    return renderMarkdown(q.interviewExpectedAnswer);
   });
 
   readonly isDraft = computed<boolean>(() => this.question()?.publishStatus === 'Draft');
   readonly isPublished = computed<boolean>(() => this.question()?.publishStatus === 'Published');
+}
+
+function renderMarkdown(markdown: string): string {
+  const html = marked.parse(markdown, { async: false });
+  const enhanced = html.replaceAll('<pre><code', '<pre class="markdown-code"><code');
+  return DOMPurify.sanitize(enhanced);
 }

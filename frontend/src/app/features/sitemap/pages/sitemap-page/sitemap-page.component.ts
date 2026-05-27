@@ -16,6 +16,7 @@ export class SitemapPageComponent implements OnInit {
     this.seoService.setMeta({
       title: 'Карта сайта',
       description: 'Карта сайта.',
+      canonicalPath: '/sitemap',
     });
   }
 }

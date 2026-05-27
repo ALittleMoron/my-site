@@ -1,8 +1,9 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, tap, switchMap, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiClient } from '../http/api-client.service';
 import { AuthTokenService } from './auth-token.service';
+import { AuthSessionService } from './auth-session.service';
 
 export interface LoginRequest {
   username: string;
@@ -22,10 +23,11 @@ export interface AccountInfo {
 export class AuthService {
   private readonly apiClient = inject(ApiClient);
   private readonly tokenService = inject(AuthTokenService);
+  private readonly session = inject(AuthSessionService);
 
-  readonly currentUser = signal<AccountInfo | null>(null);
-  readonly isAdmin = computed(() => this.currentUser()?.role === 'Admin');
-  readonly isLoggedIn = computed(() => this.currentUser() !== null);
+  readonly currentUser = this.session.currentUser;
+  readonly isAdmin = this.session.isAdmin;
+  readonly isLoggedIn = this.session.isLoggedIn;
 
   constructor() {
     if (this.tokenService.token()) {
@@ -46,20 +48,20 @@ export class AuthService {
     return this.apiClient.post<void>('/api/auth/logout', {}).pipe(
       tap(() => {
         this.tokenService.clearToken();
-        this.currentUser.set(null);
+        this.session.clear();
       }),
     );
   }
 
   clearLocalSession(): void {
     this.tokenService.clearToken();
-    this.currentUser.set(null);
+    this.session.clear();
   }
 
   loadCurrentUser(): Observable<void> {
     return this.apiClient.get<AccountInfo>('/api/account/base').pipe(
       map((account) => {
-        this.currentUser.set(account);
+        this.session.setCurrentUser(account);
       }),
     );
   }

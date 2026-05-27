@@ -10,6 +10,8 @@ In the full application stack, infrastructure nginx remains the public edge prox
 
 ## Development server
 
+Use Node.js 22 for local frontend commands (`.nvmrc` matches CI and the Docker builder).
+
 To start a local development server, run:
 
 ```bash
@@ -21,7 +23,7 @@ Once the server is running, open your browser and navigate to `http://localhost:
 ## Building
 
 ```bash
-npm run build
+make build
 ```
 
 The production build is written to `dist/my-site-frontend/browser`.
@@ -50,11 +52,11 @@ The frontend should not own TLS, public domain routing, backend proxy rules, Min
 ## Running unit tests
 
 ```bash
-npm test
+make test
 ```
 
 ## Linting
 
 ```bash
-npm run lint
+make lint
 ```

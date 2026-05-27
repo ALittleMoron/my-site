@@ -17,6 +17,7 @@ import {
   MatrixLayoutMode,
 } from '../../../../core/layout/layout-preferences.service';
 import { SeoService } from '../../../../core/seo/seo.service';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -50,6 +51,7 @@ export class MatrixListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly layoutPreferences = inject(LayoutPreferencesService);
   private readonly seoService = inject(SeoService);
+  private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly isAdmin = this.authService.isAdmin;
@@ -103,6 +105,7 @@ export class MatrixListComponent implements OnInit {
     this.seoService.setMeta({
       title: 'Матрица компетенций',
       description: 'Матрица компетенций Junior/Middle/Senior разработчика.',
+      canonicalPath: '/competency-matrix',
     });
     this.loadSheets();
   }
@@ -204,11 +207,13 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.notifications.success('Вопрос опубликован.');
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
+          this.notifications.error('Не удалось опубликовать вопрос.');
         },
       });
   }
@@ -219,11 +224,13 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.notifications.success('Вопрос снят с публикации.');
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
+          this.notifications.error('Не удалось снять вопрос с публикации.');
         },
       });
   }
@@ -234,12 +241,14 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.notifications.success('Вопрос удалён.');
           this.closeDetail();
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
+          this.notifications.error('Не удалось удалить вопрос.');
         },
       });
   }

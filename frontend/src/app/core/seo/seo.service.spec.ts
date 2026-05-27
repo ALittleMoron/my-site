@@ -34,4 +34,27 @@ describe('SeoService', () => {
     const tag = metaService.getTag('name="description"');
     expect(tag?.content).toBe(description);
   });
+
+  it('setMeta() creates canonical link from canonical path', () => {
+    service.setMeta({
+      title: 'Обо мне',
+      description: 'Описание страницы.',
+      canonicalPath: '/about-me',
+    });
+
+    const link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    expect(link?.href).toBe('http://localhost:4200/about-me');
+  });
+
+  it('setMeta() removes stale canonical link when canonical is not provided', () => {
+    service.setMeta({
+      title: 'Обо мне',
+      description: 'Описание страницы.',
+      canonicalPath: '/about-me',
+    });
+
+    service.setMeta({ title: '404', description: 'Страница не найдена.' });
+
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+  });
 });

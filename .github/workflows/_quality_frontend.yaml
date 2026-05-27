@@ -27,6 +27,8 @@ jobs:
         run: make -C frontend lint
       - name: "Type check"
         run: make -C frontend typecheck
+      - name: "Build frontend"
+        run: make -C frontend build
       - name: "Run frontend tests with coverage"
         run: make tests-coverage-frontend
       - name: "Coverage Badge"

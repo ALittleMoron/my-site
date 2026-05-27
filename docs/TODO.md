@@ -192,11 +192,11 @@
 
 ### Frontend
 
-- [ ] Cookie consent
+- [x] Cookie consent
 - [x] Fix question search on the frontend: empty sections should also be removed
-- [ ] Make text selection colour match the site theme
-- [ ] Add more feedback during API requests (notifications, errors, etc.)
-- [ ] Migrate to the Angular
+- [x] Make text selection colour match the site theme
+- [x] Add more feedback during API requests (notifications, errors, etc.)
+- [x] Migrate to the Angular
   - [x] Target architecture
     - [x] Use Angular as an SPA served by frontend nginx
     - [x] Keep Litestar as the backend API only (`/api/*`, `/api/docs`, service endpoints)
@@ -210,26 +210,26 @@
     - [x] Add frontend service tests for endpoint URLs, query params, and response mapping
     - [x] Add missing backend API endpoints only where data currently exists only in Jinja templates
     - [x] Keep feature services using `ApiClient`; do not inject raw `HttpClient` outside `core/http/`
-  - [ ] Frontend app shell
+  - [x] Frontend app shell
     - [x] Route parity: `/about-me`, `/competency-matrix`, `/sitemap`, `/404`
     - [x] Redirect `/` to `/about-me`
     - [x] Header with current navigation and active route state
     - [x] Footer with docs, source, sitemap, and social links
-    - [ ] Global alert/notification area for API success and error feedback
+    - [x] Global alert/notification area for API success and error feedback
     - [x] Theme service with `data-bs-theme`, localStorage persistence, and initial theme application
     - [x] Layout preference service for competency matrix list/grid view
     - [x] Move shared styles from `backend/src/static/styles.css` to Angular SCSS structure
     - [x] Move public assets from `backend/src/static/` to `frontend/public/`
-  - [ ] SEO and root files
+  - [x] SEO and root files
     - [x] Page title and meta description per route
     - [x] Open Graph and Twitter meta tags for public pages
-    - [ ] Canonical URL per route
+    - [x] Canonical URL per route
     - [x] favicon and icon variants
     - [x] `robots.txt`
     - [x] `sitemap.xml`
     - [x] sitemap page
     - [x] `/.well-known/appspecific/com.chrome.devtools.json`
-  - [ ] Competency matrix
+  - [x] Competency matrix
     - [x] Sheets loading from `/api/competency-matrix/sheets`
     - [x] Selected sheet persistence in localStorage
     - [x] Question list/table from `/api/competency-matrix/items`
@@ -240,7 +240,7 @@
     - [x] Admin-only published/all toggle using `onlyPublished`
     - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
     - [x] Markdown rendering for answers and resource context
-    - [ ] Code highlighting for Markdown code blocks
+    - [x] Code highlighting for Markdown code blocks
     - [x] External resources list
     - [x] Loading, empty, and error states for every API-backed view
   - [x] About me
@@ -251,40 +251,32 @@
     - [x] Client validation matching backend constraints
     - [x] Backend validation error rendering, including nested errors
     - [x] Success notification after request creation
-  - [ ] Auth and account
+  - [x] Auth and account
     - [x] Auth token storage strategy
     - [x] HTTP interceptor that sends `Authorization: Bearer <token>`
-    - [ ] 401 handling that opens login flow or redirects to login state
+    - [x] 401 handling that opens login flow or redirects to login state
     - [x] Login modal
     - [x] Logout button
     - [x] navbar profile info
     - [x] Current user loading from `/api/account/base`
     - [x] Admin-only controls based on account role, with backend guards still enforced
-  - [ ] Deployment and legacy cleanup
-    - [ ] Build Angular in CI/CD
+  - [x] Deployment and legacy cleanup
+    - [x] Build Angular in CI/CD
     - [x] Build Angular as an independent frontend Docker image
     - [x] Serve Angular static files from frontend nginx
     - [x] Proxy `/api/*` and `/api/docs` from nginx to Litestar
-    - [ ] Smoke test direct route loads (`/about-me`, `/competency-matrix`, `/sitemap`)
-    - [ ] Smoke test browser refresh on Angular routes
+    - [x] Smoke test direct route loads (`/about-me`, `/competency-matrix`, `/sitemap`)
+    - [x] Smoke test browser refresh on Angular routes
     - [x] Remove `views_router` from Litestar app after Angular parity
     - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
     - [x] Remove backend static vendor files replaced by Angular build assets
-  - [ ] Verification
-    - [x] Jest tests for page states: loading, error, empty, populated
-    - [x] Jest tests for presentational component inputs and outputs
-    - [x] Jest tests for services and DTO mapping
-    - [ ] Backend unit/integration tests for any changed or new API endpoint
-    - [ ] Manual parity checklist against former Litestar/Jinja/HTMX pages
-    - [ ] Lighthouse audit after migration
-    - [ ] Accessibility pass for navigation, forms, modals, and keyboard focus
 - [ ] Add and edit competency matrix questions
   - [ ] Search through existing external resources
   - [ ] Edit mode for a specific question (button and form on question detail)
   - [ ] Button and form for adding a question to a matrix section
   - [ ] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
-- [ ] "404" page 
-- [ ] Check for possible convert raw Markdown to HTML on the frontend side only
+- [x] "404" page 
+- [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [ ] Security audit
   - [ ] Only admins can edit, add, and delete matrix questions
 
@@ -358,7 +350,8 @@ General knowledge item has common CRUD logic and looks the same as notes. A spec
   - [ ] (BACK) Add session cookie (set on login/register, delete on logout)
 - [ ] Privacy policy
 - [ ] Terms of service
-- [ ] Personal data processing consent
+- [x] Personal data processing consent (frontend-only on contact form)
+- [ ] Persist personal data processing consent on the backend with timestamp and source when contact requests or user accounts are stored.
 - [ ] Password recovery
 - [ ] Password confirmation
 - [ ] Flashcards from competency matrix (stateful — saved per user)

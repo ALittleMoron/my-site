@@ -5,6 +5,8 @@ import { AppComponent } from './app.component';
 import { AuthService } from './core/auth/auth.service';
 import { AuthModalService } from './core/auth/auth-modal.service';
 import { ThemeService } from './core/layout/theme.service';
+import { NotificationService } from './core/notifications/notification.service';
+import { ConsentService } from './core/privacy/consent.service';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
@@ -41,6 +43,20 @@ describe('AppComponent', () => {
             toggleTheme: jest.fn(),
           },
         },
+        {
+          provide: NotificationService,
+          useValue: {
+            notifications: signal([]),
+            dismiss: jest.fn(),
+          },
+        },
+        {
+          provide: ConsentService,
+          useValue: {
+            cookieConsentAccepted: signal(true),
+            acceptCookieConsent: jest.fn(),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -58,5 +74,13 @@ describe('AppComponent', () => {
     isLoginOpen.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-login-page')).not.toBeNull();
+  });
+
+  it('renders global notification area', () => {
+    expect(fixture.nativeElement.querySelector('app-notification-area')).not.toBeNull();
+  });
+
+  it('renders cookie consent banner host', () => {
+    expect(fixture.nativeElement.querySelector('app-cookie-consent-banner')).not.toBeNull();
   });
 });

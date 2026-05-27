@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
+import { environment } from '../../../environments/environment';
 
 export interface SeoMeta {
   title: string;
   description: string;
   canonicalUrl?: string;
+  canonicalPath?: string;
   ogImage?: string;
 }
 
@@ -19,7 +21,7 @@ export class SeoService {
   setMeta(data: SeoMeta): void {
     const fullTitle = `${data.title} - ${SITE_NAME}`;
     const image = data.ogImage ?? DEFAULT_OG_IMAGE;
-    const url = data.canonicalUrl ?? '';
+    const url = data.canonicalUrl ?? this.buildCanonicalUrl(data.canonicalPath);
 
     this.title.setTitle(fullTitle);
 
@@ -38,7 +40,17 @@ export class SeoService {
 
     if (url) {
       this.updateCanonicalLink(url);
+    } else {
+      this.removeCanonicalLink();
     }
+  }
+
+  private buildCanonicalUrl(path: string | undefined): string {
+    if (!path) return '';
+    const baseUrl = environment.siteUrl.replace(/\/$/, '');
+    if (!baseUrl) return path;
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${normalizedPath}`;
   }
 
   private updateCanonicalLink(url: string): void {
@@ -50,5 +62,9 @@ export class SeoService {
       head.appendChild(link);
     }
     link.setAttribute('href', url);
+  }
+
+  private removeCanonicalLink(): void {
+    document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
   }
 }

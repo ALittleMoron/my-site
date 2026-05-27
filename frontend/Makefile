@@ -34,9 +34,14 @@ lint:
 typecheck:
 	npx tsc --noEmit -p tsconfig.app.json
 
+.PHONY: build
+build:
+	npm run build
+
 .PHONY: quality
 quality:
 	$(MAKE) format
 	$(MAKE) lint
 	$(MAKE) typecheck
+	$(MAKE) build
 	$(MAKE) test

@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { AboutPageComponent } from './about-page.component';
 import { ContactService } from '../../services/contact.service';
 import { ApiError } from '../../../../core/models/api-error.model';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 
 const mockApiError: ApiError = {
   code: 'validation_error',
@@ -26,15 +27,24 @@ describe('AboutPageComponent', () => {
   let fixture: ComponentFixture<AboutPageComponent>;
   let component: AboutPageComponent;
   let contactService: { createContactRequest: jest.Mock };
+  let notificationService: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
     contactService = {
       createContactRequest: jest.fn().mockReturnValue(of(null)),
     };
+    notificationService = {
+      success: jest.fn(),
+      error: jest.fn(),
+    };
 
     await TestBed.configureTestingModule({
       imports: [AboutPageComponent],
-      providers: [{ provide: ContactService, useValue: contactService }, provideRouter([])],
+      providers: [
+        { provide: ContactService, useValue: contactService },
+        { provide: NotificationService, useValue: notificationService },
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AboutPageComponent);
@@ -43,7 +53,13 @@ describe('AboutPageComponent', () => {
   });
 
   it('submit button is disabled when message is empty', () => {
-    component.form.setValue({ name: '', email: '', telegram: '', message: '' });
+    component.form.setValue({
+      name: '',
+      email: '',
+      telegram: '',
+      message: '',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector(
       'button[type="submit"]',
@@ -52,7 +68,13 @@ describe('AboutPageComponent', () => {
   });
 
   it('submit button is enabled when message is filled', () => {
-    component.form.setValue({ name: '', email: '', telegram: '', message: 'Hello' });
+    component.form.setValue({
+      name: '',
+      email: '',
+      telegram: '',
+      message: 'Hello',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector(
       'button[type="submit"]',
@@ -60,8 +82,33 @@ describe('AboutPageComponent', () => {
     expect(button.disabled).toBe(false);
   });
 
+  it('requires personal data consent before submitting', () => {
+    component.form.setValue({
+      name: '',
+      email: '',
+      telegram: '',
+      message: 'Hello',
+      personalDataConsent: false,
+    });
+    fixture.detectChanges();
+
+    component.submit();
+
+    const button = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(contactService.createContactRequest).not.toHaveBeenCalled();
+  });
+
   it('empty optional fields are sent as null', () => {
-    component.form.setValue({ name: '', email: '', telegram: '', message: 'Test message' });
+    component.form.setValue({
+      name: '',
+      email: '',
+      telegram: '',
+      message: 'Test message',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
 
     component.submit();
@@ -75,7 +122,13 @@ describe('AboutPageComponent', () => {
   });
 
   it('whitespace-only optional fields are sent as null', () => {
-    component.form.setValue({ name: '   ', email: '', telegram: '', message: 'Test message' });
+    component.form.setValue({
+      name: '   ',
+      email: '',
+      telegram: '',
+      message: 'Test message',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
 
     component.submit();
@@ -94,6 +147,7 @@ describe('AboutPageComponent', () => {
       email: 'alice@example.com',
       telegram: '@alice',
       message: 'Hello',
+      personalDataConsent: true,
     });
     fixture.detectChanges();
 
@@ -109,7 +163,13 @@ describe('AboutPageComponent', () => {
 
   it('displays backend validation error when present', () => {
     contactService.createContactRequest.mockReturnValue(throwError(() => mockApiError));
-    component.form.setValue({ name: '', email: '', telegram: '', message: 'Test' });
+    component.form.setValue({
+      name: '',
+      email: '',
+      telegram: '',
+      message: 'Test',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
 
     component.submit();
@@ -119,11 +179,18 @@ describe('AboutPageComponent', () => {
     expect(errorEl).toBeTruthy();
     expect(errorEl.textContent).toContain('name');
     expect(errorEl.textContent).toContain('Ensure this field has no more than 255 characters.');
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось отправить заявку.');
   });
 
   it('displays success state after 204 response', () => {
     contactService.createContactRequest.mockReturnValue(of(null));
-    component.form.setValue({ name: 'Alice', email: '', telegram: '', message: 'Test' });
+    component.form.setValue({
+      name: 'Alice',
+      email: '',
+      telegram: '',
+      message: 'Test',
+      personalDataConsent: true,
+    });
     fixture.detectChanges();
 
     component.submit();
@@ -135,5 +202,6 @@ describe('AboutPageComponent', () => {
 
     const form = fixture.nativeElement.querySelector('form');
     expect(form).toBeFalsy();
+    expect(notificationService.success).toHaveBeenCalledWith('Заявка отправлена.');
   });
 });

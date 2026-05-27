@@ -12,6 +12,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { ContactService } from '../../services/contact.service';
 
@@ -24,6 +25,7 @@ import { ContactService } from '../../services/contact.service';
 })
 export class AboutPageComponent implements OnInit {
   private readonly contactService = inject(ContactService);
+  private readonly notifications = inject(NotificationService);
   private readonly seoService = inject(SeoService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -44,6 +46,10 @@ export class AboutPageComponent implements OnInit {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(10000)],
     }),
+    personalDataConsent: new FormControl<boolean>(false, {
+      nonNullable: true,
+      validators: [Validators.requiredTrue],
+    }),
   });
 
   readonly submitting = signal(false);
@@ -55,6 +61,7 @@ export class AboutPageComponent implements OnInit {
     this.seoService.setMeta({
       title: 'Обо мне',
       description: 'Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контактная форма.',
+      canonicalPath: '/about-me',
     });
   }
 
@@ -84,10 +91,13 @@ export class AboutPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.submitted.set(true);
+          this.notifications.success('Заявка отправлена.');
           this.form.reset();
+          this.form.controls.personalDataConsent.setValue(false);
         },
         error: (err: ApiError) => {
           this.submitError.set(err);
+          this.notifications.error('Не удалось отправить заявку.');
         },
       });
   }
