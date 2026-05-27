@@ -37,6 +37,8 @@ my-site/
 │   ├── src/        # Исходный код приложения
 │   └── tests/      # Backend-тесты (pytest)
 ├── .env.example    # Пример переменных окружения
+├── .env.test       # Безопасные переменные для тестового окружения
+├── docker-compose.test.yml
 └── docker-compose.yml
 ```
 
@@ -94,9 +96,11 @@ make run
 ## 🧪 Тесты
 
 ```bash
-make tests                     # все тесты (backend + frontend)
-make test-backend              # только backend (pytest)
-make test-backend-unit         # unit-тесты backend
-make test-backend-integration  # интеграционные тесты backend
-make test-frontend             # только frontend (jest)
+make tests-compose              # изолированная test DB, backend + frontend, автоочистка
+make tests-fast                 # backend + frontend с уже запущенной test DB
+make test-env-up                # запустить переиспользуемый test PostgreSQL
+make test-env-down              # остановить test PostgreSQL и удалить данные
+make test-backend-unit          # unit-тесты backend, DB не нужна
+make test-backend-integration   # интеграционные тесты backend, нужна test DB
+make test-frontend              # только frontend (jest)
 ```

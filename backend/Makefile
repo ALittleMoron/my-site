@@ -4,6 +4,9 @@ PYTHONPATH := src
 ALEMBIC_CONFIG := src/infra/postgresql/alembic/alembic.ini
 NAME := src
 TESTS := tests
+TEST_ENV_FILE ?= ../.env.test
+LOAD_TEST_ENV := set -a; [ ! -f "$(TEST_ENV_FILE)" ] || . "$(TEST_ENV_FILE)"; set +a;
+TEST_ENV_OVERRIDES ?=
 
 .PHONY: install
 install:
@@ -98,24 +101,24 @@ lint-check:
 .PHONY: test
 test:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/
 
 .PHONY: test-unit
 test-unit:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/unit/
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/unit/
 
 .PHONY: test-integration
 test-integration:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/integration/
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/integration/
 
 .PHONY: tests-coverage
 tests-coverage:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage run -m pytest $(TESTS)/
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage xml
-	PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage report --fail-under=60
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage run -m pytest $(TESTS)/
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage xml
+	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage report --fail-under=60
 
 .PHONY: quality
 quality:

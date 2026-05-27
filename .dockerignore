@@ -3,6 +3,7 @@ pre-commit-config.yaml
 .git
 .gitignore
 .env
+.env.test
 .env.example
 .coverage
 coverage.xml

@@ -24,7 +24,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 55432:5432
     steps:
       - uses: actions/checkout@v4
       - name: "Set up Python"
@@ -45,19 +45,6 @@ jobs:
       - name: "Dead code scan"
         continue-on-error: true
         run: make -C backend vulture
-      - name: "Prepare envs"
-        run: |
-          openssl genpkey -algorithm ed25519 -out private.pem
-          openssl pkey -in private.pem -pubout -out public.pem
-          {
-            echo "AUTH_PRIVATE_KEY<<EOF"
-            cat private.pem
-            echo "EOF"
-            echo "AUTH_PUBLIC_KEY<<EOF"
-            cat public.pem
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-          rm public.pem private.pem
       - name: "Run backend tests with coverage"
         run: make tests-coverage
       - name: "Coverage Badge"

@@ -38,6 +38,15 @@ make tests               # all tests
 make tests-coverage      # all + coverage report
 ```
 
+From the repository root:
+
+```bash
+make tests-fast          # backend + frontend, uses .env.test and an already running test DB
+make tests-compose       # starts isolated test PostgreSQL, runs tests, then stops containers
+make test-env-up         # start isolated test PostgreSQL manually
+make test-env-down       # stop isolated test PostgreSQL and remove its data
+```
+
 ## Patterns
 
 - Shared fixtures: `backend/tests/fixtures.py` — `FactoryFixture`, `StorageFixture`

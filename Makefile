@@ -12,6 +12,8 @@ stop:
 
 # Backend
 
+TEST_COMPOSE := docker compose --env-file .env.test -f docker-compose.test.yml
+
 .PHONY: install-backend
 install-backend:
 	$(MAKE) -C backend install
@@ -32,13 +34,41 @@ revision:
 test-backend:
 	$(MAKE) -C backend test
 
+.PHONY: test-backend-fast
+test-backend-fast:
+	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test
+
 .PHONY: test-backend-unit
 test-backend-unit:
 	$(MAKE) -C backend test-unit
 
+.PHONY: test-backend-unit-fast
+test-backend-unit-fast:
+	$(MAKE) -C backend test-unit TEST_ENV_FILE=../.env.test
+
 .PHONY: test-backend-integration
 test-backend-integration:
 	$(MAKE) -C backend test-integration
+
+.PHONY: test-backend-integration-fast
+test-backend-integration-fast:
+	$(MAKE) -C backend test-integration TEST_ENV_FILE=../.env.test
+
+.PHONY: test-env-up
+test-env-up:
+	$(TEST_COMPOSE) up -d --wait postgres-test
+
+.PHONY: test-env-down
+test-env-down:
+	$(TEST_COMPOSE) down -v --remove-orphans
+
+.PHONY: test-backend-compose
+test-backend-compose:
+	$(MAKE) test-env-up
+	@status=0; \
+	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test || status=$$?; \
+	$(MAKE) test-env-down; \
+	exit $$status
 
 .PHONY: tests-coverage
 tests-coverage:
@@ -73,6 +103,17 @@ install: install-backend install-frontend
 
 .PHONY: tests
 tests: test-backend test-frontend
+
+.PHONY: tests-fast
+tests-fast: test-backend-fast test-frontend
+
+.PHONY: tests-compose
+tests-compose: test-env-up
+	@status=0; \
+	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test || status=$$?; \
+	if [ $$status -eq 0 ]; then $(MAKE) test-frontend || status=$$?; fi; \
+	$(MAKE) test-env-down; \
+	exit $$status
 
 .PHONY: clean
 clean:

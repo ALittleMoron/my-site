@@ -37,6 +37,8 @@ my-site/
 │   ├── src/        # Application source
 │   └── tests/      # Backend tests (pytest)
 ├── .env.example    # Example environment variables
+├── .env.test       # Safe test-only environment variables
+├── docker-compose.test.yml
 └── docker-compose.yml
 ```
 
@@ -94,9 +96,11 @@ See [docker-compose.yml](../docker-compose.yml) for all services.
 ## 🧪 Tests
 
 ```bash
-make tests                  # all tests (backend + frontend)
-make test-backend           # backend only (pytest)
-make test-backend-unit      # backend unit tests
-make test-backend-integration  # backend integration tests
-make test-frontend          # frontend only (jest)
+make tests-compose              # isolated test DB, backend + frontend, auto cleanup
+make tests-fast                 # backend + frontend with an already running test DB
+make test-env-up                # start reusable test PostgreSQL
+make test-env-down              # stop reusable test PostgreSQL and remove data
+make test-backend-unit          # backend unit tests, no DB required
+make test-backend-integration   # backend integration tests, needs test DB
+make test-frontend              # frontend only (jest)
 ```
