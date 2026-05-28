@@ -7,11 +7,14 @@ from pydantic import Field
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
+    AttachedExternalResource,
     CompetencyMatrixItem,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpsertParams,
+    ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
+    NewExternalResourceAttachment,
     Sheets,
 )
 from core.enums import PublishStatusEnum
@@ -36,22 +39,11 @@ class BaseResourceSchema(CamelCaseSchema):
             examples=["https://python.org/", "https://pythonz.net/"],
         ),
     ]
-    context: Annotated[
-        str,
-        Field(
-            title="Контекст",
-            description="Контекст. Пояснение, почему был добавлен данный ресурс.",
-            examples=[
-                "Официальная документация - хорошее место для изучения.",
-                "Блог с хорошими статьями, где можно изучить тему X.",
-            ],
-        ),
-    ]
 
 
 class ResourceRequestSchema(BaseResourceSchema):
     def to_schema(self, resource_id: IntId) -> ExternalResource:
-        return ExternalResource(id=resource_id, name=self.name, url=self.url, context=self.context)
+        return ExternalResource(id=resource_id, name=self.name, url=self.url)
 
 
 class ResourceResponseSchema(BaseResourceSchema):
@@ -70,7 +62,86 @@ class ResourceResponseSchema(BaseResourceSchema):
             id=schema.id,
             name=schema.name,
             url=schema.url,
+        )
+
+
+class AttachedResourceResponseSchema(BaseResourceSchema):
+    id: Annotated[
+        int,
+        Field(
+            title="Идентификатор",
+            description="Идентификатор ресурса для дополнительного изучения.",
+            examples=[1, 2, 3],
+        ),
+    ]
+    context: Annotated[
+        str,
+        Field(
+            title="Контекст",
+            description="Контекст. Пояснение, почему был добавлен данный ресурс.",
+            examples=[
+                "Официальная документация - хорошее место для изучения.",
+                "Блог с хорошими статьями, где можно изучить тему X.",
+            ],
+        ),
+    ]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: AttachedExternalResource) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.name,
+            url=schema.url,
             context=schema.context,
+        )
+
+
+class ExistingResourceAttachmentRequestSchema(CamelCaseSchema):
+    resource_id: Annotated[
+        int,
+        Field(
+            title="Идентификатор",
+            description="Идентификатор существующего ресурса.",
+            examples=[1, 2, 3],
+        ),
+    ]
+    context: Annotated[
+        str,
+        Field(
+            title="Контекст",
+            description="Контекст ресурса в рамках конкретного вопроса.",
+            examples=["Официальная документация по теме."],
+        ),
+    ]
+
+    def to_schema(self) -> ExistingExternalResourceAttachment:
+        return ExistingExternalResourceAttachment(
+            resource_id=IntId(self.resource_id),
+            context=self.context,
+        )
+
+
+class NewResourceAttachmentRequestSchema(CamelCaseSchema):
+    resource: Annotated[
+        ResourceRequestSchema,
+        Field(
+            title="Ресурс",
+            description="Новый ресурс для создания и прикрепления к вопросу.",
+        ),
+    ]
+    context: Annotated[
+        str,
+        Field(
+            title="Контекст",
+            description="Контекст ресурса в рамках конкретного вопроса.",
+            examples=["Официальная документация по теме."],
+        ),
+    ]
+
+    def to_schema(self, resource_id: IntId) -> NewExternalResourceAttachment:
+        return NewExternalResourceAttachment(
+            resource=self.resource.to_schema(resource_id=resource_id),
+            context=self.context,
         )
 
 
@@ -170,7 +241,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         ),
     ]
     resources: Annotated[
-        list[ResourceResponseSchema],
+        list[AttachedResourceResponseSchema],
         Field(
             title="Ресурсы",
             description="Список ресурсов для дополнительного изучения",
@@ -190,7 +261,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
             subsection=schema.subsection,
             publish_status=schema.publish_status,
             resources=[
-                ResourceResponseSchema.from_domain_schema(schema=resource)
+                AttachedResourceResponseSchema.from_domain_schema(schema=resource)
                 for resource in schema.resources
             ],
         )
@@ -277,7 +348,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
         ),
     ]
     resources: Annotated[
-        list[int | ResourceRequestSchema],
+        list[ExistingResourceAttachmentRequestSchema | NewResourceAttachmentRequestSchema],
         Field(
             title="Ресурсы",
             description="Список ресурсов для дополнительного изучения",
@@ -304,8 +375,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             subsection=self.subsection,
             publish_status=self.publish_status,
             resources=[
-                IntId(resource)
-                if isinstance(resource, int)
+                resource.to_schema()
+                if isinstance(resource, ExistingResourceAttachmentRequestSchema)
                 else resource.to_schema(
                     resource_id=(
                         resource_id_generator.get_next()

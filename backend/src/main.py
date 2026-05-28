@@ -9,7 +9,12 @@ from infra.ioc.container import container
 
 
 def create_app() -> Litestar:
-    return create_litestar_app(lifespan=[app_lifespan], container=container)
+    return create_litestar_app(
+        lifespan=[app_lifespan],
+        container=container,
+        extra_plugins=[],
+        extra_middlewares=[],
+    )
 
 
 if __name__ == "__main__":

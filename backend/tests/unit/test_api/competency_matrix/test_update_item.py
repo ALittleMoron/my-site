@@ -28,12 +28,20 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 "subsection": "Subsection",
                 "publishStatus": "Draft",
                 "resources": [
-                    1,
-                    2,
                     {
-                        "name": "resource 1",
-                        "url": "http://example.com",
+                        "resourceId": 1,
                         "context": "resource context 1",
+                    },
+                    {
+                        "resourceId": 2,
+                        "context": "resource context 2",
+                    },
+                    {
+                        "resource": {
+                            "name": "resource 1",
+                            "url": "http://example.com",
+                        },
+                        "context": "resource context 3",
                     },
                 ],
             },
@@ -59,7 +67,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             subsection="Subsection",
             publish_status=PublishStatusEnum.DRAFT,
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=1,
                     name="resource 1",
                     url="http://example.com",
@@ -79,12 +87,20 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 "subsection": "Subsection",
                 "publishStatus": "Draft",
                 "resources": [
-                    1,
-                    2,
                     {
-                        "name": "resource 1",
-                        "url": "http://example.com",
+                        "resourceId": 1,
                         "context": "resource context 1",
+                    },
+                    {
+                        "resourceId": 2,
+                        "context": "resource context 2",
+                    },
+                    {
+                        "resource": {
+                            "name": "resource 1",
+                            "url": "http://example.com",
+                        },
+                        "context": "resource context 3",
                     },
                 ],
             },
@@ -101,13 +117,19 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 subsection="Subsection",
                 publish_status=PublishStatusEnum.DRAFT,
                 resources=[
-                    self.factory.core.int_id(1),
-                    self.factory.core.int_id(2),
-                    self.factory.core.external_resource(
+                    self.factory.core.existing_external_resource_attachment(
+                        resource_id=1,
+                        context="resource context 1",
+                    ),
+                    self.factory.core.existing_external_resource_attachment(
+                        resource_id=2,
+                        context="resource context 2",
+                    ),
+                    self.factory.core.new_external_resource_attachment(
                         resource_id=ANY,
                         name="resource 1",
                         url="http://example.com",
-                        context="resource context 1",
+                        context="resource context 3",
                     ),
                 ],
             ),

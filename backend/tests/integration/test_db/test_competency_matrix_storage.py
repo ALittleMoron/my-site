@@ -25,7 +25,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
-                        self.factory.core.external_resource(
+                        self.factory.core.attached_external_resource(
                             resource_id=1,
                             name="NAME 1",
                             url="https://example1.com",
@@ -43,7 +43,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 2",
                     subsection="SUBSECTION 2",
                     resources=[
-                        self.factory.core.external_resource(
+                        self.factory.core.attached_external_resource(
                             resource_id=2,
                             name="NAME 2",
                             url="https://example2.com",
@@ -90,7 +90,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             section="SECTION 1",
             subsection="SUBSECTION 1",
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=1,
                     name="NAME 1",
                     url="https://example1.com",
@@ -111,7 +111,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 section="SECTION 1",
                 subsection="SUBSECTION 1",
                 resources=[
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=10,
                         name="NAME 1",
                         url="https://example1.com",
@@ -130,7 +130,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             section="SECTION 1",
             subsection="SUBSECTION 1",
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=10,
                     name="NAME 1",
                     url="https://example1.com",
@@ -152,7 +152,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
-                        self.factory.core.external_resource(
+                        self.factory.core.attached_external_resource(
                             resource_id=10,
                             name="NAME 1",
                             url="https://example1.com",
@@ -173,7 +173,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 section="SECTION 3",
                 subsection="SUBSECTION 3",
                 resources=[
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=10,
                         name="NAME 3",
                         url="https://example3.com",
@@ -192,7 +192,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             section="SECTION 3",
             subsection="SUBSECTION 3",
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=10,
                     name="NAME 3",
                     url="https://example3.com",
@@ -208,13 +208,11 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     resource_id=100,
                     name="NAME 100",
                     url="https://example100.com",
-                    context="CONTEXT 100",
                 ),
                 self.factory.core.external_resource(
                     resource_id=101,
                     name="NAME 101",
                     url="https://example101.com",
-                    context="CONTEXT 101",
                 ),
             ],
         )
@@ -224,13 +222,11 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 resource_id=100,
                 name="NAME 100",
                 url="https://example100.com",
-                context="CONTEXT 100",
             ),
             self.factory.core.external_resource(
                 resource_id=101,
                 name="NAME 101",
                 url="https://example101.com",
-                context="CONTEXT 101",
             ),
         ]
 
@@ -247,7 +243,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     section="SECTION 1",
                     subsection="SUBSECTION 1",
                     resources=[
-                        self.factory.core.external_resource(
+                        self.factory.core.attached_external_resource(
                             resource_id=10,
                             name="NAME 1",
                             url="https://example1.com",
@@ -272,7 +268,6 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                     resource_id=100,
                     name="NAMED 100",
                     url="https://example100.com",
-                    context="CONTEXT 100",
                 ),
                 self.factory.core.external_resource(
                     resource_id=101,
@@ -288,6 +283,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         )
         resources = await self.storage.search_competency_matrix_resources(
             search_name="named",
+            limit=10,
         )
         assert len(resources) == 2
         assert resources[0].name == "NAMED 100"

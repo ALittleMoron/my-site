@@ -15,7 +15,8 @@ class TestFindResourcesItemUseCase(FactoryFixture):
 
     async def test_search_resources(self) -> None:
         search_name = self.factory.core.search_name("Find")
-        await self.use_case.find_resources(search_name=search_name)
+        await self.use_case.find_resources(search_name=search_name, limit=10)
         self.storage.search_competency_matrix_resources.assert_called_once_with(
             search_name="find",
+            limit=10,
         )

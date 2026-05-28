@@ -21,8 +21,9 @@ def global_random_int() -> IntId:
 @pytest.fixture(scope="session")
 def test_settings() -> Generator[Settings]:
     original_use_cache = settings.app.use_cache
+    original_database_name = settings.database.name
     settings.database.name = "my_site_database_test"
     settings.app.use_cache = False
     yield settings
     settings.app.use_cache = original_use_cache
-    settings.database.name = "my_site_database"
+    settings.database.name = original_database_name

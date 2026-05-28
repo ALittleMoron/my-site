@@ -39,5 +39,6 @@ class CompetencyMatrixStorage(ABC):
     async def search_competency_matrix_resources(
         self,
         search_name: str,
+        limit: int,
     ) -> ExternalResources:
         raise NotImplementedError

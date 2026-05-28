@@ -33,10 +33,10 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
         token_header_name: str,
         token_prefix: str,
         container: AsyncContainer,
-        exclude: str | list[str] | None = None,
-        exclude_from_auth_key: str = "exclude_from_auth",
-        exclude_http_methods: Sequence[Method] | None = None,
-        scopes: Scopes | None = None,
+        exclude: str | list[str] | None,
+        exclude_from_auth_key: str,
+        exclude_http_methods: Sequence[Method] | None,
+        scopes: Scopes | None,
     ) -> None:
         super().__init__(
             app=app,

@@ -54,6 +54,7 @@ make test-env-down       # stop isolated test PostgreSQL and remove its data
 - Mock providers for unit tests: `backend/tests/unit/mocks/providers/`
 - Test data factories in `backend/tests/helpers/factories/`: `CoreFactoryHelper` (domain objects), `ApiFactoryHelper` (request payloads) — plain Python, no Mimesis
 - Access via `self.factory.core.*` / `self.factory.api.*` — inherit from `FactoryFixture`
+- Defaults are allowed in tests, test helpers, and factories when they reduce noise and make the required fields for a scenario easier to see.
 - Unit test mocking: `Mock(spec=SomeStorageABC)` from `unittest.mock`
 - API tests: inherit `ApiFixture` -> `self.api.*` / `self.no_auth_api.*`
 - Integration DB tests: inherit `StorageFixture` -> `self.storage_helper.*`, session auto-rollbacks

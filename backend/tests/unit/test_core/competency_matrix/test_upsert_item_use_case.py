@@ -20,7 +20,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         params = self.factory.core.competency_matrix_item_upsert_params(
             item_id=2,
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.new_external_resource_attachment(
                     resource_id=3,
                     name="resource 3",
                     url="http://example.com",
@@ -34,7 +34,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
             item=self.factory.core.competency_matrix_item(
                 item_id=2,
                 resources=[
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=3,
                         name="resource 3",
                         url="http://example.com",
@@ -51,15 +51,20 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                     resource_id=1,
                     name="resource 1",
                     url="http://example1.com",
-                    context="resource context 1",
                 ),
             ],
         )
         params = self.factory.core.competency_matrix_item_upsert_params(
             item_id=2,
             resources=[
-                self.factory.core.int_id(1),
-                self.factory.core.int_id(2),
+                self.factory.core.existing_external_resource_attachment(
+                    resource_id=1,
+                    context="resource context 1",
+                ),
+                self.factory.core.existing_external_resource_attachment(
+                    resource_id=2,
+                    context="resource context 2",
+                ),
             ],
         )
         with pytest.raises(CompetencyMatrixItemNotFoundError):
@@ -76,13 +81,11 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                     resource_id=1,
                     name="resource 1",
                     url="http://example1.com",
-                    context="resource context 1",
                 ),
                 self.factory.core.external_resource(
                     resource_id=2,
                     name="resource 2",
                     url="http://example2.com",
-                    context="resource context 2",
                 ),
             ],
         )
@@ -95,9 +98,15 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
             section="",
             subsection="",
             resources=[
-                self.factory.core.int_id(1),
-                self.factory.core.int_id(2),
-                self.factory.core.external_resource(
+                self.factory.core.existing_external_resource_attachment(
+                    resource_id=1,
+                    context="resource context 1",
+                ),
+                self.factory.core.existing_external_resource_attachment(
+                    resource_id=2,
+                    context="resource context 2",
+                ),
+                self.factory.core.new_external_resource_attachment(
                     resource_id=3,
                     name="resource 3",
                     url="http://example.com",
@@ -119,19 +128,19 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 section="",
                 subsection="",
                 resources=[
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=1,
                         name="resource 1",
                         url="http://example1.com",
                         context="resource context 1",
                     ),
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=2,
                         name="resource 2",
                         url="http://example2.com",
                         context="resource context 2",
                     ),
-                    self.factory.core.external_resource(
+                    self.factory.core.attached_external_resource(
                         resource_id=3,
                         name="resource 3",
                         url="http://example.com",

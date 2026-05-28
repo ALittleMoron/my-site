@@ -8,6 +8,7 @@ from pydantic.alias_generators import to_snake as snake_case
 class CamelCaseSchema(BaseModel):
     model_config = ConfigDict(
         alias_generator=camel_case,
+        extra="forbid",
         from_attributes=True,
         populate_by_name=True,
     )
@@ -16,6 +17,7 @@ class CamelCaseSchema(BaseModel):
 class SnakeCaseSchema(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_case,
+        extra="forbid",
         from_attributes=True,
         populate_by_name=True,
     )

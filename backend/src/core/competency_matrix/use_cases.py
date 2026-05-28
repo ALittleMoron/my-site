@@ -20,7 +20,7 @@ class AbstractCompetencyMatrixUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_resources(self, *, search_name: SearchName) -> ExternalResources:
+    async def find_resources(self, *, search_name: SearchName, limit: int) -> ExternalResources:
         raise NotImplementedError
 
     @abstractmethod
@@ -71,9 +71,15 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
         sheets = await self.storage.list_sheets()
         return Sheets(values=sheets)
 
-    async def find_resources(self, *, search_name: SearchName) -> ExternalResources:
+    async def find_resources(
+        self,
+        *,
+        search_name: SearchName,
+        limit: int,
+    ) -> ExternalResources:
         return await self.storage.search_competency_matrix_resources(
             search_name=search_name.cleaned,
+            limit=limit,
         )
 
     async def list_items(

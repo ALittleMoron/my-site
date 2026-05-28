@@ -25,6 +25,7 @@ jobs:
           echo "ADMIN_SECRET_KEY=${{ secrets.ADMIN_SECRET_KEY }}" >> .env
           echo "ADMIN_INIT_LOGIN=${{ secrets.ADMIN_INIT_LOGIN }}" >> .env
           echo "ADMIN_INIT_PASSWORD=${{ secrets.ADMIN_INIT_PASSWORD }}" >> .env
+          echo "APP_URL_SCHEMA=${{ secrets.APP_URL_SCHEMA }}" >> .env
           echo "APP_DEBUG=${{ secrets.APP_DEBUG }}" >> .env
           echo "APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }}" >> .env
           echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
@@ -42,14 +43,20 @@ jobs:
           echo "DB_EXPIRE_ON_COMMIT=${{ secrets.DB_EXPIRE_ON_COMMIT }}" >> .env
           echo "PBW_ENCRYPTION_KEY=${{ secrets.PBW_ENCRYPTION_KEY }}" >> .env
           echo "AUTH_TOKEN_EXPIRE_SECONDS=${{ secrets.AUTH_TOKEN_EXPIRE_SECONDS }}" >> .env
-          echo "AUTH_CRYPTO_SCHEMES=${{ secrets.AUTH_CRYPTO_SCHEMES }}" >> .env
+          echo "AUTH_TOKEN_HEADER_NAME=${{ secrets.AUTH_TOKEN_HEADER_NAME }}" >> .env
+          echo "AUTH_TOKEN_PREFIX=${{ secrets.AUTH_TOKEN_PREFIX }}" >> .env
+          echo "AUTH_PUBLIC_KEY=${{ secrets.AUTH_PUBLIC_KEY }}" >> .env
+          echo "AUTH_PRIVATE_KEY=${{ secrets.AUTH_PRIVATE_KEY }}" >> .env
           echo "MINIO_HOST=${{ secrets.MINIO_HOST }}" >> .env
           echo "MINIO_PORT=${{ secrets.MINIO_PORT }}" >> .env
           echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
           echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
           echo "MINIO_SECURE=${{ secrets.MINIO_SECURE }}" >> .env
-          echo "PRESIGN_PUT_EXPIRES_SECONDS=${{ secrets.PRESIGN_PUT_EXPIRES_SECONDS }}" >> .env
+          echo "MINIO_PRESIGN_PUT_EXPIRES_SECONDS=${{ secrets.MINIO_PRESIGN_PUT_EXPIRES_SECONDS }}" >> .env
+          echo "SENTRY_USE=${{ secrets.SENTRY_USE }}" >> .env
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
+          echo "VALKEY_HOST=${{ secrets.VALKEY_HOST }}" >> .env
+          echo "VALKEY_PORT=${{ secrets.VALKEY_PORT }}" >> .env
 
       - name: Sync infrastructure files to server
         uses: burnett01/rsync-deployments@7.0.2

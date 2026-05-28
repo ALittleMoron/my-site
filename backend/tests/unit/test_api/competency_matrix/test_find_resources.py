@@ -14,4 +14,10 @@ class TestFindResourcesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.OK
         self.use_case.find_resources.assert_called_once_with(
             search_name=self.factory.core.search_name("test"),
+            limit=10,
         )
+
+    def test_search_resources_requires_limit(self) -> None:
+        response = self.api.get_search_competency_matrix_resources(search_name="test", limit=None)
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.find_resources.assert_not_called()

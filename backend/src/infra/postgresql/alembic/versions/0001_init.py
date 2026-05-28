@@ -9,6 +9,7 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
     op.create_table(
         "auth__user_model",
         sa.Column("username", sa.String(length=255), nullable=False),
@@ -103,7 +104,6 @@ def upgrade() -> None:
         "competency_matrix__external_resource_model",
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("url", sa.String(length=2048), nullable=False),
-        sa.Column("context", sa.String(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -111,6 +111,22 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        "cm_external_resource_name_trgm_idx",
+        "competency_matrix__external_resource_model",
+        [sa.func.lower(sa.column("name")).label("name_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"name_lower": "gin_trgm_ops"},
+    )
+    op.create_index(
+        "cm_external_resource_url_trgm_idx",
+        "competency_matrix__external_resource_model",
+        [sa.func.lower(sa.column("url")).label("url_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"url_lower": "gin_trgm_ops"},
     )
     op.create_table(
         "contacts__contact_me_model",
@@ -123,10 +139,15 @@ def upgrade() -> None:
     )
     op.create_table(
         "competency_matrix__resource_to_item_secondary_model",
-        sa.Column("item_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False,),
+        sa.Column(
+            "item_id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            nullable=False,
+        ),
         sa.Column(
             "resource_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False,
         ),
+        sa.Column("context", sa.String(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -140,12 +161,21 @@ def upgrade() -> None:
             ["resource_id"], ["competency_matrix__external_resource_model.id"], ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("item_id", "resource_id", name="cm_resource_item_uniq"),
     )
 
 
 def downgrade() -> None:
     op.drop_table("competency_matrix__resource_to_item_secondary_model")
     op.drop_table("contacts__contact_me_model")
+    op.drop_index(
+        "cm_external_resource_url_trgm_idx",
+        table_name="competency_matrix__external_resource_model",
+    )
+    op.drop_index(
+        "cm_external_resource_name_trgm_idx",
+        table_name="competency_matrix__external_resource_model",
+    )
     op.drop_table("competency_matrix__external_resource_model")
     op.drop_index("cmi_sheet_idx", table_name="competency_matrix__competency_matrix_item_model")
     op.drop_table("competency_matrix__competency_matrix_item_model")

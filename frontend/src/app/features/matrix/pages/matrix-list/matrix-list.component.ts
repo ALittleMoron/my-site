@@ -8,8 +8,14 @@ import {
   OnInit,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { MatrixService } from '../../services/matrix.service';
-import { MatrixQuestionDetail, MatrixQuestionList } from '../../models/matrix-question.model';
+import {
+  MatrixQuestionDetail,
+  MatrixQuestionList,
+  MatrixQuestionPayload,
+  MatrixResource,
+} from '../../models/matrix-question.model';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
@@ -26,8 +32,10 @@ import { MatrixFilterBarComponent } from './components/matrix-filter-bar/matrix-
 import { MatrixGroupedListComponent } from './components/matrix-grouped-list/matrix-grouped-list.component';
 import { MatrixGroupedGridComponent } from './components/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixQuestionDetailComponent } from './components/matrix-question-detail/matrix-question-detail.component';
+import { MatrixQuestionFormComponent } from './components/matrix-question-form/matrix-question-form.component';
 
 const CHOSEN_SHEET_KEY = 'chosenSheet';
+const RESOURCE_SEARCH_LIMIT = 10;
 
 @Component({
   selector: 'app-matrix-list',
@@ -42,6 +50,7 @@ const CHOSEN_SHEET_KEY = 'chosenSheet';
     MatrixGroupedListComponent,
     MatrixGroupedGridComponent,
     MatrixQuestionDetailComponent,
+    MatrixQuestionFormComponent,
   ],
   templateUrl: './matrix-list.component.html',
   styleUrl: './matrix-list.component.scss',
@@ -53,6 +62,7 @@ export class MatrixListComponent implements OnInit {
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly resourceSearchTerm = new Subject<string>();
 
   readonly isAdmin = this.authService.isAdmin;
 
@@ -67,6 +77,8 @@ export class MatrixListComponent implements OnInit {
   readonly detailLoading = signal(false);
   readonly detailError = signal<ApiError | null>(null);
   readonly detailVisible = signal(false);
+  readonly detailMode = signal<'view' | 'edit' | 'create'>('view');
+  readonly resourceSearchResults = signal<MatrixResource[]>([]);
 
   readonly layoutMode = this.layoutPreferences.matrixLayout;
 
@@ -108,6 +120,27 @@ export class MatrixListComponent implements OnInit {
       canonicalPath: '/competency-matrix',
     });
     this.loadSheets();
+    this.resourceSearchTerm
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        switchMap((searchName) => {
+          const trimmedSearchName = searchName.trim();
+          if (trimmedSearchName.length < 2) {
+            this.resourceSearchResults.set([]);
+            return EMPTY;
+          }
+          return this.matrixService.searchResources(trimmedSearchName, RESOURCE_SEARCH_LIMIT).pipe(
+            catchError(() => {
+              this.resourceSearchResults.set([]);
+              this.notifications.error('Не удалось найти ресурсы.');
+              return EMPTY;
+            }),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((resources) => this.resourceSearchResults.set(resources));
   }
 
   loadSheets(): void {
@@ -177,6 +210,7 @@ export class MatrixListComponent implements OnInit {
 
   openDetail(id: number): void {
     this.detailVisible.set(true);
+    this.detailMode.set('view');
     this.selectedQuestion.set(null);
     this.detailLoading.set(true);
     this.detailError.set(null);
@@ -195,10 +229,51 @@ export class MatrixListComponent implements OnInit {
       });
   }
 
+  openCreate(): void {
+    this.detailVisible.set(true);
+    this.detailMode.set('create');
+    this.selectedQuestion.set(null);
+    this.detailError.set(null);
+    this.detailLoading.set(false);
+    this.resourceSearchResults.set([]);
+  }
+
+  openEdit(): void {
+    this.detailMode.set('edit');
+    this.resourceSearchResults.set([]);
+  }
+
   closeDetail(): void {
     this.detailVisible.set(false);
     this.selectedQuestion.set(null);
     this.detailError.set(null);
+    this.detailMode.set('view');
+    this.resourceSearchResults.set([]);
+  }
+
+  searchResources(searchName: string): void {
+    this.resourceSearchTerm.next(searchName);
+  }
+
+  saveQuestion(payload: MatrixQuestionPayload): void {
+    const current = this.selectedQuestion();
+    const request =
+      this.detailMode() === 'edit' && current
+        ? this.matrixService.updateQuestion(current.id, payload)
+        : this.matrixService.createQuestion(payload);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (detail) => {
+        this.selectedQuestion.set(detail);
+        this.detailMode.set('view');
+        this.notifications.success('Вопрос сохранён.');
+        const sheet = this.selectedSheet();
+        if (sheet) this.loadQuestions(sheet);
+      },
+      error: (err: ApiError) => {
+        this.detailError.set(err);
+        this.notifications.error('Не удалось сохранить вопрос.');
+      },
+    });
   }
 
   onPublish(id: number): void {

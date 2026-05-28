@@ -1,11 +1,15 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { of, throwError, Subject } from 'rxjs';
 import { MatrixListComponent } from './matrix-list.component';
 import { MatrixService } from '../../services/matrix.service';
 import { LayoutPreferencesService } from '../../../../core/layout/layout-preferences.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
-import { MatrixQuestionDetail, MatrixQuestionList } from '../../models/matrix-question.model';
+import {
+  MatrixQuestionDetail,
+  MatrixQuestionList,
+  MatrixResource,
+} from '../../models/matrix-question.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 
 const mockQuestionList: MatrixQuestionList = {
@@ -59,6 +63,9 @@ describe('MatrixListComponent', () => {
     getSheets: jest.Mock;
     getQuestions: jest.Mock;
     getQuestion: jest.Mock;
+    searchResources: jest.Mock;
+    createQuestion: jest.Mock;
+    updateQuestion: jest.Mock;
     publishQuestion: jest.Mock;
     unpublishQuestion: jest.Mock;
     deleteQuestion: jest.Mock;
@@ -78,6 +85,9 @@ describe('MatrixListComponent', () => {
       getSheets: jest.fn().mockReturnValue(of(['JavaScript', 'Python'])),
       getQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
       getQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      searchResources: jest.fn().mockReturnValue(of([])),
+      createQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      updateQuestion: jest.fn().mockReturnValue(of(mockDetail)),
       publishQuestion: jest.fn().mockReturnValue(of(undefined)),
       unpublishQuestion: jest.fn().mockReturnValue(of(undefined)),
       deleteQuestion: jest.fn().mockReturnValue(of(undefined)),
@@ -299,6 +309,57 @@ describe('MatrixListComponent', () => {
     expect(modal.querySelector('app-error-message')).toBeTruthy();
     expect(modal.querySelector('app-loading-spinner')).toBeFalsy();
   });
+
+  it('uses latest resource search response when requests resolve out of order', fakeAsync(() => {
+    const first = new Subject<MatrixResource[]>();
+    const second = new Subject<MatrixResource[]>();
+    matrixService.searchResources
+      .mockReturnValueOnce(first.asObservable())
+      .mockReturnValueOnce(second.asObservable());
+
+    fixture.detectChanges();
+    component.searchResources('py');
+    tick(250);
+    component.searchResources('pyd');
+    tick(250);
+
+    second.next([{ id: 2, name: 'Pydantic', url: 'https://docs.pydantic.dev' }]);
+    second.complete();
+    first.next([{ id: 1, name: 'Python', url: 'https://docs.python.org' }]);
+    first.complete();
+
+    expect(component.resourceSearchResults()).toEqual([
+      { id: 2, name: 'Pydantic', url: 'https://docs.pydantic.dev' },
+    ]);
+  }));
+
+  it('searches resources with trimmed query', fakeAsync(() => {
+    fixture.detectChanges();
+
+    component.searchResources('  pydantic  ');
+    tick(250);
+
+    expect(matrixService.searchResources).toHaveBeenCalledWith('pydantic', 10);
+  }));
+
+  it('clears resource search results when latest search fails', fakeAsync(() => {
+    matrixService.searchResources
+      .mockReturnValueOnce(of([{ id: 1, name: 'Python', url: 'https://docs.python.org' }]))
+      .mockReturnValueOnce(throwError(() => mockError));
+
+    fixture.detectChanges();
+    component.searchResources('python');
+    tick(250);
+    expect(component.resourceSearchResults()).toEqual([
+      { id: 1, name: 'Python', url: 'https://docs.python.org' },
+    ]);
+
+    component.searchResources('pydantic');
+    tick(250);
+
+    expect(component.resourceSearchResults()).toEqual([]);
+    expect(component.error()).toBeNull();
+  }));
 
   it('should hide modal and clear question when closeDetail is called', () => {
     fixture.detectChanges();

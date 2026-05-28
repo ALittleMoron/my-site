@@ -62,7 +62,7 @@ class MinioFileStorage(FileStorage):
         file_data: BytesIO,
         object_name: str,
         namespace: str,
-        content_type: str | None = None,
+        content_type: str | None,
     ) -> FileUploadResult:
         _namespace = self._ensure_valid_namespace(namespace)
         logger.info("Uploading file", bucket_name=_namespace, object_name=object_name)

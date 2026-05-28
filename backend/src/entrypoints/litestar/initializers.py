@@ -89,6 +89,9 @@ def create_middlewares(container: AsyncContainer) -> list[Middleware]:
             token_prefix=settings.auth.token_prefix,
             container=container,
             exclude=["/api/docs"],
+            exclude_from_auth_key="exclude_from_auth",
+            exclude_http_methods=None,
+            scopes=None,
         ),
     ]
 
@@ -113,8 +116,8 @@ def create_cli_app(
 def create_litestar_app(
     lifespan: Lifespan,
     container: AsyncContainer,
-    extra_plugins: Sequence[PluginProtocol] | None = None,
-    extra_middlewares: Sequence[Middleware] | None = None,
+    extra_plugins: Sequence[PluginProtocol],
+    extra_middlewares: Sequence[Middleware],
 ) -> Litestar:
     return Litestar(
         route_handlers=create_routers(),
@@ -125,7 +128,7 @@ def create_litestar_app(
         response_cache_config=(
             ResponseCacheConfig(store="litestar_cache") if settings.app.use_cache else None
         ),
-        middleware=[*create_middlewares(container), *(extra_middlewares or [])],
-        plugins=[*create_plugins(), *(extra_plugins or [])],
+        middleware=[*create_middlewares(container), *extra_middlewares],
+        plugins=[*create_plugins(), *extra_plugins],
         openapi_config=create_openapi_config(),
     )

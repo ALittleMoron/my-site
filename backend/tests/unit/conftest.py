@@ -66,7 +66,12 @@ async def container(  # noqa: PLR0913
 
 @pytest.fixture
 def app(container: AsyncContainer) -> Litestar:
-    app = create_litestar_app(lifespan=[], container=container)
+    app = create_litestar_app(
+        lifespan=[],
+        container=container,
+        extra_plugins=[],
+        extra_middlewares=[],
+    )
     setup_dishka(container=container, app=app)
     return app
 

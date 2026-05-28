@@ -16,7 +16,7 @@ class ContactMeRequest(CamelCaseSchema):
             description="Имя пользователя (можно полное по желанию).",
             examples=["Дмитрий Лунев"],
         ),
-    ] = None
+    ]
     email: Annotated[
         str | None,
         Field(
@@ -34,7 +34,7 @@ class ContactMeRequest(CamelCaseSchema):
             description="Телеграм аккаунт для связи с пользователем",
             examples=["@alm_dmitriy_dev"],
         ),
-    ] = None
+    ]
     message: Annotated[
         str,
         Field(
@@ -47,7 +47,9 @@ class ContactMeRequest(CamelCaseSchema):
 
     @field_validator("telegram", mode="after")
     @classmethod
-    def check_telegram(cls, value: str, _: ValidationInfo) -> str:
+    def check_telegram(cls, value: str | None, _: ValidationInfo) -> str | None:
+        if value is None:
+            return value
         max_length = 256
         if value[0] != "@":
             value = "@" + value

@@ -25,7 +25,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             subsection="Subsection",
             publish_status=PublishStatusEnum.DRAFT,
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=1,
                     name="resource 1",
                     url="http://example.com",
@@ -44,12 +44,20 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 "subsection": "Subsection",
                 "publishStatus": "Draft",
                 "resources": [
-                    1,
-                    2,
                     {
-                        "name": "resource 1",
-                        "url": "http://example.com",
+                        "resourceId": 1,
                         "context": "resource context 1",
+                    },
+                    {
+                        "resourceId": 2,
+                        "context": "resource context 2",
+                    },
+                    {
+                        "resource": {
+                            "name": "resource 1",
+                            "url": "http://example.com",
+                        },
+                        "context": "resource context 3",
                     },
                 ],
             },
@@ -66,13 +74,19 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 subsection="Subsection",
                 publish_status=PublishStatusEnum.DRAFT,
                 resources=[
-                    self.factory.core.int_id(1),
-                    self.factory.core.int_id(2),
-                    self.factory.core.external_resource(
+                    self.factory.core.existing_external_resource_attachment(
+                        resource_id=1,
+                        context="resource context 1",
+                    ),
+                    self.factory.core.existing_external_resource_attachment(
+                        resource_id=2,
+                        context="resource context 2",
+                    ),
+                    self.factory.core.new_external_resource_attachment(
                         resource_id=ANY,
                         name="resource 1",
                         url="http://example.com",
-                        context="resource context 1",
+                        context="resource context 3",
                     ),
                 ],
             ),
@@ -97,3 +111,70 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
+
+    def test_create_item_rejects_resource_attachment_with_resource_id_and_resource(self) -> None:
+        response = self.api.post_create_item(
+            data={
+                "question": "question 1",
+                "answer": "answer 1",
+                "interviewExpectedAnswer": "interview expected answer 1",
+                "sheet": "Python",
+                "grade": "Junior",
+                "section": "Section",
+                "subsection": "Subsection",
+                "publishStatus": "Draft",
+                "resources": [
+                    {
+                        "resourceId": 1,
+                        "resource": {
+                            "name": "resource 1",
+                            "url": "http://example.com",
+                        },
+                        "context": "resource context",
+                    },
+                ],
+            },
+        )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.upsert_item.assert_not_called()
+
+    def test_create_item_requires_existing_resource_context(self) -> None:
+        response = self.api.post_create_item(
+            data={
+                "question": "question 1",
+                "answer": "answer 1",
+                "interviewExpectedAnswer": "interview expected answer 1",
+                "sheet": "Python",
+                "grade": "Junior",
+                "section": "Section",
+                "subsection": "Subsection",
+                "publishStatus": "Draft",
+                "resources": [{"resourceId": 1}],
+            },
+        )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.upsert_item.assert_not_called()
+
+    def test_create_item_requires_new_resource_context(self) -> None:
+        response = self.api.post_create_item(
+            data={
+                "question": "question 1",
+                "answer": "answer 1",
+                "interviewExpectedAnswer": "interview expected answer 1",
+                "sheet": "Python",
+                "grade": "Junior",
+                "section": "Section",
+                "subsection": "Subsection",
+                "publishStatus": "Draft",
+                "resources": [
+                    {
+                        "resource": {
+                            "name": "resource 1",
+                            "url": "http://example.com",
+                        },
+                    },
+                ],
+            },
+        )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.upsert_item.assert_not_called()

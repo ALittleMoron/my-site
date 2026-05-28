@@ -12,10 +12,17 @@ class APIHelper:
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
-    def get_search_competency_matrix_resources(self, search_name: str) -> Response:
+    def get_search_competency_matrix_resources(
+        self,
+        search_name: str,
+        limit: int | None = 10,
+    ) -> Response:
+        params: dict[str, str | int] = {"searchName": search_name}
+        if limit is not None:
+            params["limit"] = limit
         return self.client.get(
             "/api/competency-matrix/resources/search",
-            params={"searchName": search_name},
+            params=params,
         )
 
     def get_competency_matrix_sheets(self) -> Response:
@@ -24,17 +31,23 @@ class APIHelper:
     def get_competency_matrix_items(
         self,
         sheet_name: str = "",
-        only_published: bool = True,
+        only_published: bool | None = True,
     ) -> Response:
+        params: dict[str, str | bool] = {"sheetName": sheet_name}
+        if only_published is not None:
+            params["onlyPublished"] = only_published
         return self.client.get(
             "/api/competency-matrix/items",
-            params={"sheetName": sheet_name, "onlyPublished": only_published},
+            params=params,
         )
 
-    def get_competency_matrix_item(self, pk: int, only_published: bool = True) -> Response:
+    def get_competency_matrix_item(self, pk: int, only_published: bool | None = True) -> Response:
+        params: dict[str, bool] = {}
+        if only_published is not None:
+            params["onlyPublished"] = only_published
         return self.client.get(
             f"/api/competency-matrix/items/detail/{pk}",
-            params={"onlyPublished": only_published},
+            params=params,
         )
 
     def post_create_item(self, data: dict[str, Any]) -> Response:

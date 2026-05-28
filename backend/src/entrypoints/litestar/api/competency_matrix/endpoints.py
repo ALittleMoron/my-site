@@ -21,7 +21,6 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixSheetsListResponseSchema,
 )
 from entrypoints.litestar.guards import admin_user_guard
-from infra.config.settings import settings
 
 
 class CompetencyMatrixApiController(Controller):
@@ -35,7 +34,6 @@ class CompetencyMatrixApiController(Controller):
             "без вывода вопросов по ним. Сделайте запрос на ручку `items/` с параметром sheetId, "
             "чтобы получить вопросы по нужному листу."
         ),
-        cache=settings.app.get_cache_duration(120),  # 2 минуты
         name="competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -49,7 +47,6 @@ class CompetencyMatrixApiController(Controller):
     @get(
         "/resources/search",
         description="Поиск вопросов по матрице компетенций по названию и url.",
-        cache=settings.app.get_cache_duration(10),  # 10 секунд
         name="competency-matrix-resources-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -57,14 +54,14 @@ class CompetencyMatrixApiController(Controller):
         self,
         search_name: Annotated[str, Parameter(query="searchName")],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        limit: Annotated[int, Parameter(query="limit", ge=1, le=50)],
     ) -> CompetencyMatrixResourcesResponseSchema:
-        items = await use_case.find_resources(search_name=SearchName(search_name))
+        items = await use_case.find_resources(search_name=SearchName(search_name), limit=limit)
         return CompetencyMatrixResourcesResponseSchema.from_domain_schema(schema=items)
 
     @get(
         "/items",
         description="Получение списка вопросов по матрице компетенций.",
-        cache=settings.app.get_cache_duration(60),  # 1 минута
         name="competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -73,7 +70,7 @@ class CompetencyMatrixApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         sheet_name: Annotated[str, Parameter(query="sheetName")],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
-        only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
+        only_published: Annotated[bool, Parameter(query="onlyPublished")],
     ) -> CompetencyMatrixItemsListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
@@ -111,7 +108,6 @@ class CompetencyMatrixApiController(Controller):
     @get(
         "/items/detail/{pk:int}",
         description="Получение подробной информации о вопросе из матрицы компетенций.",
-        cache=settings.app.get_cache_duration(15),  # 15 секунд
         name="competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -120,7 +116,7 @@ class CompetencyMatrixApiController(Controller):
         pk: int,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
-        only_published: Annotated[bool, Parameter(query="onlyPublished")] = True,  # noqa: FBT002
+        only_published: Annotated[bool, Parameter(query="onlyPublished")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError

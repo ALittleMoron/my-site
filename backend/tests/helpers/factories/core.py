@@ -8,11 +8,15 @@ from core.auth.types import Token
 from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import (
+    AttachedExternalResource,
+    AttachedExternalResources,
     CompetencyMatrixItem,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpsertParams,
+    ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
+    NewExternalResourceAttachment,
     Sheets,
 )
 from core.contacts.schemas import ContactMe
@@ -30,13 +34,11 @@ class CoreFactoryHelper:
         resource_id: Any,
         name: str = "RESOURCE",
         url: str = "https://example.com",
-        context: str = "Context",
     ) -> ExternalResource:
         return ExternalResource(
             id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
             name=name,
             url=url,
-            context=context,
         )
 
     @classmethod
@@ -45,6 +47,52 @@ class CoreFactoryHelper:
         values: list[ExternalResource] | None = None,
     ) -> ExternalResources:
         return ExternalResources(values=values or [])
+
+    @classmethod
+    def attached_external_resource(
+        cls,
+        resource_id: Any,
+        name: str = "RESOURCE",
+        url: str = "https://example.com",
+        context: str = "Context",
+    ) -> AttachedExternalResource:
+        return AttachedExternalResource(
+            id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
+            name=name,
+            url=url,
+            context=context,
+        )
+
+    @classmethod
+    def attached_external_resources(
+        cls,
+        values: list[AttachedExternalResource] | None = None,
+    ) -> AttachedExternalResources:
+        return AttachedExternalResources(values=values or [])
+
+    @classmethod
+    def existing_external_resource_attachment(
+        cls,
+        resource_id: Any,
+        context: str = "Context",
+    ) -> ExistingExternalResourceAttachment:
+        return ExistingExternalResourceAttachment(
+            resource_id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
+            context=context,
+        )
+
+    @classmethod
+    def new_external_resource_attachment(
+        cls,
+        resource_id: Any,
+        name: str = "RESOURCE",
+        url: str = "https://example.com",
+        context: str = "Context",
+    ) -> NewExternalResourceAttachment:
+        return NewExternalResourceAttachment(
+            resource=cls.external_resource(resource_id=resource_id, name=name, url=url),
+            context=context,
+        )
 
     @classmethod
     def competency_matrix_item(
@@ -58,7 +106,7 @@ class CoreFactoryHelper:
         grade: GradeEnum | None = GradeEnum.JUNIOR,
         section: str = "Section",
         subsection: str = "Subsection",
-        resources: list[ExternalResource] | None = None,
+        resources: list[AttachedExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=cls.int_id(item_id),
@@ -70,7 +118,7 @@ class CoreFactoryHelper:
             grade=grade,
             section=section,
             subsection=subsection,
-            resources=ExternalResources(values=resources or []),
+            resources=AttachedExternalResources(values=resources or []),
         )
 
     @classmethod
@@ -85,7 +133,9 @@ class CoreFactoryHelper:
         grade: GradeEnum = GradeEnum.JUNIOR,
         section: str = "Section",
         subsection: str = "Subsection",
-        resources: list[IntId | ExternalResource] | None = None,
+        resources: (
+            list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
+        ) = None,
     ) -> CompetencyMatrixItemUpsertParams:
         return CompetencyMatrixItemUpsertParams(
             id=cls.int_id(item_id),

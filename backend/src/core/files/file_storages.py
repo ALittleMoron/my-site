@@ -15,7 +15,7 @@ class FileStorage(ABC):
         file_data: BytesIO,
         object_name: str,
         namespace: str,
-        content_type: str | None = None,
+        content_type: str | None,
     ) -> FileUploadResult:
         raise NotImplementedError
 

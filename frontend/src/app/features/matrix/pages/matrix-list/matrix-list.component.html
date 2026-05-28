@@ -1,6 +1,12 @@
 <div class="container py-4 mt-5">
   <h1 class="fw-bold mb-3">Матрица компетенций</h1>
 
+  @if (isAdmin()) {
+    <button type="button" class="btn btn-primary mb-3" (click)="openCreate()">
+      Добавить вопрос
+    </button>
+  }
+
   @if (sheets().length > 0) {
     <app-matrix-sheet-tabs
       [sheets]="sheets()"
@@ -59,7 +65,15 @@
     >
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Детализация вопроса</h5>
+          <h5 class="modal-title">
+            @if (detailMode() === 'create') {
+              Добавление вопроса
+            } @else if (detailMode() === 'edit') {
+              Редактирование вопроса
+            } @else {
+              Детализация вопроса
+            }
+          </h5>
           <button
             type="button"
             class="btn-close"
@@ -68,15 +82,26 @@
           ></button>
         </div>
         <div class="modal-body">
-          <app-matrix-question-detail
-            [question]="selectedQuestion()"
-            [loading]="detailLoading()"
-            [error]="detailError()"
-            [isAdmin]="isAdmin()"
-            (publish)="onPublish(selectedQuestion()!.id)"
-            (unpublish)="onUnpublish(selectedQuestion()!.id)"
-            (delete)="onDelete(selectedQuestion()!.id)"
-          />
+          @if (detailMode() === 'view') {
+            <app-matrix-question-detail
+              [question]="selectedQuestion()"
+              [loading]="detailLoading()"
+              [error]="detailError()"
+              [isAdmin]="isAdmin()"
+              (edit)="openEdit()"
+              (publish)="onPublish(selectedQuestion()!.id)"
+              (unpublish)="onUnpublish(selectedQuestion()!.id)"
+              (delete)="onDelete(selectedQuestion()!.id)"
+            />
+          } @else {
+            <app-matrix-question-form
+              [question]="detailMode() === 'edit' ? selectedQuestion() : null"
+              [searchResults]="resourceSearchResults()"
+              (resourceSearch)="searchResources($event)"
+              (questionSave)="saveQuestion($event)"
+              (formCancel)="detailMode() === 'edit' ? detailMode.set('view') : closeDetail()"
+            />
+          }
         </div>
       </div>
     </div>

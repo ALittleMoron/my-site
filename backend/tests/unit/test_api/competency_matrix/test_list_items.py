@@ -78,3 +78,11 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ],
         }
         self.use_case.list_items.assert_called_once_with(sheet_name="Python", only_published=True)
+
+    def test_list_requires_only_published(self) -> None:
+        response = self.api.get_competency_matrix_items(
+            sheet_name="Python",
+            only_published=None,
+        )
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.list_items.assert_not_called()

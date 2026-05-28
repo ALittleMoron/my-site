@@ -19,6 +19,10 @@ class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
             token_header_name="Authorization",
             token_prefix="Bearer",
             container=self.container.container,
+            exclude=None,
+            exclude_from_auth_key="exclude_from_auth",
+            exclude_http_methods=None,
+            scopes=None,
         )
 
     async def test_authenticate_no_token(self) -> None:

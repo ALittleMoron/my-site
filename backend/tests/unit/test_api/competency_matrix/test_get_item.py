@@ -24,6 +24,11 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "location": None,
         }
 
+    def test_get_competency_matrix_item_requires_only_published(self) -> None:
+        response = self.api.get_competency_matrix_item(pk=1, only_published=None)
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.get_item.assert_not_called()
+
     def test_get_competency_matrix_item(self) -> None:
         self.use_case.get_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
@@ -36,7 +41,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             section="Основы",
             sheet="Python",
             resources=[
-                self.factory.core.external_resource(
+                self.factory.core.attached_external_resource(
                     resource_id=1,
                     name="resource",
                     url="http://example.com",

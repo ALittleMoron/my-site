@@ -22,6 +22,7 @@ export class MatrixQuestionDetailComponent {
   readonly publish = output<void>();
   readonly unpublish = output<void>();
   readonly delete = output<void>();
+  readonly edit = output<void>();
 
   readonly answerHtml = computed<string>(() => {
     const q = this.question();

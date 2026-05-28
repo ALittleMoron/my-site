@@ -1,4 +1,3 @@
-import secrets
 import time
 import uuid
 from abc import ABCMeta, abstractmethod
@@ -8,7 +7,7 @@ from dataclasses import dataclass
 
 class FileNameGenerator(metaclass=ABCMeta):
     @abstractmethod
-    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
+    def __call__(self, folder: str | None, file_extension: str) -> str:
         raise NotImplementedError
 
     @staticmethod
@@ -20,9 +19,9 @@ class FileNameGenerator(metaclass=ABCMeta):
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class UUIDFileNameGenerator(FileNameGenerator):
-    generator: Callable[[], uuid.UUID] = uuid.uuid4
+    generator: Callable[[], uuid.UUID]
 
-    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
+    def __call__(self, folder: str | None, file_extension: str) -> str:
         normalized_extension = self.normalize_extension(file_extension)
         path = "/".join([(folder or "").strip("/"), self.generator().hex + normalized_extension])
         return path.removeprefix("/")
@@ -30,10 +29,10 @@ class UUIDFileNameGenerator(FileNameGenerator):
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class TimestampFileNameGenerator(FileNameGenerator):
-    random_suffix_length: int = 4
-    random_generator: Callable[[int], str] = secrets.token_hex
+    random_suffix_length: int
+    random_generator: Callable[[int], str]
 
-    def __call__(self, folder: str | None = None, file_extension: str = "") -> str:
+    def __call__(self, folder: str | None, file_extension: str) -> str:
         timestamp = int(time.time() * 1_000_000)  # микросекунды
         random_suffix = self.random_generator(self.random_suffix_length)
         normalized_extension = self.normalize_extension(file_extension)

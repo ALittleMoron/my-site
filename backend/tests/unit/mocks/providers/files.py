@@ -17,7 +17,7 @@ class MockFilesProvider(Provider):
 
     @provide(scope=Scope.APP)
     async def provide_file_name_generator(self) -> FileNameGenerator:
-        def mock_call(folder: str | None = None, file_extension: str = "") -> str:
+        def mock_call(folder: str | None, file_extension: str) -> str:
             normalized_extension = FileNameGenerator.normalize_extension(file_extension)
             file_name = f"{self.timestamp}_{self.random_suffix}{normalized_extension}"
             path = "/".join([(folder or "").strip("/"), file_name])

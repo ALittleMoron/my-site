@@ -54,6 +54,45 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_contact_me_request_requires_name_key(self) -> None:
+        data = self.factory.api.contact_me_request(
+            name=None,
+            email="example@mail.ru",
+            telegram=None,
+            message="MESSAGE",
+        )
+        data.pop("name")
+        response = self.api.post_create_contact_me_request(data=data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        self.use_case.create_contact_me_request.assert_not_called()
+
+    def test_contact_me_request_requires_telegram_key(self) -> None:
+        data = self.factory.api.contact_me_request(
+            name=None,
+            email="example@mail.ru",
+            telegram=None,
+            message="MESSAGE",
+        )
+        data.pop("telegram")
+        response = self.api.post_create_contact_me_request(data=data)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        self.use_case.create_contact_me_request.assert_not_called()
+
+    def test_contact_me_request_rejects_extra_fields(self) -> None:
+        response = self.api.post_create_contact_me_request(
+            data={
+                **self.factory.api.contact_me_request(
+                    name="NAME",
+                    email="example@mail.ru",
+                    telegram="@telegram",
+                    message="MESSAGE",
+                ),
+                "unexpectedField": "value",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        self.use_case.create_contact_me_request.assert_not_called()
+
     def test_contact_me_request_min_length(self) -> None:
         response = self.api.post_create_contact_me_request(
             data=self.factory.api.contact_me_request(

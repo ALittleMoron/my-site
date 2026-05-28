@@ -4,11 +4,15 @@ import { ApiClient } from '../../../core/http/api-client.service';
 import {
   MatrixItemDetailDto,
   MatrixItemsListDto,
+  MatrixQuestionPayload,
   MatrixQuestionDetail,
   MatrixQuestionList,
+  MatrixResource,
+  MatrixResourcesDto,
   MatrixSheetsDto,
   mapMatrixDetailDto,
   mapMatrixListDto,
+  mapMatrixResourceDto,
 } from '../models/matrix-question.model';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +39,27 @@ export class MatrixService {
       .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, {
         onlyPublished: String(onlyPublished),
       })
+      .pipe(map(mapMatrixDetailDto));
+  }
+
+  searchResources(searchName: string, limit: number): Observable<MatrixResource[]> {
+    return this.api
+      .get<MatrixResourcesDto>('/api/competency-matrix/resources/search', {
+        searchName,
+        limit: String(limit),
+      })
+      .pipe(map((dto) => dto.resources.map(mapMatrixResourceDto)));
+  }
+
+  createQuestion(payload: MatrixQuestionPayload): Observable<MatrixQuestionDetail> {
+    return this.api
+      .post<MatrixItemDetailDto>('/api/competency-matrix/items', payload)
+      .pipe(map(mapMatrixDetailDto));
+  }
+
+  updateQuestion(id: number, payload: MatrixQuestionPayload): Observable<MatrixQuestionDetail> {
+    return this.api
+      .put<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, payload)
       .pipe(map(mapMatrixDetailDto));
   }
 

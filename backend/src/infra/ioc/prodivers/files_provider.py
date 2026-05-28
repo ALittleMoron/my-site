@@ -1,3 +1,5 @@
+import secrets
+
 from dishka import Provider, Scope, provide
 from miniopy_async.api import Minio
 
@@ -11,7 +13,10 @@ from infra.minio.file_storages import MinioFileStorage
 class FilesProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_file_name_generator(self) -> FileNameGenerator:
-        return TimestampFileNameGenerator()
+        return TimestampFileNameGenerator(
+            random_suffix_length=4,
+            random_generator=secrets.token_hex,
+        )
 
     @provide(scope=Scope.APP)
     async def provide_minio_client(self) -> Minio:

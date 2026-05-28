@@ -26,6 +26,7 @@ These rules apply to backend Python code under `backend/**/*.py`.
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.
 - Controllers must receive dependencies through `FromDishka[...]`, preferably typed as abstract use case interfaces.
 - API schemas must inherit from the shared schema bases and explicitly map to/from domain objects with `to_schema` / `from_domain_schema`.
+- Use `to_domain_schema` / `from_domain_schema` for same-concept conversions between API schemas, ORM models, and core domain schemas when the method signature already identifies the exact source/target type. Use a more specific conversion method name only when the conversion changes the semantic entity, such as attached resource -> plain external resource.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
 
 ## Persistence

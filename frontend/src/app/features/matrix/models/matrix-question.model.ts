@@ -2,6 +2,9 @@ export interface MatrixResourceDto {
   id: number;
   name: string;
   url: string;
+}
+
+export interface MatrixAttachedResourceDto extends MatrixResourceDto {
   context: string;
 }
 
@@ -18,7 +21,7 @@ export interface MatrixItemDetailDto extends MatrixItemDto {
   section: string;
   subsection: string;
   publishStatus: 'Draft' | 'Published';
-  resources: MatrixResourceDto[];
+  resources: MatrixAttachedResourceDto[];
 }
 
 export interface MatrixGradeGroupDto {
@@ -45,10 +48,17 @@ export interface MatrixSheetsDto {
   sheets: string[];
 }
 
+export interface MatrixResourcesDto {
+  resources: MatrixResourceDto[];
+}
+
 export interface MatrixResource {
   id: number;
   name: string;
   url: string;
+}
+
+export interface MatrixAttachedResource extends MatrixResource {
   context: string;
 }
 
@@ -65,7 +75,36 @@ export interface MatrixQuestionDetail extends MatrixQuestion {
   section: string;
   subsection: string;
   publishStatus: 'Draft' | 'Published';
-  resources: MatrixResource[];
+  resources: MatrixAttachedResource[];
+}
+
+export interface ExistingMatrixResourceAttachmentPayload {
+  resourceId: number;
+  context: string;
+}
+
+export interface NewMatrixResourceAttachmentPayload {
+  resource: {
+    name: string;
+    url: string;
+  };
+  context: string;
+}
+
+export type MatrixResourceAttachmentPayload =
+  | ExistingMatrixResourceAttachmentPayload
+  | NewMatrixResourceAttachmentPayload;
+
+export interface MatrixQuestionPayload {
+  question: string;
+  answer: string;
+  interviewExpectedAnswer: string;
+  sheet: string;
+  grade: string;
+  section: string;
+  subsection: string;
+  publishStatus: 'Draft' | 'Published';
+  resources: MatrixResourceAttachmentPayload[];
 }
 
 export interface MatrixGradeGroup {
@@ -124,5 +163,13 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
       url: resource.url,
       context: resource.context,
     })),
+  };
+}
+
+export function mapMatrixResourceDto(dto: MatrixResourceDto): MatrixResource {
+  return {
+    id: dto.id,
+    name: dto.name,
+    url: dto.url,
   };
 }

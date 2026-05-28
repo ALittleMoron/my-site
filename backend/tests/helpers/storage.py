@@ -33,7 +33,7 @@ class StorageHelper:
         self,
         item: CompetencyMatrixItem,
     ) -> CompetencyMatrixItemModel:
-        model = CompetencyMatrixItemModel.from_domain_schema(item=item)
+        model = CompetencyMatrixItemModel.from_domain_schema(item=item, include_relationships=True)
         await self.session.merge(model)
         await self.session.flush()
         return model
@@ -42,7 +42,10 @@ class StorageHelper:
         self,
         items: list[CompetencyMatrixItem],
     ) -> list[CompetencyMatrixItemModel]:
-        db_items = [CompetencyMatrixItemModel.from_domain_schema(item=item) for item in items]
+        db_items = [
+            CompetencyMatrixItemModel.from_domain_schema(item=item, include_relationships=True)
+            for item in items
+        ]
         self.session.add_all(db_items)
         await self.session.flush()
         return db_items

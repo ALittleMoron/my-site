@@ -44,7 +44,7 @@ class JwtUser(BaseUser):
     def from_dict(cls, payload: dict[str, Any]) -> JwtUser:
         return cls(
             username=payload["username"],
-            role=RoleEnum(payload["role"]),
+            role=RoleEnum.from_value(payload["role"]),
         )
 
     @classmethod

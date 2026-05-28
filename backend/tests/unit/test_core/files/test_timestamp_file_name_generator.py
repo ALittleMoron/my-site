@@ -1,3 +1,4 @@
+import secrets
 import time
 from unittest.mock import Mock
 
@@ -9,13 +10,22 @@ from core.files.file_name_generators import TimestampFileNameGenerator
 class TestTimestampFileNameGenerator:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
-        self.timestamp_generator = TimestampFileNameGenerator()
-        self.custom_length_generator = TimestampFileNameGenerator(random_suffix_length=6)
+        self.timestamp_generator = TimestampFileNameGenerator(
+            random_suffix_length=4,
+            random_generator=secrets.token_hex,
+        )
+        self.custom_length_generator = TimestampFileNameGenerator(
+            random_suffix_length=6,
+            random_generator=secrets.token_hex,
+        )
         self.mock_generator = Mock(return_value="abc123")
-        self.custom_generator = TimestampFileNameGenerator(random_generator=self.mock_generator)
+        self.custom_generator = TimestampFileNameGenerator(
+            random_suffix_length=4,
+            random_generator=self.mock_generator,
+        )
 
     def test_generate_file_name_without_folder(self) -> None:
-        file_name = self.timestamp_generator()
+        file_name = self.timestamp_generator(folder=None, file_extension="")
 
         assert isinstance(file_name, str)
         assert "_" in file_name
@@ -35,7 +45,7 @@ class TestTimestampFileNameGenerator:
         ],
     )
     def test_generate_file_name_with_folder(self, folder: str, expected_prefix: str) -> None:
-        file_name = self.timestamp_generator(folder=folder)
+        file_name = self.timestamp_generator(folder=folder, file_extension="")
 
         if expected_prefix:
             assert file_name.startswith(expected_prefix)
@@ -49,22 +59,22 @@ class TestTimestampFileNameGenerator:
         assert len(parts[1]) == 8
 
     def test_custom_random_suffix_length(self) -> None:
-        file_name = self.custom_length_generator()
+        file_name = self.custom_length_generator(folder=None, file_extension="")
 
         parts = file_name.split("_")
         assert len(parts[1]) == 12  # 6 bytes * 2 hex chars
 
     def test_custom_random_generator(self) -> None:
-        file_name = self.custom_generator()
+        file_name = self.custom_generator(folder=None, file_extension="")
 
         parts = file_name.split("_")
         assert parts[1] == "abc123"
         self.mock_generator.assert_called_once_with(4)
 
     def test_timestamp_increases_over_time(self) -> None:
-        file_name1 = self.timestamp_generator()
+        file_name1 = self.timestamp_generator(folder=None, file_extension="")
         time.sleep(0.001)  # 1 миллисекунда
-        file_name2 = self.timestamp_generator()
+        file_name2 = self.timestamp_generator(folder=None, file_extension="")
 
         timestamp1 = int(file_name1.split("_")[0])
         timestamp2 = int(file_name2.split("_")[0])
@@ -72,12 +82,12 @@ class TestTimestampFileNameGenerator:
         assert timestamp2 > timestamp1
 
     def test_multiple_calls_generate_different_names(self) -> None:
-        file_names = [self.timestamp_generator() for _ in range(10)]
+        file_names = [self.timestamp_generator(folder=None, file_extension="") for _ in range(10)]
 
         assert len(set(file_names)) == 10
 
     def test_file_name_format(self) -> None:
-        file_name = self.timestamp_generator()
+        file_name = self.timestamp_generator(folder=None, file_extension="")
 
         parts = file_name.split("_")
         timestamp_part = parts[0]
@@ -89,7 +99,7 @@ class TestTimestampFileNameGenerator:
         assert all(c in "0123456789abcdef" for c in random_part)
 
     def test_generate_file_name_with_extension(self) -> None:
-        file_name = self.timestamp_generator(file_extension=".png")
+        file_name = self.timestamp_generator(folder=None, file_extension=".png")
 
         assert file_name.endswith(".png")
         parts = file_name.replace(".png", "").split("_")
@@ -107,7 +117,7 @@ class TestTimestampFileNameGenerator:
         assert len(parts) == 2
 
     def test_generate_file_name_with_extension_without_dot(self) -> None:
-        file_name = self.timestamp_generator(file_extension="gif")
+        file_name = self.timestamp_generator(folder=None, file_extension="gif")
 
         assert file_name.endswith(".gif")
         parts = file_name.replace(".gif", "").split("_")

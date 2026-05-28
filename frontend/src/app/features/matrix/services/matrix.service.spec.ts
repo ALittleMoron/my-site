@@ -133,4 +133,102 @@ describe('MatrixService', () => {
 
     expect(completed).toBe(true);
   });
+
+  it('searchResources loads resource matches with limit', () => {
+    let firstResourceName: string | undefined;
+
+    service.searchResources('python', 5).subscribe((resources) => {
+      firstResourceName = resources[0].name;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/resources/search'),
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('searchName')).toBe('python');
+    expect(req.request.params.get('limit')).toBe('5');
+    req.flush({
+      resources: [{ id: 1, name: 'Python docs', url: 'https://docs.python.org' }],
+    });
+
+    expect(firstResourceName).toBe('Python docs');
+  });
+
+  it('createQuestion posts payload and maps saved detail', () => {
+    let resultId: number | undefined;
+
+    service
+      .createQuestion({
+        question: 'Question',
+        answer: 'Answer',
+        interviewExpectedAnswer: 'Expected',
+        sheet: 'Python',
+        grade: 'Junior',
+        section: 'Core',
+        subsection: 'Syntax',
+        publishStatus: 'Draft',
+        resources: [{ resourceId: 1, context: 'Read this' }],
+      })
+      .subscribe((question) => {
+        resultId = question.id;
+      });
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.resources).toEqual([{ resourceId: 1, context: 'Read this' }]);
+    req.flush({
+      id: 7,
+      question: 'Question',
+      answer: 'Answer',
+      interviewExpectedAnswer: 'Expected',
+      sheet: 'Python',
+      grade: 'Junior',
+      section: 'Core',
+      subsection: 'Syntax',
+      publishStatus: 'Draft',
+      resources: [],
+    });
+
+    expect(resultId).toBe(7);
+  });
+
+  it('updateQuestion puts payload to detail endpoint and maps saved detail', () => {
+    let resultQuestion: string | undefined;
+
+    service
+      .updateQuestion(7, {
+        question: 'Updated',
+        answer: 'Answer',
+        interviewExpectedAnswer: 'Expected',
+        sheet: 'Python',
+        grade: 'Junior',
+        section: 'Core',
+        subsection: 'Syntax',
+        publishStatus: 'Published',
+        resources: [{ resource: { name: 'Docs', url: 'https://example.com' }, context: '' }],
+      })
+      .subscribe((question) => {
+        resultQuestion = question.question;
+      });
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/7'));
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body.resources).toEqual([
+      { resource: { name: 'Docs', url: 'https://example.com' }, context: '' },
+    ]);
+    req.flush({
+      id: 7,
+      question: 'Updated',
+      answer: 'Answer',
+      interviewExpectedAnswer: 'Expected',
+      sheet: 'Python',
+      grade: 'Junior',
+      section: 'Core',
+      subsection: 'Syntax',
+      publishStatus: 'Published',
+      resources: [],
+    });
+
+    expect(resultQuestion).toBe('Updated');
+  });
 });

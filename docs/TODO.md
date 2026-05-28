@@ -270,15 +270,15 @@
     - [x] Remove `views_router` from Litestar app after Angular parity
     - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
     - [x] Remove backend static vendor files replaced by Angular build assets
-- [ ] Add and edit competency matrix questions
-  - [ ] Search through existing external resources
-  - [ ] Edit mode for a specific question (button and form on question detail)
-  - [ ] Button and form for adding a question to a matrix section
-  - [ ] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
+- [x] Add and edit competency matrix questions
+  - [x] Search through existing external resources
+  - [x] Edit mode for a specific question (button and form on question detail)
+  - [x] Button and form for adding a question to a matrix section
+  - [x] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
 - [x] "404" page 
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [ ] Security audit
-  - [ ] Only admins can edit, add, and delete matrix questions
+  - [x] Only admins can edit, add, and delete matrix questions
 
 ### Notes
 

@@ -21,12 +21,12 @@ class _ProjectBaseSettings(BaseSettings):
 class _AppSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
-    url_schema: Literal["http", "https"] = "http"
-    debug: bool = True
-    secret_key: SecretStrExtended = SecretStrExtended("SECRET_KEY")
-    domain: str = "localhost"
-    use_cache: bool = True
-    use_rate_limit: bool = True
+    url_schema: Literal["http", "https"]
+    debug: bool
+    secret_key: SecretStrExtended
+    domain: str
+    use_cache: bool
+    use_rate_limit: bool
 
     @property
     def is_local_domain(self) -> bool:
@@ -44,28 +44,23 @@ class _AppSettings(_ProjectBaseSettings):
 class _AdminSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="ADMIN_")
 
-    init_username: str = "admin"
-    init_password: SecretStrExtended = SecretStrExtended("admin")
+    init_login: str
+    init_password: SecretStrExtended
 
 
 class _DatabaseSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="DB_")
 
-    # connection creds settings
-    user: str = "postgres"
-    password: SecretStrExtended = SecretStrExtended("postgres")
-    driver: str = "postgresql+psycopg"
-    host: str = "localhost"
-    port: str = "5432"
-    name: str = "my_site_database"
-
-    # engine_settings
-    pool_pre_ping: bool = True
-    pool_size: int = 10
-    max_overflow: int = 20
-
-    # session maker settings
-    expire_on_commit: bool = False
+    user: str
+    password: SecretStrExtended
+    driver: str
+    host: str
+    port: str
+    name: str
+    pool_pre_ping: bool
+    pool_size: int
+    max_overflow: int
+    expire_on_commit: bool
 
     @property
     def url(self) -> SecretStrExtended:
@@ -79,20 +74,20 @@ class _AuthSettings(_ProjectBaseSettings):
 
     public_key: SecretStrExtended
     private_key: SecretStrExtended
-    token_expire_seconds: int = 60 * 60 * 24 * 2
-    token_header_name: str = "Authorization"  # noqa: S105
-    token_prefix: str = "Bearer"  # noqa: S105
+    token_expire_seconds: int
+    token_header_name: str
+    token_prefix: str
 
 
 class _MinioSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="MINIO_")
 
-    host: str = "localhost"
-    port: int = 9000
-    secret_key: SecretStrExtended = SecretStrExtended("minioadmin")
-    access_key: str = "minioadmin"
-    secure: bool = False
-    presign_put_expires_seconds: int = 60 * 5  # 5 minutes
+    host: str
+    port: int
+    secret_key: SecretStrExtended
+    access_key: str
+    secure: bool
+    presign_put_expires_seconds: int
 
     @property
     def endpoint(self) -> str:
@@ -102,15 +97,15 @@ class _MinioSettings(_ProjectBaseSettings):
 class _SentrySettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="SENTRY_")
 
-    use: bool = True
-    dsn: str = ""
+    use: bool
+    dsn: str
 
 
 class _ValkeySettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="VALKEY_")
 
-    host: str = "localhost"
-    port: int = 6379
+    host: str
+    port: int
 
     def get_url(self, db: int | str) -> SecretStrExtended:
         return SecretStrExtended(f"valkey://{self.host}:{self.port}/{db}")
@@ -121,13 +116,22 @@ class _ValkeySettings(_ProjectBaseSettings):
 
 
 class Settings:
-    app: _AppSettings = _AppSettings()
-    admin: _AdminSettings = _AdminSettings()
-    auth: _AuthSettings = _AuthSettings()
-    database: _DatabaseSettings = _DatabaseSettings()
-    minio: _MinioSettings = _MinioSettings()
-    sentry: _SentrySettings = _SentrySettings()
-    valkey: _ValkeySettings = _ValkeySettings()
+    app: _AppSettings
+    admin: _AdminSettings
+    auth: _AuthSettings
+    database: _DatabaseSettings
+    minio: _MinioSettings
+    sentry: _SentrySettings
+    valkey: _ValkeySettings
+
+    def __init__(self) -> None:
+        self.app = _AppSettings()
+        self.admin = _AdminSettings()
+        self.auth = _AuthSettings()
+        self.database = _DatabaseSettings()
+        self.minio = _MinioSettings()
+        self.sentry = _SentrySettings()
+        self.valkey = _ValkeySettings()
 
     @property
     def base_url(self) -> str:

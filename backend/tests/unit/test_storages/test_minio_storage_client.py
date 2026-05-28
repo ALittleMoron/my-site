@@ -77,6 +77,7 @@ class TestMinioFileStorage:
                 file_data=file_data,
                 object_name=object_name,
                 namespace="NOT_VALID",
+                content_type=None,
             )
 
     async def test_upload_file_minio_exception(self) -> None:
@@ -89,6 +90,7 @@ class TestMinioFileStorage:
                 file_data=file_data,
                 object_name=object_name,
                 namespace="media",
+                content_type=None,
             )
 
     async def test_init_storage(self) -> None:
