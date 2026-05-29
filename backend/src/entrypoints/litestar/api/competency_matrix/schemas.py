@@ -9,8 +9,9 @@ from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerat
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     CompetencyMatrixItem,
+    CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
-    CompetencyMatrixItemUpsertParams,
+    CompetencyMatrixItemUpdateParams,
     ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
@@ -355,17 +356,13 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
         ),
     ]
 
-    def to_schema(
+    def to_create_schema(
         self,
-        item_id_generator: IntId | ItemIdGenerator,
-        resource_id_generator: IntId | ResourceIdGenerator,
-    ) -> CompetencyMatrixItemUpsertParams:
-        return CompetencyMatrixItemUpsertParams(
-            id=(
-                item_id_generator.get_next()
-                if isinstance(item_id_generator, ItemIdGenerator)
-                else item_id_generator
-            ),
+        item_id_generator: ItemIdGenerator,
+        resource_id_generator: ResourceIdGenerator,
+    ) -> CompetencyMatrixItemCreateParams:
+        return CompetencyMatrixItemCreateParams(
+            id=item_id_generator.get_next(),
             question=self.question,
             answer=self.answer,
             interview_expected_answer=self.interview_expected_answer,
@@ -374,19 +371,37 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             section=self.section,
             subsection=self.subsection,
             publish_status=self.publish_status,
-            resources=[
-                resource.to_schema()
-                if isinstance(resource, ExistingResourceAttachmentRequestSchema)
-                else resource.to_schema(
-                    resource_id=(
-                        resource_id_generator.get_next()
-                        if isinstance(resource_id_generator, ResourceIdGenerator)
-                        else resource_id_generator
-                    ),
-                )
-                for resource in self.resources
-            ],
+            resources=self._to_resource_attachments(resource_id_generator=resource_id_generator),
         )
+
+    def to_update_schema(
+        self,
+        item_id: IntId,
+        resource_id_generator: ResourceIdGenerator,
+    ) -> CompetencyMatrixItemUpdateParams:
+        return CompetencyMatrixItemUpdateParams(
+            id=item_id,
+            question=self.question,
+            answer=self.answer,
+            interview_expected_answer=self.interview_expected_answer,
+            sheet=self.sheet,
+            grade=self.grade,
+            section=self.section,
+            subsection=self.subsection,
+            publish_status=self.publish_status,
+            resources=self._to_resource_attachments(resource_id_generator=resource_id_generator),
+        )
+
+    def _to_resource_attachments(
+        self,
+        resource_id_generator: ResourceIdGenerator,
+    ) -> list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]:
+        return [
+            resource.to_schema()
+            if isinstance(resource, ExistingResourceAttachmentRequestSchema)
+            else resource.to_schema(resource_id=resource_id_generator.get_next())
+            for resource in self.resources
+        ]
 
 
 class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):

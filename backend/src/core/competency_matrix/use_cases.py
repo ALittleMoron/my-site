@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
+    CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
-    CompetencyMatrixItemUpsertParams,
+    CompetencyMatrixItemUpdateParams,
+    CompetencyMatrixItemWriteParams,
     ExternalResources,
     Sheets,
 )
@@ -42,10 +44,18 @@ class AbstractCompetencyMatrixUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def upsert_item(
+    async def create_item(
         self,
         *,
-        params: CompetencyMatrixItemUpsertParams,
+        params: CompetencyMatrixItemCreateParams,
+    ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_item(
+        self,
+        *,
+        params: CompetencyMatrixItemUpdateParams,
     ) -> CompetencyMatrixItem:
         raise NotImplementedError
 
@@ -103,10 +113,26 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
             raise CompetencyMatrixItemNotFoundError
         return item
 
-    async def upsert_item(
+    async def create_item(
         self,
         *,
-        params: CompetencyMatrixItemUpsertParams,
+        params: CompetencyMatrixItemCreateParams,
+    ) -> CompetencyMatrixItem:
+        item = await self._build_item_from_params(params=params)
+        return await self.storage.create_competency_matrix_item(item=item)
+
+    async def update_item(
+        self,
+        *,
+        params: CompetencyMatrixItemUpdateParams,
+    ) -> CompetencyMatrixItem:
+        item = await self._build_item_from_params(params=params)
+        return await self.storage.update_competency_matrix_item(item=item)
+
+    async def _build_item_from_params(
+        self,
+        *,
+        params: CompetencyMatrixItemWriteParams,
     ) -> CompetencyMatrixItem:
         resource_ids_to_assign = params.get_resource_ids_to_assign()
         resources = (
@@ -116,8 +142,7 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
         )
         if not resources.all_resources_exists_by_ids(ids=set(resource_ids_to_assign)):
             raise CompetencyMatrixItemNotFoundError
-        item = params.to_item(resources=resources)
-        return await self.storage.upsert_competency_matrix_item(item=item)
+        return params.to_item(resources=resources)
 
     async def delete_item(self, *, item_id: IntId) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)
@@ -128,6 +153,7 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
         item_id: IntId,
         publish_status: PublishStatusEnum,
     ) -> None:
-        item = await self.storage.get_competency_matrix_item(item_id=item_id)
-        item.set_publish_status(status=publish_status)
-        await self.storage.upsert_competency_matrix_item(item=item)
+        await self.storage.update_competency_matrix_item_publish_status(
+            item_id=item_id,
+            publish_status=publish_status,
+        )

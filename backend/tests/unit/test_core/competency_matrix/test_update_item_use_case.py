@@ -16,35 +16,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         self.storage = Mock(spec=CompetencyMatrixStorage)
         self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
-    async def test_no_resources_to_assign(self) -> None:
-        params = self.factory.core.competency_matrix_item_upsert_params(
-            item_id=2,
-            resources=[
-                self.factory.core.new_external_resource_attachment(
-                    resource_id=3,
-                    name="resource 3",
-                    url="http://example.com",
-                    context="resource context 3",
-                ),
-            ],
-        )
-        await self.use_case.upsert_item(params=params)
-        self.storage.get_resources_by_ids.assert_not_called()
-        self.storage.upsert_competency_matrix_item.assert_called_once_with(
-            item=self.factory.core.competency_matrix_item(
-                item_id=2,
-                resources=[
-                    self.factory.core.attached_external_resource(
-                        resource_id=3,
-                        name="resource 3",
-                        url="http://example.com",
-                        context="resource context 3",
-                    ),
-                ],
-            ),
-        )
-
-    async def test_not_all_resources_returned(self) -> None:
+    async def test_update_item_rejects_missing_existing_resource(self) -> None:
         self.storage.get_resources_by_ids.return_value = self.factory.core.external_resources(
             values=[
                 self.factory.core.external_resource(
@@ -54,7 +26,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 ),
             ],
         )
-        params = self.factory.core.competency_matrix_item_upsert_params(
+        params = self.factory.core.competency_matrix_item_update_params(
             item_id=2,
             resources=[
                 self.factory.core.existing_external_resource_attachment(
@@ -68,13 +40,13 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
             ],
         )
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.use_case.upsert_item(params=params)
+            await self.use_case.update_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )
-        self.storage.upsert_competency_matrix_item.assert_not_called()
+        self.storage.update_competency_matrix_item.assert_not_called()
 
-    async def test_valid(self) -> None:
+    async def test_update_item(self) -> None:
         self.storage.get_resources_by_ids.return_value = self.factory.core.external_resources(
             values=[
                 self.factory.core.external_resource(
@@ -89,7 +61,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 ),
             ],
         )
-        params = self.factory.core.competency_matrix_item_upsert_params(
+        params = self.factory.core.competency_matrix_item_update_params(
             item_id=2,
             question="2",
             publish_status=PublishStatusEnum.DRAFT,
@@ -114,11 +86,11 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 ),
             ],
         )
-        await self.use_case.upsert_item(params=params)
+        await self.use_case.update_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )
-        self.storage.upsert_competency_matrix_item.assert_called_once_with(
+        self.storage.update_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(
                 item_id=2,
                 question="2",

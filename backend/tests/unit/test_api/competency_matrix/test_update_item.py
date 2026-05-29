@@ -15,7 +15,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_update_item_not_found(self) -> None:
-        self.use_case.upsert_item.side_effect = CompetencyMatrixItemNotFoundError()
+        self.use_case.update_item.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.put_update_item(
             pk=100500,
             data={
@@ -56,7 +56,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         }
 
     def test_update_item(self) -> None:
-        self.use_case.upsert_item.return_value = self.factory.core.competency_matrix_item(
+        self.use_case.update_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="question 1",
             answer="answer 1",
@@ -105,8 +105,8 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 ],
             },
         )
-        self.use_case.upsert_item.assert_called_once_with(
-            params=self.factory.core.competency_matrix_item_upsert_params(
+        self.use_case.update_item.assert_called_once_with(
+            params=self.factory.core.competency_matrix_item_update_params(
                 item_id=100500,
                 question="question 1",
                 answer="answer 1",

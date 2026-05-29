@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.enums import PublishStatusEnum
 from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
@@ -99,8 +100,8 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             ],
         )
 
-    async def test_upsert_competency_matrix_item_create(self) -> None:
-        item = await self.storage.upsert_competency_matrix_item(
+    async def test_create_competency_matrix_item(self) -> None:
+        item = await self.storage.create_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
                 question="1",
@@ -139,7 +140,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             ],
         )
 
-    async def test_upsert_competency_matrix_item_update(self) -> None:
+    async def test_update_competency_matrix_item(self) -> None:
         await self.storage_helper.create_competency_matrix_items(
             items=[
                 self.factory.core.competency_matrix_item(
@@ -162,7 +163,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 ),
             ],
         )
-        item = await self.storage.upsert_competency_matrix_item(
+        item = await self.storage.update_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
                 question="3",
@@ -200,6 +201,100 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
                 ),
             ],
         )
+
+    async def test_update_competency_matrix_item_replaces_resources(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    question="1",
+                    answer="Answer 1",
+                    interview_expected_answer="Expected answer 1",
+                    sheet="Python",
+                    grade=GradeEnum.MIDDLE_PLUS,
+                    section="SECTION 1",
+                    subsection="SUBSECTION 1",
+                    resources=[
+                        self.factory.core.attached_external_resource(
+                            resource_id=10,
+                            name="NAME 10",
+                            url="https://example10.com",
+                            context="CONTEXT 10",
+                        ),
+                        self.factory.core.attached_external_resource(
+                            resource_id=11,
+                            name="NAME 11",
+                            url="https://example11.com",
+                            context="CONTEXT 11",
+                        ),
+                    ],
+                ),
+            ],
+        )
+        item = await self.storage.update_competency_matrix_item(
+            item=self.factory.core.competency_matrix_item(
+                item_id=3,
+                question="1",
+                answer="Answer 1",
+                interview_expected_answer="Expected answer 1",
+                sheet="Python",
+                grade=GradeEnum.MIDDLE_PLUS,
+                section="SECTION 1",
+                subsection="SUBSECTION 1",
+                resources=[
+                    self.factory.core.attached_external_resource(
+                        resource_id=12,
+                        name="NAME 12",
+                        url="https://example12.com",
+                        context="CONTEXT 12",
+                    ),
+                ],
+            ),
+        )
+        assert item.resources.values == [
+            self.factory.core.attached_external_resource(
+                resource_id=12,
+                name="NAME 12",
+                url="https://example12.com",
+                context="CONTEXT 12",
+            ),
+        ]
+
+    async def test_update_competency_matrix_item_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.update_competency_matrix_item(
+                item=self.factory.core.competency_matrix_item(item_id=3),
+            )
+
+    async def test_update_publish_status(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    question="1",
+                    answer="Answer 1",
+                    interview_expected_answer="Expected answer 1",
+                    sheet="Python",
+                    grade=GradeEnum.MIDDLE_PLUS,
+                    section="SECTION 1",
+                    subsection="SUBSECTION 1",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+            ],
+        )
+        await self.storage.update_competency_matrix_item_publish_status(
+            item_id=self.factory.core.int_id(3),
+            publish_status=PublishStatusEnum.DRAFT,
+        )
+        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        assert item.publish_status == PublishStatusEnum.DRAFT
+
+    async def test_update_publish_status_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.update_competency_matrix_item_publish_status(
+                item_id=self.factory.core.int_id(3),
+                publish_status=PublishStatusEnum.DRAFT,
+            )
 
     async def test_get_resources_by_ids(self) -> None:
         await self.storage_helper.create_external_resources(

@@ -11,8 +11,9 @@ from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
     CompetencyMatrixItem,
+    CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
-    CompetencyMatrixItemUpsertParams,
+    CompetencyMatrixItemUpdateParams,
     ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
@@ -122,7 +123,7 @@ class CoreFactoryHelper:
         )
 
     @classmethod
-    def competency_matrix_item_upsert_params(
+    def competency_matrix_item_create_params(
         cls,
         item_id: int,
         question: str = "QUESTION",
@@ -136,8 +137,37 @@ class CoreFactoryHelper:
         resources: (
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
-    ) -> CompetencyMatrixItemUpsertParams:
-        return CompetencyMatrixItemUpsertParams(
+    ) -> CompetencyMatrixItemCreateParams:
+        return CompetencyMatrixItemCreateParams(
+            id=cls.int_id(item_id),
+            question=question,
+            publish_status=publish_status,
+            answer=answer,
+            interview_expected_answer=interview_expected_answer,
+            sheet=sheet,
+            grade=grade,
+            section=section,
+            subsection=subsection,
+            resources=resources or [],
+        )
+
+    @classmethod
+    def competency_matrix_item_update_params(
+        cls,
+        item_id: int,
+        question: str = "QUESTION",
+        publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
+        answer: str = "Answer",
+        interview_expected_answer: str = "Answer",
+        sheet: str = "Sheet",
+        grade: GradeEnum = GradeEnum.JUNIOR,
+        section: str = "Section",
+        subsection: str = "Subsection",
+        resources: (
+            list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
+        ) = None,
+    ) -> CompetencyMatrixItemUpdateParams:
+        return CompetencyMatrixItemUpdateParams(
             id=cls.int_id(item_id),
             question=question,
             publish_status=publish_status,

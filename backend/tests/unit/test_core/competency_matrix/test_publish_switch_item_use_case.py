@@ -15,43 +15,23 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_set_draft(self) -> None:
-        self.storage.get_competency_matrix_item.return_value = (
-            self.factory.core.competency_matrix_item(
-                item_id=1,
-                publish_status=PublishStatusEnum.PUBLISHED,
-            )
-        )
         await self.use_case.switch_item_publish_status(
             item_id=self.factory.core.int_id(1),
             publish_status=PublishStatusEnum.DRAFT,
         )
-        self.storage.get_competency_matrix_item.assert_called_once_with(
+        self.storage.get_competency_matrix_item.assert_not_called()
+        self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
             item_id=self.factory.core.int_id(1),
-        )
-        self.storage.upsert_competency_matrix_item.assert_called_once_with(
-            item=self.factory.core.competency_matrix_item(
-                item_id=1,
-                publish_status=PublishStatusEnum.DRAFT,
-            ),
+            publish_status=PublishStatusEnum.DRAFT,
         )
 
     async def test_set_published(self) -> None:
-        self.storage.get_competency_matrix_item.return_value = (
-            self.factory.core.competency_matrix_item(
-                item_id=1,
-                publish_status=PublishStatusEnum.DRAFT,
-            )
-        )
         await self.use_case.switch_item_publish_status(
             item_id=self.factory.core.int_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        self.storage.get_competency_matrix_item.assert_called_once_with(
+        self.storage.get_competency_matrix_item.assert_not_called()
+        self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
             item_id=self.factory.core.int_id(1),
-        )
-        self.storage.upsert_competency_matrix_item.assert_called_once_with(
-            item=self.factory.core.competency_matrix_item(
-                item_id=1,
-                publish_status=PublishStatusEnum.PUBLISHED,
-            ),
+            publish_status=PublishStatusEnum.PUBLISHED,
         )

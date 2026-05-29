@@ -14,7 +14,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_create_item(self) -> None:
-        self.use_case.upsert_item.return_value = self.factory.core.competency_matrix_item(
+        self.use_case.create_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             question="question 1",
             answer="answer 1",
@@ -62,8 +62,8 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 ],
             },
         )
-        self.use_case.upsert_item.assert_called_once_with(
-            params=self.factory.core.competency_matrix_item_upsert_params(
+        self.use_case.create_item.assert_called_once_with(
+            params=self.factory.core.competency_matrix_item_create_params(
                 item_id=1,
                 question="question 1",
                 answer="answer 1",
@@ -136,7 +136,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
         assert response.status_code == codes.BAD_REQUEST, response.json()
-        self.use_case.upsert_item.assert_not_called()
+        self.use_case.create_item.assert_not_called()
 
     def test_create_item_requires_existing_resource_context(self) -> None:
         response = self.api.post_create_item(
@@ -153,7 +153,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
         assert response.status_code == codes.BAD_REQUEST, response.json()
-        self.use_case.upsert_item.assert_not_called()
+        self.use_case.create_item.assert_not_called()
 
     def test_create_item_requires_new_resource_context(self) -> None:
         response = self.api.post_create_item(
@@ -177,4 +177,4 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
         assert response.status_code == codes.BAD_REQUEST, response.json()
-        self.use_case.upsert_item.assert_not_called()
+        self.use_case.create_item.assert_not_called()

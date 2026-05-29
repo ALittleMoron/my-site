@@ -97,8 +97,8 @@ class CompetencyMatrixApiController(Controller):
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixItemDetailResponseSchema:
-        item = await use_case.upsert_item(
-            params=data.to_schema(
+        item = await use_case.create_item(
+            params=data.to_create_schema(
                 item_id_generator=item_id_generator,
                 resource_id_generator=resource_id_generator,
             ),
@@ -137,9 +137,9 @@ class CompetencyMatrixApiController(Controller):
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> CompetencyMatrixItemDetailResponseSchema:
-        item = await use_case.upsert_item(
-            params=data.to_schema(
-                item_id_generator=IntId(pk),
+        item = await use_case.update_item(
+            params=data.to_update_schema(
+                item_id=IntId(pk),
                 resource_id_generator=resource_id_generator,
             ),
         )

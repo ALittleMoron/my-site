@@ -21,6 +21,13 @@ These rules apply to backend Python code under `backend/**/*.py`.
 | Config | `backend/src/infra/config/` | Pydantic settings, logging setup |
 | File storage | `backend/src/infra/minio/` | files adapter |
 
+## Operation Boundaries
+
+- Do not model entity mutation methods as `upsert` when the behavior can create, update,
+  delete, or otherwise mutate different state. Use explicit operation-specific names and methods
+  such as `create_*`, `update_*`, `delete_*`, `publish_*`, or `set_*` so callers cannot
+  accidentally trigger broader behavior than intended.
+
 ## HTTP and Schemas
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.

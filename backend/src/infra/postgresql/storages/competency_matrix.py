@@ -49,34 +49,63 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             raise CompetencyMatrixItemNotFoundError
         return item.to_domain_schema(include_relationships=True)
 
-    async def upsert_competency_matrix_item(
+    async def create_competency_matrix_item(
         self,
         item: CompetencyMatrixItem,
     ) -> CompetencyMatrixItem:
-        stmt = (
-            select(CompetencyMatrixItemModel)
-            .where(CompetencyMatrixItemModel.id == item.id)
-            .options(selectinload(CompetencyMatrixItemModel.resource_links))
+        item_model = CompetencyMatrixItemModel.from_domain_schema(
+            item=item,
+            include_relationships=False,
         )
-        item_model = await self.session.scalar(stmt)
-        if item_model is None:
-            item_model = CompetencyMatrixItemModel.from_domain_schema(
-                item=item,
-                include_relationships=False,
-            )
-            item_model.resource_links = await self._build_resource_links(
-                item=item,
-                existing_links=None,
-            )
-            self.session.add(item_model)
-        else:
-            item_model.update_from_domain_schema(item=item)
-            item_model.resource_links = await self._build_resource_links(
-                item=item,
-                existing_links=item_model.resource_links,
-            )
+        item_model.resource_links = await self._build_resource_links(
+            item=item,
+            existing_links=None,
+        )
+        self.session.add(item_model)
         await self.session.flush()
         return await self.get_competency_matrix_item(item_id=item.id)
+
+    async def update_competency_matrix_item(
+        self,
+        item: CompetencyMatrixItem,
+    ) -> CompetencyMatrixItem:
+        item_model = await self._get_competency_matrix_item_model(
+            item_id=item.id,
+            load_resource_links=True,
+        )
+        item_model.update_from_domain_schema(item=item)
+        item_model.resource_links = await self._build_resource_links(
+            item=item,
+            existing_links=item_model.resource_links,
+        )
+        await self.session.flush()
+        return await self.get_competency_matrix_item(item_id=item.id)
+
+    async def update_competency_matrix_item_publish_status(
+        self,
+        item_id: IntId,
+        publish_status: PublishStatusEnum,
+    ) -> None:
+        item_model = await self._get_competency_matrix_item_model(
+            item_id=item_id,
+            load_resource_links=False,
+        )
+        item_model.publish_status = publish_status
+        await self.session.flush()
+
+    async def _get_competency_matrix_item_model(
+        self,
+        item_id: IntId,
+        *,
+        load_resource_links: bool,
+    ) -> CompetencyMatrixItemModel:
+        stmt = select(CompetencyMatrixItemModel).where(CompetencyMatrixItemModel.id == item_id)
+        if load_resource_links:
+            stmt = stmt.options(selectinload(CompetencyMatrixItemModel.resource_links))
+        item_model = await self.session.scalar(stmt)
+        if item_model is None:
+            raise CompetencyMatrixItemNotFoundError
+        return item_model
 
     async def _build_resource_links(
         self,

@@ -91,12 +91,9 @@ class BaseCompetencyMatrixItem:
 class CompetencyMatrixItem(BaseCompetencyMatrixItem):
     resources: AttachedExternalResources
 
-    def set_publish_status(self, status: PublishStatusEnum) -> None:
-        self.publish_status = status
-
 
 @dataclass(slots=True, kw_only=True)
-class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
+class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
     grade: GradeEnum
     resources: list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]
 
@@ -150,6 +147,14 @@ class CompetencyMatrixItemUpsertParams(BaseCompetencyMatrixItem):
                 values=[*attached_existing_resources, *attached_new_resources],
             ),
         )
+
+
+@dataclass(slots=True, kw_only=True)
+class CompetencyMatrixItemCreateParams(CompetencyMatrixItemWriteParams): ...
+
+
+@dataclass(slots=True, kw_only=True)
+class CompetencyMatrixItemUpdateParams(CompetencyMatrixItemWriteParams): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

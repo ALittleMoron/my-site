@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResources
+from core.enums import PublishStatusEnum
 from core.types import IntId
 
 
@@ -18,10 +19,25 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def upsert_competency_matrix_item(
+    async def create_competency_matrix_item(
         self,
         item: CompetencyMatrixItem,
     ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_competency_matrix_item(
+        self,
+        item: CompetencyMatrixItem,
+    ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_competency_matrix_item_publish_status(
+        self,
+        item_id: IntId,
+        publish_status: PublishStatusEnum,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
