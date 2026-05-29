@@ -65,6 +65,79 @@ class APIHelper:
     def post_set_published_status_to_item(self, pk: int) -> Response:
         return self.client.post(f"/api/competency-matrix/items/detail/{pk}/set-published")
 
+    def get_notes(
+        self,
+        page: int | None = 1,
+        page_size: int | None = 10,
+        only_published: bool | None = True,
+        tag_slug: str | None = None,
+    ) -> Response:
+        params: dict[str, str | int | bool] = {}
+        if page is not None:
+            params["page"] = page
+        if page_size is not None:
+            params["pageSize"] = page_size
+        if only_published is not None:
+            params["onlyPublished"] = only_published
+        if tag_slug is not None:
+            params["tagSlug"] = tag_slug
+        return self.client.get("/api/notes", params=params)
+
+    def get_note(self, slug: str, only_published: bool | None = True) -> Response:
+        params: dict[str, bool] = {}
+        if only_published is not None:
+            params["onlyPublished"] = only_published
+        return self.client.get(f"/api/notes/detail/{slug}", params=params)
+
+    def get_notes_tree(self) -> Response:
+        return self.client.get("/api/notes/tree")
+
+    def post_create_note(self, data: dict[str, Any]) -> Response:
+        return self.client.post("/api/notes", json=data)
+
+    def put_update_note(self, slug: str, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/notes/detail/{slug}", json=data)
+
+    def delete_note(self, slug: str) -> Response:
+        return self.client.delete(f"/api/notes/detail/{slug}")
+
+    def post_set_draft_status_to_note(self, slug: str) -> Response:
+        return self.client.post(f"/api/notes/detail/{slug}/set-draft")
+
+    def post_set_published_status_to_note(self, slug: str) -> Response:
+        return self.client.post(f"/api/notes/detail/{slug}/set-published")
+
+    def get_tags(self, include_deleted: bool | None = False) -> Response:
+        params: dict[str, bool] = {}
+        if include_deleted is not None:
+            params["includeDeleted"] = include_deleted
+        return self.client.get("/api/notes/tags", params=params)
+
+    def get_search_tags(
+        self,
+        search_name: str,
+        include_deleted: bool | None = False,
+        limit: int | None = 10,
+    ) -> Response:
+        params: dict[str, str | int | bool] = {"searchName": search_name}
+        if include_deleted is not None:
+            params["includeDeleted"] = include_deleted
+        if limit is not None:
+            params["limit"] = limit
+        return self.client.get("/api/notes/tags/search", params=params)
+
+    def post_create_tag(self, data: dict[str, Any]) -> Response:
+        return self.client.post("/api/notes/tags", json=data)
+
+    def put_update_tag(self, tag_id: int, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/notes/tags/{tag_id}", json=data)
+
+    def delete_tag(self, tag_id: int) -> Response:
+        return self.client.delete(f"/api/notes/tags/{tag_id}")
+
+    def post_restore_tag(self, tag_id: int) -> Response:
+        return self.client.post(f"/api/notes/tags/{tag_id}/restore")
+
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/contacts", json=data)
 

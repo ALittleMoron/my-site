@@ -1,0 +1,148 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="row g-3">
+    <div class="col-md-8">
+      <label class="form-label" for="noteTitle">Заголовок</label>
+      <input
+        id="noteTitle"
+        type="text"
+        class="form-control"
+        formControlName="title"
+        (input)="onTitleInput()"
+      />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="noteFolder">Папка</label>
+      <input id="noteFolder" type="text" class="form-control" formControlName="folder" />
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="noteSlug">Slug</label>
+      <input
+        id="noteSlug"
+        type="text"
+        class="form-control"
+        formControlName="slug"
+        (input)="onSlugInput()"
+      />
+    </div>
+  </div>
+
+  <div class="form-check form-switch my-3">
+    <input
+      id="notePublishStatus"
+      class="form-check-input"
+      type="checkbox"
+      [checked]="form.controls.publishStatus.value === 'Draft'"
+      (change)="setPublishStatusFromEvent($event)"
+    />
+    <label class="form-check-label" for="notePublishStatus">Черновик</label>
+  </div>
+
+  <div class="mb-3">
+    <div class="form-label">Содержимое</div>
+    <app-markdown-editor [value]="form.controls.content.value" (valueChange)="setContent($event)" />
+  </div>
+
+  <div class="border rounded-3 p-3">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+      <h3 class="h6 mb-0">Теги</h3>
+      @if (tagError()) {
+        <span class="text-danger small">{{ tagError() }}</span>
+      }
+    </div>
+
+    <div class="row g-2 align-items-end mb-3" [formGroup]="newTagForm">
+      <div class="col-md-5">
+        <label class="form-label small" for="newTagName">Название</label>
+        <input
+          id="newTagName"
+          class="form-control form-control-sm"
+          formControlName="name"
+          (input)="onNewTagNameInput()"
+        />
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small" for="newTagSlug">Slug</label>
+        <input
+          id="newTagSlug"
+          class="form-control form-control-sm"
+          formControlName="slug"
+          (input)="onNewTagSlugInput()"
+        />
+      </div>
+      <div class="col-md-2 d-grid">
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="createTag()">
+          Добавить
+        </button>
+      </div>
+    </div>
+
+    <div class="vstack gap-2">
+      @for (tag of tags(); track tag.id) {
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [id]="'noteTag-' + tag.id"
+              [checked]="isTagSelected(tag.id)"
+              [disabled]="isTagDeleted(tag)"
+              (change)="toggleTag(tag.id, $event)"
+            />
+          </div>
+          <div class="col-md-4">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftName"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftName(tag.id, $event)"
+              aria-label="Название тега"
+            />
+          </div>
+          <div class="col-md-3">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftSlug"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftSlug(tag.id, $event)"
+              aria-label="Slug тега"
+            />
+          </div>
+          <div class="col-auto">
+            @if (isTagDeleted(tag)) {
+              <span class="badge text-bg-secondary">Удалён</span>
+            }
+          </div>
+          <div class="col d-flex justify-content-end gap-2">
+            @if (isTagDeleted(tag)) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success"
+                (click)="restoreTag(tag.id)"
+              >
+                Вернуть
+              </button>
+            } @else {
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="updateTag(tag)">
+                Сохранить
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="deleteTag(tag.id)"
+              >
+                Удалить
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
+      Отмена
+    </button>
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+  </div>
+</form>

@@ -20,7 +20,7 @@
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
 A personal site with a Litestar REST API backend and an Angular 19 SPA frontend.
-Features a competency matrix, blog, contact form, and admin panel.
+Features a competency matrix, notes, contact form, and admin panel.
 
 ## 📖 Documentation
 
@@ -45,9 +45,10 @@ my-site/
 ## ✨ Features
 
 - Competency matrix with questions, answers, and Markdown rendering
+- Notes with folders, tags, Markdown rendering, and publish visibility
 - Angular SPA with dark/light theme and list/grid layouts
 - REST API with OpenAPI documentation
-- Admin panel: create, edit, publish/unpublish matrix questions
+- Admin panel: create, edit, publish/unpublish matrix questions and notes
 - Contact form
 - PASETO-based authentication
 

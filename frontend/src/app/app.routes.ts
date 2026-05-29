@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/matrix/matrix.routes').then((m) => m.matrixRoutes),
   },
   {
+    path: 'notes',
+    loadChildren: () => import('./features/notes/notes.routes').then((m) => m.notesRoutes),
+  },
+  {
     path: 'sitemap',
     loadChildren: () => import('./features/sitemap/sitemap.routes').then((m) => m.sitemapRoutes),
   },

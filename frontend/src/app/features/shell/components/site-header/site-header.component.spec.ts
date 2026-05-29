@@ -74,6 +74,14 @@ describe('SiteHeaderComponent', () => {
     expect(hrefs).toContain('/competency-matrix');
   });
 
+  it('renders nav link to /notes', () => {
+    const links = el.querySelectorAll('a[routerLink]');
+    const hrefs = Array.from(links).map(
+      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
+    );
+    expect(hrefs).toContain('/notes');
+  });
+
   it('theme toggle button calls themeService.toggleTheme()', () => {
     const button = el.querySelector('button[aria-label="Toggle theme"]') as HTMLButtonElement;
     expect(button).not.toBeNull();

@@ -8,6 +8,7 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
 from entrypoints.litestar.api.contacts.endpoints import api_router as contacts_router
 from entrypoints.litestar.api.files.endpoints import api_router as files_router
 from entrypoints.litestar.api.healthcheck.endpoints import api_router as healthcheck_router
+from entrypoints.litestar.api.notes.endpoints import api_router as notes_router
 
 api_router = Router(
     "/api",
@@ -18,6 +19,7 @@ api_router = Router(
         files_router,
         auth_router,
         account_router,
+        notes_router,
     ],
     tags=["api"],
 )

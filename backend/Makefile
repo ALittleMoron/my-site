@@ -80,7 +80,7 @@ fix:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	$(UV_RUN) ruff format $(NAME) $(TESTS) --config ./pyproject.toml
 
-# Usage: make lint-file file=src/core/blog/use_cases.py
+# Usage: make lint-file file=src/core/notes/use_cases.py
 .PHONY: lint-file
 lint-file:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi

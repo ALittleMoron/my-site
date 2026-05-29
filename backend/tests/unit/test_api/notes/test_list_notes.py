@@ -1,0 +1,86 @@
+import uuid
+
+import pytest_asyncio
+from httpx import codes
+
+from core.auth.exceptions import ForbiddenError
+from core.enums import PublishStatusEnum
+from core.notes.schemas import NoteFilters
+from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+
+
+class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self) -> None:
+        self.use_case = await self.container.get_notes_use_case()
+
+    def test_list_notes(self) -> None:
+        tag = self.factory.core.tag(tag_id=1, name="Python", slug="python")
+        note = self.factory.core.note(
+            note_id=uuid.UUID(int=1),
+            title="Typed notes",
+            content="Typed notes content for excerpt.",
+            slug="typed-notes",
+            folder="Engineering",
+            author_username="admin",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            published_at="2026-01-02T03:04:05",
+            created_at="2026-01-01T03:04:05",
+            updated_at="2026-01-03T03:04:05",
+            tags=[tag],
+        )
+        self.use_case.list_notes.return_value = self.factory.core.note_list(
+            notes=[note],
+            total_count=1,
+            total_pages=1,
+        )
+
+        response = self.api.get_notes(page=1, page_size=10, only_published=True, tag_slug="python")
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json() == {
+            "totalCount": 1,
+            "totalPages": 1,
+            "notes": [
+                {
+                    "id": str(note.id),
+                    "title": "Typed notes",
+                    "slug": "typed-notes",
+                    "folder": "Engineering",
+                    "authorUsername": "admin",
+                    "publishedAt": "2026-01-02T03:04:05+00:00",
+                    "publishStatus": "Published",
+                    "updatedAt": "2026-01-03T03:04:05+00:00",
+                    "excerpt": "Typed notes content for excerpt.",
+                    "tags": [
+                        {
+                            "id": 1,
+                            "name": "Python",
+                            "slug": "python",
+                            "deletedAt": None,
+                        },
+                    ],
+                },
+            ],
+        }
+        self.use_case.list_notes.assert_called_once_with(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=True,
+                tag_slug="python",
+            ),
+        )
+
+    def test_list_notes_requires_explicit_page(self) -> None:
+        response = self.api.get_notes(page=None, page_size=10, only_published=True)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.list_notes.assert_not_called()
+
+    def test_anonymous_cannot_request_all_notes(self) -> None:
+        response = self.no_auth_api.get_notes(page=1, page_size=10, only_published=False)
+
+        assert response.status_code == codes.FORBIDDEN
+        assert response.json()["message"] == ForbiddenError.message
+        self.use_case.list_notes.assert_not_called()

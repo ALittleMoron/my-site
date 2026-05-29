@@ -7,7 +7,7 @@
 - [x] Competency matrix list as grid and list views
 - [x] About me section
 - [x] Contact form
-- [x] Blog (no API, core functionality only)
+- [x] Notes (previous MVP core-only implementation)
 - [x] Admin panel via SQLAdmin
 
 - [x] Add Databasus for database backups
@@ -282,20 +282,21 @@
 
 ### Notes
 
-- [ ] Hide/Publish notes
-- [ ] Show notes sorted by publication date
-- [ ] Show notes in a side panel with a tree view
-- [ ] Filters by tags, categories, and date
+- [x] Hide/Publish notes
+- [x] Show notes sorted by publication date
+- [x] Show notes in a side panel with a tree view
+- [x] Filters by tags
+- [ ] Filters by date
 - [ ] Search notes by title and content
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
-    - [ ] Tags
+    - [x] Tags
     - [ ] Attachments
     - [ ] links with other notes with `[[note]]` syntax
     - [ ] Properties
-- [ ] Security audit
-  - [ ] Only admins can edit, add, and delete posts
-  - [ ] Regular users cannot view hidden posts
+- [x] Security audit
+  - [x] Only admins can edit, add, and delete notes
+  - [x] Regular users cannot view hidden notes
 
 ### Knowledge database
 
@@ -369,7 +370,7 @@
 - [ ] Password recovery
 - [ ] Password confirmation
 - [ ] Flashcards from competency matrix (stateful — saved per user)
-- [ ] Comments on blog posts
+- [ ] Comments on notes
 - [ ] 2FA/MFA for users
 - [ ] User profile
   - [ ] Course completion statistics

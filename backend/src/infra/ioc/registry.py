@@ -5,12 +5,12 @@ from dishka.integrations.litestar import LitestarProvider
 
 from infra.ioc.prodivers.account_provider import UserAccountProvider
 from infra.ioc.prodivers.auth_provider import AuthProvider
-from infra.ioc.prodivers.blog_provider import BlogProvider
 from infra.ioc.prodivers.competency_matrix_provider import CompetencyMatrixProvider
 from infra.ioc.prodivers.contacts_provider import ContactsProvider
 from infra.ioc.prodivers.database_provider import DatabaseProvider
 from infra.ioc.prodivers.files_provider import FilesProvider
 from infra.ioc.prodivers.general_provider import GeneralProvider
+from infra.ioc.prodivers.notes_provider import NotesProvider
 
 
 def get_providers() -> Iterable[Provider]:
@@ -23,5 +23,5 @@ def get_providers() -> Iterable[Provider]:
         UserAccountProvider(),
         AuthProvider(),
         ContactsProvider(),
-        BlogProvider(),
+        NotesProvider(),
     )

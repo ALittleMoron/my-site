@@ -2,21 +2,21 @@
 
 ## Concept
 
-Personal portfolio site with a blog and an interactive competency matrix.
+Personal portfolio site with notes and an interactive competency matrix.
 Demonstrates technical skills through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
 
 ## Audience
 
 - Potential employers and recruiters
 - Colleagues and like-minded people in IT
-- The author himself (as a knowledge base and blog)
+- The author himself (as a knowledge base and notes)
 
 ## Non-goals (will not build)
 
 - Paid features. All functionality will be free.
 - Complex role/permission system. No moderator or multi-admin roles. Only authenticated users and guests. I am the only admin.
 - Complex third-party integrations (CRM, ERP, etc.).
-- Complex notification systems (email, SMS, etc.). A subscription to new blog posts, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
+- Complex notification systems (email, SMS, etc.). A subscription to new notes, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
 - Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.
 - Gamification. No points, levels, or achievements. Focus is on learning and skill development, not game mechanics. Progress tracking at most.
 - Social features. No comments, follows, or feeds. Focus is on content and learning, not social interaction.
@@ -26,12 +26,12 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 ## Risks
 
 - Content may grow uncontrollably. The site could become overloaded with content, making navigation and search harder.
-- Keeping content up to date. The blog and competency matrix require regular updates, which can be time-consuming.
+- Keeping content up to date. Notes and the competency matrix require regular updates, which can be time-consuming.
 
 ## Core features
 
 1. **Competency matrix** — interactive Q&A, topic filtering, hints, and tips
-2. **Blog** — rich text editor, Markdown support
+2. **Notes** — Markdown editor, folders, tags, and publish visibility
 3. **Contacts** — feedback form
 4. **Admin panel** — content management through the main frontend, no separate admin UI
 
@@ -44,4 +44,4 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 ## Goal
 
-Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and blog for self-development.
+Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and notes for self-development.

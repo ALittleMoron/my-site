@@ -1,0 +1,60 @@
+@if (loading()) {
+  <app-loading-spinner />
+} @else if (error()) {
+  <app-error-message [error]="error()!" />
+} @else if (note()) {
+  <article>
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="back.emit()">
+        Назад
+      </button>
+      @if (isAdmin()) {
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+          <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">
+            Редактировать
+          </button>
+          @if (isDraft()) {
+            <button type="button" class="btn btn-sm btn-success" (click)="publish.emit()">
+              Опубликовать
+            </button>
+          }
+          @if (isPublished()) {
+            <button type="button" class="btn btn-sm btn-warning" (click)="unpublish.emit()">
+              Снять с публикации
+            </button>
+          }
+          <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">
+            Удалить
+          </button>
+        </div>
+      }
+    </div>
+
+    <h1 class="fw-bold mb-2">{{ note()!.title }}</h1>
+    <div class="d-flex flex-wrap gap-2 align-items-center text-body-secondary small mb-3">
+      <span>{{ noteDate() }}</span>
+      <span>{{ note()!.authorUsername }}</span>
+      <span>{{ note()!.folder }}</span>
+      @if (isAdmin() && isDraft()) {
+        <span class="badge text-bg-warning">Черновик</span>
+      }
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      @for (tag of note()!.tags; track tag.id) {
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          (click)="tagSelected.emit(tag.slug)"
+        >
+          {{ tag.name }}
+          @if (tag.deletedAt) {
+            <span class="badge text-bg-secondary ms-1">Удалён</span>
+          }
+        </button>
+      }
+    </div>
+
+    <div class="notes-markdown" [innerHTML]="contentHtml()"></div>
+  </article>
+}

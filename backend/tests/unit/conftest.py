@@ -20,6 +20,7 @@ from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixPro
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
 from tests.unit.mocks.providers.general import MockGeneralProvider
+from tests.unit.mocks.providers.notes import MockNotesProvider
 
 
 @pytest.fixture
@@ -56,6 +57,7 @@ async def container(  # noqa: PLR0913
         MockGeneralProvider(uuid_=global_random_uuid, int_=global_random_int),
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
+        MockNotesProvider(),
         MockContactsProvider(),
         MockUserAccountProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),

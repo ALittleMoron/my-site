@@ -1,7 +1,10 @@
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatrixQuestionDetail, MatrixQuestionPayload } from '../../../../models/matrix-question.model';
-import { MarkdownEditorComponent } from '../markdown-editor/markdown-editor.component';
+import {
+  MatrixQuestionDetail,
+  MatrixQuestionPayload,
+} from '../../../../models/matrix-question.model';
+import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { MatrixQuestionFormComponent } from './matrix-question-form.component';
 
 @Component({

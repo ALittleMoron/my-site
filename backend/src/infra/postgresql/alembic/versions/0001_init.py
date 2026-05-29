@@ -23,10 +23,12 @@ def upgrade() -> None:
     )
     op.create_index("users_username_idx", "auth__user_model", ["username"], unique=False)
     op.create_table(
-        "blog__blog_post_model",
+        "notes__note_model",
         sa.Column("title", sa.String(length=255), nullable=False),
         sa.Column("content", sa.String(), nullable=False),
         sa.Column("slug", sa.String(length=255), nullable=False),
+        sa.Column("folder", sa.String(length=255), nullable=False),
+        sa.Column("author_username", sa.String(length=255), nullable=False),
         sa.Column(
             "published_at",
             UTCDateTime(timezone=True),
@@ -53,8 +55,34 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_blog__blog_post_model_slug"), "blog__blog_post_model", ["slug"], unique=True,
+        op.f("ix_notes__note_model_slug"), "notes__note_model", ["slug"], unique=True,
     )
+    op.create_table(
+        "notes__tag_model",
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("slug", sa.String(length=255), nullable=False),
+        sa.Column("deleted_at", UTCDateTime(timezone=True), nullable=True),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            autoincrement=True,
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            UTCDateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            UTCDateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_notes__tag_model_slug"), "notes__tag_model", ["slug"], unique=True)
     op.create_table(
         "competency_matrix__competency_matrix_item_model",
         sa.Column("question", sa.String(length=255), nullable=False),
@@ -163,9 +191,29 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("item_id", "resource_id", name="cm_resource_item_uniq"),
     )
+    op.create_table(
+        "notes__note_to_tag_secondary_model",
+        sa.Column("note_id", sa.UUID(), nullable=False),
+        sa.Column(
+            "tag_id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            nullable=False,
+        ),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            autoincrement=True,
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tag_id"], ["notes__tag_model.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("note_id", "tag_id", name="notes_note_tag_uniq"),
+    )
 
 
 def downgrade() -> None:
+    op.drop_table("notes__note_to_tag_secondary_model")
     op.drop_table("competency_matrix__resource_to_item_secondary_model")
     op.drop_table("contacts__contact_me_model")
     op.drop_index(
@@ -179,7 +227,9 @@ def downgrade() -> None:
     op.drop_table("competency_matrix__external_resource_model")
     op.drop_index("cmi_sheet_idx", table_name="competency_matrix__competency_matrix_item_model")
     op.drop_table("competency_matrix__competency_matrix_item_model")
-    op.drop_index(op.f("ix_blog__blog_post_model_slug"), table_name="blog__blog_post_model")
-    op.drop_table("blog__blog_post_model")
+    op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
+    op.drop_table("notes__tag_model")
+    op.drop_index(op.f("ix_notes__note_model_slug"), table_name="notes__note_model")
+    op.drop_table("notes__note_model")
     op.drop_index("users_username_idx", table_name="auth__user_model")
     op.drop_table("auth__user_model")

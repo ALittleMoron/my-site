@@ -2,7 +2,7 @@
 
 ## Project
 
-Portfolio/blog site and knowledge database
+Portfolio/notes site and knowledge database
 
 ## Stack
 

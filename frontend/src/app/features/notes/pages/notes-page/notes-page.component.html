@@ -1,0 +1,156 @@
+<main class="container py-4 mt-5">
+  <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+    <div>
+      <h1 class="fw-bold mb-1">Заметки</h1>
+      @if (activeTag()) {
+        <div class="small text-body-secondary">
+          Тег: <span class="fw-semibold">{{ activeTag()!.name }}</span>
+        </div>
+      }
+    </div>
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+      <button type="button" class="btn btn-outline-secondary" (click)="toggleSidePanel()">
+        Папки
+      </button>
+      @if (isAdmin()) {
+        <button type="button" class="btn btn-primary" (click)="openCreate()">
+          Добавить заметку
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="notes-layout" [class.notes-layout-panel-open]="sidePanelOpen()">
+    @if (sidePanelOpen()) {
+      <aside class="notes-side-panel border-end pe-lg-3">
+        <app-notes-side-panel
+          [tree]="tree()"
+          [currentSlug]="currentSlug()"
+          (noteSelected)="openNote($event)"
+          (closePanel)="closeSidePanel()"
+        />
+      </aside>
+      <button
+        type="button"
+        class="notes-mobile-backdrop d-lg-none"
+        aria-label="Закрыть папки"
+        (click)="closeSidePanel()"
+      ></button>
+    }
+
+    <section class="notes-content">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+        <div class="d-flex flex-wrap gap-2">
+          @for (tag of activeTags(); track tag.id) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-secondary]="activeTagSlug() === tag.slug"
+              [class.btn-outline-secondary]="activeTagSlug() !== tag.slug"
+              (click)="selectTag(tag.slug)"
+            >
+              {{ tag.name }}
+            </button>
+          }
+          @if (activeTagSlug()) {
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearTag()">
+              Сбросить
+            </button>
+          }
+        </div>
+
+        @if (isAdmin()) {
+          <div class="form-check form-switch mb-0">
+            <input
+              id="notesOnlyPublishedToggle"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              [checked]="onlyPublished()"
+              (change)="setOnlyPublished(!onlyPublished())"
+            />
+            <label class="form-check-label" for="notesOnlyPublishedToggle">
+              Только опубликованные
+            </label>
+          </div>
+        }
+      </div>
+
+      @if (isDetailRoute()) {
+        <app-note-detail
+          [note]="selectedNote()"
+          [loading]="detailLoading()"
+          [error]="detailError()"
+          [isAdmin]="isAdmin()"
+          (back)="backToList()"
+          (edit)="openEdit()"
+          (publish)="publishNote()"
+          (unpublish)="unpublishNote()"
+          (delete)="deleteNote()"
+          (tagSelected)="selectTag($event)"
+        />
+      } @else if (listLoading()) {
+        <app-loading-spinner />
+      } @else if (listError()) {
+        <app-error-message [error]="listError()!" (retry)="loadNotes()" />
+      } @else if (isEmpty()) {
+        <app-empty-state message="Заметки не найдены." />
+      } @else if (notes()) {
+        <app-note-list
+          [notes]="notes()!.notes"
+          [page]="page()"
+          [totalPages]="notes()!.totalPages"
+          [isAdmin]="isAdmin()"
+          (noteSelected)="openNote($event)"
+          (tagSelected)="selectTag($event)"
+          (pageChange)="changePage($event)"
+        />
+      }
+    </section>
+  </div>
+</main>
+
+@if (formVisible()) {
+  <div
+    class="modal d-block modal-backdrop-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Форма заметки"
+    (click)="closeForm()"
+    (keyup.escape)="closeForm()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="h5 modal-title">
+            {{ formNote() ? 'Редактирование заметки' : 'Новая заметка' }}
+          </h2>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Закрыть"
+            (click)="closeForm()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          @if (formError()) {
+            <app-error-message [error]="formError()!" />
+          }
+          <app-note-form
+            [note]="formNote()"
+            (noteSave)="saveNote($event)"
+            (formCancel)="closeForm()"
+            (tagsChanged)="loadTags()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+}

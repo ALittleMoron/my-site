@@ -15,6 +15,7 @@ from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.contacts.use_cases import AbstractContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import AbstractFilesUseCase
+from core.notes.use_cases import AbstractNotesUseCase
 from core.types import IntId
 
 
@@ -43,6 +44,11 @@ class IocContainerHelper:
     # COMPETENCY MATRIX
     async def get_competency_matrix_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractCompetencyMatrixUseCase)
+        return cast("Mock", use_case)
+
+    # NOTES
+    async def get_notes_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractNotesUseCase)
         return cast("Mock", use_case)
 
     # AUTH

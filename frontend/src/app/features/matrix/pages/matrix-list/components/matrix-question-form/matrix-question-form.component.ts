@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, OnInit, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatrixQuestionDetail, MatrixQuestionPayload, MatrixResource } from '../../../../models/matrix-question.model';
+import {
+  MatrixQuestionDetail,
+  MatrixQuestionPayload,
+  MatrixResource,
+} from '../../../../models/matrix-question.model';
 import {
   MatrixResourceDraft,
   MatrixResourcePickerComponent,
 } from '../matrix-resource-picker/matrix-resource-picker.component';
-import { MarkdownEditorComponent } from '../markdown-editor/markdown-editor.component';
+import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 
 interface MatrixQuestionForm {
   question: FormControl<string>;

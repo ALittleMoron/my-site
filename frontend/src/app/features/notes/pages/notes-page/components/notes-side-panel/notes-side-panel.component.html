@@ -1,0 +1,46 @@
+<div class="notes-panel-header d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h6 mb-0">Папки</h2>
+  <button
+    type="button"
+    class="btn-close d-lg-none"
+    aria-label="Закрыть"
+    (click)="closePanel.emit()"
+  ></button>
+</div>
+
+@if (tree().folders.length === 0) {
+  <p class="text-body-secondary small mb-0">Заметок пока нет.</p>
+} @else {
+  <div class="vstack gap-2">
+    @for (folder of tree().folders; track folder.folder) {
+      <div>
+        <button
+          type="button"
+          class="btn btn-sm w-100 d-flex justify-content-between align-items-center text-start notes-folder-button"
+          (click)="toggleFolder(folder.folder)"
+          [attr.aria-expanded]="isExpanded(folder.folder)"
+        >
+          <span class="text-truncate">{{ folder.folder }}</span>
+          <span class="badge rounded-pill text-bg-secondary">{{ folderNoteCount(folder) }}</span>
+        </button>
+        @if (isExpanded(folder.folder)) {
+          <div class="list-group list-group-flush ms-2 mt-1">
+            @for (note of folder.notes; track note.slug) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action py-2 small"
+                [class.active]="currentSlug() === note.slug"
+                (click)="noteSelected.emit(note.slug)"
+              >
+                <span class="d-block text-truncate">{{ note.title }}</span>
+                @if (note.publishStatus === 'Draft') {
+                  <span class="badge text-bg-warning mt-1">Черновик</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

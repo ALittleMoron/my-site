@@ -35,17 +35,16 @@
       class="form-check-input"
       type="checkbox"
       [checked]="form.controls.publishStatus.value === 'Draft'"
-      (change)="form.controls.publishStatus.setValue($any($event.target).checked ? 'Draft' : 'Published')"
+      (change)="
+        form.controls.publishStatus.setValue($any($event.target).checked ? 'Draft' : 'Published')
+      "
     />
     <label class="form-check-label" for="matrixPublishStatus">Черновик</label>
   </div>
 
   <div class="mb-3">
     <div class="form-label">Ответ</div>
-    <app-markdown-editor
-      [value]="form.controls.answer.value"
-      (valueChange)="setAnswer($event)"
-    />
+    <app-markdown-editor [value]="form.controls.answer.value" (valueChange)="setAnswer($event)" />
   </div>
 
   <div class="mb-3">
@@ -64,7 +63,9 @@
   />
 
   <div class="d-flex justify-content-end gap-2 mt-4">
-    <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">Отмена</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
+      Отмена
+    </button>
     <button type="submit" class="btn btn-primary">Сохранить</button>
   </div>
 </form>

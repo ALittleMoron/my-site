@@ -27,6 +27,8 @@ Never violate these boundaries:
 | `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                             |
 | `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                            |
 | `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                |
+| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                 |
+| `core/editor/editor-image-upload.service.ts` | Presign + unsigned upload flow for editor images                      |
 | `core/auth/auth.service.ts`                  | Login/logout, `isAdmin()` signal, session state                       |
 | `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
 | `core/auth/auth-token.service.ts`            | Token read/write from `localStorage`                                  |
@@ -73,6 +75,7 @@ features/<name>/
 | `about`     | `/about-me`          | Static page with contact form                                                     |
 | `auth`      | `/login`             | Login page, no guard                                                              |
 | `matrix`    | `/competency-matrix` | Auth-guarded, filter/grid/detail                                                  |
+| `notes`     | `/notes`             | Public list/detail, admin CRUD, folders side-panel, tags                          |
 | `sitemap`   | `/sitemap`           | Static                                                                            |
 | `not-found` | `/404`               | Wildcard redirect target                                                          |
 | `shell`     | n/a                  | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent` |

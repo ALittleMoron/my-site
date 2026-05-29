@@ -5,7 +5,6 @@ from typing import Any
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser, User
 from core.auth.types import Token
-from core.blog.schemas import BlogPost, BlogPostList
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
@@ -24,6 +23,7 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
+from core.notes.schemas import Note, NoteList, NoteTags, Tag, Tags
 from core.schemas import Secret
 from core.types import IntId, SearchName
 
@@ -218,23 +218,28 @@ class CoreFactoryHelper:
         )
 
     @classmethod
-    def blog_post(
+    def note(
         cls,
-        post_id: uuid.UUID | None = None,
-        title: str = "Test Blog Post",
-        content: str = "This is a test blog post content.",
-        slug: str = "test-blog-post",
+        note_id: uuid.UUID | None = None,
+        title: str = "Test Note",
+        content: str = "This is a test note content.",
+        slug: str = "test-notes-note",
+        folder: str = "General",
+        author_username: str = "admin",
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         published_at: str | None = None,
         created_at: str | None = None,
         updated_at: str | None = None,
-    ) -> BlogPost:
+        tags: list[Tag] | None = None,
+    ) -> Note:
         now = datetime.now(tz=UTC)
-        return BlogPost(
-            id=post_id or uuid.uuid4(),
+        return Note(
+            id=note_id or uuid.uuid4(),
             title=title,
             content=content,
             slug=slug,
+            folder=folder,
+            author_username=author_username,
             publish_status=publish_status,
             published_at=(
                 datetime.fromisoformat(published_at).replace(tzinfo=UTC)
@@ -251,16 +256,40 @@ class CoreFactoryHelper:
                 if updated_at is not None
                 else now
             ),
+            tags=NoteTags(values=tags or []),
         )
 
     @classmethod
-    def blog_post_list(
+    def note_list(
         cls,
-        posts: list[BlogPost] | None = None,
+        notes: list[Note] | None = None,
         total_count: int = 0,
         total_pages: int = 0,
-    ) -> BlogPostList:
-        return BlogPostList(posts=posts or [], total_count=total_count, total_pages=total_pages)
+    ) -> NoteList:
+        return NoteList(notes=notes or [], total_count=total_count, total_pages=total_pages)
+
+    @classmethod
+    def tag(
+        cls,
+        tag_id: IntId | int = 1,
+        name: str = "Python",
+        slug: str = "python",
+        deleted_at: str | None = None,
+    ) -> Tag:
+        return Tag(
+            id=cls.int_id(tag_id) if isinstance(tag_id, int) else tag_id,
+            name=name,
+            slug=slug,
+            deleted_at=(
+                datetime.fromisoformat(deleted_at).replace(tzinfo=UTC)
+                if deleted_at is not None
+                else None
+            ),
+        )
+
+    @classmethod
+    def tags(cls, values: list[Tag] | None = None) -> Tags:
+        return Tags(values=values or [])
 
     @classmethod
     def jwt_user(
