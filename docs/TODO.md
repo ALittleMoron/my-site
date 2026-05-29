@@ -277,7 +277,7 @@
   - [x] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
 - [x] "404" page 
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
-- [ ] Security audit
+- [x] Security audit
   - [x] Only admins can edit, add, and delete matrix questions
 
 ### Notes
@@ -299,26 +299,40 @@
 
 ### Knowledge database
 
-Knowledge database is a collection of knowledge items of two types: general and specific.
-
-General knowledge item has common CRUD logic and looks the same as notes. A specific knowledge item has additional fields and has its own logic.
-
 - [ ] Dashboard
   - [ ] Important info (in-dashboard CRUD – only text items)
-  - [ ] dates and birthdays (current and next month)
-  - [ ] recently changed files
-  - [ ] statistics
-- [ ] General Knowledge item
-  - [ ] folders and subfolders
-  - [ ] Hide/Publish items
-  - [ ] CRUD with a rich text editor
-- [ ] Specific Knowledge item
+  - [ ] Dates and birthdays (current and next month)
+  - [ ] Recently changed files
+  - [ ] Statistics
+    - [ ] Files per category count - badge next to folder name with amount of files.
+  - [ ] Resume
+    - [ ] Generate resume from companies, people with who you work with, projects, technologies, etc.
+    - [ ] Customization
+      - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
+      - [ ] Blocks visibility
+      - [ ] Themes
+    - [ ] Export
+      - [ ] To PDF
+      - [ ] To Docx
+  - [ ] Access
+    - [ ] V1: Admins only, Per admin knowledge items (admins can see only their own items)
+    - [ ] V2: Public knowledge items, users access to shared dashboard
+    - [ ] V3: All users public and private items, per user dashboard
+- [ ] Knowledge item
   - [ ] Shared logic
-    - [ ] Hide/Publish the entire category
     - [ ] CRUD with a rich text editor
     - [ ] Tags
     - [ ] Attachments
+  - [ ] General knowledge item
+    - [ ] Folders
+    - [ ] 
   - [ ] Books
+    - [ ] Shared logic
+    - [ ] All books page
+    - [ ] All read books page
+    - [ ] Books to buy page
+    - [ ] Books by categories page
+    - [ ] Books to reread page
   - [ ] Companies
   - [ ] Dates
   - [ ] Offers
@@ -391,6 +405,7 @@ General knowledge item has common CRUD logic and looks the same as notes. A spec
 
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [ ] UI localisation
+- [ ] Database localisation
 - [ ] Migrate from Makefile to Just
 
 ## Bugs
