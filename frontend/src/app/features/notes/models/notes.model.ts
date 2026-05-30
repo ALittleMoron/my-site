@@ -223,6 +223,9 @@ export interface NoteListParams {
   pageSize: number;
   onlyPublished: boolean;
   tagSlug: string | null;
+  publishedFrom: string | null;
+  publishedTo: string | null;
+  searchQuery: string | null;
 }
 
 export function mapTagDto(dto: NoteTagDto): NoteTag {

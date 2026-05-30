@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 import pytest_asyncio
 
@@ -95,6 +97,9 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
                 page_size=10,
                 only_published=True,
                 tag_slug="python",
+                published_from=None,
+                published_to=None,
+                search_query=None,
             ),
         )
 
@@ -132,7 +137,15 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
         )
 
         result = await self.storage.list_notes(
-            filters=NoteFilters(page=1, page_size=10, only_published=False, tag_slug=None),
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=False,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query=None,
+            ),
         )
 
         assert [note.slug for note in result.values] == [
@@ -140,6 +153,167 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             "older-published",
             "draft",
         ]
+
+    async def test_list_notes_filters_by_inclusive_publish_date_range(self) -> None:
+        await self.storage_helper.create_notes(
+            notes=[
+                self.factory.core.note(
+                    title="Before",
+                    slug="before",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-01-31T23:59:59",
+                    created_at="2024-01-31T23:59:59",
+                    updated_at="2024-01-31T23:59:59",
+                ),
+                self.factory.core.note(
+                    title="Range Start",
+                    slug="range-start",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-02-01T00:00:00",
+                    created_at="2024-02-01T00:00:00",
+                    updated_at="2024-02-01T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Range End",
+                    slug="range-end",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-02-29T23:59:59",
+                    created_at="2024-02-29T23:59:59",
+                    updated_at="2024-02-29T23:59:59",
+                ),
+                self.factory.core.note(
+                    title="After",
+                    slug="after",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-03-01T00:00:00",
+                    created_at="2024-03-01T00:00:00",
+                    updated_at="2024-03-01T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Draft",
+                    slug="draft",
+                    publish_status=PublishStatusEnum.DRAFT,
+                    created_at="2024-02-15T00:00:00",
+                    updated_at="2024-02-15T00:00:00",
+                ),
+            ],
+        )
+
+        result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=False,
+                tag_slug=None,
+                published_from=date(2024, 2, 1),
+                published_to=date(2024, 2, 29),
+                search_query=None,
+            ),
+        )
+
+        assert [note.slug for note in result.values] == ["range-end", "range-start"]
+        assert result.total_count == 2
+        assert result.total_pages == 1
+
+    async def test_list_notes_searches_by_title_and_content(self) -> None:
+        await self.storage_helper.create_notes(
+            notes=[
+                self.factory.core.note(
+                    title="PostgreSQL full text search",
+                    content="Indexing notes without a table scan.",
+                    slug="title-match",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-05-01T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Dependency injection",
+                    content="Dishka providers wire use cases to storage adapters.",
+                    slug="content-match",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-04-01T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Unrelated",
+                    content="No matching terms here.",
+                    slug="unrelated",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-06-01T00:00:00",
+                ),
+            ],
+        )
+
+        title_result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=True,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query="full text",
+            ),
+        )
+        content_result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=True,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query="dishka providers",
+            ),
+        )
+
+        assert [note.slug for note in title_result.values] == ["title-match"]
+        assert [note.slug for note in content_result.values] == ["content-match"]
+
+    async def test_list_notes_composes_tag_date_and_search_filters(self) -> None:
+        python = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        database = self.factory.core.tag(tag_id=IntId(2), slug="database")
+        await self.storage_helper.create_tags(tags=[python, database])
+        await self.storage_helper.create_notes(
+            notes=[
+                self.factory.core.note(
+                    title="Python database indexing",
+                    content="PostgreSQL search vectors for notes.",
+                    slug="match",
+                    tags=[python],
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-02-10T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Python old indexing",
+                    content="PostgreSQL search vectors for notes.",
+                    slug="old",
+                    tags=[python],
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-01-10T00:00:00",
+                ),
+                self.factory.core.note(
+                    title="Database indexing",
+                    content="PostgreSQL search vectors for notes.",
+                    slug="wrong-tag",
+                    tags=[database],
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-02-10T00:00:00",
+                ),
+            ],
+        )
+
+        result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                only_published=True,
+                tag_slug="python",
+                published_from=date(2024, 2, 1),
+                published_to=date(2024, 2, 29),
+                search_query="search vectors",
+            ),
+        )
+
+        assert [note.slug for note in result.values] == ["match"]
 
     async def test_list_tree_groups_folders_and_hides_drafts_for_public(self) -> None:
         await self.storage_helper.create_notes(

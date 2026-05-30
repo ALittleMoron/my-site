@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from math import ceil
 from typing import Any, TypeVar
 from uuid import UUID
@@ -66,7 +66,11 @@ class NotesDatabaseStorage(NotesStorage):
             ),
             filters=filters,
         )
-        query = query.order_by(*self._note_ordering()).offset(filters.offset).limit(filters.limit)
+        query = (
+            query.order_by(*self._note_ordering(search_query=filters.search_query))
+            .offset(filters.offset)
+            .limit(filters.limit)
+        )
         count_query = self._apply_note_filters(
             select(func.count(func.distinct(NoteModel.id))),
             filters=filters,
@@ -98,15 +102,44 @@ class NotesDatabaseStorage(NotesStorage):
                 .join(NoteToTagSecondaryModel.tag)
                 .where(TagModel.slug == filters.tag_slug, TagModel.deleted_at.is_(None))
             )
+        if filters.published_from is not None:
+            query = query.where(
+                NoteModel.published_at >= self._date_start(value=filters.published_from),
+            )
+        if filters.published_to is not None:
+            query = query.where(
+                NoteModel.published_at <= self._date_end(value=filters.published_to),
+            )
+        if filters.search_query is not None:
+            query = query.where(
+                NoteModel.search_vector.op("@@")(
+                    func.websearch_to_tsquery("simple", filters.search_query),
+                ),
+            )
         return query
 
-    def _note_ordering(self) -> tuple[Any, ...]:
-        return (
+    def _note_ordering(self, *, search_query: str | None = None) -> tuple[Any, ...]:
+        default_ordering = (
             case((NoteModel.publish_status == PublishStatusEnum.PUBLISHED, 0), else_=1),
             NoteModel.published_at.desc().nullslast(),
             NoteModel.updated_at.desc(),
             NoteModel.title,
         )
+        if search_query is None:
+            return default_ordering
+        return (
+            func.ts_rank_cd(
+                NoteModel.search_vector,
+                func.websearch_to_tsquery("simple", search_query),
+            ).desc(),
+            *default_ordering,
+        )
+
+    def _date_start(self, *, value: date) -> datetime:
+        return datetime.combine(value, time.min, tzinfo=UTC)
+
+    def _date_end(self, *, value: date) -> datetime:
+        return datetime.combine(value, time.max, tzinfo=UTC)
 
     async def list_tree(self, *, only_published: bool) -> NoteTree:
         query = select(NoteModel).order_by(NoteModel.folder, *self._note_ordering())

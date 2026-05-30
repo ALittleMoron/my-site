@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 revision = "0001"
@@ -30,6 +31,16 @@ def upgrade() -> None:
         sa.Column("folder", sa.String(length=255), nullable=False),
         sa.Column("author_username", sa.String(length=255), nullable=False),
         sa.Column(
+            "search_vector",
+            postgresql.TSVECTOR(),
+            sa.Computed(
+                "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
+                "setweight(to_tsvector('simple', coalesce(content, '')), 'B')",
+                persisted=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
             "published_at",
             UTCDateTime(timezone=True),
             nullable=True,
@@ -56,6 +67,19 @@ def upgrade() -> None:
     )
     op.create_index(
         op.f("ix_notes__note_model_slug"), "notes__note_model", ["slug"], unique=True,
+    )
+    op.create_index(
+        "notes_note_search_vector_gin_idx",
+        "notes__note_model",
+        ["search_vector"],
+        unique=False,
+        postgresql_using="gin",
+    )
+    op.create_index(
+        "notes_note_publish_status_published_at_idx",
+        "notes__note_model",
+        ["publish_status", "published_at"],
+        unique=False,
     )
     op.create_table(
         "notes__tag_model",
@@ -210,9 +234,91 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("note_id", "tag_id", name="notes_note_tag_uniq"),
     )
+    op.create_table(
+        "notes__note_daily_analytics_model",
+        sa.Column("note_id", sa.UUID(), nullable=False),
+        sa.Column("date", sa.Date(), nullable=False),
+        sa.Column(
+            "source_category",
+            sa.Enum(
+                "DIRECT",
+                "INTERNAL",
+                "SEARCH",
+                "SOCIAL",
+                "EXTERNAL",
+                "UNKNOWN",
+                name="note_view_source_category_enum",
+                native_enum=False,
+                length=20,
+            ),
+            nullable=False,
+        ),
+        sa.Column("view_count", sa.Integer(), nullable=False),
+        sa.Column("engaged_view_count", sa.Integer(), nullable=False),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            autoincrement=True,
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "note_id",
+            "date",
+            "source_category",
+            name="notes_daily_analytics_note_date_source_uniq",
+        ),
+    )
+    op.create_table(
+        "notes__note_reaction_model",
+        sa.Column("note_id", sa.UUID(), nullable=False),
+        sa.Column("note_scoped_voter_hash", sa.String(length=64), nullable=False),
+        sa.Column(
+            "reaction_kind",
+            sa.Enum(
+                "HEART",
+                "FIRE",
+                "THINKING",
+                "NEUTRAL",
+                "POOP",
+                name="note_reaction_kind_enum",
+                native_enum=False,
+                length=20,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+            autoincrement=True,
+            nullable=False,
+        ),
+        sa.Column(
+            "created_at",
+            UTCDateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            UTCDateTime(timezone=True),
+            server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "note_id",
+            "note_scoped_voter_hash",
+            name="notes_reaction_note_voter_uniq",
+        ),
+    )
 
 
 def downgrade() -> None:
+    op.drop_table("notes__note_reaction_model")
+    op.drop_table("notes__note_daily_analytics_model")
     op.drop_table("notes__note_to_tag_secondary_model")
     op.drop_table("competency_matrix__resource_to_item_secondary_model")
     op.drop_table("contacts__contact_me_model")
@@ -229,6 +335,15 @@ def downgrade() -> None:
     op.drop_table("competency_matrix__competency_matrix_item_model")
     op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
     op.drop_table("notes__tag_model")
+    op.drop_index(
+        "notes_note_publish_status_published_at_idx",
+        table_name="notes__note_model",
+    )
+    op.drop_index(
+        "notes_note_search_vector_gin_idx",
+        table_name="notes__note_model",
+        postgresql_using="gin",
+    )
     op.drop_index(op.f("ix_notes__note_model_slug"), table_name="notes__note_model")
     op.drop_table("notes__note_model")
     op.drop_index("users_username_idx", table_name="auth__user_model")

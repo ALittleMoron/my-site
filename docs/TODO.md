@@ -288,8 +288,8 @@
 - [x] Show public note view counters and anonymous reactions
 - [x] Admin note statistics by date range, source category, and reactions
 - [x] Filters by tags
-- [ ] Filters by publish date range
-- [ ] Search notes by title and content
+- [x] Filters by publish date range
+- [x] Search notes by title and content
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
     - [x] Tags

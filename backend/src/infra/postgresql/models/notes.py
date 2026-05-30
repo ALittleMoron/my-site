@@ -2,7 +2,8 @@ from datetime import date, datetime
 from typing import Self
 from uuid import UUID
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Computed, Date, Enum, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin, UUIDMixin
@@ -39,11 +40,33 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         String(length=255),
         doc="Username of the note author",
     )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR(),
+        Computed(
+            "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
+            "setweight(to_tsvector('simple', coalesce(content, '')), 'B')",
+            persisted=True,
+        ),
+        doc="Generated full-text search vector for title and content",
+    )
 
     tag_links: Mapped[list[NoteToTagSecondaryModel]] = relationship(
         back_populates="note",
         cascade="all, delete-orphan",
         doc="Links between notes and tags",
+    )
+
+    __table_args__ = (
+        Index(
+            "notes_note_search_vector_gin_idx",
+            search_vector,
+            postgresql_using="gin",
+        ),
+        Index(
+            "notes_note_publish_status_published_at_idx",
+            "publish_status",
+            "published_at",
+        ),
     )
 
     def __str__(self) -> str:

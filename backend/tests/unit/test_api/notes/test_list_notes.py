@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 import pytest_asyncio
 from httpx import codes
@@ -83,6 +84,38 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 page_size=10,
                 only_published=True,
                 tag_slug="python",
+                published_from=None,
+                published_to=None,
+                search_query=None,
+            ),
+        )
+
+    def test_list_notes_with_publish_date_range_and_search_query(self) -> None:
+        self.use_case.list_notes.return_value = self.factory.core.note_list(
+            notes=[],
+            total_count=0,
+            total_pages=0,
+        )
+
+        response = self.api.get_notes(
+            page=2,
+            page_size=5,
+            only_published=True,
+            published_from="2026-01-01",
+            published_to="2026-01-31",
+            search_query="  typed notes  ",
+        )
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_notes.assert_called_once_with(
+            filters=NoteFilters(
+                page=2,
+                page_size=5,
+                only_published=True,
+                tag_slug=None,
+                published_from=date(2026, 1, 1),
+                published_to=date(2026, 1, 31),
+                search_query="typed notes",
             ),
         )
 

@@ -38,6 +38,15 @@ export class NotesService {
     if (params.tagSlug) {
       queryParams['tagSlug'] = params.tagSlug;
     }
+    if (params.publishedFrom) {
+      queryParams['publishedFrom'] = params.publishedFrom;
+    }
+    if (params.publishedTo) {
+      queryParams['publishedTo'] = params.publishedTo;
+    }
+    if (params.searchQuery) {
+      queryParams['searchQuery'] = params.searchQuery;
+    }
     return this.api.get<NoteListDto>('/api/notes', queryParams).pipe(map(mapNoteListDto));
   }
 

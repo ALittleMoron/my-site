@@ -5,6 +5,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateIndex
 
 from infra.postgresql.models.competency_matrix import ExternalResourceModel
+from infra.postgresql.models.notes import NoteModel
 
 
 def test_external_resource_model_defines_trigram_search_indexes() -> None:
@@ -20,4 +21,23 @@ def test_external_resource_model_defines_trigram_search_indexes() -> None:
         "CREATE INDEX cm_external_resource_url_trgm_idx "
         "ON competency_matrix__external_resource_model "
         "USING gin (lower(url) gin_trgm_ops)",
+    } <= statements
+
+
+def test_note_model_defines_search_and_publish_filter_indexes() -> None:
+    table = cast("Table", NoteModel.__table__)
+    search_vector = table.c.search_vector
+    statements = {
+        str(CreateIndex(index).compile(dialect=postgresql.dialect())) for index in table.indexes
+    }
+
+    assert search_vector.computed is not None
+    assert "to_tsvector('simple'" in str(search_vector.computed.sqltext)
+    assert {
+        "CREATE INDEX notes_note_search_vector_gin_idx "
+        "ON notes__note_model "
+        "USING gin (search_vector)",
+        "CREATE INDEX notes_note_publish_status_published_at_idx "
+        "ON notes__note_model "
+        "(publish_status, published_at)",
     } <= statements

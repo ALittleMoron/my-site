@@ -23,7 +23,15 @@ describe('NotesService', () => {
     let firstViewCount: number | undefined;
 
     service
-      .getNotes({ page: 2, pageSize: 10, onlyPublished: false, tagSlug: 'python' })
+      .getNotes({
+        page: 2,
+        pageSize: 10,
+        onlyPublished: false,
+        tagSlug: 'python',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+        searchQuery: 'typed notes',
+      })
       .subscribe((list) => {
         firstTitle = list.notes[0].title;
         firstViewCount = list.notes[0].viewCount;
@@ -35,6 +43,9 @@ describe('NotesService', () => {
     expect(req.request.params.get('pageSize')).toBe('10');
     expect(req.request.params.get('onlyPublished')).toBe('false');
     expect(req.request.params.get('tagSlug')).toBe('python');
+    expect(req.request.params.get('publishedFrom')).toBe('2026-01-01');
+    expect(req.request.params.get('publishedTo')).toBe('2026-01-31');
+    expect(req.request.params.get('searchQuery')).toBe('typed notes');
     req.flush({
       totalCount: 1,
       totalPages: 1,

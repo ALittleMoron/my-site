@@ -48,15 +48,24 @@ class NotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
         tag_slug: Annotated[str | None, Parameter(query="tagSlug")] = None,
+        published_from: Annotated[date | None, Parameter(query="publishedFrom")] = None,
+        published_to: Annotated[date | None, Parameter(query="publishedTo")] = None,
+        search_query: Annotated[str | None, Parameter(query="searchQuery")] = None,
     ) -> NoteListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
+        normalized_search_query = (
+            search_query.strip() if search_query is not None and search_query.strip() else None
+        )
         notes = await use_case.list_notes(
             filters=NoteFilters(
                 page=page,
                 page_size=page_size,
                 only_published=only_published,
                 tag_slug=tag_slug,
+                published_from=published_from,
+                published_to=published_to,
+                search_query=normalized_search_query,
             ),
         )
         stats = await analytics_use_case.get_public_stats(

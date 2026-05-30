@@ -33,6 +33,7 @@ describe('NotesPageComponent', () => {
     getReaction: jest.Mock;
     setReaction: jest.Mock;
   };
+  let router: { navigate: jest.Mock };
 
   beforeEach(async () => {
     paramMap = new BehaviorSubject(convertToParamMap({ slug: 'typed-notes' }));
@@ -53,6 +54,7 @@ describe('NotesPageComponent', () => {
       getReaction: jest.fn().mockReturnValue(null),
       setReaction: jest.fn(),
     };
+    router = { navigate: jest.fn() };
 
     await TestBed.configureTestingModule({
       imports: [NotesPageComponent],
@@ -73,7 +75,7 @@ describe('NotesPageComponent', () => {
             queryParamMap: queryParamMap.asObservable(),
           },
         },
-        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: Router, useValue: router },
       ],
     }).compileComponents();
 
@@ -135,6 +137,96 @@ describe('NotesPageComponent', () => {
     });
     expect(anonymousReactionService.setReaction).toHaveBeenCalledWith('typed-notes', 'poop');
     fixture.destroy();
+  });
+
+  it('loads list filters from query params and requests notes with them', () => {
+    paramMap.next(convertToParamMap({}));
+    queryParamMap.next(
+      convertToParamMap({
+        page: '2',
+        tag: 'python',
+        searchQuery: 'postgres search',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      }),
+    );
+
+    fixture.detectChanges();
+
+    expect(notesService.getNotes).toHaveBeenCalledWith({
+      page: 2,
+      pageSize: 10,
+      onlyPublished: true,
+      tagSlug: 'python',
+      publishedFrom: '2026-01-01',
+      publishedTo: '2026-01-31',
+      searchQuery: 'postgres search',
+    });
+  });
+
+  it('applies list filters through query params without fetching on input changes', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+    notesService.getNotes.mockClear();
+
+    fixture.componentInstance.setSearchQuery('  postgres  ');
+    fixture.componentInstance.setPublishedFrom('2026-01-01');
+    fixture.componentInstance.setPublishedTo('2026-01-31');
+    fixture.componentInstance.applyFilters();
+
+    expect(notesService.getNotes).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+      queryParams: {
+        page: 1,
+        searchQuery: 'postgres',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      },
+    });
+  });
+
+  it('preserves list filters while paginating', () => {
+    paramMap.next(convertToParamMap({}));
+    queryParamMap.next(
+      convertToParamMap({
+        tag: 'python',
+        searchQuery: 'postgres',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      }),
+    );
+    fixture.detectChanges();
+
+    fixture.componentInstance.changePage(3);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+      queryParams: {
+        page: 3,
+        tag: 'python',
+        searchQuery: 'postgres',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      },
+    });
+  });
+
+  it('clears tag, search, and date filters together', () => {
+    paramMap.next(convertToParamMap({}));
+    queryParamMap.next(
+      convertToParamMap({
+        tag: 'python',
+        searchQuery: 'postgres',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      }),
+    );
+    fixture.detectChanges();
+
+    fixture.componentInstance.clearListFilters();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+      queryParams: { page: 1 },
+    });
   });
 });
 

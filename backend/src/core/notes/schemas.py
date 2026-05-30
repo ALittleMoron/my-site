@@ -71,6 +71,9 @@ class NoteFilters:
     page_size: int
     only_published: bool
     tag_slug: str | None
+    published_from: date | None
+    published_to: date | None
+    search_query: str | None
 
     @property
     def limit(self) -> int:

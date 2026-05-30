@@ -19,7 +19,7 @@ Portfolio/notes site and knowledge database
 
 ## General rules
 
-- Always use Context7 when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+- When library/API documentation, code generation, setup, or configuration steps are needed, search the internet without me having to explicitly ask. Prefer official documentation and primary sources, and cite the sources used in the response.
 - Do not perform any git action that changes repository state unless I explicitly ask for it. This includes `git add`, `git commit`, `git push`, `git stash`, branch creation, branch switching, rebasing, merging, resetting, checking out files, and similar mutating operations.
 - For non-trivial tasks, create and follow a Superpowers implementation plan before changing code or configuration. Trivial docs-only edits and direct answers do not require a plan.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.

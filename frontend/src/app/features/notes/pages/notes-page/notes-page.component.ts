@@ -79,6 +79,9 @@ export class NotesPageComponent implements OnInit {
   readonly onlyPublished = signal(true);
   readonly currentSlug = signal<string | null>(null);
   readonly activeTagSlug = signal<string | null>(null);
+  readonly searchQuery = signal('');
+  readonly publishedFrom = signal('');
+  readonly publishedTo = signal('');
   readonly page = signal(1);
 
   readonly notes = signal<NoteList | null>(null);
@@ -114,6 +117,13 @@ export class NotesPageComponent implements OnInit {
   readonly isEmpty = computed(
     () => !this.listLoading() && !this.listError() && (this.notes()?.notes.length ?? 0) === 0,
   );
+  readonly hasListFilters = computed(
+    () =>
+      this.activeTagSlug() !== null ||
+      this.searchQuery().trim() !== '' ||
+      this.publishedFrom() !== '' ||
+      this.publishedTo() !== '',
+  );
 
   ngOnInit(): void {
     this.seoService.setMeta({
@@ -130,6 +140,9 @@ export class NotesPageComponent implements OnInit {
         const slug = params.get('slug');
         this.currentSlug.set(slug);
         this.activeTagSlug.set(query.get('tag'));
+        this.searchQuery.set(query.get('searchQuery') ?? '');
+        this.publishedFrom.set(query.get('publishedFrom') ?? '');
+        this.publishedTo.set(query.get('publishedTo') ?? '');
         this.page.set(readPage(query.get('page')));
         if (slug) {
           this.loadDetail(slug);
@@ -166,28 +179,70 @@ export class NotesPageComponent implements OnInit {
   }
 
   openNote(slug: string): void {
-    this.router.navigate(['/notes', slug]);
+    this.router.navigate(['/notes', slug], {
+      queryParams: this.buildListQueryParams({ page: this.page() }),
+    });
   }
 
   backToList(): void {
-    this.router.navigate(['/notes']);
+    this.router.navigate(['/notes'], {
+      queryParams: this.buildListQueryParams({ page: this.page() }),
+    });
   }
 
   selectTag(slug: string): void {
-    this.router.navigate(['/notes'], { queryParams: { tag: slug, page: 1 } });
+    this.router.navigate(['/notes'], {
+      queryParams: this.buildListQueryParams({ page: 1, tagSlug: slug }),
+    });
   }
 
   clearTag(): void {
-    this.router.navigate(['/notes'], { queryParams: { page: 1 } });
+    this.router.navigate(['/notes'], {
+      queryParams: this.buildListQueryParams({ page: 1, tagSlug: null }),
+    });
   }
 
   changePage(page: number): void {
-    const queryParams: Record<string, string | number> = { page };
-    const tag = this.activeTagSlug();
-    if (tag) {
-      queryParams['tag'] = tag;
-    }
-    this.router.navigate(['/notes'], { queryParams });
+    this.router.navigate(['/notes'], {
+      queryParams: this.buildListQueryParams({ page }),
+    });
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(value);
+  }
+
+  setPublishedFrom(value: string): void {
+    this.publishedFrom.set(value);
+  }
+
+  setPublishedTo(value: string): void {
+    this.publishedTo.set(value);
+  }
+
+  onSearchInput(event: Event): void {
+    this.setSearchQuery(readInputValue(event));
+  }
+
+  onPublishedFromInput(event: Event): void {
+    this.setPublishedFrom(readInputValue(event));
+  }
+
+  onPublishedToInput(event: Event): void {
+    this.setPublishedTo(readInputValue(event));
+  }
+
+  applyFilters(): void {
+    this.router.navigate(['/notes'], {
+      queryParams: this.buildListQueryParams({ page: 1 }),
+    });
+  }
+
+  clearListFilters(): void {
+    this.searchQuery.set('');
+    this.publishedFrom.set('');
+    this.publishedTo.set('');
+    this.router.navigate(['/notes'], { queryParams: { page: 1 } });
   }
 
   openCreate(): void {
@@ -377,6 +432,9 @@ export class NotesPageComponent implements OnInit {
         pageSize: PAGE_SIZE,
         onlyPublished: this.onlyPublished(),
         tagSlug: this.activeTagSlug(),
+        publishedFrom: this.publishedFrom() || null,
+        publishedTo: this.publishedTo() || null,
+        searchQuery: this.normalizedSearchQuery(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -479,11 +537,42 @@ export class NotesPageComponent implements OnInit {
     this.engagedViewTimerId = null;
     this.engagedViewState = null;
   }
+
+  private buildListQueryParams(params: {
+    page: number;
+    tagSlug?: string | null;
+  }): Record<string, string | number> {
+    const queryParams: Record<string, string | number> = { page: params.page };
+    const tagSlug = params.tagSlug === undefined ? this.activeTagSlug() : params.tagSlug;
+    const searchQuery = this.normalizedSearchQuery();
+    if (tagSlug) {
+      queryParams['tag'] = tagSlug;
+    }
+    if (searchQuery) {
+      queryParams['searchQuery'] = searchQuery;
+    }
+    if (this.publishedFrom()) {
+      queryParams['publishedFrom'] = this.publishedFrom();
+    }
+    if (this.publishedTo()) {
+      queryParams['publishedTo'] = this.publishedTo();
+    }
+    return queryParams;
+  }
+
+  private normalizedSearchQuery(): string | null {
+    const value = this.searchQuery().trim();
+    return value === '' ? null : value;
+  }
 }
 
 function readPage(value: string | null): number {
   const page = Number(value ?? '1');
   return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function readInputValue(event: Event): string {
+  return (event.target as HTMLInputElement).value;
 }
 
 function compareTags(a: NoteTag, b: NoteTag): number {

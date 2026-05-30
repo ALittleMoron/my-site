@@ -71,6 +71,9 @@ class APIHelper:
         page_size: int | None = 10,
         only_published: bool | None = True,
         tag_slug: str | None = None,
+        published_from: str | None = None,
+        published_to: str | None = None,
+        search_query: str | None = None,
     ) -> Response:
         params: dict[str, str | int | bool] = {}
         if page is not None:
@@ -81,6 +84,12 @@ class APIHelper:
             params["onlyPublished"] = only_published
         if tag_slug is not None:
             params["tagSlug"] = tag_slug
+        if published_from is not None:
+            params["publishedFrom"] = published_from
+        if published_to is not None:
+            params["publishedTo"] = published_to
+        if search_query is not None:
+            params["searchQuery"] = search_query
         return self.client.get("/api/notes", params=params)
 
     def get_note(self, slug: str, only_published: bool | None = True) -> Response:

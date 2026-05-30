@@ -16,6 +16,16 @@
   min-width: 0;
 }
 
+.notes-filter-form {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) minmax(9rem, 11rem) minmax(9rem, 11rem) auto;
+}
+
+.notes-filter-search,
+.notes-filter-date {
+  min-width: 0;
+}
+
 .modal-backdrop-overlay {
   background-color: rgba(0, 0, 0, 0.5);
 }
@@ -34,6 +44,10 @@
 }
 
 @media (max-width: 991.98px) {
+  .notes-filter-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .notes-layout-panel-open {
     grid-template-columns: minmax(0, 1fr);
   }

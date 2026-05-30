@@ -26,7 +26,15 @@ class TestNotesUseCase(FactoryFixture):
         self.use_case = NotesUseCase(storage=self.storage)
 
     async def test_list_notes_delegates_filters_to_storage(self) -> None:
-        filters = NoteFilters(page=1, page_size=10, only_published=True, tag_slug="python")
+        filters = NoteFilters(
+            page=1,
+            page_size=10,
+            only_published=True,
+            tag_slug="python",
+            published_from=None,
+            published_to=None,
+            search_query=None,
+        )
         expected = self.factory.core.note_list(
             notes=[self.factory.core.note(title="Published note", slug="published-note")],
             total_count=1,

@@ -56,6 +56,60 @@
     }
 
     <section class="notes-content">
+      <form
+        class="notes-filter-form align-items-end gap-2 mb-3"
+        (submit)="applyFilters(); $event.preventDefault()"
+      >
+        <div class="notes-filter-search">
+          <label class="form-label small text-body-secondary mb-1" for="notesSearchQuery">
+            Поиск
+          </label>
+          <input
+            id="notesSearchQuery"
+            type="search"
+            class="form-control"
+            placeholder="Заголовок или текст"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+        <div class="notes-filter-date">
+          <label class="form-label small text-body-secondary mb-1" for="notesPublishedFrom">
+            C
+          </label>
+          <input
+            id="notesPublishedFrom"
+            type="date"
+            class="form-control"
+            [value]="publishedFrom()"
+            (input)="onPublishedFromInput($event)"
+          />
+        </div>
+        <div class="notes-filter-date">
+          <label class="form-label small text-body-secondary mb-1" for="notesPublishedTo">
+            По
+          </label>
+          <input
+            id="notesPublishedTo"
+            type="date"
+            class="form-control"
+            [value]="publishedTo()"
+            (input)="onPublishedToInput($event)"
+          />
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-secondary">Найти</button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="!hasListFilters()"
+            (click)="clearListFilters()"
+          >
+            Сбросить
+          </button>
+        </div>
+      </form>
+
       <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
         <div class="d-flex flex-wrap gap-2">
           @for (tag of activeTags(); track tag.id) {
@@ -71,7 +125,7 @@
           }
           @if (activeTagSlug()) {
             <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearTag()">
-              Сбросить
+              Сбросить тег
             </button>
           }
         </div>
