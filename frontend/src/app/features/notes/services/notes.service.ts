@@ -8,6 +8,10 @@ import {
   NoteListDto,
   NoteListParams,
   NotePayload,
+  NoteReactionPayload,
+  NoteStats,
+  NoteStatsDto,
+  NoteStatsParams,
   NoteTag,
   NoteTagDto,
   NoteTree,
@@ -16,6 +20,7 @@ import {
   TagsDto,
   mapNoteDetailDto,
   mapNoteListDto,
+  mapNoteStatsDto,
   mapNoteTreeDto,
   mapTagDto,
 } from '../models/notes.model';
@@ -42,6 +47,23 @@ export class NotesService {
         onlyPublished: String(onlyPublished),
       })
       .pipe(map(mapNoteDetailDto));
+  }
+
+  trackEngagedView(slug: string): Observable<void> {
+    return this.api.post<void>(`/api/notes/detail/${slug}/analytics/engaged-view`, {});
+  }
+
+  setReaction(slug: string, payload: NoteReactionPayload): Observable<void> {
+    return this.api.post<void>(`/api/notes/detail/${slug}/reaction`, payload);
+  }
+
+  getStats(params: NoteStatsParams): Observable<NoteStats> {
+    return this.api
+      .get<NoteStatsDto>('/api/notes/stats', {
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+      })
+      .pipe(map(mapNoteStatsDto));
   }
 
   getTree(): Observable<NoteTree> {

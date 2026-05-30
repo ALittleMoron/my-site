@@ -14,7 +14,8 @@ import { ConsentService } from '../../../../core/privacy/consent.service';
       >
         <div class="container d-flex flex-column flex-md-row gap-3 align-items-md-center">
           <p class="m-0 flex-grow-1">
-            Сайт использует cookies для базовой работы интерфейса и сохранения настроек.
+            Сайт использует локальное хранилище для базовой работы интерфейса, сохранения настроек и
+            анонимных реакций. Просмотры считаются агрегированно, без аналитических cookies.
           </p>
           <button type="button" class="btn button-active" (click)="consent.acceptCookieConsent()">
             Хорошо

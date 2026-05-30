@@ -1,27 +1,43 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from math import ceil
 from typing import Any, TypeVar
+from uuid import UUID
 
 from sqlalchemy import Select, case, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from core.enums import PublishStatusEnum
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     Note,
+    NoteAnalyticsDailyStats,
+    NoteAnalyticsNoteStats,
+    NoteAnalyticsStats,
+    NoteAnalyticsTotals,
     NoteFilters,
-    NoteList,
+    NotePublicStats,
+    NotePublicStatsCollection,
+    NoteReactionCounts,
+    Notes,
     NoteTree,
     NoteTreeFolder,
     NoteTreeItem,
     Tag,
     Tags,
 )
-from core.notes.storages import NotesStorage
+from core.notes.storages import NoteAnalyticsStorage, NotesStorage
 from core.types import IntId
-from infra.postgresql.models import NoteModel, NoteToTagSecondaryModel, TagModel
+from infra.postgresql.models import (
+    NoteDailyAnalyticsModel,
+    NoteModel,
+    NoteReactionModel,
+    NoteToTagSecondaryModel,
+    TagModel,
+)
 
 _SelectT = TypeVar("_SelectT")
 
@@ -43,7 +59,7 @@ class NotesDatabaseStorage(NotesStorage):
             raise NoteNotFoundError
         return note_model.to_domain_schema(include_deleted_tags=include_deleted_tags)
 
-    async def list_notes(self, *, filters: NoteFilters) -> NoteList:
+    async def list_notes(self, *, filters: NoteFilters) -> Notes:
         query = self._apply_note_filters(
             select(NoteModel).options(
                 selectinload(NoteModel.tag_links).selectinload(NoteToTagSecondaryModel.tag),
@@ -59,8 +75,8 @@ class NotesDatabaseStorage(NotesStorage):
 
         note_models = await self.session.scalars(query)
 
-        return NoteList(
-            notes=[
+        return Notes(
+            values=[
                 note_model.to_domain_schema(include_deleted_tags=not filters.only_published)
                 for note_model in note_models.unique()
             ],
@@ -234,3 +250,266 @@ class NotesDatabaseStorage(NotesStorage):
         model = await self._get_tag_model(tag_id=tag_id)
         model.deleted_at = None
         await self.session.flush()
+
+
+@dataclass(kw_only=True)
+class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
+    session: AsyncSession
+
+    async def increment_view(
+        self,
+        *,
+        note_id: UUID,
+        source_category: NoteViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        await self._increment_daily_counter(
+            note_id=note_id,
+            source_category=source_category,
+            viewed_on=viewed_on,
+            view_count_increment=1,
+            engaged_view_count_increment=0,
+        )
+
+    async def increment_engaged_view(
+        self,
+        *,
+        note_id: UUID,
+        source_category: NoteViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        await self._increment_daily_counter(
+            note_id=note_id,
+            source_category=source_category,
+            viewed_on=viewed_on,
+            view_count_increment=0,
+            engaged_view_count_increment=1,
+        )
+
+    async def _increment_daily_counter(
+        self,
+        *,
+        note_id: UUID,
+        source_category: NoteViewSourceCategory,
+        viewed_on: date | None,
+        view_count_increment: int,
+        engaged_view_count_increment: int,
+    ) -> None:
+        recorded_on = viewed_on if viewed_on is not None else datetime.now(tz=UTC).date()
+        insert_statement = postgresql_insert(NoteDailyAnalyticsModel).values(
+            note_id=note_id,
+            date=recorded_on,
+            source_category=source_category,
+            view_count=view_count_increment,
+            engaged_view_count=engaged_view_count_increment,
+        )
+        await self.session.execute(
+            insert_statement.on_conflict_do_update(
+                index_elements=[
+                    NoteDailyAnalyticsModel.note_id,
+                    NoteDailyAnalyticsModel.date,
+                    NoteDailyAnalyticsModel.source_category,
+                ],
+                set_={
+                    NoteDailyAnalyticsModel.view_count.key: (
+                        NoteDailyAnalyticsModel.view_count + view_count_increment
+                    ),
+                    NoteDailyAnalyticsModel.engaged_view_count.key: (
+                        NoteDailyAnalyticsModel.engaged_view_count + engaged_view_count_increment
+                    ),
+                },
+            ),
+        )
+        await self.session.flush()
+
+    async def get_public_stats(self, *, note_ids: list[UUID]) -> NotePublicStatsCollection:
+        if not note_ids:
+            return NotePublicStatsCollection(values=[])
+        view_counts = await self._get_view_counts(note_ids=note_ids)
+        reaction_counts = await self._get_reaction_counts(note_ids=note_ids)
+        return NotePublicStatsCollection(
+            values=[
+                NotePublicStats(
+                    note_id=note_id,
+                    view_count=view_counts.get(note_id, 0),
+                    reaction_counts=reaction_counts.get(note_id, NoteReactionCounts.zero()),
+                )
+                for note_id in note_ids
+            ],
+        )
+
+    async def _get_view_counts(self, *, note_ids: list[UUID]) -> dict[UUID, int]:
+        result = await self.session.execute(
+            select(
+                NoteDailyAnalyticsModel.note_id,
+                func.coalesce(func.sum(NoteDailyAnalyticsModel.view_count), 0),
+            )
+            .where(NoteDailyAnalyticsModel.note_id.in_(note_ids))
+            .group_by(NoteDailyAnalyticsModel.note_id),
+        )
+        return {row[0]: row[1] for row in result}
+
+    async def _get_reaction_counts(self, *, note_ids: list[UUID]) -> dict[UUID, NoteReactionCounts]:
+        result = await self.session.execute(
+            select(
+                NoteReactionModel.note_id,
+                NoteReactionModel.reaction_kind,
+                func.count(NoteReactionModel.id),
+            )
+            .where(NoteReactionModel.note_id.in_(note_ids))
+            .group_by(NoteReactionModel.note_id, NoteReactionModel.reaction_kind),
+        )
+        raw_counts: dict[UUID, dict[NoteReactionKind, int]] = {}
+        for note_id, reaction_kind, count in result:
+            raw_counts.setdefault(note_id, {})[self._to_reaction_kind(reaction_kind)] = count
+        return {
+            note_id: self._build_reaction_counts(counts=counts)
+            for note_id, counts in raw_counts.items()
+        }
+
+    async def set_reaction(
+        self,
+        *,
+        note_id: UUID,
+        note_scoped_voter_hash: str,
+        reaction_kind: NoteReactionKind | None,
+    ) -> None:
+        model = await self.session.scalar(
+            select(NoteReactionModel)
+            .where(
+                NoteReactionModel.note_id == note_id,
+                NoteReactionModel.note_scoped_voter_hash == note_scoped_voter_hash,
+            )
+            .with_for_update(),
+        )
+        if reaction_kind is None:
+            if model is not None:
+                await self.session.delete(model)
+            await self.session.flush()
+            return
+        if model is None:
+            self.session.add(
+                NoteReactionModel(
+                    note_id=note_id,
+                    note_scoped_voter_hash=note_scoped_voter_hash,
+                    reaction_kind=reaction_kind,
+                ),
+            )
+        else:
+            model.reaction_kind = reaction_kind
+        await self.session.flush()
+
+    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
+        daily = await self._get_daily_stats(date_from=date_from, date_to=date_to)
+        note_ids = list(dict.fromkeys(item.note_id for item in daily))
+        reaction_counts = await self._get_reaction_counts(note_ids=note_ids)
+        notes = self._build_note_stats(daily=daily, reaction_counts=reaction_counts)
+        return NoteAnalyticsStats(
+            date_from=date_from,
+            date_to=date_to,
+            totals=NoteAnalyticsTotals(
+                view_count=sum(item.view_count for item in daily),
+                engaged_view_count=sum(item.engaged_view_count for item in daily),
+                reaction_count=sum(item.reaction_counts.total for item in notes),
+            ),
+            notes=notes,
+            daily=daily,
+        )
+
+    async def _get_daily_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+    ) -> list[NoteAnalyticsDailyStats]:
+        result = await self.session.execute(
+            select(
+                NoteDailyAnalyticsModel.note_id,
+                NoteModel.title,
+                NoteModel.slug,
+                NoteDailyAnalyticsModel.date,
+                NoteDailyAnalyticsModel.source_category,
+                NoteDailyAnalyticsModel.view_count,
+                NoteDailyAnalyticsModel.engaged_view_count,
+            )
+            .join(NoteModel, NoteModel.id == NoteDailyAnalyticsModel.note_id)
+            .where(
+                NoteDailyAnalyticsModel.date >= date_from,
+                NoteDailyAnalyticsModel.date <= date_to,
+            )
+            .order_by(
+                NoteDailyAnalyticsModel.date,
+                NoteModel.title,
+                NoteDailyAnalyticsModel.source_category,
+            ),
+        )
+        return [
+            NoteAnalyticsDailyStats(
+                note_id=row[0],
+                title=row[1],
+                slug=row[2],
+                date=row[3],
+                source_category=self._to_source_category(row[4]),
+                view_count=row[5],
+                engaged_view_count=row[6],
+            )
+            for row in result
+        ]
+
+    def _build_note_stats(
+        self,
+        *,
+        daily: list[NoteAnalyticsDailyStats],
+        reaction_counts: dict[UUID, NoteReactionCounts],
+    ) -> list[NoteAnalyticsNoteStats]:
+        note_stats: dict[UUID, NoteAnalyticsNoteStats] = {}
+        for item in daily:
+            existing = note_stats.get(item.note_id)
+            if existing is None:
+                note_stats[item.note_id] = NoteAnalyticsNoteStats(
+                    note_id=item.note_id,
+                    title=item.title,
+                    slug=item.slug,
+                    view_count=item.view_count,
+                    engaged_view_count=item.engaged_view_count,
+                    reaction_counts=reaction_counts.get(item.note_id, NoteReactionCounts.zero()),
+                )
+            else:
+                note_stats[item.note_id] = NoteAnalyticsNoteStats(
+                    note_id=existing.note_id,
+                    title=existing.title,
+                    slug=existing.slug,
+                    view_count=existing.view_count + item.view_count,
+                    engaged_view_count=existing.engaged_view_count + item.engaged_view_count,
+                    reaction_counts=existing.reaction_counts,
+                )
+        return sorted(note_stats.values(), key=lambda item: (-item.view_count, item.title))
+
+    def _build_reaction_counts(
+        self,
+        *,
+        counts: dict[NoteReactionKind, int],
+    ) -> NoteReactionCounts:
+        return NoteReactionCounts(
+            heart=counts.get(NoteReactionKind.HEART, 0),
+            fire=counts.get(NoteReactionKind.FIRE, 0),
+            thinking=counts.get(NoteReactionKind.THINKING, 0),
+            neutral=counts.get(NoteReactionKind.NEUTRAL, 0),
+            poop=counts.get(NoteReactionKind.POOP, 0),
+        )
+
+    def _to_reaction_kind(self, value: NoteReactionKind | str) -> NoteReactionKind:
+        if isinstance(value, NoteReactionKind):
+            return value
+        try:
+            return NoteReactionKind.from_value(value)
+        except ValueError:
+            return NoteReactionKind[value]
+
+    def _to_source_category(self, value: NoteViewSourceCategory | str) -> NoteViewSourceCategory:
+        if isinstance(value, NoteViewSourceCategory):
+            return value
+        try:
+            return NoteViewSourceCategory.from_value(value)
+        except ValueError:
+            return NoteViewSourceCategory[value]

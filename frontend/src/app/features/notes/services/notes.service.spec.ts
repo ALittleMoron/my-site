@@ -20,11 +20,13 @@ describe('NotesService', () => {
 
   it('loads notes with pagination, visibility, and tag filters', () => {
     let firstTitle: string | undefined;
+    let firstViewCount: number | undefined;
 
     service
       .getNotes({ page: 2, pageSize: 10, onlyPublished: false, tagSlug: 'python' })
       .subscribe((list) => {
         firstTitle = list.notes[0].title;
+        firstViewCount = list.notes[0].viewCount;
       });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes'));
@@ -48,19 +50,23 @@ describe('NotesService', () => {
           publishStatus: 'Published',
           updatedAt: '2026-01-03T03:04:05+00:00',
           excerpt: 'Excerpt',
+          viewCount: 42,
           tags: [{ id: 1, name: 'Python', slug: 'python', deletedAt: null }],
         },
       ],
     });
 
     expect(firstTitle).toBe('Typed notes');
+    expect(firstViewCount).toBe(42);
   });
 
   it('loads detail with explicit visibility', () => {
     let content: string | undefined;
+    let fireCount: number | undefined;
 
     service.getNote('typed-notes', true).subscribe((note) => {
       content = note.content;
+      fireCount = note.reactionCounts.fire;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/detail/typed-notes'));
@@ -78,10 +84,76 @@ describe('NotesService', () => {
       createdAt: '2026-01-01T03:04:05+00:00',
       updatedAt: '2026-01-03T03:04:05+00:00',
       excerpt: 'Markdown',
+      viewCount: 5,
+      reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
       tags: [],
     });
 
     expect(content).toBe('# Markdown');
+    expect(fireCount).toBe(2);
+  });
+
+  it('tracks engagement and reactions', () => {
+    service.trackEngagedView('typed-notes').subscribe();
+    const engagedReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/notes/detail/typed-notes/analytics/engaged-view'),
+    );
+    expect(engagedReq.request.method).toBe('POST');
+    engagedReq.flush(null);
+
+    service
+      .setReaction('typed-notes', { reactionKind: 'poop', clientToken: 'client-token' })
+      .subscribe();
+    const reactionReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/notes/detail/typed-notes/reaction'),
+    );
+    expect(reactionReq.request.method).toBe('POST');
+    expect(reactionReq.request.body).toEqual({
+      reactionKind: 'poop',
+      clientToken: 'client-token',
+    });
+    reactionReq.flush(null);
+  });
+
+  it('loads admin note statistics', () => {
+    let reactionTotal: number | undefined;
+
+    service.getStats({ dateFrom: '2026-01-01', dateTo: '2026-01-31' }).subscribe((stats) => {
+      reactionTotal = stats.totals.reactionCount;
+    });
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/stats'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('dateFrom')).toBe('2026-01-01');
+    expect(req.request.params.get('dateTo')).toBe('2026-01-31');
+    req.flush({
+      dateFrom: '2026-01-01',
+      dateTo: '2026-01-31',
+      totals: { viewCount: 7, engagedViewCount: 3, reactionCount: 2 },
+      notes: [
+        {
+          noteId: '00000000-0000-0000-0000-000000000001',
+          title: 'Typed notes',
+          slug: 'typed-notes',
+          viewCount: 7,
+          engagedViewCount: 3,
+          reactionCounts: { heart: 1, fire: 0, thinking: 1, neutral: 0, poop: 0 },
+        },
+      ],
+      daily: [
+        {
+          noteId: '00000000-0000-0000-0000-000000000001',
+          title: 'Typed notes',
+          slug: 'typed-notes',
+          date: '2026-01-02',
+          sourceCategory: 'Search',
+          viewCount: 7,
+          engagedViewCount: 3,
+        },
+      ],
+    });
+
+    expect(reactionTotal).toBe(2);
   });
 
   it('loads tree without tag filters', () => {
@@ -208,6 +280,8 @@ function noteDetailDto(): unknown {
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-03T03:04:05+00:00',
     excerpt: 'Content',
+    viewCount: 0,
+    reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     tags: [],
   };
 }

@@ -1,4 +1,20 @@
 export type NotePublishStatus = 'Draft' | 'Published';
+export type NoteReactionKind = 'heart' | 'fire' | 'thinking' | 'neutral' | 'poop';
+export type NoteViewSourceCategory =
+  | 'Direct'
+  | 'Internal'
+  | 'Search'
+  | 'Social'
+  | 'External'
+  | 'Unknown';
+
+export interface NoteReactionCountsDto {
+  heart: number;
+  fire: number;
+  thinking: number;
+  neutral: number;
+  poop: number;
+}
 
 export interface NoteTagDto {
   id: number;
@@ -17,12 +33,14 @@ export interface NoteSummaryDto {
   publishStatus: NotePublishStatus;
   updatedAt: string;
   excerpt: string;
+  viewCount: number;
   tags: NoteTagDto[];
 }
 
 export interface NoteDetailDto extends NoteSummaryDto {
   content: string;
   createdAt: string;
+  reactionCounts: NoteReactionCountsDto;
 }
 
 export interface NoteListDto {
@@ -52,11 +70,52 @@ export interface TagsDto {
   tags: NoteTagDto[];
 }
 
+export interface NoteStatsTotalsDto {
+  viewCount: number;
+  engagedViewCount: number;
+  reactionCount: number;
+}
+
+export interface NoteStatsNoteDto {
+  noteId: string;
+  title: string;
+  slug: string;
+  viewCount: number;
+  engagedViewCount: number;
+  reactionCounts: NoteReactionCountsDto;
+}
+
+export interface NoteStatsDailyDto {
+  noteId: string;
+  title: string;
+  slug: string;
+  date: string;
+  sourceCategory: NoteViewSourceCategory;
+  viewCount: number;
+  engagedViewCount: number;
+}
+
+export interface NoteStatsDto {
+  dateFrom: string;
+  dateTo: string;
+  totals: NoteStatsTotalsDto;
+  notes: NoteStatsNoteDto[];
+  daily: NoteStatsDailyDto[];
+}
+
 export interface NoteTag {
   id: number;
   name: string;
   slug: string;
   deletedAt: string | null;
+}
+
+export interface NoteReactionCounts {
+  heart: number;
+  fire: number;
+  thinking: number;
+  neutral: number;
+  poop: number;
 }
 
 export interface NoteSummary {
@@ -69,12 +128,14 @@ export interface NoteSummary {
   publishStatus: NotePublishStatus;
   updatedAt: string;
   excerpt: string;
+  viewCount: number;
   tags: NoteTag[];
 }
 
 export interface NoteDetail extends NoteSummary {
   content: string;
   createdAt: string;
+  reactionCounts: NoteReactionCounts;
 }
 
 export interface NoteList {
@@ -114,6 +175,49 @@ export interface TagPayload {
   slug: string;
 }
 
+export interface NoteReactionPayload {
+  reactionKind: NoteReactionKind | null;
+  clientToken: string;
+}
+
+export interface NoteStatsParams {
+  dateFrom: string;
+  dateTo: string;
+}
+
+export interface NoteStatsTotals {
+  viewCount: number;
+  engagedViewCount: number;
+  reactionCount: number;
+}
+
+export interface NoteStatsNote {
+  noteId: string;
+  title: string;
+  slug: string;
+  viewCount: number;
+  engagedViewCount: number;
+  reactionCounts: NoteReactionCounts;
+}
+
+export interface NoteStatsDaily {
+  noteId: string;
+  title: string;
+  slug: string;
+  date: string;
+  sourceCategory: NoteViewSourceCategory;
+  viewCount: number;
+  engagedViewCount: number;
+}
+
+export interface NoteStats {
+  dateFrom: string;
+  dateTo: string;
+  totals: NoteStatsTotals;
+  notes: NoteStatsNote[];
+  daily: NoteStatsDaily[];
+}
+
 export interface NoteListParams {
   page: number;
   pageSize: number;
@@ -141,6 +245,7 @@ export function mapNoteSummaryDto(dto: NoteSummaryDto): NoteSummary {
     publishStatus: dto.publishStatus,
     updatedAt: dto.updatedAt,
     excerpt: dto.excerpt,
+    viewCount: dto.viewCount,
     tags: dto.tags.map(mapTagDto),
   };
 }
@@ -150,6 +255,7 @@ export function mapNoteDetailDto(dto: NoteDetailDto): NoteDetail {
     ...mapNoteSummaryDto(dto),
     content: dto.content,
     createdAt: dto.createdAt,
+    reactionCounts: mapReactionCountsDto(dto.reactionCounts),
   };
 }
 
@@ -167,5 +273,32 @@ export function mapNoteTreeDto(dto: NoteTreeDto): NoteTree {
       folder: folder.folder,
       notes: folder.notes.map((note) => ({ ...note })),
     })),
+  };
+}
+
+export function mapReactionCountsDto(dto: NoteReactionCountsDto): NoteReactionCounts {
+  return {
+    heart: dto.heart,
+    fire: dto.fire,
+    thinking: dto.thinking,
+    neutral: dto.neutral,
+    poop: dto.poop,
+  };
+}
+
+export function mapNoteStatsDto(dto: NoteStatsDto): NoteStats {
+  return {
+    dateFrom: dto.dateFrom,
+    dateTo: dto.dateTo,
+    totals: { ...dto.totals },
+    notes: dto.notes.map((note) => ({
+      noteId: note.noteId,
+      title: note.title,
+      slug: note.slug,
+      viewCount: note.viewCount,
+      engagedViewCount: note.engagedViewCount,
+      reactionCounts: mapReactionCountsDto(note.reactionCounts),
+    })),
+    daily: dto.daily.map((item) => ({ ...item })),
   };
 }

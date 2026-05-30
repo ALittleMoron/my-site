@@ -89,6 +89,20 @@ class APIHelper:
             params["onlyPublished"] = only_published
         return self.client.get(f"/api/notes/detail/{slug}", params=params)
 
+    def post_note_engaged_view(self, slug: str) -> Response:
+        return self.client.post(f"/api/notes/detail/{slug}/analytics/engaged-view")
+
+    def post_note_reaction(self, slug: str, data: dict[str, Any]) -> Response:
+        return self.client.post(f"/api/notes/detail/{slug}/reaction", json=data)
+
+    def get_note_stats(self, date_from: str | None, date_to: str | None) -> Response:
+        params: dict[str, str] = {}
+        if date_from is not None:
+            params["dateFrom"] = date_from
+        if date_to is not None:
+            params["dateTo"] = date_to
+        return self.client.get("/api/notes/stats", params=params)
+
     def get_notes_tree(self) -> Response:
         return self.client.get("/api/notes/tree")
 

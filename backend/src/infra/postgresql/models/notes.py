@@ -1,15 +1,16 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Self
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import Date, Enum, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin, UUIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.enums import PublishStatusEnum
-from core.notes.schemas import Note, NoteTags, Tag
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
+from core.notes.schemas import Note, Tag, Tags
 from core.types import IntId
 from infra.postgresql.models.base import BaseModel
 from infra.postgresql.models.mixins.publish import PublishMixin
@@ -81,10 +82,10 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
             folder=self.folder,
             author_username=self.author_username,
             published_at=self.published_at,
-            publish_status=_to_publish_status(self.publish_status),
+            publish_status=PublishStatusEnum.from_storage_value(self.publish_status),
             created_at=self.created_at,
             updated_at=self.updated_at,
-            tags=NoteTags(
+            tags=Tags(
                 values=[
                     link.tag.to_domain_schema()
                     for link in self.tag_links
@@ -162,10 +163,70 @@ class NoteToTagSecondaryModel(IntegerIDMixin, BaseModel):
         )
 
 
-def _to_publish_status(value: PublishStatusEnum | str) -> PublishStatusEnum:
-    if isinstance(value, PublishStatusEnum):
-        return value
-    try:
-        return PublishStatusEnum.from_value(value)
-    except ValueError:
-        return PublishStatusEnum[value]
+class NoteDailyAnalyticsModel(IntegerIDMixin, BaseModel):
+    note_id: Mapped[UUID] = mapped_column(
+        ForeignKey(NoteModel.id, ondelete="CASCADE"),
+        doc="Note identifier",
+    )
+    date: Mapped[date] = mapped_column(
+        Date(),
+        doc="UTC day when the note interaction was recorded",
+    )
+    source_category: Mapped[NoteViewSourceCategory] = mapped_column(
+        Enum(
+            NoteViewSourceCategory,
+            native_enum=False,
+            length=20,
+            name="note_view_source_category_enum",
+        ),
+        doc="Coarse referrer source category",
+    )
+    view_count: Mapped[int] = mapped_column(
+        Integer(),
+        doc="Number of public note detail views",
+    )
+    engaged_view_count: Mapped[int] = mapped_column(
+        Integer(),
+        doc="Number of public note detail views with engagement signal",
+    )
+
+    note: Mapped[NoteModel] = relationship(doc="Tracked note")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "note_id",
+            "date",
+            "source_category",
+            name="notes_daily_analytics_note_date_source_uniq",
+        ),
+    )
+
+
+class NoteReactionModel(IntegerIDMixin, AuditMixin, BaseModel):
+    note_id: Mapped[UUID] = mapped_column(
+        ForeignKey(NoteModel.id, ondelete="CASCADE"),
+        doc="Note identifier",
+    )
+    note_scoped_voter_hash: Mapped[str] = mapped_column(
+        String(length=64),
+        doc="HMAC hash scoped to one note and one anonymous client token",
+    )
+    reaction_kind: Mapped[NoteReactionKind] = mapped_column(
+        Enum(
+            NoteReactionKind,
+            native_enum=False,
+            length=20,
+            name="note_reaction_kind_enum",
+        ),
+        doc="Anonymous reaction kind",
+    )
+
+    note: Mapped[NoteModel] = relationship(doc="Reacted note")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "note_id",
+            "note_scoped_voter_hash",
+            name="notes_reaction_note_voter_uniq",
+        ),
+    )

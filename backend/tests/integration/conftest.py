@@ -14,7 +14,9 @@ from infra.config.settings import Settings, settings
 from infra.postgresql.models import (
     CompetencyMatrixItemModel,
     ExternalResourceModel,
+    NoteDailyAnalyticsModel,
     NoteModel,
+    NoteReactionModel,
     NoteToTagSecondaryModel,
     TagModel,
     UserModel,
@@ -49,6 +51,8 @@ async def clear_tables(engine: AsyncEngine) -> None:
         await conn.execute(delete(UserModel))
         await conn.execute(delete(ExternalResourceModel))
         await conn.execute(delete(CompetencyMatrixItemModel))
+        await conn.execute(delete(NoteReactionModel))
+        await conn.execute(delete(NoteDailyAnalyticsModel))
         await conn.execute(delete(NoteToTagSecondaryModel))
         await conn.execute(delete(NoteModel))
         await conn.execute(delete(TagModel))

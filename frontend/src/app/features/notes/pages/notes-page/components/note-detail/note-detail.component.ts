@@ -4,7 +4,21 @@ import { marked } from 'marked';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { NoteDetail } from '../../../../models/notes.model';
+import { NoteDetail, NoteReactionKind } from '../../../../models/notes.model';
+
+interface ReactionOption {
+  kind: NoteReactionKind;
+  emoji: string;
+  label: string;
+}
+
+const REACTION_OPTIONS: ReactionOption[] = [
+  { kind: 'heart', emoji: '❤️', label: 'Понравилось' },
+  { kind: 'fire', emoji: '🔥', label: 'Хочу ещё' },
+  { kind: 'thinking', emoji: '🤔', label: 'Заставило подумать' },
+  { kind: 'neutral', emoji: '😐', label: 'Нормально' },
+  { kind: 'poop', emoji: '💩', label: 'Не зашло' },
+];
 
 @Component({
   selector: 'app-note-detail',
@@ -18,6 +32,8 @@ export class NoteDetailComponent {
   readonly loading = input(false);
   readonly error = input<ApiError | null>(null);
   readonly isAdmin = input(false);
+  readonly selectedReaction = input<NoteReactionKind | null>(null);
+  readonly reactionLoading = input(false);
 
   readonly back = output<void>();
   readonly edit = output<void>();
@@ -25,6 +41,9 @@ export class NoteDetailComponent {
   readonly unpublish = output<void>();
   readonly delete = output<void>();
   readonly tagSelected = output<string>();
+  readonly reactionSelected = output<NoteReactionKind>();
+
+  readonly reactions = REACTION_OPTIONS;
 
   readonly contentHtml = computed(() => {
     const note = this.note();
@@ -39,6 +58,12 @@ export class NoteDetailComponent {
     const note = this.note();
     if (!note) return '';
     return formatDate(note.publishedAt ?? note.updatedAt);
+  }
+
+  reactionCount(kind: NoteReactionKind): number {
+    const note = this.note();
+    if (!note) return 0;
+    return note.reactionCounts[kind];
   }
 }
 

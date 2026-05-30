@@ -1,15 +1,22 @@
+import hmac
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from hashlib import sha256
+from urllib.parse import urlparse
+from uuid import UUID
 
 from core.enums import PublishStatusEnum
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
+from core.notes.event_dispatchers import NoteAnalyticsErrorReporter
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     Note,
+    NoteAnalyticsStats,
     NoteCreateParams,
     NoteFilters,
-    NoteList,
-    NoteTags,
+    NotePublicStatsCollection,
+    Notes,
     NoteTree,
     NoteUpdateParams,
     Tag,
@@ -17,7 +24,8 @@ from core.notes.schemas import (
     Tags,
     TagUpdateParams,
 )
-from core.notes.storages import NotesStorage
+from core.notes.storages import NoteAnalyticsStorage, NotesStorage
+from core.schemas import Secret
 from core.types import IntId
 
 
@@ -27,7 +35,7 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_notes(self, *, filters: NoteFilters) -> NoteList:
+    async def list_notes(self, *, filters: NoteFilters) -> Notes:
         raise NotImplementedError
 
     @abstractmethod
@@ -80,6 +88,53 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
 
+class AbstractNoteAnalyticsUseCase(ABC):
+    @abstractmethod
+    async def track_public_view(
+        self,
+        *,
+        note: Note,
+        referrer: str | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def track_view(
+        self,
+        *,
+        note: Note,
+        source_category: NoteViewSourceCategory,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def track_engaged_view(
+        self,
+        *,
+        slug: str,
+        source_category: NoteViewSourceCategory,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_public_stats(self, *, note_ids: list[UUID]) -> NotePublicStatsCollection:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_reaction(
+        self,
+        *,
+        slug: str,
+        client_token: str,
+        reaction_kind: NoteReactionKind | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
+        raise NotImplementedError
+
+
 @dataclass(kw_only=True, slots=True, frozen=True)
 class NotesUseCase(AbstractNotesUseCase):
     storage: NotesStorage
@@ -93,7 +148,7 @@ class NotesUseCase(AbstractNotesUseCase):
             raise NoteNotFoundError
         return note.public_copy() if only_published else note
 
-    async def list_notes(self, *, filters: NoteFilters) -> NoteList:
+    async def list_notes(self, *, filters: NoteFilters) -> Notes:
         return await self.storage.list_notes(filters=filters)
 
     async def list_tree(self, *, only_published: bool) -> NoteTree:
@@ -113,7 +168,7 @@ class NotesUseCase(AbstractNotesUseCase):
             published_at=now if params.publish_status == PublishStatusEnum.PUBLISHED else None,
             created_at=now,
             updated_at=now,
-            tags=NoteTags(values=tags.values),
+            tags=Tags(values=tags.values),
         )
         return await self.storage.create_note(note=note)
 
@@ -135,7 +190,7 @@ class NotesUseCase(AbstractNotesUseCase):
             published_at=published_at,
             created_at=existing_note.created_at,
             updated_at=now,
-            tags=NoteTags(values=tags.values),
+            tags=Tags(values=tags.values),
         )
         return await self.storage.update_note(note=note)
 
@@ -177,3 +232,135 @@ class NotesUseCase(AbstractNotesUseCase):
 
     async def restore_tag(self, *, tag_id: IntId) -> None:
         await self.storage.restore_tag(tag_id=tag_id)
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class NoteAnalyticsUseCase(AbstractNoteAnalyticsUseCase):
+    notes_storage: NotesStorage
+    analytics_storage: NoteAnalyticsStorage
+    reaction_secret: Secret[str]
+    app_domain: str
+    error_reporter: NoteAnalyticsErrorReporter
+
+    async def track_public_view(
+        self,
+        *,
+        note: Note,
+        referrer: str | None,
+    ) -> None:
+        try:
+            await self.track_view(
+                note=note,
+                source_category=self._classify_source_category(referrer=referrer),
+            )
+        except Exception as exc:  # noqa: BLE001
+            self.error_reporter.report_public_view_tracking_failure(note=note, error=exc)
+
+    async def track_view(
+        self,
+        *,
+        note: Note,
+        source_category: NoteViewSourceCategory,
+    ) -> None:
+        if not note.is_available():
+            return
+        await self.analytics_storage.increment_view(
+            note_id=note.id,
+            source_category=source_category,
+            viewed_on=None,
+        )
+
+    async def track_engaged_view(
+        self,
+        *,
+        slug: str,
+        source_category: NoteViewSourceCategory,
+    ) -> None:
+        note = await self._get_published_note(slug=slug)
+        await self.analytics_storage.increment_engaged_view(
+            note_id=note.id,
+            source_category=source_category,
+            viewed_on=None,
+        )
+
+    async def get_public_stats(self, *, note_ids: list[UUID]) -> NotePublicStatsCollection:
+        unique_note_ids = list(dict.fromkeys(note_ids))
+        stats = await self.analytics_storage.get_public_stats(note_ids=unique_note_ids)
+        return stats.fill_missing(note_ids=unique_note_ids)
+
+    async def set_reaction(
+        self,
+        *,
+        slug: str,
+        client_token: str,
+        reaction_kind: NoteReactionKind | None,
+    ) -> None:
+        note = await self._get_published_note(slug=slug)
+        await self.analytics_storage.set_reaction(
+            note_id=note.id,
+            note_scoped_voter_hash=self._build_note_scoped_voter_hash(
+                note_id=note.id,
+                client_token=client_token,
+            ),
+            reaction_kind=reaction_kind,
+        )
+
+    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
+        return await self.analytics_storage.get_stats(date_from=date_from, date_to=date_to)
+
+    async def _get_published_note(self, *, slug: str) -> Note:
+        note = await self.notes_storage.get_note_by_slug(slug=slug, include_deleted_tags=False)
+        if not note.is_available():
+            raise NoteNotFoundError
+        return note
+
+    def _classify_source_category(self, *, referrer: str | None) -> NoteViewSourceCategory:
+        if not referrer:
+            return NoteViewSourceCategory.DIRECT
+        hostname = urlparse(referrer).hostname
+        if hostname is None:
+            return NoteViewSourceCategory.UNKNOWN
+        normalized_hostname = hostname.lower()
+        app_domain = self.app_domain.lower()
+        if normalized_hostname == app_domain or normalized_hostname.endswith(f".{app_domain}"):
+            return NoteViewSourceCategory.INTERNAL
+        if self._is_search_hostname(hostname=normalized_hostname):
+            return NoteViewSourceCategory.SEARCH
+        if self._is_social_hostname(hostname=normalized_hostname):
+            return NoteViewSourceCategory.SOCIAL
+        return NoteViewSourceCategory.EXTERNAL
+
+    def _is_search_hostname(self, *, hostname: str) -> bool:
+        return any(
+            search_hostname in hostname
+            for search_hostname in (
+                "google.",
+                "yandex.",
+                "bing.",
+                "duckduckgo.",
+                "search.yahoo.",
+            )
+        )
+
+    def _is_social_hostname(self, *, hostname: str) -> bool:
+        return any(
+            social_hostname in hostname
+            for social_hostname in (
+                "facebook.",
+                "linkedin.",
+                "reddit.",
+                "t.me",
+                "telegram.",
+                "twitter.",
+                "x.com",
+                "vk.",
+            )
+        )
+
+    def _build_note_scoped_voter_hash(self, *, note_id: UUID, client_token: str) -> str:
+        message = f"{note_id}:{client_token}".encode()
+        return hmac.new(
+            self.reaction_secret.get_secret_value().encode(),
+            message,
+            sha256,
+        ).hexdigest()

@@ -50,6 +50,13 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["message"] == ForbiddenError.message
         self.use_case.list_tags.assert_not_called()
 
+    def test_anonymous_cannot_list_deleted_tags_with_numeric_bool(self) -> None:
+        response = self.no_auth_api.client.get("/api/notes/tags", params={"includeDeleted": "1"})
+
+        assert response.status_code == codes.FORBIDDEN
+        assert response.json()["message"] == ForbiddenError.message
+        self.use_case.list_tags.assert_not_called()
+
     def test_search_tags(self) -> None:
         self.use_case.search_tags.return_value = self.factory.core.tags(
             values=[self.factory.core.tag(tag_id=1, name="Python", slug="python")],

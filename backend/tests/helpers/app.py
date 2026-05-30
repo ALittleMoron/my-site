@@ -15,7 +15,7 @@ from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.contacts.use_cases import AbstractContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import AbstractFilesUseCase
-from core.notes.use_cases import AbstractNotesUseCase
+from core.notes.use_cases import AbstractNoteAnalyticsUseCase, AbstractNotesUseCase
 from core.types import IntId
 
 
@@ -49,6 +49,10 @@ class IocContainerHelper:
     # NOTES
     async def get_notes_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractNotesUseCase)
+        return cast("Mock", use_case)
+
+    async def get_note_analytics_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractNoteAnalyticsUseCase)
         return cast("Mock", use_case)
 
     # AUTH

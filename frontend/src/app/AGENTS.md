@@ -39,6 +39,7 @@ Never violate these boundaries:
 | `core/seo/seo.service.ts`                    | Sets `<title>` and meta tags per route                                |
 | `core/notifications/notification.service.ts` | App-wide transient success/error notifications                        |
 | `core/privacy/consent.service.ts`            | Frontend-only local consent persistence                               |
+| `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence      |
 | `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
 | `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
 

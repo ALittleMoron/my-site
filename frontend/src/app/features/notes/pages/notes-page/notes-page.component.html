@@ -16,9 +16,26 @@
         <button type="button" class="btn btn-primary" (click)="openCreate()">
           Добавить заметку
         </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="toggleStats()">
+          Статистика
+        </button>
       }
     </div>
   </div>
+
+  @if (isAdmin() && statsVisible()) {
+    <app-notes-stats-panel
+      [stats]="stats()"
+      [loading]="statsLoading()"
+      [error]="statsError()"
+      [dateFrom]="statsDateFrom()"
+      [dateTo]="statsDateTo()"
+      (dateFromChange)="setStatsDateFrom($event)"
+      (dateToChange)="setStatsDateTo($event)"
+      (refresh)="loadStats()"
+      (exportCsv)="exportStatsCsv()"
+    />
+  }
 
   <div class="notes-layout" [class.notes-layout-panel-open]="sidePanelOpen()">
     @if (sidePanelOpen()) {
@@ -82,12 +99,15 @@
           [loading]="detailLoading()"
           [error]="detailError()"
           [isAdmin]="isAdmin()"
+          [selectedReaction]="selectedReaction()"
+          [reactionLoading]="reactionLoading()"
           (back)="backToList()"
           (edit)="openEdit()"
           (publish)="publishNote()"
           (unpublish)="unpublishNote()"
           (delete)="deleteNote()"
           (tagSelected)="selectTag($event)"
+          (reactionSelected)="selectReaction($event)"
         />
       } @else if (listLoading()) {
         <app-loading-spinner />

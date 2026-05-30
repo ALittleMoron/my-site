@@ -1,0 +1,175 @@
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ActivatedRoute,
+  ParamMap,
+  Router,
+  convertToParamMap,
+  provideRouter,
+} from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
+import { SeoService } from '../../../../core/seo/seo.service';
+import { NoteDetail, NoteList, NoteStats, NoteTree } from '../../models/notes.model';
+import { NotesService } from '../../services/notes.service';
+import { NotesPageComponent } from './notes-page.component';
+
+describe('NotesPageComponent', () => {
+  let fixture: ComponentFixture<NotesPageComponent>;
+  let paramMap: BehaviorSubject<ParamMap>;
+  let queryParamMap: BehaviorSubject<ParamMap>;
+  let notesService: {
+    getTags: jest.Mock;
+    getTree: jest.Mock;
+    getNote: jest.Mock;
+    getNotes: jest.Mock;
+    trackEngagedView: jest.Mock;
+    setReaction: jest.Mock;
+    getStats: jest.Mock;
+  };
+  let anonymousReactionService: {
+    getOrCreateClientToken: jest.Mock;
+    getReaction: jest.Mock;
+    setReaction: jest.Mock;
+  };
+
+  beforeEach(async () => {
+    paramMap = new BehaviorSubject(convertToParamMap({ slug: 'typed-notes' }));
+    queryParamMap = new BehaviorSubject(convertToParamMap({}));
+    notesService = {
+      getTags: jest.fn().mockReturnValue(of([])),
+      getTree: jest.fn().mockReturnValue(of({ folders: [] } satisfies NoteTree)),
+      getNote: jest.fn().mockReturnValue(of(noteDetail())),
+      getNotes: jest
+        .fn()
+        .mockReturnValue(of({ notes: [], totalCount: 0, totalPages: 0 } satisfies NoteList)),
+      trackEngagedView: jest.fn().mockReturnValue(of(undefined)),
+      setReaction: jest.fn().mockReturnValue(of(undefined)),
+      getStats: jest.fn().mockReturnValue(of(noteStats())),
+    };
+    anonymousReactionService = {
+      getOrCreateClientToken: jest.fn().mockReturnValue('client-token'),
+      getReaction: jest.fn().mockReturnValue(null),
+      setReaction: jest.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [NotesPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: NotesService, useValue: notesService },
+        { provide: AuthService, useValue: { isAdmin: () => false } },
+        { provide: SeoService, useValue: { setMeta: jest.fn() } },
+        {
+          provide: NotificationService,
+          useValue: { success: jest.fn(), error: jest.fn() },
+        },
+        { provide: AnonymousReactionService, useValue: anonymousReactionService },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: paramMap.asObservable(),
+            queryParamMap: queryParamMap.asObservable(),
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(NotesPageComponent);
+  });
+
+  afterEach(() => {
+    setDocumentVisibility('visible');
+    jest.restoreAllMocks();
+    fixture.destroy();
+  });
+
+  it('sends engaged view once after detail stays open for 30 seconds', fakeAsync(() => {
+    fixture.detectChanges();
+    notesService.trackEngagedView.mockClear();
+
+    fixture.componentInstance.loadDetail('typed-notes');
+
+    tick(30_000);
+
+    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes');
+
+    tick(30_000);
+
+    expect(notesService.trackEngagedView).toHaveBeenCalledTimes(1);
+  }));
+
+  it('pauses engaged view timer while document is hidden', fakeAsync(() => {
+    fixture.detectChanges();
+    notesService.trackEngagedView.mockClear();
+
+    fixture.componentInstance.loadDetail('typed-notes');
+
+    tick(10_000);
+    setDocumentVisibility('hidden');
+    tick(30_000);
+
+    expect(notesService.trackEngagedView).not.toHaveBeenCalled();
+
+    setDocumentVisibility('visible');
+    tick(19_999);
+
+    expect(notesService.trackEngagedView).not.toHaveBeenCalled();
+
+    tick(1);
+
+    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes');
+  }));
+
+  it('creates reaction token lazily and persists selected reaction after success', () => {
+    fixture.detectChanges();
+
+    fixture.componentInstance.selectReaction('poop');
+
+    expect(anonymousReactionService.getOrCreateClientToken).toHaveBeenCalled();
+    expect(notesService.setReaction).toHaveBeenCalledWith('typed-notes', {
+      reactionKind: 'poop',
+      clientToken: 'client-token',
+    });
+    expect(anonymousReactionService.setReaction).toHaveBeenCalledWith('typed-notes', 'poop');
+    fixture.destroy();
+  });
+});
+
+function noteDetail(): NoteDetail {
+  return {
+    id: '00000000-0000-0000-0000-000000000001',
+    title: 'Typed notes',
+    slug: 'typed-notes',
+    folder: 'Engineering',
+    authorUsername: 'admin',
+    publishedAt: '2026-01-02T03:04:05+00:00',
+    publishStatus: 'Published',
+    createdAt: '2026-01-01T03:04:05+00:00',
+    updatedAt: '2026-01-03T03:04:05+00:00',
+    excerpt: 'Excerpt',
+    content: '# Content',
+    viewCount: 1,
+    reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
+    tags: [],
+  };
+}
+
+function setDocumentVisibility(visibilityState: DocumentVisibilityState): void {
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: visibilityState,
+  });
+}
+
+function noteStats(): NoteStats {
+  return {
+    dateFrom: '2026-01-01',
+    dateTo: '2026-01-31',
+    totals: { viewCount: 0, engagedViewCount: 0, reactionCount: 0 },
+    notes: [],
+    daily: [],
+  };
+}

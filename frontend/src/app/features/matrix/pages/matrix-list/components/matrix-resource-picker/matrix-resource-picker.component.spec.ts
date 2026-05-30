@@ -99,9 +99,6 @@ describe('MatrixResourcePickerComponent', () => {
     component.updateContext(0, 'Read first');
     component.detach(0);
 
-    expect(emitted).toEqual([
-      [{ ...existingResource, context: 'Read first', isNew: false }],
-      [],
-    ]);
+    expect(emitted).toEqual([[{ ...existingResource, context: 'Read first', isNew: false }], []]);
   });
 });

@@ -58,7 +58,7 @@
   - [ ] Load testing (Locust)
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
-- [ ] Add basic analytics (Matomo) for user behavior tracking.
+- [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
 - [x] Move tests to backend and create a src subfolder for backend
@@ -285,8 +285,10 @@
 - [x] Hide/Publish notes
 - [x] Show notes sorted by publication date
 - [x] Show notes in a side panel with a tree view
+- [x] Show public note view counters and anonymous reactions
+- [x] Admin note statistics by date range, source category, and reactions
 - [x] Filters by tags
-- [ ] Filters by date
+- [ ] Filters by publish date range
 - [ ] Search notes by title and content
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
@@ -408,6 +410,7 @@
 - [ ] UI localisation
 - [ ] Database localisation
 - [ ] Migrate from Makefile to Just
+- [ ] Cache on API get methods + cache invalidation on changes
 
 ## Bugs
 

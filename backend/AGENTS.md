@@ -28,6 +28,27 @@ These rules apply to backend Python code under `backend/**/*.py`.
   such as `create_*`, `update_*`, `delete_*`, `publish_*`, or `set_*` so callers cannot
   accidentally trigger broader behavior than intended.
 
+## Business Logic Boundaries
+
+- Business logic must live in domain use cases under `backend/src/core/**/use_cases.py`.
+  Shared domain behavior may live in explicit core domain services when a use case would otherwise
+  duplicate meaningful logic.
+- API controllers, Litestar handlers, schemas, Dishka providers, storages, ORM models, settings,
+  event dispatchers, and infrastructure adapters must not own business decisions. They may validate
+  transport shape, map data, wire dependencies, persist/load data, or call a use case.
+- Request-level access checks and input checks that can be decided before entering a use case should
+  live at the Litestar boundary, preferably as guards or `Provide` dependencies. Do not hide those
+  checks in controller helper functions.
+- Do not add private module-level helper functions in backend source to hold business behavior.
+  Put the behavior on the real owning class or use case instead.
+- Do not create classes that exist only to wrap one or more `@classmethod` helpers. A class must
+  represent a real domain concept, interface, adapter, provider, guard, schema, model, or service.
+- Top-level functions are acceptable when the framework or tool naturally requires them or when a
+  callable class would add ceremony without improving ownership: app factories, Litestar lifespan
+  hooks, CLI commands, Alembic migration functions, and small pure infrastructure entrypoints.
+- When choosing between a function and a method, prefer the shape that expresses real ownership.
+  Do not move code into a class solely to satisfy a stylistic ban on functions.
+
 ## HTTP and Schemas
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.

@@ -35,3 +35,12 @@ class LabeledStrEnum(StrEnum):
 class PublishStatusEnum(LabeledStrEnum):
     DRAFT = "Draft", "Черновик"
     PUBLISHED = "Published", "Опубликовано"
+
+    @classmethod
+    def from_storage_value(cls, value: Self | str) -> Self:
+        if isinstance(value, cls):
+            return value
+        try:
+            return cls.from_value(value)
+        except ValueError:
+            return cls[value]

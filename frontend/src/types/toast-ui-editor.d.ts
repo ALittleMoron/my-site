@@ -13,7 +13,10 @@ declare module '@toast-ui/editor' {
       change?: () => void;
     };
     hooks?: {
-      addImageBlobHook?: (blob: Blob | File, callback: (url: string, altText?: string) => void) => void;
+      addImageBlobHook?: (
+        blob: Blob | File,
+        callback: (url: string, altText?: string) => void,
+      ) => void;
     };
   }
 

@@ -1,7 +1,19 @@
 from abc import ABC, abstractmethod
+from datetime import date
+from uuid import UUID
 
 from core.enums import PublishStatusEnum
-from core.notes.schemas import Note, NoteFilters, NoteList, NoteTree, Tag, Tags
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
+from core.notes.schemas import (
+    Note,
+    NoteAnalyticsStats,
+    NoteFilters,
+    NotePublicStatsCollection,
+    Notes,
+    NoteTree,
+    Tag,
+    Tags,
+)
 from core.types import IntId
 
 
@@ -11,7 +23,7 @@ class NotesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_notes(self, *, filters: NoteFilters) -> NoteList:
+    async def list_notes(self, *, filters: NoteFilters) -> Notes:
         raise NotImplementedError
 
     @abstractmethod
@@ -65,4 +77,44 @@ class NotesStorage(ABC):
 
     @abstractmethod
     async def restore_tag(self, *, tag_id: IntId) -> None:
+        raise NotImplementedError
+
+
+class NoteAnalyticsStorage(ABC):
+    @abstractmethod
+    async def increment_view(
+        self,
+        *,
+        note_id: UUID,
+        source_category: NoteViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def increment_engaged_view(
+        self,
+        *,
+        note_id: UUID,
+        source_category: NoteViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_public_stats(self, *, note_ids: list[UUID]) -> NotePublicStatsCollection:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_reaction(
+        self,
+        *,
+        note_id: UUID,
+        note_scoped_voter_hash: str,
+        reaction_kind: NoteReactionKind | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
         raise NotImplementedError

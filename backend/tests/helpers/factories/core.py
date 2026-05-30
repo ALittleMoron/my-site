@@ -23,7 +23,7 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
-from core.notes.schemas import Note, NoteList, NoteTags, Tag, Tags
+from core.notes.schemas import Note, NoteReactionCounts, Notes, Tag, Tags
 from core.schemas import Secret
 from core.types import IntId, SearchName
 
@@ -256,7 +256,7 @@ class CoreFactoryHelper:
                 if updated_at is not None
                 else now
             ),
-            tags=NoteTags(values=tags or []),
+            tags=Tags(values=tags or []),
         )
 
     @classmethod
@@ -265,8 +265,8 @@ class CoreFactoryHelper:
         notes: list[Note] | None = None,
         total_count: int = 0,
         total_pages: int = 0,
-    ) -> NoteList:
-        return NoteList(notes=notes or [], total_count=total_count, total_pages=total_pages)
+    ) -> Notes:
+        return Notes(values=notes or [], total_count=total_count, total_pages=total_pages)
 
     @classmethod
     def tag(
@@ -290,6 +290,23 @@ class CoreFactoryHelper:
     @classmethod
     def tags(cls, values: list[Tag] | None = None) -> Tags:
         return Tags(values=values or [])
+
+    @classmethod
+    def note_reaction_counts(
+        cls,
+        heart: int = 0,
+        fire: int = 0,
+        thinking: int = 0,
+        neutral: int = 0,
+        poop: int = 0,
+    ) -> NoteReactionCounts:
+        return NoteReactionCounts(
+            heart=heart,
+            fire=fire,
+            thinking=thinking,
+            neutral=neutral,
+            poop=poop,
+        )
 
     @classmethod
     def jwt_user(

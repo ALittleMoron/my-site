@@ -32,10 +32,7 @@ export class MatrixResourcePickerComponent {
 
   attach(resource: MatrixResource): void {
     if (this.resources().some((item) => !item.isNew && item.id === resource.id)) return;
-    this.resourcesChange.emit([
-      ...this.resources(),
-      { ...resource, context: '', isNew: false },
-    ]);
+    this.resourcesChange.emit([...this.resources(), { ...resource, context: '', isNew: false }]);
   }
 
   addNew(): void {

@@ -13,19 +13,36 @@ import { combineLatest } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { NoteDetail, NoteList, NotePayload, NoteTag, NoteTree } from '../../models/notes.model';
+import {
+  NoteDetail,
+  NoteList,
+  NotePayload,
+  NoteReactionKind,
+  NoteStats,
+  NoteTag,
+  NoteTree,
+} from '../../models/notes.model';
 import { NotesService } from '../../services/notes.service';
 import { NoteDetailComponent } from './components/note-detail/note-detail.component';
 import { NoteFormComponent } from './components/note-form/note-form.component';
 import { NoteListComponent } from './components/note-list/note-list.component';
+import { NotesStatsPanelComponent } from './components/notes-stats-panel/notes-stats-panel.component';
 import { NotesSidePanelComponent } from './components/notes-side-panel/notes-side-panel.component';
 
 const PAGE_SIZE = 10;
 const SIDE_PANEL_STORAGE_KEY = 'notesSidePanelOpen';
+const ENGAGED_VIEW_DELAY_MS = 30_000;
+const ENGAGED_VIEW_TICK_MS = 1_000;
+
+interface EngagedViewState {
+  slug: string;
+  visibleMs: number;
+}
 
 @Component({
   selector: 'app-notes-page',
@@ -37,6 +54,7 @@ const SIDE_PANEL_STORAGE_KEY = 'notesSidePanelOpen';
     NoteDetailComponent,
     NoteFormComponent,
     NoteListComponent,
+    NotesStatsPanelComponent,
     NotesSidePanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,9 +66,13 @@ export class NotesPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
+  private readonly anonymousReactionService = inject(AnonymousReactionService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private engagedViewTimerId: ReturnType<typeof setInterval> | null = null;
+  private engagedViewState: EngagedViewState | null = null;
+  private readonly trackedEngagedViewSlugs = new Set<string>();
 
   readonly isAdmin = this.authService.isAdmin;
   readonly sidePanelOpen = signal(localStorage.getItem(SIDE_PANEL_STORAGE_KEY) === 'true');
@@ -63,6 +85,8 @@ export class NotesPageComponent implements OnInit {
   readonly tree = signal<NoteTree>({ folders: [] });
   readonly tags = signal<NoteTag[]>([]);
   readonly selectedNote = signal<NoteDetail | null>(null);
+  readonly selectedReaction = signal<NoteReactionKind | null>(null);
+  readonly reactionLoading = signal(false);
 
   readonly listLoading = signal(false);
   readonly listError = signal<ApiError | null>(null);
@@ -72,6 +96,12 @@ export class NotesPageComponent implements OnInit {
   readonly formVisible = signal(false);
   readonly formNote = signal<NoteDetail | null>(null);
   readonly formError = signal<ApiError | null>(null);
+  readonly statsVisible = signal(false);
+  readonly stats = signal<NoteStats | null>(null);
+  readonly statsLoading = signal(false);
+  readonly statsError = signal<ApiError | null>(null);
+  readonly statsDateFrom = signal(formatDateInput(daysBefore(new Date(), 30)));
+  readonly statsDateTo = signal(formatDateInput(new Date()));
 
   readonly activeTags = computed(() =>
     [...this.tags()].filter((tag) => tag.deletedAt === null).sort(compareTags),
@@ -93,6 +123,7 @@ export class NotesPageComponent implements OnInit {
     });
     this.loadTags();
     this.loadTree();
+    this.destroyRef.onDestroy(() => this.clearEngagedViewTimer());
     combineLatest([this.route.paramMap, this.route.queryParamMap])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([params, query]) => {
@@ -103,7 +134,9 @@ export class NotesPageComponent implements OnInit {
         if (slug) {
           this.loadDetail(slug);
         } else {
+          this.clearEngagedViewTimer();
           this.selectedNote.set(null);
+          this.selectedReaction.set(null);
           this.loadNotes();
         }
       });
@@ -252,6 +285,89 @@ export class NotesPageComponent implements OnInit {
       });
   }
 
+  selectReaction(kind: NoteReactionKind): void {
+    const note = this.selectedNote();
+    if (!note || note.publishStatus !== 'Published') return;
+    const previousReaction = this.selectedReaction();
+    const nextReaction = previousReaction === kind ? null : kind;
+    this.reactionLoading.set(true);
+    this.notesService
+      .setReaction(note.slug, {
+        reactionKind: nextReaction,
+        clientToken: this.anonymousReactionService.getOrCreateClientToken(),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.selectedReaction.set(nextReaction);
+          this.anonymousReactionService.setReaction(note.slug, nextReaction);
+          this.selectedNote.set(
+            applyReactionChange({
+              note,
+              previousReaction,
+              nextReaction,
+            }),
+          );
+          this.reactionLoading.set(false);
+        },
+        error: () => {
+          this.reactionLoading.set(false);
+          this.notifications.error('Не удалось сохранить реакцию.');
+        },
+      });
+  }
+
+  toggleStats(): void {
+    this.statsVisible.update((visible) => {
+      const next = !visible;
+      if (next && this.stats() === null) {
+        this.loadStats();
+      }
+      return next;
+    });
+  }
+
+  setStatsDateFrom(value: string): void {
+    this.statsDateFrom.set(value);
+  }
+
+  setStatsDateTo(value: string): void {
+    this.statsDateTo.set(value);
+  }
+
+  loadStats(): void {
+    this.statsLoading.set(true);
+    this.statsError.set(null);
+    this.notesService
+      .getStats({
+        dateFrom: this.statsDateFrom(),
+        dateTo: this.statsDateTo(),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stats) => {
+          this.stats.set(stats);
+          this.statsLoading.set(false);
+        },
+        error: (err: ApiError) => {
+          this.statsError.set(err);
+          this.statsLoading.set(false);
+        },
+      });
+  }
+
+  exportStatsCsv(): void {
+    const stats = this.stats();
+    if (!stats) return;
+    const csv = buildStatsCsv(stats);
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `notes-stats-${stats.dateFrom}-${stats.dateTo}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   loadNotes(): void {
     this.listLoading.set(true);
     this.listError.set(null);
@@ -276,6 +392,7 @@ export class NotesPageComponent implements OnInit {
   }
 
   loadDetail(slug: string): void {
+    this.clearEngagedViewTimer();
     this.detailLoading.set(true);
     this.detailError.set(null);
     this.notesService
@@ -284,6 +401,10 @@ export class NotesPageComponent implements OnInit {
       .subscribe({
         next: (note) => {
           this.selectedNote.set(note);
+          this.selectedReaction.set(
+            toNoteReactionKind(this.anonymousReactionService.getReaction(note.slug)),
+          );
+          this.scheduleEngagedView(note);
           this.detailLoading.set(false);
         },
         error: (err: ApiError) => {
@@ -312,6 +433,52 @@ export class NotesPageComponent implements OnInit {
         error: () => this.tree.set({ folders: [] }),
       });
   }
+
+  private scheduleEngagedView(note: NoteDetail): void {
+    if (this.isAdmin() || note.publishStatus !== 'Published') return;
+    if (this.trackedEngagedViewSlugs.has(note.slug)) return;
+    this.engagedViewState = {
+      slug: note.slug,
+      visibleMs: 0,
+    };
+    this.engagedViewTimerId = setInterval(
+      () => this.trackEngagedViewProgress(),
+      ENGAGED_VIEW_TICK_MS,
+    );
+  }
+
+  private trackEngagedViewProgress(): void {
+    const state = this.engagedViewState;
+    if (state === null || document.visibilityState !== 'visible') return;
+    state.visibleMs += ENGAGED_VIEW_TICK_MS;
+    if (state.visibleMs < ENGAGED_VIEW_DELAY_MS) return;
+    this.trackScheduledEngagedView();
+  }
+
+  private trackScheduledEngagedView(): void {
+    const state = this.engagedViewState;
+    if (state === null) return;
+    if (this.engagedViewTimerId !== null) {
+      clearInterval(this.engagedViewTimerId);
+    }
+    this.engagedViewTimerId = null;
+    this.engagedViewState = null;
+    this.notesService
+      .trackEngagedView(state.slug)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.trackedEngagedViewSlugs.add(state.slug),
+        error: () => undefined,
+      });
+  }
+
+  private clearEngagedViewTimer(): void {
+    if (this.engagedViewTimerId !== null) {
+      clearInterval(this.engagedViewTimerId);
+    }
+    this.engagedViewTimerId = null;
+    this.engagedViewState = null;
+  }
 }
 
 function readPage(value: string | null): number {
@@ -321,4 +488,67 @@ function readPage(value: string | null): number {
 
 function compareTags(a: NoteTag, b: NoteTag): number {
   return a.name.localeCompare(b.name, 'ru');
+}
+
+function toNoteReactionKind(value: string | null): NoteReactionKind | null {
+  if (
+    value === 'heart' ||
+    value === 'fire' ||
+    value === 'thinking' ||
+    value === 'neutral' ||
+    value === 'poop'
+  ) {
+    return value;
+  }
+  return null;
+}
+
+function applyReactionChange(params: {
+  note: NoteDetail;
+  previousReaction: NoteReactionKind | null;
+  nextReaction: NoteReactionKind | null;
+}): NoteDetail {
+  const reactionCounts = { ...params.note.reactionCounts };
+  if (params.previousReaction !== null) {
+    reactionCounts[params.previousReaction] = Math.max(
+      0,
+      reactionCounts[params.previousReaction] - 1,
+    );
+  }
+  if (params.nextReaction !== null) {
+    reactionCounts[params.nextReaction] += 1;
+  }
+  return { ...params.note, reactionCounts };
+}
+
+function daysBefore(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() - days);
+  return result;
+}
+
+function formatDateInput(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function buildStatsCsv(stats: NoteStats): string {
+  const rows = [
+    ['title', 'slug', 'views', 'engaged_views', 'heart', 'fire', 'thinking', 'neutral', 'poop'],
+    ...stats.notes.map((note) => [
+      note.title,
+      note.slug,
+      String(note.viewCount),
+      String(note.engagedViewCount),
+      String(note.reactionCounts.heart),
+      String(note.reactionCounts.fire),
+      String(note.reactionCounts.thinking),
+      String(note.reactionCounts.neutral),
+      String(note.reactionCounts.poop),
+    ]),
+  ];
+  return rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+}
+
+function escapeCsvCell(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
 }

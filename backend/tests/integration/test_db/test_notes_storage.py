@@ -98,7 +98,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in result.notes] == ["published-python"]
+        assert [note.slug for note in result.values] == ["published-python"]
         assert result.total_count == 1
         assert result.total_pages == 1
 
@@ -135,7 +135,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(page=1, page_size=10, only_published=False, tag_slug=None),
         )
 
-        assert [note.slug for note in result.notes] == [
+        assert [note.slug for note in result.values] == [
             "newer-published",
             "older-published",
             "draft",

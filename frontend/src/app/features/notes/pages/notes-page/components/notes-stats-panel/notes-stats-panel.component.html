@@ -1,0 +1,77 @@
+<section class="border rounded p-3 mb-4" aria-label="Статистика заметок">
+  <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+    <label class="form-label mb-0">
+      <span class="small text-body-secondary d-block mb-1">С</span>
+      <input
+        type="date"
+        class="form-control form-control-sm"
+        [value]="dateFrom()"
+        (input)="onDateFromInput($event)"
+      />
+    </label>
+    <label class="form-label mb-0">
+      <span class="small text-body-secondary d-block mb-1">По</span>
+      <input
+        type="date"
+        class="form-control form-control-sm"
+        [value]="dateTo()"
+        (input)="onDateToInput($event)"
+      />
+    </label>
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh.emit()">
+      Обновить
+    </button>
+    @if (stats()) {
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="exportCsv.emit()">
+        CSV
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else if (error()) {
+    <app-error-message [error]="error()!" (retry)="refresh.emit()" />
+  } @else if (stats()) {
+    <div class="d-flex flex-wrap gap-3 small text-body-secondary mb-3">
+      <span>Просмотры: {{ stats()!.totals.viewCount }}</span>
+      <span>Вовлечённые: {{ stats()!.totals.engagedViewCount }}</span>
+      <span>Реакции: {{ stats()!.totals.reactionCount }}</span>
+    </div>
+
+    @if (stats()!.notes.length === 0) {
+      <app-empty-state message="За выбранный период статистики нет." />
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Заметка</th>
+              <th scope="col" class="text-end">Просмотры</th>
+              <th scope="col" class="text-end">Вовлечённые</th>
+              <th scope="col" class="text-end">❤️</th>
+              <th scope="col" class="text-end">🔥</th>
+              <th scope="col" class="text-end">🤔</th>
+              <th scope="col" class="text-end">😐</th>
+              <th scope="col" class="text-end">💩</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (note of stats()!.notes; track note.noteId) {
+              <tr>
+                <td>{{ note.title }}</td>
+                <td class="text-end">{{ note.viewCount }}</td>
+                <td class="text-end">{{ note.engagedViewCount }}</td>
+                <td class="text-end">{{ note.reactionCounts.heart }}</td>
+                <td class="text-end">{{ note.reactionCounts.fire }}</td>
+                <td class="text-end">{{ note.reactionCounts.thinking }}</td>
+                <td class="text-end">{{ note.reactionCounts.neutral }}</td>
+                <td class="text-end">{{ note.reactionCounts.poop }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

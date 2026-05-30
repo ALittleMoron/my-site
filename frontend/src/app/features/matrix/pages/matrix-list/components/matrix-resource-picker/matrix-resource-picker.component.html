@@ -14,7 +14,11 @@
   @if (searchResults().length > 0) {
     <div class="list-group mb-3">
       @for (resource of searchResults(); track resource.id) {
-        <button type="button" class="list-group-item list-group-item-action" (click)="attach(resource)">
+        <button
+          type="button"
+          class="list-group-item list-group-item-action"
+          (click)="attach(resource)"
+        >
           <span class="d-block fw-semibold">{{ resource.name }}</span>
           <span class="small text-muted">{{ resource.url }}</span>
         </button>
@@ -42,7 +46,9 @@
       />
     </div>
     <div class="col-md-2 d-grid">
-      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addNew()">Добавить</button>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addNew()">
+        Добавить
+      </button>
     </div>
   </div>
 
