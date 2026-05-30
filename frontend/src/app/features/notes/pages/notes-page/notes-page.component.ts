@@ -11,6 +11,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
@@ -51,6 +53,7 @@ interface EngagedViewState {
     EmptyStateComponent,
     ErrorMessageComponent,
     LoadingSpinnerComponent,
+    TranslatePipe,
     NoteDetailComponent,
     NoteFormComponent,
     NoteListComponent,
@@ -64,6 +67,7 @@ interface EngagedViewState {
 export class NotesPageComponent implements OnInit {
   private readonly notesService = inject(NotesService);
   private readonly authService = inject(AuthService);
+  private readonly i18n = inject(I18nService);
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
   private readonly anonymousReactionService = inject(AnonymousReactionService);
@@ -124,11 +128,12 @@ export class NotesPageComponent implements OnInit {
       this.publishedFrom() !== '' ||
       this.publishedTo() !== '',
   );
+  readonly dateLocale = computed(() => this.i18n.dateLocale());
 
   ngOnInit(): void {
-    this.seoService.setMeta({
-      title: 'Заметки',
-      description: 'Заметки и короткие материалы.',
+    this.seoService.setTranslatedMeta({
+      titleKey: 'notes.seo.title',
+      descriptionKey: 'notes.seo.description',
       canonicalPath: '/notes',
     });
     this.loadTags();
@@ -270,7 +275,7 @@ export class NotesPageComponent implements OnInit {
       : this.notesService.createNote(payload);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (note) => {
-        this.notifications.success('Заметка сохранена.');
+        this.notifications.success(this.i18n.translate('notes.notify.saved'));
         this.closeForm();
         this.loadTags();
         this.loadTree();
@@ -278,7 +283,7 @@ export class NotesPageComponent implements OnInit {
       },
       error: (err: ApiError) => {
         this.formError.set(err);
-        this.notifications.error('Не удалось сохранить заметку.');
+        this.notifications.error(this.i18n.translate('notes.notify.saveError'));
       },
     });
   }
@@ -291,13 +296,13 @@ export class NotesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Заметка опубликована.');
+          this.notifications.success(this.i18n.translate('notes.notify.published'));
           this.loadTree();
           this.loadDetail(note.slug);
         },
         error: (err: ApiError) => {
           this.detailError.set(err);
-          this.notifications.error('Не удалось опубликовать заметку.');
+          this.notifications.error(this.i18n.translate('notes.notify.publishError'));
         },
       });
   }
@@ -310,13 +315,13 @@ export class NotesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Заметка снята с публикации.');
+          this.notifications.success(this.i18n.translate('notes.notify.unpublished'));
           this.loadTree();
           this.loadDetail(note.slug);
         },
         error: (err: ApiError) => {
           this.detailError.set(err);
-          this.notifications.error('Не удалось снять заметку с публикации.');
+          this.notifications.error(this.i18n.translate('notes.notify.unpublishError'));
         },
       });
   }
@@ -329,13 +334,13 @@ export class NotesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Заметка удалена.');
+          this.notifications.success(this.i18n.translate('notes.notify.deleted'));
           this.loadTree();
           this.router.navigate(['/notes']);
         },
         error: (err: ApiError) => {
           this.detailError.set(err);
-          this.notifications.error('Не удалось удалить заметку.');
+          this.notifications.error(this.i18n.translate('notes.notify.deleteError'));
         },
       });
   }
@@ -367,7 +372,7 @@ export class NotesPageComponent implements OnInit {
         },
         error: () => {
           this.reactionLoading.set(false);
-          this.notifications.error('Не удалось сохранить реакцию.');
+          this.notifications.error(this.i18n.translate('notes.notify.reactionError'));
         },
       });
   }

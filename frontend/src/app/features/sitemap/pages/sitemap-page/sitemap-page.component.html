@@ -1,8 +1,14 @@
 <main class="container py-5">
-  <h1 class="fw-bold">Карта сайта</h1>
+  <h1 class="fw-bold">{{ 'sitemap.title' | t }}</h1>
   <ul class="list-unstyled mt-4">
-    <li><a routerLink="/about-me">Обо мне</a></li>
-    <li><a routerLink="/competency-matrix">Матрица компетенций</a></li>
-    <li><a routerLink="/notes">Заметки</a></li>
+    <li>
+      <a routerLink="/about-me">{{ 'shell.nav.about' | t }}</a>
+    </li>
+    <li>
+      <a routerLink="/competency-matrix">{{ 'shell.nav.matrix' | t }}</a>
+    </li>
+    <li>
+      <a routerLink="/notes">{{ 'shell.nav.notes' | t }}</a>
+    </li>
   </ul>
 </main>

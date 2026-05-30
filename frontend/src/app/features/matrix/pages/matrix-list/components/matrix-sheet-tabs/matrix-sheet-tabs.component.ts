@@ -1,8 +1,10 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-matrix-sheet-tabs',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-sheet-tabs.component.html',
 })

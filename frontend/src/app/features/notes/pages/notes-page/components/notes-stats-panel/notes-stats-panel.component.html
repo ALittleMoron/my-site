@@ -1,7 +1,7 @@
-<section class="border rounded p-3 mb-4" aria-label="Статистика заметок">
+<section class="border rounded p-3 mb-4" [attr.aria-label]="'notes.stats.aria' | t">
   <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
     <label class="form-label mb-0">
-      <span class="small text-body-secondary d-block mb-1">С</span>
+      <span class="small text-body-secondary d-block mb-1">{{ 'notes.stats.from' | t }}</span>
       <input
         type="date"
         class="form-control form-control-sm"
@@ -10,7 +10,7 @@
       />
     </label>
     <label class="form-label mb-0">
-      <span class="small text-body-secondary d-block mb-1">По</span>
+      <span class="small text-body-secondary d-block mb-1">{{ 'notes.stats.to' | t }}</span>
       <input
         type="date"
         class="form-control form-control-sm"
@@ -19,7 +19,7 @@
       />
     </label>
     <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh.emit()">
-      Обновить
+      {{ 'shared.update' | t }}
     </button>
     @if (stats()) {
       <button type="button" class="btn btn-sm btn-outline-secondary" (click)="exportCsv.emit()">
@@ -29,26 +29,30 @@
   </div>
 
   @if (loading()) {
-    <app-loading-spinner />
+    <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
   } @else if (error()) {
-    <app-error-message [error]="error()!" (retry)="refresh.emit()" />
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="refresh.emit()"
+    />
   } @else if (stats()) {
     <div class="d-flex flex-wrap gap-3 small text-body-secondary mb-3">
-      <span>Просмотры: {{ stats()!.totals.viewCount }}</span>
-      <span>Вовлечённые: {{ stats()!.totals.engagedViewCount }}</span>
-      <span>Реакции: {{ stats()!.totals.reactionCount }}</span>
+      <span>{{ 'notes.stats.views' | t: { count: stats()!.totals.viewCount } }}</span>
+      <span>{{ 'notes.stats.engaged' | t: { count: stats()!.totals.engagedViewCount } }}</span>
+      <span>{{ 'notes.stats.reactions' | t: { count: stats()!.totals.reactionCount } }}</span>
     </div>
 
     @if (stats()!.notes.length === 0) {
-      <app-empty-state message="За выбранный период статистики нет." />
+      <app-empty-state [message]="'notes.stats.empty' | t" />
     } @else {
       <div class="table-responsive">
         <table class="table table-sm align-middle">
           <thead>
             <tr>
-              <th scope="col">Заметка</th>
-              <th scope="col" class="text-end">Просмотры</th>
-              <th scope="col" class="text-end">Вовлечённые</th>
+              <th scope="col">{{ 'notes.stats.note' | t }}</th>
+              <th scope="col" class="text-end">{{ 'notes.stats.viewsColumn' | t }}</th>
+              <th scope="col" class="text-end">{{ 'notes.stats.engagedColumn' | t }}</th>
               <th scope="col" class="text-end">❤️</th>
               <th scope="col" class="text-end">🔥</th>
               <th scope="col" class="text-end">🤔</th>

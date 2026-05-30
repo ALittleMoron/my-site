@@ -1,25 +1,25 @@
 @if (loading()) {
-  <app-loading-spinner />
+  <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
 } @else if (error()) {
-  <app-error-message [error]="error()!" />
+  <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" />
 } @else if (question()) {
   <div class="question-detail">
-    <h2 class="h5">Вопрос:</h2>
+    <h2 class="h5">{{ 'matrix.detail.question' | t }}</h2>
     <p>{{ question()!.question }}</p>
 
     <hr />
 
-    <h2 class="h5">Ответ:</h2>
+    <h2 class="h5">{{ 'matrix.detail.answer' | t }}</h2>
     <div [innerHTML]="answerHtml()"></div>
 
     <hr />
 
-    <h2 class="h5">Ответ, который ожидается на собеседовании:</h2>
+    <h2 class="h5">{{ 'matrix.detail.expectedAnswer' | t }}</h2>
     <div [innerHTML]="interviewAnswerHtml()"></div>
 
     @if (question()!.resources.length > 0) {
       <hr />
-      <h2 class="h5">Внешние ресурсы:</h2>
+      <h2 class="h5">{{ 'matrix.detail.resources' | t }}</h2>
       <ul class="list-unstyled">
         @for (resource of question()!.resources; track resource.id) {
           <li class="mt-2">
@@ -43,19 +43,21 @@
       <hr />
       <div class="d-flex gap-2 mt-2">
         <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">
-          Редактировать
+          {{ 'shared.edit' | t }}
         </button>
         @if (isDraft()) {
           <button type="button" class="btn btn-sm btn-success" (click)="publish.emit()">
-            Опубликовать
+            {{ 'shared.publish' | t }}
           </button>
         }
         @if (isPublished()) {
           <button type="button" class="btn btn-sm btn-warning" (click)="unpublish.emit()">
-            Снять с публикации
+            {{ 'shared.unpublish' | t }}
           </button>
         }
-        <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">Удалить</button>
+        <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">
+          {{ 'shared.delete' | t }}
+        </button>
       </div>
     }
   </div>

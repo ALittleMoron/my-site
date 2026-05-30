@@ -12,6 +12,12 @@ class APIHelper:
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
+    def get_i18n_languages(self) -> Response:
+        return self.client.get("/api/i18n/languages")
+
+    def get_i18n_bundle(self, language: str) -> Response:
+        return self.client.get(f"/api/i18n/bundles/{language}")
+
     def get_search_competency_matrix_resources(
         self,
         search_name: str,

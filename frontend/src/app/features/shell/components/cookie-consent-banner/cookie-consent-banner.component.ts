@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ConsentService } from '../../../../core/privacy/consent.service';
 
 @Component({
   selector: 'app-cookie-consent-banner',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!consent.cookieConsentAccepted()) {
@@ -14,11 +16,10 @@ import { ConsentService } from '../../../../core/privacy/consent.service';
       >
         <div class="container d-flex flex-column flex-md-row gap-3 align-items-md-center">
           <p class="m-0 flex-grow-1">
-            Сайт использует локальное хранилище для базовой работы интерфейса, сохранения настроек и
-            анонимных реакций. Просмотры считаются агрегированно, без аналитических cookies.
+            {{ 'shell.cookie.text' | t }}
           </p>
           <button type="button" class="btn button-active" (click)="consent.acceptCookieConsent()">
-            Хорошо
+            {{ 'shell.cookie.accept' | t }}
           </button>
         </div>
       </section>

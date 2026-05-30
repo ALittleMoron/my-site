@@ -24,6 +24,8 @@ import {
 } from '../../../../core/layout/layout-preferences.service';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -51,6 +53,7 @@ const RESOURCE_SEARCH_LIMIT = 10;
     MatrixGroupedGridComponent,
     MatrixQuestionDetailComponent,
     MatrixQuestionFormComponent,
+    TranslatePipe,
   ],
   templateUrl: './matrix-list.component.html',
   styleUrl: './matrix-list.component.scss',
@@ -61,6 +64,7 @@ export class MatrixListComponent implements OnInit {
   private readonly layoutPreferences = inject(LayoutPreferencesService);
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly resourceSearchTerm = new Subject<string>();
 
@@ -114,9 +118,9 @@ export class MatrixListComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.seoService.setMeta({
-      title: 'Матрица компетенций',
-      description: 'Матрица компетенций Junior/Middle/Senior разработчика.',
+    this.seoService.setTranslatedMeta({
+      titleKey: 'matrix.seo.title',
+      descriptionKey: 'matrix.seo.description',
       canonicalPath: '/competency-matrix',
     });
     this.loadSheets();
@@ -133,7 +137,7 @@ export class MatrixListComponent implements OnInit {
           return this.matrixService.searchResources(trimmedSearchName, RESOURCE_SEARCH_LIMIT).pipe(
             catchError(() => {
               this.resourceSearchResults.set([]);
-              this.notifications.error('Не удалось найти ресурсы.');
+              this.notifications.error(this.i18n.translate('matrix.notify.resourcesError'));
               return EMPTY;
             }),
           );
@@ -265,13 +269,13 @@ export class MatrixListComponent implements OnInit {
       next: (detail) => {
         this.selectedQuestion.set(detail);
         this.detailMode.set('view');
-        this.notifications.success('Вопрос сохранён.');
+        this.notifications.success(this.i18n.translate('matrix.notify.saved'));
         const sheet = this.selectedSheet();
         if (sheet) this.loadQuestions(sheet);
       },
       error: (err: ApiError) => {
         this.detailError.set(err);
-        this.notifications.error('Не удалось сохранить вопрос.');
+        this.notifications.error(this.i18n.translate('matrix.notify.saveError'));
       },
     });
   }
@@ -282,13 +286,13 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Вопрос опубликован.');
+          this.notifications.success(this.i18n.translate('matrix.notify.published'));
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
-          this.notifications.error('Не удалось опубликовать вопрос.');
+          this.notifications.error(this.i18n.translate('matrix.notify.publishError'));
         },
       });
   }
@@ -299,13 +303,13 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Вопрос снят с публикации.');
+          this.notifications.success(this.i18n.translate('matrix.notify.unpublished'));
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
-          this.notifications.error('Не удалось снять вопрос с публикации.');
+          this.notifications.error(this.i18n.translate('matrix.notify.unpublishError'));
         },
       });
   }
@@ -316,14 +320,14 @@ export class MatrixListComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.notifications.success('Вопрос удалён.');
+          this.notifications.success(this.i18n.translate('matrix.notify.deleted'));
           this.closeDetail();
           const sheet = this.selectedSheet();
           if (sheet) this.loadQuestions(sheet);
         },
         error: (err: ApiError) => {
           this.error.set(err);
-          this.notifications.error('Не удалось удалить вопрос.');
+          this.notifications.error(this.i18n.translate('matrix.notify.deleteError'));
         },
       });
   }

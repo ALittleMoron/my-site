@@ -7,13 +7,18 @@ import { AuthModalService } from './core/auth/auth-modal.service';
 import { ThemeService } from './core/layout/theme.service';
 import { NotificationService } from './core/notifications/notification.service';
 import { ConsentService } from './core/privacy/consent.service';
+import { I18nService } from './core/i18n/i18n.service';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let isLoginOpen: ReturnType<typeof signal<boolean>>;
+  let startupError: ReturnType<typeof signal<boolean>>;
+  let retryStartup: jest.Mock;
 
   beforeEach(async () => {
     isLoginOpen = signal(false);
+    startupError = signal(false);
+    retryStartup = jest.fn().mockReturnValue({ subscribe: jest.fn() });
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],
@@ -57,6 +62,36 @@ describe('AppComponent', () => {
             acceptCookieConsent: jest.fn(),
           },
         },
+        {
+          provide: I18nService,
+          useValue: {
+            language: signal('ru'),
+            languages: signal([
+              { code: 'ru', label: 'Русский' },
+              { code: 'en', label: 'English' },
+            ]),
+            startupError,
+            retryStartup,
+            translate: (key: string) => {
+              const messages: Record<string, string> = {
+                'i18n.startupError.title': 'Failed to load localization',
+                'i18n.startupError.message': 'Check the API connection and try again.',
+                'i18n.startupError.retry': 'Retry',
+                'shell.nav.about': 'Обо мне',
+                'shell.nav.matrix': 'Матрица компетенций',
+                'shell.nav.notes': 'Заметки',
+                'shell.nav.toggleNavigation': 'Открыть навигацию',
+                'shell.theme.dark': 'Dark',
+                'shell.theme.light': 'Light',
+                'shell.theme.toggle': 'Переключить тему',
+                'shell.auth.login': 'Войти',
+                'shell.language.label': 'Язык',
+              };
+              return messages[key] ?? key;
+            },
+            switchLanguage: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -82,5 +117,23 @@ describe('AppComponent', () => {
 
   it('renders cookie consent banner host', () => {
     expect(fixture.nativeElement.querySelector('app-cookie-consent-banner')).not.toBeNull();
+  });
+
+  it('renders startup error instead of the app shell when i18n bootstrap failed', () => {
+    startupError.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-site-header')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Failed to load localization');
+  });
+
+  it('retries i18n startup from the startup error screen', () => {
+    startupError.set(true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    button.click();
+
+    expect(retryStartup).toHaveBeenCalled();
   });
 });

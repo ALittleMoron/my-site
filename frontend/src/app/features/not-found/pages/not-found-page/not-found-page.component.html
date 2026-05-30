@@ -1,5 +1,5 @@
 <main class="container py-5">
   <h1 class="fw-bold">404</h1>
-  <p class="text-secondary">Страница не найдена.</p>
-  <a routerLink="/about-me">Вернуться на главную</a>
+  <p class="text-secondary">{{ 'notFound.message' | t }}</p>
+  <a routerLink="/about-me">{{ 'notFound.home' | t }}</a>
 </main>

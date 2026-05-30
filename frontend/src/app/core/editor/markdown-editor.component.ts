@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type Editor from '@toast-ui/editor';
+import { I18nService } from '../i18n/i18n.service';
 import { EditorImageUploadService } from './editor-image-upload.service';
 
 @Component({
@@ -23,6 +24,7 @@ import { EditorImageUploadService } from './editor-image-upload.service';
 })
 export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly imageUpload = inject(EditorImageUploadService);
+  private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private editor: Editor | null = null;
   private syncingInput = false;
@@ -43,17 +45,14 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   async ngAfterViewInit(): Promise<void> {
-    const [{ default: Editor }, { default: ruRu }] = await Promise.all([
-      import('@toast-ui/editor'),
-      import('@toast-ui/editor/dist/i18n/ru-ru'),
-    ]);
-    Editor.setLanguage('ru-RU', ruRu);
+    const { default: Editor } = await import('@toast-ui/editor');
+    const language = await this.resolveEditorLanguage(Editor);
     this.editor = new Editor({
       el: this.editorHost.nativeElement,
       height: '360px',
       initialEditType: 'markdown',
       hideModeSwitch: true,
-      language: 'ru-RU',
+      language,
       previewStyle: 'vertical',
       usageStatistics: false,
       initialValue: this.value(),
@@ -84,5 +83,14 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.editor?.destroy();
+  }
+
+  private async resolveEditorLanguage(editorConstructor: typeof Editor): Promise<string> {
+    if (this.i18n.language() !== 'ru') {
+      return 'en-US';
+    }
+    const { default: ruRu } = await import('@toast-ui/editor/dist/i18n/ru-ru');
+    editorConstructor.setLanguage('ru-RU', ruRu);
+    return 'ru-RU';
   }
 }

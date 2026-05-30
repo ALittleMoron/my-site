@@ -11,5 +11,5 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   `,
 })
 export class EmptyStateComponent {
-  readonly message = input<string>('No items found.');
+  readonly message = input<string>('');
 }

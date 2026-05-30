@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { MatrixAttachedResource, MatrixResource } from '../../../../models/matrix-question.model';
 
 export interface MatrixResourceDraft extends MatrixAttachedResource {
@@ -9,7 +10,7 @@ export interface MatrixResourceDraft extends MatrixAttachedResource {
 @Component({
   selector: 'app-matrix-resource-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-resource-picker.component.html',
 })

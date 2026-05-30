@@ -1,23 +1,23 @@
 <main class="container py-4 mt-5">
   <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
     <div>
-      <h1 class="fw-bold mb-1">Заметки</h1>
+      <h1 class="fw-bold mb-1">{{ 'notes.title' | t }}</h1>
       @if (activeTag()) {
         <div class="small text-body-secondary">
-          Тег: <span class="fw-semibold">{{ activeTag()!.name }}</span>
+          {{ 'notes.activeTag' | t: { name: activeTag()!.name } }}
         </div>
       }
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-end">
       <button type="button" class="btn btn-outline-secondary" (click)="toggleSidePanel()">
-        Папки
+        {{ 'notes.folders' | t }}
       </button>
       @if (isAdmin()) {
         <button type="button" class="btn btn-primary" (click)="openCreate()">
-          Добавить заметку
+          {{ 'notes.add' | t }}
         </button>
         <button type="button" class="btn btn-outline-secondary" (click)="toggleStats()">
-          Статистика
+          {{ 'notes.stats.button' | t }}
         </button>
       }
     </div>
@@ -50,7 +50,7 @@
       <button
         type="button"
         class="notes-mobile-backdrop d-lg-none"
-        aria-label="Закрыть папки"
+        [attr.aria-label]="'shared.close' | t"
         (click)="closeSidePanel()"
       ></button>
     }
@@ -62,20 +62,20 @@
       >
         <div class="notes-filter-search">
           <label class="form-label small text-body-secondary mb-1" for="notesSearchQuery">
-            Поиск
+            {{ 'notes.filters.search' | t }}
           </label>
           <input
             id="notesSearchQuery"
             type="search"
             class="form-control"
-            placeholder="Заголовок или текст"
+            [attr.placeholder]="'notes.filters.searchPlaceholder' | t"
             [value]="searchQuery()"
             (input)="onSearchInput($event)"
           />
         </div>
         <div class="notes-filter-date">
           <label class="form-label small text-body-secondary mb-1" for="notesPublishedFrom">
-            C
+            {{ 'notes.filters.from' | t }}
           </label>
           <input
             id="notesPublishedFrom"
@@ -87,7 +87,7 @@
         </div>
         <div class="notes-filter-date">
           <label class="form-label small text-body-secondary mb-1" for="notesPublishedTo">
-            По
+            {{ 'notes.filters.to' | t }}
           </label>
           <input
             id="notesPublishedTo"
@@ -98,14 +98,14 @@
           />
         </div>
         <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-secondary">Найти</button>
+          <button type="submit" class="btn btn-secondary">{{ 'notes.filters.submit' | t }}</button>
           <button
             type="button"
             class="btn btn-outline-secondary"
             [disabled]="!hasListFilters()"
             (click)="clearListFilters()"
           >
-            Сбросить
+            {{ 'notes.filters.reset' | t }}
           </button>
         </div>
       </form>
@@ -125,7 +125,7 @@
           }
           @if (activeTagSlug()) {
             <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearTag()">
-              Сбросить тег
+              {{ 'notes.filters.resetTag' | t }}
             </button>
           }
         </div>
@@ -141,7 +141,7 @@
               (change)="setOnlyPublished(!onlyPublished())"
             />
             <label class="form-check-label" for="notesOnlyPublishedToggle">
-              Только опубликованные
+              {{ 'notes.filters.onlyPublished' | t }}
             </label>
           </div>
         }
@@ -152,6 +152,7 @@
           [note]="selectedNote()"
           [loading]="detailLoading()"
           [error]="detailError()"
+          [dateLocale]="dateLocale()"
           [isAdmin]="isAdmin()"
           [selectedReaction]="selectedReaction()"
           [reactionLoading]="reactionLoading()"
@@ -164,16 +165,21 @@
           (reactionSelected)="selectReaction($event)"
         />
       } @else if (listLoading()) {
-        <app-loading-spinner />
+        <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
       } @else if (listError()) {
-        <app-error-message [error]="listError()!" (retry)="loadNotes()" />
+        <app-error-message
+          [error]="listError()!"
+          [retryLabel]="'shared.retry' | t"
+          (retry)="loadNotes()"
+        />
       } @else if (isEmpty()) {
-        <app-empty-state message="Заметки не найдены." />
+        <app-empty-state [message]="'notes.empty' | t" />
       } @else if (notes()) {
         <app-note-list
           [notes]="notes()!.notes"
           [page]="page()"
           [totalPages]="notes()!.totalPages"
+          [dateLocale]="dateLocale()"
           [isAdmin]="isAdmin()"
           (noteSelected)="openNote($event)"
           (tagSelected)="selectTag($event)"
@@ -189,7 +195,7 @@
     class="modal d-block modal-backdrop-overlay"
     role="dialog"
     aria-modal="true"
-    aria-label="Форма заметки"
+    [attr.aria-label]="'notes.formAria' | t"
     (click)="closeForm()"
     (keyup.escape)="closeForm()"
     tabindex="0"
@@ -204,18 +210,18 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="h5 modal-title">
-            {{ formNote() ? 'Редактирование заметки' : 'Новая заметка' }}
+            {{ (formNote() ? 'notes.modal.edit' : 'notes.modal.create') | t }}
           </h2>
           <button
             type="button"
             class="btn-close"
-            aria-label="Закрыть"
+            [attr.aria-label]="'shared.close' | t"
             (click)="closeForm()"
           ></button>
         </div>
         <div class="modal-body">
           @if (formError()) {
-            <app-error-message [error]="formError()!" />
+            <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
           }
           <app-note-form
             [note]="formNote()"

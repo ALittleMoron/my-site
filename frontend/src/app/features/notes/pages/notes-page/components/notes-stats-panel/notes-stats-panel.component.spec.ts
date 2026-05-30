@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NotesStatsPanelComponent } from './notes-stats-panel.component';
 
 describe('NotesStatsPanelComponent', () => {
@@ -8,6 +9,7 @@ describe('NotesStatsPanelComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NotesStatsPanelComponent],
+      providers: [provideI18nTesting()],
     }).compileComponents();
     fixture = TestBed.createComponent(NotesStatsPanelComponent);
     fixture.componentRef.setInput('dateFrom', '2026-01-01');

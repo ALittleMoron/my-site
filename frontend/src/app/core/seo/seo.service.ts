@@ -1,6 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, effect, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from '../../../environments/environment';
+import { I18nService } from '../i18n/i18n.service';
 
 export interface SeoMeta {
   title: string;
@@ -10,16 +11,58 @@ export interface SeoMeta {
   ogImage?: string;
 }
 
-const SITE_NAME = 'Мой сайт';
+export interface TranslatedSeoMeta {
+  titleKey: string;
+  descriptionKey: string;
+  canonicalUrl?: string;
+  canonicalPath?: string;
+  ogImage?: string;
+}
+
+const SITE_NAME_KEY = 'app.siteName';
 const DEFAULT_OG_IMAGE = '/images/personal.jpg';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly i18n = inject(I18nService);
+  private translatedMeta: TranslatedSeoMeta | null = null;
+
+  constructor() {
+    effect(() => {
+      this.i18n.language();
+      if (this.translatedMeta) {
+        this.applyTranslatedMeta(this.translatedMeta);
+      }
+    });
+  }
 
   setMeta(data: SeoMeta): void {
-    const fullTitle = `${data.title} - ${SITE_NAME}`;
+    this.translatedMeta = null;
+    this.applyMeta(data, this.i18n.translate(SITE_NAME_KEY));
+  }
+
+  setTranslatedMeta(data: TranslatedSeoMeta): void {
+    this.translatedMeta = data;
+    this.applyTranslatedMeta(data);
+  }
+
+  private applyTranslatedMeta(data: TranslatedSeoMeta): void {
+    this.applyMeta(
+      {
+        title: this.i18n.translate(data.titleKey),
+        description: this.i18n.translate(data.descriptionKey),
+        canonicalUrl: data.canonicalUrl,
+        canonicalPath: data.canonicalPath,
+        ogImage: data.ogImage,
+      },
+      this.i18n.translate('app.siteName'),
+    );
+  }
+
+  private applyMeta(data: SeoMeta, siteName: string): void {
+    const fullTitle = `${data.title} - ${siteName}`;
     const image = data.ogImage ?? DEFAULT_OG_IMAGE;
     const url = data.canonicalUrl ?? this.buildCanonicalUrl(data.canonicalPath);
 
@@ -28,7 +71,7 @@ export class SeoService {
     this.meta.updateTag({ name: 'description', content: data.description });
 
     this.meta.updateTag({ property: 'og:type', content: 'website' });
-    this.meta.updateTag({ property: 'og:site_name', content: SITE_NAME });
+    this.meta.updateTag({ property: 'og:site_name', content: siteName });
     this.meta.updateTag({ property: 'og:title', content: fullTitle });
     this.meta.updateTag({ property: 'og:description', content: data.description });
     this.meta.updateTag({ property: 'og:url', content: url });

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { EmptyStateComponent } from '../../../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
@@ -8,7 +9,7 @@ import { NoteStats } from '../../../../models/notes.model';
 @Component({
   selector: 'app-notes-stats-panel',
   standalone: true,
-  imports: [EmptyStateComponent, ErrorMessageComponent, LoadingSpinnerComponent],
+  imports: [EmptyStateComponent, ErrorMessageComponent, LoadingSpinnerComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes-stats-panel.component.html',
 })

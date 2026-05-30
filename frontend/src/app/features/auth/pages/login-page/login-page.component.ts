@@ -3,17 +3,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login-page.component.html',
 })
 export class LoginPageComponent {
   private readonly authService = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
+  private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly form = new FormGroup({
@@ -46,7 +49,7 @@ export class LoginPageComponent {
           const message =
             err !== null && typeof err === 'object' && 'message' in err
               ? String((err as { message: unknown }).message)
-              : 'Login failed. Please try again.';
+              : this.i18n.translate('auth.login.error');
           this.loginError.set(message);
         },
       });

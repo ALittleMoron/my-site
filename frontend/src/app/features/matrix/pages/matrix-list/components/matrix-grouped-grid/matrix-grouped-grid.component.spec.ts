@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { MatrixGroupedGridComponent } from './matrix-grouped-grid.component';
 import { MatrixQuestionList } from '../../../../models/matrix-question.model';
 
@@ -33,6 +34,7 @@ describe('MatrixGroupedGridComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatrixGroupedGridComponent],
+      providers: [provideI18nTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixGroupedGridComponent);

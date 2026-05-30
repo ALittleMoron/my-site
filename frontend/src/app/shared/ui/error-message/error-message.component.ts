@@ -12,12 +12,13 @@ export interface ErrorDisplay {
     <div class="alert alert-danger d-flex align-items-center justify-content-between" role="alert">
       <span>{{ error().message }}</span>
       <button type="button" class="btn btn-sm btn-outline-danger ms-3" (click)="retry.emit()">
-        Retry
+        {{ retryLabel() }}
       </button>
     </div>
   `,
 })
 export class ErrorMessageComponent {
   readonly error = input.required<ErrorDisplay>();
+  readonly retryLabel = input.required<string>();
   readonly retry = output<void>();
 }

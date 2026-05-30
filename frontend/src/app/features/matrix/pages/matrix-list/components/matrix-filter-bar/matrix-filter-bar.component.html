@@ -19,8 +19,8 @@
         <input
           type="text"
           class="form-control form-bordered"
-          placeholder="Поиск навыков и вопросов"
-          aria-label="Поиск навыков и вопросов"
+          [placeholder]="'matrix.filter.searchPlaceholder' | t"
+          [attr.aria-label]="'matrix.filter.searchPlaceholder' | t"
           [value]="search()"
           (input)="onSearchInput($event)"
         />
@@ -28,10 +28,10 @@
           <button
             type="button"
             class="btn btn-sm button-active"
-            aria-label="Очистить поиск"
+            [attr.aria-label]="'matrix.filter.clearSearch' | t"
             (click)="clearSearch()"
           >
-            Очистить
+            {{ 'matrix.filter.clear' | t }}
           </button>
         }
       </div>
@@ -48,19 +48,21 @@
             [checked]="onlyPublished()"
             (change)="toggleOnlyPublished()"
           />
-          <label class="form-check-label" for="onlyPublishedToggle">Только опубликованные</label>
+          <label class="form-check-label" for="onlyPublishedToggle">
+            {{ 'matrix.filter.onlyPublished' | t }}
+          </label>
         </div>
       }
     </div>
 
     <div class="col-auto d-flex justify-content-end align-items-center gap-2 mt-2 mt-md-0">
-      <div class="btn-group" role="group" aria-label="Layout switcher">
+      <div class="btn-group" role="group" [attr.aria-label]="'matrix.filter.layout' | t">
         <button
           type="button"
           class="btn btn-sm"
           [class.button-active]="isListMode()"
           [class.button-inactive]="!isListMode()"
-          aria-label="List view"
+          [attr.aria-label]="'matrix.filter.listView' | t"
           (click)="setLayout('list')"
         >
           <svg
@@ -87,7 +89,7 @@
           class="btn btn-sm"
           [class.button-active]="isGridMode()"
           [class.button-inactive]="!isGridMode()"
-          aria-label="Grid view"
+          [attr.aria-label]="'matrix.filter.gridView' | t"
           (click)="setLayout('grid')"
         >
           <svg

@@ -34,6 +34,10 @@ Portfolio/notes site and knowledge database
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
+- UI localisation is backend-bundle driven: user-facing interface strings must come from the
+  backend i18n catalog, while database/content localisation is a separate later concern. Supported
+  languages must be represented by an enum, and the initial/default UI language must come from the
+  required `I18N_DEFAULT_LANGUAGE` environment setting.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains and `/api/*`, while frontend nginx serves the SPA and falls back to `index.html`.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created

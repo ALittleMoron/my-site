@@ -1,9 +1,11 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { MatrixQuestionList } from '../../../../models/matrix-question.model';
 
 @Component({
   selector: 'app-matrix-grouped-list',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-grouped-list.component.html',
 })
@@ -14,5 +16,9 @@ export class MatrixGroupedListComponent {
 
   selectQuestion(id: number): void {
     this.questionSelected.emit(id);
+  }
+
+  gradeLabelKey(grade: string): string {
+    return `enum.grade.${grade.replace('+', 'Plus')}`;
   }
 }

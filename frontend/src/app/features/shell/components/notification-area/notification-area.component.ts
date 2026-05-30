@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-notification-area',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (notificationService.notifications().length > 0) {
@@ -14,7 +16,7 @@ import { NotificationService } from '../../../../core/notifications/notification
             <button
               type="button"
               class="btn-close"
-              aria-label="Закрыть"
+              [attr.aria-label]="'shared.close' | t"
               (click)="notificationService.dismiss(notification.id)"
             ></button>
           </div>

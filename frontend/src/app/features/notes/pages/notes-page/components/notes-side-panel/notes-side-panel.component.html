@@ -1,15 +1,15 @@
 <div class="notes-panel-header d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h6 mb-0">Папки</h2>
+  <h2 class="h6 mb-0">{{ 'notes.folders' | t }}</h2>
   <button
     type="button"
     class="btn-close d-lg-none"
-    aria-label="Закрыть"
+    [attr.aria-label]="'shared.close' | t"
     (click)="closePanel.emit()"
   ></button>
 </div>
 
 @if (tree().folders.length === 0) {
-  <p class="text-body-secondary small mb-0">Заметок пока нет.</p>
+  <p class="text-body-secondary small mb-0">{{ 'notes.emptyTree' | t }}</p>
 } @else {
   <div class="vstack gap-2">
     @for (folder of tree().folders; track folder.folder) {
@@ -34,7 +34,7 @@
               >
                 <span class="d-block text-truncate">{{ note.title }}</span>
                 @if (note.publishStatus === 'Draft') {
-                  <span class="badge text-bg-warning mt-1">Черновик</span>
+                  <span class="badge text-bg-warning mt-1">{{ 'shared.draft' | t }}</span>
                 }
               </button>
             }

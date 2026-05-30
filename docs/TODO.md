@@ -407,7 +407,7 @@
 ### Other tasks
 
 - [ ] Split monorepo into separate repos: front, back, infra.
-- [ ] UI localisation
+- [x] UI localisation
 - [ ] Database localisation
 - [ ] Migrate from Makefile to Just
 - [ ] Cache on API get methods + cache invalidation on changes

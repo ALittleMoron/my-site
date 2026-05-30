@@ -2,10 +2,10 @@
   <table class="table competency-matrix-table align-top">
     <thead class="competency-matrix-header">
       <tr>
-        <th class="p-3 text-start">Раздел</th>
-        <th class="p-3 text-start">Подраздел</th>
+        <th class="p-3 text-start">{{ 'matrix.grid.section' | t }}</th>
+        <th class="p-3 text-start">{{ 'matrix.grid.subsection' | t }}</th>
         @for (grade of grades(); track grade) {
-          <th class="p-3 text-center">{{ grade }}</th>
+          <th class="p-3 text-center">{{ gradeLabelKey(grade) | t }}</th>
         }
       </tr>
     </thead>

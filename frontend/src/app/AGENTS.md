@@ -43,6 +43,17 @@ Never violate these boundaries:
 | `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
 | `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
 
+## I18n
+
+- Runtime i18n is loaded once on app startup from the backend: request available languages first,
+  then request the selected language bundle.
+- Do not hardcode user-facing interface strings in Angular templates or components. Use
+  `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
+- Persist only supported language codes returned by the backend. Do not introduce frontend-only
+  languages or language fallbacks that bypass the backend enum/catalog.
+- Do not localise database/content text in this layer yet; only interface chrome, labels,
+  validation copy, notifications, SEO chrome, and enum labels belong in the UI i18n bundle.
+
 ## `shared/ui/` Rules
 
 - Add a component here only when 2+ features already use it.

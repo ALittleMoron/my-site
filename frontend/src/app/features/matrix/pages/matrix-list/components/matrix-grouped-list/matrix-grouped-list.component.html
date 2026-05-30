@@ -10,7 +10,7 @@
           @for (grade of subsection.grades; track grade.grade) {
             <article class="col">
               <div class="card rounded-3 h-100">
-                <p class="ps-2 pt-2 mb-1 fw-semibold">{{ grade.grade }}</p>
+                <p class="ps-2 pt-2 mb-1 fw-semibold">{{ gradeLabelKey(grade.grade) | t }}</p>
                 <ul class="list-group list-group-flush mb-1 pb-1">
                   @for (question of grade.questions; track question.id) {
                     <li class="list-group-item">

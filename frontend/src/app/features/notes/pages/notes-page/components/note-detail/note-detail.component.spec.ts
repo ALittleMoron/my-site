@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NoteDetailComponent } from './note-detail.component';
 
 describe('NoteDetailComponent', () => {
   let fixture: ComponentFixture<NoteDetailComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [NoteDetailComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [NoteDetailComponent],
+      providers: [provideI18nTesting()],
+    }).compileComponents();
     fixture = TestBed.createComponent(NoteDetailComponent);
     fixture.componentRef.setInput('note', {
       id: '00000000-0000-0000-0000-000000000001',
@@ -25,6 +29,7 @@ describe('NoteDetailComponent', () => {
       tags: [{ id: 1, name: 'Python', slug: 'python', deletedAt: null }],
     });
     fixture.componentRef.setInput('selectedReaction', 'poop');
+    fixture.componentRef.setInput('dateLocale', 'ru-RU');
     fixture.detectChanges();
   });
 

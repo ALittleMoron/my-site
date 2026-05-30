@@ -6,7 +6,7 @@
     (click)="toggleNav()"
     aria-controls="navbarContent"
     [attr.aria-expanded]="isNavOpen()"
-    aria-label="Toggle navigation"
+    [attr.aria-label]="'shell.nav.toggleNavigation' | t"
   >
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -18,7 +18,7 @@
             class="nav-link link-colored"
             routerLink="/about-me"
             routerLinkActive="link-active"
-            aria-label="Обо мне"
+            [attr.aria-label]="'shell.nav.about' | t"
             (click)="closeNav()"
           >
             <svg
@@ -36,7 +36,7 @@
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>Обо мне</span>
+            <span>{{ 'shell.nav.about' | t }}</span>
           </a>
         </li>
         <li class="nav-item mx-3">
@@ -44,7 +44,7 @@
             class="nav-link link-colored"
             routerLink="/competency-matrix"
             routerLinkActive="link-active"
-            aria-label="Матрица компетенций"
+            [attr.aria-label]="'shell.nav.matrix' | t"
             (click)="closeNav()"
           >
             <svg
@@ -62,7 +62,7 @@
                 d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466zm-.068 1.873.22-.748 3.496 1.311a.5.5 0 0 0 .352 0l3.496-1.311.22.748L8 12.46z"
               />
             </svg>
-            <span>Матрица компетенций</span>
+            <span>{{ 'shell.nav.matrix' | t }}</span>
           </a>
         </li>
         <li class="nav-item mx-3">
@@ -70,7 +70,7 @@
             class="nav-link link-colored"
             routerLink="/notes"
             routerLinkActive="link-active"
-            aria-label="Заметки"
+            [attr.aria-label]="'shell.nav.notes' | t"
             (click)="closeNav()"
           >
             <svg
@@ -88,7 +88,7 @@
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
             </svg>
-            <span>Заметки</span>
+            <span>{{ 'shell.nav.notes' | t }}</span>
           </a>
         </li>
       </ul>
@@ -98,31 +98,54 @@
         type="button"
         class="btn button-inactive btn-sm"
         (click)="toggle()"
-        aria-label="Toggle theme"
+        [attr.aria-label]="'shell.theme.toggle' | t"
       >
         {{ toggleLabel() }}
       </button>
 
+      <div
+        class="btn-group btn-group-sm"
+        role="group"
+        [attr.aria-label]="'shell.language.label' | t"
+      >
+        @for (language of languageOptions(); track language.code) {
+          <button
+            type="button"
+            class="btn"
+            [class.btn-primary]="language.selected"
+            [class.button-inactive]="!language.selected"
+            [attr.aria-pressed]="language.selected"
+            [attr.title]="language.label"
+            (click)="switchLanguage(language.code)"
+          >
+            {{ language.shortLabel }}
+          </button>
+        }
+      </div>
+
       @if (isLoggedIn()) {
-        <span class="text-body-secondary small" [attr.aria-label]="'Logged in as ' + username()">
+        <span
+          class="text-body-secondary small"
+          [attr.aria-label]="'shell.auth.loggedInAs' | t: { username: username() ?? '' }"
+        >
           {{ username() }}
         </span>
         <button
           type="button"
           class="btn btn-outline-danger btn-sm"
           (click)="logout()"
-          aria-label="Выйти"
+          [attr.aria-label]="'shell.auth.logout' | t"
         >
-          Выйти
+          {{ 'shell.auth.logout' | t }}
         </button>
       } @else {
         <button
           type="button"
           class="btn button-inactive btn-sm"
           (click)="openLogin()"
-          aria-label="Войти"
+          [attr.aria-label]="'shell.auth.login' | t"
         >
-          Войти
+          {{ 'shell.auth.login' | t }}
         </button>
       }
     </div>

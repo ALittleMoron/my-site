@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatrixFilterBarComponent } from './matrix-filter-bar.component';
 import { MatrixLayoutMode } from '../../../../../../core/layout/layout-preferences.service';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
+import { MatrixFilterBarComponent } from './matrix-filter-bar.component';
 
 describe('MatrixFilterBarComponent', () => {
   let fixture: ComponentFixture<MatrixFilterBarComponent>;
@@ -9,6 +10,11 @@ describe('MatrixFilterBarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatrixFilterBarComponent],
+      providers: [
+        provideI18nTesting({
+          'matrix.filter.clearSearch': 'Очистить поиск',
+        }),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixFilterBarComponent);

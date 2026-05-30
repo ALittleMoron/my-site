@@ -10,6 +10,7 @@ import {
   MatrixResourcePickerComponent,
 } from '../matrix-resource-picker/matrix-resource-picker.component';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 
 interface MatrixQuestionForm {
   question: FormControl<string>;
@@ -25,7 +26,12 @@ interface MatrixQuestionForm {
 @Component({
   selector: 'app-matrix-question-form',
   standalone: true,
-  imports: [ReactiveFormsModule, MarkdownEditorComponent, MatrixResourcePickerComponent],
+  imports: [
+    ReactiveFormsModule,
+    MarkdownEditorComponent,
+    MatrixResourcePickerComponent,
+    TranslatePipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-form.component.html',
 })

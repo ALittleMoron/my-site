@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { NoteTree, NoteTreeFolder } from '../../../../models/notes.model';
 
 @Component({
   selector: 'app-notes-side-panel',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes-side-panel.component.html',
 })

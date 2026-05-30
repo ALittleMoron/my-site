@@ -6,8 +6,13 @@
   <form class="modal-dialog" [formGroup]="form" (ngSubmit)="login()" novalidate>
     <div class="modal-content" style="z-index: 1067">
       <div class="modal-header">
-        <h5 class="modal-title">Вход в систему</h5>
-        <button type="button" class="btn-close" aria-label="Закрыть" (click)="close()"></button>
+        <h5 class="modal-title">{{ 'auth.login.title' | t }}</h5>
+        <button
+          type="button"
+          class="btn-close"
+          [attr.aria-label]="'shared.close' | t"
+          (click)="close()"
+        ></button>
       </div>
 
       <div class="modal-body">
@@ -18,26 +23,26 @@
         }
 
         <div class="mb-3">
-          <label for="username" class="form-label">Имя пользователя</label>
+          <label for="username" class="form-label">{{ 'auth.login.username' | t }}</label>
           <input
             id="username"
             type="text"
             class="form-control"
             formControlName="username"
             autocomplete="username"
-            aria-label="Имя пользователя"
+            [attr.aria-label]="'auth.login.username' | t"
           />
         </div>
 
         <div class="mb-4">
-          <label for="password" class="form-label">Пароль</label>
+          <label for="password" class="form-label">{{ 'auth.login.password' | t }}</label>
           <input
             id="password"
             type="password"
             class="form-control"
             formControlName="password"
             autocomplete="current-password"
-            aria-label="Пароль"
+            [attr.aria-label]="'auth.login.password' | t"
           />
         </div>
       </div>
@@ -47,13 +52,13 @@
           type="submit"
           class="btn button-active"
           [disabled]="form.invalid || submitting()"
-          aria-label="Войти"
+          [attr.aria-label]="'auth.login.submit' | t"
         >
           @if (submitting()) {
             <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-            Вход...
+            {{ 'auth.login.submitting' | t }}
           } @else {
-            Войти
+            {{ 'auth.login.submit' | t }}
           }
         </button>
       </div>

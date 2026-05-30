@@ -57,6 +57,7 @@ jobs:
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           echo "VALKEY_HOST=${{ secrets.VALKEY_HOST }}" >> .env
           echo "VALKEY_PORT=${{ secrets.VALKEY_PORT }}" >> .env
+          echo "I18N_DEFAULT_LANGUAGE=${{ secrets.I18N_DEFAULT_LANGUAGE }}" >> .env
 
       - name: Sync infrastructure files to server
         uses: burnett01/rsync-deployments@7.0.2

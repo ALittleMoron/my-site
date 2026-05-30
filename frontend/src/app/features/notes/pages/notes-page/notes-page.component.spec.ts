@@ -11,6 +11,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
 import { SeoService } from '../../../../core/seo/seo.service';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { NoteDetail, NoteList, NoteStats, NoteTree } from '../../models/notes.model';
 import { NotesService } from '../../services/notes.service';
 import { NotesPageComponent } from './notes-page.component';
@@ -62,7 +63,8 @@ describe('NotesPageComponent', () => {
         provideRouter([]),
         { provide: NotesService, useValue: notesService },
         { provide: AuthService, useValue: { isAdmin: () => false } },
-        { provide: SeoService, useValue: { setMeta: jest.fn() } },
+        { provide: SeoService, useValue: { setTranslatedMeta: jest.fn() } },
+        provideI18nTesting(),
         {
           provide: NotificationService,
           useValue: { success: jest.fn(), error: jest.fn() },

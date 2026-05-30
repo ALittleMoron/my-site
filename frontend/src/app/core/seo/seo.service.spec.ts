@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Meta, Title } from '@angular/platform-browser';
+import { provideI18nTesting } from '../../testing/i18n-testing';
 import { SeoService } from './seo.service';
 
 describe('SeoService', () => {
@@ -8,7 +9,9 @@ describe('SeoService', () => {
   let metaService: Meta;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideI18nTesting()],
+    });
     service = TestBed.inject(SeoService);
     titleService = TestBed.inject(Title);
     metaService = TestBed.inject(Meta);

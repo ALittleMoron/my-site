@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { NoteSummary } from '../../../../models/notes.model';
 
 @Component({
   selector: 'app-note-list',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './note-list.component.html',
 })
@@ -11,6 +13,7 @@ export class NoteListComponent {
   readonly notes = input.required<NoteSummary[]>();
   readonly page = input.required<number>();
   readonly totalPages = input.required<number>();
+  readonly dateLocale = input.required<string>();
   readonly isAdmin = input(false);
 
   readonly noteSelected = output<string>();
@@ -21,7 +24,7 @@ export class NoteListComponent {
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
   noteDate(note: NoteSummary): string {
-    return formatDate(note.publishedAt ?? note.updatedAt);
+    return formatDate(note.publishedAt ?? note.updatedAt, this.dateLocale());
   }
 
   previousPage(): void {
@@ -37,6 +40,6 @@ export class NoteListComponent {
   }
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(new Date(value));
+function formatDate(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 }

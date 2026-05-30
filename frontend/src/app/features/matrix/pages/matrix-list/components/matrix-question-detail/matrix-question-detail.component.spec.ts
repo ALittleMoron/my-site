@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatrixQuestionDetailComponent } from './matrix-question-detail.component';
-import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
 import { ApiError } from '../../../../../../core/models/api-error.model';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
+import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
+import { MatrixQuestionDetailComponent } from './matrix-question-detail.component';
 
 const mockDetail: MatrixQuestionDetail = {
   id: 1,
@@ -31,6 +32,7 @@ describe('MatrixQuestionDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatrixQuestionDetailComponent],
+      providers: [provideI18nTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixQuestionDetailComponent);

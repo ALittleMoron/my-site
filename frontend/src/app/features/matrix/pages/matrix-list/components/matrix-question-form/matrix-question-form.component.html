@@ -1,30 +1,30 @@
 <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="mb-3">
-    <label class="form-label" for="matrixQuestion">Вопрос</label>
+    <label class="form-label" for="matrixQuestion">{{ 'matrix.form.question' | t }}</label>
     <input id="matrixQuestion" type="text" class="form-control" formControlName="question" />
   </div>
 
   <div class="row g-3">
     <div class="col-md-6">
-      <label class="form-label" for="matrixSheet">Лист</label>
+      <label class="form-label" for="matrixSheet">{{ 'matrix.form.sheet' | t }}</label>
       <input id="matrixSheet" type="text" class="form-control" formControlName="sheet" />
     </div>
     <div class="col-md-6">
-      <label class="form-label" for="matrixGrade">Грейд</label>
+      <label class="form-label" for="matrixGrade">{{ 'matrix.form.grade' | t }}</label>
       <select id="matrixGrade" class="form-select" formControlName="grade">
-        <option value="Junior">Junior</option>
-        <option value="Junior+">Junior+</option>
-        <option value="Middle">Middle</option>
-        <option value="Middle+">Middle+</option>
-        <option value="Senior">Senior</option>
+        <option value="Junior">{{ 'enum.grade.Junior' | t }}</option>
+        <option value="Junior+">{{ 'enum.grade.JuniorPlus' | t }}</option>
+        <option value="Middle">{{ 'enum.grade.Middle' | t }}</option>
+        <option value="Middle+">{{ 'enum.grade.MiddlePlus' | t }}</option>
+        <option value="Senior">{{ 'enum.grade.Senior' | t }}</option>
       </select>
     </div>
     <div class="col-md-6">
-      <label class="form-label" for="matrixSection">Раздел</label>
+      <label class="form-label" for="matrixSection">{{ 'matrix.form.section' | t }}</label>
       <input id="matrixSection" type="text" class="form-control" formControlName="section" />
     </div>
     <div class="col-md-6">
-      <label class="form-label" for="matrixSubsection">Подраздел</label>
+      <label class="form-label" for="matrixSubsection">{{ 'matrix.form.subsection' | t }}</label>
       <input id="matrixSubsection" type="text" class="form-control" formControlName="subsection" />
     </div>
   </div>
@@ -39,16 +39,16 @@
         form.controls.publishStatus.setValue($any($event.target).checked ? 'Draft' : 'Published')
       "
     />
-    <label class="form-check-label" for="matrixPublishStatus">Черновик</label>
+    <label class="form-check-label" for="matrixPublishStatus">{{ 'matrix.form.draft' | t }}</label>
   </div>
 
   <div class="mb-3">
-    <div class="form-label">Ответ</div>
+    <div class="form-label">{{ 'matrix.form.answer' | t }}</div>
     <app-markdown-editor [value]="form.controls.answer.value" (valueChange)="setAnswer($event)" />
   </div>
 
   <div class="mb-3">
-    <div class="form-label">Ожидаемый ответ на собеседовании</div>
+    <div class="form-label">{{ 'matrix.form.expectedAnswer' | t }}</div>
     <app-markdown-editor
       [value]="form.controls.interviewExpectedAnswer.value"
       (valueChange)="setInterviewExpectedAnswer($event)"
@@ -64,8 +64,8 @@
 
   <div class="d-flex justify-content-end gap-2 mt-4">
     <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
-      Отмена
+      {{ 'shared.cancel' | t }}
     </button>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
+    <button type="submit" class="btn btn-primary">{{ 'shared.save' | t }}</button>
   </div>
 </form>

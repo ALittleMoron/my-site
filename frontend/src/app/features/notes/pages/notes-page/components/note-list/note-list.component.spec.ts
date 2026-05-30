@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NoteListComponent } from './note-list.component';
 
 describe('NoteListComponent', () => {
   let fixture: ComponentFixture<NoteListComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [NoteListComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [NoteListComponent],
+      providers: [provideI18nTesting()],
+    }).compileComponents();
     fixture = TestBed.createComponent(NoteListComponent);
     fixture.componentRef.setInput('notes', [
       {
@@ -25,6 +29,7 @@ describe('NoteListComponent', () => {
     ]);
     fixture.componentRef.setInput('page', 1);
     fixture.componentRef.setInput('totalPages', 1);
+    fixture.componentRef.setInput('dateLocale', 'ru-RU');
     fixture.detectChanges();
   });
 

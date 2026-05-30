@@ -57,6 +57,17 @@ These rules apply to backend Python code under `backend/**/*.py`.
 - Use `to_domain_schema` / `from_domain_schema` for same-concept conversions between API schemas, ORM models, and core domain schemas when the method signature already identifies the exact source/target type. Use a more specific conversion method name only when the conversion changes the semantic entity, such as attached resource -> plain external resource.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
 
+## I18n
+
+- The backend i18n catalog is the source of truth for UI interface strings and enum labels.
+  Database/content localisation is out of scope until an explicit design change says otherwise.
+- Supported UI languages must be modeled with a backend enum. Do not accept arbitrary language
+  strings in production API/settings code.
+- The default UI language must be configured explicitly through the required
+  `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
+- Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
+  and cover new languages/keys with catalog parity tests.
+
 ## Persistence
 
 - SQLAlchemy models and database storages live only under `backend/src/infra/postgresql/`.

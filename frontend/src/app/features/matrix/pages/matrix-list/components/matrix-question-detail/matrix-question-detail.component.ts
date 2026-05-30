@@ -5,12 +5,13 @@ import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-matrix-question-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LoadingSpinnerComponent, ErrorMessageComponent],
+  imports: [LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe],
   templateUrl: './matrix-question-detail.component.html',
 })
 export class MatrixQuestionDetailComponent {

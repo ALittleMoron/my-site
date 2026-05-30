@@ -8,12 +8,14 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
 from entrypoints.litestar.api.contacts.endpoints import api_router as contacts_router
 from entrypoints.litestar.api.files.endpoints import api_router as files_router
 from entrypoints.litestar.api.healthcheck.endpoints import api_router as healthcheck_router
+from entrypoints.litestar.api.i18n.endpoints import api_router as i18n_router
 from entrypoints.litestar.api.notes.endpoints import api_router as notes_router
 
 api_router = Router(
     "/api",
     route_handlers=[
         healthcheck_router,
+        i18n_router,
         competency_matrix_router,
         contacts_router,
         files_router,

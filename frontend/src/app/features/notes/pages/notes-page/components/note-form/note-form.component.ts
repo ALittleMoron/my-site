@@ -11,6 +11,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { I18nService } from '../../../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { NoteDetail, NotePayload, NoteTag } from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
 
@@ -71,12 +73,13 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
 @Component({
   selector: 'app-note-form',
   standalone: true,
-  imports: [ReactiveFormsModule, MarkdownEditorComponent],
+  imports: [ReactiveFormsModule, MarkdownEditorComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './note-form.component.html',
 })
 export class NoteFormComponent implements OnInit {
   private readonly notesService = inject(NotesService);
+  private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private slugEdited = false;
   private newTagSlugEdited = false;
@@ -197,7 +200,7 @@ export class NoteFormComponent implements OnInit {
           this.newTagSlugEdited = false;
           this.tagsChanged.emit();
         },
-        error: () => this.tagError.set('Не удалось создать тег.'),
+        error: () => this.tagError.set(this.i18n.translate('notes.tags.createError')),
       });
   }
 
@@ -215,7 +218,7 @@ export class NoteFormComponent implements OnInit {
           );
           this.tagsChanged.emit();
         },
-        error: () => this.tagError.set('Не удалось сохранить тег.'),
+        error: () => this.tagError.set(this.i18n.translate('notes.tags.saveError')),
       });
   }
 
@@ -234,7 +237,7 @@ export class NoteFormComponent implements OnInit {
           });
           this.tagsChanged.emit();
         },
-        error: () => this.tagError.set('Не удалось удалить тег.'),
+        error: () => this.tagError.set(this.i18n.translate('notes.tags.deleteError')),
       });
   }
 
@@ -248,7 +251,7 @@ export class NoteFormComponent implements OnInit {
           this.loadTags();
           this.tagsChanged.emit();
         },
-        error: () => this.tagError.set('Не удалось восстановить тег.'),
+        error: () => this.tagError.set(this.i18n.translate('notes.tags.restoreError')),
       });
   }
 
@@ -270,7 +273,7 @@ export class NoteFormComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags.map(toDraft).sort(compareTags)),
-        error: () => this.tagError.set('Не удалось загрузить теги.'),
+        error: () => this.tagError.set(this.i18n.translate('notes.tags.loadError')),
       });
   }
 }

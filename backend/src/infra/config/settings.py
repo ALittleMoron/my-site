@@ -5,6 +5,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from core.files.types import Namespace
+from core.i18n.enums import LanguageEnum
 from core.schemas import Secret
 from infra.config.constants import constants
 
@@ -115,11 +116,18 @@ class _ValkeySettings(_ProjectBaseSettings):
         return self.get_url(db=constants.valkey.databases.response_cache)
 
 
+class _I18nSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="I18N_")
+
+    default_language: LanguageEnum
+
+
 class Settings:
     app: _AppSettings
     admin: _AdminSettings
     auth: _AuthSettings
     database: _DatabaseSettings
+    i18n: _I18nSettings
     minio: _MinioSettings
     sentry: _SentrySettings
     valkey: _ValkeySettings
@@ -129,6 +137,7 @@ class Settings:
         self.admin = _AdminSettings()
         self.auth = _AuthSettings()
         self.database = _DatabaseSettings()
+        self.i18n = _I18nSettings()
         self.minio = _MinioSettings()
         self.sentry = _SentrySettings()
         self.valkey = _ValkeySettings()

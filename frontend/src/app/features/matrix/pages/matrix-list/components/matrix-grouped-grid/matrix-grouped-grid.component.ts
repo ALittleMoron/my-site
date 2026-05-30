@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import {
   MatrixQuestion,
   MatrixQuestionList,
@@ -21,6 +22,7 @@ interface GridRow {
 @Component({
   selector: 'app-matrix-grouped-grid',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-grouped-grid.component.html',
 })
@@ -69,5 +71,9 @@ export class MatrixGroupedGridComponent {
 
   selectQuestion(id: number): void {
     this.questionSelected.emit(id);
+  }
+
+  gradeLabelKey(grade: string): string {
+    return `enum.grade.${grade.replace('+', 'Plus')}`;
   }
 }

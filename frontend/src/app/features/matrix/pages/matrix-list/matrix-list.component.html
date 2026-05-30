@@ -1,9 +1,9 @@
 <div class="container py-4 mt-5">
-  <h1 class="fw-bold mb-3">Матрица компетенций</h1>
+  <h1 class="fw-bold mb-3">{{ 'matrix.title' | t }}</h1>
 
   @if (isAdmin()) {
     <button type="button" class="btn btn-primary mb-3" (click)="openCreate()">
-      Добавить вопрос
+      {{ 'matrix.addQuestion' | t }}
     </button>
   }
 
@@ -26,11 +26,15 @@
   />
 
   @if (loading()) {
-    <app-loading-spinner />
+    <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
   } @else if (error()) {
-    <app-error-message [error]="error()!" (retry)="loadSheets()" />
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="loadSheets()"
+    />
   } @else if (isEmpty()) {
-    <app-empty-state message="Вопросы не найдены." />
+    <app-empty-state [message]="'matrix.empty' | t" />
   } @else if (filteredQuestions()) {
     @if (layoutMode() === 'list') {
       <app-matrix-grouped-list
@@ -51,7 +55,7 @@
     class="modal d-block modal-backdrop-overlay"
     role="dialog"
     aria-modal="true"
-    aria-label="Детализация вопроса"
+    [attr.aria-label]="'matrix.detailAria' | t"
     (click)="closeDetail()"
     (keyup.escape)="closeDetail()"
     tabindex="0"
@@ -67,17 +71,17 @@
         <div class="modal-header">
           <h5 class="modal-title">
             @if (detailMode() === 'create') {
-              Добавление вопроса
+              {{ 'matrix.modal.create' | t }}
             } @else if (detailMode() === 'edit') {
-              Редактирование вопроса
+              {{ 'matrix.modal.edit' | t }}
             } @else {
-              Детализация вопроса
+              {{ 'matrix.modal.detail' | t }}
             }
           </h5>
           <button
             type="button"
             class="btn-close"
-            aria-label="Закрыть"
+            [attr.aria-label]="'shared.close' | t"
             (click)="closeDetail()"
           ></button>
         </div>

@@ -5,6 +5,7 @@ import { MatrixService } from '../../services/matrix.service';
 import { LayoutPreferencesService } from '../../../../core/layout/layout-preferences.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import {
   MatrixQuestionDetail,
   MatrixQuestionList,
@@ -116,6 +117,7 @@ describe('MatrixListComponent', () => {
         { provide: LayoutPreferencesService, useValue: layoutPreferences },
         { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
+        provideI18nTesting(),
       ],
     }).compileComponents();
 

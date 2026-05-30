@@ -1,30 +1,30 @@
 @if (loading()) {
-  <app-loading-spinner />
+  <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
 } @else if (error()) {
-  <app-error-message [error]="error()!" />
+  <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" />
 } @else if (note()) {
   <article>
     <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
       <button type="button" class="btn btn-sm btn-outline-secondary" (click)="back.emit()">
-        Назад
+        {{ 'shared.back' | t }}
       </button>
       @if (isAdmin()) {
         <div class="d-flex gap-2 flex-wrap justify-content-end">
           <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">
-            Редактировать
+            {{ 'shared.edit' | t }}
           </button>
           @if (isDraft()) {
             <button type="button" class="btn btn-sm btn-success" (click)="publish.emit()">
-              Опубликовать
+              {{ 'shared.publish' | t }}
             </button>
           }
           @if (isPublished()) {
             <button type="button" class="btn btn-sm btn-warning" (click)="unpublish.emit()">
-              Снять с публикации
+              {{ 'shared.unpublish' | t }}
             </button>
           }
           <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">
-            Удалить
+            {{ 'shared.delete' | t }}
           </button>
         </div>
       }
@@ -35,9 +35,9 @@
       <span>{{ noteDate() }}</span>
       <span>{{ note()!.authorUsername }}</span>
       <span>{{ note()!.folder }}</span>
-      <span>{{ note()!.viewCount }} просмотров</span>
+      <span>{{ 'notes.views' | t: { count: note()!.viewCount } }}</span>
       @if (isAdmin() && isDraft()) {
-        <span class="badge text-bg-warning">Черновик</span>
+        <span class="badge text-bg-warning">{{ 'shared.draft' | t }}</span>
       }
     </div>
 
@@ -50,7 +50,7 @@
         >
           {{ tag.name }}
           @if (tag.deletedAt) {
-            <span class="badge text-bg-secondary ms-1">Удалён</span>
+            <span class="badge text-bg-secondary ms-1">{{ 'shared.removed' | t }}</span>
           }
         </button>
       }
@@ -59,7 +59,7 @@
     <div class="notes-markdown" [innerHTML]="contentHtml()"></div>
 
     @if (isPublished()) {
-      <section class="border-top mt-4 pt-3" aria-label="Реакции">
+      <section class="border-top mt-4 pt-3" [attr.aria-label]="'notes.reactions' | t">
         <div class="d-flex flex-wrap gap-2">
           @for (reaction of reactions; track reaction.kind) {
             <button
@@ -69,7 +69,7 @@
               [class.btn-outline-secondary]="selectedReaction() !== reaction.kind"
               [disabled]="reactionLoading()"
               [attr.aria-pressed]="selectedReaction() === reaction.kind"
-              [attr.aria-label]="reaction.label"
+              [attr.aria-label]="reaction.labelKey | t"
               (click)="reactionSelected.emit(reaction.kind)"
             >
               <span aria-hidden="true">{{ reaction.emoji }}</span>

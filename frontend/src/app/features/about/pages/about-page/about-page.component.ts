@@ -11,6 +11,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { SeoService } from '../../../../core/seo/seo.service';
@@ -20,11 +22,12 @@ import { ContactService } from '../../services/contact.service';
   selector: 'app-about-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './about-page.component.html',
 })
 export class AboutPageComponent implements OnInit {
   private readonly contactService = inject(ContactService);
+  private readonly i18n = inject(I18nService);
   private readonly notifications = inject(NotificationService);
   private readonly seoService = inject(SeoService);
   private readonly destroyRef = inject(DestroyRef);
@@ -58,9 +61,9 @@ export class AboutPageComponent implements OnInit {
   readonly hasNestedErrors = computed(() => !!this.submitError()?.nested_errors?.length);
 
   ngOnInit(): void {
-    this.seoService.setMeta({
-      title: 'Обо мне',
-      description: 'Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контактная форма.',
+    this.seoService.setTranslatedMeta({
+      titleKey: 'about.seo.title',
+      descriptionKey: 'about.seo.description',
       canonicalPath: '/about-me',
     });
   }
@@ -91,13 +94,13 @@ export class AboutPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.submitted.set(true);
-          this.notifications.success('Заявка отправлена.');
+          this.notifications.success(this.i18n.translate('about.contact.sent'));
           this.form.reset();
           this.form.controls.personalDataConsent.setValue(false);
         },
         error: (err: ApiError) => {
           this.submitError.set(err);
-          this.notifications.error('Не удалось отправить заявку.');
+          this.notifications.error(this.i18n.translate('about.contact.sendError'));
         },
       });
   }

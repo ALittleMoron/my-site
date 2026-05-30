@@ -5,6 +5,7 @@ import { AboutPageComponent } from './about-page.component';
 import { ContactService } from '../../services/contact.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
 
 const mockApiError: ApiError = {
   code: 'validation_error',
@@ -43,6 +44,7 @@ describe('AboutPageComponent', () => {
       providers: [
         { provide: ContactService, useValue: contactService },
         { provide: NotificationService, useValue: notificationService },
+        provideI18nTesting(),
         provideRouter([]),
       ],
     }).compileComponents();

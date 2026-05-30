@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { provideI18nTesting } from '../../testing/i18n-testing';
 import { EditorImageUploadService } from './editor-image-upload.service';
 import { MarkdownEditorComponent } from './markdown-editor.component';
 
@@ -60,7 +61,10 @@ describe('MarkdownEditorComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [MarkdownEditorComponent],
-      providers: [{ provide: EditorImageUploadService, useValue: uploadService }],
+      providers: [
+        { provide: EditorImageUploadService, useValue: uploadService },
+        provideI18nTesting(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MarkdownEditorComponent);
@@ -69,7 +73,7 @@ describe('MarkdownEditorComponent', () => {
 
   it('lazy-loads ToastUI editor with the current value', async () => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await waitForEditor(fixture);
 
     expect(MockEditor.setLanguage).toHaveBeenCalledWith('ru-RU', { Markdown: 'Markdown' });
     expect(MockEditor.instances[0].options.initialValue).toBe('Initial **markdown**');
@@ -79,7 +83,7 @@ describe('MarkdownEditorComponent', () => {
     const emitted: string[] = [];
     fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
     fixture.detectChanges();
-    await fixture.whenStable();
+    await waitForEditor(fixture);
 
     MockEditor.instances[0].setMarkdown('Updated');
     MockEditor.instances[0].options.events?.change?.();
@@ -89,7 +93,7 @@ describe('MarkdownEditorComponent', () => {
 
   it('uploads image blobs through EditorImageUploadService', async () => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await waitForEditor(fixture);
     const callback = jest.fn();
     const blob = new Blob(['image'], { type: 'image/png' });
 
@@ -101,10 +105,19 @@ describe('MarkdownEditorComponent', () => {
 
   it('destroys the editor instance', async () => {
     fixture.detectChanges();
-    await fixture.whenStable();
+    await waitForEditor(fixture);
 
     fixture.destroy();
 
     expect(MockEditor.instances[0].destroy).toHaveBeenCalled();
   });
 });
+
+async function waitForEditor(fixture: ComponentFixture<MarkdownEditorComponent>): Promise<void> {
+  for (let attempt = 0; attempt < 5 && MockEditor.instances.length === 0; attempt += 1) {
+    await fixture.whenStable();
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  }
+}

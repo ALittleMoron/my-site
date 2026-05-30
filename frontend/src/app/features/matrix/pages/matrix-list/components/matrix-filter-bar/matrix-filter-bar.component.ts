@@ -1,9 +1,11 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { MatrixLayoutMode } from '../../../../../../core/layout/layout-preferences.service';
+import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-matrix-filter-bar',
   standalone: true,
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-filter-bar.component.html',
 })
