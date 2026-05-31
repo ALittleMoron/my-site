@@ -1,12 +1,18 @@
 import uuid
+from datetime import date
 from unittest.mock import Mock
 
 import pytest
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.exceptions import NoteNotFoundError
-from core.notes.schemas import NotePublicStatsCollection, NoteReactionCounts
+from core.notes.schemas import (
+    NoteAnalyticsDailyStats,
+    NotePublicStatsCollection,
+    NoteReactionCounts,
+)
 from core.notes.storages import NoteAnalyticsStorage, NotesStorage
 from core.notes.use_cases import NoteAnalyticsUseCase
 from core.schemas import Secret
@@ -142,3 +148,57 @@ class TestNoteAnalyticsUseCase(FactoryFixture):
             neutral=0,
             poop=0,
         )
+
+    async def test_get_stats_builds_totals_and_note_rows_from_storage_data(self) -> None:
+        note_id = uuid.UUID(int=1)
+        self.analytics_storage.get_daily_stats.return_value = [
+            NoteAnalyticsDailyStats(
+                note_id=note_id,
+                title="Typed notes",
+                slug="typed-notes",
+                date=date(2026, 1, 2),
+                source_category=NoteViewSourceCategory.SEARCH,
+                view_count=4,
+                engaged_view_count=1,
+            ),
+            NoteAnalyticsDailyStats(
+                note_id=note_id,
+                title="Typed notes",
+                slug="typed-notes",
+                date=date(2026, 1, 3),
+                source_category=NoteViewSourceCategory.DIRECT,
+                view_count=3,
+                engaged_view_count=2,
+            ),
+        ]
+        self.analytics_storage.get_reaction_counts.return_value = {
+            note_id: NoteReactionCounts(
+                heart=1,
+                fire=0,
+                thinking=1,
+                neutral=0,
+                poop=0,
+            ),
+        }
+
+        result = await self.use_case.get_stats(
+            date_from=date(2026, 1, 1),
+            date_to=date(2026, 1, 31),
+            language=LanguageEnum.RU,
+        )
+
+        assert result.totals.view_count == 7
+        assert result.totals.engaged_view_count == 3
+        assert result.totals.reaction_count == 2
+        assert len(result.notes) == 1
+        assert result.notes[0].note_id == note_id
+        assert result.notes[0].view_count == 7
+        assert result.notes[0].engaged_view_count == 3
+        assert result.notes[0].reaction_counts.thinking == 1
+        assert result.daily == self.analytics_storage.get_daily_stats.return_value
+        self.analytics_storage.get_daily_stats.assert_called_once_with(
+            date_from=date(2026, 1, 1),
+            date_to=date(2026, 1, 31),
+            language=LanguageEnum.RU,
+        )
+        self.analytics_storage.get_reaction_counts.assert_called_once_with(note_ids=[note_id])

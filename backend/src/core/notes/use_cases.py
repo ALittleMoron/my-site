@@ -173,10 +173,19 @@ class NotesUseCase(AbstractNotesUseCase):
         return note.public_copy() if only_published else note
 
     async def list_notes(self, *, filters: NoteFilters) -> Notes:
-        return await self.storage.list_notes(filters=filters)
+        notes, total_count = await self.storage.list_notes(filters=filters)
+        return Notes.from_page(
+            values=notes,
+            total_count=total_count,
+            page_size=filters.page_size,
+        )
 
     async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
-        return await self.storage.list_tree(only_published=only_published, language=language)
+        items = await self.storage.list_tree_items(
+            only_published=only_published,
+            language=language,
+        )
+        return NoteTree.from_items(items=items)
 
     async def create_note(self, *, params: NoteCreateParams) -> Note:
         tags = await self._get_active_tags(tag_ids=params.tag_ids)
@@ -333,10 +342,18 @@ class NoteAnalyticsUseCase(AbstractNoteAnalyticsUseCase):
         date_to: date,
         language: LanguageEnum,
     ) -> NoteAnalyticsStats:
-        return await self.analytics_storage.get_stats(
+        daily = await self.analytics_storage.get_daily_stats(
             date_from=date_from,
             date_to=date_to,
             language=language,
+        )
+        note_ids = list(dict.fromkeys(item.note_id for item in daily))
+        reaction_counts = await self.analytics_storage.get_reaction_counts(note_ids=note_ids)
+        return NoteAnalyticsStats.from_daily_stats(
+            date_from=date_from,
+            date_to=date_to,
+            daily=daily,
+            reaction_counts=reaction_counts,
         )
 
     async def _get_published_note(self, *, slug: str) -> Note:

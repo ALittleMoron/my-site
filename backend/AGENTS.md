@@ -48,6 +48,15 @@ These rules apply to backend Python code under `backend/**/*.py`.
   hooks, CLI commands, Alembic migration functions, and small pure infrastructure entrypoints.
 - When choosing between a function and a method, prefer the shape that expresses real ownership.
   Do not move code into a class solely to satisfy a stylistic ban on functions.
+- Prefer moving meaningful multi-parameter object creation into methods on the object that owns
+  that creation logic, or into the owning use case when the object is an aggregate/read model.
+  Do not extract creation solely for tiny objects with too few fields to justify the extra method.
+- Aggregating core objects such as note lists, note trees, analytics summaries, and similar
+  use-case-shaped read models must be assembled in core use cases or on the owning core object.
+  Storage adapters must return persisted entities or narrow row/data objects needed for assembly;
+  they must not collect, group, paginate, or summarize those rows into complex core aggregates.
+  Simple one-field containers such as `Tags(values=...)` and `ExternalResources(values=...)`
+  may remain at storage boundaries when they only wrap loaded values.
 
 ## HTTP and Schemas
 

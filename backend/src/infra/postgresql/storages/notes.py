@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
-from math import ceil
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -16,17 +15,11 @@ from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     Note,
     NoteAnalyticsDailyStats,
-    NoteAnalyticsNoteStats,
-    NoteAnalyticsStats,
-    NoteAnalyticsTotals,
     NoteFilters,
     NotePublicStats,
     NotePublicStatsCollection,
     NoteReactionCounts,
-    Notes,
-    NoteTree,
-    NoteTreeFolder,
-    NoteTreeItem,
+    NoteTreeItemData,
     Tag,
     Tags,
 )
@@ -65,7 +58,7 @@ class NotesDatabaseStorage(NotesStorage):
             raise NoteNotFoundError
         return note_model.to_domain_schema(include_deleted_tags=include_deleted_tags)
 
-    async def list_notes(self, *, filters: NoteFilters) -> Notes:
+    async def list_notes(self, *, filters: NoteFilters) -> tuple[list[Note], int]:
         query = self._apply_note_filters(
             select(NoteModel).options(
                 selectinload(NoteModel.tag_links).selectinload(NoteToTagSecondaryModel.tag),
@@ -90,15 +83,14 @@ class NotesDatabaseStorage(NotesStorage):
 
         note_models = await self.session.scalars(query)
 
-        return Notes(
-            values=[
+        return (
+            [
                 note_model.to_domain_schema(
                     include_deleted_tags=not filters.only_published,
                 )
                 for note_model in note_models.unique()
             ],
-            total_count=total_count,
-            total_pages=ceil(total_count / filters.page_size) if total_count > 0 else 0,
+            total_count,
         )
 
     def _apply_note_filters(
@@ -174,7 +166,12 @@ class NotesDatabaseStorage(NotesStorage):
     def _date_end(self, *, value: date) -> datetime:
         return datetime.combine(value, time.max, tzinfo=UTC)
 
-    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
+    async def list_tree_items(
+        self,
+        *,
+        only_published: bool,
+        language: LanguageEnum,
+    ) -> list[NoteTreeItemData]:
         query = select(NoteModel).order_by(
             self._folder_column(language=language),
             *self._note_ordering(language=language),
@@ -182,25 +179,17 @@ class NotesDatabaseStorage(NotesStorage):
         if only_published:
             query = query.where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
         models = await self.session.scalars(query)
-        folders: dict[str, list[NoteTreeItem]] = {}
-        for model in models:
-            folder = model.folder_ru if language == LanguageEnum.RU else model.folder_en
-            title = model.title_ru if language == LanguageEnum.RU else model.title_en
-            folders.setdefault(folder, []).append(
-                NoteTreeItem(
-                    title=title,
-                    slug=model.slug,
-                    publish_status=model.publish_status,
-                    published_at=model.published_at,
-                    updated_at=model.updated_at,
-                ),
+        return [
+            NoteTreeItemData(
+                folder=model.folder_ru if language == LanguageEnum.RU else model.folder_en,
+                title=model.title_ru if language == LanguageEnum.RU else model.title_en,
+                slug=model.slug,
+                publish_status=model.publish_status,
+                published_at=model.published_at,
+                updated_at=model.updated_at,
             )
-        return NoteTree(
-            folders=[
-                NoteTreeFolder(folder=folder, notes=notes)
-                for folder, notes in sorted(folders.items(), key=lambda item: item[0].lower())
-            ],
-        )
+            for model in models
+        ]
 
     async def create_note(self, *, note: Note) -> Note:
         model = NoteModel.from_domain_schema(note=note)
@@ -422,7 +411,7 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
         if not note_ids:
             return NotePublicStatsCollection(values=[])
         view_counts = await self._get_view_counts(note_ids=note_ids)
-        reaction_counts = await self._get_reaction_counts(note_ids=note_ids)
+        reaction_counts = await self.get_reaction_counts(note_ids=note_ids)
         return NotePublicStatsCollection(
             values=[
                 NotePublicStats(
@@ -445,7 +434,9 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
         )
         return {row[0]: row[1] for row in result}
 
-    async def _get_reaction_counts(self, *, note_ids: list[UUID]) -> dict[UUID, NoteReactionCounts]:
+    async def get_reaction_counts(self, *, note_ids: list[UUID]) -> dict[UUID, NoteReactionCounts]:
+        if not note_ids:
+            return {}
         result = await self.session.execute(
             select(
                 NoteReactionModel.note_id,
@@ -459,7 +450,7 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
         for note_id, reaction_kind, count in result:
             raw_counts.setdefault(note_id, {})[self._to_reaction_kind(reaction_kind)] = count
         return {
-            note_id: self._build_reaction_counts(counts=counts)
+            note_id: NoteReactionCounts.from_counts(counts=counts)
             for note_id, counts in raw_counts.items()
         }
 
@@ -495,34 +486,7 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
             model.reaction_kind = reaction_kind
         await self.session.flush()
 
-    async def get_stats(
-        self,
-        *,
-        date_from: date,
-        date_to: date,
-        language: LanguageEnum,
-    ) -> NoteAnalyticsStats:
-        daily = await self._get_daily_stats(
-            date_from=date_from,
-            date_to=date_to,
-            language=language,
-        )
-        note_ids = list(dict.fromkeys(item.note_id for item in daily))
-        reaction_counts = await self._get_reaction_counts(note_ids=note_ids)
-        notes = self._build_note_stats(daily=daily, reaction_counts=reaction_counts)
-        return NoteAnalyticsStats(
-            date_from=date_from,
-            date_to=date_to,
-            totals=NoteAnalyticsTotals(
-                view_count=sum(item.view_count for item in daily),
-                engaged_view_count=sum(item.engaged_view_count for item in daily),
-                reaction_count=sum(item.reaction_counts.total for item in notes),
-            ),
-            notes=notes,
-            daily=daily,
-        )
-
-    async def _get_daily_stats(
+    async def get_daily_stats(
         self,
         *,
         date_from: date,
@@ -568,48 +532,6 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
         if language == LanguageEnum.RU:
             return NoteModel.title_ru
         return NoteModel.title_en
-
-    def _build_note_stats(
-        self,
-        *,
-        daily: list[NoteAnalyticsDailyStats],
-        reaction_counts: dict[UUID, NoteReactionCounts],
-    ) -> list[NoteAnalyticsNoteStats]:
-        note_stats: dict[UUID, NoteAnalyticsNoteStats] = {}
-        for item in daily:
-            existing = note_stats.get(item.note_id)
-            if existing is None:
-                note_stats[item.note_id] = NoteAnalyticsNoteStats(
-                    note_id=item.note_id,
-                    title=item.title,
-                    slug=item.slug,
-                    view_count=item.view_count,
-                    engaged_view_count=item.engaged_view_count,
-                    reaction_counts=reaction_counts.get(item.note_id, NoteReactionCounts.zero()),
-                )
-            else:
-                note_stats[item.note_id] = NoteAnalyticsNoteStats(
-                    note_id=existing.note_id,
-                    title=existing.title,
-                    slug=existing.slug,
-                    view_count=existing.view_count + item.view_count,
-                    engaged_view_count=existing.engaged_view_count + item.engaged_view_count,
-                    reaction_counts=existing.reaction_counts,
-                )
-        return sorted(note_stats.values(), key=lambda item: (-item.view_count, item.title))
-
-    def _build_reaction_counts(
-        self,
-        *,
-        counts: dict[NoteReactionKind, int],
-    ) -> NoteReactionCounts:
-        return NoteReactionCounts(
-            heart=counts.get(NoteReactionKind.HEART, 0),
-            fire=counts.get(NoteReactionKind.FIRE, 0),
-            thinking=counts.get(NoteReactionKind.THINKING, 0),
-            neutral=counts.get(NoteReactionKind.NEUTRAL, 0),
-            poop=counts.get(NoteReactionKind.POOP, 0),
-        )
 
     def _to_reaction_kind(self, value: NoteReactionKind | str) -> NoteReactionKind:
         if isinstance(value, NoteReactionKind):

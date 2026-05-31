@@ -7,11 +7,11 @@ from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.schemas import (
     Note,
-    NoteAnalyticsStats,
+    NoteAnalyticsDailyStats,
     NoteFilters,
     NotePublicStatsCollection,
-    Notes,
-    NoteTree,
+    NoteReactionCounts,
+    NoteTreeItemData,
     Tag,
     Tags,
 )
@@ -29,11 +29,16 @@ class NotesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_notes(self, *, filters: NoteFilters) -> Notes:
+    async def list_notes(self, *, filters: NoteFilters) -> tuple[list[Note], int]:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
+    async def list_tree_items(
+        self,
+        *,
+        only_published: bool,
+        language: LanguageEnum,
+    ) -> list[NoteTreeItemData]:
         raise NotImplementedError
 
     @abstractmethod
@@ -134,11 +139,15 @@ class NoteAnalyticsStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_stats(
+    async def get_daily_stats(
         self,
         *,
         date_from: date,
         date_to: date,
         language: LanguageEnum,
-    ) -> NoteAnalyticsStats:
+    ) -> list[NoteAnalyticsDailyStats]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_reaction_counts(self, *, note_ids: list[UUID]) -> dict[UUID, NoteReactionCounts]:
         raise NotImplementedError

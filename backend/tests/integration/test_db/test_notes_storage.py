@@ -123,7 +123,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        result = await self.storage.list_notes(
+        notes, total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -136,9 +136,8 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in result.values] == ["published-python"]
-        assert result.total_count == 1
-        assert result.total_pages == 1
+        assert [note.slug for note in notes] == ["published-python"]
+        assert total_count == 1
 
     async def test_list_notes_sorts_published_before_drafts_for_admin(self) -> None:
         await self.storage_helper.create_notes(
@@ -169,7 +168,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        result = await self.storage.list_notes(
+        notes, _total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -182,7 +181,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in result.values] == [
+        assert [note.slug for note in notes] == [
             "newer-published",
             "older-published",
             "draft",
@@ -233,7 +232,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        result = await self.storage.list_notes(
+        notes, total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -246,9 +245,8 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in result.values] == ["range-end", "range-start"]
-        assert result.total_count == 2
-        assert result.total_pages == 1
+        assert [note.slug for note in notes] == ["range-end", "range-start"]
+        assert total_count == 2
 
     async def test_list_notes_searches_by_title_and_content(self) -> None:
         await self.storage_helper.create_notes(
@@ -277,7 +275,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        title_result = await self.storage.list_notes(
+        title_notes, _title_total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -289,7 +287,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
                 search_query="full text",
             ),
         )
-        content_result = await self.storage.list_notes(
+        content_notes, _content_total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -302,8 +300,8 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in title_result.values] == ["title-match"]
-        assert [note.slug for note in content_result.values] == ["content-match"]
+        assert [note.slug for note in title_notes] == ["title-match"]
+        assert [note.slug for note in content_notes] == ["content-match"]
 
     async def test_list_notes_searches_only_requested_language_vector(self) -> None:
         await self.storage_helper.create_notes(
@@ -329,7 +327,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        ru_result = await self.storage.list_notes(
+        ru_notes, _ru_total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -341,7 +339,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
                 search_query="документам",
             ),
         )
-        en_result = await self.storage.list_notes(
+        en_notes, _en_total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -354,8 +352,8 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in ru_result.values] == ["database-indexes"]
-        assert [note.slug for note in en_result.values] == ["task-queues"]
+        assert [note.slug for note in ru_notes] == ["database-indexes"]
+        assert [note.slug for note in en_notes] == ["task-queues"]
 
     async def test_list_notes_composes_tag_date_and_search_filters(self) -> None:
         python = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -390,7 +388,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        result = await self.storage.list_notes(
+        notes, _total_count = await self.storage.list_notes(
             filters=NoteFilters(
                 page=1,
                 page_size=10,
@@ -403,7 +401,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [note.slug for note in result.values] == ["match"]
+        assert [note.slug for note in notes] == ["match"]
 
     async def test_list_tree_groups_folders_and_hides_drafts_for_public(self) -> None:
         await self.storage_helper.create_notes(
@@ -431,18 +429,24 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        public_tree = await self.storage.list_tree(
+        public_items = await self.storage.list_tree_items(
             only_published=True,
             language=LanguageEnum.RU,
         )
-        admin_tree = await self.storage.list_tree(
+        admin_items = await self.storage.list_tree_items(
             only_published=False,
             language=LanguageEnum.RU,
         )
 
-        assert [folder.folder for folder in public_tree.folders] == ["Architecture", "Backend"]
-        assert [item.slug for item in public_tree.folders[0].notes] == ["a-note"]
-        assert [item.slug for item in admin_tree.folders[0].notes] == ["a-note", "draft"]
+        assert [(item.folder, item.slug) for item in public_items] == [
+            ("Architecture", "a-note"),
+            ("Backend", "b-note"),
+        ]
+        assert [(item.folder, item.slug) for item in admin_items] == [
+            ("Architecture", "a-note"),
+            ("Architecture", "draft"),
+            ("Backend", "b-note"),
+        ]
 
     async def test_update_note_publish_status_sets_first_published_at_only_once(self) -> None:
         await self.storage_helper.create_note(

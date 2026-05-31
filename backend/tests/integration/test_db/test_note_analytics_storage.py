@@ -95,16 +95,15 @@ class TestNoteAnalyticsDatabaseStorage(StorageFixture, FactoryFixture):
             reaction_kind=NoteReactionKind.THINKING,
         )
 
-        result = await self.storage.get_stats(
+        daily = await self.storage.get_daily_stats(
             date_from=date(2026, 1, 1),
             date_to=date(2026, 1, 31),
             language=LanguageEnum.RU,
         )
+        reaction_counts = await self.storage.get_reaction_counts(note_ids=[first_note.id])
 
-        assert result.totals.view_count == 1
-        assert result.totals.engaged_view_count == 1
-        assert result.totals.reaction_count == 1
-        assert [item.slug for item in result.notes] == ["first"]
-        assert result.notes[0].reaction_counts.thinking == 1
-        assert [item.slug for item in result.daily] == ["first"]
-        assert result.daily[0].source_category == NoteViewSourceCategory.EXTERNAL
+        assert [item.slug for item in daily] == ["first"]
+        assert daily[0].view_count == 1
+        assert daily[0].engaged_view_count == 1
+        assert daily[0].source_category == NoteViewSourceCategory.EXTERNAL
+        assert reaction_counts[first_note.id].thinking == 1

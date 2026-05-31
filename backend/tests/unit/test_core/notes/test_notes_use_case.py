@@ -10,6 +10,7 @@ from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     NoteCreateParams,
     NoteFilters,
+    NoteTreeItemData,
     NoteUpdateParams,
     TagCreateParams,
     TagUpdateParams,
@@ -26,7 +27,7 @@ class TestNotesUseCase(FactoryFixture):
         self.storage = Mock(spec=NotesStorage)
         self.use_case = NotesUseCase(storage=self.storage)
 
-    async def test_list_notes_delegates_filters_to_storage(self) -> None:
+    async def test_list_notes_builds_page_from_storage_rows(self) -> None:
         filters = NoteFilters(
             page=1,
             page_size=10,
@@ -37,17 +38,50 @@ class TestNotesUseCase(FactoryFixture):
             published_to=None,
             search_query=None,
         )
-        expected = self.factory.core.note_list(
-            notes=[self.factory.core.note(title="Published note", slug="published-note")],
-            total_count=1,
-            total_pages=1,
-        )
-        self.storage.list_notes.return_value = expected
+        note = self.factory.core.note(title="Published note", slug="published-note")
+        self.storage.list_notes.return_value = ([note], 11)
 
         result = await self.use_case.list_notes(filters=filters)
 
-        assert result == expected
+        assert result.values == [note]
+        assert result.total_count == 11
+        assert result.total_pages == 2
         self.storage.list_notes.assert_called_once_with(filters=filters)
+
+    async def test_list_tree_builds_folders_from_storage_items(self) -> None:
+        first_updated_at = datetime(2026, 1, 1, tzinfo=UTC)
+        second_updated_at = datetime(2026, 1, 2, tzinfo=UTC)
+        self.storage.list_tree_items.return_value = [
+            NoteTreeItemData(
+                folder="Backend",
+                title="Storage",
+                slug="storage",
+                publish_status=PublishStatusEnum.PUBLISHED,
+                published_at=datetime(2026, 1, 1, tzinfo=UTC),
+                updated_at=first_updated_at,
+            ),
+            NoteTreeItemData(
+                folder="Architecture",
+                title="Boundaries",
+                slug="boundaries",
+                publish_status=PublishStatusEnum.DRAFT,
+                published_at=None,
+                updated_at=second_updated_at,
+            ),
+        ]
+
+        result = await self.use_case.list_tree(
+            only_published=False,
+            language=LanguageEnum.EN,
+        )
+
+        assert [folder.folder for folder in result.folders] == ["Architecture", "Backend"]
+        assert [item.slug for item in result.folders[0].notes] == ["boundaries"]
+        assert [item.slug for item in result.folders[1].notes] == ["storage"]
+        self.storage.list_tree_items.assert_called_once_with(
+            only_published=False,
+            language=LanguageEnum.EN,
+        )
 
     async def test_get_note_rejects_draft_when_only_published(self) -> None:
         self.storage.get_note_by_slug.return_value = self.factory.core.note(

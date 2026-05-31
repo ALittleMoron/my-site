@@ -1,11 +1,14 @@
+from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date, datetime
+from math import ceil
 from typing import Self
 from uuid import UUID
 
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.enums import NoteViewSourceCategory
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.schemas import ValuedDataclass
 from core.types import IntId
 
@@ -76,6 +79,14 @@ class Note:
 class Notes(ValuedDataclass[Note]):
     total_count: int
     total_pages: int
+
+    @classmethod
+    def from_page(cls, *, values: list[Note], total_count: int, page_size: int) -> Self:
+        return cls(
+            values=values,
+            total_count=total_count,
+            total_pages=ceil(total_count / page_size) if total_count > 0 else 0,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -175,6 +186,25 @@ class NoteTreeItem:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class NoteTreeItemData:
+    folder: str
+    title: str
+    slug: str
+    publish_status: PublishStatusEnum
+    published_at: datetime | None
+    updated_at: datetime
+
+    def to_tree_item(self) -> NoteTreeItem:
+        return NoteTreeItem(
+            title=self.title,
+            slug=self.slug,
+            publish_status=self.publish_status,
+            published_at=self.published_at,
+            updated_at=self.updated_at,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class NoteTreeFolder:
     folder: str
     notes: list[NoteTreeItem]
@@ -183,6 +213,18 @@ class NoteTreeFolder:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NoteTree:
     folders: list[NoteTreeFolder]
+
+    @classmethod
+    def from_items(cls, *, items: list[NoteTreeItemData]) -> Self:
+        folders: defaultdict[str, list[NoteTreeItem]] = defaultdict(list)
+        for item in items:
+            folders[item.folder].append(item.to_tree_item())
+        return cls(
+            folders=[
+                NoteTreeFolder(folder=folder, notes=notes)
+                for folder, notes in sorted(folders.items(), key=lambda item: item[0].lower())
+            ],
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -196,6 +238,16 @@ class NoteReactionCounts:
     @classmethod
     def zero(cls) -> Self:
         return cls(heart=0, fire=0, thinking=0, neutral=0, poop=0)
+
+    @classmethod
+    def from_counts(cls, *, counts: Mapping[NoteReactionKind, int]) -> Self:
+        return cls(
+            heart=counts.get(NoteReactionKind.HEART, 0),
+            fire=counts.get(NoteReactionKind.FIRE, 0),
+            thinking=counts.get(NoteReactionKind.THINKING, 0),
+            neutral=counts.get(NoteReactionKind.NEUTRAL, 0),
+            poop=counts.get(NoteReactionKind.POOP, 0),
+        )
 
     @property
     def total(self) -> int:
@@ -241,6 +293,32 @@ class NoteAnalyticsNoteStats:
     engaged_view_count: int
     reaction_counts: NoteReactionCounts
 
+    @classmethod
+    def from_daily_stats(
+        cls,
+        *,
+        daily: NoteAnalyticsDailyStats,
+        reaction_counts: NoteReactionCounts,
+    ) -> Self:
+        return cls(
+            note_id=daily.note_id,
+            title=daily.title,
+            slug=daily.slug,
+            view_count=daily.view_count,
+            engaged_view_count=daily.engaged_view_count,
+            reaction_counts=reaction_counts,
+        )
+
+    def with_daily_stats(self, *, daily: NoteAnalyticsDailyStats) -> Self:
+        return self.__class__(
+            note_id=self.note_id,
+            title=self.title,
+            slug=self.slug,
+            view_count=self.view_count + daily.view_count,
+            engaged_view_count=self.engaged_view_count + daily.engaged_view_count,
+            reaction_counts=self.reaction_counts,
+        )
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NoteAnalyticsDailyStats:
@@ -260,6 +338,47 @@ class NoteAnalyticsStats:
     totals: NoteAnalyticsTotals
     notes: list[NoteAnalyticsNoteStats]
     daily: list[NoteAnalyticsDailyStats]
+
+    @classmethod
+    def from_daily_stats(
+        cls,
+        *,
+        date_from: date,
+        date_to: date,
+        daily: list[NoteAnalyticsDailyStats],
+        reaction_counts: dict[UUID, NoteReactionCounts],
+    ) -> Self:
+        notes = cls._build_note_stats(daily=daily, reaction_counts=reaction_counts)
+        return cls(
+            date_from=date_from,
+            date_to=date_to,
+            totals=NoteAnalyticsTotals(
+                view_count=sum(item.view_count for item in daily),
+                engaged_view_count=sum(item.engaged_view_count for item in daily),
+                reaction_count=sum(item.reaction_counts.total for item in notes),
+            ),
+            notes=notes,
+            daily=daily,
+        )
+
+    @classmethod
+    def _build_note_stats(
+        cls,
+        *,
+        daily: list[NoteAnalyticsDailyStats],
+        reaction_counts: dict[UUID, NoteReactionCounts],
+    ) -> list[NoteAnalyticsNoteStats]:
+        note_stats: dict[UUID, NoteAnalyticsNoteStats] = {}
+        for item in daily:
+            existing = note_stats.get(item.note_id)
+            if existing is None:
+                note_stats[item.note_id] = NoteAnalyticsNoteStats.from_daily_stats(
+                    daily=item,
+                    reaction_counts=reaction_counts.get(item.note_id, NoteReactionCounts.zero()),
+                )
+            else:
+                note_stats[item.note_id] = existing.with_daily_stats(daily=item)
+        return sorted(note_stats.values(), key=lambda item: (-item.view_count, item.title))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
