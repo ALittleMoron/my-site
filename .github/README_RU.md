@@ -8,7 +8,7 @@
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
-| Тестирование | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) |
+| Тестирование | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![locust](./badges/locust.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
 | Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
 | Логирование | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
@@ -35,7 +35,8 @@ my-site/
 ├── frontend/       # Angular 19 SPA (собственный nginx-образ)
 ├── backend/        # Litestar API + доменная логика
 │   ├── src/        # Исходный код приложения
-│   └── tests/      # Backend-тесты (pytest)
+│   ├── tests/      # Backend-тесты (pytest)
+│   └── performance/ # сценарии нагрузочного тестирования Locust и отчёты
 ├── .env.example    # Пример переменных окружения
 ├── .env.test       # Безопасные переменные для тестового окружения
 ├── docker-compose.test.yml
@@ -104,4 +105,6 @@ make test-env-down              # остановить test PostgreSQL и уда
 make test-backend-unit          # unit-тесты backend, DB не нужна
 make test-backend-integration   # интеграционные тесты backend, нужна test DB
 make test-frontend              # только frontend (jest)
+make install-performance        # установить dependency group Locust для IDE/локальных запусков
+make performance-smoke          # короткий Locust smoke-профиль, пишет backend/performance/reports
 ```

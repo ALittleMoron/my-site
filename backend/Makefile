@@ -7,11 +7,17 @@ TESTS := tests
 TEST_ENV_FILE ?= ../.env.test
 LOAD_TEST_ENV := set -a; [ ! -f "$(TEST_ENV_FILE)" ] || . "$(TEST_ENV_FILE)"; set +a;
 TEST_ENV_OVERRIDES ?=
+PERFORMANCE_ENV_FILE ?= ../.env
 
 .PHONY: install
 install:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
 	$(UV) sync --locked --all-extras
+
+.PHONY: install-performance
+install-performance:
+	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
+	$(UV) sync --locked --group performance
 
 .PHONY: run
 run:
@@ -78,7 +84,7 @@ vulture:
 .PHONY: fix
 fix:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff format $(NAME) $(TESTS) --config ./pyproject.toml
+	$(UV_RUN) ruff format $(NAME) $(TESTS) performance --config ./pyproject.toml
 
 # Usage: make lint-file file=src/core/notes/use_cases.py
 .PHONY: lint-file
@@ -90,13 +96,13 @@ lint-file:
 .PHONY: ruff-check
 ruff-check:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff check $(NAME) $(TESTS) --fix
+	$(UV_RUN) ruff check $(NAME) $(TESTS) performance --fix
 
 .PHONY: lint-check
 lint-check:
 	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff format $(NAME) $(TESTS) --check --config ./pyproject.toml
-	$(UV_RUN) ruff check $(NAME) $(TESTS) --config ./pyproject.toml
+	$(UV_RUN) ruff format $(NAME) $(TESTS) performance --check --config ./pyproject.toml
+	$(UV_RUN) ruff check $(NAME) $(TESTS) performance --config ./pyproject.toml
 
 .PHONY: test
 test:
@@ -128,3 +134,15 @@ quality:
 	$(MAKE) types
 	$(MAKE) ruff-check
 	$(MAKE) test
+
+.PHONY: performance-smoke
+performance-smoke:
+	bash performance/run_locust.sh smoke "$(PERFORMANCE_ENV_FILE)"
+
+.PHONY: performance-baseline
+performance-baseline:
+	bash performance/run_locust.sh baseline "$(PERFORMANCE_ENV_FILE)"
+
+.PHONY: performance-report-clean
+performance-report-clean:
+	bash performance/run_locust.sh clean "$(PERFORMANCE_ENV_FILE)"

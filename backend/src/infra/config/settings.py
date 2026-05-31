@@ -62,6 +62,9 @@ class _DatabaseSettings(_ProjectBaseSettings):
     pool_size: int
     max_overflow: int
     expire_on_commit: bool
+    log_query_metrics: bool
+    slow_query_log_threshold_ms: int
+    slow_query_log_statement_max_length: int
 
     @property
     def url(self) -> SecretStrExtended:

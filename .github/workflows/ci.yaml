@@ -12,3 +12,10 @@ jobs:
   quality-frontend:
     name: "Frontend quality"
     uses: ./.github/workflows/_quality_frontend.yaml
+
+  performance:
+    name: "Performance smoke"
+    needs:
+      - quality-backend
+      - quality-frontend
+    uses: ./.github/workflows/_performance.yaml

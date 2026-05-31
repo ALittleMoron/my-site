@@ -1,0 +1,114 @@
+name: Performance
+
+on:
+  workflow_call:
+
+jobs:
+  performance-smoke:
+    name: Performance smoke
+    timeout-minutes: 20
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: my_site_database_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 55432:5432
+    env:
+      APP_URL_SCHEMA: http
+      APP_DEBUG: "true"
+      APP_SECRET_KEY: TEST_SECRET_KEY
+      APP_DOMAIN: localhost
+      APP_USE_CACHE: "false"
+      APP_USE_RATE_LIMIT: "true"
+      I18N_DEFAULT_LANGUAGE: ru
+      ADMIN_INIT_LOGIN: admin
+      ADMIN_INIT_PASSWORD: admin
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DRIVER: postgresql+psycopg
+      DB_HOST: localhost
+      DB_PORT: 55432
+      DB_NAME: my_site_database_test
+      DB_POOL_PRE_PING: "true"
+      DB_POOL_SIZE: 10
+      DB_MAX_OVERFLOW: 20
+      DB_EXPIRE_ON_COMMIT: "false"
+      DB_LOG_QUERY_METRICS: "false"
+      DB_SLOW_QUERY_LOG_THRESHOLD_MS: 250
+      DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH: 1000
+      AUTH_TOKEN_EXPIRE_SECONDS: 172800
+      AUTH_TOKEN_HEADER_NAME: Authorization
+      AUTH_TOKEN_PREFIX: Bearer
+      AUTH_PUBLIC_KEY: |
+        -----BEGIN PUBLIC KEY-----
+        MCowBQYDK2VwAyEAgiimqA4yuUL9ahhsRGooZXoO4XTDzmK+pu4mJnfdPIk=
+        -----END PUBLIC KEY-----
+      AUTH_PRIVATE_KEY: |
+        -----BEGIN PRIVATE KEY-----
+        MC4CAQAwBQYDK2VwBCIEIHvAarrKpuBdN5qcsk7uVGwHA3HuzMr0j7ZGvIruVb+B
+        -----END PRIVATE KEY-----
+      MINIO_HOST: localhost
+      MINIO_PORT: 9000
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECURE: "false"
+      MINIO_PRESIGN_PUT_EXPIRES_SECONDS: 300
+      SENTRY_USE: "false"
+      SENTRY_DSN: ""
+      VALKEY_HOST: localhost
+      VALKEY_PORT: 6379
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v6
+      - name: "Install backend dependencies"
+        run: make install-backend
+      - name: "Install performance dependencies"
+        run: make install-performance
+      - name: "Start backend"
+        run: |
+          cd backend
+          PYTHONPATH=src uv run uvicorn main:create_app --port 8000 --host 127.0.0.1 > ../backend-performance.log 2>&1 &
+          echo "$!" > ../backend-performance.pid
+          cd ..
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:8000/api/healthcheck > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat backend-performance.log
+          exit 1
+      - name: "Run Locust smoke profile"
+        run: make performance-smoke PERFORMANCE_ENV_FILE=../.env.test
+      - name: "Upload performance reports"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-smoke-reports
+          path: backend/performance/reports/
+      - name: "Print backend log on failure"
+        if: failure()
+        run: cat backend-performance.log
+      - name: "Stop backend"
+        if: always()
+        run: |
+          if [ -f backend-performance.pid ]; then
+            kill "$(cat backend-performance.pid)" || true
+          fi

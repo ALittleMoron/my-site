@@ -55,7 +55,12 @@
 
 - [ ] (SEO) Add schemaMarkup link
 - [ ] Check site performance
-  - [ ] Load testing (Locust)
+  - [x] Add Locust smoke/baseline scaffolding and CI report artifacts
+  - [x] Validate selected Locust API responses against backend response schemas
+  - [ ] Tune Locust thresholds from real baseline reports
+  - [ ] Expand Locust scenarios with seeded note/detail/matrix data
+  - [ ] Run scheduled/manual baseline load tests against a production-like environment
+  - [ ] Add Lighthouse CI with performance budgets for Angular SPA routes
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
@@ -182,8 +187,38 @@
 
 ### Tracing and Monitoring
 
+- [x] Add optional app-side slow SQL query timing logs without raw parameter values
+- [ ] Enable slow SQL query timing logs in staging/production with explicit thresholds
 - [ ] Error alerts to Telegram bot
 - [ ] Set up Grafana + Prometheus + Loki
+- [ ] Set up PostgreSQL performance visibility
+    - [ ] Enable `pg_stat_statements` for aggregate query timing, calls, rows, and cache-hit signals
+    - [ ] Enable safe `auto_explain` logging for slow query plans
+    - [ ] Alert on long-running queries, lock waits, deadlocks, and connection pool saturation
+    - [ ] Add dashboard panels for top queries by total time, mean time, p95-ish latency, and calls
+- [ ] Detect likely N+1 and query explosions
+    - [ ] Count SQL statements per HTTP request
+    - [ ] Warn when one request exceeds the query-count threshold
+    - [ ] Add tests for query-count budgets on expensive API endpoints
+- [ ] Add Prometheus exporters
+    - [ ] PostgreSQL exporter
+    - [ ] nginx exporter
+    - [ ] node/container exporter
+    - [ ] Valkey-compatible Redis exporter
+    - [ ] MinIO exporter or built-in metrics scrape
+- [ ] Add Grafana dashboards
+    - [ ] API latency p50/p95/p99, request rate, and 4xx/5xx rate
+    - [ ] DB query latency, locks, connections, and disk usage
+    - [ ] nginx upstream status and response latency
+    - [ ] container CPU/RAM/restarts
+    - [ ] backup freshness and restore-test status
+- [ ] Add operational alerts
+    - [ ] p95 latency regression
+    - [ ] 5xx spikes
+    - [ ] event loop lag
+    - [ ] TLS certificate expiry
+    - [ ] backup failure or stale backup
+    - [ ] disk pressure
 - [ ] Set up a container health monitoring service
     - [ ] Send notifications on a container crash
     - [ ] Send notifications on high resource usage (CPU, RAM)

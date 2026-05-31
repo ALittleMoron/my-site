@@ -34,6 +34,11 @@ Portfolio/notes site and knowledge database
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
+- Performance and test tooling may import reusable application contracts from `backend/src`, such
+  as enums, schemas, factories, and public helpers, but tooling-specific infrastructure must live
+  with that tooling. Do not create performance-only or test-only support modules under
+  `backend/src`; keep performance support under `backend/performance/` and test support under
+  `backend/tests/`.
 - UI localisation is backend-bundle driven: user-facing interface strings must come from the
   backend i18n catalog. Database/content localisation is separate from UI i18n: notes and note
   tags use required fixed `*_ru` / `*_en` fields in existing tables, with explicit

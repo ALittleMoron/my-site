@@ -47,6 +47,9 @@ dev = [
 local = [
     "ipython>=9.8.0",
 ]
+performance = [
+    "locust==2.44.0",
+]
 
 [tool.uv]
 package = false

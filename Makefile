@@ -18,6 +18,10 @@ TEST_COMPOSE := docker compose --env-file .env.test -f docker-compose.test.yml
 install-backend:
 	$(MAKE) -C backend install
 
+.PHONY: install-performance
+install-performance:
+	$(MAKE) -C backend install-performance
+
 .PHONY: migrate
 migrate:
 	$(MAKE) -C backend migrate
@@ -114,6 +118,20 @@ tests-compose: test-env-up
 	if [ $$status -eq 0 ]; then $(MAKE) test-frontend || status=$$?; fi; \
 	$(MAKE) test-env-down; \
 	exit $$status
+
+# Performance
+
+.PHONY: performance-smoke
+performance-smoke:
+	$(MAKE) -C backend performance-smoke
+
+.PHONY: performance-baseline
+performance-baseline:
+	$(MAKE) -C backend performance-baseline
+
+.PHONY: performance-report-clean
+performance-report-clean:
+	$(MAKE) -C backend performance-report-clean
 
 .PHONY: clean
 clean:

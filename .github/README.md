@@ -8,7 +8,7 @@
 | Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![argon2](./badges/argon2.svg) |
 | Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
-| Testing | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) |
+| Testing | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![locust](./badges/locust.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
 | Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![vulture](./badges/vulture.svg) |
 | Logging | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
@@ -35,7 +35,8 @@ my-site/
 ├── frontend/       # Angular 19 SPA (served by its own nginx image)
 ├── backend/        # Litestar API + domain logic
 │   ├── src/        # Application source
-│   └── tests/      # Backend tests (pytest)
+│   ├── tests/      # Backend tests (pytest)
+│   └── performance/ # Locust load-test scenarios and reports
 ├── .env.example    # Example environment variables
 ├── .env.test       # Safe test-only environment variables
 ├── docker-compose.test.yml
@@ -104,4 +105,6 @@ make test-env-down              # stop reusable test PostgreSQL and remove data
 make test-backend-unit          # backend unit tests, no DB required
 make test-backend-integration   # backend integration tests, needs test DB
 make test-frontend              # frontend only (jest)
+make install-performance        # install Locust dependency group for local IDE/runs
+make performance-smoke          # short Locust smoke profile, writes backend/performance/reports
 ```
