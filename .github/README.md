@@ -107,4 +107,5 @@ make test-backend-integration   # backend integration tests, needs test DB
 make test-frontend              # frontend only (jest)
 make install-performance        # install Locust dependency group for local IDE/runs
 make performance-smoke          # short Locust smoke profile, writes backend/performance/reports
+make query-plans-balanced       # seed test DB and EXPLAIN ANALYZE real search queries
 ```

@@ -4,7 +4,7 @@ from pathlib import Path
 
 class TestLocustfileStructure:
     def test_public_site_user_delegates_helpers_to_scenario_composition(self) -> None:
-        locustfile = Path("performance/locustfile.py")
+        locustfile = Path("performance/locust/locustfile.py")
         tree = ast.parse(locustfile.read_text())
         user_class = next(
             node
@@ -19,7 +19,7 @@ class TestLocustfileStructure:
         assert "discover_note_slugs" not in method_names
 
     def test_public_site_user_task_methods_delegate_to_scenario_attribute(self) -> None:
-        locustfile = Path("performance/locustfile.py")
+        locustfile = Path("performance/locust/locustfile.py")
         tree = ast.parse(locustfile.read_text())
         user_class = next(
             node

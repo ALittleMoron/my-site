@@ -2,7 +2,7 @@ import pytest
 
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.i18n.schemas import LanguagesResponseSchema
-from performance.contracts import (
+from performance.locust.contracts import (
     performance_language_from_environment,
     validate_response_payload,
 )

@@ -1,6 +1,6 @@
 import pytest
 
-from performance.thresholds import (
+from performance.locust.thresholds import (
     PerformanceStats,
     PerformanceThresholds,
     evaluate_performance,

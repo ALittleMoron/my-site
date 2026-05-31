@@ -107,4 +107,5 @@ make test-backend-integration   # интеграционные тесты backen
 make test-frontend              # только frontend (jest)
 make install-performance        # установить dependency group Locust для IDE/локальных запусков
 make performance-smoke          # короткий Locust smoke-профиль, пишет backend/performance/reports
+make query-plans-balanced       # наполнить test DB и выполнить EXPLAIN ANALYZE реальных search-запросов
 ```

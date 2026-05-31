@@ -1,7 +1,7 @@
 from typing import Any, Self
 
 from entrypoints.litestar.api.i18n.schemas import LanguagesResponseSchema
-from performance.http import PerformanceApiClient
+from performance.locust.http import PerformanceApiClient
 
 
 class FakeResponse:

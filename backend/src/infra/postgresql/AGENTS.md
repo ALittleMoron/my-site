@@ -2,6 +2,10 @@
 
 These rules apply to SQLAlchemy models, PostgreSQL storages, and Alembic migrations under `backend/src/infra/postgresql/`.
 
+## Performance Query Plans
+
+- Any changes under `backend/src/infra/postgresql/` must also be reflected in `backend/performance/query_plans/` by updating the relevant query capture, seed data, expectations, docs, or tests so the query-plan harness continues to exercise the changed PostgreSQL behavior.
+
 ## Migrations
 
 - Do not write raw SQL in Alembic migrations when SQLAlchemy can express the operation.

@@ -16,8 +16,8 @@ from entrypoints.litestar.api.notes.schemas import (
     NoteListResponseSchema,
     NoteTreeResponseSchema,
 )
-from performance.contracts import performance_language_from_environment
-from performance.http import LocustHttpClient, PerformanceApiClient
+from performance.locust.contracts import performance_language_from_environment
+from performance.locust.http import LocustHttpClient, PerformanceApiClient
 
 
 class PublicSiteDiscovery:

@@ -35,7 +35,7 @@ run_locust() {
 
     mkdir -p "$PERFORMANCE_REPORT_DIR"
     PYTHONPATH=src uv run --locked --group performance locust \
-        -f performance/locustfile.py \
+        -f performance/locust/locustfile.py \
         --host "$PERFORMANCE_HOST" \
         --headless \
         --only-summary \

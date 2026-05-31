@@ -3,7 +3,7 @@ from typing import Protocol, Self
 
 from pydantic import BaseModel
 
-from performance.contracts import validate_response_payload
+from performance.locust.contracts import validate_response_payload
 
 HTTP_OK = 200
 

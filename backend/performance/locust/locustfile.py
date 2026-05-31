@@ -4,8 +4,8 @@ from typing import Any
 from locust import HttpUser, between, events, task
 
 from infra.config.loggers import logger
-from performance.scenario import PublicSiteScenario
-from performance.thresholds import (
+from performance.locust.scenario import PublicSiteScenario
+from performance.locust.thresholds import (
     PerformanceStats,
     evaluate_performance,
     thresholds_from_environment,

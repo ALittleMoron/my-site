@@ -57,6 +57,7 @@
 - [ ] Check site performance
   - [x] Add Locust smoke/baseline scaffolding and CI report artifacts
   - [x] Validate selected Locust API responses against backend response schemas
+  - [x] Add reusable PostgreSQL query-plan harness for real compiled search queries
   - [ ] Tune Locust thresholds from real baseline reports
   - [ ] Expand Locust scenarios with seeded note/detail/matrix data
   - [ ] Run scheduled/manual baseline load tests against a production-like environment
@@ -460,6 +461,8 @@
 - [x] UI localisation
 - [ ] Database localisation
 - [ ] Migrate from Makefile to Just
+- [ ] Move complex logic out of Makefiles into dedicated script folders (`backend/scripts/`, `frontend/scripts/`, `infra/scripts/`); keep Makefiles as thin wrappers that only call Bash scripts or nested Makefiles.
+- [ ] Refactor project scripts so `make <command>` fully prepares and runs tests, linters, checkers, and similar commands without manual setup (start required Docker services, prepare data, and run other prerequisites as needed).
 - [ ] Cache on API get methods + cache invalidation on changes
 
 ## Bugs
