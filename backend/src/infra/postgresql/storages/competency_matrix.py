@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import ARRAY, Integer, bindparam, case, func, or_, select
+from sqlalchemy import ARRAY, Integer, String, and_, bindparam, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
@@ -10,6 +10,7 @@ from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
+from infra.config.constants import constants
 from infra.postgresql.models import CompetencyMatrixItemModel, ExternalResourceModel
 from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
 
@@ -173,22 +174,61 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         language: LanguageEnum,
     ) -> ExternalResources:
         lowered_search_name = search_name.lower()
-        name_column = self._resource_name_column(language=language)
+        active_name_column = self._resource_name_column(language=language)
+        secondary_name_column = self._secondary_resource_name_column(language=language)
+        search_query = bindparam(
+            "resource_search_query",
+            value=lowered_search_name,
+            type_=String(),
+        )
+        search_pattern = f"%{lowered_search_name}%"
+        prefix_pattern = f"{lowered_search_name}%"
+        active_name = func.lower(active_name_column)
+        secondary_name = func.lower(secondary_name_column)
+        url = func.lower(ExternalResourceModel.url)
+        fuzzy_search_allowed = (
+            func.length(search_query) >= constants.search.min_trigram_fuzzy_query_length
+        )
+        similarity_score = func.greatest(
+            func.similarity(active_name, search_query),
+            func.similarity(secondary_name, search_query),
+            func.similarity(url, search_query),
+            func.word_similarity(search_query, active_name),
+            func.word_similarity(search_query, secondary_name),
+            func.word_similarity(search_query, url),
+        )
         stmt = (
             select(ExternalResourceModel)
             .where(
                 or_(
-                    func.lower(name_column).ilike(f"%{lowered_search_name}%"),
-                    func.lower(ExternalResourceModel.url).ilike(f"%{lowered_search_name}%"),
+                    active_name.ilike(search_pattern),
+                    secondary_name.ilike(search_pattern),
+                    url.ilike(search_pattern),
+                    and_(
+                        fuzzy_search_allowed,
+                        or_(
+                            active_name.op("%")(search_query),
+                            secondary_name.op("%")(search_query),
+                            url.op("%")(search_query),
+                            active_name.op("%>")(search_query),
+                            secondary_name.op("%>")(search_query),
+                            url.op("%>")(search_query),
+                        ),
+                    ),
                 ),
             )
             .order_by(
                 case(
-                    (func.lower(name_column) == lowered_search_name, 0),
-                    (func.lower(name_column).startswith(lowered_search_name), 1),
-                    else_=2,
+                    (active_name == lowered_search_name, 0),
+                    (active_name.like(prefix_pattern), 1),
+                    (secondary_name == lowered_search_name, 2),
+                    (secondary_name.like(prefix_pattern), 3),
+                    (url.like(search_pattern), 4),
+                    else_=5,
                 ),
-                name_column,
+                similarity_score.desc(),
+                active_name,
+                ExternalResourceModel.id,
             )
             .limit(limit)
         )
@@ -203,3 +243,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         if language == LanguageEnum.RU:
             return ExternalResourceModel.name_ru
         return ExternalResourceModel.name_en
+
+    def _secondary_resource_name_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return ExternalResourceModel.name_en
+        return ExternalResourceModel.name_ru

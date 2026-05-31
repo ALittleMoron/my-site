@@ -33,11 +33,16 @@ class _FilesConstants:
     allowed_to_upload_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 
 
+class _SearchConstants:
+    min_trigram_fuzzy_query_length: int = 6
+
+
 class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
     valkey: _ValkeyConstants = _ValkeyConstants()
     files: _FilesConstants = _FilesConstants()
+    search: _SearchConstants = _SearchConstants()
 
 
 constants = Constants()

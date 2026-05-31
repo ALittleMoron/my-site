@@ -9,6 +9,9 @@ These rules apply to backend Python code under `backend/**/*.py`.
 - mypy: strict mode (`disallow_untyped_defs = true` etc.)
 - No docstrings unless interface is non-obvious from types
 - Comments: only for non-obvious WHY, never WHAT
+- Keep reusable backend tuning values, such as search thresholds, in
+  `backend/src/infra/config/constants.py` and import `constants`; do not define module-local
+  constants for those values in services, storages, or adapters.
 
 ## Layers
 

@@ -63,6 +63,41 @@ const mockQuestionList: MatrixQuestionList = {
   ],
 };
 
+const duplicateSubsectionQuestionList: MatrixQuestionList = {
+  sheetKey: 'javascript',
+  sheet: 'JavaScript',
+  sections: [
+    {
+      section: 'Runtime',
+      subsections: [
+        {
+          subsection: 'Basics',
+          grades: [
+            {
+              grade: 'Junior',
+              questions: [{ id: 1, question: 'How does the event loop work?' }],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      section: 'Browser',
+      subsections: [
+        {
+          subsection: 'Basics',
+          grades: [
+            {
+              grade: 'Junior',
+              questions: [{ id: 2, question: 'What is DOM event delegation?' }],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 const mockDetail: MatrixQuestionDetail = {
   id: 1,
   question: 'What is a closure?',
@@ -286,6 +321,33 @@ describe('MatrixListComponent', () => {
     );
     expect(allQuestions.length).toBe(1);
     expect(allQuestions[0].question).toBe('What is a closure?');
+  });
+
+  it('filters table layout search when subsections have duplicate names', () => {
+    const consoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      matrixService.getQuestions.mockReturnValue(of(duplicateSubsectionQuestionList));
+      layoutPreferences.matrixLayout.set('grid');
+      fixture.detectChanges();
+
+      const input = fixture.nativeElement.querySelector<HTMLInputElement>('input[type="text"]')!;
+      input.value = 'delegation';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      const grid = fixture.nativeElement.querySelector('app-matrix-grouped-grid') as HTMLElement;
+      expect(grid.textContent).toContain('Browser');
+      expect(grid.textContent).toContain('What is DOM event delegation?');
+      expect(grid.textContent).not.toContain('Runtime');
+      expect(grid.textContent).not.toContain('How does the event loop work?');
+      expect(
+        [...consoleWarn.mock.calls, ...consoleError.mock.calls].flat().join(' '),
+      ).not.toContain('NG0955');
+    } finally {
+      consoleWarn.mockRestore();
+      consoleError.mockRestore();
+    }
   });
 
   it('should remove empty grade groups when filtering', () => {

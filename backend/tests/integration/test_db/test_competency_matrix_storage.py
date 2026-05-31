@@ -385,3 +385,104 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert len(resources) == 2
         assert resources[0].name_en == "NAMED 100"
         assert resources[1].name_en == "NAMED 101"
+
+    async def test_search_competency_matrix_resources_matches_typo(self) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=110,
+                    name="Pydantic",
+                    url="https://docs.pydantic.dev",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=111,
+                    name="Django",
+                    url="https://docs.djangoproject.com",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="pydntic",
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+        assert [resource.name_en for resource in resources] == ["Pydantic"]
+
+    async def test_search_competency_matrix_resources_matches_secondary_language_name(
+        self,
+    ) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=120,
+                    name_ru="Документация FastAPI",
+                    name_en="FastAPI docs",
+                    url="https://fastapi.tiangolo.com",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="документация",
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+        assert [resource.name_en for resource in resources] == ["FastAPI docs"]
+
+    async def test_search_competency_matrix_resources_ranks_active_language_matches(
+        self,
+    ) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=130,
+                    name="Python Package Index",
+                    url="https://pypi.org",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=131,
+                    name="Packaging guide",
+                    url="https://python.example.com/packages",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=132,
+                    name="Python",
+                    url="https://python.org",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="python",
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+        assert [resource.name_en for resource in resources][:2] == [
+            "Python",
+            "Python Package Index",
+        ]
+
+    async def test_search_competency_matrix_resources_respects_limit(self) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=140,
+                    name="Limit resource A",
+                    url="https://example-a.com",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=141,
+                    name="Limit resource B",
+                    url="https://example-b.com",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=142,
+                    name="Limit resource C",
+                    url="https://example-c.com",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="limit",
+            limit=2,
+            language=LanguageEnum.EN,
+        )
+        assert len(resources) == 2

@@ -464,8 +464,8 @@
 
 ## Bugs
 
-- [ ] Search does not work in "table" view mode
-- [ ] Resource search is suboptimal. Connect full-text search via [sqlalchemy-searchable](https://sqlalchemy-searchable.readthedocs.io/en/latest/quickstart.html)
+- [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
+- [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
 
 ## Documentation
 
