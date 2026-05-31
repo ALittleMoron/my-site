@@ -4,6 +4,7 @@ import pytest
 import pytest_asyncio
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import NoteFilters
 from core.types import IntId
@@ -48,13 +49,44 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             include_deleted_tags=True,
         )
 
-        assert public_result.title == "Test Note"
+        assert public_result.localized_title(language=LanguageEnum.RU) == "Test Note"
         assert [tag.slug for tag in public_result.tags] == ["python"]
         assert [tag.slug for tag in admin_result.tags] == ["python", "deleted"]
 
+    async def test_get_note_by_slug_returns_canonical_translations(self) -> None:
+        await self.storage_helper.create_note(
+            note=self.factory.core.note(
+                title_ru="Русская заметка",
+                title_en="English note",
+                content_ru="Русское содержимое",
+                content_en="English content",
+                folder_ru="Русская папка",
+                folder_en="English folder",
+                slug="localized-note",
+            ),
+        )
+
+        result = await self.storage.get_note_by_slug(
+            slug="localized-note",
+            include_deleted_tags=False,
+        )
+
+        assert not hasattr(result, "title")
+        assert not hasattr(result, "content")
+        assert not hasattr(result, "folder")
+        assert result.localized_title(language=LanguageEnum.RU) == "Русская заметка"
+        assert result.localized_content(language=LanguageEnum.RU) == "Русское содержимое"
+        assert result.localized_folder(language=LanguageEnum.RU) == "Русская папка"
+        assert result.localized_title(language=LanguageEnum.EN) == "English note"
+        assert result.localized_content(language=LanguageEnum.EN) == "English content"
+        assert result.localized_folder(language=LanguageEnum.EN) == "English folder"
+
     async def test_get_note_by_slug_not_found(self) -> None:
         with pytest.raises(NoteNotFoundError):
-            await self.storage.get_note_by_slug(slug="non-existent", include_deleted_tags=False)
+            await self.storage.get_note_by_slug(
+                slug="non-existent",
+                include_deleted_tags=False,
+            )
 
     async def test_list_notes_filters_by_active_tag_and_published_status(self) -> None:
         python = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -95,6 +127,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug="python",
                 published_from=None,
@@ -140,6 +173,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=False,
                 tag_slug=None,
                 published_from=None,
@@ -203,6 +237,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=False,
                 tag_slug=None,
                 published_from=date(2024, 2, 1),
@@ -246,6 +281,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug=None,
                 published_from=None,
@@ -257,6 +293,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug=None,
                 published_from=None,
@@ -267,6 +304,58 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
 
         assert [note.slug for note in title_result.values] == ["title-match"]
         assert [note.slug for note in content_result.values] == ["content-match"]
+
+    async def test_list_notes_searches_only_requested_language_vector(self) -> None:
+        await self.storage_helper.create_notes(
+            notes=[
+                self.factory.core.note(
+                    title_ru="Очереди задач",
+                    title_en="Task queues",
+                    content_ru="Фоновая обработка заданий.",
+                    content_en="Background job processing.",
+                    slug="task-queues",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-05-01T00:00:00",
+                ),
+                self.factory.core.note(
+                    title_ru="Индексы PostgreSQL",
+                    title_en="Database indexes",
+                    content_ru="Поиск по документам.",
+                    content_en="Query planning details.",
+                    slug="database-indexes",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    published_at="2024-04-01T00:00:00",
+                ),
+            ],
+        )
+
+        ru_result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.RU,
+                only_published=True,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query="документам",
+            ),
+        )
+        en_result = await self.storage.list_notes(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.EN,
+                only_published=True,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query="background",
+            ),
+        )
+
+        assert [note.slug for note in ru_result.values] == ["database-indexes"]
+        assert [note.slug for note in en_result.values] == ["task-queues"]
 
     async def test_list_notes_composes_tag_date_and_search_filters(self) -> None:
         python = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -305,6 +394,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug="python",
                 published_from=date(2024, 2, 1),
@@ -341,8 +431,14 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        public_tree = await self.storage.list_tree(only_published=True)
-        admin_tree = await self.storage.list_tree(only_published=False)
+        public_tree = await self.storage.list_tree(
+            only_published=True,
+            language=LanguageEnum.RU,
+        )
+        admin_tree = await self.storage.list_tree(
+            only_published=False,
+            language=LanguageEnum.RU,
+        )
 
         assert [folder.folder for folder in public_tree.folders] == ["Architecture", "Backend"]
         assert [item.slug for item in public_tree.folders[0].notes] == ["a-note"]
@@ -357,7 +453,10 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             slug="draft",
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        first = await self.storage.get_note_by_slug(slug="draft", include_deleted_tags=False)
+        first = await self.storage.get_note_by_slug(
+            slug="draft",
+            include_deleted_tags=False,
+        )
         await self.storage.update_note_publish_status(
             slug="draft",
             publish_status=PublishStatusEnum.DRAFT,
@@ -366,7 +465,10 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             slug="draft",
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        second = await self.storage.get_note_by_slug(slug="draft", include_deleted_tags=False)
+        second = await self.storage.get_note_by_slug(
+            slug="draft",
+            include_deleted_tags=False,
+        )
 
         assert first.published_at is not None
         assert second.published_at == first.published_at
@@ -376,10 +478,19 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
         await self.storage.create_tag(tag=tag)
 
         await self.storage.soft_delete_tag(tag_id=IntId(1))
-        active_tags = await self.storage.list_tags(include_deleted=False)
-        deleted_tags = await self.storage.list_tags(include_deleted=True)
+        active_tags = await self.storage.list_tags(
+            include_deleted=False,
+            language=LanguageEnum.RU,
+        )
+        deleted_tags = await self.storage.list_tags(
+            include_deleted=True,
+            language=LanguageEnum.RU,
+        )
         await self.storage.restore_tag(tag_id=IntId(1))
-        restored_tags = await self.storage.list_tags(include_deleted=False)
+        restored_tags = await self.storage.list_tags(
+            include_deleted=False,
+            language=LanguageEnum.RU,
+        )
 
         assert active_tags.values == []
         assert deleted_tags.values[0].deleted_at is not None

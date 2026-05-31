@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
+import { LanguageCode } from '../../../core/i18n/i18n.model';
 import {
   NoteDetail,
   NoteDetailDto,
@@ -33,6 +34,7 @@ export class NotesService {
     const queryParams: Record<string, string> = {
       page: String(params.page),
       pageSize: String(params.pageSize),
+      language: params.language,
       onlyPublished: String(params.onlyPublished),
     };
     if (params.tagSlug) {
@@ -50,20 +52,29 @@ export class NotesService {
     return this.api.get<NoteListDto>('/api/notes', queryParams).pipe(map(mapNoteListDto));
   }
 
-  getNote(slug: string, onlyPublished: boolean): Observable<NoteDetail> {
+  getNote(slug: string, onlyPublished: boolean, language: LanguageCode): Observable<NoteDetail> {
     return this.api
       .get<NoteDetailDto>(`/api/notes/detail/${slug}`, {
+        language,
         onlyPublished: String(onlyPublished),
       })
       .pipe(map(mapNoteDetailDto));
   }
 
-  trackEngagedView(slug: string): Observable<void> {
-    return this.api.post<void>(`/api/notes/detail/${slug}/analytics/engaged-view`, {});
+  trackEngagedView(slug: string, language: LanguageCode): Observable<void> {
+    return this.api.post<void>(
+      `/api/notes/detail/${slug}/analytics/engaged-view`,
+      {},
+      { language },
+    );
   }
 
-  setReaction(slug: string, payload: NoteReactionPayload): Observable<void> {
-    return this.api.post<void>(`/api/notes/detail/${slug}/reaction`, payload);
+  setReaction(
+    slug: string,
+    payload: NoteReactionPayload,
+    language: LanguageCode,
+  ): Observable<void> {
+    return this.api.post<void>(`/api/notes/detail/${slug}/reaction`, payload, { language });
   }
 
   getStats(params: NoteStatsParams): Observable<NoteStats> {
@@ -71,21 +82,24 @@ export class NotesService {
       .get<NoteStatsDto>('/api/notes/stats', {
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
+        language: params.language,
       })
       .pipe(map(mapNoteStatsDto));
   }
 
-  getTree(): Observable<NoteTree> {
-    return this.api.get<NoteTreeDto>('/api/notes/tree').pipe(map(mapNoteTreeDto));
+  getTree(language: LanguageCode): Observable<NoteTree> {
+    return this.api.get<NoteTreeDto>('/api/notes/tree', { language }).pipe(map(mapNoteTreeDto));
   }
 
-  createNote(payload: NotePayload): Observable<NoteDetail> {
-    return this.api.post<NoteDetailDto>('/api/notes', payload).pipe(map(mapNoteDetailDto));
-  }
-
-  updateNote(slug: string, payload: NotePayload): Observable<NoteDetail> {
+  createNote(payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
     return this.api
-      .put<NoteDetailDto>(`/api/notes/detail/${slug}`, payload)
+      .post<NoteDetailDto>('/api/notes', payload, { language })
+      .pipe(map(mapNoteDetailDto));
+  }
+
+  updateNote(slug: string, payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
+    return this.api
+      .put<NoteDetailDto>(`/api/notes/detail/${slug}`, payload, { language })
       .pipe(map(mapNoteDetailDto));
   }
 
@@ -101,28 +115,36 @@ export class NotesService {
     return this.api.post<void>(`/api/notes/detail/${slug}/set-draft`, {});
   }
 
-  getTags(includeDeleted: boolean): Observable<NoteTag[]> {
+  getTags(includeDeleted: boolean, language: LanguageCode): Observable<NoteTag[]> {
     return this.api
-      .get<TagsDto>('/api/notes/tags', { includeDeleted: String(includeDeleted) })
+      .get<TagsDto>('/api/notes/tags', { includeDeleted: String(includeDeleted), language })
       .pipe(map((dto) => dto.tags.map(mapTagDto)));
   }
 
-  searchTags(searchName: string, includeDeleted: boolean, limit: number): Observable<NoteTag[]> {
+  searchTags(
+    searchName: string,
+    includeDeleted: boolean,
+    limit: number,
+    language: LanguageCode,
+  ): Observable<NoteTag[]> {
     return this.api
       .get<TagsDto>('/api/notes/tags/search', {
         searchName,
         includeDeleted: String(includeDeleted),
         limit: String(limit),
+        language,
       })
       .pipe(map((dto) => dto.tags.map(mapTagDto)));
   }
 
-  createTag(payload: TagPayload): Observable<NoteTag> {
-    return this.api.post<NoteTagDto>('/api/notes/tags', payload).pipe(map(mapTagDto));
+  createTag(payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
+    return this.api.post<NoteTagDto>('/api/notes/tags', payload, { language }).pipe(map(mapTagDto));
   }
 
-  updateTag(tagId: number, payload: TagPayload): Observable<NoteTag> {
-    return this.api.put<NoteTagDto>(`/api/notes/tags/${tagId}`, payload).pipe(map(mapTagDto));
+  updateTag(tagId: number, payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
+    return this.api
+      .put<NoteTagDto>(`/api/notes/tags/${tagId}`, payload, { language })
+      .pipe(map(mapTagDto));
   }
 
   deleteTag(tagId: number): Observable<void> {

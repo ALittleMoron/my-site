@@ -51,8 +51,14 @@ Never violate these boundaries:
   `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
 - Persist only supported language codes returned by the backend. Do not introduce frontend-only
   languages or language fallbacks that bypass the backend enum/catalog.
-- Do not localise database/content text in this layer yet; only interface chrome, labels,
-  validation copy, notifications, SEO chrome, and enum labels belong in the UI i18n bundle.
+- Notes and note tags localise content through the notes API, not through the UI i18n bundle. Pass
+  the current `I18nService.language()` value as the explicit `language` query parameter for
+  localized read requests, edit both RU/EN note and tag `translations` in authoring forms, and send
+  both languages in write payloads.
+- Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
+  language fallbacks for localized content.
+- Do not localise competency matrix or other database/content text in this layer until the backend
+  supports that content explicitly.
 
 ## `shared/ui/` Rules
 

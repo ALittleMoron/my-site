@@ -26,7 +26,19 @@ describe('NoteDetailComponent', () => {
       content: '# Content',
       viewCount: 42,
       reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
-      tags: [{ id: 1, name: 'Python', slug: 'python', deletedAt: null }],
+      tags: [
+        {
+          id: 1,
+          name: 'Python',
+          slug: 'python',
+          deletedAt: null,
+          translations: { ru: { name: 'Python' }, en: { name: 'Python' } },
+        },
+      ],
+      translations: {
+        ru: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
+        en: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
+      },
     });
     fixture.componentRef.setInput('selectedReaction', 'poop');
     fixture.componentRef.setInput('dateLocale', 'ru-RU');

@@ -7,9 +7,10 @@ from uuid import UUID
 from sqlalchemy import Select, case, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
@@ -46,7 +47,12 @@ _SelectT = TypeVar("_SelectT")
 class NotesDatabaseStorage(NotesStorage):
     session: AsyncSession
 
-    async def get_note_by_slug(self, *, slug: str, include_deleted_tags: bool) -> Note:
+    async def get_note_by_slug(
+        self,
+        *,
+        slug: str,
+        include_deleted_tags: bool,
+    ) -> Note:
         query = (
             select(NoteModel)
             .where(NoteModel.slug == slug)
@@ -67,7 +73,12 @@ class NotesDatabaseStorage(NotesStorage):
             filters=filters,
         )
         query = (
-            query.order_by(*self._note_ordering(search_query=filters.search_query))
+            query.order_by(
+                *self._note_ordering(
+                    search_query=filters.search_query,
+                    language=filters.language,
+                ),
+            )
             .offset(filters.offset)
             .limit(filters.limit)
         )
@@ -81,7 +92,9 @@ class NotesDatabaseStorage(NotesStorage):
 
         return Notes(
             values=[
-                note_model.to_domain_schema(include_deleted_tags=not filters.only_published)
+                note_model.to_domain_schema(
+                    include_deleted_tags=not filters.only_published,
+                )
                 for note_model in note_models.unique()
             ],
             total_count=total_count,
@@ -112,28 +125,48 @@ class NotesDatabaseStorage(NotesStorage):
             )
         if filters.search_query is not None:
             query = query.where(
-                NoteModel.search_vector.op("@@")(
+                self._search_vector(language=filters.language).op("@@")(
                     func.websearch_to_tsquery("simple", filters.search_query),
                 ),
             )
         return query
 
-    def _note_ordering(self, *, search_query: str | None = None) -> tuple[Any, ...]:
+    def _note_ordering(
+        self,
+        *,
+        search_query: str | None = None,
+        language: LanguageEnum,
+    ) -> tuple[Any, ...]:
         default_ordering = (
             case((NoteModel.publish_status == PublishStatusEnum.PUBLISHED, 0), else_=1),
             NoteModel.published_at.desc().nullslast(),
             NoteModel.updated_at.desc(),
-            NoteModel.title,
+            self._title_column(language=language),
         )
         if search_query is None:
             return default_ordering
         return (
             func.ts_rank_cd(
-                NoteModel.search_vector,
+                self._search_vector(language=language),
                 func.websearch_to_tsquery("simple", search_query),
             ).desc(),
             *default_ordering,
         )
+
+    def _search_vector(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return NoteModel.search_vector_ru
+        return NoteModel.search_vector_en
+
+    def _title_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return NoteModel.title_ru
+        return NoteModel.title_en
+
+    def _folder_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return NoteModel.folder_ru
+        return NoteModel.folder_en
 
     def _date_start(self, *, value: date) -> datetime:
         return datetime.combine(value, time.min, tzinfo=UTC)
@@ -141,16 +174,21 @@ class NotesDatabaseStorage(NotesStorage):
     def _date_end(self, *, value: date) -> datetime:
         return datetime.combine(value, time.max, tzinfo=UTC)
 
-    async def list_tree(self, *, only_published: bool) -> NoteTree:
-        query = select(NoteModel).order_by(NoteModel.folder, *self._note_ordering())
+    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
+        query = select(NoteModel).order_by(
+            self._folder_column(language=language),
+            *self._note_ordering(language=language),
+        )
         if only_published:
             query = query.where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
         models = await self.session.scalars(query)
         folders: dict[str, list[NoteTreeItem]] = {}
         for model in models:
-            folders.setdefault(model.folder, []).append(
+            folder = model.folder_ru if language == LanguageEnum.RU else model.folder_en
+            title = model.title_ru if language == LanguageEnum.RU else model.title_en
+            folders.setdefault(folder, []).append(
                 NoteTreeItem(
-                    title=model.title,
+                    title=title,
                     slug=model.slug,
                     publish_status=model.publish_status,
                     published_at=model.published_at,
@@ -169,7 +207,10 @@ class NotesDatabaseStorage(NotesStorage):
         model.tag_links = self._build_tag_links(note=note)
         self.session.add(model)
         await self.session.flush()
-        return await self.get_note_by_slug(slug=note.slug, include_deleted_tags=True)
+        return await self.get_note_by_slug(
+            slug=note.slug,
+            include_deleted_tags=True,
+        )
 
     async def update_note(self, *, note: Note) -> Note:
         query = (
@@ -183,7 +224,10 @@ class NotesDatabaseStorage(NotesStorage):
         model.update_from_domain_schema(note=note)
         model.tag_links = self._build_tag_links(note=note)
         await self.session.flush()
-        return await self.get_note_by_slug(slug=note.slug, include_deleted_tags=True)
+        return await self.get_note_by_slug(
+            slug=note.slug,
+            include_deleted_tags=True,
+        )
 
     def _build_tag_links(self, *, note: Note) -> list[NoteToTagSecondaryModel]:
         return [NoteToTagSecondaryModel.from_domain_schema(tag=tag) for tag in note.tags]
@@ -214,7 +258,12 @@ class NotesDatabaseStorage(NotesStorage):
             model.published_at = datetime.now(tz=UTC)
         await self.session.flush()
 
-    async def get_tags_by_ids(self, *, tag_ids: list[IntId], include_deleted: bool) -> Tags:
+    async def get_tags_by_ids(
+        self,
+        *,
+        tag_ids: list[IntId],
+        include_deleted: bool,
+    ) -> Tags:
         if not tag_ids:
             return Tags(values=[])
         query = select(TagModel).where(TagModel.id.in_(tag_ids))
@@ -223,30 +272,39 @@ class NotesDatabaseStorage(NotesStorage):
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
-    async def list_tags(self, *, include_deleted: bool) -> Tags:
-        query = select(TagModel).order_by(func.lower(TagModel.name), TagModel.id)
+    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
+        name_column = self._tag_name_column(language=language)
+        query = select(TagModel).order_by(func.lower(name_column), TagModel.id)
         if not include_deleted:
             query = query.where(TagModel.deleted_at.is_(None))
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
-    async def search_tags(self, *, search_name: str, include_deleted: bool, limit: int) -> Tags:
+    async def search_tags(
+        self,
+        *,
+        search_name: str,
+        include_deleted: bool,
+        limit: int,
+        language: LanguageEnum,
+    ) -> Tags:
         lowered_search_name = search_name.lower()
+        name_column = self._tag_name_column(language=language)
         query = (
             select(TagModel)
             .where(
                 or_(
-                    func.lower(TagModel.name).ilike(f"%{lowered_search_name}%"),
+                    func.lower(name_column).ilike(f"%{lowered_search_name}%"),
                     func.lower(TagModel.slug).ilike(f"%{lowered_search_name}%"),
                 ),
             )
             .order_by(
                 case(
-                    (func.lower(TagModel.name) == lowered_search_name, 0),
-                    (func.lower(TagModel.name).startswith(lowered_search_name), 1),
+                    (func.lower(name_column) == lowered_search_name, 0),
+                    (func.lower(name_column).startswith(lowered_search_name), 1),
                     else_=2,
                 ),
-                TagModel.name,
+                name_column,
             )
             .limit(limit)
         )
@@ -254,6 +312,11 @@ class NotesDatabaseStorage(NotesStorage):
             query = query.where(TagModel.deleted_at.is_(None))
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
+
+    def _tag_name_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return TagModel.name_ru
+        return TagModel.name_en
 
     async def create_tag(self, *, tag: Tag) -> Tag:
         model = TagModel.from_domain_schema(tag=tag)
@@ -432,8 +495,18 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
             model.reaction_kind = reaction_kind
         await self.session.flush()
 
-    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
-        daily = await self._get_daily_stats(date_from=date_from, date_to=date_to)
+    async def get_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+        language: LanguageEnum,
+    ) -> NoteAnalyticsStats:
+        daily = await self._get_daily_stats(
+            date_from=date_from,
+            date_to=date_to,
+            language=language,
+        )
         note_ids = list(dict.fromkeys(item.note_id for item in daily))
         reaction_counts = await self._get_reaction_counts(note_ids=note_ids)
         notes = self._build_note_stats(daily=daily, reaction_counts=reaction_counts)
@@ -454,11 +527,13 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
         *,
         date_from: date,
         date_to: date,
+        language: LanguageEnum,
     ) -> list[NoteAnalyticsDailyStats]:
+        title_column = self._analytics_title_column(language=language)
         result = await self.session.execute(
             select(
                 NoteDailyAnalyticsModel.note_id,
-                NoteModel.title,
+                title_column,
                 NoteModel.slug,
                 NoteDailyAnalyticsModel.date,
                 NoteDailyAnalyticsModel.source_category,
@@ -472,7 +547,7 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
             )
             .order_by(
                 NoteDailyAnalyticsModel.date,
-                NoteModel.title,
+                title_column,
                 NoteDailyAnalyticsModel.source_category,
             ),
         )
@@ -488,6 +563,11 @@ class NoteAnalyticsDatabaseStorage(NoteAnalyticsStorage):
             )
             for row in result
         ]
+
+    def _analytics_title_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return NoteModel.title_ru
+        return NoteModel.title_en
 
     def _build_note_stats(
         self,

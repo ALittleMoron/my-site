@@ -13,24 +13,30 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
+import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { NoteDetail, NotePayload, NoteTag } from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
 
 interface NoteFormControls {
-  title: FormControl<string>;
-  content: FormControl<string>;
+  titleRu: FormControl<string>;
+  titleEn: FormControl<string>;
+  contentRu: FormControl<string>;
+  contentEn: FormControl<string>;
   slug: FormControl<string>;
-  folder: FormControl<string>;
+  folderRu: FormControl<string>;
+  folderEn: FormControl<string>;
   publishStatus: FormControl<'Draft' | 'Published'>;
 }
 
 interface TagFormControls {
-  name: FormControl<string>;
+  nameRu: FormControl<string>;
+  nameEn: FormControl<string>;
   slug: FormControl<string>;
 }
 
 interface TagDraft extends NoteTag {
-  draftName: string;
+  draftNameRu: string;
+  draftNameEn: string;
   draftSlug: string;
 }
 
@@ -92,17 +98,22 @@ export class NoteFormComponent implements OnInit {
   readonly tags = signal<TagDraft[]>([]);
   readonly selectedTagIds = signal<ReadonlySet<number>>(new Set<number>());
   readonly tagError = signal<string | null>(null);
+  readonly activeLanguageTab = signal<LanguageCode>('ru');
 
   readonly form = new FormGroup<NoteFormControls>({
-    title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    content: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    titleRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    titleEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    contentRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    contentEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    folder: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    folderRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    folderEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     publishStatus: new FormControl<'Draft' | 'Published'>('Draft', { nonNullable: true }),
   });
 
   readonly newTagForm = new FormGroup<TagFormControls>({
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    nameRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    nameEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
@@ -111,10 +122,13 @@ export class NoteFormComponent implements OnInit {
     if (note) {
       this.slugEdited = true;
       this.form.setValue({
-        title: note.title,
-        content: note.content,
+        titleRu: note.translations.ru.title,
+        titleEn: note.translations.en.title,
+        contentRu: note.translations.ru.content,
+        contentEn: note.translations.en.content,
         slug: note.slug,
-        folder: note.folder,
+        folderRu: note.translations.ru.folder,
+        folderEn: note.translations.en.folder,
         publishStatus: note.publishStatus,
       });
       this.selectedTagIds.set(new Set(note.tags.map((tag) => tag.id)));
@@ -122,17 +136,25 @@ export class NoteFormComponent implements OnInit {
     this.loadTags();
   }
 
-  onTitleInput(): void {
+  onTitleEnInput(): void {
     if (this.slugEdited) return;
-    this.form.controls.slug.setValue(slugify(this.form.controls.title.value));
+    this.form.controls.slug.setValue(slugify(this.form.controls.titleEn.value));
   }
 
   onSlugInput(): void {
     this.slugEdited = true;
   }
 
-  setContent(value: string): void {
-    this.form.controls.content.setValue(value);
+  setActiveLanguageTab(language: LanguageCode): void {
+    this.activeLanguageTab.set(language);
+  }
+
+  setContentRu(value: string): void {
+    this.form.controls.contentRu.setValue(value);
+  }
+
+  setContentEn(value: string): void {
+    this.form.controls.contentEn.setValue(value);
   }
 
   setPublishStatusFromEvent(event: Event): void {
@@ -161,10 +183,17 @@ export class NoteFormComponent implements OnInit {
     return tag.deletedAt !== null;
   }
 
-  updateTagDraftName(tagId: number, event: Event): void {
+  updateTagDraftNameRu(tagId: number, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.tags.update((tags) =>
-      tags.map((tag) => (tag.id === tagId ? { ...tag, draftName: value } : tag)),
+      tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameRu: value } : tag)),
+    );
+  }
+
+  updateTagDraftNameEn(tagId: number, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.tags.update((tags) =>
+      tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameEn: value } : tag)),
     );
   }
 
@@ -175,9 +204,9 @@ export class NoteFormComponent implements OnInit {
     );
   }
 
-  onNewTagNameInput(): void {
+  onNewTagNameEnInput(): void {
     if (this.newTagSlugEdited) return;
-    this.newTagForm.controls.slug.setValue(slugify(this.newTagForm.controls.name.value));
+    this.newTagForm.controls.slug.setValue(slugify(this.newTagForm.controls.nameEn.value));
   }
 
   onNewTagSlugInput(): void {
@@ -190,13 +219,23 @@ export class NoteFormComponent implements OnInit {
       return;
     }
     this.tagError.set(null);
+    const value = this.newTagForm.getRawValue();
     this.notesService
-      .createTag(this.newTagForm.getRawValue())
+      .createTag(
+        {
+          slug: value.slug,
+          translations: {
+            ru: { name: value.nameRu },
+            en: { name: value.nameEn },
+          },
+        },
+        this.currentLanguage(),
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tag) => {
           this.tags.update((tags) => [...tags, toDraft(tag)].sort(compareTags));
-          this.newTagForm.reset({ name: '', slug: '' });
+          this.newTagForm.reset({ nameRu: '', nameEn: '', slug: '' });
           this.newTagSlugEdited = false;
           this.tagsChanged.emit();
         },
@@ -207,7 +246,17 @@ export class NoteFormComponent implements OnInit {
   updateTag(tag: TagDraft): void {
     this.tagError.set(null);
     this.notesService
-      .updateTag(tag.id, { name: tag.draftName, slug: tag.draftSlug })
+      .updateTag(
+        tag.id,
+        {
+          slug: tag.draftSlug,
+          translations: {
+            ru: { name: tag.draftNameRu },
+            en: { name: tag.draftNameEn },
+          },
+        },
+        this.currentLanguage(),
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updated) => {
@@ -264,24 +313,49 @@ export class NoteFormComponent implements OnInit {
     const activeTagIds = this.tags()
       .filter((tag) => !this.isTagDeleted(tag) && this.selectedTagIds().has(tag.id))
       .map((tag) => tag.id);
-    this.noteSave.emit({ ...value, tagIds: activeTagIds });
+    this.noteSave.emit({
+      slug: value.slug,
+      publishStatus: value.publishStatus,
+      tagIds: activeTagIds,
+      translations: {
+        ru: {
+          title: value.titleRu,
+          content: value.contentRu,
+          folder: value.folderRu,
+        },
+        en: {
+          title: value.titleEn,
+          content: value.contentEn,
+          folder: value.folderEn,
+        },
+      },
+    });
   }
 
   private loadTags(): void {
     this.notesService
-      .getTags(true)
+      .getTags(true, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags.map(toDraft).sort(compareTags)),
         error: () => this.tagError.set(this.i18n.translate('notes.tags.loadError')),
       });
   }
+
+  private currentLanguage(): LanguageCode {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
+  }
 }
 
 function toDraft(tag: NoteTag): TagDraft {
   return {
     ...tag,
-    draftName: tag.name,
+    draftNameRu: tag.translations.ru.name,
+    draftNameEn: tag.translations.en.name,
     draftSlug: tag.slug,
   };
 }

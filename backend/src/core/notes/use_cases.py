@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.event_dispatchers import NoteAnalyticsErrorReporter
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
@@ -39,7 +40,7 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tree(self, *, only_published: bool) -> NoteTree:
+    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
         raise NotImplementedError
 
     @abstractmethod
@@ -47,7 +48,12 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_note(self, *, slug: str, params: NoteUpdateParams) -> Note:
+    async def update_note(
+        self,
+        *,
+        slug: str,
+        params: NoteUpdateParams,
+    ) -> Note:
         raise NotImplementedError
 
     @abstractmethod
@@ -64,11 +70,18 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tags(self, *, include_deleted: bool) -> Tags:
+    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
-    async def search_tags(self, *, search_name: str, include_deleted: bool, limit: int) -> Tags:
+    async def search_tags(
+        self,
+        *,
+        search_name: str,
+        include_deleted: bool,
+        limit: int,
+        language: LanguageEnum,
+    ) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
@@ -76,7 +89,12 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_tag(self, *, tag_id: IntId, params: TagUpdateParams) -> Tag:
+    async def update_tag(
+        self,
+        *,
+        tag_id: IntId,
+        params: TagUpdateParams,
+    ) -> Tag:
         raise NotImplementedError
 
     @abstractmethod
@@ -131,7 +149,13 @@ class AbstractNoteAnalyticsUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
+    async def get_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+        language: LanguageEnum,
+    ) -> NoteAnalyticsStats:
         raise NotImplementedError
 
 
@@ -151,51 +175,35 @@ class NotesUseCase(AbstractNotesUseCase):
     async def list_notes(self, *, filters: NoteFilters) -> Notes:
         return await self.storage.list_notes(filters=filters)
 
-    async def list_tree(self, *, only_published: bool) -> NoteTree:
-        return await self.storage.list_tree(only_published=only_published)
+    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
+        return await self.storage.list_tree(only_published=only_published, language=language)
 
     async def create_note(self, *, params: NoteCreateParams) -> Note:
         tags = await self._get_active_tags(tag_ids=params.tag_ids)
         now = datetime.now(tz=UTC)
-        note = Note(
-            id=params.id,
-            title=params.title,
-            content=params.content,
-            slug=params.slug,
-            folder=params.folder,
-            author_username=params.author_username,
-            publish_status=params.publish_status,
-            published_at=now if params.publish_status == PublishStatusEnum.PUBLISHED else None,
-            created_at=now,
-            updated_at=now,
-            tags=Tags(values=tags.values),
-        )
-        return await self.storage.create_note(note=note)
+        return await self.storage.create_note(note=params.to_note(now=now, tags=tags))
 
-    async def update_note(self, *, slug: str, params: NoteUpdateParams) -> Note:
-        existing_note = await self.storage.get_note_by_slug(slug=slug, include_deleted_tags=True)
+    async def update_note(
+        self,
+        *,
+        slug: str,
+        params: NoteUpdateParams,
+    ) -> Note:
+        existing_note = await self.storage.get_note_by_slug(
+            slug=slug,
+            include_deleted_tags=True,
+        )
         tags = await self._get_active_tags(tag_ids=params.tag_ids)
         now = datetime.now(tz=UTC)
-        published_at = existing_note.published_at
-        if published_at is None and params.publish_status == PublishStatusEnum.PUBLISHED:
-            published_at = now
-        note = Note(
-            id=existing_note.id,
-            title=params.title,
-            content=params.content,
-            slug=params.slug,
-            folder=params.folder,
-            author_username=existing_note.author_username,
-            publish_status=params.publish_status,
-            published_at=published_at,
-            created_at=existing_note.created_at,
-            updated_at=now,
-            tags=Tags(values=tags.values),
+        return await self.storage.update_note(
+            note=params.to_note(existing_note=existing_note, now=now, tags=tags),
         )
-        return await self.storage.update_note(note=note)
 
     async def _get_active_tags(self, *, tag_ids: list[IntId]) -> Tags:
-        tags = await self.storage.get_tags_by_ids(tag_ids=tag_ids, include_deleted=False)
+        tags = await self.storage.get_tags_by_ids(
+            tag_ids=tag_ids,
+            include_deleted=False,
+        )
         if not tags.all_tags_exist_by_ids(ids=set(tag_ids)):
             raise TagNotFoundError
         return tags
@@ -211,20 +219,33 @@ class NotesUseCase(AbstractNotesUseCase):
     ) -> None:
         await self.storage.update_note_publish_status(slug=slug, publish_status=publish_status)
 
-    async def list_tags(self, *, include_deleted: bool) -> Tags:
-        return await self.storage.list_tags(include_deleted=include_deleted)
+    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
+        return await self.storage.list_tags(include_deleted=include_deleted, language=language)
 
-    async def search_tags(self, *, search_name: str, include_deleted: bool, limit: int) -> Tags:
+    async def search_tags(
+        self,
+        *,
+        search_name: str,
+        include_deleted: bool,
+        limit: int,
+        language: LanguageEnum,
+    ) -> Tags:
         return await self.storage.search_tags(
             search_name=search_name,
             include_deleted=include_deleted,
             limit=limit,
+            language=language,
         )
 
     async def create_tag(self, *, params: TagCreateParams) -> Tag:
         return await self.storage.create_tag(tag=params.to_tag())
 
-    async def update_tag(self, *, tag_id: IntId, params: TagUpdateParams) -> Tag:
+    async def update_tag(
+        self,
+        *,
+        tag_id: IntId,
+        params: TagUpdateParams,
+    ) -> Tag:
         return await self.storage.update_tag(tag=params.to_tag(tag_id=tag_id))
 
     async def soft_delete_tag(self, *, tag_id: IntId) -> None:
@@ -305,11 +326,24 @@ class NoteAnalyticsUseCase(AbstractNoteAnalyticsUseCase):
             reaction_kind=reaction_kind,
         )
 
-    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
-        return await self.analytics_storage.get_stats(date_from=date_from, date_to=date_to)
+    async def get_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+        language: LanguageEnum,
+    ) -> NoteAnalyticsStats:
+        return await self.analytics_storage.get_stats(
+            date_from=date_from,
+            date_to=date_to,
+            language=language,
+        )
 
     async def _get_published_note(self, *, slug: str) -> Note:
-        note = await self.notes_storage.get_note_by_slug(slug=slug, include_deleted_tags=False)
+        note = await self.notes_storage.get_note_by_slug(
+            slug=slug,
+            include_deleted_tags=False,
+        )
         if not note.is_available():
             raise NoteNotFoundError
         return note

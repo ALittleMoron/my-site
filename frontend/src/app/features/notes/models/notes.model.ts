@@ -1,3 +1,5 @@
+import { LanguageCode } from '../../../core/i18n/i18n.model';
+
 export type NotePublishStatus = 'Draft' | 'Published';
 export type NoteReactionKind = 'heart' | 'fire' | 'thinking' | 'neutral' | 'poop';
 export type NoteViewSourceCategory =
@@ -16,11 +18,32 @@ export interface NoteReactionCountsDto {
   poop: number;
 }
 
+export interface NoteTranslationDto {
+  title: string;
+  content: string;
+  folder: string;
+}
+
+export interface NoteTranslationsDto {
+  ru: NoteTranslationDto;
+  en: NoteTranslationDto;
+}
+
+export interface NoteTagTranslationDto {
+  name: string;
+}
+
+export interface NoteTagTranslationsDto {
+  ru: NoteTagTranslationDto;
+  en: NoteTagTranslationDto;
+}
+
 export interface NoteTagDto {
   id: number;
   name: string;
   slug: string;
   deletedAt: string | null;
+  translations: NoteTagTranslationsDto;
 }
 
 export interface NoteSummaryDto {
@@ -41,6 +64,7 @@ export interface NoteDetailDto extends NoteSummaryDto {
   content: string;
   createdAt: string;
   reactionCounts: NoteReactionCountsDto;
+  translations: NoteTranslationsDto;
 }
 
 export interface NoteListDto {
@@ -108,6 +132,7 @@ export interface NoteTag {
   name: string;
   slug: string;
   deletedAt: string | null;
+  translations: NoteTagTranslations;
 }
 
 export interface NoteReactionCounts {
@@ -136,6 +161,7 @@ export interface NoteDetail extends NoteSummary {
   content: string;
   createdAt: string;
   reactionCounts: NoteReactionCounts;
+  translations: NoteTranslations;
 }
 
 export interface NoteList {
@@ -161,18 +187,36 @@ export interface NoteTree {
   folders: NoteTreeFolder[];
 }
 
-export interface NotePayload {
+export interface NoteTranslation {
   title: string;
   content: string;
-  slug: string;
   folder: string;
+}
+
+export interface NoteTranslations {
+  ru: NoteTranslation;
+  en: NoteTranslation;
+}
+
+export interface NoteTagTranslation {
+  name: string;
+}
+
+export interface NoteTagTranslations {
+  ru: NoteTagTranslation;
+  en: NoteTagTranslation;
+}
+
+export interface NotePayload {
+  slug: string;
   publishStatus: NotePublishStatus;
   tagIds: number[];
+  translations: NoteTranslations;
 }
 
 export interface TagPayload {
-  name: string;
   slug: string;
+  translations: NoteTagTranslations;
 }
 
 export interface NoteReactionPayload {
@@ -183,6 +227,7 @@ export interface NoteReactionPayload {
 export interface NoteStatsParams {
   dateFrom: string;
   dateTo: string;
+  language: LanguageCode;
 }
 
 export interface NoteStatsTotals {
@@ -221,6 +266,7 @@ export interface NoteStats {
 export interface NoteListParams {
   page: number;
   pageSize: number;
+  language: LanguageCode;
   onlyPublished: boolean;
   tagSlug: string | null;
   publishedFrom: string | null;
@@ -234,6 +280,7 @@ export function mapTagDto(dto: NoteTagDto): NoteTag {
     name: dto.name,
     slug: dto.slug,
     deletedAt: dto.deletedAt,
+    translations: dto.translations,
   };
 }
 
@@ -259,6 +306,7 @@ export function mapNoteDetailDto(dto: NoteDetailDto): NoteDetail {
     content: dto.content,
     createdAt: dto.createdAt,
     reactionCounts: mapReactionCountsDto(dto.reactionCounts),
+    translations: dto.translations,
   };
 }
 

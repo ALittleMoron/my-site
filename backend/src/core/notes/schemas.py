@@ -1,9 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import Self
 from uuid import UUID
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteViewSourceCategory
 from core.schemas import ValuedDataclass
 from core.types import IntId
@@ -12,12 +13,18 @@ from core.types import IntId
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Tag:
     id: IntId
-    name: str
+    name_ru: str
+    name_en: str
     slug: str
     deleted_at: datetime | None
 
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
+
+    def localized_name(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.name_ru
+        return self.name_en
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -29,10 +36,13 @@ class Tags(ValuedDataclass[Tag]):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Note:
     id: UUID
-    title: str
-    content: str
     slug: str
-    folder: str
+    title_ru: str
+    title_en: str
+    content_ru: str
+    content_en: str
+    folder_ru: str
+    folder_en: str
     author_username: str
     published_at: datetime | None
     publish_status: PublishStatusEnum
@@ -43,20 +53,23 @@ class Note:
     def is_available(self) -> bool:
         return self.publish_status == PublishStatusEnum.PUBLISHED
 
+    def localized_title(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.title_ru
+        return self.title_en
+
+    def localized_content(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.content_ru
+        return self.content_en
+
+    def localized_folder(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.folder_ru
+        return self.folder_en
+
     def public_copy(self) -> Note:
-        return Note(
-            id=self.id,
-            title=self.title,
-            content=self.content,
-            slug=self.slug,
-            folder=self.folder,
-            author_username=self.author_username,
-            published_at=self.published_at,
-            publish_status=self.publish_status,
-            created_at=self.created_at,
-            updated_at=self.updated_at,
-            tags=Tags(values=[tag for tag in self.tags if not tag.is_deleted()]),
-        )
+        return replace(self, tags=Tags(values=[tag for tag in self.tags if not tag.is_deleted()]))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -69,6 +82,7 @@ class Notes(ValuedDataclass[Note]):
 class NoteFilters:
     page: int
     page_size: int
+    language: LanguageEnum
     only_published: bool
     tag_slug: str | None
     published_from: date | None
@@ -87,23 +101,68 @@ class NoteFilters:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NoteCreateParams:
     id: UUID
-    title: str
-    content: str
     slug: str
-    folder: str
+    title_ru: str
+    title_en: str
+    content_ru: str
+    content_en: str
+    folder_ru: str
+    folder_en: str
     author_username: str
     publish_status: PublishStatusEnum
     tag_ids: list[IntId]
 
+    def to_note(self, *, now: datetime, tags: Tags) -> Note:
+        return Note(
+            id=self.id,
+            slug=self.slug,
+            title_ru=self.title_ru,
+            title_en=self.title_en,
+            content_ru=self.content_ru,
+            content_en=self.content_en,
+            folder_ru=self.folder_ru,
+            folder_en=self.folder_en,
+            author_username=self.author_username,
+            publish_status=self.publish_status,
+            published_at=now if self.publish_status == PublishStatusEnum.PUBLISHED else None,
+            created_at=now,
+            updated_at=now,
+            tags=tags,
+        )
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NoteUpdateParams:
-    title: str
-    content: str
     slug: str
-    folder: str
+    title_ru: str
+    title_en: str
+    content_ru: str
+    content_en: str
+    folder_ru: str
+    folder_en: str
     publish_status: PublishStatusEnum
     tag_ids: list[IntId]
+
+    def to_note(self, *, existing_note: Note, now: datetime, tags: Tags) -> Note:
+        published_at = existing_note.published_at
+        if published_at is None and self.publish_status == PublishStatusEnum.PUBLISHED:
+            published_at = now
+        return Note(
+            id=existing_note.id,
+            slug=self.slug,
+            title_ru=self.title_ru,
+            title_en=self.title_en,
+            content_ru=self.content_ru,
+            content_en=self.content_en,
+            folder_ru=self.folder_ru,
+            folder_en=self.folder_en,
+            author_username=existing_note.author_username,
+            publish_status=self.publish_status,
+            published_at=published_at,
+            created_at=existing_note.created_at,
+            updated_at=now,
+            tags=tags,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -206,17 +265,31 @@ class NoteAnalyticsStats:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TagCreateParams:
     id: IntId
-    name: str
+    name_ru: str
+    name_en: str
     slug: str
 
     def to_tag(self) -> Tag:
-        return Tag(id=self.id, name=self.name, slug=self.slug, deleted_at=None)
+        return Tag(
+            id=self.id,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            slug=self.slug,
+            deleted_at=None,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TagUpdateParams:
-    name: str
+    name_ru: str
+    name_en: str
     slug: str
 
     def to_tag(self, tag_id: IntId) -> Tag:
-        return Tag(id=tag_id, name=self.name, slug=self.slug, deleted_at=None)
+        return Tag(
+            id=tag_id,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            slug=self.slug,
+            deleted_at=None,
+        )

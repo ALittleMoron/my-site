@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NotesService } from '../../../../services/notes.service';
 import { NoteFormComponent } from './note-form.component';
 
@@ -20,21 +21,28 @@ describe('NoteFormComponent', () => {
     notesService = {
       getTags: jest.fn().mockReturnValue(
         of([
-          { id: 1, name: 'Python', slug: 'python', deletedAt: null },
-          { id: 2, name: 'Old', slug: 'old', deletedAt: '2026-01-04T03:04:05+00:00' },
+          tag({ id: 1, name: 'Python', slug: 'python', deletedAt: null }),
+          tag({
+            id: 2,
+            name: 'Old',
+            slug: 'old',
+            deletedAt: '2026-01-04T03:04:05+00:00',
+          }),
         ]),
       ),
       createTag: jest
         .fn()
-        .mockReturnValue(of({ id: 3, name: 'Backend', slug: 'backend', deletedAt: null })),
-      updateTag: jest.fn().mockReturnValue(of({ id: 1, name: 'Py', slug: 'py', deletedAt: null })),
+        .mockReturnValue(of(tag({ id: 3, name: 'Backend', slug: 'backend', deletedAt: null }))),
+      updateTag: jest
+        .fn()
+        .mockReturnValue(of(tag({ id: 1, name: 'Py', slug: 'py', deletedAt: null }))),
       deleteTag: jest.fn().mockReturnValue(of(undefined)),
       restoreTag: jest.fn().mockReturnValue(of(undefined)),
     };
 
     await TestBed.configureTestingModule({
       imports: [NoteFormComponent],
-      providers: [{ provide: NotesService, useValue: notesService }],
+      providers: [{ provide: NotesService, useValue: notesService }, provideI18nTesting()],
     })
       .overrideComponent(NoteFormComponent, {
         remove: { imports: [MarkdownEditorComponent] },
@@ -48,19 +56,19 @@ describe('NoteFormComponent', () => {
   });
 
   it('suggests slug from title until slug is edited manually', () => {
-    const title = fixture.debugElement.query(By.css('#noteTitle'))
+    const title = fixture.debugElement.query(By.css('#noteTitleEn'))
       .nativeElement as HTMLInputElement;
     const slug = fixture.debugElement.query(By.css('#noteSlug')).nativeElement as HTMLInputElement;
 
-    title.value = 'Новая заметка про Angular';
+    title.value = 'New Angular note';
     title.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    expect(slug.value).toBe('novaya-zametka-pro-angular');
+    expect(slug.value).toBe('new-angular-note');
 
     slug.value = 'manual-slug';
     slug.dispatchEvent(new Event('input'));
-    title.value = 'Другой заголовок';
+    title.value = 'Another title';
     title.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
@@ -68,19 +76,28 @@ describe('NoteFormComponent', () => {
   });
 
   it('emits payload with selected active tags', () => {
-    const title = fixture.debugElement.query(By.css('#noteTitle'))
+    const titleRu = fixture.debugElement.query(By.css('#noteTitleRu'))
       .nativeElement as HTMLInputElement;
-    const contentEditor = fixture.debugElement.query(By.directive(MarkdownEditorStubComponent));
+    const titleEn = fixture.debugElement.query(By.css('#noteTitleEn'))
+      .nativeElement as HTMLInputElement;
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
     const saveSpy = jest.fn();
     fixture.componentInstance.noteSave.subscribe(saveSpy);
 
-    title.value = 'Typed note';
-    title.dispatchEvent(new Event('input'));
-    contentEditor.componentInstance.valueChange.emit('Content');
-    const folder = fixture.debugElement.query(By.css('#noteFolder'))
+    titleRu.value = 'Типизированная заметка';
+    titleRu.dispatchEvent(new Event('input'));
+    titleEn.value = 'Typed note';
+    titleEn.dispatchEvent(new Event('input'));
+    contentEditors[0].componentInstance.valueChange.emit('Содержимое');
+    contentEditors[1].componentInstance.valueChange.emit('Content');
+    const folderRu = fixture.debugElement.query(By.css('#noteFolderRu'))
       .nativeElement as HTMLInputElement;
-    folder.value = 'Engineering';
-    folder.dispatchEvent(new Event('input'));
+    folderRu.value = 'Инженерия';
+    folderRu.dispatchEvent(new Event('input'));
+    const folderEn = fixture.debugElement.query(By.css('#noteFolderEn'))
+      .nativeElement as HTMLInputElement;
+    folderEn.value = 'Engineering';
+    folderEn.dispatchEvent(new Event('input'));
     const tagCheckbox = fixture.debugElement.query(By.css('#noteTag-1'))
       .nativeElement as HTMLInputElement;
     tagCheckbox.click();
@@ -90,12 +107,13 @@ describe('NoteFormComponent', () => {
     form.dispatchEvent(new Event('submit'));
 
     expect(saveSpy).toHaveBeenCalledWith({
-      title: 'Typed note',
-      content: 'Content',
       slug: 'typed-note',
-      folder: 'Engineering',
       publishStatus: 'Draft',
       tagIds: [1],
+      translations: {
+        ru: { title: 'Типизированная заметка', content: 'Содержимое', folder: 'Инженерия' },
+        en: { title: 'Typed note', content: 'Content', folder: 'Engineering' },
+      },
     });
   });
 });
@@ -108,4 +126,19 @@ describe('NoteFormComponent', () => {
 class MarkdownEditorStubComponent {
   readonly value = input<string>('');
   readonly valueChange = output<string>();
+}
+
+function tag(params: {
+  id: number;
+  name: string;
+  slug: string;
+  deletedAt: string | null;
+}): unknown {
+  return {
+    ...params,
+    translations: {
+      ru: { name: params.name },
+      en: { name: params.name },
+    },
+  };
 }

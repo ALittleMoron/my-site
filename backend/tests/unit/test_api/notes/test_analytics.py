@@ -4,6 +4,7 @@ from datetime import date
 import pytest_asyncio
 from httpx import codes
 
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.schemas import (
     NoteAnalyticsDailyStats,
@@ -142,4 +143,5 @@ class TestNoteAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.analytics_use_case.get_stats.assert_called_once_with(
             date_from=date(2026, 1, 1),
             date_to=date(2026, 1, 31),
+            language=LanguageEnum.RU,
         )

@@ -60,13 +60,24 @@ These rules apply to backend Python code under `backend/**/*.py`.
 ## I18n
 
 - The backend i18n catalog is the source of truth for UI interface strings and enum labels.
-  Database/content localisation is out of scope until an explicit design change says otherwise.
+  Database/content localisation is separate from the UI catalog.
+- Notes and note tags localise content with required fixed fields in existing tables:
+  `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, `folder_en`, `name_ru`,
+  and `name_en`. Do not add generic translation tables, production defaults, or fallback language
+  behavior unless an explicit design change asks for them.
+- Core note and tag domain entities must not store localized projection fields such as `title`,
+  `content`, `folder`, or `name`. Keep canonical RU/EN fields on the domain object and build
+  localized public values in response schemas or explicit read models using `LanguageEnum`.
+- Read/write APIs that expose localized note or tag content must use the backend language enum and
+  require explicit `LanguageEnum`/`language` selection where localized values are returned.
 - Supported UI languages must be modeled with a backend enum. Do not accept arbitrary language
   strings in production API/settings code.
 - The default UI language must be configured explicitly through the required
   `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
 - Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
   and cover new languages/keys with catalog parity tests.
+- Competency matrix and non-note content localisation remains future work until explicitly
+  designed.
 
 ## Persistence
 

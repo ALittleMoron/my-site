@@ -6,6 +6,7 @@ from typing import Annotated, Self
 from pydantic import Field
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.schemas import (
     Note,
@@ -36,14 +37,37 @@ class TagResponseSchema(CamelCaseSchema):
     name: Annotated[str, Field(title="Название")]
     slug: Annotated[str, Field(title="Slug")]
     deleted_at: Annotated[str | None, Field(title="Дата удаления")]
+    translations: Annotated[TagTranslationsResponseSchema, Field(title="Переводы")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Tag, language: LanguageEnum) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.localized_name(language=language),
+            slug=schema.slug,
+            deleted_at=schema.deleted_at.isoformat() if schema.deleted_at is not None else None,
+            translations=TagTranslationsResponseSchema.from_domain_schema(schema=schema),
+        )
+
+
+class TagTranslationSchema(CamelCaseSchema):
+    name: Annotated[str, Field(title="Название", min_length=1, max_length=255)]
+
+
+class TagTranslationsSchema(CamelCaseSchema):
+    ru: Annotated[TagTranslationSchema, Field(title="Русский перевод")]
+    en: Annotated[TagTranslationSchema, Field(title="Английский перевод")]
+
+
+class TagTranslationsResponseSchema(CamelCaseSchema):
+    ru: Annotated[TagTranslationSchema, Field(title="Русский перевод")]
+    en: Annotated[TagTranslationSchema, Field(title="Английский перевод")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Tag) -> Self:
         return cls(
-            id=schema.id,
-            name=schema.name,
-            slug=schema.slug,
-            deleted_at=schema.deleted_at.isoformat() if schema.deleted_at is not None else None,
+            ru=TagTranslationSchema(name=schema.name_ru),
+            en=TagTranslationSchema(name=schema.name_en),
         )
 
 
@@ -51,19 +75,33 @@ class TagsResponseSchema(CamelCaseSchema):
     tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
 
     @classmethod
-    def from_domain_schema(cls, *, schema: Tags) -> Self:
-        return cls(tags=[TagResponseSchema.from_domain_schema(schema=tag) for tag in schema])
+    def from_domain_schema(cls, *, schema: Tags, language: LanguageEnum) -> Self:
+        return cls(
+            tags=[
+                TagResponseSchema.from_domain_schema(schema=tag, language=language)
+                for tag in schema
+            ],
+        )
 
 
 class TagRequestSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Название", min_length=1, max_length=255)]
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
+    translations: Annotated[TagTranslationsSchema, Field(title="Переводы")]
 
     def to_create_schema(self, *, tag_id: IntId) -> TagCreateParams:
-        return TagCreateParams(id=tag_id, name=self.name, slug=self.slug)
+        return TagCreateParams(
+            id=tag_id,
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+            slug=self.slug,
+        )
 
     def to_update_schema(self) -> TagUpdateParams:
-        return TagUpdateParams(name=self.name, slug=self.slug)
+        return TagUpdateParams(
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+            slug=self.slug,
+        )
 
 
 class NoteReactionCountsResponseSchema(CamelCaseSchema):
@@ -98,21 +136,30 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
     tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
 
     @classmethod
-    def from_domain_schema(cls, *, schema: Note, stats: NotePublicStats) -> Self:
+    def from_domain_schema(
+        cls,
+        *,
+        schema: Note,
+        stats: NotePublicStats,
+        language: LanguageEnum,
+    ) -> Self:
         return cls(
             id=str(schema.id),
-            title=schema.title,
+            title=schema.localized_title(language=language),
             slug=schema.slug,
-            folder=schema.folder,
+            folder=schema.localized_folder(language=language),
             author_username=schema.author_username,
             published_at=schema.published_at.isoformat()
             if schema.published_at is not None
             else None,
             publish_status=schema.publish_status,
             updated_at=schema.updated_at.isoformat(),
-            excerpt=cls.build_excerpt(content=schema.content),
+            excerpt=cls.build_excerpt(content=schema.localized_content(language=language)),
             view_count=stats.view_count,
-            tags=[TagResponseSchema.from_domain_schema(schema=tag) for tag in schema.tags],
+            tags=[
+                TagResponseSchema.from_domain_schema(schema=tag, language=language)
+                for tag in schema.tags
+            ],
         )
 
     @classmethod
@@ -126,14 +173,26 @@ class NoteDetailResponseSchema(NoteSummaryResponseSchema):
     content: Annotated[str, Field(title="Содержимое")]
     created_at: Annotated[str, Field(title="Дата создания")]
     reaction_counts: Annotated[NoteReactionCountsResponseSchema, Field(title="Реакции")]
+    translations: Annotated[NoteTranslationsResponseSchema, Field(title="Переводы")]
 
     @classmethod
-    def from_domain_schema(cls, *, schema: Note, stats: NotePublicStats) -> Self:
-        summary = NoteSummaryResponseSchema.from_domain_schema(schema=schema, stats=stats)
+    def from_domain_schema(
+        cls,
+        *,
+        schema: Note,
+        stats: NotePublicStats,
+        language: LanguageEnum,
+    ) -> Self:
+        summary = NoteSummaryResponseSchema.from_domain_schema(
+            schema=schema,
+            stats=stats,
+            language=language,
+        )
         return cls(
             **summary.model_dump(),
-            content=schema.content,
+            content=schema.localized_content(language=language),
             created_at=schema.created_at.isoformat(),
+            translations=NoteTranslationsResponseSchema.from_domain_schema(schema=schema),
             reaction_counts=NoteReactionCountsResponseSchema.from_domain_schema(
                 schema=stats.reaction_counts,
             ),
@@ -146,7 +205,13 @@ class NoteListResponseSchema(CamelCaseSchema):
     notes: Annotated[list[NoteSummaryResponseSchema], Field(title="Заметки")]
 
     @classmethod
-    def from_domain_schema(cls, *, schema: Notes, stats: NotePublicStatsCollection) -> Self:
+    def from_domain_schema(
+        cls,
+        *,
+        schema: Notes,
+        stats: NotePublicStatsCollection,
+        language: LanguageEnum,
+    ) -> Self:
         return cls(
             total_count=schema.total_count,
             total_pages=schema.total_pages,
@@ -154,27 +219,60 @@ class NoteListResponseSchema(CamelCaseSchema):
                 NoteSummaryResponseSchema.from_domain_schema(
                     schema=note,
                     stats=stats.by_note_id(note.id),
+                    language=language,
                 )
                 for note in schema.values
             ],
         )
 
 
-class NoteRequestSchema(CamelCaseSchema):
+class NoteTranslationSchema(CamelCaseSchema):
     title: Annotated[str, Field(title="Заголовок", min_length=1, max_length=255)]
     content: Annotated[str, Field(title="Содержимое", min_length=1)]
-    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
     folder: Annotated[str, Field(title="Папка", min_length=1, max_length=255)]
+
+
+class NoteTranslationsSchema(CamelCaseSchema):
+    ru: Annotated[NoteTranslationSchema, Field(title="Русский перевод")]
+    en: Annotated[NoteTranslationSchema, Field(title="Английский перевод")]
+
+
+class NoteTranslationsResponseSchema(CamelCaseSchema):
+    ru: Annotated[NoteTranslationSchema, Field(title="Русский перевод")]
+    en: Annotated[NoteTranslationSchema, Field(title="Английский перевод")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: Note) -> Self:
+        return cls(
+            ru=NoteTranslationSchema(
+                title=schema.title_ru,
+                content=schema.content_ru,
+                folder=schema.folder_ru,
+            ),
+            en=NoteTranslationSchema(
+                title=schema.title_en,
+                content=schema.content_en,
+                folder=schema.folder_en,
+            ),
+        )
+
+
+class NoteRequestSchema(CamelCaseSchema):
+    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     tag_ids: Annotated[list[int], Field(title="Идентификаторы тегов")]
+    translations: Annotated[NoteTranslationsSchema, Field(title="Переводы")]
 
     def to_create_schema(self, *, note_id: uuid.UUID, author_username: str) -> NoteCreateParams:
         return NoteCreateParams(
             id=note_id,
-            title=self.title,
-            content=self.content,
             slug=self.slug,
-            folder=self.folder,
+            title_ru=self.translations.ru.title,
+            title_en=self.translations.en.title,
+            content_ru=self.translations.ru.content,
+            content_en=self.translations.en.content,
+            folder_ru=self.translations.ru.folder,
+            folder_en=self.translations.en.folder,
             author_username=author_username,
             publish_status=self.publish_status,
             tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
@@ -182,10 +280,13 @@ class NoteRequestSchema(CamelCaseSchema):
 
     def to_update_schema(self) -> NoteUpdateParams:
         return NoteUpdateParams(
-            title=self.title,
-            content=self.content,
             slug=self.slug,
-            folder=self.folder,
+            title_ru=self.translations.ru.title,
+            title_en=self.translations.en.title,
+            content_ru=self.translations.ru.content,
+            content_en=self.translations.en.content,
+            folder_ru=self.translations.ru.folder,
+            folder_en=self.translations.en.folder,
             publish_status=self.publish_status,
             tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
         )

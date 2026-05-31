@@ -1,19 +1,5 @@
 <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="row g-3">
-    <div class="col-md-8">
-      <label class="form-label" for="noteTitle">{{ 'notes.form.title' | t }}</label>
-      <input
-        id="noteTitle"
-        type="text"
-        class="form-control"
-        formControlName="title"
-        (input)="onTitleInput()"
-      />
-    </div>
-    <div class="col-md-4">
-      <label class="form-label" for="noteFolder">{{ 'notes.form.folder' | t }}</label>
-      <input id="noteFolder" type="text" class="form-control" formControlName="folder" />
-    </div>
     <div class="col-12">
       <label class="form-label" for="noteSlug">{{ 'notes.form.slug' | t }}</label>
       <input
@@ -23,6 +9,77 @@
         formControlName="slug"
         (input)="onSlugInput()"
       />
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs mt-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'ru'"
+        (click)="setActiveLanguageTab('ru')"
+      >
+        {{ 'notes.form.languageRu' | t }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'en'"
+        (click)="setActiveLanguageTab('en')"
+      >
+        {{ 'notes.form.languageEn' | t }}
+      </button>
+    </li>
+  </ul>
+
+  <div class="border border-top-0 rounded-bottom p-3 mb-3">
+    <div [class.d-none]="activeLanguageTab() !== 'ru'">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="noteTitleRu">{{ 'notes.form.titleRu' | t }}</label>
+          <input id="noteTitleRu" type="text" class="form-control" formControlName="titleRu" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="noteFolderRu">{{ 'notes.form.folderRu' | t }}</label>
+          <input id="noteFolderRu" type="text" class="form-control" formControlName="folderRu" />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'notes.form.contentRu' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.contentRu.value"
+            (valueChange)="setContentRu($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div [class.d-none]="activeLanguageTab() !== 'en'">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="noteTitleEn">{{ 'notes.form.titleEn' | t }}</label>
+          <input
+            id="noteTitleEn"
+            type="text"
+            class="form-control"
+            formControlName="titleEn"
+            (input)="onTitleEnInput()"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="noteFolderEn">{{ 'notes.form.folderEn' | t }}</label>
+          <input id="noteFolderEn" type="text" class="form-control" formControlName="folderEn" />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'notes.form.contentEn' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.contentEn.value"
+            (valueChange)="setContentEn($event)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 
@@ -37,11 +94,6 @@
     <label class="form-check-label" for="notePublishStatus">{{ 'shared.draft' | t }}</label>
   </div>
 
-  <div class="mb-3">
-    <div class="form-label">{{ 'notes.form.content' | t }}</div>
-    <app-markdown-editor [value]="form.controls.content.value" (valueChange)="setContent($event)" />
-  </div>
-
   <div class="border rounded-3 p-3">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
       <h3 class="h6 mb-0">{{ 'notes.form.tags' | t }}</h3>
@@ -51,16 +103,20 @@
     </div>
 
     <div class="row g-2 align-items-end mb-3" [formGroup]="newTagForm">
-      <div class="col-md-5">
-        <label class="form-label small" for="newTagName">{{ 'notes.form.tagName' | t }}</label>
+      <div class="col-md-3">
+        <label class="form-label small" for="newTagNameRu">{{ 'notes.form.tagNameRu' | t }}</label>
+        <input id="newTagNameRu" class="form-control form-control-sm" formControlName="nameRu" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small" for="newTagNameEn">{{ 'notes.form.tagNameEn' | t }}</label>
         <input
-          id="newTagName"
+          id="newTagNameEn"
           class="form-control form-control-sm"
-          formControlName="name"
-          (input)="onNewTagNameInput()"
+          formControlName="nameEn"
+          (input)="onNewTagNameEnInput()"
         />
       </div>
-      <div class="col-md-5">
+      <div class="col-md-4">
         <label class="form-label small" for="newTagSlug">{{ 'notes.form.slug' | t }}</label>
         <input
           id="newTagSlug"
@@ -89,13 +145,22 @@
               (change)="toggleTag(tag.id, $event)"
             />
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <input
               class="form-control form-control-sm"
-              [value]="tag.draftName"
+              [value]="tag.draftNameRu"
               [disabled]="isTagDeleted(tag)"
-              (input)="updateTagDraftName(tag.id, $event)"
-              [attr.aria-label]="'notes.form.tagNameAria' | t"
+              (input)="updateTagDraftNameRu(tag.id, $event)"
+              [attr.aria-label]="'notes.form.tagNameRuAria' | t"
+            />
+          </div>
+          <div class="col-md-3">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftNameEn"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftNameEn(tag.id, $event)"
+              [attr.aria-label]="'notes.form.tagNameEnAria' | t"
             />
           </div>
           <div class="col-md-3">

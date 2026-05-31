@@ -6,6 +6,7 @@ from httpx import codes
 
 from core.auth.exceptions import ForbiddenError
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import NoteNotFoundError
 from core.notes.schemas import (
     NotePublicStats,
@@ -84,10 +85,26 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     "name": "Old",
                     "slug": "old",
                     "deletedAt": "2026-01-04T03:04:05+00:00",
+                    "translations": {
+                        "ru": {"name": "Old"},
+                        "en": {"name": "Old"},
+                    },
                 },
             ],
             "content": "# Markdown detail",
             "createdAt": "2026-01-01T03:04:05+00:00",
+            "translations": {
+                "ru": {
+                    "title": "Detail note",
+                    "content": "# Markdown detail",
+                    "folder": "General",
+                },
+                "en": {
+                    "title": "Detail note",
+                    "content": "# Markdown detail",
+                    "folder": "General",
+                },
+            },
             "reactionCounts": {
                 "heart": 2,
                 "fire": 1,
@@ -96,7 +113,10 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 "poop": 5,
             },
         }
-        self.use_case.get_note.assert_called_once_with(slug="detail-note", only_published=False)
+        self.use_case.get_note.assert_called_once_with(
+            slug="detail-note",
+            only_published=False,
+        )
         self.analytics_use_case.track_public_view.assert_not_called()
 
     def test_public_get_note_tracks_view(self) -> None:
@@ -139,6 +159,12 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.NOT_FOUND
         assert response.json()["message"] == NoteNotFoundError.message
+
+    def test_get_note_requires_explicit_language(self) -> None:
+        response = self.api.get_note(slug="detail-note", language=None)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.get_note.assert_not_called()
 
     def test_anonymous_cannot_request_draft_note(self) -> None:
         response = self.no_auth_api.get_note(slug="draft", only_published=False)
@@ -188,4 +214,13 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.list_tree.assert_called_once_with(only_published=True)
+        self.use_case.list_tree.assert_called_once_with(
+            only_published=True,
+            language=LanguageEnum.RU,
+        )
+
+    def test_tree_requires_explicit_language(self) -> None:
+        response = self.api.get_notes_tree(language=None)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.list_tree.assert_not_called()

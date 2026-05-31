@@ -3,6 +3,7 @@ from datetime import date
 from uuid import UUID
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.schemas import (
     Note,
@@ -19,7 +20,12 @@ from core.types import IntId
 
 class NotesStorage(ABC):
     @abstractmethod
-    async def get_note_by_slug(self, *, slug: str, include_deleted_tags: bool) -> Note:
+    async def get_note_by_slug(
+        self,
+        *,
+        slug: str,
+        include_deleted_tags: bool,
+    ) -> Note:
         raise NotImplementedError
 
     @abstractmethod
@@ -27,7 +33,7 @@ class NotesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tree(self, *, only_published: bool) -> NoteTree:
+    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
         raise NotImplementedError
 
     @abstractmethod
@@ -52,15 +58,27 @@ class NotesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_tags_by_ids(self, *, tag_ids: list[IntId], include_deleted: bool) -> Tags:
+    async def get_tags_by_ids(
+        self,
+        *,
+        tag_ids: list[IntId],
+        include_deleted: bool,
+    ) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tags(self, *, include_deleted: bool) -> Tags:
+    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
-    async def search_tags(self, *, search_name: str, include_deleted: bool, limit: int) -> Tags:
+    async def search_tags(
+        self,
+        *,
+        search_name: str,
+        include_deleted: bool,
+        limit: int,
+        language: LanguageEnum,
+    ) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
@@ -116,5 +134,11 @@ class NoteAnalyticsStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_stats(self, *, date_from: date, date_to: date) -> NoteAnalyticsStats:
+    async def get_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+        language: LanguageEnum,
+    ) -> NoteAnalyticsStats:
         raise NotImplementedError

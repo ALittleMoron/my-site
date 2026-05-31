@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     NoteCreateParams,
@@ -29,6 +30,7 @@ class TestNotesUseCase(FactoryFixture):
         filters = NoteFilters(
             page=1,
             page_size=10,
+            language=LanguageEnum.RU,
             only_published=True,
             tag_slug="python",
             published_from=None,
@@ -54,7 +56,10 @@ class TestNotesUseCase(FactoryFixture):
         )
 
         with pytest.raises(NoteNotFoundError):
-            await self.use_case.get_note(slug="draft-note", only_published=True)
+            await self.use_case.get_note(
+                slug="draft-note",
+                only_published=True,
+            )
 
     async def test_get_note_returns_draft_when_admin_requests_all_notes(self) -> None:
         expected = self.factory.core.note(
@@ -63,7 +68,10 @@ class TestNotesUseCase(FactoryFixture):
         )
         self.storage.get_note_by_slug.return_value = expected
 
-        result = await self.use_case.get_note(slug="draft-note", only_published=False)
+        result = await self.use_case.get_note(
+            slug="draft-note",
+            only_published=False,
+        )
 
         assert result == expected
         self.storage.get_note_by_slug.assert_called_once_with(
@@ -75,10 +83,13 @@ class TestNotesUseCase(FactoryFixture):
         tag_ids = [IntId(1), IntId(2)]
         params = NoteCreateParams(
             id=uuid.uuid4(),
-            title="Note",
-            content="Content",
             slug="note",
-            folder="Python",
+            title_ru="Заметка",
+            title_en="Note",
+            content_ru="Содержимое",
+            content_en="Content",
+            folder_ru="Питон",
+            folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
             tag_ids=tag_ids,
@@ -93,13 +104,15 @@ class TestNotesUseCase(FactoryFixture):
     async def test_create_note_persists_note_with_active_tags(self) -> None:
         tag_ids = [IntId(1)]
         note_id = uuid.uuid4()
-        now = datetime.now(tz=UTC)
         params = NoteCreateParams(
             id=note_id,
-            title="Note",
-            content="Content",
             slug="note",
-            folder="Python",
+            title_ru="Заметка",
+            title_en="Note",
+            content_ru="Содержимое",
+            content_en="Content",
+            folder_ru="Питон",
+            folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
             tag_ids=tag_ids,
@@ -107,15 +120,16 @@ class TestNotesUseCase(FactoryFixture):
         tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
         expected = self.factory.core.note(
             note_id=note_id,
-            title="Note",
-            content="Content",
             slug="note",
-            folder="Python",
+            title_ru="Заметка",
+            title_en="Note",
+            content_ru="Содержимое",
+            content_en="Content",
+            folder_ru="Питон",
+            folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
             tags=[tag],
-            created_at=now.isoformat(),
-            updated_at=now.isoformat(),
         )
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
         self.storage.create_note.return_value = expected
@@ -125,9 +139,46 @@ class TestNotesUseCase(FactoryFixture):
         assert result == expected
         self.storage.create_note.assert_called_once()
         created_note = self.storage.create_note.call_args.kwargs["note"]
-        assert created_note.title == "Note"
+        assert not hasattr(created_note, "title")
+        assert not hasattr(created_note, "content")
+        assert not hasattr(created_note, "folder")
+        assert created_note.localized_title(language=LanguageEnum.RU) == "Заметка"
+        assert created_note.localized_content(language=LanguageEnum.RU) == "Содержимое"
+        assert created_note.localized_folder(language=LanguageEnum.RU) == "Питон"
+        assert created_note.title_ru == "Заметка"
+        assert created_note.title_en == "Note"
         assert created_note.author_username == "admin"
         assert created_note.tags.values == [tag]
+
+    def test_note_create_params_builds_canonical_note(self) -> None:
+        note_id = uuid.uuid4()
+        now = datetime(2026, 5, 31, 12, 0, tzinfo=UTC)
+        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        params = NoteCreateParams(
+            id=note_id,
+            slug="note",
+            title_ru="Заметка",
+            title_en="Note",
+            content_ru="Содержимое",
+            content_en="Content",
+            folder_ru="Питон",
+            folder_en="Python",
+            author_username="admin",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            tag_ids=[IntId(1)],
+        )
+
+        note = params.to_note(now=now, tags=self.factory.core.tags(values=[tag]))
+
+        assert not hasattr(note, "title")
+        assert not hasattr(note, "content")
+        assert not hasattr(note, "folder")
+        assert note.localized_title(language=LanguageEnum.RU) == "Заметка"
+        assert note.localized_title(language=LanguageEnum.EN) == "Note"
+        assert note.published_at == now
+        assert note.created_at == now
+        assert note.updated_at == now
+        assert note.tags.values == [tag]
 
     async def test_update_note_keeps_existing_author(self) -> None:
         tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -137,10 +188,13 @@ class TestNotesUseCase(FactoryFixture):
             tags=[tag],
         )
         params = NoteUpdateParams(
-            title="New",
-            content="New content",
             slug="new-note",
-            folder="Architecture",
+            title_ru="Новая",
+            title_en="New",
+            content_ru="Новый контент",
+            content_en="New content",
+            folder_ru="Архитектура",
+            folder_en="Architecture",
             publish_status=PublishStatusEnum.PUBLISHED,
             tag_ids=[IntId(1)],
         )
@@ -154,12 +208,17 @@ class TestNotesUseCase(FactoryFixture):
             tags=[tag],
         )
 
-        await self.use_case.update_note(slug="old-note", params=params)
+        await self.use_case.update_note(
+            slug="old-note",
+            params=params,
+        )
 
         updated_note = self.storage.update_note.call_args.kwargs["note"]
         assert updated_note.id == existing.id
         assert updated_note.author_username == "original-author"
-        assert updated_note.title == "New"
+        assert updated_note.title_ru == "Новая"
+        assert updated_note.title_en == "New"
+        assert not hasattr(updated_note, "title")
 
     async def test_switch_publish_status_delegates_to_storage(self) -> None:
         await self.use_case.switch_note_publish_status(
@@ -173,8 +232,18 @@ class TestNotesUseCase(FactoryFixture):
         )
 
     async def test_create_tag_delegates_to_storage(self) -> None:
-        params = TagCreateParams(id=IntId(1), name="Python", slug="python")
-        expected = self.factory.core.tag(tag_id=IntId(1), name="Python", slug="python")
+        params = TagCreateParams(
+            id=IntId(1),
+            name_ru="Питон",
+            name_en="Python",
+            slug="python",
+        )
+        expected = self.factory.core.tag(
+            tag_id=IntId(1),
+            name_ru="Питон",
+            name_en="Python",
+            slug="python",
+        )
         self.storage.create_tag.return_value = expected
 
         result = await self.use_case.create_tag(params=params)
@@ -183,15 +252,23 @@ class TestNotesUseCase(FactoryFixture):
         self.storage.create_tag.assert_called_once_with(tag=expected)
 
     async def test_update_tag_delegates_to_storage(self) -> None:
-        params = TagUpdateParams(name="Python Updated", slug="python-updated")
+        params = TagUpdateParams(
+            name_ru="Питон обновлённый",
+            name_en="Python Updated",
+            slug="python-updated",
+        )
         expected = self.factory.core.tag(
             tag_id=IntId(1),
-            name="Python Updated",
+            name_ru="Питон обновлённый",
+            name_en="Python Updated",
             slug="python-updated",
         )
         self.storage.update_tag.return_value = expected
 
-        result = await self.use_case.update_tag(tag_id=IntId(1), params=params)
+        result = await self.use_case.update_tag(
+            tag_id=IntId(1),
+            params=params,
+        )
 
         assert result == expected
         self.storage.update_tag.assert_called_once_with(tag=expected)

@@ -76,12 +76,15 @@ class APIHelper:
         page: int | None = 1,
         page_size: int | None = 10,
         only_published: bool | None = True,
+        language: str | None = "ru",
         tag_slug: str | None = None,
         published_from: str | None = None,
         published_to: str | None = None,
         search_query: str | None = None,
     ) -> Response:
         params: dict[str, str | int | bool] = {}
+        if language is not None:
+            params["language"] = language
         if page is not None:
             params["page"] = page
         if page_size is not None:
@@ -98,34 +101,76 @@ class APIHelper:
             params["searchQuery"] = search_query
         return self.client.get("/api/notes", params=params)
 
-    def get_note(self, slug: str, only_published: bool | None = True) -> Response:
-        params: dict[str, bool] = {}
+    def get_note(
+        self,
+        slug: str,
+        only_published: bool | None = True,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str | bool] = {}
+        if language is not None:
+            params["language"] = language
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(f"/api/notes/detail/{slug}", params=params)
 
-    def post_note_engaged_view(self, slug: str) -> Response:
-        return self.client.post(f"/api/notes/detail/{slug}/analytics/engaged-view")
-
-    def post_note_reaction(self, slug: str, data: dict[str, Any]) -> Response:
-        return self.client.post(f"/api/notes/detail/{slug}/reaction", json=data)
-
-    def get_note_stats(self, date_from: str | None, date_to: str | None) -> Response:
+    def post_note_engaged_view(self, slug: str, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post(
+            f"/api/notes/detail/{slug}/analytics/engaged-view",
+            params=params,
+        )
+
+    def post_note_reaction(
+        self,
+        slug: str,
+        data: dict[str, Any],
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post(f"/api/notes/detail/{slug}/reaction", params=params, json=data)
+
+    def get_note_stats(
+        self,
+        date_from: str | None,
+        date_to: str | None,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
         if date_from is not None:
             params["dateFrom"] = date_from
         if date_to is not None:
             params["dateTo"] = date_to
         return self.client.get("/api/notes/stats", params=params)
 
-    def get_notes_tree(self) -> Response:
-        return self.client.get("/api/notes/tree")
+    def get_notes_tree(self, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/notes/tree", params=params)
 
-    def post_create_note(self, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/notes", json=data)
+    def post_create_note(self, data: dict[str, Any], language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post("/api/notes", params=params, json=data)
 
-    def put_update_note(self, slug: str, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/notes/detail/{slug}", json=data)
+    def put_update_note(
+        self,
+        slug: str,
+        data: dict[str, Any],
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.put(f"/api/notes/detail/{slug}", params=params, json=data)
 
     def delete_note(self, slug: str) -> Response:
         return self.client.delete(f"/api/notes/detail/{slug}")
@@ -136,8 +181,14 @@ class APIHelper:
     def post_set_published_status_to_note(self, slug: str) -> Response:
         return self.client.post(f"/api/notes/detail/{slug}/set-published")
 
-    def get_tags(self, include_deleted: bool | None = False) -> Response:
-        params: dict[str, bool] = {}
+    def get_tags(
+        self,
+        include_deleted: bool | None = False,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str | bool] = {}
+        if language is not None:
+            params["language"] = language
         if include_deleted is not None:
             params["includeDeleted"] = include_deleted
         return self.client.get("/api/notes/tags", params=params)
@@ -147,19 +198,33 @@ class APIHelper:
         search_name: str,
         include_deleted: bool | None = False,
         limit: int | None = 10,
+        language: str | None = "ru",
     ) -> Response:
         params: dict[str, str | int | bool] = {"searchName": search_name}
+        if language is not None:
+            params["language"] = language
         if include_deleted is not None:
             params["includeDeleted"] = include_deleted
         if limit is not None:
             params["limit"] = limit
         return self.client.get("/api/notes/tags/search", params=params)
 
-    def post_create_tag(self, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/notes/tags", json=data)
+    def post_create_tag(self, data: dict[str, Any], language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post("/api/notes/tags", params=params, json=data)
 
-    def put_update_tag(self, tag_id: int, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/notes/tags/{tag_id}", json=data)
+    def put_update_tag(
+        self,
+        tag_id: int,
+        data: dict[str, Any],
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.put(f"/api/notes/tags/{tag_id}", params=params, json=data)
 
     def delete_tag(self, tag_id: int) -> Response:
         return self.client.delete(f"/api/notes/tags/{tag_id}")

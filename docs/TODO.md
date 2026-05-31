@@ -282,6 +282,18 @@
 
 ### Notes
 
+- [x] Content localisation for notes
+  - [x] Store note `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, and `folder_en` as required columns
+  - [x] Store tag `name_ru` and `name_en` as required columns
+  - [x] Keep note `slug` and tag `slug` as single stable English identifiers shared across languages
+  - [x] Require all RU/EN fields on create and update for both draft and published notes
+  - [x] Read note list, detail, tree, tag list, and tag search results in the selected content language
+  - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
+  - [x] Keep `tagSlug` as one language-neutral English filter
+  - [x] Add admin UI controls for editing RU and EN note and tag fields in one form
+  - [x] Update the init Alembic migration because the service is not deployed yet
+  - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
+  - [x] Cover backend and frontend behaviour with focused tests
 - [x] Hide/Publish notes
 - [x] Show notes sorted by publication date
 - [x] Show notes in a side panel with a tree view
@@ -390,6 +402,10 @@
 
 ### Competency Matrix Improvements
 
+- [ ] Content localisation for competency matrix
+  - [ ] Keep competency matrix localisation out of the current notes-only implementation
+  - [ ] Decide language-neutral identifiers before implementation
+  - [ ] Localise sheets, sections, subsections, questions, answers, expected answers, and resource context
 - [ ] Add a separate queue list for questions I want to add to the matrix
 - [ ] Ability to suggest a question for the competency matrix
 - [ ] Ability to report a typo in the competency matrix

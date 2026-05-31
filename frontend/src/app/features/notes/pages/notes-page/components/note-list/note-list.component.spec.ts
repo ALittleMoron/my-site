@@ -24,7 +24,15 @@ describe('NoteListComponent', () => {
         updatedAt: '2026-01-03T03:04:05+00:00',
         excerpt: 'Excerpt',
         viewCount: 42,
-        tags: [{ id: 1, name: 'Python', slug: 'python', deletedAt: null }],
+        tags: [
+          {
+            id: 1,
+            name: 'Python',
+            slug: 'python',
+            deletedAt: null,
+            translations: { ru: { name: 'Python' }, en: { name: 'Python' } },
+          },
+        ],
       },
     ]);
     fixture.componentRef.setInput('page', 1);

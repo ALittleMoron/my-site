@@ -13,12 +13,14 @@ export class ApiClient {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params: httpParams });
   }
 
-  post<T>(path: string, body: unknown): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}${path}`, body);
+  post<T>(path: string, body: unknown, params?: Record<string, string>): Observable<T> {
+    const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
+    return this.http.post<T>(`${this.baseUrl}${path}`, body, { params: httpParams });
   }
 
-  put<T>(path: string, body: unknown): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}${path}`, body);
+  put<T>(path: string, body: unknown, params?: Record<string, string>): Observable<T> {
+    const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
+    return this.http.put<T>(`${this.baseUrl}${path}`, body, { params: httpParams });
   }
 
   patch<T>(path: string, body: unknown): Observable<T> {

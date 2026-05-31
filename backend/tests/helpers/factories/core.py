@@ -225,6 +225,12 @@ class CoreFactoryHelper:
         content: str = "This is a test note content.",
         slug: str = "test-notes-note",
         folder: str = "General",
+        title_ru: str | None = None,
+        title_en: str | None = None,
+        content_ru: str | None = None,
+        content_en: str | None = None,
+        folder_ru: str | None = None,
+        folder_en: str | None = None,
         author_username: str = "admin",
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         published_at: str | None = None,
@@ -235,10 +241,13 @@ class CoreFactoryHelper:
         now = datetime.now(tz=UTC)
         return Note(
             id=note_id or uuid.uuid4(),
-            title=title,
-            content=content,
             slug=slug,
-            folder=folder,
+            title_ru=title_ru or title,
+            title_en=title_en or title,
+            content_ru=content_ru or content,
+            content_en=content_en or content,
+            folder_ru=folder_ru or folder,
+            folder_en=folder_en or folder,
             author_username=author_username,
             publish_status=publish_status,
             published_at=(
@@ -273,12 +282,15 @@ class CoreFactoryHelper:
         cls,
         tag_id: IntId | int = 1,
         name: str = "Python",
+        name_ru: str | None = None,
+        name_en: str | None = None,
         slug: str = "python",
         deleted_at: str | None = None,
     ) -> Tag:
         return Tag(
             id=cls.int_id(tag_id) if isinstance(tag_id, int) else tag_id,
-            name=name,
+            name_ru=name_ru or name,
+            name_en=name_en or name,
             slug=slug,
             deleted_at=(
                 datetime.fromisoformat(deleted_at).replace(tzinfo=UTC)

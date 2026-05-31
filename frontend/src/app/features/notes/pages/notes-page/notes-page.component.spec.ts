@@ -8,6 +8,7 @@ import {
 } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
 import { SeoService } from '../../../../core/seo/seo.service';
@@ -98,7 +99,7 @@ describe('NotesPageComponent', () => {
 
     tick(30_000);
 
-    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes');
+    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
 
     tick(30_000);
 
@@ -124,7 +125,7 @@ describe('NotesPageComponent', () => {
 
     tick(1);
 
-    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes');
+    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
   }));
 
   it('creates reaction token lazily and persists selected reaction after success', () => {
@@ -133,10 +134,14 @@ describe('NotesPageComponent', () => {
     fixture.componentInstance.selectReaction('poop');
 
     expect(anonymousReactionService.getOrCreateClientToken).toHaveBeenCalled();
-    expect(notesService.setReaction).toHaveBeenCalledWith('typed-notes', {
-      reactionKind: 'poop',
-      clientToken: 'client-token',
-    });
+    expect(notesService.setReaction).toHaveBeenCalledWith(
+      'typed-notes',
+      {
+        reactionKind: 'poop',
+        clientToken: 'client-token',
+      },
+      'ru',
+    );
     expect(anonymousReactionService.setReaction).toHaveBeenCalledWith('typed-notes', 'poop');
     fixture.destroy();
   });
@@ -158,11 +163,36 @@ describe('NotesPageComponent', () => {
     expect(notesService.getNotes).toHaveBeenCalledWith({
       page: 2,
       pageSize: 10,
+      language: 'ru',
       onlyPublished: true,
       tagSlug: 'python',
       publishedFrom: '2026-01-01',
       publishedTo: '2026-01-31',
       searchQuery: 'postgres search',
+    });
+  });
+
+  it('reloads localized content when language changes', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+    notesService.getNotes.mockClear();
+    notesService.getTags.mockClear();
+    notesService.getTree.mockClear();
+
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    expect(notesService.getTags).toHaveBeenCalledWith(false, 'en');
+    expect(notesService.getTree).toHaveBeenCalledWith('en');
+    expect(notesService.getNotes).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 10,
+      language: 'en',
+      onlyPublished: true,
+      tagSlug: null,
+      publishedFrom: null,
+      publishedTo: null,
+      searchQuery: null,
     });
   });
 
@@ -248,6 +278,10 @@ function noteDetail(): NoteDetail {
     viewCount: 1,
     reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     tags: [],
+    translations: {
+      ru: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
+      en: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
+    },
   };
 }
 

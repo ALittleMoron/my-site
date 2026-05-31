@@ -3,6 +3,7 @@ from datetime import date
 
 import pytest_asyncio
 
+from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from infra.postgresql.storages.notes import NoteAnalyticsDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
@@ -97,6 +98,7 @@ class TestNoteAnalyticsDatabaseStorage(StorageFixture, FactoryFixture):
         result = await self.storage.get_stats(
             date_from=date(2026, 1, 1),
             date_to=date(2026, 1, 31),
+            language=LanguageEnum.RU,
         )
 
         assert result.totals.view_count == 1

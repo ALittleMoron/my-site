@@ -26,17 +26,23 @@ def test_external_resource_model_defines_trigram_search_indexes() -> None:
 
 def test_note_model_defines_search_and_publish_filter_indexes() -> None:
     table = cast("Table", NoteModel.__table__)
-    search_vector = table.c.search_vector
+    search_vector_ru = table.c.search_vector_ru
+    search_vector_en = table.c.search_vector_en
     statements = {
         str(CreateIndex(index).compile(dialect=postgresql.dialect())) for index in table.indexes
     }
 
-    assert search_vector.computed is not None
-    assert "to_tsvector('simple'" in str(search_vector.computed.sqltext)
+    assert search_vector_ru.computed is not None
+    assert search_vector_en.computed is not None
+    assert "title_ru" in str(search_vector_ru.computed.sqltext)
+    assert "content_en" in str(search_vector_en.computed.sqltext)
     assert {
         "CREATE INDEX notes_note_search_vector_gin_idx "
         "ON notes__note_model "
-        "USING gin (search_vector)",
+        "USING gin (search_vector_ru)",
+        "CREATE INDEX notes_note_search_vector_en_gin_idx "
+        "ON notes__note_model "
+        "USING gin (search_vector_en)",
         "CREATE INDEX notes_note_publish_status_published_at_idx "
         "ON notes__note_model "
         "(publish_status, published_at)",

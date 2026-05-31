@@ -25,17 +25,30 @@ def upgrade() -> None:
     op.create_index("users_username_idx", "auth__user_model", ["username"], unique=False)
     op.create_table(
         "notes__note_model",
-        sa.Column("title", sa.String(length=255), nullable=False),
-        sa.Column("content", sa.String(), nullable=False),
+        sa.Column("title_ru", sa.String(length=255), nullable=False),
+        sa.Column("title_en", sa.String(length=255), nullable=False),
+        sa.Column("content_ru", sa.String(), nullable=False),
+        sa.Column("content_en", sa.String(), nullable=False),
         sa.Column("slug", sa.String(length=255), nullable=False),
-        sa.Column("folder", sa.String(length=255), nullable=False),
+        sa.Column("folder_ru", sa.String(length=255), nullable=False),
+        sa.Column("folder_en", sa.String(length=255), nullable=False),
         sa.Column("author_username", sa.String(length=255), nullable=False),
         sa.Column(
-            "search_vector",
+            "search_vector_ru",
             postgresql.TSVECTOR(),
             sa.Computed(
-                "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
-                "setweight(to_tsvector('simple', coalesce(content, '')), 'B')",
+                "setweight(to_tsvector('simple', coalesce(title_ru, '')), 'A') || "
+                "setweight(to_tsvector('simple', coalesce(content_ru, '')), 'B')",
+                persisted=True,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
+            "search_vector_en",
+            postgresql.TSVECTOR(),
+            sa.Computed(
+                "setweight(to_tsvector('simple', coalesce(title_en, '')), 'A') || "
+                "setweight(to_tsvector('simple', coalesce(content_en, '')), 'B')",
                 persisted=True,
             ),
             nullable=False,
@@ -66,12 +79,22 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_notes__note_model_slug"), "notes__note_model", ["slug"], unique=True,
+        op.f("ix_notes__note_model_slug"),
+        "notes__note_model",
+        ["slug"],
+        unique=True,
     )
     op.create_index(
         "notes_note_search_vector_gin_idx",
         "notes__note_model",
-        ["search_vector"],
+        ["search_vector_ru"],
+        unique=False,
+        postgresql_using="gin",
+    )
+    op.create_index(
+        "notes_note_search_vector_en_gin_idx",
+        "notes__note_model",
+        ["search_vector_en"],
         unique=False,
         postgresql_using="gin",
     )
@@ -83,7 +106,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "notes__tag_model",
-        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("name_ru", sa.String(length=255), nullable=False),
+        sa.Column("name_en", sa.String(length=255), nullable=False),
         sa.Column("slug", sa.String(length=255), nullable=False),
         sa.Column("deleted_at", UTCDateTime(timezone=True), nullable=True),
         sa.Column(
@@ -338,6 +362,11 @@ def downgrade() -> None:
     op.drop_index(
         "notes_note_publish_status_published_at_idx",
         table_name="notes__note_model",
+    )
+    op.drop_index(
+        "notes_note_search_vector_en_gin_idx",
+        table_name="notes__note_model",
+        postgresql_using="gin",
     )
     op.drop_index(
         "notes_note_search_vector_gin_idx",

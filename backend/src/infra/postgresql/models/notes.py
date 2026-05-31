@@ -18,13 +18,21 @@ from infra.postgresql.models.mixins.publish import PublishMixin
 
 
 class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
-    title: Mapped[str] = mapped_column(
+    title_ru: Mapped[str] = mapped_column(
         String(length=255),
-        doc="Title of the note",
+        doc="Russian title of the note",
     )
-    content: Mapped[str] = mapped_column(
+    title_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English title of the note",
+    )
+    content_ru: Mapped[str] = mapped_column(
         String(),
-        doc="Content of the note",
+        doc="Russian content of the note",
+    )
+    content_en: Mapped[str] = mapped_column(
+        String(),
+        doc="English content of the note",
     )
     slug: Mapped[str] = mapped_column(
         String(length=255),
@@ -32,22 +40,35 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         index=True,
         doc="URL slug for the note",
     )
-    folder: Mapped[str] = mapped_column(
+    folder_ru: Mapped[str] = mapped_column(
         String(length=255),
-        doc="One-level folder name for the note tree",
+        doc="Russian one-level folder name for the note tree",
+    )
+    folder_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English one-level folder name for the note tree",
     )
     author_username: Mapped[str] = mapped_column(
         String(length=255),
         doc="Username of the note author",
     )
-    search_vector: Mapped[str] = mapped_column(
+    search_vector_ru: Mapped[str] = mapped_column(
         TSVECTOR(),
         Computed(
-            "setweight(to_tsvector('simple', coalesce(title, '')), 'A') || "
-            "setweight(to_tsvector('simple', coalesce(content, '')), 'B')",
+            "setweight(to_tsvector('simple', coalesce(title_ru, '')), 'A') || "
+            "setweight(to_tsvector('simple', coalesce(content_ru, '')), 'B')",
             persisted=True,
         ),
-        doc="Generated full-text search vector for title and content",
+        doc="Generated full-text search vector for Russian title and content",
+    )
+    search_vector_en: Mapped[str] = mapped_column(
+        TSVECTOR(),
+        Computed(
+            "setweight(to_tsvector('simple', coalesce(title_en, '')), 'A') || "
+            "setweight(to_tsvector('simple', coalesce(content_en, '')), 'B')",
+            persisted=True,
+        ),
+        doc="Generated full-text search vector for English title and content",
     )
 
     tag_links: Mapped[list[NoteToTagSecondaryModel]] = relationship(
@@ -59,7 +80,12 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
     __table_args__ = (
         Index(
             "notes_note_search_vector_gin_idx",
-            search_vector,
+            search_vector_ru,
+            postgresql_using="gin",
+        ),
+        Index(
+            "notes_note_search_vector_en_gin_idx",
+            search_vector_en,
             postgresql_using="gin",
         ),
         Index(
@@ -70,16 +96,19 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
     )
 
     def __str__(self) -> str:
-        return f'Note "{self.title}"'
+        return f'Note "{self.title_en}"'
 
     @classmethod
     def from_domain_schema(cls, note: Note) -> Self:
         return cls(
             id=note.id,
-            title=note.title,
-            content=note.content,
+            title_ru=note.title_ru,
+            title_en=note.title_en,
+            content_ru=note.content_ru,
+            content_en=note.content_en,
             slug=note.slug,
-            folder=note.folder,
+            folder_ru=note.folder_ru,
+            folder_en=note.folder_en,
             author_username=note.author_username,
             published_at=note.published_at,
             publish_status=note.publish_status,
@@ -88,10 +117,13 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         )
 
     def update_from_domain_schema(self, note: Note) -> None:
-        self.title = note.title
-        self.content = note.content
+        self.title_ru = note.title_ru
+        self.title_en = note.title_en
+        self.content_ru = note.content_ru
+        self.content_en = note.content_en
         self.slug = note.slug
-        self.folder = note.folder
+        self.folder_ru = note.folder_ru
+        self.folder_en = note.folder_en
         self.publish_status = note.publish_status
         self.published_at = note.published_at
         self.updated_at = note.updated_at
@@ -99,10 +131,13 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
     def to_domain_schema(self, *, include_deleted_tags: bool) -> Note:
         return Note(
             id=self.id,
-            title=self.title,
-            content=self.content,
             slug=self.slug,
-            folder=self.folder,
+            title_ru=self.title_ru,
+            title_en=self.title_en,
+            content_ru=self.content_ru,
+            content_en=self.content_en,
+            folder_ru=self.folder_ru,
+            folder_en=self.folder_en,
             author_username=self.author_username,
             published_at=self.published_at,
             publish_status=PublishStatusEnum.from_storage_value(self.publish_status),
@@ -119,9 +154,13 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
 
 
 class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
-    name: Mapped[str] = mapped_column(
+    name_ru: Mapped[str] = mapped_column(
         String(length=255),
-        doc="Human-readable tag name",
+        doc="Russian human-readable tag name",
+    )
+    name_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English human-readable tag name",
     )
     slug: Mapped[str] = mapped_column(
         String(length=255),
@@ -135,25 +174,28 @@ class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
     )
 
     def __str__(self) -> str:
-        return f'Tag "{self.name}"'
+        return f'Tag "{self.name_en}"'
 
     @classmethod
     def from_domain_schema(cls, tag: Tag) -> Self:
         return cls(
             id=tag.id,
-            name=tag.name,
+            name_ru=tag.name_ru,
+            name_en=tag.name_en,
             slug=tag.slug,
             deleted_at=tag.deleted_at,
         )
 
     def update_from_domain_schema(self, tag: Tag) -> None:
-        self.name = tag.name
+        self.name_ru = tag.name_ru
+        self.name_en = tag.name_en
         self.slug = tag.slug
 
     def to_domain_schema(self) -> Tag:
         return Tag(
             id=IntId(self.id),
-            name=self.name,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
             slug=self.slug,
             deleted_at=self.deleted_at,
         )

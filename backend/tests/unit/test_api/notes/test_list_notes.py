@@ -6,6 +6,7 @@ from httpx import codes
 
 from core.auth.exceptions import ForbiddenError
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.notes.schemas import NoteFilters, NotePublicStats, NotePublicStatsCollection
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -73,6 +74,10 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                             "name": "Python",
                             "slug": "python",
                             "deletedAt": None,
+                            "translations": {
+                                "ru": {"name": "Python"},
+                                "en": {"name": "Python"},
+                            },
                         },
                     ],
                 },
@@ -82,6 +87,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             filters=NoteFilters(
                 page=1,
                 page_size=10,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug="python",
                 published_from=None,
@@ -111,6 +117,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             filters=NoteFilters(
                 page=2,
                 page_size=5,
+                language=LanguageEnum.RU,
                 only_published=True,
                 tag_slug=None,
                 published_from=date(2026, 1, 1),
@@ -121,6 +128,12 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
     def test_list_notes_requires_explicit_page(self) -> None:
         response = self.api.get_notes(page=None, page_size=10, only_published=True)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.list_notes.assert_not_called()
+
+    def test_list_notes_requires_explicit_language(self) -> None:
+        response = self.api.get_notes(page=1, page_size=10, only_published=True, language=None)
 
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_notes.assert_not_called()

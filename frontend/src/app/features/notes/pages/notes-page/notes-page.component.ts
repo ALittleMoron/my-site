@@ -4,13 +4,16 @@ import {
   DestroyRef,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -77,6 +80,7 @@ export class NotesPageComponent implements OnInit {
   private engagedViewTimerId: ReturnType<typeof setInterval> | null = null;
   private engagedViewState: EngagedViewState | null = null;
   private readonly trackedEngagedViewSlugs = new Set<string>();
+  private languageReloadInitialized = false;
 
   readonly isAdmin = this.authService.isAdmin;
   readonly sidePanelOpen = signal(localStorage.getItem(SIDE_PANEL_STORAGE_KEY) === 'true');
@@ -129,6 +133,16 @@ export class NotesPageComponent implements OnInit {
       this.publishedTo() !== '',
   );
   readonly dateLocale = computed(() => this.i18n.dateLocale());
+
+  private readonly languageReloadEffect = effect(() => {
+    const language = this.i18n.language();
+    if (language === null) return;
+    if (!this.languageReloadInitialized) {
+      this.languageReloadInitialized = true;
+      return;
+    }
+    untracked(() => this.reloadLocalizedContent());
+  });
 
   ngOnInit(): void {
     this.seoService.setTranslatedMeta({
@@ -270,9 +284,10 @@ export class NotesPageComponent implements OnInit {
 
   saveNote(payload: NotePayload): void {
     const editing = this.formNote();
+    const language = this.currentLanguage();
     const request = editing
-      ? this.notesService.updateNote(editing.slug, payload)
-      : this.notesService.createNote(payload);
+      ? this.notesService.updateNote(editing.slug, payload, language)
+      : this.notesService.createNote(payload, language);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (note) => {
         this.notifications.success(this.i18n.translate('notes.notify.saved'));
@@ -352,10 +367,14 @@ export class NotesPageComponent implements OnInit {
     const nextReaction = previousReaction === kind ? null : kind;
     this.reactionLoading.set(true);
     this.notesService
-      .setReaction(note.slug, {
-        reactionKind: nextReaction,
-        clientToken: this.anonymousReactionService.getOrCreateClientToken(),
-      })
+      .setReaction(
+        note.slug,
+        {
+          reactionKind: nextReaction,
+          clientToken: this.anonymousReactionService.getOrCreateClientToken(),
+        },
+        this.currentLanguage(),
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -402,6 +421,7 @@ export class NotesPageComponent implements OnInit {
       .getStats({
         dateFrom: this.statsDateFrom(),
         dateTo: this.statsDateTo(),
+        language: this.currentLanguage(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -435,6 +455,7 @@ export class NotesPageComponent implements OnInit {
       .getNotes({
         page: this.page(),
         pageSize: PAGE_SIZE,
+        language: this.currentLanguage(),
         onlyPublished: this.onlyPublished(),
         tagSlug: this.activeTagSlug(),
         publishedFrom: this.publishedFrom() || null,
@@ -459,7 +480,7 @@ export class NotesPageComponent implements OnInit {
     this.detailLoading.set(true);
     this.detailError.set(null);
     this.notesService
-      .getNote(slug, !this.isAdmin())
+      .getNote(slug, !this.isAdmin(), this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (note) => {
@@ -479,7 +500,7 @@ export class NotesPageComponent implements OnInit {
 
   loadTags(): void {
     this.notesService
-      .getTags(false)
+      .getTags(false, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags),
@@ -489,7 +510,7 @@ export class NotesPageComponent implements OnInit {
 
   loadTree(): void {
     this.notesService
-      .getTree()
+      .getTree(this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tree) => this.tree.set(tree),
@@ -527,7 +548,7 @@ export class NotesPageComponent implements OnInit {
     this.engagedViewTimerId = null;
     this.engagedViewState = null;
     this.notesService
-      .trackEngagedView(state.slug)
+      .trackEngagedView(state.slug, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.trackedEngagedViewSlugs.add(state.slug),
@@ -568,6 +589,28 @@ export class NotesPageComponent implements OnInit {
   private normalizedSearchQuery(): string | null {
     const value = this.searchQuery().trim();
     return value === '' ? null : value;
+  }
+
+  private reloadLocalizedContent(): void {
+    this.loadTags();
+    this.loadTree();
+    const slug = this.currentSlug();
+    if (slug) {
+      this.loadDetail(slug);
+    } else {
+      this.loadNotes();
+    }
+    if (this.statsVisible()) {
+      this.loadStats();
+    }
+  }
+
+  private currentLanguage(): LanguageCode {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
   }
 }
 

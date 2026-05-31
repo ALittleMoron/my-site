@@ -32,10 +32,13 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.post_create_note(
             data=self.factory.api.note_request(
-                title="New note",
-                content="New content",
+                title_ru="Новая заметка",
+                title_en="New note",
+                content_ru="Новое содержимое",
+                content_en="New content",
                 slug="new-note",
-                folder="Inbox",
+                folder_ru="Входящие",
+                folder_en="Inbox",
                 publish_status="Draft",
                 tag_ids=[IntId(1), IntId(2)],
             ),
@@ -46,10 +49,13 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.create_note.assert_called_once_with(
             params=NoteCreateParams(
                 id=self.note_id,
-                title="New note",
-                content="New content",
                 slug="new-note",
-                folder="Inbox",
+                title_ru="Новая заметка",
+                title_en="New note",
+                content_ru="Новое содержимое",
+                content_en="New content",
+                folder_ru="Входящие",
+                folder_en="Inbox",
                 author_username="test",
                 publish_status=PublishStatusEnum.DRAFT,
                 tag_ids=[IntId(1), IntId(2)],
@@ -74,10 +80,13 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.api.put_update_note(
             slug="old-note",
             data=self.factory.api.note_request(
-                title="Updated note",
-                content="Updated content",
+                title_ru="Обновлённая заметка",
+                title_en="Updated note",
+                content_ru="Обновлённое содержимое",
+                content_en="Updated content",
                 slug="updated-note",
-                folder="Inbox",
+                folder_ru="Входящие",
+                folder_en="Inbox",
                 publish_status="Published",
                 tag_ids=[IntId(1)],
             ),
@@ -88,14 +97,26 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.update_note.assert_called_once_with(
             slug="old-note",
             params=NoteUpdateParams(
-                title="Updated note",
-                content="Updated content",
                 slug="updated-note",
-                folder="Inbox",
+                title_ru="Обновлённая заметка",
+                title_en="Updated note",
+                content_ru="Обновлённое содержимое",
+                content_en="Updated content",
+                folder_ru="Входящие",
+                folder_en="Inbox",
                 publish_status=PublishStatusEnum.PUBLISHED,
                 tag_ids=[IntId(1)],
             ),
         )
+
+    def test_create_note_requires_all_translation_fields(self) -> None:
+        data = self.factory.api.note_request()
+        del data["translations"]["en"]["content"]
+
+        response = self.api.post_create_note(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_note.assert_not_called()
 
     def test_delete_note_not_found(self) -> None:
         self.use_case.delete_note.side_effect = NoteNotFoundError()
