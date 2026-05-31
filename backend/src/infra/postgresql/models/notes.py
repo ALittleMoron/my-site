@@ -2,7 +2,17 @@ from datetime import date, datetime
 from typing import Self
 from uuid import UUID
 
-from sqlalchemy import Computed, Date, Enum, ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Computed,
+    Date,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
@@ -171,6 +181,27 @@ class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
     deleted_at: Mapped[datetime | None] = mapped_column(
         UTCDateTime(timezone=True),
         doc="Soft deletion timestamp",
+    )
+
+    __table_args__ = (
+        Index(
+            "notes_tag_name_ru_trgm_idx",
+            func.lower(name_ru).label("name_ru_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
+        ),
+        Index(
+            "notes_tag_name_en_trgm_idx",
+            func.lower(name_en).label("name_en_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"name_en_lower": "gin_trgm_ops"},
+        ),
+        Index(
+            "notes_tag_slug_trgm_idx",
+            func.lower(slug).label("slug_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"slug_lower": "gin_trgm_ops"},
+        ),
     )
 
     def __str__(self) -> str:

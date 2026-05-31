@@ -131,6 +131,30 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_notes__tag_model_slug"), "notes__tag_model", ["slug"], unique=True)
+    op.create_index(
+        "notes_tag_name_ru_trgm_idx",
+        "notes__tag_model",
+        [sa.func.lower(sa.column("name_ru")).label("name_ru_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
+    )
+    op.create_index(
+        "notes_tag_name_en_trgm_idx",
+        "notes__tag_model",
+        [sa.func.lower(sa.column("name_en")).label("name_en_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"name_en_lower": "gin_trgm_ops"},
+    )
+    op.create_index(
+        "notes_tag_slug_trgm_idx",
+        "notes__tag_model",
+        [sa.func.lower(sa.column("slug")).label("slug_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"slug_lower": "gin_trgm_ops"},
+    )
     op.create_table(
         "competency_matrix__competency_matrix_item_model",
         sa.Column("question_ru", sa.String(length=255), nullable=False),
@@ -381,6 +405,9 @@ def downgrade() -> None:
         table_name="competency_matrix__competency_matrix_item_model",
     )
     op.drop_table("competency_matrix__competency_matrix_item_model")
+    op.drop_index("notes_tag_slug_trgm_idx", table_name="notes__tag_model")
+    op.drop_index("notes_tag_name_en_trgm_idx", table_name="notes__tag_model")
+    op.drop_index("notes_tag_name_ru_trgm_idx", table_name="notes__tag_model")
     op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
     op.drop_table("notes__tag_model")
     op.drop_index(

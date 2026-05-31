@@ -500,6 +500,114 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
         assert deleted_tags.values[0].deleted_at is not None
         assert [tag.slug for tag in restored_tags] == ["python"]
 
+    async def test_search_tags_matches_typo(self) -> None:
+        await self.storage_helper.create_tags(
+            tags=[
+                self.factory.core.tag(tag_id=IntId(1), name="Python", slug="python"),
+                self.factory.core.tag(tag_id=IntId(2), name="Django", slug="django"),
+            ],
+        )
+
+        tags = await self.storage.search_tags(
+            search_name="pythno",
+            include_deleted=False,
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+
+        assert [tag.name_en for tag in tags] == ["Python"]
+
+    async def test_search_tags_matches_secondary_language_name(self) -> None:
+        await self.storage_helper.create_tags(
+            tags=[
+                self.factory.core.tag(
+                    tag_id=IntId(1),
+                    name_ru="Базы данных",
+                    name_en="Databases",
+                    slug="databases",
+                ),
+            ],
+        )
+
+        tags = await self.storage.search_tags(
+            search_name="базы",
+            include_deleted=False,
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+
+        assert [tag.name_en for tag in tags] == ["Databases"]
+
+    async def test_search_tags_ranks_active_language_matches_before_slug_matches(self) -> None:
+        await self.storage_helper.create_tags(
+            tags=[
+                self.factory.core.tag(
+                    tag_id=IntId(1),
+                    name="Package tooling",
+                    slug="python-packages",
+                ),
+                self.factory.core.tag(
+                    tag_id=IntId(2),
+                    name="Python",
+                    slug="language",
+                ),
+                self.factory.core.tag(
+                    tag_id=IntId(3),
+                    name="Python internals",
+                    slug="runtime",
+                ),
+            ],
+        )
+
+        tags = await self.storage.search_tags(
+            search_name="python",
+            include_deleted=False,
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+
+        assert [tag.name_en for tag in tags][:2] == ["Python", "Python internals"]
+
+    async def test_search_tags_respects_limit(self) -> None:
+        await self.storage_helper.create_tags(
+            tags=[
+                self.factory.core.tag(tag_id=IntId(1), name="Limit A", slug="limit-a"),
+                self.factory.core.tag(tag_id=IntId(2), name="Limit B", slug="limit-b"),
+                self.factory.core.tag(tag_id=IntId(3), name="Limit C", slug="limit-c"),
+            ],
+        )
+
+        tags = await self.storage.search_tags(
+            search_name="limit",
+            include_deleted=False,
+            limit=2,
+            language=LanguageEnum.EN,
+        )
+
+        assert len(tags) == 2
+
+    async def test_search_tags_excludes_deleted_tags(self) -> None:
+        await self.storage_helper.create_tags(
+            tags=[
+                self.factory.core.tag(tag_id=IntId(1), name="Python", slug="python"),
+                self.factory.core.tag(
+                    tag_id=IntId(2),
+                    name="Python deleted",
+                    slug="python-deleted",
+                    deleted_at="2026-01-04T03:04:05",
+                ),
+            ],
+        )
+
+        tags = await self.storage.search_tags(
+            search_name="python",
+            include_deleted=False,
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+
+        assert [tag.slug for tag in tags] == ["python"]
+
     async def test_update_unknown_tag_raises_not_found(self) -> None:
         with pytest.raises(TagNotFoundError):
             await self.storage.update_tag(

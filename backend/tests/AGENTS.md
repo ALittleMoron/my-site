@@ -62,6 +62,9 @@ make test-env-down       # stop isolated test PostgreSQL and remove its data
 - Create domain test objects through `self.factory.core.*`; direct dataclass construction is only for cases not covered by factories yet.
 - Unit API tests verify HTTP contract and use case calls. Unit core tests verify branch logic. Storage behavior belongs in integration tests.
 - Cover DB/storage changes with integration tests through `StorageFixture`.
+- Do not add tests that only mirror ORM metadata/index declarations or trivial one-to-one model
+  converters. They do not validate behavior; cover storage behavior through integration tests
+  instead.
 
 ## Coverage Target
 

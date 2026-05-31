@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime, time
 from typing import Any, TypeVar
 from uuid import UUID
 
-from sqlalchemy import Select, case, func, or_, select
+from sqlalchemy import Select, String, and_, bindparam, case, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
@@ -25,6 +25,7 @@ from core.notes.schemas import (
 )
 from core.notes.storages import NoteAnalyticsStorage, NotesStorage
 from core.types import IntId
+from infra.config.constants import constants
 from infra.postgresql.models import (
     NoteDailyAnalyticsModel,
     NoteModel,
@@ -278,22 +279,61 @@ class NotesDatabaseStorage(NotesStorage):
         language: LanguageEnum,
     ) -> Tags:
         lowered_search_name = search_name.lower()
-        name_column = self._tag_name_column(language=language)
+        active_name_column = self._tag_name_column(language=language)
+        secondary_name_column = self._secondary_tag_name_column(language=language)
+        search_query = bindparam(
+            "tag_search_query",
+            value=lowered_search_name,
+            type_=String(),
+        )
+        search_pattern = f"%{lowered_search_name}%"
+        prefix_pattern = f"{lowered_search_name}%"
+        active_name = func.lower(active_name_column)
+        secondary_name = func.lower(secondary_name_column)
+        slug = func.lower(TagModel.slug)
+        fuzzy_search_allowed = (
+            func.length(search_query) >= constants.search.min_trigram_fuzzy_query_length
+        )
+        similarity_score = func.greatest(
+            func.similarity(active_name, search_query),
+            func.similarity(secondary_name, search_query),
+            func.similarity(slug, search_query),
+            func.word_similarity(search_query, active_name),
+            func.word_similarity(search_query, secondary_name),
+            func.word_similarity(search_query, slug),
+        )
         query = (
             select(TagModel)
             .where(
                 or_(
-                    func.lower(name_column).ilike(f"%{lowered_search_name}%"),
-                    func.lower(TagModel.slug).ilike(f"%{lowered_search_name}%"),
+                    active_name.ilike(search_pattern),
+                    secondary_name.ilike(search_pattern),
+                    slug.ilike(search_pattern),
+                    and_(
+                        fuzzy_search_allowed,
+                        or_(
+                            active_name.op("%")(search_query),
+                            secondary_name.op("%")(search_query),
+                            slug.op("%")(search_query),
+                            active_name.op("%>")(search_query),
+                            secondary_name.op("%>")(search_query),
+                            slug.op("%>")(search_query),
+                        ),
+                    ),
                 ),
             )
             .order_by(
                 case(
-                    (func.lower(name_column) == lowered_search_name, 0),
-                    (func.lower(name_column).startswith(lowered_search_name), 1),
-                    else_=2,
+                    (active_name == lowered_search_name, 0),
+                    (active_name.like(prefix_pattern), 1),
+                    (secondary_name == lowered_search_name, 2),
+                    (secondary_name.like(prefix_pattern), 3),
+                    (slug.like(search_pattern), 4),
+                    else_=5,
                 ),
-                name_column,
+                similarity_score.desc(),
+                active_name,
+                TagModel.id,
             )
             .limit(limit)
         )
@@ -306,6 +346,11 @@ class NotesDatabaseStorage(NotesStorage):
         if language == LanguageEnum.RU:
             return TagModel.name_ru
         return TagModel.name_en
+
+    def _secondary_tag_name_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return TagModel.name_en
+        return TagModel.name_ru
 
     async def create_tag(self, *, tag: Tag) -> Tag:
         model = TagModel.from_domain_schema(tag=tag)
