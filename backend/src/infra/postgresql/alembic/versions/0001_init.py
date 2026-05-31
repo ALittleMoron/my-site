@@ -133,12 +133,19 @@ def upgrade() -> None:
     op.create_index(op.f("ix_notes__tag_model_slug"), "notes__tag_model", ["slug"], unique=True)
     op.create_table(
         "competency_matrix__competency_matrix_item_model",
-        sa.Column("question", sa.String(length=255), nullable=False),
-        sa.Column("answer", sa.String(), nullable=False),
-        sa.Column("interview_expected_answer", sa.String(), nullable=False),
-        sa.Column("sheet", sa.String(length=255), nullable=False),
-        sa.Column("section", sa.String(length=255), nullable=False),
-        sa.Column("subsection", sa.String(length=255), nullable=False),
+        sa.Column("question_ru", sa.String(length=255), nullable=False),
+        sa.Column("question_en", sa.String(length=255), nullable=False),
+        sa.Column("answer_ru", sa.String(), nullable=False),
+        sa.Column("answer_en", sa.String(), nullable=False),
+        sa.Column("interview_expected_answer_ru", sa.String(), nullable=False),
+        sa.Column("interview_expected_answer_en", sa.String(), nullable=False),
+        sa.Column("sheet_key", sa.String(length=255), nullable=False),
+        sa.Column("sheet_ru", sa.String(length=255), nullable=False),
+        sa.Column("sheet_en", sa.String(length=255), nullable=False),
+        sa.Column("section_ru", sa.String(length=255), nullable=False),
+        sa.Column("section_en", sa.String(length=255), nullable=False),
+        sa.Column("subsection_ru", sa.String(length=255), nullable=False),
+        sa.Column("subsection_en", sa.String(length=255), nullable=False),
         sa.Column(
             "grade",
             sa.Enum(
@@ -171,14 +178,15 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        "cmi_sheet_idx",
+        "cmi_sheet_key_idx",
         "competency_matrix__competency_matrix_item_model",
-        [sa.literal_column("lower('sheet')")],
+        [sa.func.lower(sa.column("sheet_key")).label("sheet_key_lower")],
         unique=False,
     )
     op.create_table(
         "competency_matrix__external_resource_model",
-        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("name_ru", sa.String(length=255), nullable=False),
+        sa.Column("name_en", sa.String(length=255), nullable=False),
         sa.Column("url", sa.String(length=2048), nullable=False),
         sa.Column(
             "id",
@@ -189,12 +197,20 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        "cm_external_resource_name_trgm_idx",
+        "cm_external_resource_name_ru_trgm_idx",
         "competency_matrix__external_resource_model",
-        [sa.func.lower(sa.column("name")).label("name_lower")],
+        [sa.func.lower(sa.column("name_ru")).label("name_ru_lower")],
         unique=False,
         postgresql_using="gin",
-        postgresql_ops={"name_lower": "gin_trgm_ops"},
+        postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
+    )
+    op.create_index(
+        "cm_external_resource_name_en_trgm_idx",
+        "competency_matrix__external_resource_model",
+        [sa.func.lower(sa.column("name_en")).label("name_en_lower")],
+        unique=False,
+        postgresql_using="gin",
+        postgresql_ops={"name_en_lower": "gin_trgm_ops"},
     )
     op.create_index(
         "cm_external_resource_url_trgm_idx",
@@ -223,7 +239,8 @@ def upgrade() -> None:
         sa.Column(
             "resource_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False,
         ),
-        sa.Column("context", sa.String(), nullable=False),
+        sa.Column("context_ru", sa.String(), nullable=False),
+        sa.Column("context_en", sa.String(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -351,11 +368,18 @@ def downgrade() -> None:
         table_name="competency_matrix__external_resource_model",
     )
     op.drop_index(
-        "cm_external_resource_name_trgm_idx",
+        "cm_external_resource_name_en_trgm_idx",
+        table_name="competency_matrix__external_resource_model",
+    )
+    op.drop_index(
+        "cm_external_resource_name_ru_trgm_idx",
         table_name="competency_matrix__external_resource_model",
     )
     op.drop_table("competency_matrix__external_resource_model")
-    op.drop_index("cmi_sheet_idx", table_name="competency_matrix__competency_matrix_item_model")
+    op.drop_index(
+        "cmi_sheet_key_idx",
+        table_name="competency_matrix__competency_matrix_item_model",
+    )
     op.drop_table("competency_matrix__competency_matrix_item_model")
     op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
     op.drop_table("notes__tag_model")

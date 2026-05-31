@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
+import { MatrixSheet } from '../../../../models/matrix-question.model';
 
 @Component({
   selector: 'app-matrix-sheet-tabs',
@@ -9,16 +10,16 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
   templateUrl: './matrix-sheet-tabs.component.html',
 })
 export class MatrixSheetTabsComponent {
-  readonly sheets = input.required<string[]>();
-  readonly selectedSheet = input<string | null>(null);
+  readonly sheets = input.required<MatrixSheet[]>();
+  readonly selectedSheetKey = input<string | null>(null);
 
   readonly sheetSelected = output<string>();
 
-  isSelected(sheet: string): boolean {
-    return this.selectedSheet() === sheet;
+  isSelected(sheet: MatrixSheet): boolean {
+    return this.selectedSheetKey() === sheet.key;
   }
 
-  selectSheet(sheet: string): void {
-    this.sheetSelected.emit(sheet);
+  selectSheet(sheet: MatrixSheet): void {
+    this.sheetSelected.emit(sheet.key);
   }
 }

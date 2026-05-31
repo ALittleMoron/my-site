@@ -3,6 +3,7 @@ import { MatrixGroupedListComponent } from './matrix-grouped-list.component';
 import { MatrixQuestionList } from '../../../../models/matrix-question.model';
 
 const mockQuestionList: MatrixQuestionList = {
+  sheetKey: 'javascript',
   sheet: 'JavaScript',
   sections: [
     {

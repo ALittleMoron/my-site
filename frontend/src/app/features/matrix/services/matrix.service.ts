@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
+import { LanguageCode } from '../../../core/i18n/i18n.model';
 import {
   MatrixItemDetailDto,
   MatrixItemsListDto,
@@ -9,57 +10,83 @@ import {
   MatrixQuestionList,
   MatrixResource,
   MatrixResourcesDto,
+  MatrixSheet,
   MatrixSheetsDto,
   mapMatrixDetailDto,
   mapMatrixListDto,
   mapMatrixResourceDto,
+  mapMatrixSheetDto,
 } from '../models/matrix-question.model';
 
 @Injectable({ providedIn: 'root' })
 export class MatrixService {
   private readonly api = inject(ApiClient);
 
-  getSheets(): Observable<string[]> {
+  getSheets(language: LanguageCode): Observable<MatrixSheet[]> {
     return this.api
-      .get<MatrixSheetsDto>('/api/competency-matrix/sheets')
-      .pipe(map((dto) => dto.sheets));
+      .get<MatrixSheetsDto>('/api/competency-matrix/sheets', { language })
+      .pipe(map((dto) => dto.sheets.map(mapMatrixSheetDto)));
   }
 
-  getQuestions(sheetName: string, onlyPublished: boolean): Observable<MatrixQuestionList> {
+  getQuestions(
+    sheetKey: string,
+    onlyPublished: boolean,
+    language: LanguageCode,
+  ): Observable<MatrixQuestionList> {
     return this.api
       .get<MatrixItemsListDto>('/api/competency-matrix/items', {
-        sheetName,
+        sheetKey,
         onlyPublished: String(onlyPublished),
+        language,
       })
       .pipe(map(mapMatrixListDto));
   }
 
-  getQuestion(id: number, onlyPublished: boolean): Observable<MatrixQuestionDetail> {
+  getQuestion(
+    id: number,
+    onlyPublished: boolean,
+    language: LanguageCode,
+  ): Observable<MatrixQuestionDetail> {
     return this.api
       .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, {
         onlyPublished: String(onlyPublished),
+        language,
       })
       .pipe(map(mapMatrixDetailDto));
   }
 
-  searchResources(searchName: string, limit: number): Observable<MatrixResource[]> {
+  searchResources(
+    searchName: string,
+    limit: number,
+    language: LanguageCode,
+  ): Observable<MatrixResource[]> {
     return this.api
       .get<MatrixResourcesDto>('/api/competency-matrix/resources/search', {
         searchName,
         limit: String(limit),
+        language,
       })
       .pipe(map((dto) => dto.resources.map(mapMatrixResourceDto)));
   }
 
-  createQuestion(payload: MatrixQuestionPayload): Observable<MatrixQuestionDetail> {
+  createQuestion(
+    payload: MatrixQuestionPayload,
+    language: LanguageCode,
+  ): Observable<MatrixQuestionDetail> {
     return this.api
-      .post<MatrixItemDetailDto>('/api/competency-matrix/items', payload)
+      .post<MatrixItemDetailDto>('/api/competency-matrix/items', payload, { language })
       .pipe(map(mapMatrixDetailDto));
   }
 
-  updateQuestion(id: number, payload: MatrixQuestionPayload): Observable<MatrixQuestionDetail> {
+  updateQuestion(
+    id: number,
+    payload: MatrixQuestionPayload,
+    language: LanguageCode,
+  ): Observable<MatrixQuestionDetail> {
     return this.api
-      .put<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, payload)
+      .put<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, payload, {
+        language,
+      })
       .pipe(map(mapMatrixDetailDto));
   }
 

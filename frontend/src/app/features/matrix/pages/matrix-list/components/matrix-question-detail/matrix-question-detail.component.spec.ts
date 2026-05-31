@@ -9,12 +9,42 @@ const mockDetail: MatrixQuestionDetail = {
   question: 'What is a closure?',
   answer: 'A **closure** is a function with access to its outer scope.',
   interviewExpectedAnswer: 'Demonstrate understanding of lexical scoping.',
+  sheetKey: 'javascript',
   sheet: 'JavaScript',
   grade: 'Junior',
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
-  resources: [{ id: 10, name: 'MDN', url: 'https://mdn.io', context: 'See MDN docs' }],
+  translations: {
+    ru: {
+      question: 'Что такое замыкание?',
+      answer: 'Замыкание — это функция.',
+      interviewExpectedAnswer: 'Лексическая область видимости.',
+      sheet: 'JavaScript',
+      section: 'Core',
+      subsection: 'Syntax',
+    },
+    en: {
+      question: 'What is a closure?',
+      answer: 'A **closure** is a function with access to its outer scope.',
+      interviewExpectedAnswer: 'Demonstrate understanding of lexical scoping.',
+      sheet: 'JavaScript',
+      section: 'Core',
+      subsection: 'Syntax',
+    },
+  },
+  resources: [
+    {
+      id: 10,
+      name: 'MDN',
+      url: 'https://mdn.io',
+      context: 'See MDN docs',
+      translations: {
+        ru: { name: 'MDN', context: 'См. документацию MDN' },
+        en: { name: 'MDN', context: 'See MDN docs' },
+      },
+    },
+  ],
 };
 
 const mockError: ApiError = {

@@ -11,8 +11,11 @@ describe('MatrixSheetTabsComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixSheetTabsComponent);
-    fixture.componentRef.setInput('sheets', ['JavaScript', 'Python']);
-    fixture.componentRef.setInput('selectedSheet', 'JavaScript');
+    fixture.componentRef.setInput('sheets', [
+      { key: 'javascript', name: 'JavaScript' },
+      { key: 'python', name: 'Python' },
+    ]);
+    fixture.componentRef.setInput('selectedSheetKey', 'javascript');
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
   });
@@ -35,6 +38,6 @@ describe('MatrixSheetTabsComponent', () => {
     fixture.componentInstance.sheetSelected.subscribe((s: string) => emitted.push(s));
     const buttons = el.querySelectorAll<HTMLButtonElement>('button');
     buttons[1].click();
-    expect(emitted).toEqual(['Python']);
+    expect(emitted).toEqual(['python']);
   });
 });

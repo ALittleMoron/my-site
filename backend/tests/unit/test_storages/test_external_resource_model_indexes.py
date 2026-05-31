@@ -4,7 +4,10 @@ from sqlalchemy import Table
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateIndex
 
-from infra.postgresql.models.competency_matrix import ExternalResourceModel
+from infra.postgresql.models.competency_matrix import (
+    CompetencyMatrixItemModel,
+    ExternalResourceModel,
+)
 from infra.postgresql.models.notes import NoteModel
 
 
@@ -15,12 +18,28 @@ def test_external_resource_model_defines_trigram_search_indexes() -> None:
     }
 
     assert {
-        "CREATE INDEX cm_external_resource_name_trgm_idx "
+        "CREATE INDEX cm_external_resource_name_ru_trgm_idx "
         "ON competency_matrix__external_resource_model "
-        "USING gin (lower(name) gin_trgm_ops)",
+        "USING gin (lower(name_ru) gin_trgm_ops)",
+        "CREATE INDEX cm_external_resource_name_en_trgm_idx "
+        "ON competency_matrix__external_resource_model "
+        "USING gin (lower(name_en) gin_trgm_ops)",
         "CREATE INDEX cm_external_resource_url_trgm_idx "
         "ON competency_matrix__external_resource_model "
         "USING gin (lower(url) gin_trgm_ops)",
+    } <= statements
+
+
+def test_competency_matrix_item_model_defines_sheet_key_index() -> None:
+    table = cast("Table", CompetencyMatrixItemModel.__table__)
+    statements = {
+        str(CreateIndex(index).compile(dialect=postgresql.dialect())) for index in table.indexes
+    }
+
+    assert {
+        "CREATE INDEX cmi_sheet_key_idx "
+        "ON competency_matrix__competency_matrix_item_model "
+        "(lower(sheet_key))",
     } <= statements
 
 

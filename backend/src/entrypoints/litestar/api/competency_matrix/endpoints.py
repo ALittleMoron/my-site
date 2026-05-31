@@ -12,6 +12,7 @@ from core.auth.types import Token
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.types import IntId, SearchName
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
@@ -40,9 +41,13 @@ class CompetencyMatrixApiController(Controller):
     async def list_competency_matrix_sheet(
         self,
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.list_sheets()
-        return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(schema=sheets)
+        return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(
+            schema=sheets,
+            language=language,
+        )
 
     @get(
         "/resources/search",
@@ -55,9 +60,17 @@ class CompetencyMatrixApiController(Controller):
         search_name: Annotated[str, Parameter(query="searchName")],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         limit: Annotated[int, Parameter(query="limit", ge=1, le=50)],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixResourcesResponseSchema:
-        items = await use_case.find_resources(search_name=SearchName(search_name), limit=limit)
-        return CompetencyMatrixResourcesResponseSchema.from_domain_schema(schema=items)
+        items = await use_case.find_resources(
+            search_name=SearchName(search_name),
+            limit=limit,
+            language=language,
+        )
+        return CompetencyMatrixResourcesResponseSchema.from_domain_schema(
+            schema=items,
+            language=language,
+        )
 
     @get(
         "/items",
@@ -68,19 +81,21 @@ class CompetencyMatrixApiController(Controller):
     async def list_competency_matrix_items(
         self,
         request: Request[JwtUser, Token | None, State],
-        sheet_name: Annotated[str, Parameter(query="sheetName")],
+        sheet_key: Annotated[str, Parameter(query="sheetKey")],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixItemsListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
         items = await use_case.list_items(
-            sheet_name=sheet_name,
+            sheet_key=sheet_key,
             only_published=only_published,
         )
         return CompetencyMatrixItemsListResponseSchema.from_domain_schema(
-            sheet=sheet_name,
+            sheet_key=sheet_key,
             schema=items,
+            language=language,
         )
 
     @post(
@@ -96,6 +111,7 @@ class CompetencyMatrixApiController(Controller):
         resource_id_generator: FromDishka[ResourceIdGenerator],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
             params=data.to_create_schema(
@@ -103,7 +119,10 @@ class CompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
-        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
+            schema=item,
+            language=language,
+        )
 
     @get(
         "/items/detail/{pk:int}",
@@ -117,11 +136,15 @@ class CompetencyMatrixApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         only_published: Annotated[bool, Parameter(query="onlyPublished")],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
         item = await use_case.get_item(item_id=IntId(pk), only_published=only_published)
-        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
+            schema=item,
+            language=language,
+        )
 
     @put(
         "/items/detail/{pk:int}",
@@ -136,6 +159,7 @@ class CompetencyMatrixApiController(Controller):
         resource_id_generator: FromDishka[ResourceIdGenerator],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, Parameter(query="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.update_item(
             params=data.to_update_schema(
@@ -143,7 +167,10 @@ class CompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
-        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(schema=item)
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
+            schema=item,
+            language=language,
+        )
 
     @delete(
         "/items/detail/{pk:int}",

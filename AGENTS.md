@@ -40,15 +40,18 @@ Portfolio/notes site and knowledge database
   `backend/src`; keep performance support under `backend/performance/` and test support under
   `backend/tests/`.
 - UI localisation is backend-bundle driven: user-facing interface strings must come from the
-  backend i18n catalog. Database/content localisation is separate from UI i18n: notes and note
-  tags use required fixed `*_ru` / `*_en` fields in existing tables, with explicit
-  `LanguageEnum`/`language` selection for localized read APIs. Core note/tag domain entities keep
-  canonical translation fields only; localized `title`, `content`, `folder`, and `name` values are
-  response/read-model projections, not stored domain fields. Do not add generic translation tables,
-  production defaults, or language fallbacks unless an explicit design change asks for them.
-  Supported UI languages must be represented by an enum, and the initial/default UI language must
-  come from the required `I18N_DEFAULT_LANGUAGE` environment setting. Competency matrix and other
-  content localisation remains future work until explicitly designed.
+  backend i18n catalog. Database/content localisation is separate from UI i18n: notes, note tags,
+  and competency matrix content use required fixed `*_ru` / `*_en` fields in existing tables, with
+  explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix sheets use
+  a stable language-neutral `sheet_key`/`sheetKey`; localized sheet names, sections, subsections,
+  questions, answers, expected answers, resource names, and attachment contexts are projections.
+  Core note/tag/matrix domain entities keep canonical translation fields only; localized `title`,
+  `content`, `folder`, `name`, and matrix text values are response/read-model projections, not
+  stored domain-only fields. Do not add generic translation tables, production defaults, or language
+  fallbacks unless an explicit design change asks for them. Supported UI languages must be
+  represented by an enum, and the initial/default UI language must come from the required
+  `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation remains future work until
+  explicitly designed.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains and `/api/*`, while frontend nginx serves the SPA and falls back to `index.html`.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created

@@ -18,7 +18,8 @@ export class MatrixGroupedListComponent {
     this.questionSelected.emit(id);
   }
 
-  gradeLabelKey(grade: string): string {
+  gradeLabelKey(grade: string | null): string {
+    if (grade === null) return 'shared.notSet';
     return `enum.grade.${grade.replace('+', 'Plus')}`;
   }
 }

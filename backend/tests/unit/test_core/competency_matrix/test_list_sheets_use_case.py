@@ -14,6 +14,6 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         self.use_case = CompetencyMatrixUseCase(storage=self.storage)
 
     async def test_list_sheets(self) -> None:
-        self.storage.list_sheets.return_value = ["Python", "SQL"]
+        self.storage.list_sheets.return_value = self.factory.core.sheets(values=["Python", "SQL"])
         sheets = await self.use_case.list_sheets()
         assert sheets == self.factory.core.sheets(values=["Python", "SQL"])

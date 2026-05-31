@@ -2,12 +2,13 @@ from dataclasses import dataclass
 
 from sqlalchemy import ARRAY, Integer, bindparam, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResources
+from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResources, Sheet, Sheets
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.postgresql.models import CompetencyMatrixItemModel, ExternalResourceModel
 from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
@@ -17,19 +18,34 @@ from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryMod
 class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     session: AsyncSession
 
-    async def list_sheets(self) -> list[str]:
+    async def list_sheets(self) -> Sheets:
         stmt = (
-            select(CompetencyMatrixItemModel.sheet)
+            select(
+                CompetencyMatrixItemModel.sheet_key,
+                CompetencyMatrixItemModel.sheet_ru,
+                CompetencyMatrixItemModel.sheet_en,
+            )
             .where(CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED)
             .distinct()
-            .order_by(CompetencyMatrixItemModel.sheet)
+            .order_by(CompetencyMatrixItemModel.sheet_key)
         )
-        sheets = await self.session.scalars(stmt)
-        return list(sheets)
+        rows = await self.session.execute(stmt)
+        return Sheets(
+            values=[
+                Sheet(key=row.sheet_key, name_ru=row.sheet_ru, name_en=row.sheet_en) for row in rows
+            ],
+        )
 
-    async def list_competency_matrix_items(self, sheet_name: str) -> list[CompetencyMatrixItem]:
-        stmt = select(CompetencyMatrixItemModel).where(
-            func.lower(CompetencyMatrixItemModel.sheet) == sheet_name.lower(),
+    async def list_competency_matrix_items(self, sheet_key: str) -> list[CompetencyMatrixItem]:
+        stmt = (
+            select(CompetencyMatrixItemModel)
+            .where(func.lower(CompetencyMatrixItemModel.sheet_key) == sheet_key.lower())
+            .order_by(
+                CompetencyMatrixItemModel.section_en,
+                CompetencyMatrixItemModel.subsection_en,
+                CompetencyMatrixItemModel.grade,
+                CompetencyMatrixItemModel.id,
+            )
         )
         items = await self.session.scalars(stmt)
         return [item.to_domain_schema(include_relationships=False) for item in items]
@@ -124,7 +140,8 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             if link is None:
                 link = ResourceToItemSecondaryModel(resource_id=resource.id)
             link.resource = resource_model
-            link.context = resource.context
+            link.context_ru = resource.context_ru
+            link.context_en = resource.context_en
             links.append(link)
         return links
 
@@ -153,25 +170,36 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self,
         search_name: str,
         limit: int,
+        language: LanguageEnum,
     ) -> ExternalResources:
         lowered_search_name = search_name.lower()
+        name_column = self._resource_name_column(language=language)
         stmt = (
             select(ExternalResourceModel)
             .where(
                 or_(
-                    func.lower(ExternalResourceModel.name).ilike(f"%{lowered_search_name}%"),
+                    func.lower(name_column).ilike(f"%{lowered_search_name}%"),
                     func.lower(ExternalResourceModel.url).ilike(f"%{lowered_search_name}%"),
                 ),
             )
             .order_by(
                 case(
-                    (func.lower(ExternalResourceModel.name) == lowered_search_name, 0),
-                    (func.lower(ExternalResourceModel.name).startswith(lowered_search_name), 1),
+                    (func.lower(name_column) == lowered_search_name, 0),
+                    (func.lower(name_column).startswith(lowered_search_name), 1),
                     else_=2,
                 ),
-                ExternalResourceModel.name,
+                name_column,
             )
             .limit(limit)
         )
         resources = await self.session.scalars(stmt)
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
+
+    def _resource_name_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return ExternalResourceModel.name_ru
+        return ExternalResourceModel.name_en

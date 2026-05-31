@@ -4,6 +4,7 @@ import { MatrixGroupedGridComponent } from './matrix-grouped-grid.component';
 import { MatrixQuestionList } from '../../../../models/matrix-question.model';
 
 const mockQuestionList: MatrixQuestionList = {
+  sheetKey: 'javascript',
   sheet: 'JavaScript',
   sections: [
     {

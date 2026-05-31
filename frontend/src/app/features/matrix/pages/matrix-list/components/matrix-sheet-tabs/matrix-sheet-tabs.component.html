@@ -3,7 +3,7 @@
   role="tablist"
   [attr.aria-label]="'matrix.grid.sheetsAria' | t"
 >
-  @for (sheet of sheets(); track sheet) {
+  @for (sheet of sheets(); track sheet.key) {
     <button
       type="button"
       role="tab"
@@ -13,7 +13,7 @@
       [attr.aria-selected]="isSelected(sheet)"
       (click)="selectSheet(sheet)"
     >
-      {{ sheet }}
+      {{ sheet.name }}
     </button>
   }
 </div>

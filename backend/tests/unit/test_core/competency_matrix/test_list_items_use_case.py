@@ -27,7 +27,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.list_items(sheet_name="Python", only_published=True)
+        items = await self.use_case.list_items(sheet_key="python", only_published=True)
         assert items.values == []
 
     async def test_available(self) -> None:
@@ -36,18 +36,20 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 item_id=1,
                 question="1",
                 publish_status=PublishStatusEnum.PUBLISHED,
+                sheet_key="python",
                 sheet="Python",
                 grade=GradeEnum.JUNIOR,
                 section="1",
                 subsection="1",
             ),
         ]
-        items = await self.use_case.list_items(sheet_name="Python", only_published=True)
+        items = await self.use_case.list_items(sheet_key="python", only_published=True)
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
                 question="1",
                 publish_status=PublishStatusEnum.PUBLISHED,
+                sheet_key="python",
                 sheet="Python",
                 grade=GradeEnum.JUNIOR,
                 section="1",
@@ -67,7 +69,7 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.list_items(sheet_name="Python", only_published=False)
+        items = await self.use_case.list_items(sheet_key="python", only_published=False)
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,

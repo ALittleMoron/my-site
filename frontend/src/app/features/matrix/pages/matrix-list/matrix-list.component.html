@@ -10,7 +10,7 @@
   @if (sheets().length > 0) {
     <app-matrix-sheet-tabs
       [sheets]="sheets()"
-      [selectedSheet]="selectedSheet()"
+      [selectedSheetKey]="selectedSheetKey()"
       (sheetSelected)="selectSheet($event)"
     />
   }

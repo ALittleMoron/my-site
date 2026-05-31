@@ -22,12 +22,42 @@ const question: MatrixQuestionDetail = {
   question: 'What is PEP8?',
   answer: 'Answer',
   interviewExpectedAnswer: 'Expected',
+  sheetKey: 'python',
   sheet: 'Python',
   grade: 'Junior',
   section: 'Core',
   subsection: 'Style',
   publishStatus: 'Draft',
-  resources: [{ id: 1, name: 'Python docs', url: 'https://docs.python.org', context: 'Read' }],
+  translations: {
+    ru: {
+      question: 'Что такое PEP8?',
+      answer: 'Ответ',
+      interviewExpectedAnswer: 'Ожидаемый ответ',
+      sheet: 'Python',
+      section: 'Core',
+      subsection: 'Style',
+    },
+    en: {
+      question: 'What is PEP8?',
+      answer: 'Answer',
+      interviewExpectedAnswer: 'Expected',
+      sheet: 'Python',
+      section: 'Core',
+      subsection: 'Style',
+    },
+  },
+  resources: [
+    {
+      id: 1,
+      name: 'Python docs',
+      url: 'https://docs.python.org',
+      context: 'Read',
+      translations: {
+        ru: { name: 'Документация Python', context: 'Читать' },
+        en: { name: 'Python docs', context: 'Read' },
+      },
+    },
+  ],
 };
 
 describe('MatrixQuestionFormComponent', () => {
@@ -54,17 +84,34 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(component.form.getRawValue()).toEqual({
-      question: 'What is PEP8?',
-      answer: 'Answer',
-      interviewExpectedAnswer: 'Expected',
-      sheet: 'Python',
+      questionRu: 'Что такое PEP8?',
+      questionEn: 'What is PEP8?',
+      answerRu: 'Ответ',
+      answerEn: 'Answer',
+      interviewExpectedAnswerRu: 'Ожидаемый ответ',
+      interviewExpectedAnswerEn: 'Expected',
+      sheetKey: 'python',
+      sheetRu: 'Python',
+      sheetEn: 'Python',
       grade: 'Junior',
-      section: 'Core',
-      subsection: 'Style',
+      sectionRu: 'Core',
+      sectionEn: 'Core',
+      subsectionRu: 'Style',
+      subsectionEn: 'Style',
       publishStatus: 'Draft',
     });
     expect(component.resources()).toEqual([
-      { id: 1, name: 'Python docs', url: 'https://docs.python.org', context: 'Read', isNew: false },
+      {
+        id: 1,
+        name: 'Python docs',
+        url: 'https://docs.python.org',
+        context: 'Read',
+        translations: {
+          ru: { name: 'Документация Python', context: 'Читать' },
+          en: { name: 'Python docs', context: 'Read' },
+        },
+        isNew: false,
+      },
     ]);
   });
 
@@ -74,35 +121,87 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     component.form.setValue({
-      question: 'Question',
-      answer: 'Answer',
-      interviewExpectedAnswer: 'Expected',
-      sheet: 'Python',
+      questionRu: 'Вопрос',
+      questionEn: 'Question',
+      answerRu: 'Ответ',
+      answerEn: 'Answer',
+      interviewExpectedAnswerRu: 'Ожидаемый ответ',
+      interviewExpectedAnswerEn: 'Expected',
+      sheetKey: 'python',
+      sheetRu: 'Python',
+      sheetEn: 'Python',
       grade: 'Middle',
-      section: 'Core',
-      subsection: 'Syntax',
+      sectionRu: 'Core',
+      sectionEn: 'Core',
+      subsectionRu: 'Syntax',
+      subsectionEn: 'Syntax',
       publishStatus: 'Published',
     });
     component.resources.set([
-      { id: 1, name: 'Python docs', url: 'https://docs.python.org', context: 'Read', isNew: false },
-      { id: -1, name: 'New docs', url: 'https://example.com', context: '', isNew: true },
+      {
+        id: 1,
+        name: 'Python docs',
+        url: 'https://docs.python.org',
+        context: 'Read',
+        translations: {
+          ru: { name: 'Документация Python', context: 'Читать' },
+          en: { name: 'Python docs', context: 'Read' },
+        },
+        isNew: false,
+      },
+      {
+        id: -1,
+        name: 'New docs',
+        url: 'https://example.com',
+        context: '',
+        translations: {
+          ru: { name: 'Новая документация', context: '' },
+          en: { name: 'New docs', context: '' },
+        },
+        isNew: true,
+      },
     ]);
 
     component.submit();
 
     expect(emitted).toEqual([
       {
-        question: 'Question',
-        answer: 'Answer',
-        interviewExpectedAnswer: 'Expected',
-        sheet: 'Python',
+        sheetKey: 'python',
         grade: 'Middle',
-        section: 'Core',
-        subsection: 'Syntax',
         publishStatus: 'Published',
+        translations: {
+          ru: {
+            question: 'Вопрос',
+            answer: 'Ответ',
+            interviewExpectedAnswer: 'Ожидаемый ответ',
+            sheet: 'Python',
+            section: 'Core',
+            subsection: 'Syntax',
+          },
+          en: {
+            question: 'Question',
+            answer: 'Answer',
+            interviewExpectedAnswer: 'Expected',
+            sheet: 'Python',
+            section: 'Core',
+            subsection: 'Syntax',
+          },
+        },
         resources: [
-          { resourceId: 1, context: 'Read' },
-          { resource: { name: 'New docs', url: 'https://example.com' }, context: '' },
+          {
+            resourceId: 1,
+            translations: { ru: { context: 'Читать' }, en: { context: 'Read' } },
+          },
+          {
+            resource: {
+              url: 'https://example.com',
+              translations: {
+                ru: { name: 'Новая документация' },
+                en: { name: 'New docs' },
+              },
+            },
+            translations: { ru: { context: '' }, en: { context: '' } },
+          },
         ],
       },
     ]);

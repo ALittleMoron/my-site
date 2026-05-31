@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.fixtures import FactoryFixture, StorageFixture
@@ -57,10 +58,10 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
 
     async def test_list_sheets(self) -> None:
         sheets = await self.storage.list_sheets()
-        assert sheets == ["Python", "SQL"]
+        assert sheets == self.factory.core.sheets(values=["Python", "SQL"])
 
     async def test_list_items(self) -> None:
-        items = await self.storage.list_competency_matrix_items(sheet_name="Python")
+        items = await self.storage.list_competency_matrix_items(sheet_key="python")
         assert items == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -379,7 +380,8 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         resources = await self.storage.search_competency_matrix_resources(
             search_name="named",
             limit=10,
+            language=LanguageEnum.EN,
         )
         assert len(resources) == 2
-        assert resources[0].name == "NAMED 100"
-        assert resources[1].name == "NAMED 101"
+        assert resources[0].name_en == "NAMED 100"
+        assert resources[1].name_en == "NAMED 101"

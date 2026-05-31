@@ -437,10 +437,9 @@
 
 ### Competency Matrix Improvements
 
-- [ ] Content localisation for competency matrix
-  - [ ] Keep competency matrix localisation out of the current notes-only implementation
-  - [ ] Decide language-neutral identifiers before implementation
-  - [ ] Localise sheets, sections, subsections, questions, answers, expected answers, and resource context
+- [x] Content localisation for competency matrix
+  - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
+  - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
 - [ ] Add a separate queue list for questions I want to add to the matrix
 - [ ] Ability to suggest a question for the competency matrix
 - [ ] Ability to report a typo in the competency matrix

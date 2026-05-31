@@ -17,6 +17,7 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     ExternalResources,
     NewExternalResourceAttachment,
+    Sheet,
     Sheets,
 )
 from core.contacts.schemas import ContactMe
@@ -34,11 +35,14 @@ class CoreFactoryHelper:
         cls,
         resource_id: Any,
         name: str = "RESOURCE",
+        name_ru: str | None = None,
+        name_en: str | None = None,
         url: str = "https://example.com",
     ) -> ExternalResource:
         return ExternalResource(
             id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
-            name=name,
+            name_ru=name_ru or name,
+            name_en=name_en or name,
             url=url,
         )
 
@@ -54,14 +58,20 @@ class CoreFactoryHelper:
         cls,
         resource_id: Any,
         name: str = "RESOURCE",
+        name_ru: str | None = None,
+        name_en: str | None = None,
         url: str = "https://example.com",
         context: str = "Context",
+        context_ru: str | None = None,
+        context_en: str | None = None,
     ) -> AttachedExternalResource:
         return AttachedExternalResource(
             id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
-            name=name,
+            name_ru=name_ru or name,
+            name_en=name_en or name,
             url=url,
-            context=context,
+            context_ru=context_ru or context,
+            context_en=context_en or context,
         )
 
     @classmethod
@@ -76,10 +86,13 @@ class CoreFactoryHelper:
         cls,
         resource_id: Any,
         context: str = "Context",
+        context_ru: str | None = None,
+        context_en: str | None = None,
     ) -> ExistingExternalResourceAttachment:
         return ExistingExternalResourceAttachment(
             resource_id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
-            context=context,
+            context_ru=context_ru or context,
+            context_en=context_en or context,
         )
 
     @classmethod
@@ -87,12 +100,23 @@ class CoreFactoryHelper:
         cls,
         resource_id: Any,
         name: str = "RESOURCE",
+        name_ru: str | None = None,
+        name_en: str | None = None,
         url: str = "https://example.com",
         context: str = "Context",
+        context_ru: str | None = None,
+        context_en: str | None = None,
     ) -> NewExternalResourceAttachment:
         return NewExternalResourceAttachment(
-            resource=cls.external_resource(resource_id=resource_id, name=name, url=url),
-            context=context,
+            resource=cls.external_resource(
+                resource_id=resource_id,
+                name=name,
+                name_ru=name_ru,
+                name_en=name_en,
+                url=url,
+            ),
+            context_ru=context_ru or context,
+            context_en=context_en or context,
         )
 
     @classmethod
@@ -100,25 +124,45 @@ class CoreFactoryHelper:
         cls,
         item_id: int,
         question: str = "QUESTION",
+        question_ru: str | None = None,
+        question_en: str | None = None,
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         answer: str = "Answer",
+        answer_ru: str | None = None,
+        answer_en: str | None = None,
         interview_expected_answer: str = "Answer",
+        interview_expected_answer_ru: str | None = None,
+        interview_expected_answer_en: str | None = None,
+        sheet_key: str | None = None,
         sheet: str = "Sheet",
+        sheet_ru: str | None = None,
+        sheet_en: str | None = None,
         grade: GradeEnum | None = GradeEnum.JUNIOR,
         section: str = "Section",
+        section_ru: str | None = None,
+        section_en: str | None = None,
         subsection: str = "Subsection",
+        subsection_ru: str | None = None,
+        subsection_en: str | None = None,
         resources: list[AttachedExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=cls.int_id(item_id),
-            question=question,
+            question_ru=question_ru or question,
+            question_en=question_en or question,
             publish_status=publish_status,
-            answer=answer,
-            interview_expected_answer=interview_expected_answer,
-            sheet=sheet,
+            answer_ru=answer_ru or answer,
+            answer_en=answer_en or answer,
+            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
+            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
+            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
+            sheet_ru=sheet_ru or sheet,
+            sheet_en=sheet_en or sheet,
             grade=grade,
-            section=section,
-            subsection=subsection,
+            section_ru=section_ru or section,
+            section_en=section_en or section,
+            subsection_ru=subsection_ru or subsection,
+            subsection_en=subsection_en or subsection,
             resources=AttachedExternalResources(values=resources or []),
         )
 
@@ -127,27 +171,47 @@ class CoreFactoryHelper:
         cls,
         item_id: int,
         question: str = "QUESTION",
+        question_ru: str | None = None,
+        question_en: str | None = None,
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         answer: str = "Answer",
+        answer_ru: str | None = None,
+        answer_en: str | None = None,
         interview_expected_answer: str = "Answer",
+        interview_expected_answer_ru: str | None = None,
+        interview_expected_answer_en: str | None = None,
+        sheet_key: str | None = None,
         sheet: str = "Sheet",
+        sheet_ru: str | None = None,
+        sheet_en: str | None = None,
         grade: GradeEnum = GradeEnum.JUNIOR,
         section: str = "Section",
+        section_ru: str | None = None,
+        section_en: str | None = None,
         subsection: str = "Subsection",
+        subsection_ru: str | None = None,
+        subsection_en: str | None = None,
         resources: (
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemCreateParams:
         return CompetencyMatrixItemCreateParams(
             id=cls.int_id(item_id),
-            question=question,
+            question_ru=question_ru or question,
+            question_en=question_en or question,
             publish_status=publish_status,
-            answer=answer,
-            interview_expected_answer=interview_expected_answer,
-            sheet=sheet,
+            answer_ru=answer_ru or answer,
+            answer_en=answer_en or answer,
+            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
+            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
+            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
+            sheet_ru=sheet_ru or sheet,
+            sheet_en=sheet_en or sheet,
             grade=grade,
-            section=section,
-            subsection=subsection,
+            section_ru=section_ru or section,
+            section_en=section_en or section,
+            subsection_ru=subsection_ru or subsection,
+            subsection_en=subsection_en or subsection,
             resources=resources or [],
         )
 
@@ -156,33 +220,70 @@ class CoreFactoryHelper:
         cls,
         item_id: int,
         question: str = "QUESTION",
+        question_ru: str | None = None,
+        question_en: str | None = None,
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         answer: str = "Answer",
+        answer_ru: str | None = None,
+        answer_en: str | None = None,
         interview_expected_answer: str = "Answer",
+        interview_expected_answer_ru: str | None = None,
+        interview_expected_answer_en: str | None = None,
+        sheet_key: str | None = None,
         sheet: str = "Sheet",
+        sheet_ru: str | None = None,
+        sheet_en: str | None = None,
         grade: GradeEnum = GradeEnum.JUNIOR,
         section: str = "Section",
+        section_ru: str | None = None,
+        section_en: str | None = None,
         subsection: str = "Subsection",
+        subsection_ru: str | None = None,
+        subsection_en: str | None = None,
         resources: (
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemUpdateParams:
         return CompetencyMatrixItemUpdateParams(
             id=cls.int_id(item_id),
-            question=question,
+            question_ru=question_ru or question,
+            question_en=question_en or question,
             publish_status=publish_status,
-            answer=answer,
-            interview_expected_answer=interview_expected_answer,
-            sheet=sheet,
+            answer_ru=answer_ru or answer,
+            answer_en=answer_en or answer,
+            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
+            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
+            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
+            sheet_ru=sheet_ru or sheet,
+            sheet_en=sheet_en or sheet,
             grade=grade,
-            section=section,
-            subsection=subsection,
+            section_ru=section_ru or section,
+            section_en=section_en or section,
+            subsection_ru=subsection_ru or subsection,
+            subsection_en=subsection_en or subsection,
             resources=resources or [],
         )
 
     @classmethod
-    def sheets(cls, values: list[str] | None = None) -> Sheets:
-        return Sheets(values=values or [])
+    def sheet(
+        cls,
+        key: str = "python",
+        name: str = "Python",
+        name_ru: str | None = None,
+        name_en: str | None = None,
+    ) -> Sheet:
+        return Sheet(key=key, name_ru=name_ru or name, name_en=name_en or name)
+
+    @classmethod
+    def sheets(cls, values: list[Sheet] | list[str] | None = None) -> Sheets:
+        if values is None:
+            return Sheets(values=[])
+        return Sheets(
+            values=[
+                cls.sheet(key=value.lower(), name=value) if isinstance(value, str) else value
+                for value in values
+            ],
+        )
 
     @classmethod
     def user(

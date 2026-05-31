@@ -13,6 +13,7 @@ from core.competency_matrix.schemas import (
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from core.types import IntId, SearchName
 
 
@@ -22,14 +23,20 @@ class AbstractCompetencyMatrixUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_resources(self, *, search_name: SearchName, limit: int) -> ExternalResources:
+    async def find_resources(
+        self,
+        *,
+        search_name: SearchName,
+        limit: int,
+        language: LanguageEnum,
+    ) -> ExternalResources:
         raise NotImplementedError
 
     @abstractmethod
     async def list_items(
         self,
         *,
-        sheet_name: str,
+        sheet_key: str,
         only_published: bool,
     ) -> CompetencyMatrixItems:
         raise NotImplementedError
@@ -78,27 +85,28 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
     storage: CompetencyMatrixStorage
 
     async def list_sheets(self) -> Sheets:
-        sheets = await self.storage.list_sheets()
-        return Sheets(values=sheets)
+        return await self.storage.list_sheets()
 
     async def find_resources(
         self,
         *,
         search_name: SearchName,
         limit: int,
+        language: LanguageEnum,
     ) -> ExternalResources:
         return await self.storage.search_competency_matrix_resources(
             search_name=search_name.cleaned,
             limit=limit,
+            language=language,
         )
 
     async def list_items(
         self,
         *,
-        sheet_name: str,
+        sheet_key: str,
         only_published: bool,
     ) -> CompetencyMatrixItems:
-        items = await self.storage.list_competency_matrix_items(sheet_name=sheet_name)
+        items = await self.storage.list_competency_matrix_items(sheet_key=sheet_key)
         matrix = CompetencyMatrixItems(values=items)
         return matrix.only_available() if only_published else matrix
 

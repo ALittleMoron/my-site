@@ -7,7 +7,7 @@ import {
 } from '../../../../models/matrix-question.model';
 
 interface GridCell {
-  grade: string;
+  grade: string | null;
   questions: MatrixQuestion[];
 }
 
@@ -31,9 +31,9 @@ export class MatrixGroupedGridComponent {
 
   readonly questionSelected = output<number>();
 
-  readonly grades = computed<string[]>(() => {
-    const seen = new Set<string>();
-    const result: string[] = [];
+  readonly grades = computed<(string | null)[]>(() => {
+    const seen = new Set<string | null>();
+    const result: (string | null)[] = [];
     for (const section of this.questions().sections) {
       for (const subsection of section.subsections) {
         for (const grade of subsection.grades) {
@@ -73,7 +73,8 @@ export class MatrixGroupedGridComponent {
     this.questionSelected.emit(id);
   }
 
-  gradeLabelKey(grade: string): string {
+  gradeLabelKey(grade: string | null): string {
+    if (grade === null) return 'shared.notSet';
     return `enum.grade.${grade.replace('+', 'Plus')}`;
   }
 }

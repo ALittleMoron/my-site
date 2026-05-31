@@ -1,13 +1,8 @@
 <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-  <div class="mb-3">
-    <label class="form-label" for="matrixQuestion">{{ 'matrix.form.question' | t }}</label>
-    <input id="matrixQuestion" type="text" class="form-control" formControlName="question" />
-  </div>
-
   <div class="row g-3">
     <div class="col-md-6">
-      <label class="form-label" for="matrixSheet">{{ 'matrix.form.sheet' | t }}</label>
-      <input id="matrixSheet" type="text" class="form-control" formControlName="sheet" />
+      <label class="form-label" for="matrixSheetKey">{{ 'matrix.form.sheetKey' | t }}</label>
+      <input id="matrixSheetKey" type="text" class="form-control" formControlName="sheetKey" />
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrixGrade">{{ 'matrix.form.grade' | t }}</label>
@@ -19,13 +14,138 @@
         <option value="Senior">{{ 'enum.grade.Senior' | t }}</option>
       </select>
     </div>
-    <div class="col-md-6">
-      <label class="form-label" for="matrixSection">{{ 'matrix.form.section' | t }}</label>
-      <input id="matrixSection" type="text" class="form-control" formControlName="section" />
+  </div>
+
+  <ul class="nav nav-tabs mt-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'ru'"
+        (click)="setActiveLanguageTab('ru')"
+      >
+        {{ 'notes.form.languageRu' | t }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'en'"
+        (click)="setActiveLanguageTab('en')"
+      >
+        {{ 'notes.form.languageEn' | t }}
+      </button>
+    </li>
+  </ul>
+
+  <div class="border border-top-0 rounded-bottom p-3 mb-3">
+    <div [class.d-none]="activeLanguageTab() !== 'ru'">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="matrixQuestionRu">{{
+            'matrix.form.questionRu' | t
+          }}</label>
+          <input
+            id="matrixQuestionRu"
+            type="text"
+            class="form-control"
+            formControlName="questionRu"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSheetRu">{{ 'matrix.form.sheetRu' | t }}</label>
+          <input id="matrixSheetRu" type="text" class="form-control" formControlName="sheetRu" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSectionRu">{{ 'matrix.form.sectionRu' | t }}</label>
+          <input
+            id="matrixSectionRu"
+            type="text"
+            class="form-control"
+            formControlName="sectionRu"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSubsectionRu">
+            {{ 'matrix.form.subsectionRu' | t }}
+          </label>
+          <input
+            id="matrixSubsectionRu"
+            type="text"
+            class="form-control"
+            formControlName="subsectionRu"
+          />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'matrix.form.answerRu' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.answerRu.value"
+            (valueChange)="setAnswerRu($event)"
+          />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'matrix.form.expectedAnswerRu' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.interviewExpectedAnswerRu.value"
+            (valueChange)="setInterviewExpectedAnswerRu($event)"
+          />
+        </div>
+      </div>
     </div>
-    <div class="col-md-6">
-      <label class="form-label" for="matrixSubsection">{{ 'matrix.form.subsection' | t }}</label>
-      <input id="matrixSubsection" type="text" class="form-control" formControlName="subsection" />
+
+    <div [class.d-none]="activeLanguageTab() !== 'en'">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="matrixQuestionEn">{{
+            'matrix.form.questionEn' | t
+          }}</label>
+          <input
+            id="matrixQuestionEn"
+            type="text"
+            class="form-control"
+            formControlName="questionEn"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSheetEn">{{ 'matrix.form.sheetEn' | t }}</label>
+          <input id="matrixSheetEn" type="text" class="form-control" formControlName="sheetEn" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSectionEn">{{ 'matrix.form.sectionEn' | t }}</label>
+          <input
+            id="matrixSectionEn"
+            type="text"
+            class="form-control"
+            formControlName="sectionEn"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="matrixSubsectionEn">
+            {{ 'matrix.form.subsectionEn' | t }}
+          </label>
+          <input
+            id="matrixSubsectionEn"
+            type="text"
+            class="form-control"
+            formControlName="subsectionEn"
+          />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'matrix.form.answerEn' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.answerEn.value"
+            (valueChange)="setAnswerEn($event)"
+          />
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'matrix.form.expectedAnswerEn' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.interviewExpectedAnswerEn.value"
+            (valueChange)="setInterviewExpectedAnswerEn($event)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 
@@ -42,22 +162,10 @@
     <label class="form-check-label" for="matrixPublishStatus">{{ 'matrix.form.draft' | t }}</label>
   </div>
 
-  <div class="mb-3">
-    <div class="form-label">{{ 'matrix.form.answer' | t }}</div>
-    <app-markdown-editor [value]="form.controls.answer.value" (valueChange)="setAnswer($event)" />
-  </div>
-
-  <div class="mb-3">
-    <div class="form-label">{{ 'matrix.form.expectedAnswer' | t }}</div>
-    <app-markdown-editor
-      [value]="form.controls.interviewExpectedAnswer.value"
-      (valueChange)="setInterviewExpectedAnswer($event)"
-    />
-  </div>
-
   <app-matrix-resource-picker
     [resources]="resources()"
     [searchResults]="searchResults()"
+    [activeLanguage]="activeLanguageTab()"
     (searchChange)="resourceSearch.emit($event)"
     (resourcesChange)="resources.set($event)"
   />

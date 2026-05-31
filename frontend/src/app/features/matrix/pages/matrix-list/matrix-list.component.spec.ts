@@ -10,10 +10,37 @@ import {
   MatrixQuestionDetail,
   MatrixQuestionList,
   MatrixResource,
+  MatrixSheet,
 } from '../../models/matrix-question.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 
+const mockSheets: MatrixSheet[] = [
+  { key: 'javascript', name: 'JavaScript' },
+  { key: 'python', name: 'Python' },
+];
+
+const pythonResource: MatrixResource = {
+  id: 1,
+  name: 'Python',
+  url: 'https://docs.python.org',
+  translations: {
+    ru: { name: 'Python' },
+    en: { name: 'Python' },
+  },
+};
+
+const pydanticResource: MatrixResource = {
+  id: 2,
+  name: 'Pydantic',
+  url: 'https://docs.pydantic.dev',
+  translations: {
+    ru: { name: 'Pydantic' },
+    en: { name: 'Pydantic' },
+  },
+};
+
 const mockQuestionList: MatrixQuestionList = {
+  sheetKey: 'javascript',
   sheet: 'JavaScript',
   sections: [
     {
@@ -41,11 +68,30 @@ const mockDetail: MatrixQuestionDetail = {
   question: 'What is a closure?',
   answer: 'A **closure** is a function.',
   interviewExpectedAnswer: 'Lexical scoping.',
+  sheetKey: 'javascript',
   sheet: 'JavaScript',
   grade: 'Junior',
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
+  translations: {
+    ru: {
+      question: 'Что такое замыкание?',
+      answer: 'Замыкание — это функция.',
+      interviewExpectedAnswer: 'Лексическая область видимости.',
+      sheet: 'JavaScript',
+      section: 'Core',
+      subsection: 'Syntax',
+    },
+    en: {
+      question: 'What is a closure?',
+      answer: 'A **closure** is a function.',
+      interviewExpectedAnswer: 'Lexical scoping.',
+      sheet: 'JavaScript',
+      section: 'Core',
+      subsection: 'Syntax',
+    },
+  },
   resources: [],
 };
 
@@ -83,7 +129,7 @@ describe('MatrixListComponent', () => {
 
   beforeEach(async () => {
     matrixService = {
-      getSheets: jest.fn().mockReturnValue(of(['JavaScript', 'Python'])),
+      getSheets: jest.fn().mockReturnValue(of(mockSheets)),
       getQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
       getQuestion: jest.fn().mockReturnValue(of(mockDetail)),
       searchResources: jest.fn().mockReturnValue(of([])),
@@ -157,19 +203,19 @@ describe('MatrixListComponent', () => {
     fixture.detectChanges();
     component.loading.set(false);
     component.error.set(null);
-    component.questions.set({ sheet: 'JavaScript', sections: [] });
+    component.questions.set({ sheetKey: 'javascript', sheet: 'JavaScript', sections: [] });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
   });
 
   it('should load sheets on init and auto-select first sheet', () => {
     fixture.detectChanges();
-    expect(matrixService.getSheets).toHaveBeenCalled();
-    expect(component.selectedSheet()).toBe('JavaScript');
+    expect(matrixService.getSheets).toHaveBeenCalledWith('ru');
+    expect(component.selectedSheet()).toEqual(mockSheets[0]);
   });
 
   it('should restore sheet from localStorage on init', () => {
-    localStorage.setItem('chosenSheet', 'Python');
+    localStorage.setItem('chosenSheet', 'python');
     // Create a new component instance so ngOnInit reads localStorage
     fixture = TestBed.createComponent(MatrixListComponent);
     component = fixture.componentInstance;
@@ -184,14 +230,14 @@ describe('MatrixListComponent', () => {
 
   it('should store sheet to localStorage when sheet is selected', () => {
     fixture.detectChanges();
-    component.selectSheet('Python');
-    expect(localStorage.getItem('chosenSheet')).toBe('Python');
+    component.selectSheet('python');
+    expect(localStorage.getItem('chosenSheet')).toBe('python');
   });
 
   it('should load questions for selected sheet', () => {
     fixture.detectChanges();
-    component.selectSheet('Python');
-    expect(matrixService.getQuestions).toHaveBeenCalledWith('Python', true);
+    component.selectSheet('python');
+    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('python', true, 'ru');
   });
 
   it('should render list layout by default', () => {
@@ -325,14 +371,12 @@ describe('MatrixListComponent', () => {
     component.searchResources('pyd');
     tick(250);
 
-    second.next([{ id: 2, name: 'Pydantic', url: 'https://docs.pydantic.dev' }]);
+    second.next([pydanticResource]);
     second.complete();
-    first.next([{ id: 1, name: 'Python', url: 'https://docs.python.org' }]);
+    first.next([pythonResource]);
     first.complete();
 
-    expect(component.resourceSearchResults()).toEqual([
-      { id: 2, name: 'Pydantic', url: 'https://docs.pydantic.dev' },
-    ]);
+    expect(component.resourceSearchResults()).toEqual([pydanticResource]);
   }));
 
   it('searches resources with trimmed query', fakeAsync(() => {
@@ -341,20 +385,18 @@ describe('MatrixListComponent', () => {
     component.searchResources('  pydantic  ');
     tick(250);
 
-    expect(matrixService.searchResources).toHaveBeenCalledWith('pydantic', 10);
+    expect(matrixService.searchResources).toHaveBeenCalledWith('pydantic', 10, 'ru');
   }));
 
   it('clears resource search results when latest search fails', fakeAsync(() => {
     matrixService.searchResources
-      .mockReturnValueOnce(of([{ id: 1, name: 'Python', url: 'https://docs.python.org' }]))
+      .mockReturnValueOnce(of([pythonResource]))
       .mockReturnValueOnce(throwError(() => mockError));
 
     fixture.detectChanges();
     component.searchResources('python');
     tick(250);
-    expect(component.resourceSearchResults()).toEqual([
-      { id: 1, name: 'Python', url: 'https://docs.python.org' },
-    ]);
+    expect(component.resourceSearchResults()).toEqual([pythonResource]);
 
     component.searchResources('pydantic');
     tick(250);
@@ -375,19 +417,19 @@ describe('MatrixListComponent', () => {
 
   it('should call publishQuestion and reload questions on onPublish', () => {
     fixture.detectChanges();
-    component.selectedSheet.set('JavaScript');
+    component.selectedSheetKey.set('javascript');
     component.onPublish(1);
     expect(matrixService.publishQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос опубликован.');
   });
 
   it('should call unpublishQuestion and reload questions on onUnpublish', () => {
     fixture.detectChanges();
-    component.selectedSheet.set('JavaScript');
+    component.selectedSheetKey.set('javascript');
     component.onUnpublish(1);
     expect(matrixService.unpublishQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос снят с публикации.');
   });
 
@@ -395,12 +437,12 @@ describe('MatrixListComponent', () => {
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
-    component.selectedSheet.set('JavaScript');
+    component.selectedSheetKey.set('javascript');
     component.onDelete(1);
     fixture.detectChanges();
     expect(matrixService.deleteQuestion).toHaveBeenCalledWith(1);
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeFalsy();
-    expect(matrixService.getQuestions).toHaveBeenCalledWith('JavaScript', true);
+    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос удалён.');
   });
 

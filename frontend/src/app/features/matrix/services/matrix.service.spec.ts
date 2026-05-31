@@ -18,33 +18,36 @@ describe('MatrixService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('loads sheets from the backend matrix endpoint', () => {
-    let result: string[] | undefined;
+  it('loads localized sheets from the backend matrix endpoint', () => {
+    let result: { key: string; name: string }[] | undefined;
 
-    service.getSheets().subscribe((sheets) => {
+    service.getSheets('en').subscribe((sheets) => {
       result = sheets;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/sheets'));
     expect(req.request.method).toBe('GET');
-    req.flush({ sheets: ['Python', 'SQL'] });
+    expect(req.request.params.get('language')).toBe('en');
+    req.flush({ sheets: [{ key: 'python', name: 'Python' }] });
 
-    expect(result).toEqual(['Python', 'SQL']);
+    expect(result).toEqual([{ key: 'python', name: 'Python' }]);
   });
 
-  it('loads grouped questions with sheet and publication filters', () => {
+  it('loads grouped questions with sheet key, publication, and language filters', () => {
     let resultSheet: string | undefined;
     let firstQuestion: string | undefined;
 
-    service.getQuestions('Python', true).subscribe((list) => {
+    service.getQuestions('python', true, 'en').subscribe((list) => {
       resultSheet = list.sheet;
       firstQuestion = list.sections[0].subsections[0].grades[0].questions[0].question;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
-    expect(req.request.params.get('sheetName')).toBe('Python');
+    expect(req.request.params.get('sheetKey')).toBe('python');
     expect(req.request.params.get('onlyPublished')).toBe('true');
+    expect(req.request.params.get('language')).toBe('en');
     req.flush({
+      sheetKey: 'python',
       sheet: 'Python',
       sections: [
         {
@@ -63,29 +66,93 @@ describe('MatrixService', () => {
     expect(firstQuestion).toBe('What is PEP8?');
   });
 
-  it('loads question detail from the backend detail endpoint', () => {
+  it('loads localized question detail from the backend detail endpoint', () => {
     let resultQuestion: string | undefined;
+    let resultTranslation: string | undefined;
 
-    service.getQuestion(1, false).subscribe((question) => {
+    service.getQuestion(1, false, 'en').subscribe((question) => {
       resultQuestion = question.question;
+      resultTranslation = question.translations.ru.question;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
     expect(req.request.params.get('onlyPublished')).toBe('false');
-    req.flush({
-      id: 1,
-      question: 'What is PEP8?',
-      answer: 'Answer',
-      interviewExpectedAnswer: 'Expected answer',
-      sheet: 'Python',
-      grade: 'Junior',
-      section: 'Core',
-      subsection: 'Syntax',
-      publishStatus: 'Published',
-      resources: [],
-    });
+    expect(req.request.params.get('language')).toBe('en');
+    req.flush(matrixDetailDto());
 
     expect(resultQuestion).toBe('What is PEP8?');
+    expect(resultTranslation).toBe('Что такое PEP8?');
+  });
+
+  it('searchResources loads localized resource matches with limit and language', () => {
+    let firstResourceName: string | undefined;
+    let firstTranslation: string | undefined;
+
+    service.searchResources('python', 5, 'en').subscribe((resources) => {
+      firstResourceName = resources[0].name;
+      firstTranslation = resources[0].translations.ru.name;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/resources/search'),
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('searchName')).toBe('python');
+    expect(req.request.params.get('limit')).toBe('5');
+    expect(req.request.params.get('language')).toBe('en');
+    req.flush({
+      resources: [
+        {
+          id: 1,
+          name: 'Python docs',
+          url: 'https://docs.python.org',
+          translations: { ru: { name: 'Документация Python' }, en: { name: 'Python docs' } },
+        },
+      ],
+    });
+
+    expect(firstResourceName).toBe('Python docs');
+    expect(firstTranslation).toBe('Документация Python');
+  });
+
+  it('createQuestion posts localized payload and maps saved detail', () => {
+    let resultId: number | undefined;
+
+    service.createQuestion(matrixPayload(), 'en').subscribe((question) => {
+      resultId = question.id;
+    });
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.params.get('language')).toBe('en');
+    expect(req.request.body.resources).toEqual([
+      {
+        resourceId: 1,
+        translations: {
+          ru: { context: 'Читать сначала' },
+          en: { context: 'Read first' },
+        },
+      },
+    ]);
+    req.flush(matrixDetailDto({ id: 7 }));
+
+    expect(resultId).toBe(7);
+  });
+
+  it('updateQuestion puts localized payload to detail endpoint and maps saved detail', () => {
+    let resultQuestion: string | undefined;
+
+    service.updateQuestion(7, matrixPayload(), 'ru').subscribe((question) => {
+      resultQuestion = question.question;
+    });
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/7'));
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.params.get('language')).toBe('ru');
+    expect(req.request.body.sheetKey).toBe('python');
+    req.flush(matrixDetailDto({ question: 'Что такое PEP8?' }));
+
+    expect(resultQuestion).toBe('Что такое PEP8?');
   });
 
   it('publishQuestion posts to set-published endpoint', () => {
@@ -133,102 +200,85 @@ describe('MatrixService', () => {
 
     expect(completed).toBe(true);
   });
-
-  it('searchResources loads resource matches with limit', () => {
-    let firstResourceName: string | undefined;
-
-    service.searchResources('python', 5).subscribe((resources) => {
-      firstResourceName = resources[0].name;
-    });
-
-    const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/resources/search'),
-    );
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('searchName')).toBe('python');
-    expect(req.request.params.get('limit')).toBe('5');
-    req.flush({
-      resources: [{ id: 1, name: 'Python docs', url: 'https://docs.python.org' }],
-    });
-
-    expect(firstResourceName).toBe('Python docs');
-  });
-
-  it('createQuestion posts payload and maps saved detail', () => {
-    let resultId: number | undefined;
-
-    service
-      .createQuestion({
-        question: 'Question',
-        answer: 'Answer',
-        interviewExpectedAnswer: 'Expected',
-        sheet: 'Python',
-        grade: 'Junior',
-        section: 'Core',
-        subsection: 'Syntax',
-        publishStatus: 'Draft',
-        resources: [{ resourceId: 1, context: 'Read this' }],
-      })
-      .subscribe((question) => {
-        resultId = question.id;
-      });
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body.resources).toEqual([{ resourceId: 1, context: 'Read this' }]);
-    req.flush({
-      id: 7,
-      question: 'Question',
-      answer: 'Answer',
-      interviewExpectedAnswer: 'Expected',
-      sheet: 'Python',
-      grade: 'Junior',
-      section: 'Core',
-      subsection: 'Syntax',
-      publishStatus: 'Draft',
-      resources: [],
-    });
-
-    expect(resultId).toBe(7);
-  });
-
-  it('updateQuestion puts payload to detail endpoint and maps saved detail', () => {
-    let resultQuestion: string | undefined;
-
-    service
-      .updateQuestion(7, {
-        question: 'Updated',
-        answer: 'Answer',
-        interviewExpectedAnswer: 'Expected',
-        sheet: 'Python',
-        grade: 'Junior',
-        section: 'Core',
-        subsection: 'Syntax',
-        publishStatus: 'Published',
-        resources: [{ resource: { name: 'Docs', url: 'https://example.com' }, context: '' }],
-      })
-      .subscribe((question) => {
-        resultQuestion = question.question;
-      });
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/7'));
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.body.resources).toEqual([
-      { resource: { name: 'Docs', url: 'https://example.com' }, context: '' },
-    ]);
-    req.flush({
-      id: 7,
-      question: 'Updated',
-      answer: 'Answer',
-      interviewExpectedAnswer: 'Expected',
-      sheet: 'Python',
-      grade: 'Junior',
-      section: 'Core',
-      subsection: 'Syntax',
-      publishStatus: 'Published',
-      resources: [],
-    });
-
-    expect(resultQuestion).toBe('Updated');
-  });
 });
+
+function matrixPayload() {
+  return {
+    sheetKey: 'python',
+    grade: 'Junior',
+    publishStatus: 'Draft',
+    translations: {
+      ru: {
+        question: 'Что такое PEP8?',
+        answer: 'Ответ',
+        interviewExpectedAnswer: 'Ожидаемый ответ',
+        sheet: 'Питон',
+        section: 'Основы',
+        subsection: 'Стиль',
+      },
+      en: {
+        question: 'What is PEP8?',
+        answer: 'Answer',
+        interviewExpectedAnswer: 'Expected answer',
+        sheet: 'Python',
+        section: 'Core',
+        subsection: 'Style',
+      },
+    },
+    resources: [
+      {
+        resourceId: 1,
+        translations: {
+          ru: { context: 'Читать сначала' },
+          en: { context: 'Read first' },
+        },
+      },
+    ],
+  } as const;
+}
+
+function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 1,
+    question: 'What is PEP8?',
+    answer: 'Answer',
+    interviewExpectedAnswer: 'Expected answer',
+    sheetKey: 'python',
+    sheet: 'Python',
+    grade: 'Junior',
+    section: 'Core',
+    subsection: 'Style',
+    publishStatus: 'Published',
+    translations: {
+      ru: {
+        question: 'Что такое PEP8?',
+        answer: 'Ответ',
+        interviewExpectedAnswer: 'Ожидаемый ответ',
+        sheet: 'Питон',
+        section: 'Основы',
+        subsection: 'Стиль',
+      },
+      en: {
+        question: 'What is PEP8?',
+        answer: 'Answer',
+        interviewExpectedAnswer: 'Expected answer',
+        sheet: 'Python',
+        section: 'Core',
+        subsection: 'Style',
+      },
+    },
+    resources: [
+      {
+        id: 1,
+        name: 'Python docs',
+        url: 'https://docs.python.org',
+        context: 'Read first',
+        translations: {
+          ru: { name: 'Документация Python', context: 'Читать сначала' },
+          en: { name: 'Python docs', context: 'Read first' },
+        },
+      },
+    ],
+    ...overrides,
+  };
+}

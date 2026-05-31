@@ -18,33 +18,11 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.use_case.update_item.side_effect = CompetencyMatrixItemNotFoundError()
         response = self.api.put_update_item(
             pk=100500,
-            data={
-                "question": "question 1",
-                "answer": "answer 1",
-                "interviewExpectedAnswer": "interview expected answer 1",
-                "sheet": "Python",
-                "grade": "Junior",
-                "section": "Section",
-                "subsection": "Subsection",
-                "publishStatus": "Draft",
-                "resources": [
-                    {
-                        "resourceId": 1,
-                        "context": "resource context 1",
-                    },
-                    {
-                        "resourceId": 2,
-                        "context": "resource context 2",
-                    },
-                    {
-                        "resource": {
-                            "name": "resource 1",
-                            "url": "http://example.com",
-                        },
-                        "context": "resource context 3",
-                    },
+            data=self.factory.api.competency_matrix_item_request(
+                resources=[
+                    self.factory.api.existing_matrix_resource_attachment_request(resource_id=1),
                 ],
-            },
+            ),
         )
         assert response.status_code == codes.NOT_FOUND
         assert response.json() == {
@@ -58,99 +36,100 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_update_item(self) -> None:
         self.use_case.update_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
-            question="question 1",
-            answer="answer 1",
-            interview_expected_answer="interview expected answer 1",
-            sheet="Python",
+            question_ru="вопрос 1",
+            question_en="question 1",
+            answer_ru="ответ 1",
+            answer_en="answer 1",
+            interview_expected_answer_ru="ожидаемый ответ 1",
+            interview_expected_answer_en="interview expected answer 1",
+            sheet_key="python",
+            sheet_ru="Питон",
+            sheet_en="Python",
             grade=GradeEnum.JUNIOR,
-            section="Section",
-            subsection="Subsection",
+            section_ru="Основы",
+            section_en="Basics",
+            subsection_ru="Функции",
+            subsection_en="Functions",
             publish_status=PublishStatusEnum.DRAFT,
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=1,
-                    name="resource 1",
+                    name_ru="ресурс 1",
+                    name_en="resource 1",
                     url="http://example.com",
-                    context="resource context 1",
+                    context_ru="контекст ресурса 1",
+                    context_en="resource context 1",
                 ),
             ],
         )
         response = self.api.put_update_item(
             pk=100500,
-            data={
-                "question": "question 1",
-                "answer": "answer 1",
-                "interviewExpectedAnswer": "interview expected answer 1",
-                "sheet": "Python",
-                "grade": "Junior",
-                "section": "Section",
-                "subsection": "Subsection",
-                "publishStatus": "Draft",
-                "resources": [
-                    {
-                        "resourceId": 1,
-                        "context": "resource context 1",
-                    },
-                    {
-                        "resourceId": 2,
-                        "context": "resource context 2",
-                    },
-                    {
-                        "resource": {
-                            "name": "resource 1",
-                            "url": "http://example.com",
-                        },
-                        "context": "resource context 3",
-                    },
+            data=self.factory.api.competency_matrix_item_request(
+                resources=[
+                    self.factory.api.existing_matrix_resource_attachment_request(
+                        resource_id=1,
+                        context_ru="контекст ресурса 1",
+                        context_en="resource context 1",
+                    ),
+                    self.factory.api.new_matrix_resource_attachment_request(
+                        name_ru="ресурс 1",
+                        name_en="resource 1",
+                        url="http://example.com",
+                        context_ru="контекст ресурса 2",
+                        context_en="resource context 2",
+                    ),
                 ],
-            },
+            ),
+            language="en",
         )
         self.use_case.update_item.assert_called_once_with(
             params=self.factory.core.competency_matrix_item_update_params(
                 item_id=100500,
-                question="question 1",
-                answer="answer 1",
-                interview_expected_answer="interview expected answer 1",
-                sheet="Python",
+                question_ru="вопрос 1",
+                question_en="question 1",
+                answer_ru="ответ 1",
+                answer_en="answer 1",
+                interview_expected_answer_ru="ожидаемый ответ 1",
+                interview_expected_answer_en="interview expected answer 1",
+                sheet_key="python",
+                sheet_ru="Питон",
+                sheet_en="Python",
                 grade=GradeEnum.JUNIOR,
-                section="Section",
-                subsection="Subsection",
+                section_ru="Основы",
+                section_en="Basics",
+                subsection_ru="Функции",
+                subsection_en="Functions",
                 publish_status=PublishStatusEnum.DRAFT,
                 resources=[
                     self.factory.core.existing_external_resource_attachment(
                         resource_id=1,
-                        context="resource context 1",
-                    ),
-                    self.factory.core.existing_external_resource_attachment(
-                        resource_id=2,
-                        context="resource context 2",
+                        context_ru="контекст ресурса 1",
+                        context_en="resource context 1",
                     ),
                     self.factory.core.new_external_resource_attachment(
                         resource_id=ANY,
-                        name="resource 1",
+                        name_ru="ресурс 1",
+                        name_en="resource 1",
                         url="http://example.com",
-                        context="resource context 3",
+                        context_ru="контекст ресурса 2",
+                        context_en="resource context 2",
                     ),
                 ],
             ),
         )
         assert response.status_code == codes.OK, response.json()
-        assert response.json() == {
-            "id": 1,
-            "question": "question 1",
-            "answer": "answer 1",
-            "interviewExpectedAnswer": "interview expected answer 1",
-            "sheet": "Python",
-            "grade": "Junior",
-            "section": "Section",
-            "subsection": "Subsection",
-            "publishStatus": PublishStatusEnum.DRAFT.value,
-            "resources": [
-                {
-                    "id": ANY,
-                    "name": "resource 1",
-                    "url": "http://example.com",
-                    "context": "resource context 1",
-                },
-            ],
+        assert response.json()["question"] == "question 1"
+        assert response.json()["sheetKey"] == "python"
+        assert response.json()["resources"][0]["translations"] == {
+            "ru": {"name": "ресурс 1", "context": "контекст ресурса 1"},
+            "en": {"name": "resource 1", "context": "resource context 1"},
         }
+
+    def test_update_item_requires_explicit_language(self) -> None:
+        response = self.api.put_update_item(
+            pk=100500,
+            data=self.factory.api.competency_matrix_item_request(),
+            language=None,
+        )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.update_item.assert_not_called()

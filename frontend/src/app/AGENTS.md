@@ -57,8 +57,14 @@ Never violate these boundaries:
   both languages in write payloads.
 - Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
   language fallbacks for localized content.
-- Do not localise competency matrix or other database/content text in this layer until the backend
-  supports that content explicitly.
+- Competency matrix content localises through the matrix API, not through the UI i18n bundle. Pass
+  the current `I18nService.language()` value as the explicit `language` query parameter for sheets,
+  item lists, item details, resource search, and create/update responses; use stable `sheetKey`
+  values for sheet selection and persistence.
+- Require all RU/EN competency matrix translation fields and resource contexts in frontend forms.
+  Do not add frontend-only language fallbacks for localized content.
+- Do not localise other database/content text in this layer until the backend supports that content
+  explicitly.
 
 ## `shared/ui/` Rules
 

@@ -22,8 +22,11 @@ class APIHelper:
         self,
         search_name: str,
         limit: int | None = 10,
+        language: str | None = "ru",
     ) -> Response:
         params: dict[str, str | int] = {"searchName": search_name}
+        if language is not None:
+            params["language"] = language
         if limit is not None:
             params["limit"] = limit
         return self.client.get(
@@ -31,15 +34,21 @@ class APIHelper:
             params=params,
         )
 
-    def get_competency_matrix_sheets(self) -> Response:
-        return self.client.get("/api/competency-matrix/sheets")
+    def get_competency_matrix_sheets(self, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/competency-matrix/sheets", params=params)
 
     def get_competency_matrix_items(
         self,
-        sheet_name: str = "",
+        sheet_key: str = "",
         only_published: bool | None = True,
+        language: str | None = "ru",
     ) -> Response:
-        params: dict[str, str | bool] = {"sheetName": sheet_name}
+        params: dict[str, str | bool] = {"sheetKey": sheet_key}
+        if language is not None:
+            params["language"] = language
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(
@@ -47,8 +56,15 @@ class APIHelper:
             params=params,
         )
 
-    def get_competency_matrix_item(self, pk: int, only_published: bool | None = True) -> Response:
-        params: dict[str, bool] = {}
+    def get_competency_matrix_item(
+        self,
+        pk: int,
+        only_published: bool | None = True,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str | bool] = {}
+        if language is not None:
+            params["language"] = language
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(
@@ -56,11 +72,26 @@ class APIHelper:
             params=params,
         )
 
-    def post_create_item(self, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/competency-matrix/items", json=data)
+    def post_create_item(self, data: dict[str, Any], language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post("/api/competency-matrix/items", params=params, json=data)
 
-    def put_update_item(self, pk: int, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/competency-matrix/items/detail/{pk}", json=data)
+    def put_update_item(
+        self,
+        pk: int,
+        data: dict[str, Any],
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.put(
+            f"/api/competency-matrix/items/detail/{pk}",
+            params=params,
+            json=data,
+        )
 
     def delete_item(self, pk: int) -> Response:
         return self.client.delete(f"/api/competency-matrix/items/detail/{pk}")

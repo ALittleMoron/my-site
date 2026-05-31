@@ -4,6 +4,7 @@ import pytest
 
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
+from core.i18n.enums import LanguageEnum
 from tests.unit.fixtures import FactoryFixture
 
 
@@ -15,8 +16,13 @@ class TestFindResourcesItemUseCase(FactoryFixture):
 
     async def test_search_resources(self) -> None:
         search_name = self.factory.core.search_name("Find")
-        await self.use_case.find_resources(search_name=search_name, limit=10)
+        await self.use_case.find_resources(
+            search_name=search_name,
+            limit=10,
+            language=LanguageEnum.EN,
+        )
         self.storage.search_competency_matrix_resources.assert_called_once_with(
             search_name="find",
             limit=10,
+            language=LanguageEnum.EN,
         )

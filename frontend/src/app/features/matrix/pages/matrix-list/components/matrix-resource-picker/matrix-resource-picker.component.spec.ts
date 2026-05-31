@@ -6,6 +6,20 @@ const existingResource: MatrixResource = {
   id: 1,
   name: 'Python docs',
   url: 'https://docs.python.org',
+  translations: {
+    ru: { name: 'Документация Python' },
+    en: { name: 'Python docs' },
+  },
+};
+
+const existingResourceDraft = {
+  ...existingResource,
+  context: '',
+  translations: {
+    ru: { name: 'Документация Python', context: '' },
+    en: { name: 'Python docs', context: '' },
+  },
+  isNew: false,
 };
 
 describe('MatrixResourcePickerComponent', () => {
@@ -21,6 +35,7 @@ describe('MatrixResourcePickerComponent', () => {
     component = fixture.componentInstance;
     fixture.componentRef.setInput('resources', []);
     fixture.componentRef.setInput('searchResults', [existingResource]);
+    fixture.componentRef.setInput('activeLanguage', 'ru');
     fixture.detectChanges();
   });
 
@@ -38,26 +53,38 @@ describe('MatrixResourcePickerComponent', () => {
     component.resourcesChange.subscribe((resources) => emitted.push(resources));
 
     component.attach(existingResource);
-    fixture.componentRef.setInput('resources', [
-      { ...existingResource, context: '', isNew: false },
-    ]);
+    fixture.componentRef.setInput('resources', [existingResourceDraft]);
     component.attach(existingResource);
 
-    expect(emitted).toEqual([[{ ...existingResource, context: '', isNew: false }]]);
+    expect(emitted).toEqual([[existingResourceDraft]]);
   });
 
   it('adds a new resource when name and url are present', () => {
     const emitted: unknown[] = [];
     component.resourcesChange.subscribe((resources) => emitted.push(resources));
 
-    component.newName.set('Docs');
+    component.newNameRu.set('Документация');
+    component.newNameEn.set('Docs');
     component.newUrl.set('https://example.com');
     component.addNew();
 
     expect(emitted).toEqual([
-      [{ id: -1, name: 'Docs', url: 'https://example.com', context: '', isNew: true }],
+      [
+        {
+          id: -1,
+          name: 'Документация',
+          url: 'https://example.com',
+          context: '',
+          translations: {
+            ru: { name: 'Документация', context: '' },
+            en: { name: 'Docs', context: '' },
+          },
+          isNew: true,
+        },
+      ],
     ]);
-    expect(component.newName()).toBe('');
+    expect(component.newNameRu()).toBe('');
+    expect(component.newNameEn()).toBe('');
     expect(component.newUrl()).toBe('');
   });
 
@@ -65,40 +92,76 @@ describe('MatrixResourcePickerComponent', () => {
     const emitted: unknown[] = [];
     component.resourcesChange.subscribe((resources) => emitted.push(resources));
 
-    component.newName.set('First');
+    component.newNameRu.set('Первый');
+    component.newNameEn.set('First');
     component.newUrl.set('https://first.example.com');
     component.addNew();
 
     fixture.componentRef.setInput('resources', [
       {
         id: -1,
-        name: 'First',
+        name: 'Первый',
         url: 'https://first.example.com',
         context: '',
+        translations: {
+          ru: { name: 'Первый', context: '' },
+          en: { name: 'First', context: '' },
+        },
         isNew: true,
       },
     ]);
 
-    component.newName.set('Second');
+    component.newNameRu.set('Второй');
+    component.newNameEn.set('Second');
     component.newUrl.set('https://second.example.com');
     component.addNew();
 
     expect(emitted.at(-1)).toEqual([
-      { id: -1, name: 'First', url: 'https://first.example.com', context: '', isNew: true },
-      { id: -2, name: 'Second', url: 'https://second.example.com', context: '', isNew: true },
+      {
+        id: -1,
+        name: 'Первый',
+        url: 'https://first.example.com',
+        context: '',
+        translations: {
+          ru: { name: 'Первый', context: '' },
+          en: { name: 'First', context: '' },
+        },
+        isNew: true,
+      },
+      {
+        id: -2,
+        name: 'Второй',
+        url: 'https://second.example.com',
+        context: '',
+        translations: {
+          ru: { name: 'Второй', context: '' },
+          en: { name: 'Second', context: '' },
+        },
+        isNew: true,
+      },
     ]);
   });
 
   it('updates context and detaches resources', () => {
     const emitted: unknown[] = [];
     component.resourcesChange.subscribe((resources) => emitted.push(resources));
-    fixture.componentRef.setInput('resources', [
-      { ...existingResource, context: '', isNew: false },
-    ]);
+    fixture.componentRef.setInput('resources', [existingResourceDraft]);
 
-    component.updateContext(0, 'Read first');
+    component.updateContext(0, 'ru', 'Read first');
     component.detach(0);
 
-    expect(emitted).toEqual([[{ ...existingResource, context: 'Read first', isNew: false }], []]);
+    expect(emitted).toEqual([
+      [
+        {
+          ...existingResourceDraft,
+          context: 'Read first',
+          translations: {
+            ru: { name: 'Документация Python', context: 'Read first' },
+            en: { name: 'Python docs', context: '' },
+          },
+        },
+      ],
+      [],
+    ]);
   });
 });

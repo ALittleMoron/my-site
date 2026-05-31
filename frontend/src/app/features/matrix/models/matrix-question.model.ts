@@ -1,11 +1,49 @@
+export type MatrixPublishStatus = 'Draft' | 'Published';
+export type MatrixGrade = 'Junior' | 'Junior+' | 'Middle' | 'Middle+' | 'Senior';
+
+export interface MatrixResourceTranslationDto {
+  name: string;
+}
+
+export interface MatrixResourceTranslationsDto {
+  ru: MatrixResourceTranslationDto;
+  en: MatrixResourceTranslationDto;
+}
+
+export interface MatrixAttachedResourceTranslationDto {
+  name: string;
+  context: string;
+}
+
+export interface MatrixAttachedResourceTranslationsDto {
+  ru: MatrixAttachedResourceTranslationDto;
+  en: MatrixAttachedResourceTranslationDto;
+}
+
+export interface MatrixItemTranslationDto {
+  question: string;
+  answer: string;
+  interviewExpectedAnswer: string;
+  sheet: string;
+  section: string;
+  subsection: string;
+}
+
+export interface MatrixItemTranslationsDto {
+  ru: MatrixItemTranslationDto;
+  en: MatrixItemTranslationDto;
+}
+
 export interface MatrixResourceDto {
   id: number;
   name: string;
   url: string;
+  translations: MatrixResourceTranslationsDto;
 }
 
-export interface MatrixAttachedResourceDto extends MatrixResourceDto {
+export interface MatrixAttachedResourceDto extends Omit<MatrixResourceDto, 'translations'> {
   context: string;
+  translations: MatrixAttachedResourceTranslationsDto;
 }
 
 export interface MatrixItemDto {
@@ -16,16 +54,18 @@ export interface MatrixItemDto {
 export interface MatrixItemDetailDto extends MatrixItemDto {
   answer: string;
   interviewExpectedAnswer: string;
+  sheetKey: string;
   sheet: string;
-  grade: string | null;
+  grade: MatrixGrade | null;
   section: string;
   subsection: string;
-  publishStatus: 'Draft' | 'Published';
+  publishStatus: MatrixPublishStatus;
+  translations: MatrixItemTranslationsDto;
   resources: MatrixAttachedResourceDto[];
 }
 
 export interface MatrixGradeGroupDto {
-  grade: string;
+  grade: MatrixGrade | null;
   items: MatrixItemDto[];
 }
 
@@ -40,26 +80,72 @@ export interface MatrixSectionGroupDto {
 }
 
 export interface MatrixItemsListDto {
+  sheetKey: string;
   sheet: string;
   sections: MatrixSectionGroupDto[];
 }
 
+export interface MatrixSheetDto {
+  key: string;
+  name: string;
+}
+
 export interface MatrixSheetsDto {
-  sheets: string[];
+  sheets: MatrixSheetDto[];
 }
 
 export interface MatrixResourcesDto {
   resources: MatrixResourceDto[];
 }
 
+export interface MatrixResourceTranslation {
+  name: string;
+}
+
+export interface MatrixResourceTranslations {
+  ru: MatrixResourceTranslation;
+  en: MatrixResourceTranslation;
+}
+
+export interface MatrixAttachedResourceTranslation {
+  name: string;
+  context: string;
+}
+
+export interface MatrixAttachedResourceTranslations {
+  ru: MatrixAttachedResourceTranslation;
+  en: MatrixAttachedResourceTranslation;
+}
+
+export interface MatrixItemTranslation {
+  question: string;
+  answer: string;
+  interviewExpectedAnswer: string;
+  sheet: string;
+  section: string;
+  subsection: string;
+}
+
+export interface MatrixItemTranslations {
+  ru: MatrixItemTranslation;
+  en: MatrixItemTranslation;
+}
+
+export interface MatrixSheet {
+  key: string;
+  name: string;
+}
+
 export interface MatrixResource {
   id: number;
   name: string;
   url: string;
+  translations: MatrixResourceTranslations;
 }
 
-export interface MatrixAttachedResource extends MatrixResource {
+export interface MatrixAttachedResource extends Omit<MatrixResource, 'translations'> {
   context: string;
+  translations: MatrixAttachedResourceTranslations;
 }
 
 export interface MatrixQuestion {
@@ -70,25 +156,38 @@ export interface MatrixQuestion {
 export interface MatrixQuestionDetail extends MatrixQuestion {
   answer: string;
   interviewExpectedAnswer: string;
+  sheetKey: string;
   sheet: string;
-  grade: string | null;
+  grade: MatrixGrade | null;
   section: string;
   subsection: string;
-  publishStatus: 'Draft' | 'Published';
+  publishStatus: MatrixPublishStatus;
+  translations: MatrixItemTranslations;
   resources: MatrixAttachedResource[];
+}
+
+export interface MatrixAttachmentContextTranslationPayload {
+  context: string;
+}
+
+export interface MatrixAttachmentContextTranslationsPayload {
+  ru: MatrixAttachmentContextTranslationPayload;
+  en: MatrixAttachmentContextTranslationPayload;
 }
 
 export interface ExistingMatrixResourceAttachmentPayload {
   resourceId: number;
-  context: string;
+  translations: MatrixAttachmentContextTranslationsPayload;
+}
+
+export interface NewMatrixResourcePayload {
+  url: string;
+  translations: MatrixResourceTranslations;
 }
 
 export interface NewMatrixResourceAttachmentPayload {
-  resource: {
-    name: string;
-    url: string;
-  };
-  context: string;
+  resource: NewMatrixResourcePayload;
+  translations: MatrixAttachmentContextTranslationsPayload;
 }
 
 export type MatrixResourceAttachmentPayload =
@@ -96,19 +195,15 @@ export type MatrixResourceAttachmentPayload =
   | NewMatrixResourceAttachmentPayload;
 
 export interface MatrixQuestionPayload {
-  question: string;
-  answer: string;
-  interviewExpectedAnswer: string;
-  sheet: string;
-  grade: string;
-  section: string;
-  subsection: string;
-  publishStatus: 'Draft' | 'Published';
+  sheetKey: string;
+  grade: MatrixGrade;
+  publishStatus: MatrixPublishStatus;
+  translations: MatrixItemTranslations;
   resources: MatrixResourceAttachmentPayload[];
 }
 
 export interface MatrixGradeGroup {
-  grade: string;
+  grade: MatrixGrade | null;
   questions: MatrixQuestion[];
 }
 
@@ -123,12 +218,21 @@ export interface MatrixSectionGroup {
 }
 
 export interface MatrixQuestionList {
+  sheetKey: string;
   sheet: string;
   sections: MatrixSectionGroup[];
 }
 
+export function mapMatrixSheetDto(dto: MatrixSheetDto): MatrixSheet {
+  return {
+    key: dto.key,
+    name: dto.name,
+  };
+}
+
 export function mapMatrixListDto(dto: MatrixItemsListDto): MatrixQuestionList {
   return {
+    sheetKey: dto.sheetKey,
     sheet: dto.sheet,
     sections: dto.sections.map((section) => ({
       section: section.section,
@@ -152,16 +256,19 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
     question: dto.question,
     answer: dto.answer,
     interviewExpectedAnswer: dto.interviewExpectedAnswer,
+    sheetKey: dto.sheetKey,
     sheet: dto.sheet,
     grade: dto.grade,
     section: dto.section,
     subsection: dto.subsection,
     publishStatus: dto.publishStatus,
+    translations: dto.translations,
     resources: dto.resources.map((resource) => ({
       id: resource.id,
       name: resource.name,
       url: resource.url,
       context: resource.context,
+      translations: resource.translations,
     })),
   };
 }
@@ -171,5 +278,6 @@ export function mapMatrixResourceDto(dto: MatrixResourceDto): MatrixResource {
     id: dto.id,
     name: dto.name,
     url: dto.url,
+    translations: dto.translations,
   };
 }
