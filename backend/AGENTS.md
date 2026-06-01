@@ -1,6 +1,7 @@
 # Backend Instructions
 
-These rules apply to backend Python code under `backend/**/*.py`.
+Unless a section states a broader scope, these rules apply to backend Python code under
+`backend/**/*.py`.
 
 ## Code Style
 
@@ -101,6 +102,18 @@ These rules apply to backend Python code under `backend/**/*.py`.
 - Database storages return domain schemas, not ORM models.
 - Storages may `flush`, but must not `commit`; transaction ownership belongs to the DI/session provider.
 - Every DB model change must include a matching Alembic migration.
+
+## Performance
+
+- For backend changes that can realistically affect runtime performance, run
+  `make performance-smoke` before the first implementation change and again after the task, then
+  compare the generated reports to check for regressions. This applies to query shape, storage
+  access patterns, API handlers/use cases, serialization, caching, external I/O, migrations, or
+  data-volume behavior.
+- Skip this before/after smoke workflow for small edits with no credible performance impact, such
+  as narrow documentation, formatting, test-only, typing-only, naming-only, or localized mechanical
+  changes. If a pre-change smoke cannot be run because the task starts from a broken state, record
+  that in the final response and compare against the nearest available baseline/report instead.
 
 ## Dependency Injection
 
