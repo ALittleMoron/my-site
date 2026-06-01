@@ -15,6 +15,7 @@ jobs:
 
   performance:
     name: "Performance smoke"
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
       - quality-backend
       - quality-frontend
