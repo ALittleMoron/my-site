@@ -60,7 +60,7 @@ jobs:
           echo "I18N_DEFAULT_LANGUAGE=${{ secrets.I18N_DEFAULT_LANGUAGE }}" >> .env
 
       - name: Sync infrastructure files to server
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@8.0.5
         with:
           switches: -avzr --delete --exclude '.git' --exclude 'node_modules' --exclude '.venv'
           path: |
