@@ -1,7 +1,8 @@
 import type { Config } from 'jest';
+import { createCjsPreset } from 'jest-preset-angular/presets/index.js';
 
 const config: Config = {
-  preset: 'jest-preset-angular',
+  ...createCjsPreset(),
   setupFilesAfterEnv: ['<rootDir>/src/setup-jest.ts'],
   testMatch: ['<rootDir>/src/**/*.spec.ts'],
   collectCoverageFrom: ['src/app/**/*.ts', '!src/app/**/*.routes.ts'],

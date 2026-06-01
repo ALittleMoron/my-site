@@ -4,7 +4,8 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 
 ## Stack
 
-- Angular (latest stable), standalone components only
+- Angular 21, standalone components only
+- Keep Angular framework packages, Angular CLI/build tooling, and `angular-eslint` on the same Angular major.
 - SCSS for styles
 - Bootstrap 5 via `styles/main.scss`
 - Jest via `jest-preset-angular` for tests

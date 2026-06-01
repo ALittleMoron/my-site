@@ -20,7 +20,7 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Оба генерируются в отдельных CI job-ах.
 
-Личный сайт с REST API на **Litestar** и SPA-фронтендом на **Angular 19**.
+Личный сайт с REST API на **Litestar** и SPA-фронтендом на **Angular 21**.
 Матрица компетенций, заметки, форма обратной связи и панель администратора.
 
 ## 📖 Документация
@@ -33,7 +33,7 @@
 ```
 my-site/
 ├── infra/          # nginx reverse proxy, скрипты запуска
-├── frontend/       # Angular 19 SPA (собственный nginx-образ)
+├── frontend/       # Angular 21 SPA (собственный nginx-образ)
 ├── backend/        # Litestar API + доменная логика
 │   ├── src/        # Исходный код приложения
 │   ├── tests/      # Backend-тесты (pytest)

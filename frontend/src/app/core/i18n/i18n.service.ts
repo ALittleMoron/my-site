@@ -1,5 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import { Injectable, Injector, inject, signal } from '@angular/core';
+import { Injectable, Injector, inject, signal, DOCUMENT } from '@angular/core';
 import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 import { ApiClient } from '../http/api-client.service';
 import {

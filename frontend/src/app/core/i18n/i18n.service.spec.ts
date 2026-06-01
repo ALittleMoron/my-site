@@ -1,5 +1,6 @@
+import { DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DOCUMENT } from '@angular/common';
+
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApiClient } from '../http/api-client.service';

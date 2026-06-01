@@ -10,7 +10,7 @@ In the full application stack, infrastructure nginx remains the public edge prox
 
 ## Development server
 
-Use Node.js 22 for local frontend commands (`.nvmrc` matches CI and the Docker builder).
+Use Node.js 22.18+ for local frontend commands (`.nvmrc` matches CI and the Docker builder).
 
 To start a local development server, run:
 
@@ -40,7 +40,7 @@ docker build -t my_site_frontend:latest .
 
 The image uses:
 
-- `node:22-alpine` to install dependencies and run the Angular production build.
+- `node:22.18.0-alpine` to install dependencies and run the Angular production build.
 - `nginx:1.29.4-alpine` to serve `/usr/share/nginx/html`.
 - `nginx.conf` for SPA fallback to `index.html`.
 - `docker-entrypoint.d/20-envsubst-sitemap.sh` to substitute `APP_DOMAIN` in `sitemap.xml` at container start.
