@@ -18,7 +18,7 @@
     "@angular/core": "^19.2.0",
     "@angular/forms": "^19.2.0",
     "@angular/platform-browser": "^19.2.0",
-    "@angular/platform-browser-dynamic": "^19.2.0",
+    "@angular/platform-browser-dynamic": "^21.2.15",
     "@angular/router": "^19.2.0",
     "@toast-ui/editor": "^3.2.2",
     "bootstrap": "^5.3.8",
