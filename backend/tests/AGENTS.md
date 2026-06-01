@@ -33,7 +33,7 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 
 ```bash
 make test-unit           # unit tests only (fast, run often)
-make test-integration    # integration tests (needs DB running)
+make test-integration    # integration tests; starts/reuses test DB automatically
 make tests               # all tests
 make tests-coverage      # all + coverage report
 ```
@@ -41,8 +41,8 @@ make tests-coverage      # all + coverage report
 From the repository root:
 
 ```bash
-make tests-fast          # backend + frontend, uses .env.test and an already running test DB
-make tests-compose       # starts isolated test PostgreSQL, runs tests, then stops containers
+make tests-fast          # backend + frontend; starts/reuses test PostgreSQL automatically
+make tests-compose       # starts/reuses test PostgreSQL, runs tests, then cleans up owned services
 make test-env-up         # start isolated test PostgreSQL manually
 make test-env-down       # stop isolated test PostgreSQL and remove its data
 ```

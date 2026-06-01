@@ -98,14 +98,13 @@ See [docker-compose.yml](../docker-compose.yml) for all services.
 ## 🧪 Tests
 
 ```bash
-make tests-compose              # isolated test DB, backend + frontend, auto cleanup
-make tests-fast                 # backend + frontend with an already running test DB
+make tests-compose              # starts/reuses test DB, backend + frontend, owned cleanup
+make tests-fast                 # backend + frontend; starts/reuses test DB automatically
 make test-env-up                # start reusable test PostgreSQL
 make test-env-down              # stop reusable test PostgreSQL and remove data
 make test-backend-unit          # backend unit tests, no DB required
-make test-backend-integration   # backend integration tests, needs test DB
+make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
-make install-performance        # install Locust dependency group for local IDE/runs
-make performance-smoke          # short Locust smoke profile, writes backend/performance/reports
-make query-plans-balanced       # seed test DB and EXPLAIN ANALYZE real search queries
+make performance-smoke          # auto local backend + short Locust smoke profile
+make query-plans-balanced       # auto test DB, seed data, EXPLAIN ANALYZE search queries
 ```

@@ -32,6 +32,10 @@ Portfolio/notes site and knowledge database
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
+- Check, test, coverage, quality, query-plan, and performance Make targets must be self-contained:
+  they should conditionally prepare dependencies, load the required test environment, start required
+  test services or local backend processes, prepare deterministic data where applicable, and clean
+  up only resources they started themselves.
 - Keep Makefiles as thin wrappers only: Make recipes may call Bash scripts under the relevant
   `scripts/` directory or delegate to nested Makefiles with `$(MAKE) -C ...`, while command logic,
   env loading, shell branching, Docker orchestration, cleanup, and tool invocations belong in

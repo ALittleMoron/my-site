@@ -3,25 +3,23 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/../.." && pwd)"
+# shellcheck source=test_services.sh
+. "$script_dir/test_services.sh"
 cd "$repo_dir"
 
 mode="${1:?mode is required}"
+test_env_file="${TEST_ENV_FILE:-.env.test}"
 status=0
 
-cleanup() {
-    bash infra/scripts/test_env.sh down || true
-}
-
-trap cleanup EXIT
-
-bash infra/scripts/test_env.sh up
+ensure_test_db "$test_env_file"
+trap cleanup_owned_test_db EXIT
 
 case "$mode" in
     backend)
-        make -C backend test TEST_ENV_FILE=../.env.test || status=$?
+        make -C backend test TEST_ENV_FILE="$TEST_DB_ENV_FILE" || status=$?
         ;;
     all)
-        make -C backend test TEST_ENV_FILE=../.env.test || status=$?
+        make -C backend test TEST_ENV_FILE="$TEST_DB_ENV_FILE" || status=$?
         if [ "$status" -eq 0 ]; then
             make test-frontend || status=$?
         fi

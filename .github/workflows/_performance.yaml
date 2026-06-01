@@ -77,26 +77,8 @@ jobs:
           python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
         uses: astral-sh/setup-uv@v6
-      - name: "Install backend dependencies"
-        run: make install-backend
-      - name: "Install performance dependencies"
-        run: make install-performance
-      - name: "Start backend"
-        run: |
-          cd backend
-          PYTHONPATH=src uv run uvicorn main:create_app --port 8000 --host 127.0.0.1 > ../backend-performance.log 2>&1 &
-          echo "$!" > ../backend-performance.pid
-          cd ..
-          for attempt in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:8000/api/healthcheck > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat backend-performance.log
-          exit 1
       - name: "Run Locust smoke profile"
-        run: make performance-smoke PERFORMANCE_ENV_FILE=../.env.test
+        run: make performance-smoke
       - name: "Upload performance reports"
         if: always()
         uses: actions/upload-artifact@v4
@@ -105,10 +87,7 @@ jobs:
           path: backend/performance/reports/
       - name: "Print backend log on failure"
         if: failure()
-        run: cat backend-performance.log
-      - name: "Stop backend"
-        if: always()
         run: |
-          if [ -f backend-performance.pid ]; then
-            kill "$(cat backend-performance.pid)" || true
+          if [ -f backend/performance/reports/backend.log ]; then
+            cat backend/performance/reports/backend.log
           fi

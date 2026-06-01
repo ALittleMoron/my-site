@@ -98,14 +98,13 @@ make run
 ## 🧪 Тесты
 
 ```bash
-make tests-compose              # изолированная test DB, backend + frontend, автоочистка
-make tests-fast                 # backend + frontend с уже запущенной test DB
+make tests-compose              # запустить/переиспользовать test DB, backend + frontend, очистить своё
+make tests-fast                 # backend + frontend; test DB готовится автоматически
 make test-env-up                # запустить переиспользуемый test PostgreSQL
 make test-env-down              # остановить test PostgreSQL и удалить данные
 make test-backend-unit          # unit-тесты backend, DB не нужна
-make test-backend-integration   # интеграционные тесты backend, нужна test DB
+make test-backend-integration   # интеграционные тесты backend, test DB готовится автоматически
 make test-frontend              # только frontend (jest)
-make install-performance        # установить dependency group Locust для IDE/локальных запусков
-make performance-smoke          # короткий Locust smoke-профиль, пишет backend/performance/reports
-make query-plans-balanced       # наполнить test DB и выполнить EXPLAIN ANALYZE реальных search-запросов
+make performance-smoke          # автоматический local backend + короткий Locust smoke-профиль
+make query-plans-balanced       # автоматическая test DB, seed data и EXPLAIN ANALYZE search-запросов
 ```

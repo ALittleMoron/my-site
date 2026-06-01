@@ -2,7 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-backend_dir="$(cd -- "${script_dir}/.." && pwd)"
+# shellcheck source=common.sh
+. "$script_dir/common.sh"
 cd "$backend_dir"
 
 profile="${1:?profile is required}"
@@ -13,9 +14,10 @@ if [ ! -f "$env_file" ]; then
     exit 2
 fi
 
-set -a
-. "$env_file"
-set +a
+ensure_backend_deps
+TEST_ENV_FILE="$env_file"
+ensure_backend_test_db
+trap cleanup_owned_test_db EXIT
 
 require_var() {
     name="$1"
@@ -27,7 +29,7 @@ require_var() {
 
 require_var PERFORMANCE_REPORT_DIR
 
-PYTHONPATH=src uv run --locked python -m performance.query_plans \
+PYTHONPATH=src uv run --locked --all-groups python -m performance.query_plans \
     --profile "$profile" \
     --report-dir "$PERFORMANCE_REPORT_DIR/query-plans" \
     --fail-on-finding

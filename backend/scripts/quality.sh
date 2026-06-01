@@ -2,15 +2,9 @@
 set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-backend_dir="$(cd -- "${script_dir}/.." && pwd)"
+# shellcheck source=common.sh
+. "$script_dir/common.sh"
 cd "$backend_dir"
-
-require_uv() {
-    if ! command -v uv >/dev/null 2>&1; then
-        echo "UV could not be found." >&2
-        exit 2
-    fi
-}
 
 run_types() {
     PYTHONPATH=src uv run mypy --explicit-package-bases --namespace-packages \
@@ -55,7 +49,9 @@ shift
 test_env_file="${1:-${TEST_ENV_FILE:-../.env.test}}"
 test_env_overrides="${2:-${TEST_ENV_OVERRIDES:-}}"
 
-require_uv
+if [ "$action" != "clean" ]; then
+    ensure_backend_deps
+fi
 
 case "$action" in
     clean)

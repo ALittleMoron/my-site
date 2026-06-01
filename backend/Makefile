@@ -1,6 +1,6 @@
 TEST_ENV_FILE ?= ../.env.test
 TEST_ENV_OVERRIDES ?=
-PERFORMANCE_ENV_FILE ?= ../.env
+PERFORMANCE_ENV_FILE ?= ../.env.test
 QUERY_PLANS_ENV_FILE ?= ../.env.test
 
 .PHONY: install

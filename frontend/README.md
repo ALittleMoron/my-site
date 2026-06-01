@@ -22,6 +22,8 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 ## Building
 
+Frontend Make targets prepare npm dependencies automatically when `node_modules` is missing or stale.
+
 ```bash
 make build
 ```

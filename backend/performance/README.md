@@ -13,13 +13,15 @@ plans.
 
 ## Local Runs
 
-Create `.env` from `.env.example`, then tune the `PERFORMANCE_*` and `LOCUST_MAX_*`
-values there.
+Local Make targets default to `../.env.test`. They prepare backend dependencies, start or reuse the
+test PostgreSQL service, start a local backend when `PERFORMANCE_HOST` points to localhost, and
+clean up only services/processes they started. For staging or production-like targets, pass an
+explicit `PERFORMANCE_ENV_FILE`.
 
 ```bash
-make install-performance
 make performance-smoke
 make performance-baseline
+make performance-smoke PERFORMANCE_ENV_FILE=../.env
 ```
 
 Reports are written to `backend/performance/reports/` by default:
@@ -32,18 +34,16 @@ Reports are written to `backend/performance/reports/` by default:
 
 ## Query Plan Checks
 
-Use the query-plan harness when changing search queries or PostgreSQL indexes. It runs against the
-test database only by default, migrates it, clears the benchmarked tables, seeds a deterministic
-balanced dataset, compiles the real SQLAlchemy storage queries, then runs:
+Use the query-plan harness when changing search queries or PostgreSQL indexes. It starts or reuses
+the test database, migrates it, clears the benchmarked tables, seeds a deterministic balanced
+dataset, compiles the real SQLAlchemy storage queries, then runs:
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON)
 ```
 
 ```bash
-make test-env-up
 make query-plans-balanced
-make test-env-down
 ```
 
 The balanced profile seeds 200k notes, 30k tags, 500k note-tag links, and 200k competency resources.
@@ -60,7 +60,7 @@ Reports are written to `backend/performance/reports/query-plans/`:
 ## Profiles
 
 - `performance-smoke` is short and suitable for CI. It is meant to catch obvious latency or error regressions, not to establish production capacity.
-- `performance-baseline` is longer and should run against staging or a production-like environment.
+- `performance-baseline` is longer and should run against staging or a production-like environment by passing an explicit `PERFORMANCE_ENV_FILE`.
 
 ## Useful Environment Values
 
@@ -75,7 +75,7 @@ Reports are written to `backend/performance/reports/query-plans/`:
 
 ## Notes
 
-The Make targets run Locust from the backend uv environment and write HTML/CSV artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can run distributed with master/worker processes. Lighthouse CI is still tracked separately for frontend lab metrics and budgets.
+The Make targets prepare the backend uv environment, run Locust, and write HTML/CSV artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can run distributed with master/worker processes. Lighthouse CI is still tracked separately for frontend lab metrics and budgets.
 
 References:
 

@@ -36,7 +36,7 @@ test-backend:
 
 .PHONY: test-backend-fast
 test-backend-fast:
-	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test
+	$(MAKE) -C backend test
 
 .PHONY: test-backend-unit
 test-backend-unit:
@@ -44,7 +44,7 @@ test-backend-unit:
 
 .PHONY: test-backend-unit-fast
 test-backend-unit-fast:
-	$(MAKE) -C backend test-unit TEST_ENV_FILE=../.env.test
+	$(MAKE) -C backend test-unit
 
 .PHONY: test-backend-integration
 test-backend-integration:
@@ -52,7 +52,7 @@ test-backend-integration:
 
 .PHONY: test-backend-integration-fast
 test-backend-integration-fast:
-	$(MAKE) -C backend test-integration TEST_ENV_FILE=../.env.test
+	$(MAKE) -C backend test-integration
 
 .PHONY: test-env-up
 test-env-up:
