@@ -116,6 +116,31 @@ describe('NoteFormComponent', () => {
       },
     });
   });
+
+  it('updates SEO analysis while editing localized fields', () => {
+    const slug = fixture.debugElement.query(By.css('#noteSlug')).nativeElement as HTMLInputElement;
+    const titleRu = fixture.debugElement.query(By.css('#noteTitleRu'))
+      .nativeElement as HTMLInputElement;
+    const folderRu = fixture.debugElement.query(By.css('#noteFolderRu'))
+      .nativeElement as HTMLInputElement;
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+
+    slug.value = 'typed-note';
+    slug.dispatchEvent(new Event('input'));
+    titleRu.value = 'Типизированная заметка для поиска';
+    titleRu.dispatchEvent(new Event('input'));
+    folderRu.value = 'Инженерия';
+    folderRu.dispatchEvent(new Event('input'));
+    contentEditors[0].componentInstance.valueChange.emit(
+      'Эта заметка объясняет работу типизированных Angular форм, сигналов и локализованных полей в редакторе заметок.',
+    );
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('SEO-анализ');
+    expect(text).toContain('/notes/typed-note');
+  });
 });
 
 @Component({

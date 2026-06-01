@@ -1,11 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
 import { NoteDetail, NoteReactionKind } from '../../../../models/notes.model';
+import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
 interface ReactionOption {
   kind: NoteReactionKind;
@@ -24,7 +27,7 @@ const REACTION_OPTIONS: ReactionOption[] = [
 @Component({
   selector: 'app-note-detail',
   standalone: true,
-  imports: [LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe],
+  imports: [LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe, NoteSeoPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './note-detail.component.html',
 })
@@ -33,6 +36,7 @@ export class NoteDetailComponent {
   readonly loading = input(false);
   readonly error = input<ApiError | null>(null);
   readonly dateLocale = input.required<string>();
+  readonly language = input.required<LanguageCode>();
   readonly isAdmin = input(false);
   readonly selectedReaction = input<NoteReactionKind | null>(null);
   readonly reactionLoading = input(false);
@@ -55,6 +59,21 @@ export class NoteDetailComponent {
 
   readonly isDraft = computed(() => this.note()?.publishStatus === 'Draft');
   readonly isPublished = computed(() => this.note()?.publishStatus === 'Published');
+  readonly seoAnalysis = computed(() => {
+    const note = this.note();
+    if (!note) return null;
+    return analyzeNoteSeo({
+      input: {
+        slug: note.slug,
+        title: note.title,
+        content: note.content,
+        folder: note.folder,
+        tags: note.tags,
+        language: this.language(),
+      },
+      rules: NOTE_SEO_ANALYSIS_RULES,
+    });
+  });
 
   noteDate(): string {
     const note = this.note();

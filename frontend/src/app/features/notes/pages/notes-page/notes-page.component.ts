@@ -133,6 +133,13 @@ export class NotesPageComponent implements OnInit {
       this.publishedTo() !== '',
   );
   readonly dateLocale = computed(() => this.i18n.dateLocale());
+  readonly language = computed(() => {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
+  });
 
   private readonly languageReloadEffect = effect(() => {
     const language = this.i18n.language();
@@ -145,11 +152,7 @@ export class NotesPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.seoService.setTranslatedMeta({
-      titleKey: 'notes.seo.title',
-      descriptionKey: 'notes.seo.description',
-      canonicalPath: '/notes',
-    });
+    this.setNotesListSeo();
     this.loadTags();
     this.loadTree();
     this.destroyRef.onDestroy(() => this.clearEngagedViewTimer());
@@ -166,6 +169,7 @@ export class NotesPageComponent implements OnInit {
         if (slug) {
           this.loadDetail(slug);
         } else {
+          this.setNotesListSeo();
           this.clearEngagedViewTimer();
           this.selectedNote.set(null);
           this.selectedReaction.set(null);
@@ -485,6 +489,7 @@ export class NotesPageComponent implements OnInit {
       .subscribe({
         next: (note) => {
           this.selectedNote.set(note);
+          this.setNoteDetailSeo(note);
           this.selectedReaction.set(
             toNoteReactionKind(this.anonymousReactionService.getReaction(note.slug)),
           );
@@ -606,11 +611,23 @@ export class NotesPageComponent implements OnInit {
   }
 
   private currentLanguage(): LanguageCode {
-    const language = this.i18n.language();
-    if (language === null) {
-      throw new Error('I18n language is not initialized');
-    }
-    return language;
+    return this.language();
+  }
+
+  private setNotesListSeo(): void {
+    this.seoService.setTranslatedMeta({
+      titleKey: 'notes.seo.title',
+      descriptionKey: 'notes.seo.description',
+      canonicalPath: '/notes',
+    });
+  }
+
+  private setNoteDetailSeo(note: NoteDetail): void {
+    this.seoService.setMeta({
+      title: note.title,
+      description: note.excerpt,
+      canonicalPath: `/notes/${note.slug}`,
+    });
   }
 }
 

@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   input,
   output,
@@ -14,8 +15,10 @@ import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
+import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
 import { NoteDetail, NotePayload, NoteTag } from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
+import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
 interface NoteFormControls {
   titleRu: FormControl<string>;
@@ -79,7 +82,7 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
 @Component({
   selector: 'app-note-form',
   standalone: true,
-  imports: [ReactiveFormsModule, MarkdownEditorComponent, TranslatePipe],
+  imports: [ReactiveFormsModule, MarkdownEditorComponent, TranslatePipe, NoteSeoPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './note-form.component.html',
 })
@@ -116,6 +119,25 @@ export class NoteFormComponent implements OnInit {
     nameEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
+  readonly formSnapshot = signal(this.form.getRawValue());
+
+  readonly seoAnalysis = computed(() => {
+    const value = this.formSnapshot();
+    const language = this.activeLanguageTab();
+    return analyzeNoteSeo({
+      input: {
+        slug: value.slug,
+        title: language === 'ru' ? value.titleRu : value.titleEn,
+        content: language === 'ru' ? value.contentRu : value.contentEn,
+        folder: language === 'ru' ? value.folderRu : value.folderEn,
+        language,
+        tags: this.tags().filter(
+          (tag) => tag.deletedAt === null && this.selectedTagIds().has(tag.id),
+        ),
+      },
+      rules: NOTE_SEO_ANALYSIS_RULES,
+    });
+  });
 
   ngOnInit(): void {
     const note = this.note();
@@ -131,8 +153,12 @@ export class NoteFormComponent implements OnInit {
         folderEn: note.translations.en.folder,
         publishStatus: note.publishStatus,
       });
+      this.formSnapshot.set(this.form.getRawValue());
       this.selectedTagIds.set(new Set(note.tags.map((tag) => tag.id)));
     }
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.formSnapshot.set(this.form.getRawValue());
+    });
     this.loadTags();
   }
 

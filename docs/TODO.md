@@ -232,6 +232,9 @@
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme
 - [x] Add more feedback during API requests (notifications, errors, etc.)
+- [ ] Resolve frontend npm peer dependency conflicts and remove `--legacy-peer-deps` from install flows
+  - [ ] Align TypeScript with Angular CLI/build tooling peer dependency ranges so `npm ls typescript` exits cleanly
+  - [ ] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build
 - [x] Migrate to the Angular
   - [x] Target architecture
     - [x] Use Angular as an SPA served by frontend nginx
@@ -338,6 +341,12 @@
 - [x] Filters by tags
 - [x] Filters by publish date range
 - [x] Search notes by title and content
+- [ ] (SEO) Add simple note SEO analysis tool
+  - [ ] Add frontend-only note SEO analyzer without backend API or database changes
+  - [ ] Show live SEO analysis in the admin note form
+  - [ ] Show SEO analysis on existing note detail pages for admins
+  - [ ] Keep SEO analysis advisory only; do not block save or publish actions
+  - [ ] Cover analyzer and UI integration with focused frontend tests
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
     - [x] Tags

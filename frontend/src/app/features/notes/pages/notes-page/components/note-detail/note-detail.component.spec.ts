@@ -42,6 +42,7 @@ describe('NoteDetailComponent', () => {
     });
     fixture.componentRef.setInput('selectedReaction', 'poop');
     fixture.componentRef.setInput('dateLocale', 'ru-RU');
+    fixture.componentRef.setInput('language', 'en');
     fixture.detectChanges();
   });
 
@@ -50,6 +51,31 @@ describe('NoteDetailComponent', () => {
 
     expect(text).toContain('42 просмотров');
     expect(text).toContain('5');
+  });
+
+  it('shows SEO analysis for admins on published and draft notes', () => {
+    fixture.componentRef.setInput('isAdmin', true);
+    fixture.detectChanges();
+
+    let text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('SEO-анализ');
+    expect(text).toContain('/notes/typed-notes');
+
+    fixture.componentRef.setInput('note', {
+      ...fixture.componentInstance.note()!,
+      publishStatus: 'Draft',
+      publishedAt: null,
+    });
+    fixture.detectChanges();
+
+    text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('SEO-анализ');
+  });
+
+  it('hides SEO analysis from non-admin readers', () => {
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).not.toContain('SEO-анализ');
   });
 
   it('emits selected reaction', () => {

@@ -35,6 +35,10 @@ describe('NotesPageComponent', () => {
     getReaction: jest.Mock;
     setReaction: jest.Mock;
   };
+  let seoService: {
+    setTranslatedMeta: jest.Mock;
+    setMeta: jest.Mock;
+  };
   let router: { navigate: jest.Mock };
 
   beforeEach(async () => {
@@ -56,6 +60,10 @@ describe('NotesPageComponent', () => {
       getReaction: jest.fn().mockReturnValue(null),
       setReaction: jest.fn(),
     };
+    seoService = {
+      setTranslatedMeta: jest.fn(),
+      setMeta: jest.fn(),
+    };
     router = { navigate: jest.fn() };
 
     await TestBed.configureTestingModule({
@@ -64,7 +72,7 @@ describe('NotesPageComponent', () => {
         provideRouter([]),
         { provide: NotesService, useValue: notesService },
         { provide: AuthService, useValue: { isAdmin: () => false } },
-        { provide: SeoService, useValue: { setTranslatedMeta: jest.fn() } },
+        { provide: SeoService, useValue: seoService },
         provideI18nTesting(),
         {
           provide: NotificationService,
@@ -105,6 +113,27 @@ describe('NotesPageComponent', () => {
 
     expect(notesService.trackEngagedView).toHaveBeenCalledTimes(1);
   }));
+
+  it('sets note-specific SEO meta after loading detail', () => {
+    fixture.detectChanges();
+
+    expect(seoService.setMeta).toHaveBeenCalledWith({
+      title: 'Typed notes',
+      description: 'Excerpt',
+      canonicalPath: '/notes/typed-notes',
+    });
+  });
+
+  it('keeps generic translated SEO meta on the notes list route', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    expect(seoService.setTranslatedMeta).toHaveBeenCalledWith({
+      titleKey: 'notes.seo.title',
+      descriptionKey: 'notes.seo.description',
+      canonicalPath: '/notes',
+    });
+  });
 
   it('pauses engaged view timer while document is hidden', fakeAsync(() => {
     fixture.detectChanges();

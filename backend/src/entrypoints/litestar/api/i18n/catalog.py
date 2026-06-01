@@ -204,6 +204,65 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.notify.deleteError": "Не удалось удалить вопрос.",
         "notes.seo.title": "Заметки",
         "notes.seo.description": "Заметки и короткие материалы.",
+        "notes.seoAnalysis.aria": "SEO-анализ заметки",
+        "notes.seoAnalysis.title": "SEO-анализ",
+        "notes.seoAnalysis.canonical": "Canonical",
+        "notes.seoAnalysis.descriptionPreview": "Описание",
+        "notes.seoAnalysis.status.good": "Хорошо",
+        "notes.seoAnalysis.status.warning": "Проверьте",
+        "notes.seoAnalysis.status.missing": "Не хватает",
+        "notes.seoAnalysis.summary.good": "Все базовые SEO-проверки пройдены.",
+        "notes.seoAnalysis.summary.warning": "{count} предупреждения",
+        "notes.seoAnalysis.summary.missing": "{count} обязательных пункта не заполнено",
+        "notes.seoAnalysis.check.titlePresent": "Заголовок",
+        "notes.seoAnalysis.check.titleLength": "Длина заголовка",
+        "notes.seoAnalysis.check.contentPresent": "Содержимое",
+        "notes.seoAnalysis.check.descriptionQuality": "Описание",
+        "notes.seoAnalysis.check.slugPresent": "Slug",
+        "notes.seoAnalysis.check.slugFormat": "Формат slug",
+        "notes.seoAnalysis.check.singleH1": "H1",
+        "notes.seoAnalysis.check.contentLength": "Объём текста",
+        "notes.seoAnalysis.check.activeTags": "Теги",
+        "notes.seoAnalysis.message.titlePresent.good": "Заголовок заполнен.",
+        "notes.seoAnalysis.message.titlePresent.missing": "Добавьте заголовок заметки.",
+        "notes.seoAnalysis.message.titleLength.good": "Длина {count} символов выглядит нормально.",
+        "notes.seoAnalysis.message.titleLength.warning": (
+            "Лучше держать заголовок от {min} до {max} символов; сейчас {count}."
+        ),
+        "notes.seoAnalysis.message.titleLength.missing": "Сначала заполните заголовок.",
+        "notes.seoAnalysis.message.contentPresent.good": "Содержимое заполнено.",
+        "notes.seoAnalysis.message.contentPresent.missing": "Добавьте содержимое заметки.",
+        "notes.seoAnalysis.message.descriptionQuality.good": (
+            "Из текста получается достаточно подробное описание."
+        ),
+        "notes.seoAnalysis.message.descriptionQuality.warning": (
+            "Описание короткое: {count} символов из рекомендуемых {min}+."
+        ),
+        "notes.seoAnalysis.message.descriptionQuality.missing": (
+            "Описание появится после добавления содержимого."
+        ),
+        "notes.seoAnalysis.message.slugPresent.good": "Slug заполнен.",
+        "notes.seoAnalysis.message.slugPresent.missing": "Добавьте slug для URL заметки.",
+        "notes.seoAnalysis.message.slugFormat.good": "Slug подходит для URL.",
+        "notes.seoAnalysis.message.slugFormat.warning": (
+            "Используйте строчные латинские буквы, цифры и дефисы."
+        ),
+        "notes.seoAnalysis.message.slugFormat.missing": "Сначала заполните slug.",
+        "notes.seoAnalysis.message.singleH1.good": "В Markdown нет дополнительного H1.",
+        "notes.seoAnalysis.message.singleH1.warning": (
+            "Заголовок страницы уже выводится как H1; используйте ## внутри заметки."
+        ),
+        "notes.seoAnalysis.message.contentLength.good": (
+            "Объём текста {count} слов подходит для базового анализа."
+        ),
+        "notes.seoAnalysis.message.contentLength.warning": (
+            "Текст короткий: {count} слов из рекомендуемых {min}+."
+        ),
+        "notes.seoAnalysis.message.contentLength.missing": "Сначала добавьте содержимое.",
+        "notes.seoAnalysis.message.activeTags.good": "Есть хотя бы один активный тег.",
+        "notes.seoAnalysis.message.activeTags.warning": (
+            "Добавьте активный тег, чтобы уточнить тему заметки."
+        ),
         "notes.title": "Заметки",
         "notes.activeTag": "Тег: {name}",
         "notes.add": "Добавить заметку",
@@ -487,6 +546,65 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.notify.deleteError": "Failed to delete question.",
         "notes.seo.title": "Notes",
         "notes.seo.description": "Notes and short materials.",
+        "notes.seoAnalysis.aria": "Note SEO analysis",
+        "notes.seoAnalysis.title": "SEO analysis",
+        "notes.seoAnalysis.canonical": "Canonical",
+        "notes.seoAnalysis.descriptionPreview": "Description",
+        "notes.seoAnalysis.status.good": "Good",
+        "notes.seoAnalysis.status.warning": "Check",
+        "notes.seoAnalysis.status.missing": "Missing",
+        "notes.seoAnalysis.summary.good": "All basic SEO checks passed.",
+        "notes.seoAnalysis.summary.warning": "{count} warnings",
+        "notes.seoAnalysis.summary.missing": "{count} required items are missing",
+        "notes.seoAnalysis.check.titlePresent": "Title",
+        "notes.seoAnalysis.check.titleLength": "Title length",
+        "notes.seoAnalysis.check.contentPresent": "Content",
+        "notes.seoAnalysis.check.descriptionQuality": "Description",
+        "notes.seoAnalysis.check.slugPresent": "Slug",
+        "notes.seoAnalysis.check.slugFormat": "Slug format",
+        "notes.seoAnalysis.check.singleH1": "H1",
+        "notes.seoAnalysis.check.contentLength": "Text length",
+        "notes.seoAnalysis.check.activeTags": "Tags",
+        "notes.seoAnalysis.message.titlePresent.good": "Title is filled in.",
+        "notes.seoAnalysis.message.titlePresent.missing": "Add a note title.",
+        "notes.seoAnalysis.message.titleLength.good": "{count} characters looks fine.",
+        "notes.seoAnalysis.message.titleLength.warning": (
+            "Keep the title between {min} and {max} characters; it is {count} now."
+        ),
+        "notes.seoAnalysis.message.titleLength.missing": "Fill in the title first.",
+        "notes.seoAnalysis.message.contentPresent.good": "Content is filled in.",
+        "notes.seoAnalysis.message.contentPresent.missing": "Add note content.",
+        "notes.seoAnalysis.message.descriptionQuality.good": (
+            "The text produces a detailed enough description."
+        ),
+        "notes.seoAnalysis.message.descriptionQuality.warning": (
+            "The description is short: {count} characters out of recommended {min}+."
+        ),
+        "notes.seoAnalysis.message.descriptionQuality.missing": (
+            "The description will appear after content is added."
+        ),
+        "notes.seoAnalysis.message.slugPresent.good": "Slug is filled in.",
+        "notes.seoAnalysis.message.slugPresent.missing": "Add a slug for the note URL.",
+        "notes.seoAnalysis.message.slugFormat.good": "Slug is URL friendly.",
+        "notes.seoAnalysis.message.slugFormat.warning": (
+            "Use lowercase Latin letters, numbers, and hyphens."
+        ),
+        "notes.seoAnalysis.message.slugFormat.missing": "Fill in the slug first.",
+        "notes.seoAnalysis.message.singleH1.good": "Markdown has no extra H1.",
+        "notes.seoAnalysis.message.singleH1.warning": (
+            "The page title is already rendered as H1; use ## inside the note."
+        ),
+        "notes.seoAnalysis.message.contentLength.good": (
+            "{count} words is enough for the basic analysis."
+        ),
+        "notes.seoAnalysis.message.contentLength.warning": (
+            "The text is short: {count} words out of recommended {min}+."
+        ),
+        "notes.seoAnalysis.message.contentLength.missing": "Add content first.",
+        "notes.seoAnalysis.message.activeTags.good": "At least one active tag is attached.",
+        "notes.seoAnalysis.message.activeTags.warning": (
+            "Add an active tag to clarify the note topic."
+        ),
         "notes.title": "Notes",
         "notes.activeTag": "Tag: {name}",
         "notes.add": "Add note",
