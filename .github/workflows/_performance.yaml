@@ -70,18 +70,18 @@ jobs:
       VALKEY_HOST: localhost
       VALKEY_PORT: 6379
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "Set up Python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v8.1.0
       - name: "Run Locust smoke profile"
         run: make performance-smoke
       - name: "Upload performance reports"
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: performance-smoke-reports
           path: backend/performance/reports/

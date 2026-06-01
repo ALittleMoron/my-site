@@ -26,13 +26,13 @@ jobs:
         ports:
           - 55432:5432
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "Set up Python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v8.1.0
       - name: "Install backend dependencies"
         run: make install-backend
       - name: "Format & lint check"
@@ -52,13 +52,16 @@ jobs:
           pip install -U genbadge defusedxml
           genbadge coverage -n backend -i backend/coverage.xml -o .github/badges/coverage-backend.svg
       - name: "Verify Changed files"
-        uses: tj-actions/verify-changed-files@v16
         id: verify-changed-files
-        with:
-          files: .github/badges/coverage-backend.svg
+        run: |
+          if git diff --quiet -- .github/badges/coverage-backend.svg; then
+            echo "files_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "files_changed=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: "Commit and push badge"
         if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.verify-changed-files.outputs.files_changed == 'true'
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v10
         with:
           add: '.github/badges/coverage-backend.svg'
           message: 'Updated .github/badges/coverage-backend.svg - project coverage have changed'
