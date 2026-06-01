@@ -32,6 +32,10 @@ Portfolio/notes site and knowledge database
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
+- Keep Makefiles as thin wrappers only: Make recipes may call Bash scripts under the relevant
+  `scripts/` directory or delegate to nested Makefiles with `$(MAKE) -C ...`, while command logic,
+  env loading, shell branching, Docker orchestration, cleanup, and tool invocations belong in
+  dedicated scripts such as `backend/scripts/`, `frontend/scripts/`, and `infra/scripts/`.
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
 - Performance and test tooling may import reusable application contracts from `backend/src`, such

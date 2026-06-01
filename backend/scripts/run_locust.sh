@@ -1,4 +1,9 @@
+#!/usr/bin/env bash
 set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+backend_dir="$(cd -- "${script_dir}/.." && pwd)"
+cd "$backend_dir"
 
 profile="${1:?profile is required}"
 env_file="${2:?env file path is required}"

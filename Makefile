@@ -2,17 +2,13 @@
 
 .PHONY: run
 run:
-	chmod +x ./infra/run.sh
-	./infra/run.sh
+	bash infra/scripts/run.sh
 
 .PHONY: stop
 stop:
-	docker compose stop
-	docker compose down
+	bash infra/scripts/stop.sh
 
 # Backend
-
-TEST_COMPOSE := docker compose --env-file .env.test -f docker-compose.test.yml
 
 .PHONY: install-backend
 install-backend:
@@ -60,19 +56,15 @@ test-backend-integration-fast:
 
 .PHONY: test-env-up
 test-env-up:
-	$(TEST_COMPOSE) up -d --wait postgres-test
+	bash infra/scripts/test_env.sh up
 
 .PHONY: test-env-down
 test-env-down:
-	$(TEST_COMPOSE) down -v --remove-orphans
+	bash infra/scripts/test_env.sh down
 
 .PHONY: test-backend-compose
 test-backend-compose:
-	$(MAKE) test-env-up
-	@status=0; \
-	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test || status=$$?; \
-	$(MAKE) test-env-down; \
-	exit $$status
+	bash infra/scripts/tests_compose.sh backend
 
 .PHONY: tests-coverage
 tests-coverage:
@@ -112,12 +104,8 @@ tests: test-backend test-frontend
 tests-fast: test-backend-fast test-frontend
 
 .PHONY: tests-compose
-tests-compose: test-env-up
-	@status=0; \
-	$(MAKE) -C backend test TEST_ENV_FILE=../.env.test || status=$$?; \
-	if [ $$status -eq 0 ]; then $(MAKE) test-frontend || status=$$?; fi; \
-	$(MAKE) test-env-down; \
-	exit $$status
+tests-compose:
+	bash infra/scripts/tests_compose.sh all
 
 # Performance
 

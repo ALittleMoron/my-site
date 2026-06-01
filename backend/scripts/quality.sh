@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+backend_dir="$(cd -- "${script_dir}/.." && pwd)"
+cd "$backend_dir"
+
+require_uv() {
+    if ! command -v uv >/dev/null 2>&1; then
+        echo "UV could not be found." >&2
+        exit 2
+    fi
+}
+
+run_types() {
+    PYTHONPATH=src uv run mypy --explicit-package-bases --namespace-packages \
+        --config-file pyproject.toml src
+    PYTHONPATH=src uv run mypy --explicit-package-bases --namespace-packages \
+        --config-file pyproject.toml tests
+}
+
+run_bandit() {
+    uv run bandit --configfile ./pyproject.toml -r ./src
+}
+
+run_vulture() {
+    PYTHONPATH=src uv run vulture src --min-confidence 100
+}
+
+run_fix() {
+    uv run ruff format src tests performance --config ./pyproject.toml
+}
+
+run_lint_file() {
+    file_path="${1:-}"
+    if [ -z "$file_path" ]; then
+        echo "file is required. Use: make -C backend lint-file file=path/to/file.py" >&2
+        exit 2
+    fi
+    uv run ruff check --fix "$file_path" --config ./pyproject.toml
+    uv run ruff format "$file_path" --config ./pyproject.toml
+}
+
+run_ruff_check() {
+    uv run ruff check src tests performance --fix
+}
+
+run_lint_check() {
+    uv run ruff format src tests performance --check --config ./pyproject.toml
+    uv run ruff check src tests performance --config ./pyproject.toml
+}
+
+action="${1:?action is required}"
+shift
+test_env_file="${1:-${TEST_ENV_FILE:-../.env.test}}"
+test_env_overrides="${2:-${TEST_ENV_OVERRIDES:-}}"
+
+require_uv
+
+case "$action" in
+    clean)
+        find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+        ;;
+    types)
+        run_types
+        ;;
+    bandit)
+        run_bandit
+        ;;
+    vulture)
+        run_vulture
+        ;;
+    fix)
+        run_fix
+        ;;
+    lint-file)
+        run_lint_file "$@"
+        ;;
+    ruff-check)
+        run_ruff_check
+        ;;
+    lint-check)
+        run_lint_check
+        ;;
+    quality)
+        run_bandit || true
+        run_vulture || true
+        run_fix
+        run_types
+        run_ruff_check
+        bash "$script_dir/test.sh" test "$test_env_file" "$test_env_overrides"
+        ;;
+    *)
+        echo "Unknown quality action: $action" >&2
+        exit 2
+        ;;
+esac

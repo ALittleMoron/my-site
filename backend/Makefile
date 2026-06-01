@@ -1,140 +1,104 @@
-UV := $(shell command -v uv 2> /dev/null)
-UV_RUN := $(UV) run
-PYTHONPATH := src
-ALEMBIC_CONFIG := src/infra/postgresql/alembic/alembic.ini
-NAME := src
-TESTS := tests
 TEST_ENV_FILE ?= ../.env.test
-LOAD_TEST_ENV := set -a; [ ! -f "$(TEST_ENV_FILE)" ] || . "$(TEST_ENV_FILE)"; set +a;
 TEST_ENV_OVERRIDES ?=
 PERFORMANCE_ENV_FILE ?= ../.env
 QUERY_PLANS_ENV_FILE ?= ../.env.test
 
 .PHONY: install
 install:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) sync --locked --all-extras
+	bash scripts/install.sh install
 
 .PHONY: install-performance
 install-performance:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV) sync --locked --group performance
+	bash scripts/install.sh install-performance
 
 .PHONY: run
 run:
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) uvicorn main:create_app --port 8080 --host 0.0.0.0
+	bash scripts/app.sh run
 
 .PHONY: run-local
 run-local:
-	PYTHONPATH=$(PYTHONPATH) APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost $(UV_RUN) python src/main.py
+	bash scripts/app.sh run-local
 
 .PHONY: cli
 cli:
-	PYTHONPATH=$(PYTHONPATH) LITESTAR_APP="cli:create_cli" $(UV_RUN) litestar $(command)
+	bash scripts/app.sh cli $(command)
 
 .PHONY: collectstatic
 collectstatic:
-	$(MAKE) cli command="collectstatic"
+	bash scripts/app.sh collectstatic
 
 .PHONY: initbuckets
 initbuckets:
-	$(MAKE) cli command="initbuckets"
+	bash scripts/app.sh initbuckets
 
 .PHONY: revision
 revision:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) revision -m "$(word 2, $(MAKECMDGOALS)))" --autogenerate
+	bash scripts/alembic.sh revision "$(message)"
 
 .PHONY: migrate
 migrate:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) upgrade head
+	bash scripts/alembic.sh migrate
 
 .PHONY: downgrade
 downgrade:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) alembic -c $(ALEMBIC_CONFIG) downgrade -1
+	bash scripts/alembic.sh downgrade
 
 .PHONY: shell
 shell:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) ipython --no-confirm-exit --no-banner --quick \
-	--InteractiveShellApp.extensions="autoreload" \
-	--InteractiveShellApp.exec_lines="%autoreload 2"
+	bash scripts/app.sh shell
 
 .PHONY: clean
 clean:
-	find . -type d -name "__pycache__" | xargs rm -rf {};
+	bash scripts/quality.sh clean
 
 .PHONY: types
 types:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(NAME)
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) mypy --explicit-package-bases --namespace-packages --config-file pyproject.toml $(TESTS)
+	bash scripts/quality.sh types
 
 .PHONY: bandit
 bandit:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) bandit --configfile ./pyproject.toml -r ./$(NAME)
+	bash scripts/quality.sh bandit
 
 .PHONY: vulture
 vulture:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	PYTHONPATH=$(PYTHONPATH) $(UV_RUN) vulture $(NAME) --min-confidence 100
+	bash scripts/quality.sh vulture
 
 .PHONY: fix
 fix:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff format $(NAME) $(TESTS) performance --config ./pyproject.toml
+	bash scripts/quality.sh fix
 
 # Usage: make lint-file file=src/core/notes/use_cases.py
 .PHONY: lint-file
 lint-file:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff check --fix $(file) --config ./pyproject.toml
-	$(UV_RUN) ruff format $(file) --config ./pyproject.toml
+	bash scripts/quality.sh lint-file "$(file)"
 
 .PHONY: ruff-check
 ruff-check:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff check $(NAME) $(TESTS) performance --fix
+	bash scripts/quality.sh ruff-check
 
 .PHONY: lint-check
 lint-check:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(UV_RUN) ruff format $(NAME) $(TESTS) performance --check --config ./pyproject.toml
-	$(UV_RUN) ruff check $(NAME) $(TESTS) performance --config ./pyproject.toml
+	bash scripts/quality.sh lint-check
 
 .PHONY: test
 test:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/
+	bash scripts/test.sh test "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
 
 .PHONY: test-unit
 test-unit:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/unit/
+	bash scripts/test.sh test-unit "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
 
 .PHONY: test-integration
 test-integration:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) pytest --durations=10 -vvv -x $(TESTS)/integration/
+	bash scripts/test.sh test-integration "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
 
 .PHONY: tests-coverage
 tests-coverage:
-	@if [ -z $(UV) ]; then echo "UV could not be found."; exit 2; fi
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage run -m pytest $(TESTS)/
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage xml
-	$(LOAD_TEST_ENV) $(TEST_ENV_OVERRIDES) PYTHONPATH=$(PYTHONPATH) APP_USE_CACHE=false $(UV_RUN) coverage report --fail-under=60
+	bash scripts/test.sh tests-coverage "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
 
 .PHONY: quality
 quality:
-	-$(MAKE) bandit
-	-$(MAKE) vulture
-	$(MAKE) fix
-	$(MAKE) types
-	$(MAKE) ruff-check
-	$(MAKE) test
+	bash scripts/quality.sh quality "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
 
 .PHONY: performance-smoke
 performance-smoke:

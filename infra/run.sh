@@ -1,22 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Check .env file exists
-if [ ! -f .env ]; then
-    echo ".env file could not be found"
-    echo "Please create a .env file in the root directory"
-    exit 1
-fi
-
-# Check docker compose is installed
-if ! docker compose version &> /dev/null; then
-    echo "docker compose plugin could not be found. Install it."
-    exit 1
-fi
-
-# Read .env file and export variables
-set -a
-source .env
-set +a
-
-# Run docker-compose up with build option
-docker compose up --build -d
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+bash "$script_dir/scripts/run.sh"

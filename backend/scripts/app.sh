@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+backend_dir="$(cd -- "${script_dir}/.." && pwd)"
+cd "$backend_dir"
+
+require_uv() {
+    if ! command -v uv >/dev/null 2>&1; then
+        echo "UV could not be found." >&2
+        exit 2
+    fi
+}
+
+run_cli() {
+    PYTHONPATH=src LITESTAR_APP="cli:create_cli" uv run litestar "$@"
+}
+
+action="${1:?action is required}"
+shift
+
+require_uv
+
+case "$action" in
+    run)
+        PYTHONPATH=src uv run uvicorn main:create_app --port 8080 --host 0.0.0.0
+        ;;
+    run-local)
+        PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost \
+            uv run python src/main.py
+        ;;
+    cli)
+        run_cli "$@"
+        ;;
+    collectstatic)
+        run_cli collectstatic
+        ;;
+    initbuckets)
+        run_cli initbuckets
+        ;;
+    shell)
+        PYTHONPATH=src uv run ipython --no-confirm-exit --no-banner --quick \
+            --InteractiveShellApp.extensions="autoreload" \
+            --InteractiveShellApp.exec_lines="%autoreload 2"
+        ;;
+    *)
+        echo "Unknown app action: $action" >&2
+        exit 2
+        ;;
+esac

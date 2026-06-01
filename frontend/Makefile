@@ -1,47 +1,43 @@
 .PHONY: install
 install:
-	npm ci --legacy-peer-deps
+	bash scripts/npm_task.sh install
 
 .PHONY: test
 test:
-	npm test -- --watchAll=false
+	bash scripts/npm_task.sh test
 
 .PHONY: test-watch
 test-watch:
-	npm run test:watch
+	bash scripts/npm_task.sh test-watch
 
 .PHONY: test-coverage
 test-coverage:
-	npm run test:coverage
+	bash scripts/npm_task.sh test-coverage
 
 .PHONY: tests-coverage
 tests-coverage:
-	npm test -- --watchAll=false --coverage
+	bash scripts/npm_task.sh tests-coverage
 
 .PHONY: format
 format:
-	npx prettier --write src
+	bash scripts/npm_task.sh format
 
 .PHONY: format-check
 format-check:
-	npx prettier --check src
+	bash scripts/npm_task.sh format-check
 
 .PHONY: lint
 lint:
-	npm run lint
+	bash scripts/npm_task.sh lint
 
 .PHONY: typecheck
 typecheck:
-	npx tsc --noEmit -p tsconfig.app.json
+	bash scripts/npm_task.sh typecheck
 
 .PHONY: build
 build:
-	npm run build
+	bash scripts/npm_task.sh build
 
 .PHONY: quality
 quality:
-	$(MAKE) format
-	$(MAKE) lint
-	$(MAKE) typecheck
-	$(MAKE) build
-	$(MAKE) test
+	bash scripts/npm_task.sh quality
