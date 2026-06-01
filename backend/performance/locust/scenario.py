@@ -27,13 +27,13 @@ class PublicSiteDiscovery:
 
     def discover_matrix_sheets(self) -> list[str]:
         schema = self.api_client.get_validated(
-            "/api/competency-matrix/sheets",
+            f"/api/competency-matrix/sheets?language={self.language.value}",
             name="GET /api/competency-matrix/sheets",
             schema_type=CompetencyMatrixSheetsListResponseSchema,
         )
         if schema is None:
             return []
-        return schema.sheets
+        return [sheet.key for sheet in schema.sheets]
 
     def discover_note_slugs(self) -> list[str]:
         schema = self.api_client.get_validated(
@@ -105,7 +105,7 @@ class PublicSiteScenario:
 
     def matrix_sheets_task(self) -> None:
         self.api_client.get(
-            "/api/competency-matrix/sheets",
+            f"/api/competency-matrix/sheets?language={self.language.value}",
             name="GET /api/competency-matrix/sheets",
             schema_type=CompetencyMatrixSheetsListResponseSchema,
         )
@@ -116,14 +116,16 @@ class PublicSiteScenario:
             return
         self.api_client.get(
             "/api/competency-matrix/items"
-            f"?sheetName={choice(self.matrix_sheets)}&onlyPublished=true",
+            f"?sheetKey={choice(self.matrix_sheets)}"
+            f"&onlyPublished=true&language={self.language.value}",
             name="GET /api/competency-matrix/items",
             schema_type=CompetencyMatrixItemsListResponseSchema,
         )
 
     def matrix_resources_search(self) -> None:
         self.api_client.get(
-            "/api/competency-matrix/resources/search?searchName=python&limit=5",
+            "/api/competency-matrix/resources/search"
+            f"?searchName=python&limit=5&language={self.language.value}",
             name="GET /api/competency-matrix/resources/search",
             schema_type=CompetencyMatrixResourcesResponseSchema,
         )
