@@ -33,7 +33,7 @@ dev = [
     "bandit>=1.9.4",
     "coverage>=7.14.1",
     "httpx>=0.28.1",
-    "mypy>=1.19.0",
+    "mypy>=2.1.0",
     "pytest==9.0.3",
     "pytest-asyncio>=1.4.0",
     "ruff>=0.15.15",
