@@ -1,6 +1,8 @@
 # ruff: noqa: SLF001
 import binascii
+import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import pyseto
 import pytest
@@ -73,3 +75,37 @@ class TestPasetoTokenHandler:
             "username": "TEST",
             "role": RoleEnum.ADMIN,
         }
+
+    def test_get_token_remaining_seconds(self) -> None:
+        token = self.auth_handler.encode_token(
+            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN),
+        )
+
+        remaining_seconds = self.auth_handler.get_token_remaining_seconds(token)
+
+        assert remaining_seconds is not None
+        assert 0 < remaining_seconds <= self.auth_handler.token_expire_seconds
+
+    def test_get_token_remaining_seconds_without_exp(self) -> None:
+        token = pyseto.encode(
+            key=self.auth_handler._create_secret_key(),
+            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+        )
+
+        remaining_seconds = self.auth_handler.get_token_remaining_seconds(Token(token))
+
+        assert remaining_seconds is None
+
+    def test_get_token_remaining_seconds_with_expired_token(self) -> None:
+        expired_at = datetime.datetime.now(tz=ZoneInfo("Etc/UTC")) - datetime.timedelta(seconds=1)
+        token = pyseto.encode(
+            key=self.auth_handler._create_secret_key(),
+            payload={
+                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                "exp": expired_at.isoformat(),
+            },
+        )
+
+        remaining_seconds = self.auth_handler.get_token_remaining_seconds(Token(token))
+
+        assert remaining_seconds is None

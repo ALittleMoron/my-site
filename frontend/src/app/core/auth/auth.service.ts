@@ -46,9 +46,9 @@ export class AuthService {
 
   logout(): Observable<void> {
     return this.apiClient.post<void>('/api/auth/logout', {}).pipe(
-      tap(() => {
-        this.tokenService.clearToken();
-        this.session.clear();
+      tap({
+        next: () => this.clearLocalSession(),
+        error: () => this.clearLocalSession(),
       }),
     );
   }

@@ -40,7 +40,7 @@ class AuthApiController(Controller):
     @post(
         "/logout",
         name="logout-api-handler",
-        description="Эндпоинт для выхода из системы. Ничего не делает",
+        description="Эндпоинт для выхода из системы. Отзывает текущий PASETO токен.",
         status_code=status_codes.HTTP_200_OK,
     )
     async def logout(

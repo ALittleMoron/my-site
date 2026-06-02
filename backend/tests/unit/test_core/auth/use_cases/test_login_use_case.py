@@ -1,10 +1,13 @@
 # ruff: noqa: S106
+from unittest.mock import Mock
+
 import pytest
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.schemas import JwtUser
+from core.auth.storages import TokenRevocationStorage
 from core.auth.use_cases import AuthUseCase
 from tests.unit.fixtures import ContainerFixture, FactoryFixture
 
@@ -15,11 +18,13 @@ class TestAuthUseCase(ContainerFixture, FactoryFixture):
         self.hasher = await self.container.get_hasher()
         self.token_handler = await self.container.get_token_handler()
         self.auth_storage = await self.container.get_auth_storage()
+        self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
         self.user_storage = await self.container.get_user_storage()
         self.use_case = AuthUseCase(
             hasher=self.hasher,
             token_handler=self.token_handler,
             auth_storage=self.auth_storage,
+            token_revocation_storage=self.token_revocation_storage,
             user_storage=self.user_storage,
         )
 

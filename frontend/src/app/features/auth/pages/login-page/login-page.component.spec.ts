@@ -4,6 +4,7 @@ import { of, throwError } from 'rxjs';
 import { LoginPageComponent } from './login-page.component';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
 
 describe('LoginPageComponent', () => {
   let fixture: ComponentFixture<LoginPageComponent>;
@@ -19,6 +20,7 @@ describe('LoginPageComponent', () => {
       imports: [LoginPageComponent],
       providers: [
         provideRouter([]),
+        provideI18nTesting(),
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthModalService, useValue: mockAuthModalService },
       ],
@@ -35,6 +37,15 @@ describe('LoginPageComponent', () => {
     expect(compiled.querySelector('.modal.force-display-block')).not.toBeNull();
     expect(compiled.querySelector('#username')).not.toBeNull();
     expect(compiled.querySelector('#password')).not.toBeNull();
+  });
+
+  it('renders admin-only login warning', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const alert = compiled.querySelector('.alert-warning');
+
+    expect(alert).not.toBeNull();
+    expect(alert?.textContent).toContain('Пока только для администраторов');
+    expect(alert?.textContent).toContain('обычных пользователей');
   });
 
   it('submit button is disabled when form is invalid', () => {

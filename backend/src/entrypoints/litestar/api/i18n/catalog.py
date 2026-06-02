@@ -62,6 +62,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Войти",
         "auth.login.submitting": "Вход...",
         "auth.login.error": "Не удалось войти. Попробуйте ещё раз.",
+        "auth.login.adminOnlyWarning.title": "Пока только для администраторов",
+        "auth.login.adminOnlyWarning.message": (
+            "На данный момент вход работает только для администраторов. В будущем здесь "
+            "появится вход для обычных пользователей."
+        ),
         "about.seo.title": "Обо мне",
         "about.seo.description": (
             "Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контактная форма."
@@ -407,6 +412,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Log in",
         "auth.login.submitting": "Signing in...",
         "auth.login.error": "Login failed. Please try again.",
+        "auth.login.adminOnlyWarning.title": "Admins only for now",
+        "auth.login.adminOnlyWarning.message": (
+            "At the moment, login works only for administrators. Regular user login will be "
+            "added in the future."
+        ),
         "about.seo.title": "About",
         "about.seo.description": (
             "Dmitry Lunev's personal site: portfolio, competency matrix, and contact form."

@@ -69,6 +69,30 @@ describe('AuthService', () => {
       expect(service.currentUser()).toBeNull();
       expect(service.isLoggedIn()).toBe(false);
     });
+
+    it('clears token and user when logout request fails', (done) => {
+      service.currentUser.set({ username: 'admin', role: 'Admin' });
+      tokenService.setToken('some-token');
+
+      service.logout().subscribe({
+        next: () => {
+          done.fail('Expected logout request to fail');
+        },
+        error: () => {
+          expect(tokenService.token()).toBeNull();
+          expect(service.currentUser()).toBeNull();
+          expect(service.isLoggedIn()).toBe(false);
+          done();
+        },
+      });
+
+      const logoutReq = httpMock.expectOne((req) => req.url.includes('/api/auth/logout'));
+      expect(logoutReq.request.method).toBe('POST');
+      logoutReq.flush(
+        { message: 'Logout failed' },
+        { status: 500, statusText: 'Internal Server Error' },
+      );
+    });
   });
 
   describe('loadCurrentUser', () => {

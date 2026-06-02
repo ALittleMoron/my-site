@@ -1,0 +1,51 @@
+from unittest.mock import Mock
+
+import pytest_asyncio
+
+from core.auth.exceptions import UnauthorizedError
+from core.auth.storages import TokenRevocationStorage
+from core.auth.types import Token
+from core.auth.use_cases import AuthUseCase
+from tests.unit.fixtures import ContainerFixture, FactoryFixture
+
+
+class TestLogoutUseCase(ContainerFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True, loop_scope="session")
+    async def setup(self) -> None:
+        self.token_handler = await self.container.get_token_handler()
+        self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
+        self.use_case = AuthUseCase(
+            hasher=await self.container.get_hasher(),
+            auth_storage=await self.container.get_auth_storage(),
+            token_handler=self.token_handler,
+            token_revocation_storage=self.token_revocation_storage,
+            user_storage=await self.container.get_user_storage(),
+        )
+
+    async def test_logout_revokes_valid_token_until_it_expires(self) -> None:
+        token = Token(b"valid_token")
+        self.token_handler.get_token_remaining_seconds.return_value = 42
+
+        await self.use_case.logout(token=token)
+
+        self.token_handler.get_token_remaining_seconds.assert_called_once_with(token)
+        self.token_revocation_storage.revoke_token.assert_called_once_with(
+            token=token,
+            expires_in_seconds=42,
+        )
+
+    async def test_logout_ignores_invalid_token(self) -> None:
+        token = Token(b"invalid_token")
+        self.token_handler.get_token_remaining_seconds.side_effect = UnauthorizedError
+
+        await self.use_case.logout(token=token)
+
+        self.token_revocation_storage.revoke_token.assert_not_called()
+
+    async def test_logout_ignores_token_without_remaining_lifetime(self) -> None:
+        token = Token(b"expired_token")
+        self.token_handler.get_token_remaining_seconds.return_value = None
+
+        await self.use_case.logout(token=token)
+
+        self.token_revocation_storage.revoke_token.assert_not_called()

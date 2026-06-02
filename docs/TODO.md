@@ -419,6 +419,7 @@
 - [ ] User authentication improvements (possibly via OAuth2)
   - [ ] (FRONT) Register button and form
   - [ ] (BACK) Registration logic
+  - [ ] Remove the admin-only login warning after regular-user authorization/login is implemented
   - [ ] (FRONT) Password recovery button and form (simple confirmation email)
   - [ ] (BACK) Password recovery logic
   - [ ] (BACK) Add session cookie (set on login/register, delete on logout)

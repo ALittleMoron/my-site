@@ -1,9 +1,12 @@
 # ruff: noqa: S106
+from unittest.mock import Mock
+
 import pytest
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
+from core.auth.storages import TokenRevocationStorage
 from core.auth.types import Token
 from core.auth.use_cases import AuthUseCase
 from tests.unit.fixtures import ContainerFixture, FactoryFixture
@@ -14,12 +17,29 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         self.token_handler = await self.container.get_token_handler()
         self.user_storage = await self.container.get_user_storage()
+        self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
+        self.token_revocation_storage.is_token_revoked.return_value = False
         self.use_case = AuthUseCase(
             hasher=await self.container.get_hasher(),
             auth_storage=await self.container.get_auth_storage(),
             token_handler=self.token_handler,
+            token_revocation_storage=self.token_revocation_storage,
             user_storage=self.user_storage,
         )
+
+    async def test_authenticate_revoked_token(self) -> None:
+        token = Token(b"revoked_token")
+        self.token_revocation_storage.is_token_revoked.return_value = True
+
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.authenticate(
+                token=token,
+                required_role=RoleEnum.ADMIN,
+            )
+
+        self.token_revocation_storage.is_token_revoked.assert_called_once_with(token=token)
+        self.token_handler.decode_token.assert_not_called()
+        self.user_storage.get_user_by_username.assert_not_called()
 
     async def test_authenticate_token_decode_error(self) -> None:
         self.token_handler.decode_token.side_effect = UnauthorizedError
@@ -28,6 +48,9 @@ class TestLoginUseCase(ContainerFixture, FactoryFixture):
                 token=Token(b"invalid_token"),
                 required_role=RoleEnum.ADMIN,
             )
+        self.token_revocation_storage.is_token_revoked.assert_called_once_with(
+            token=Token(b"invalid_token"),
+        )
         self.token_handler.decode_token.assert_called_once_with(b"invalid_token")
 
     async def test_authenticate_user_not_found(self) -> None:

@@ -1,6 +1,7 @@
 import binascii
 import datetime
 import json
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
@@ -23,6 +24,10 @@ class TokenHandler(ABC):
 
     @abstractmethod
     def encode_token(self, payload: JwtUser) -> Token:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_token_remaining_seconds(self, token: Token) -> int | None:
         raise NotImplementedError
 
     @staticmethod
@@ -73,13 +78,24 @@ class PasetoTokenHandler(TokenHandler):
         ).isoformat()
         return payload_dict
 
-    def decode_token(self, token: Token) -> JwtUser:
+    def _decode_payload_dict(self, token: Token) -> dict[str, Any]:
         try:
             decoded = pyseto.decode(keys=self._create_public_key(), token=token).payload
         except (pyseto.DecryptError, pyseto.VerifyError, binascii.Error, ValueError) as err:
-            logger.warning(event="Pyseto decode error", exc=err, token=token)
+            logger.warning(event="Pyseto decode error", exc=err)
             raise UnauthorizedError from err
-        payload_dict = json.loads(decoded) if isinstance(decoded, bytes) else decoded
+        try:
+            payload_dict = json.loads(decoded) if isinstance(decoded, bytes) else decoded
+        except json.JSONDecodeError as err:
+            logger.warning(event="Pyseto payload JSON decode error", exc=err)
+            raise UnauthorizedError from err
+        if not isinstance(payload_dict, dict):
+            logger.error(event="Decoded payload is not a dict", payload=payload_dict)
+            raise UnauthorizedError
+        return payload_dict
+
+    def decode_token(self, token: Token) -> JwtUser:
+        payload_dict = self._decode_payload_dict(token)
         if self.validate_payload_dict(payload_dict):
             return JwtUser.from_dict(payload_dict)
         logger.error(event="Decoded payload is not valid", payload=payload_dict)
@@ -92,3 +108,22 @@ class PasetoTokenHandler(TokenHandler):
                 payload=self.prepare_payload(payload),
             ),
         )
+
+    def get_token_remaining_seconds(self, token: Token) -> int | None:
+        payload_dict = self._decode_payload_dict(token)
+        expires_at_raw = payload_dict.get("exp")
+        if not isinstance(expires_at_raw, str):
+            return None
+        try:
+            expires_at = datetime.datetime.fromisoformat(expires_at_raw)
+        except ValueError:
+            logger.warning(event="Token exp claim is invalid")
+            return None
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=ZoneInfo("Etc/UTC"))
+        remaining_seconds = math.ceil(
+            (expires_at - datetime.datetime.now(tz=ZoneInfo("Etc/UTC"))).total_seconds(),
+        )
+        if remaining_seconds <= 0:
+            return None
+        return remaining_seconds
