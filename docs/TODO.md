@@ -469,7 +469,7 @@
 
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [x] UI localisation
-- [ ] Database localisation
+- [x] Database localisation
 - [ ] Migrate from Makefile to Just
 - [x] Move complex logic out of Makefiles into dedicated script folders (`backend/scripts/`, `frontend/scripts/`, `infra/scripts/`); keep Makefiles as thin wrappers that only call Bash scripts or nested Makefiles.
 - [x] Refactor project scripts so `make <command>` fully prepares and runs tests, linters, checkers, and similar commands without manual setup (start required Docker services, prepare data, and run other prerequisites as needed).

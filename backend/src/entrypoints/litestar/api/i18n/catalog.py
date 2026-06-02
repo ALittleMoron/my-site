@@ -31,7 +31,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.auth.loggedInAs": "Вы вошли как {username}",
         "shell.language.label": "Язык",
         "shell.footer.docs": "Документация",
+        "shell.footer.sourceCode": "Исходный код",
         "shell.footer.sitemap": "Карта сайта",
+        "shell.footer.githubProfile": "Профиль GitHub",
+        "shell.footer.telegramProfile": "Профиль Telegram",
+        "shell.footer.linkedinProfile": "Профиль LinkedIn",
         "shell.cookie.text": (
             "Сайт использует локальное хранилище для базовой работы интерфейса, "
             "сохранения настроек и анонимных реакций. Просмотры считаются агрегированно, "
@@ -137,6 +141,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.validationTitle": "Несколько ошибок:",
         "about.contact.name": "Имя",
         "about.contact.namePlaceholder": "Ваше Имя",
+        "about.contact.email": "Эл. почта",
+        "about.contact.emailPlaceholder": "you@example.com",
+        "about.contact.telegram": "Телеграм",
+        "about.contact.telegramPlaceholder": "@your_username",
         "about.contact.message": "Сообщение",
         "about.contact.messagePlaceholder": "Распишите, пожалуйста, цель обращения...",
         "about.contact.personalDataConsent": (
@@ -180,6 +188,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.resources.newNamePlaceholder": "Название нового ресурса",
         "matrix.resources.newNameRuPlaceholder": "Название нового ресурса RU",
         "matrix.resources.newNameEnPlaceholder": "Название нового ресурса EN",
+        "matrix.resources.urlPlaceholder": "Ссылка",
         "matrix.resources.contextPlaceholder": "Контекст для этого вопроса",
         "matrix.resources.contextRuPlaceholder": "Контекст для этого вопроса RU",
         "matrix.resources.contextEnPlaceholder": "Контекст для этого вопроса EN",
@@ -382,7 +391,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.auth.loggedInAs": "Logged in as {username}",
         "shell.language.label": "Language",
         "shell.footer.docs": "Documentation",
+        "shell.footer.sourceCode": "Source code",
         "shell.footer.sitemap": "Sitemap",
+        "shell.footer.githubProfile": "GitHub profile",
+        "shell.footer.telegramProfile": "Telegram profile",
+        "shell.footer.linkedinProfile": "LinkedIn profile",
         "shell.cookie.text": (
             "The site uses local storage for core interface behavior, saved preferences, "
             "and anonymous reactions. Views are counted in aggregate without analytics cookies."
@@ -484,6 +497,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.validationTitle": "Several errors:",
         "about.contact.name": "Name",
         "about.contact.namePlaceholder": "Your name",
+        "about.contact.email": "Email",
+        "about.contact.emailPlaceholder": "you@example.com",
+        "about.contact.telegram": "Telegram",
+        "about.contact.telegramPlaceholder": "@your_username",
         "about.contact.message": "Message",
         "about.contact.messagePlaceholder": "Please describe the reason for contacting me...",
         "about.contact.personalDataConsent": (
@@ -527,6 +544,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.resources.newNamePlaceholder": "New resource name",
         "matrix.resources.newNameRuPlaceholder": "New resource name RU",
         "matrix.resources.newNameEnPlaceholder": "New resource name EN",
+        "matrix.resources.urlPlaceholder": "URL",
         "matrix.resources.contextPlaceholder": "Context for this question",
         "matrix.resources.contextRuPlaceholder": "Context for this question RU",
         "matrix.resources.contextEnPlaceholder": "Context for this question EN",

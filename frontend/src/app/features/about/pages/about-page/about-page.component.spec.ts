@@ -44,7 +44,12 @@ describe('AboutPageComponent', () => {
       providers: [
         { provide: ContactService, useValue: contactService },
         { provide: NotificationService, useValue: notificationService },
-        provideI18nTesting(),
+        provideI18nTesting({
+          'about.contact.email': 'Эл. почта',
+          'about.contact.emailPlaceholder': 'you@example.com',
+          'about.contact.telegram': 'Телеграм',
+          'about.contact.telegramPlaceholder': '@your_username',
+        }),
         provideRouter([]),
       ],
     }).compileComponents();
@@ -67,6 +72,20 @@ describe('AboutPageComponent', () => {
       'button[type="submit"]',
     ) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
+  });
+
+  it('renders localized contact method labels and placeholders', () => {
+    const emailInput = fixture.nativeElement.querySelector(
+      '#contact-me-email-field',
+    ) as HTMLInputElement;
+    const telegramInput = fixture.nativeElement.querySelector(
+      '#contact-me-telegram-field',
+    ) as HTMLInputElement;
+
+    expect(fixture.nativeElement.textContent).toContain('Эл. почта');
+    expect(emailInput.placeholder).toBe('you@example.com');
+    expect(fixture.nativeElement.textContent).toContain('Телеграм');
+    expect(telegramInput.placeholder).toBe('@your_username');
   });
 
   it('submit button is enabled when message is filled', () => {

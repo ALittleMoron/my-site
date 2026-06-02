@@ -15,7 +15,7 @@
             rel="noopener noreferrer"
             class="nav-link p-0 text-body-secondary"
           >
-            <small>Source-code</small>
+            <small>{{ 'shell.footer.sourceCode' | t }}</small>
           </a>
         </li>
         <li class="nav-item me-2">|</li>
@@ -33,7 +33,7 @@
             href="https://github.com/ALittleMoron"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="GitHub profile"
+            [attr.aria-label]="'shell.footer.githubProfile' | t"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -58,7 +58,7 @@
             href="https://t.me/alm_dmitriy_dev"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Telegram"
+            [attr.aria-label]="'shell.footer.telegramProfile' | t"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +79,7 @@
             href="https://www.linkedin.com/in/dmitriy-lunev/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="LinkedIn"
+            [attr.aria-label]="'shell.footer.linkedinProfile' | t"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

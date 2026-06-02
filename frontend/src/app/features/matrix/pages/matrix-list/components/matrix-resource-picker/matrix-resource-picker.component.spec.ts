@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatrixResourcePickerComponent } from './matrix-resource-picker.component';
 import { MatrixResource } from '../../../../models/matrix-question.model';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 
 const existingResource: MatrixResource = {
   id: 1,
@@ -29,6 +30,11 @@ describe('MatrixResourcePickerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatrixResourcePickerComponent],
+      providers: [
+        provideI18nTesting({
+          'matrix.resources.urlPlaceholder': 'Ссылка',
+        }),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixResourcePickerComponent);
@@ -46,6 +52,12 @@ describe('MatrixResourcePickerComponent', () => {
     component.setSearch('python');
 
     expect(emitted).toEqual(['python']);
+  });
+
+  it('renders localized url placeholder for new resources', () => {
+    const urlInput = fixture.nativeElement.querySelector('input[type="url"]') as HTMLInputElement;
+
+    expect(urlInput.placeholder).toBe('Ссылка');
   });
 
   it('attaches an existing resource once', () => {

@@ -532,7 +532,7 @@
               </div>
             </div>
             <div class="col-sm-10 text-md-start">
-              <p class="m-0" style="font-size: 1.2rem">Telegram</p>
+              <p class="m-0" style="font-size: 1.2rem">{{ 'about.contact.telegram' | t }}</p>
               <a href="https://t.me/alm_dmitriy_dev" class="link-active text-secondary"
                 >&#64;alm_dmitriy_dev</a
               >
@@ -562,7 +562,7 @@
               </div>
             </div>
             <div class="col-sm-10 text-md-start">
-              <p class="m-0" style="font-size: 1.2rem">Email</p>
+              <p class="m-0" style="font-size: 1.2rem">{{ 'about.contact.email' | t }}</p>
               <a href="mailto:dima.lunev14@gmail.com" class="link-active text-secondary"
                 >dima.lunev14&#64;gmail.com</a
               >
@@ -615,22 +615,26 @@
                 />
               </div>
               <div class="mb-3">
-                <label for="contact-me-email-field" class="form-label">Email</label>
+                <label for="contact-me-email-field" class="form-label">
+                  {{ 'about.contact.email' | t }}
+                </label>
                 <input
                   formControlName="email"
                   type="email"
                   class="form-control"
                   id="contact-me-email-field"
-                  placeholder="your@email.com"
+                  [attr.placeholder]="'about.contact.emailPlaceholder' | t"
                 />
               </div>
               <div class="mb-3">
-                <label for="contact-me-telegram-field" class="form-label">Telegram</label>
+                <label for="contact-me-telegram-field" class="form-label">
+                  {{ 'about.contact.telegram' | t }}
+                </label>
                 <input
                   formControlName="telegram"
                   class="form-control"
                   id="contact-me-telegram-field"
-                  placeholder="@your_telegram"
+                  [attr.placeholder]="'about.contact.telegramPlaceholder' | t"
                 />
               </div>
               <div class="mb-3">
