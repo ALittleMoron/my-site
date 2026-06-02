@@ -7,7 +7,7 @@ Portfolio/notes site and knowledge database
 ## Stack
 
 - Runtime: Python 3.14, uv
-- Framework: Litestar 2.18+
+- Framework: Litestar 2.23+
 - DB: PostgreSQL 16 + SQLAlchemy 2.0 async + Alembic
 - DI: Dishka
 - Cache: Valkey
@@ -41,6 +41,7 @@ Portfolio/notes site and knowledge database
   env loading, shell branching, Docker orchestration, cleanup, and tool invocations belong in
   dedicated scripts such as `backend/scripts/`, `frontend/scripts/`, and `infra/scripts/`.
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
+- When changing any library, dependency, runtime, or tool version, update the matching badges in `.github/badges/` in the same change.
 - Frontend npm installs must enforce peer dependency contracts. Resolve Angular, TypeScript, and tooling peer dependency conflicts in `frontend/package.json` and `frontend/package-lock.json` instead of using `--legacy-peer-deps` or `--force`, except for an explicitly documented temporary workaround with a TODO and removal plan.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
 - Performance and test tooling may import reusable application contracts from `backend/src`, such
