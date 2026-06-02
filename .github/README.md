@@ -20,8 +20,8 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
-A personal site with a Litestar REST API backend and an Angular 21 SPA frontend.
-Features a competency matrix, notes, contact form, and admin panel.
+A personal knowledge site with portfolio pages, a competency matrix, localized notes,
+and an integrated admin authoring mode.
 
 ## 📖 Documentation
 
@@ -46,13 +46,12 @@ my-site/
 
 ## ✨ Features
 
-- Competency matrix with questions, answers, and Markdown rendering
-- Notes with folders, tags, Markdown rendering, and publish visibility
-- Angular SPA with dark/light theme and list/grid layouts
-- REST API with OpenAPI documentation
-- Admin panel: create, edit, publish/unpublish matrix questions and notes
-- Contact form
-- PASETO-based authentication
+- Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, and linked resources
+- Notes with localized RU/EN content, folders, tags, search, date/tag filters, and publish visibility
+- Integrated admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
+- Privacy-safe note analytics with public view counters, engaged views, source categories, and anonymous reactions
+- Russian/English UI and content localization driven by the backend
+- PASETO-protected admin authentication
 
 ## 🚀 Quick Start
 

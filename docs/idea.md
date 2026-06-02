@@ -30,10 +30,10 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 ## Core features
 
-1. **Competency matrix** — interactive Q&A, topic filtering, hints, and tips
-2. **Notes** — Markdown editor, folders, tags, and publish visibility
-3. **Contacts** — feedback form
-4. **Admin panel** — content management through the main frontend, no separate admin UI
+1. **Competency matrix** — localized interactive Q&A with topic filtering, detailed answers, and linked resources
+2. **Notes** — localized content, folders, tags, search/filtering, and publish visibility
+3. **Integrated admin authoring mode** — content management through the main frontend, no separate admin UI
+4. **Privacy-safe note analytics** — public counters and anonymous reactions
 
 ## Highlights
 
