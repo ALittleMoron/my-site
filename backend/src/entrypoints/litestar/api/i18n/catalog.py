@@ -230,6 +230,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.summary.missing": "{count} обязательных пункта не заполнено",
         "notes.seoAnalysis.check.titlePresent": "Заголовок",
         "notes.seoAnalysis.check.titleLength": "Длина заголовка",
+        "notes.seoAnalysis.check.seoTitle": "SEO-заголовок",
+        "notes.seoAnalysis.check.seoDescription": "SEO-описание",
+        "notes.seoAnalysis.check.coverImage": "Обложка",
+        "notes.seoAnalysis.check.coverImageAlt": "Alt обложки",
         "notes.seoAnalysis.check.contentPresent": "Содержимое",
         "notes.seoAnalysis.check.descriptionQuality": "Описание",
         "notes.seoAnalysis.check.slugPresent": "Slug",
@@ -237,6 +241,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.check.singleH1": "H1",
         "notes.seoAnalysis.check.contentLength": "Объём текста",
         "notes.seoAnalysis.check.activeTags": "Теги",
+        "notes.seoAnalysis.check.wikiLinks": "Wiki-ссылки",
         "notes.seoAnalysis.message.titlePresent.good": "Заголовок заполнен.",
         "notes.seoAnalysis.message.titlePresent.missing": "Добавьте заголовок заметки.",
         "notes.seoAnalysis.message.titleLength.good": "Длина {count} символов выглядит нормально.",
@@ -244,6 +249,23 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Лучше держать заголовок от {min} до {max} символов; сейчас {count}."
         ),
         "notes.seoAnalysis.message.titleLength.missing": "Сначала заполните заголовок.",
+        "notes.seoAnalysis.message.seoTitle.good": "SEO-заголовок подходит по длине.",
+        "notes.seoAnalysis.message.seoTitle.warning": (
+            "SEO-заголовок лучше держать от {min} до {max} символов; сейчас {count}."
+        ),
+        "notes.seoAnalysis.message.seoTitle.missing": "Добавьте SEO-заголовок.",
+        "notes.seoAnalysis.message.seoDescription.good": "SEO-описание подходит по длине.",
+        "notes.seoAnalysis.message.seoDescription.warning": (
+            "SEO-описание лучше держать от {min} до {max} символов; сейчас {count}."
+        ),
+        "notes.seoAnalysis.message.seoDescription.missing": "Добавьте SEO-описание.",
+        "notes.seoAnalysis.message.coverImage.good": "Обложка задана.",
+        "notes.seoAnalysis.message.coverImage.missing": ("Добавьте URL или загрузите обложку."),
+        "notes.seoAnalysis.message.coverImageAlt.good": "Alt обложки подходит по длине.",
+        "notes.seoAnalysis.message.coverImageAlt.warning": (
+            "Alt обложки лучше держать от {min} до {max} символов; сейчас {count}."
+        ),
+        "notes.seoAnalysis.message.coverImageAlt.missing": "Добавьте alt-текст обложки.",
         "notes.seoAnalysis.message.contentPresent.good": "Содержимое заполнено.",
         "notes.seoAnalysis.message.contentPresent.missing": "Добавьте содержимое заметки.",
         "notes.seoAnalysis.message.descriptionQuality.good": (
@@ -277,6 +299,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.message.activeTags.warning": (
             "Добавьте активный тег, чтобы уточнить тему заметки."
         ),
+        "notes.seoAnalysis.message.wikiLinks.good": (
+            "Все wiki-ссылки ведут на существующие заметки."
+        ),
+        "notes.seoAnalysis.message.wikiLinks.warning": "Не найдены заметки: {slugs}.",
         "notes.title": "Заметки",
         "notes.activeTag": "Тег: {name}",
         "notes.add": "Добавить заметку",
@@ -310,6 +336,14 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.form.titleEn": "Заголовок EN",
         "notes.form.folderRu": "Папка RU",
         "notes.form.folderEn": "Папка EN",
+        "notes.form.seoTitleRu": "SEO-заголовок RU",
+        "notes.form.seoTitleEn": "SEO-заголовок EN",
+        "notes.form.seoDescriptionRu": "SEO-описание RU",
+        "notes.form.seoDescriptionEn": "SEO-описание EN",
+        "notes.form.coverImageUrl": "URL обложки",
+        "notes.form.coverImageFile": "Загрузить обложку",
+        "notes.form.coverImageAltRu": "Alt обложки RU",
+        "notes.form.coverImageAltEn": "Alt обложки EN",
         "notes.form.contentRu": "Содержимое RU",
         "notes.form.contentEn": "Содержимое EN",
         "notes.form.tags": "Теги",
@@ -320,6 +354,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.form.tagNameRuAria": "Название тега RU",
         "notes.form.tagNameEnAria": "Название тега EN",
         "notes.form.tagSlugAria": "Slug тега",
+        "notes.preview.aria": "Предпросмотр заметки",
+        "notes.preview.article": "Статья",
+        "notes.preview.social": "Превью для соцсетей",
         "notes.stats.aria": "Статистика заметок",
         "notes.stats.from": "С",
         "notes.stats.to": "По",
@@ -586,6 +623,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.summary.missing": "{count} required items are missing",
         "notes.seoAnalysis.check.titlePresent": "Title",
         "notes.seoAnalysis.check.titleLength": "Title length",
+        "notes.seoAnalysis.check.seoTitle": "SEO title",
+        "notes.seoAnalysis.check.seoDescription": "SEO description",
+        "notes.seoAnalysis.check.coverImage": "Cover image",
+        "notes.seoAnalysis.check.coverImageAlt": "Cover alt",
         "notes.seoAnalysis.check.contentPresent": "Content",
         "notes.seoAnalysis.check.descriptionQuality": "Description",
         "notes.seoAnalysis.check.slugPresent": "Slug",
@@ -593,6 +634,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.check.singleH1": "H1",
         "notes.seoAnalysis.check.contentLength": "Text length",
         "notes.seoAnalysis.check.activeTags": "Tags",
+        "notes.seoAnalysis.check.wikiLinks": "Wiki links",
         "notes.seoAnalysis.message.titlePresent.good": "Title is filled in.",
         "notes.seoAnalysis.message.titlePresent.missing": "Add a note title.",
         "notes.seoAnalysis.message.titleLength.good": "{count} characters looks fine.",
@@ -600,6 +642,23 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Keep the title between {min} and {max} characters; it is {count} now."
         ),
         "notes.seoAnalysis.message.titleLength.missing": "Fill in the title first.",
+        "notes.seoAnalysis.message.seoTitle.good": "SEO title length looks useful.",
+        "notes.seoAnalysis.message.seoTitle.warning": (
+            "Keep the SEO title between {min} and {max} characters; it is {count} now."
+        ),
+        "notes.seoAnalysis.message.seoTitle.missing": "Add an SEO title.",
+        "notes.seoAnalysis.message.seoDescription.good": "SEO description length looks useful.",
+        "notes.seoAnalysis.message.seoDescription.warning": (
+            "Keep the SEO description between {min} and {max} characters; it is {count} now."
+        ),
+        "notes.seoAnalysis.message.seoDescription.missing": "Add an SEO description.",
+        "notes.seoAnalysis.message.coverImage.good": "Cover image is set.",
+        "notes.seoAnalysis.message.coverImage.missing": "Add a cover URL or upload a cover.",
+        "notes.seoAnalysis.message.coverImageAlt.good": "Cover alt length looks useful.",
+        "notes.seoAnalysis.message.coverImageAlt.warning": (
+            "Keep the cover alt between {min} and {max} characters; it is {count} now."
+        ),
+        "notes.seoAnalysis.message.coverImageAlt.missing": "Add cover alt text.",
         "notes.seoAnalysis.message.contentPresent.good": "Content is filled in.",
         "notes.seoAnalysis.message.contentPresent.missing": "Add note content.",
         "notes.seoAnalysis.message.descriptionQuality.good": (
@@ -633,6 +692,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.message.activeTags.warning": (
             "Add an active tag to clarify the note topic."
         ),
+        "notes.seoAnalysis.message.wikiLinks.good": "All wiki links point to existing notes.",
+        "notes.seoAnalysis.message.wikiLinks.warning": "Missing notes: {slugs}.",
         "notes.title": "Notes",
         "notes.activeTag": "Tag: {name}",
         "notes.add": "Add note",
@@ -666,6 +727,14 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.form.titleEn": "Title EN",
         "notes.form.folderRu": "Folder RU",
         "notes.form.folderEn": "Folder EN",
+        "notes.form.seoTitleRu": "SEO title RU",
+        "notes.form.seoTitleEn": "SEO title EN",
+        "notes.form.seoDescriptionRu": "SEO description RU",
+        "notes.form.seoDescriptionEn": "SEO description EN",
+        "notes.form.coverImageUrl": "Cover image URL",
+        "notes.form.coverImageFile": "Upload cover image",
+        "notes.form.coverImageAltRu": "Cover alt RU",
+        "notes.form.coverImageAltEn": "Cover alt EN",
         "notes.form.contentRu": "Content RU",
         "notes.form.contentEn": "Content EN",
         "notes.form.tags": "Tags",
@@ -676,6 +745,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.form.tagNameRuAria": "Tag name RU",
         "notes.form.tagNameEnAria": "Tag name EN",
         "notes.form.tagSlugAria": "Tag slug",
+        "notes.preview.aria": "Note preview",
+        "notes.preview.article": "Article",
+        "notes.preview.social": "Social preview",
         "notes.stats.aria": "Notes statistics",
         "notes.stats.from": "From",
         "notes.stats.to": "To",

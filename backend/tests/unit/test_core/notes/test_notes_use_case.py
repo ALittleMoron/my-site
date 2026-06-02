@@ -10,6 +10,7 @@ from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 from core.notes.schemas import (
     NoteCreateParams,
     NoteFilters,
+    NoteMetadata,
     NoteTreeItemData,
     NoteUpdateParams,
     TagCreateParams,
@@ -126,6 +127,15 @@ class TestNotesUseCase(FactoryFixture):
             folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
+            metadata=NoteMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
             tag_ids=tag_ids,
         )
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(
@@ -149,6 +159,15 @@ class TestNotesUseCase(FactoryFixture):
             folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
+            metadata=NoteMetadata(
+                seo_title_ru="SEO заметка",
+                seo_title_en="SEO note",
+                seo_description_ru="Описание для поиска",
+                seo_description_en="Search description",
+                cover_image_url="https://example.com/cover.jpg",
+                cover_image_alt_ru="Обложка",
+                cover_image_alt_en="Cover",
+            ),
             tag_ids=tag_ids,
         )
         tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -163,6 +182,15 @@ class TestNotesUseCase(FactoryFixture):
             folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
+            metadata=NoteMetadata(
+                seo_title_ru="SEO заметка",
+                seo_title_en="SEO note",
+                seo_description_ru="Описание для поиска",
+                seo_description_en="Search description",
+                cover_image_url="https://example.com/cover.jpg",
+                cover_image_alt_ru="Обложка",
+                cover_image_alt_en="Cover",
+            ),
             tags=[tag],
         )
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
@@ -181,6 +209,7 @@ class TestNotesUseCase(FactoryFixture):
         assert created_note.localized_folder(language=LanguageEnum.RU) == "Питон"
         assert created_note.title_ru == "Заметка"
         assert created_note.title_en == "Note"
+        assert created_note.metadata == params.metadata
         assert created_note.author_username == "admin"
         assert created_note.tags.values == [tag]
 
@@ -199,6 +228,15 @@ class TestNotesUseCase(FactoryFixture):
             folder_en="Python",
             author_username="admin",
             publish_status=PublishStatusEnum.PUBLISHED,
+            metadata=NoteMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
             tag_ids=[IntId(1)],
         )
 
@@ -209,6 +247,7 @@ class TestNotesUseCase(FactoryFixture):
         assert not hasattr(note, "folder")
         assert note.localized_title(language=LanguageEnum.RU) == "Заметка"
         assert note.localized_title(language=LanguageEnum.EN) == "Note"
+        assert note.metadata == params.metadata
         assert note.published_at == now
         assert note.created_at == now
         assert note.updated_at == now
@@ -230,6 +269,15 @@ class TestNotesUseCase(FactoryFixture):
             folder_ru="Архитектура",
             folder_en="Architecture",
             publish_status=PublishStatusEnum.PUBLISHED,
+            metadata=NoteMetadata(
+                seo_title_ru="Новая SEO",
+                seo_title_en="New SEO",
+                seo_description_ru="Новое описание",
+                seo_description_en="New description",
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
             tag_ids=[IntId(1)],
         )
         self.storage.get_note_by_slug.return_value = existing
@@ -252,6 +300,7 @@ class TestNotesUseCase(FactoryFixture):
         assert updated_note.author_username == "original-author"
         assert updated_note.title_ru == "Новая"
         assert updated_note.title_en == "New"
+        assert updated_note.metadata == params.metadata
         assert not hasattr(updated_note, "title")
 
     async def test_switch_publish_status_delegates_to_storage(self) -> None:

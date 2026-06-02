@@ -51,6 +51,8 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Components consume via `toSignal()` or explicit `subscribe` with `DestroyRef` cleanup
 - DTOs mapped to UI models explicitly when field names or shapes differ
 - Sanitize any backend or user-provided Markdown/HTML before binding it with `[innerHTML]`.
+- Put reusable frontend upload helpers under `core/uploads/`, not `core/media/`; the latter matches
+  a repository ignore pattern.
 - Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests.
 
 ## Forms

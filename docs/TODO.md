@@ -341,17 +341,35 @@
 - [x] Filters by tags
 - [x] Filters by publish date range
 - [x] Search notes by title and content
-- [ ] (SEO) Add simple note SEO analysis tool
-  - [ ] Add frontend-only note SEO analyzer without backend API or database changes
-  - [ ] Show live SEO analysis in the admin note form
-  - [ ] Show SEO analysis on existing note detail pages for admins
-  - [ ] Keep SEO analysis advisory only; do not block save or publish actions
-  - [ ] Cover analyzer and UI integration with focused frontend tests
+- [x] Authoring-first public articles release
+  - [x] Use Notes as the article model and keep save/publish independent from SEO warnings
+  - [x] Add nullable RU/EN SEO metadata, cover URL, and cover alt fields to note storage/API
+  - [x] Require an explicit `metadata` request object while allowing individual metadata fields to be `null`
+  - [x] Add note form controls for SEO metadata and cover upload through the presign flow
+  - [x] Expand the live admin SEO panel with metadata, cover, alt, and wiki-link checks
+  - [x] Add in-form article/social preview for the active language
+  - [x] Render `[[note-slug]]` and `[[note-slug|Custom label]]` as internal note links
+  - [x] Warn when wiki links point to missing note slugs available in the admin note tree
+- [ ] SEO Foundation release
+  - [ ] Add Angular SSR or hybrid rendering for public routes
+  - [ ] Add `/ru` and `/en` canonical URL prefixes
+  - [ ] Generate dynamic `sitemap.xml` and `robots.txt`
+  - [ ] Emit Article JSON-LD/Open Graph metadata from stored note metadata
+  - [ ] Add HTML snapshot tests for public article pages
+- [ ] Matrix public SEO release
+  - [ ] Add explicit matrix question slugs
+  - [ ] Add separate public matrix question pages
+  - [ ] Preserve modal interaction from the matrix overview
+  - [ ] Emit QAPage structured data after public question pages exist
+- [ ] Final article metadata hardening
+  - [ ] Backfill existing article metadata
+  - [ ] Change nullable SEO metadata fields to required
+  - [ ] Update API and form validators for required article metadata
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
     - [x] Tags
     - [ ] Attachments
-    - [ ] links with other notes with `[[note]]` syntax
+    - [x] links with other notes with `[[note-slug]]` syntax
     - [ ] Properties
 - [x] Security audit
   - [x] Only admins can edit, add, and delete notes

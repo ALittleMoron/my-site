@@ -32,12 +32,24 @@ class ApiFactoryHelper:
         folder_ru: str = "Общее",
         folder_en: str = "General",
         publish_status: str = "Draft",
+        metadata: dict[str, Any] | None = None,
         tag_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         return {
             "slug": slug,
             "publishStatus": publish_status,
             "tagIds": tag_ids or [],
+            "metadata": metadata
+            if metadata is not None
+            else {
+                "seoTitleRu": "SEO заметка",
+                "seoTitleEn": "SEO note",
+                "seoDescriptionRu": "Описание для выдачи",
+                "seoDescriptionEn": "Search result description",
+                "coverImageUrl": "https://example.com/cover.jpg",
+                "coverImageAltRu": "Обложка заметки",
+                "coverImageAltEn": "Note cover",
+            },
             "translations": {
                 "ru": {"title": title_ru, "content": content_ru, "folder": folder_ru},
                 "en": {"title": title_en, "content": content_en, "folder": folder_en},

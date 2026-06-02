@@ -23,6 +23,7 @@ describe('NotesService', () => {
   it('loads notes with pagination, visibility, and tag filters', () => {
     let firstTitle: string | undefined;
     let firstViewCount: number | undefined;
+    let firstSeoTitle: string | null | undefined;
 
     service
       .getNotes({
@@ -38,6 +39,7 @@ describe('NotesService', () => {
       .subscribe((list) => {
         firstTitle = list.notes[0].title;
         firstViewCount = list.notes[0].viewCount;
+        firstSeoTitle = list.notes[0].metadata.seoTitleEn;
       });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes'));
@@ -65,6 +67,7 @@ describe('NotesService', () => {
           publishStatus: 'Published',
           updatedAt: '2026-01-03T03:04:05+00:00',
           excerpt: 'Excerpt',
+          metadata: metadataDto(),
           tags: [
             {
               id: 1,
@@ -81,15 +84,18 @@ describe('NotesService', () => {
 
     expect(firstTitle).toBe('Typed notes');
     expect(firstViewCount).toBe(42);
+    expect(firstSeoTitle).toBe('SEO Typed notes');
   });
 
   it('loads detail with explicit visibility', () => {
     let content: string | undefined;
     let fireCount: number | undefined;
+    let seoDescription: string | null | undefined;
 
     service.getNote('typed-notes', true, 'ru').subscribe((note) => {
       content = note.content;
       fireCount = note.reactionCounts.fire;
+      seoDescription = note.metadata.seoDescriptionRu;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/detail/typed-notes'));
@@ -108,6 +114,7 @@ describe('NotesService', () => {
       createdAt: '2026-01-01T03:04:05+00:00',
       updatedAt: '2026-01-03T03:04:05+00:00',
       excerpt: 'Markdown',
+      metadata: metadataDto(),
       tags: [],
       translations: {
         ru: { title: 'Типизированные заметки', content: '# Markdown', folder: 'Инженерия' },
@@ -124,6 +131,7 @@ describe('NotesService', () => {
 
     expect(content).toBe('# Markdown');
     expect(fireCount).toBe(2);
+    expect(seoDescription).toBe('SEO описание');
   });
 
   it('tracks engagement and reactions', () => {
@@ -239,6 +247,7 @@ describe('NotesService', () => {
           slug: 'new-note',
           publishStatus: 'Draft',
           tagIds: [1],
+          metadata: metadataDto(),
           translations: {
             ru: { title: 'Новая заметка', content: 'Содержимое', folder: 'Входящие' },
             en: { title: 'New note', content: 'Content', folder: 'Inbox' },
@@ -253,6 +262,7 @@ describe('NotesService', () => {
     expect(createReq.request.params.get('language')).toBe('ru');
     expect(createReq.request.body.slug).toBe('new-note');
     expect(createReq.request.body.tagIds).toEqual([1]);
+    expect(createReq.request.body.metadata.seoTitleEn).toBe('SEO Typed notes');
     expect(createReq.request.body.translations.en.title).toBe('New note');
     createReq.flush(noteDetailDto());
     flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
@@ -264,6 +274,11 @@ describe('NotesService', () => {
           slug: 'new-note',
           publishStatus: 'Published',
           tagIds: [1, 2],
+          metadata: {
+            ...metadataDto(),
+            seoTitleEn: null,
+            coverImageUrl: null,
+          },
           translations: {
             ru: { title: 'Новая заметка', content: 'Содержимое', folder: 'Входящие' },
             en: { title: 'New note', content: 'Content', folder: 'Inbox' },
@@ -278,6 +293,8 @@ describe('NotesService', () => {
     expect(updateReq.request.params.get('language')).toBe('en');
     expect(updateReq.request.body.publishStatus).toBe('Published');
     expect(updateReq.request.body.tagIds).toEqual([1, 2]);
+    expect(updateReq.request.body.metadata.seoTitleEn).toBeNull();
+    expect(updateReq.request.body.metadata.coverImageUrl).toBeNull();
     updateReq.flush(noteDetailDto());
     flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
   });
@@ -375,11 +392,32 @@ function noteDetailDto(): unknown {
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-03T03:04:05+00:00',
     excerpt: 'Content',
+    metadata: metadataDto(),
     tags: [],
     translations: {
       ru: { title: 'Новая заметка', content: 'Содержимое', folder: 'Входящие' },
       en: { title: 'New note', content: 'Content', folder: 'Inbox' },
     },
+  };
+}
+
+function metadataDto(): {
+  seoTitleRu: string | null;
+  seoTitleEn: string | null;
+  seoDescriptionRu: string | null;
+  seoDescriptionEn: string | null;
+  coverImageUrl: string | null;
+  coverImageAltRu: string | null;
+  coverImageAltEn: string | null;
+} {
+  return {
+    seoTitleRu: 'SEO заметка',
+    seoTitleEn: 'SEO Typed notes',
+    seoDescriptionRu: 'SEO описание',
+    seoDescriptionEn: 'SEO description',
+    coverImageUrl: 'https://example.com/cover.jpg',
+    coverImageAltRu: 'Обложка',
+    coverImageAltEn: 'Cover',
   };
 }
 

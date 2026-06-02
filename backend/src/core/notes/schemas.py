@@ -37,6 +37,32 @@ class Tags(ValuedDataclass[Tag]):
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class NoteMetadata:
+    seo_title_ru: str | None
+    seo_title_en: str | None
+    seo_description_ru: str | None
+    seo_description_en: str | None
+    cover_image_url: str | None
+    cover_image_alt_ru: str | None
+    cover_image_alt_en: str | None
+
+    def localized_seo_title(self, *, language: LanguageEnum) -> str | None:
+        if language == LanguageEnum.RU:
+            return self.seo_title_ru
+        return self.seo_title_en
+
+    def localized_seo_description(self, *, language: LanguageEnum) -> str | None:
+        if language == LanguageEnum.RU:
+            return self.seo_description_ru
+        return self.seo_description_en
+
+    def localized_cover_image_alt(self, *, language: LanguageEnum) -> str | None:
+        if language == LanguageEnum.RU:
+            return self.cover_image_alt_ru
+        return self.cover_image_alt_en
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Note:
     id: UUID
     slug: str
@@ -49,6 +75,7 @@ class Note:
     author_username: str
     published_at: datetime | None
     publish_status: PublishStatusEnum
+    metadata: NoteMetadata
     created_at: datetime
     updated_at: datetime
     tags: Tags
@@ -121,6 +148,7 @@ class NoteCreateParams:
     folder_en: str
     author_username: str
     publish_status: PublishStatusEnum
+    metadata: NoteMetadata
     tag_ids: list[IntId]
 
     def to_note(self, *, now: datetime, tags: Tags) -> Note:
@@ -135,6 +163,7 @@ class NoteCreateParams:
             folder_en=self.folder_en,
             author_username=self.author_username,
             publish_status=self.publish_status,
+            metadata=self.metadata,
             published_at=now if self.publish_status == PublishStatusEnum.PUBLISHED else None,
             created_at=now,
             updated_at=now,
@@ -152,6 +181,7 @@ class NoteUpdateParams:
     folder_ru: str
     folder_en: str
     publish_status: PublishStatusEnum
+    metadata: NoteMetadata
     tag_ids: list[IntId]
 
     def to_note(self, *, existing_note: Note, now: datetime, tags: Tags) -> Note:
@@ -169,6 +199,7 @@ class NoteUpdateParams:
             folder_en=self.folder_en,
             author_username=existing_note.author_username,
             publish_status=self.publish_status,
+            metadata=self.metadata,
             published_at=published_at,
             created_at=existing_note.created_at,
             updated_at=now,

@@ -24,7 +24,7 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
-from core.notes.schemas import Note, NoteReactionCounts, Notes, Tag, Tags
+from core.notes.schemas import Note, NoteMetadata, NoteReactionCounts, Notes, Tag, Tags
 from core.schemas import Secret
 from core.types import IntId, SearchName
 
@@ -332,6 +332,14 @@ class CoreFactoryHelper:
         content_en: str | None = None,
         folder_ru: str | None = None,
         folder_en: str | None = None,
+        seo_title_ru: str | None = None,
+        seo_title_en: str | None = None,
+        seo_description_ru: str | None = None,
+        seo_description_en: str | None = None,
+        cover_image_url: str | None = None,
+        cover_image_alt_ru: str | None = None,
+        cover_image_alt_en: str | None = None,
+        metadata: NoteMetadata | None = None,
         author_username: str = "admin",
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         published_at: str | None = None,
@@ -350,6 +358,16 @@ class CoreFactoryHelper:
             folder_ru=folder_ru or folder,
             folder_en=folder_en or folder,
             author_username=author_username,
+            metadata=metadata
+            or NoteMetadata(
+                seo_title_ru=seo_title_ru,
+                seo_title_en=seo_title_en,
+                seo_description_ru=seo_description_ru,
+                seo_description_en=seo_description_en,
+                cover_image_url=cover_image_url,
+                cover_image_alt_ru=cover_image_alt_ru,
+                cover_image_alt_en=cover_image_alt_en,
+            ),
             publish_status=publish_status,
             published_at=(
                 datetime.fromisoformat(published_at).replace(tzinfo=UTC)

@@ -24,6 +24,17 @@ describe('NoteDetailComponent', () => {
       updatedAt: '2026-01-03T03:04:05+00:00',
       excerpt: 'Excerpt',
       content: '# Content',
+      metadata: {
+        seoTitleRu: 'SEO Typed notes RU',
+        seoTitleEn: 'SEO Typed notes EN',
+        seoDescriptionRu:
+          'SEO description RU with enough text to be useful for search snippets and social cards.',
+        seoDescriptionEn:
+          'SEO description EN with enough text to be useful for search snippets and social cards.',
+        coverImageUrl: 'https://example.com/cover.jpg',
+        coverImageAltRu: 'Cover image RU',
+        coverImageAltEn: 'Cover image EN',
+      },
       viewCount: 42,
       reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
       tags: [

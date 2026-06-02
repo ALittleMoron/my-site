@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NotesService } from '../../../../services/notes.service';
 import { NoteFormComponent } from './note-form.component';
@@ -10,15 +11,38 @@ import { NoteFormComponent } from './note-form.component';
 describe('NoteFormComponent', () => {
   let fixture: ComponentFixture<NoteFormComponent>;
   let notesService: {
+    getTree: jest.Mock;
     getTags: jest.Mock;
     createTag: jest.Mock;
     updateTag: jest.Mock;
     deleteTag: jest.Mock;
     restoreTag: jest.Mock;
   };
+  let mediaUpload: { uploadMediaFile: jest.Mock };
 
   beforeEach(async () => {
+    mediaUpload = {
+      uploadMediaFile: jest.fn().mockReturnValue(of('https://cdn.example.com/cover.jpg')),
+    };
     notesService = {
+      getTree: jest.fn().mockReturnValue(
+        of({
+          folders: [
+            {
+              folder: 'Engineering',
+              notes: [
+                {
+                  title: 'Typed note',
+                  slug: 'typed-note',
+                  publishStatus: 'Published',
+                  publishedAt: '2026-01-02T03:04:05+00:00',
+                  updatedAt: '2026-01-03T03:04:05+00:00',
+                },
+              ],
+            },
+          ],
+        }),
+      ),
       getTags: jest.fn().mockReturnValue(
         of([
           tag({ id: 1, name: 'Python', slug: 'python', deletedAt: null }),
@@ -42,7 +66,11 @@ describe('NoteFormComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [NoteFormComponent],
-      providers: [{ provide: NotesService, useValue: notesService }, provideI18nTesting()],
+      providers: [
+        { provide: NotesService, useValue: notesService },
+        { provide: MediaUploadService, useValue: mediaUpload },
+        provideI18nTesting(),
+      ],
     })
       .overrideComponent(NoteFormComponent, {
         remove: { imports: [MarkdownEditorComponent] },
@@ -98,6 +126,34 @@ describe('NoteFormComponent', () => {
       .nativeElement as HTMLInputElement;
     folderEn.value = 'Engineering';
     folderEn.dispatchEvent(new Event('input'));
+    const seoTitleRu = fixture.debugElement.query(By.css('#noteSeoTitleRu'))
+      .nativeElement as HTMLInputElement;
+    seoTitleRu.value = 'SEO типизированная заметка';
+    seoTitleRu.dispatchEvent(new Event('input'));
+    const seoTitleEn = fixture.debugElement.query(By.css('#noteSeoTitleEn'))
+      .nativeElement as HTMLInputElement;
+    seoTitleEn.value = 'SEO typed note';
+    seoTitleEn.dispatchEvent(new Event('input'));
+    const seoDescriptionRu = fixture.debugElement.query(By.css('#noteSeoDescriptionRu'))
+      .nativeElement as HTMLTextAreaElement;
+    seoDescriptionRu.value = 'Описание для поисковой выдачи';
+    seoDescriptionRu.dispatchEvent(new Event('input'));
+    const seoDescriptionEn = fixture.debugElement.query(By.css('#noteSeoDescriptionEn'))
+      .nativeElement as HTMLTextAreaElement;
+    seoDescriptionEn.value = 'Description for search results';
+    seoDescriptionEn.dispatchEvent(new Event('input'));
+    const coverImageUrl = fixture.debugElement.query(By.css('#noteCoverImageUrl'))
+      .nativeElement as HTMLInputElement;
+    coverImageUrl.value = 'https://example.com/cover.jpg';
+    coverImageUrl.dispatchEvent(new Event('input'));
+    const coverImageAltRu = fixture.debugElement.query(By.css('#noteCoverImageAltRu'))
+      .nativeElement as HTMLInputElement;
+    coverImageAltRu.value = 'Обложка';
+    coverImageAltRu.dispatchEvent(new Event('input'));
+    const coverImageAltEn = fixture.debugElement.query(By.css('#noteCoverImageAltEn'))
+      .nativeElement as HTMLInputElement;
+    coverImageAltEn.value = 'Cover';
+    coverImageAltEn.dispatchEvent(new Event('input'));
     const tagCheckbox = fixture.debugElement.query(By.css('#noteTag-1'))
       .nativeElement as HTMLInputElement;
     tagCheckbox.click();
@@ -110,11 +166,35 @@ describe('NoteFormComponent', () => {
       slug: 'typed-note',
       publishStatus: 'Draft',
       tagIds: [1],
+      metadata: {
+        seoTitleRu: 'SEO типизированная заметка',
+        seoTitleEn: 'SEO typed note',
+        seoDescriptionRu: 'Описание для поисковой выдачи',
+        seoDescriptionEn: 'Description for search results',
+        coverImageUrl: 'https://example.com/cover.jpg',
+        coverImageAltRu: 'Обложка',
+        coverImageAltEn: 'Cover',
+      },
       translations: {
         ru: { title: 'Типизированная заметка', content: 'Содержимое', folder: 'Инженерия' },
         en: { title: 'Typed note', content: 'Content', folder: 'Engineering' },
       },
     });
+  });
+
+  it('uploads cover image and writes access URL into the metadata field', () => {
+    const fileInput = fixture.debugElement.query(By.css('#noteCoverImageFile'))
+      .nativeElement as HTMLInputElement;
+    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file] });
+
+    fileInput.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const coverImageUrl = fixture.debugElement.query(By.css('#noteCoverImageUrl'))
+      .nativeElement as HTMLInputElement;
+    expect(mediaUpload.uploadMediaFile).toHaveBeenCalledWith(file);
+    expect(coverImageUrl.value).toBe('https://cdn.example.com/cover.jpg');
   });
 
   it('updates SEO analysis while editing localized fields', () => {
@@ -140,6 +220,40 @@ describe('NoteFormComponent', () => {
 
     expect(text).toContain('SEO-анализ');
     expect(text).toContain('/notes/typed-note');
+  });
+
+  it('warns when wiki links point to missing note slugs', () => {
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+
+    contentEditors[0].componentInstance.valueChange.emit(
+      'См. [[typed-note]] и [[missing-note|отсутствующую заметку]].',
+    );
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('missing-note');
+  });
+
+  it('renders active-language preview content with wiki links', () => {
+    const titleRu = fixture.debugElement.query(By.css('#noteTitleRu'))
+      .nativeElement as HTMLInputElement;
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+
+    titleRu.value = 'Предпросмотр заметки';
+    titleRu.dispatchEvent(new Event('input'));
+    contentEditors[0].componentInstance.valueChange.emit(
+      'Откройте [[typed-note|типизированную заметку]].',
+    );
+    fixture.detectChanges();
+
+    const preview = fixture.debugElement.query(By.css('.notes-preview-article'))
+      .nativeElement as HTMLElement;
+    const link = fixture.debugElement.query(By.css('.notes-preview-article a'))
+      .nativeElement as HTMLAnchorElement;
+
+    expect(preview.textContent).toContain('Предпросмотр заметки');
+    expect(preview.textContent).toContain('типизированную заметку');
+    expect(link.getAttribute('href')).toBe('/notes/typed-note');
   });
 });
 

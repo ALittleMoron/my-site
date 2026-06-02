@@ -62,6 +62,13 @@ Portfolio/notes site and knowledge database
   represented by an enum, and the initial/default UI language must come from the required
   `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation remains future work until
   explicitly designed.
+- Article authoring uses Notes as the article model. SEO metadata for notes is explicit and
+  nullable until the planned metadata-hardening release: API write payloads must include a
+  `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
+  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
+  null. SEO analysis is advisory-only and must not block saving or publishing. Wiki-style note
+  links use `[[note-slug]]` and `[[note-slug|Custom label]]`; reserve matrix link syntax for a
+  later design after matrix question slugs exist.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains and `/api/*`, while frontend nginx serves the SPA and falls back to `index.html`.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created

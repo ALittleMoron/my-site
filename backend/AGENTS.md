@@ -104,6 +104,12 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   such as `title`, `content`, `folder`, `name`, or localized matrix text. Keep canonical RU/EN
   fields on the domain object and build localized public values in response schemas or explicit read
   models using `LanguageEnum`.
+- Note article SEO metadata belongs to the note contract, not to a generic translation table.
+  Keep the explicit nullable fields `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
+  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` on note
+  domain/API/storage models until a planned metadata-hardening release changes that contract. Note
+  create/update API payloads must require the `metadata` object itself while allowing individual
+  metadata fields to be null, with no production defaults.
 - Read/write APIs that expose localized note, tag, or competency matrix content must use the
   backend language enum and require explicit `LanguageEnum`/`language` selection where localized
   values are returned.

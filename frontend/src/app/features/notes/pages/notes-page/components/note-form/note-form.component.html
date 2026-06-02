@@ -10,6 +10,27 @@
         (input)="onSlugInput()"
       />
     </div>
+    <div class="col-md-8">
+      <label class="form-label" for="noteCoverImageUrl">{{ 'notes.form.coverImageUrl' | t }}</label>
+      <input
+        id="noteCoverImageUrl"
+        type="url"
+        class="form-control"
+        formControlName="coverImageUrl"
+      />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="noteCoverImageFile">{{
+        'notes.form.coverImageFile' | t
+      }}</label>
+      <input
+        id="noteCoverImageFile"
+        type="file"
+        class="form-control"
+        accept="image/*"
+        (change)="uploadCoverImage($event)"
+      />
+    </div>
   </div>
 
   <ul class="nav nav-tabs mt-3" role="tablist">
@@ -46,6 +67,37 @@
           <label class="form-label" for="noteFolderRu">{{ 'notes.form.folderRu' | t }}</label>
           <input id="noteFolderRu" type="text" class="form-control" formControlName="folderRu" />
         </div>
+        <div class="col-md-8">
+          <label class="form-label" for="noteSeoTitleRu">{{ 'notes.form.seoTitleRu' | t }}</label>
+          <input
+            id="noteSeoTitleRu"
+            type="text"
+            class="form-control"
+            formControlName="seoTitleRu"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="noteCoverImageAltRu">
+            {{ 'notes.form.coverImageAltRu' | t }}
+          </label>
+          <input
+            id="noteCoverImageAltRu"
+            type="text"
+            class="form-control"
+            formControlName="coverImageAltRu"
+          />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="noteSeoDescriptionRu">
+            {{ 'notes.form.seoDescriptionRu' | t }}
+          </label>
+          <textarea
+            id="noteSeoDescriptionRu"
+            class="form-control"
+            rows="3"
+            formControlName="seoDescriptionRu"
+          ></textarea>
+        </div>
         <div class="col-12">
           <div class="form-label">{{ 'notes.form.contentRu' | t }}</div>
           <app-markdown-editor
@@ -72,6 +124,37 @@
           <label class="form-label" for="noteFolderEn">{{ 'notes.form.folderEn' | t }}</label>
           <input id="noteFolderEn" type="text" class="form-control" formControlName="folderEn" />
         </div>
+        <div class="col-md-8">
+          <label class="form-label" for="noteSeoTitleEn">{{ 'notes.form.seoTitleEn' | t }}</label>
+          <input
+            id="noteSeoTitleEn"
+            type="text"
+            class="form-control"
+            formControlName="seoTitleEn"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="noteCoverImageAltEn">
+            {{ 'notes.form.coverImageAltEn' | t }}
+          </label>
+          <input
+            id="noteCoverImageAltEn"
+            type="text"
+            class="form-control"
+            formControlName="coverImageAltEn"
+          />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="noteSeoDescriptionEn">
+            {{ 'notes.form.seoDescriptionEn' | t }}
+          </label>
+          <textarea
+            id="noteSeoDescriptionEn"
+            class="form-control"
+            rows="3"
+            formControlName="seoDescriptionEn"
+          ></textarea>
+        </div>
         <div class="col-12">
           <div class="form-label">{{ 'notes.form.contentEn' | t }}</div>
           <app-markdown-editor
@@ -95,6 +178,16 @@
   </div>
 
   <app-note-seo-panel [analysis]="seoAnalysis()" />
+
+  <app-note-authoring-preview
+    [title]="activePreview().title"
+    [content]="activePreview().content"
+    [tags]="activePreview().tags"
+    [coverImageUrl]="activePreview().coverImageUrl"
+    [coverImageAlt]="activePreview().coverImageAlt"
+    [seoTitle]="activePreview().seoTitle"
+    [seoDescription]="activePreview().seoDescription"
+  />
 
   <div class="border rounded-3 p-3">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">

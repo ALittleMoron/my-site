@@ -6,19 +6,26 @@ export type NoteSeoStatus = 'good' | 'warning' | 'missing';
 export type NoteSeoCheckId =
   | 'title-present'
   | 'title-length'
+  | 'seo-title'
+  | 'seo-description'
+  | 'cover-image'
+  | 'cover-image-alt'
   | 'content-present'
   | 'description-quality'
   | 'slug-present'
   | 'slug-format'
   | 'single-h1'
   | 'content-length'
-  | 'active-tags';
+  | 'active-tags'
+  | 'wiki-links';
 
 export interface NoteSeoRules {
   titleMinLength: number;
   titleMaxLength: number;
   descriptionMinLength: number;
   descriptionMaxLength: number;
+  coverAltMinLength: number;
+  coverAltMaxLength: number;
   contentMinWords: number;
   slugPattern: RegExp;
   canonicalPathPrefix: string;
@@ -28,6 +35,11 @@ export interface NoteSeoInput {
   slug: string;
   title: string;
   content: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
+  missingWikiLinkSlugs: readonly string[];
   folder: string;
   tags: NoteTag[];
   language: LanguageCode;
@@ -56,6 +68,8 @@ export const NOTE_SEO_ANALYSIS_RULES: NoteSeoRules = {
   titleMaxLength: 70,
   descriptionMinLength: 70,
   descriptionMaxLength: 160,
+  coverAltMinLength: 5,
+  coverAltMaxLength: 125,
   contentMinWords: 20,
   slugPattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   canonicalPathPrefix: '/notes',
@@ -66,6 +80,10 @@ export function analyzeNoteSeo(params: {
   rules: NoteSeoRules;
 }): NoteSeoAnalysis {
   const title = params.input.title.trim();
+  const seoTitle = params.input.seoTitle?.trim() ?? '';
+  const seoDescription = params.input.seoDescription?.trim() ?? '';
+  const coverImageUrl = params.input.coverImageUrl?.trim() ?? '';
+  const coverImageAlt = params.input.coverImageAlt?.trim() ?? '';
   const content = params.input.content.trim();
   const slug = params.input.slug.trim();
   const plainContent = markdownToPlainText(content);
@@ -91,6 +109,50 @@ export function analyzeNoteSeo(params: {
         min: params.rules.titleMinLength,
         max: params.rules.titleMaxLength,
         count: title.length,
+      },
+    }),
+    buildCheck({
+      id: 'seo-title',
+      status: textRangeStatus({
+        value: seoTitle,
+        minLength: params.rules.titleMinLength,
+        maxLength: params.rules.titleMaxLength,
+      }),
+      messageParams: {
+        min: params.rules.titleMinLength,
+        max: params.rules.titleMaxLength,
+        count: seoTitle.length,
+      },
+    }),
+    buildCheck({
+      id: 'seo-description',
+      status: textRangeStatus({
+        value: seoDescription,
+        minLength: params.rules.descriptionMinLength,
+        maxLength: params.rules.descriptionMaxLength,
+      }),
+      messageParams: {
+        min: params.rules.descriptionMinLength,
+        max: params.rules.descriptionMaxLength,
+        count: seoDescription.length,
+      },
+    }),
+    buildCheck({
+      id: 'cover-image',
+      status: coverImageUrl ? 'good' : 'missing',
+      messageParams: {},
+    }),
+    buildCheck({
+      id: 'cover-image-alt',
+      status: textRangeStatus({
+        value: coverImageAlt,
+        minLength: params.rules.coverAltMinLength,
+        maxLength: params.rules.coverAltMaxLength,
+      }),
+      messageParams: {
+        min: params.rules.coverAltMinLength,
+        max: params.rules.coverAltMaxLength,
+        count: coverImageAlt.length,
       },
     }),
     buildCheck({
@@ -142,6 +204,13 @@ export function analyzeNoteSeo(params: {
       status: params.input.tags.some((tag) => tag.deletedAt === null) ? 'good' : 'warning',
       messageParams: {},
     }),
+    buildCheck({
+      id: 'wiki-links',
+      status: params.input.missingWikiLinkSlugs.length === 0 ? 'good' : 'warning',
+      messageParams: {
+        slugs: params.input.missingWikiLinkSlugs.join(', '),
+      },
+    }),
   ];
   return {
     overallStatus: overallStatus(checks),
@@ -181,6 +250,18 @@ function titleLengthStatus(params: {
 }): NoteSeoStatus {
   if (!params.title) return 'missing';
   if (params.title.length < params.minLength || params.title.length > params.maxLength) {
+    return 'warning';
+  }
+  return 'good';
+}
+
+function textRangeStatus(params: {
+  value: string;
+  minLength: number;
+  maxLength: number;
+}): NoteSeoStatus {
+  if (!params.value) return 'missing';
+  if (params.value.length < params.minLength || params.value.length > params.maxLength) {
     return 'warning';
   }
   return 'good';

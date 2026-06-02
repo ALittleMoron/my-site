@@ -46,6 +46,16 @@ export interface NoteTagDto {
   translations: NoteTagTranslationsDto;
 }
 
+export interface NoteMetadataDto {
+  seoTitleRu: string | null;
+  seoTitleEn: string | null;
+  seoDescriptionRu: string | null;
+  seoDescriptionEn: string | null;
+  coverImageUrl: string | null;
+  coverImageAltRu: string | null;
+  coverImageAltEn: string | null;
+}
+
 export interface NoteSummaryDto {
   id: string;
   title: string;
@@ -56,6 +66,7 @@ export interface NoteSummaryDto {
   publishStatus: NotePublishStatus;
   updatedAt: string;
   excerpt: string;
+  metadata: NoteMetadataDto;
   tags: NoteTagDto[];
 }
 
@@ -151,6 +162,16 @@ export interface NoteReactionCounts {
   poop: number;
 }
 
+export interface NoteMetadata {
+  seoTitleRu: string | null;
+  seoTitleEn: string | null;
+  seoDescriptionRu: string | null;
+  seoDescriptionEn: string | null;
+  coverImageUrl: string | null;
+  coverImageAltRu: string | null;
+  coverImageAltEn: string | null;
+}
+
 export interface NoteSummary {
   id: string;
   title: string;
@@ -161,6 +182,7 @@ export interface NoteSummary {
   publishStatus: NotePublishStatus;
   updatedAt: string;
   excerpt: string;
+  metadata: NoteMetadata;
   viewCount: number;
   tags: NoteTag[];
 }
@@ -225,6 +247,7 @@ export interface NotePayload {
   slug: string;
   publishStatus: NotePublishStatus;
   tagIds: number[];
+  metadata: NoteMetadata;
   translations: NoteTranslations;
 }
 
@@ -313,6 +336,7 @@ export function mapNoteSummaryDto(
     publishStatus: dto.publishStatus,
     updatedAt: dto.updatedAt,
     excerpt: dto.excerpt,
+    metadata: { ...dto.metadata },
     viewCount: stats.viewCount,
     tags: dto.tags.map(mapTagDto),
   };

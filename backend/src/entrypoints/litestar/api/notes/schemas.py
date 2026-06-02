@@ -15,6 +15,7 @@ from core.notes.schemas import (
     NoteAnalyticsStats,
     NoteAnalyticsTotals,
     NoteCreateParams,
+    NoteMetadata,
     NotePublicStats,
     NotePublicStatsCollection,
     NoteReactionCounts,
@@ -122,6 +123,39 @@ class NoteReactionCountsResponseSchema(CamelCaseSchema):
         )
 
 
+class NoteMetadataSchema(CamelCaseSchema):
+    seo_title_ru: Annotated[str | None, Field(title="SEO заголовок RU", max_length=255)]
+    seo_title_en: Annotated[str | None, Field(title="SEO заголовок EN", max_length=255)]
+    seo_description_ru: Annotated[str | None, Field(title="SEO описание RU", max_length=320)]
+    seo_description_en: Annotated[str | None, Field(title="SEO описание EN", max_length=320)]
+    cover_image_url: Annotated[str | None, Field(title="URL обложки", max_length=2048)]
+    cover_image_alt_ru: Annotated[str | None, Field(title="Alt обложки RU", max_length=255)]
+    cover_image_alt_en: Annotated[str | None, Field(title="Alt обложки EN", max_length=255)]
+
+    def to_domain_schema(self) -> NoteMetadata:
+        return NoteMetadata(
+            seo_title_ru=self.seo_title_ru,
+            seo_title_en=self.seo_title_en,
+            seo_description_ru=self.seo_description_ru,
+            seo_description_en=self.seo_description_en,
+            cover_image_url=self.cover_image_url,
+            cover_image_alt_ru=self.cover_image_alt_ru,
+            cover_image_alt_en=self.cover_image_alt_en,
+        )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: NoteMetadata) -> Self:
+        return cls(
+            seo_title_ru=schema.seo_title_ru,
+            seo_title_en=schema.seo_title_en,
+            seo_description_ru=schema.seo_description_ru,
+            seo_description_en=schema.seo_description_en,
+            cover_image_url=schema.cover_image_url,
+            cover_image_alt_ru=schema.cover_image_alt_ru,
+            cover_image_alt_en=schema.cover_image_alt_en,
+        )
+
+
 class NoteSummaryResponseSchema(CamelCaseSchema):
     id: Annotated[str, Field(title="Идентификатор")]
     title: Annotated[str, Field(title="Заголовок")]
@@ -132,6 +166,7 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     updated_at: Annotated[str, Field(title="Дата обновления")]
     excerpt: Annotated[str, Field(title="Короткое превью")]
+    metadata: Annotated[NoteMetadataSchema, Field(title="SEO metadata")]
     tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
 
     @classmethod
@@ -153,6 +188,7 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
             publish_status=schema.publish_status,
             updated_at=schema.updated_at.isoformat(),
             excerpt=cls.build_excerpt(content=schema.localized_content(language=language)),
+            metadata=NoteMetadataSchema.from_domain_schema(schema=schema.metadata),
             tags=[
                 TagResponseSchema.from_domain_schema(schema=tag, language=language)
                 for tag in schema.tags
@@ -280,6 +316,7 @@ class NoteRequestSchema(CamelCaseSchema):
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     tag_ids: Annotated[list[int], Field(title="Идентификаторы тегов")]
     translations: Annotated[NoteTranslationsSchema, Field(title="Переводы")]
+    metadata: Annotated[NoteMetadataSchema, Field(title="SEO metadata")]
 
     def to_create_schema(self, *, note_id: uuid.UUID, author_username: str) -> NoteCreateParams:
         return NoteCreateParams(
@@ -293,6 +330,7 @@ class NoteRequestSchema(CamelCaseSchema):
             folder_en=self.translations.en.folder,
             author_username=author_username,
             publish_status=self.publish_status,
+            metadata=self.metadata.to_domain_schema(),
             tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
         )
 
@@ -306,6 +344,7 @@ class NoteRequestSchema(CamelCaseSchema):
             folder_ru=self.translations.ru.folder,
             folder_en=self.translations.en.folder,
             publish_status=self.publish_status,
+            metadata=self.metadata.to_domain_schema(),
             tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
         )
 

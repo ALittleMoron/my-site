@@ -33,6 +33,13 @@ def upgrade() -> None:
         sa.Column("folder_ru", sa.String(length=255), nullable=False),
         sa.Column("folder_en", sa.String(length=255), nullable=False),
         sa.Column("author_username", sa.String(length=255), nullable=False),
+        sa.Column("seo_title_ru", sa.String(length=255), nullable=True),
+        sa.Column("seo_title_en", sa.String(length=255), nullable=True),
+        sa.Column("seo_description_ru", sa.String(length=320), nullable=True),
+        sa.Column("seo_description_en", sa.String(length=320), nullable=True),
+        sa.Column("cover_image_url", sa.String(length=2048), nullable=True),
+        sa.Column("cover_image_alt_ru", sa.String(length=255), nullable=True),
+        sa.Column("cover_image_alt_en", sa.String(length=255), nullable=True),
         sa.Column(
             "search_vector_ru",
             postgresql.TSVECTOR(),

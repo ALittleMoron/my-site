@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
+import { renderNoteMarkdown } from '../../../../models/note-wiki-links';
 import { NoteDetail, NoteReactionKind } from '../../../../models/notes.model';
 import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
@@ -54,7 +53,7 @@ export class NoteDetailComponent {
   readonly contentHtml = computed(() => {
     const note = this.note();
     if (!note?.content) return '';
-    return renderMarkdown(note.content);
+    return renderNoteMarkdown(note.content);
   });
 
   readonly isDraft = computed(() => this.note()?.publishStatus === 'Draft');
@@ -67,6 +66,15 @@ export class NoteDetailComponent {
         slug: note.slug,
         title: note.title,
         content: note.content,
+        seoTitle: this.language() === 'ru' ? note.metadata.seoTitleRu : note.metadata.seoTitleEn,
+        seoDescription:
+          this.language() === 'ru'
+            ? note.metadata.seoDescriptionRu
+            : note.metadata.seoDescriptionEn,
+        coverImageUrl: note.metadata.coverImageUrl,
+        coverImageAlt:
+          this.language() === 'ru' ? note.metadata.coverImageAltRu : note.metadata.coverImageAltEn,
+        missingWikiLinkSlugs: [],
         folder: note.folder,
         tags: note.tags,
         language: this.language(),
@@ -86,12 +94,6 @@ export class NoteDetailComponent {
     if (!note) return 0;
     return note.reactionCounts[kind];
   }
-}
-
-function renderMarkdown(markdown: string): string {
-  const html = marked.parse(markdown, { async: false });
-  const enhanced = html.replaceAll('<pre><code', '<pre class="markdown-code"><code');
-  return DOMPurify.sanitize(enhanced);
 }
 
 function formatDate(value: string, locale: string): string {

@@ -15,9 +15,18 @@ import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
+import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
 import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
-import { NoteDetail, NotePayload, NoteTag } from '../../../../models/notes.model';
+import { findMissingNoteWikiLinkSlugs } from '../../../../models/note-wiki-links';
+import {
+  NoteDetail,
+  NoteMetadata,
+  NotePayload,
+  NoteTag,
+  NoteTree,
+} from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
+import { NoteAuthoringPreviewComponent } from '../note-authoring-preview/note-authoring-preview.component';
 import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
 interface NoteFormControls {
@@ -28,7 +37,34 @@ interface NoteFormControls {
   slug: FormControl<string>;
   folderRu: FormControl<string>;
   folderEn: FormControl<string>;
+  seoTitleRu: FormControl<string>;
+  seoTitleEn: FormControl<string>;
+  seoDescriptionRu: FormControl<string>;
+  seoDescriptionEn: FormControl<string>;
+  coverImageUrl: FormControl<string>;
+  coverImageAltRu: FormControl<string>;
+  coverImageAltEn: FormControl<string>;
   publishStatus: FormControl<'Draft' | 'Published'>;
+}
+
+interface NoteMetadataFormValue {
+  seoTitleRu: string;
+  seoTitleEn: string;
+  seoDescriptionRu: string;
+  seoDescriptionEn: string;
+  coverImageUrl: string;
+  coverImageAltRu: string;
+  coverImageAltEn: string;
+}
+
+interface NotePreviewState {
+  title: string;
+  content: string;
+  tags: readonly NoteTag[];
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
 }
 
 interface TagFormControls {
@@ -82,12 +118,19 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
 @Component({
   selector: 'app-note-form',
   standalone: true,
-  imports: [ReactiveFormsModule, MarkdownEditorComponent, TranslatePipe, NoteSeoPanelComponent],
+  imports: [
+    ReactiveFormsModule,
+    MarkdownEditorComponent,
+    TranslatePipe,
+    NoteAuthoringPreviewComponent,
+    NoteSeoPanelComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './note-form.component.html',
 })
 export class NoteFormComponent implements OnInit {
   private readonly notesService = inject(NotesService);
+  private readonly mediaUpload = inject(MediaUploadService);
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private slugEdited = false;
@@ -100,6 +143,7 @@ export class NoteFormComponent implements OnInit {
 
   readonly tags = signal<TagDraft[]>([]);
   readonly selectedTagIds = signal<ReadonlySet<number>>(new Set<number>());
+  readonly availableNoteSlugs = signal<ReadonlySet<string> | null>(null);
   readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
 
@@ -111,6 +155,13 @@ export class NoteFormComponent implements OnInit {
     slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     folderRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     folderEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    seoTitleRu: new FormControl('', { nonNullable: true }),
+    seoTitleEn: new FormControl('', { nonNullable: true }),
+    seoDescriptionRu: new FormControl('', { nonNullable: true }),
+    seoDescriptionEn: new FormControl('', { nonNullable: true }),
+    coverImageUrl: new FormControl('', { nonNullable: true }),
+    coverImageAltRu: new FormControl('', { nonNullable: true }),
+    coverImageAltEn: new FormControl('', { nonNullable: true }),
     publishStatus: new FormControl<'Draft' | 'Published'>('Draft', { nonNullable: true }),
   });
 
@@ -124,19 +175,40 @@ export class NoteFormComponent implements OnInit {
   readonly seoAnalysis = computed(() => {
     const value = this.formSnapshot();
     const language = this.activeLanguageTab();
+    const metadata = toMetadata(value);
     return analyzeNoteSeo({
       input: {
         slug: value.slug,
         title: language === 'ru' ? value.titleRu : value.titleEn,
         content: language === 'ru' ? value.contentRu : value.contentEn,
+        seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
+        seoDescription: language === 'ru' ? metadata.seoDescriptionRu : metadata.seoDescriptionEn,
+        coverImageUrl: metadata.coverImageUrl,
+        coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
+        missingWikiLinkSlugs: missingWikiLinkSlugs({
+          markdown: language === 'ru' ? value.contentRu : value.contentEn,
+          availableSlugs: this.availableNoteSlugs(),
+        }),
         folder: language === 'ru' ? value.folderRu : value.folderEn,
         language,
-        tags: this.tags().filter(
-          (tag) => tag.deletedAt === null && this.selectedTagIds().has(tag.id),
-        ),
+        tags: this.activeTags(),
       },
       rules: NOTE_SEO_ANALYSIS_RULES,
     });
+  });
+  readonly activePreview = computed<NotePreviewState>(() => {
+    const value = this.formSnapshot();
+    const language = this.activeLanguageTab();
+    const metadata = toMetadata(value);
+    return {
+      title: language === 'ru' ? value.titleRu : value.titleEn,
+      content: language === 'ru' ? value.contentRu : value.contentEn,
+      tags: this.activeTags(),
+      coverImageUrl: metadata.coverImageUrl,
+      coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
+      seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
+      seoDescription: language === 'ru' ? metadata.seoDescriptionRu : metadata.seoDescriptionEn,
+    };
   });
 
   ngOnInit(): void {
@@ -151,6 +223,13 @@ export class NoteFormComponent implements OnInit {
         slug: note.slug,
         folderRu: note.translations.ru.folder,
         folderEn: note.translations.en.folder,
+        seoTitleRu: note.metadata.seoTitleRu ?? '',
+        seoTitleEn: note.metadata.seoTitleEn ?? '',
+        seoDescriptionRu: note.metadata.seoDescriptionRu ?? '',
+        seoDescriptionEn: note.metadata.seoDescriptionEn ?? '',
+        coverImageUrl: note.metadata.coverImageUrl ?? '',
+        coverImageAltRu: note.metadata.coverImageAltRu ?? '',
+        coverImageAltEn: note.metadata.coverImageAltEn ?? '',
         publishStatus: note.publishStatus,
       });
       this.formSnapshot.set(this.form.getRawValue());
@@ -160,6 +239,7 @@ export class NoteFormComponent implements OnInit {
       this.formSnapshot.set(this.form.getRawValue());
     });
     this.loadTags();
+    this.loadNoteTree();
   }
 
   onTitleEnInput(): void {
@@ -186,6 +266,18 @@ export class NoteFormComponent implements OnInit {
   setPublishStatusFromEvent(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.form.controls.publishStatus.setValue(checked ? 'Draft' : 'Published');
+  }
+
+  uploadCoverImage(event: Event): void {
+    const files = (event.target as HTMLInputElement).files;
+    const file = files?.item?.(0) ?? files?.[0];
+    if (!file) return;
+    this.mediaUpload
+      .uploadMediaFile(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((accessUrl) => {
+        this.form.controls.coverImageUrl.setValue(accessUrl);
+      });
   }
 
   toggleTag(tagId: number, event: Event): void {
@@ -343,6 +435,7 @@ export class NoteFormComponent implements OnInit {
       slug: value.slug,
       publishStatus: value.publishStatus,
       tagIds: activeTagIds,
+      metadata: toMetadata(value),
       translations: {
         ru: {
           title: value.titleRu,
@@ -368,6 +461,20 @@ export class NoteFormComponent implements OnInit {
       });
   }
 
+  private loadNoteTree(): void {
+    this.notesService
+      .getTree(this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tree) => this.availableNoteSlugs.set(noteTreeSlugs(tree)),
+        error: () => this.availableNoteSlugs.set(null),
+      });
+  }
+
+  private activeTags(): NoteTag[] {
+    return this.tags().filter((tag) => tag.deletedAt === null && this.selectedTagIds().has(tag.id));
+  }
+
   private currentLanguage(): LanguageCode {
     const language = this.i18n.language();
     if (language === null) {
@@ -377,6 +484,23 @@ export class NoteFormComponent implements OnInit {
   }
 }
 
+function toMetadata(value: NoteMetadataFormValue): NoteMetadata {
+  return {
+    seoTitleRu: optionalText(value.seoTitleRu),
+    seoTitleEn: optionalText(value.seoTitleEn),
+    seoDescriptionRu: optionalText(value.seoDescriptionRu),
+    seoDescriptionEn: optionalText(value.seoDescriptionEn),
+    coverImageUrl: optionalText(value.coverImageUrl),
+    coverImageAltRu: optionalText(value.coverImageAltRu),
+    coverImageAltEn: optionalText(value.coverImageAltEn),
+  };
+}
+
+function optionalText(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
 function toDraft(tag: NoteTag): TagDraft {
   return {
     ...tag,
@@ -384,6 +508,21 @@ function toDraft(tag: NoteTag): TagDraft {
     draftNameEn: tag.translations.en.name,
     draftSlug: tag.slug,
   };
+}
+
+function noteTreeSlugs(tree: NoteTree): ReadonlySet<string> {
+  return new Set(tree.folders.flatMap((folder) => folder.notes.map((note) => note.slug)));
+}
+
+function missingWikiLinkSlugs(params: {
+  markdown: string;
+  availableSlugs: ReadonlySet<string> | null;
+}): string[] {
+  if (params.availableSlugs === null) return [];
+  return findMissingNoteWikiLinkSlugs({
+    markdown: params.markdown,
+    availableSlugs: params.availableSlugs,
+  });
 }
 
 function compareTags(a: NoteTag, b: NoteTag): number {

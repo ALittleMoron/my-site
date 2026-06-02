@@ -6,7 +6,7 @@ from httpx import codes
 
 from core.enums import PublishStatusEnum
 from core.notes.exceptions import NoteNotFoundError
-from core.notes.schemas import NoteCreateParams, NoteUpdateParams
+from core.notes.schemas import NoteCreateParams, NoteMetadata, NoteUpdateParams
 from core.types import IntId
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
@@ -60,6 +60,15 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 folder_en="Inbox",
                 author_username="test",
                 publish_status=PublishStatusEnum.DRAFT,
+                metadata=NoteMetadata(
+                    seo_title_ru="SEO заметка",
+                    seo_title_en="SEO note",
+                    seo_description_ru="Описание для выдачи",
+                    seo_description_en="Search result description",
+                    cover_image_url="https://example.com/cover.jpg",
+                    cover_image_alt_ru="Обложка заметки",
+                    cover_image_alt_en="Note cover",
+                ),
                 tag_ids=[IntId(1), IntId(2)],
             ),
         )
@@ -90,6 +99,15 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 folder_ru="Входящие",
                 folder_en="Inbox",
                 publish_status="Published",
+                metadata={
+                    "seoTitleRu": "SEO обновлённая заметка",
+                    "seoTitleEn": "SEO updated note",
+                    "seoDescriptionRu": "Обновлённое описание",
+                    "seoDescriptionEn": "Updated description",
+                    "coverImageUrl": None,
+                    "coverImageAltRu": None,
+                    "coverImageAltEn": None,
+                },
                 tag_ids=[IntId(1)],
             ),
         )
@@ -107,8 +125,61 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 folder_ru="Входящие",
                 folder_en="Inbox",
                 publish_status=PublishStatusEnum.PUBLISHED,
+                metadata=NoteMetadata(
+                    seo_title_ru="SEO обновлённая заметка",
+                    seo_title_en="SEO updated note",
+                    seo_description_ru="Обновлённое описание",
+                    seo_description_en="Updated description",
+                    cover_image_url=None,
+                    cover_image_alt_ru=None,
+                    cover_image_alt_en=None,
+                ),
                 tag_ids=[IntId(1)],
             ),
+        )
+
+    def test_create_note_requires_metadata_object(self) -> None:
+        data = self.factory.api.note_request()
+        del data["metadata"]
+
+        response = self.api.post_create_note(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_note.assert_not_called()
+
+    def test_create_note_allows_null_metadata_fields(self) -> None:
+        self.use_case.create_note.return_value = self.factory.core.note(
+            note_id=self.note_id,
+            slug="nullable-metadata",
+            publish_status=PublishStatusEnum.PUBLISHED,
+        )
+        data = self.factory.api.note_request(
+            slug="nullable-metadata",
+            publish_status="Published",
+            metadata={
+                "seoTitleRu": None,
+                "seoTitleEn": None,
+                "seoDescriptionRu": None,
+                "seoDescriptionEn": None,
+                "coverImageUrl": None,
+                "coverImageAltRu": None,
+                "coverImageAltEn": None,
+            },
+        )
+
+        response = self.api.post_create_note(data=data)
+
+        assert response.status_code == codes.CREATED, response.content
+        params = self.use_case.create_note.call_args.kwargs["params"]
+        assert params.publish_status == PublishStatusEnum.PUBLISHED
+        assert params.metadata == NoteMetadata(
+            seo_title_ru=None,
+            seo_title_en=None,
+            seo_description_ru=None,
+            seo_description_en=None,
+            cover_image_url=None,
+            cover_image_alt_ru=None,
+            cover_image_alt_en=None,
         )
 
     def test_create_note_requires_all_translation_fields(self) -> None:

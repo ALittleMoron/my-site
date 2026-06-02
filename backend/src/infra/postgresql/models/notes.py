@@ -21,7 +21,7 @@ from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.enums import PublishStatusEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
-from core.notes.schemas import Note, Tag, Tags
+from core.notes.schemas import Note, NoteMetadata, Tag, Tags
 from core.types import IntId
 from infra.postgresql.models.base import BaseModel
 from infra.postgresql.models.mixins.publish import PublishMixin
@@ -61,6 +61,34 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
     author_username: Mapped[str] = mapped_column(
         String(length=255),
         doc="Username of the note author",
+    )
+    seo_title_ru: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="Russian SEO title override for the note",
+    )
+    seo_title_en: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="English SEO title override for the note",
+    )
+    seo_description_ru: Mapped[str | None] = mapped_column(
+        String(length=320),
+        doc="Russian SEO description for the note",
+    )
+    seo_description_en: Mapped[str | None] = mapped_column(
+        String(length=320),
+        doc="English SEO description for the note",
+    )
+    cover_image_url: Mapped[str | None] = mapped_column(
+        String(length=2048),
+        doc="Public cover image URL for the note",
+    )
+    cover_image_alt_ru: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="Russian cover image alt text",
+    )
+    cover_image_alt_en: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="English cover image alt text",
     )
     search_vector_ru: Mapped[str] = mapped_column(
         TSVECTOR(),
@@ -120,6 +148,13 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
             folder_ru=note.folder_ru,
             folder_en=note.folder_en,
             author_username=note.author_username,
+            seo_title_ru=note.metadata.seo_title_ru,
+            seo_title_en=note.metadata.seo_title_en,
+            seo_description_ru=note.metadata.seo_description_ru,
+            seo_description_en=note.metadata.seo_description_en,
+            cover_image_url=note.metadata.cover_image_url,
+            cover_image_alt_ru=note.metadata.cover_image_alt_ru,
+            cover_image_alt_en=note.metadata.cover_image_alt_en,
             published_at=note.published_at,
             publish_status=note.publish_status,
             created_at=note.created_at,
@@ -134,6 +169,13 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         self.slug = note.slug
         self.folder_ru = note.folder_ru
         self.folder_en = note.folder_en
+        self.seo_title_ru = note.metadata.seo_title_ru
+        self.seo_title_en = note.metadata.seo_title_en
+        self.seo_description_ru = note.metadata.seo_description_ru
+        self.seo_description_en = note.metadata.seo_description_en
+        self.cover_image_url = note.metadata.cover_image_url
+        self.cover_image_alt_ru = note.metadata.cover_image_alt_ru
+        self.cover_image_alt_en = note.metadata.cover_image_alt_en
         self.publish_status = note.publish_status
         self.published_at = note.published_at
         self.updated_at = note.updated_at
@@ -149,6 +191,7 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
             folder_ru=self.folder_ru,
             folder_en=self.folder_en,
             author_username=self.author_username,
+            metadata=self.to_metadata_domain_schema(),
             published_at=self.published_at,
             publish_status=PublishStatusEnum.from_storage_value(self.publish_status),
             created_at=self.created_at,
@@ -160,6 +203,17 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
                     if include_deleted_tags or link.tag.deleted_at is None
                 ],
             ),
+        )
+
+    def to_metadata_domain_schema(self) -> NoteMetadata:
+        return NoteMetadata(
+            seo_title_ru=self.seo_title_ru,
+            seo_title_en=self.seo_title_en,
+            seo_description_ru=self.seo_description_ru,
+            seo_description_en=self.seo_description_en,
+            cover_image_url=self.cover_image_url,
+            cover_image_alt_ru=self.cover_image_alt_ru,
+            cover_image_alt_en=self.cover_image_alt_en,
         )
 
 

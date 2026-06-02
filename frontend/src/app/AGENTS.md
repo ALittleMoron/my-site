@@ -55,6 +55,12 @@ Never violate these boundaries:
   the current `I18nService.language()` value as the explicit `language` query parameter for
   localized read requests, edit both RU/EN note and tag `translations` in authoring forms, and send
   both languages in write payloads.
+- Note article authoring must send an explicit `metadata` object with note create/update payloads.
+  Individual metadata fields may be null until the planned metadata-hardening release. Keep SEO
+  analysis advisory-only, keep in-form article/social previews derived from the active language,
+  and do not block save/publish on SEO warnings. Render note wiki links from Markdown
+  `[[note-slug]]` / `[[note-slug|Custom label]]` as internal note links, and only warn about missing
+  targets when existing note slugs are known.
 - Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
   language fallbacks for localized content.
 - Competency matrix content localises through the matrix API, not through the UI i18n bundle. Pass

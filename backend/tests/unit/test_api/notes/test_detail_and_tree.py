@@ -61,6 +61,15 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "publishStatus": "Published",
             "updatedAt": "2026-01-03T03:04:05+00:00",
             "excerpt": "Markdown detail",
+            "metadata": {
+                "seoTitleRu": None,
+                "seoTitleEn": None,
+                "seoDescriptionRu": None,
+                "seoDescriptionEn": None,
+                "coverImageUrl": None,
+                "coverImageAltRu": None,
+                "coverImageAltEn": None,
+            },
             "tags": [
                 {
                     "id": 2,

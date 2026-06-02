@@ -63,6 +63,13 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
                 folder_ru="Русская папка",
                 folder_en="English folder",
                 slug="localized-note",
+                seo_title_ru="SEO русская заметка",
+                seo_title_en="SEO English note",
+                seo_description_ru="Описание русской заметки",
+                seo_description_en="English note description",
+                cover_image_url="https://example.com/cover.jpg",
+                cover_image_alt_ru="Обложка",
+                cover_image_alt_en="Cover",
             ),
         )
 
@@ -80,6 +87,13 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
         assert result.localized_title(language=LanguageEnum.EN) == "English note"
         assert result.localized_content(language=LanguageEnum.EN) == "English content"
         assert result.localized_folder(language=LanguageEnum.EN) == "English folder"
+        assert result.metadata.seo_title_ru == "SEO русская заметка"
+        assert result.metadata.seo_title_en == "SEO English note"
+        assert result.metadata.seo_description_ru == "Описание русской заметки"
+        assert result.metadata.seo_description_en == "English note description"
+        assert result.metadata.cover_image_url == "https://example.com/cover.jpg"
+        assert result.metadata.cover_image_alt_ru == "Обложка"
+        assert result.metadata.cover_image_alt_en == "Cover"
 
     async def test_get_note_by_slug_not_found(self) -> None:
         with pytest.raises(NoteNotFoundError):
