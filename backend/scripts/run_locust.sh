@@ -9,6 +9,7 @@ cd "$backend_dir"
 profile="${1:?profile is required}"
 env_file="${2:?env file path is required}"
 PERFORMANCE_BACKEND_PID=""
+PERFORMANCE_REPORT_RUN_DIR=""
 
 require_var() {
     name="$1"
@@ -34,15 +35,14 @@ run_locust() {
     spawn_rate="$2"
     run_time="$3"
 
-    mkdir -p "$PERFORMANCE_REPORT_DIR"
     PYTHONPATH=src uv run --locked --all-groups locust \
         -f performance/locust/locustfile.py \
         --host "$PERFORMANCE_HOST" \
         --headless \
         --only-summary \
         --exit-code-on-error 0 \
-        --html "$PERFORMANCE_REPORT_DIR/locust-report.html" \
-        --csv "$PERFORMANCE_REPORT_DIR/locust" \
+        --html "$PERFORMANCE_REPORT_RUN_DIR/locust-report.html" \
+        --csv "$PERFORMANCE_REPORT_RUN_DIR/locust" \
         --csv-full-history \
         --users "$users" \
         --spawn-rate "$spawn_rate" \
@@ -74,9 +74,8 @@ start_local_backend_if_needed() {
     TEST_ENV_FILE="$env_file"
     ensure_backend_test_db
 
-    mkdir -p "$PERFORMANCE_REPORT_DIR"
     port="$(performance_host_port "$PERFORMANCE_HOST")"
-    log_file="${PERFORMANCE_BACKEND_LOG:-${PERFORMANCE_REPORT_DIR}/backend.log}"
+    log_file="${PERFORMANCE_BACKEND_LOG:-${PERFORMANCE_REPORT_RUN_DIR}/backend.log}"
 
     PYTHONPATH=src uv run uvicorn main:create_app --port "$port" --host 127.0.0.1 \
         >"$log_file" 2>&1 &
@@ -89,6 +88,7 @@ prepare_performance_run() {
     ensure_backend_deps
     load_env_file "$env_file"
     require_common_vars
+    PERFORMANCE_REPORT_RUN_DIR="$(create_performance_report_run_dir "$PERFORMANCE_REPORT_DIR" "locust")"
     trap cleanup_performance EXIT
     start_local_backend_if_needed
 }

@@ -24,13 +24,14 @@ make performance-baseline
 make performance-smoke PERFORMANCE_ENV_FILE=../.env
 ```
 
-Reports are written to `backend/performance/reports/` by default:
+Reports are written to `backend/performance/reports/locust/<timestamp>/` by default:
 
 - `locust-report.html`
 - `locust_stats.csv`
 - `locust_failures.csv`
 - `locust_exceptions.csv`
 - `locust_stats_history.csv`
+- `backend.log` when the target local backend is started by the performance script
 
 ## Query Plan Checks
 
@@ -51,7 +52,7 @@ Targeted full-text terms are present in 1% of notes so the measured searches are
 still running against large tables. The harness runs `VACUUM ANALYZE` after seeding and before
 measuring plans.
 
-Reports are written to `backend/performance/reports/query-plans/`:
+Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 
 - `summary.md`
 - `summary.json`
@@ -75,7 +76,10 @@ Reports are written to `backend/performance/reports/query-plans/`:
 
 ## Notes
 
-The Make targets prepare the backend uv environment, run Locust, and write HTML/CSV artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can run distributed with master/worker processes. Lighthouse CI is still tracked separately for frontend lab metrics and budgets.
+The Make targets prepare the backend uv environment, run Locust, and write timestamped HTML/CSV
+artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can
+run distributed with master/worker processes. Lighthouse CI is still tracked separately for
+frontend lab metrics and budgets.
 
 References:
 

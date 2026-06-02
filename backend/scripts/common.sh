@@ -35,6 +35,32 @@ invalidate_backend_deps_marker() {
     rm -f .venv/.self-contained-all-groups
 }
 
+performance_report_timestamp() {
+    date -u +"%Y%m%dT%H%M%SZ"
+}
+
+create_performance_report_run_dir() {
+    local report_root="$1"
+    local report_type="$2"
+    local timestamp
+    local report_type_dir
+    local candidate
+    local suffix
+
+    timestamp="$(performance_report_timestamp)"
+    report_type_dir="${report_root%/}/${report_type}"
+    candidate="${report_type_dir}/${timestamp}"
+    suffix=2
+
+    mkdir -p "$report_type_dir"
+    while ! mkdir "$candidate" 2>/dev/null; do
+        candidate="${report_type_dir}/${timestamp}-${suffix}"
+        suffix=$((suffix + 1))
+    done
+
+    printf '%s\n' "$candidate"
+}
+
 run_with_test_env() {
     # Intentional word splitting preserves the previous Makefile's KEY=value override form.
     env ${TEST_ENV_OVERRIDES:-} PYTHONPATH=src APP_USE_CACHE=false "$@"

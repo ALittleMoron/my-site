@@ -88,6 +88,7 @@ jobs:
       - name: "Print backend log on failure"
         if: failure()
         run: |
-          if [ -f backend/performance/reports/backend.log ]; then
-            cat backend/performance/reports/backend.log
+          latest_log="$(find backend/performance/reports/locust -name backend.log -type f -print 2>/dev/null | sort | tail -n 1 || true)"
+          if [ -n "$latest_log" ]; then
+            cat "$latest_log"
           fi

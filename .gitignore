@@ -90,7 +90,6 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
-backend/performance/reports/
 
 # Misc
 .DS_Store

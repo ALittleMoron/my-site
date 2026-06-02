@@ -28,8 +28,9 @@ require_var() {
 }
 
 require_var PERFORMANCE_REPORT_DIR
+report_run_dir="$(create_performance_report_run_dir "$PERFORMANCE_REPORT_DIR" "query-plans")"
 
 PYTHONPATH=src uv run --locked --all-groups python -m performance.query_plans \
     --profile "$profile" \
-    --report-dir "$PERFORMANCE_REPORT_DIR/query-plans" \
+    --report-dir "$report_run_dir" \
     --fail-on-finding
