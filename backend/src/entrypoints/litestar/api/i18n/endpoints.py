@@ -1,5 +1,6 @@
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, get, status_codes
+from litestar.params import FromPath
 
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.i18n.catalog import get_i18n_messages, get_language_label
@@ -39,7 +40,7 @@ class I18nApiController(Controller):
         name="i18n-bundle-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
-    async def get_bundle(self, language: LanguageEnum) -> I18nBundleResponseSchema:
+    async def get_bundle(self, language: FromPath[LanguageEnum]) -> I18nBundleResponseSchema:
         return I18nBundleResponseSchema(
             language=language,
             messages=dict(get_i18n_messages(language=language)),

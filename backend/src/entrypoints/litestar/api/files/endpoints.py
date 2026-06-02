@@ -2,7 +2,7 @@ from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, get
-from litestar.params import Parameter
+from litestar.params import QueryParameter
 
 from core.files.schemas import PresignPutObjectParams
 from core.files.use_cases import AbstractFilesUseCase
@@ -21,7 +21,7 @@ class FilesApiController(Controller):
     )
     async def presign_put_media_file(
         self,
-        content_type: Annotated[str, Parameter(query="contentType")],
+        content_type: Annotated[str, QueryParameter(name="contentType")],
         use_case: FromDishka[AbstractFilesUseCase],
     ) -> FilePresignPutResponseSchema:
         params = PresignPutObjectParams(

@@ -5,7 +5,7 @@ from typing import Annotated
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
-from litestar.params import Body, Parameter
+from litestar.params import Body, FromPath, QueryParameter
 
 from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
@@ -43,16 +43,16 @@ class NotesApiController(Controller):
     async def list_notes(  # noqa: PLR0913
         self,
         request: Request[JwtUser, Token | None, State],
-        page: Annotated[int, Parameter(query="page", ge=1)],
-        page_size: Annotated[int, Parameter(query="pageSize", ge=1, le=100)],
-        only_published: Annotated[bool, Parameter(query="onlyPublished")],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        page: Annotated[int, QueryParameter(name="page", ge=1)],
+        page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
+        only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        tag_slug: Annotated[str | None, Parameter(query="tagSlug")] = None,
-        published_from: Annotated[date | None, Parameter(query="publishedFrom")] = None,
-        published_to: Annotated[date | None, Parameter(query="publishedTo")] = None,
-        search_query: Annotated[str | None, Parameter(query="searchQuery")] = None,
+        tag_slug: Annotated[str | None, QueryParameter(name="tagSlug")] = None,
+        published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
+        published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
+        search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
     ) -> NoteListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
@@ -91,7 +91,7 @@ class NotesApiController(Controller):
         self,
         note_id: FromDishka[uuid.UUID],
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[NoteRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
@@ -118,7 +118,7 @@ class NotesApiController(Controller):
     async def list_notes_tree(
         self,
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> NoteTreeResponseSchema:
         tree = await use_case.list_tree(
@@ -135,12 +135,12 @@ class NotesApiController(Controller):
     )
     async def get_note(  # noqa: PLR0913
         self,
-        slug: str,
+        slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        only_published: Annotated[bool, Parameter(query="onlyPublished")],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> NoteDetailResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
@@ -168,10 +168,10 @@ class NotesApiController(Controller):
     )
     async def track_engaged_view(
         self,
-        slug: str,
+        slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, Parameter(query="language")],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
         if request.user.is_admin:
             return
@@ -188,10 +188,10 @@ class NotesApiController(Controller):
     )
     async def set_reaction(
         self,
-        slug: str,
+        slug: FromPath[str],
         data: Annotated[NoteReactionRequestSchema, Body()],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, Parameter(query="language")],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
         await analytics_use_case.set_reaction(
             slug=slug,
@@ -209,9 +209,9 @@ class NotesApiController(Controller):
     async def get_stats(
         self,
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        date_from: Annotated[date, Parameter(query="dateFrom")],
-        date_to: Annotated[date, Parameter(query="dateTo")],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        date_from: Annotated[date, QueryParameter(name="dateFrom")],
+        date_to: Annotated[date, QueryParameter(name="dateTo")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> NoteAnalyticsStatsResponseSchema:
         stats = await analytics_use_case.get_stats(
             date_from=date_from,
@@ -229,9 +229,9 @@ class NotesApiController(Controller):
     )
     async def update_note(
         self,
-        slug: str,
+        slug: FromPath[str],
         data: Annotated[NoteRequestSchema, Body()],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
     ) -> NoteDetailResponseSchema:
@@ -255,7 +255,7 @@ class NotesApiController(Controller):
     )
     async def delete_note(
         self,
-        slug: str,
+        slug: FromPath[str],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.delete_note(slug=slug)
@@ -269,7 +269,7 @@ class NotesApiController(Controller):
     )
     async def set_draft_status_to_note(
         self,
-        slug: str,
+        slug: FromPath[str],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.switch_note_publish_status(
@@ -286,7 +286,7 @@ class NotesApiController(Controller):
     )
     async def set_published_status_to_note(
         self,
-        slug: str,
+        slug: FromPath[str],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.switch_note_publish_status(
@@ -303,8 +303,8 @@ class NotesApiController(Controller):
     )
     async def list_tags(
         self,
-        include_deleted: Annotated[bool, Parameter(query="includeDeleted")],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.list_tags(include_deleted=include_deleted, language=language)
@@ -319,10 +319,10 @@ class NotesApiController(Controller):
     )
     async def search_tags(
         self,
-        search_name: Annotated[str, Parameter(query="searchName")],
-        include_deleted: Annotated[bool, Parameter(query="includeDeleted")],
-        limit: Annotated[int, Parameter(query="limit", ge=1, le=50)],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        search_name: Annotated[str, QueryParameter(name="searchName")],
+        include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
+        limit: Annotated[int, QueryParameter(name="limit", ge=1, le=50)],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.search_tags(
@@ -343,7 +343,7 @@ class NotesApiController(Controller):
     async def create_tag(
         self,
         tag_id: FromDishka[IntId],
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> TagResponseSchema:
@@ -361,8 +361,8 @@ class NotesApiController(Controller):
     )
     async def update_tag(
         self,
-        tag_id: int,
-        language: Annotated[LanguageEnum, Parameter(query="language")],
+        tag_id: FromPath[int],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> TagResponseSchema:
@@ -381,7 +381,7 @@ class NotesApiController(Controller):
     )
     async def delete_tag(
         self,
-        tag_id: int,
+        tag_id: FromPath[int],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.soft_delete_tag(tag_id=IntId(tag_id))
@@ -395,7 +395,7 @@ class NotesApiController(Controller):
     )
     async def restore_tag(
         self,
-        tag_id: int,
+        tag_id: FromPath[int],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.restore_tag(tag_id=IntId(tag_id))
