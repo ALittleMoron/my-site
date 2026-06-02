@@ -2,6 +2,7 @@ from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Response, get
 from verbose_http_exceptions import status
 
+from entrypoints.litestar.response_cache import ResponseCacheDomain
 from infra.config.settings import settings
 
 
@@ -13,6 +14,7 @@ class HealthcheckController(Controller):
         summary="Базовая проверка",
         description="Базовая проверка работоспособности приложения (Ответ 200 = живой)",
         cache=settings.app.get_cache_duration(1),  # 1 секунда
+        cache_key_builder=ResponseCacheDomain.HEALTHCHECK.cache_key_builder,
     )
     async def health(self) -> Response:
         return Response(content="", status_code=status.HTTP_200_OK)

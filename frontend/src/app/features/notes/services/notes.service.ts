@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { LanguageCode } from '../../../core/i18n/i18n.model';
 import {
@@ -9,6 +9,8 @@ import {
   NoteListDto,
   NoteListParams,
   NotePayload,
+  NotePublicStats,
+  NotePublicStatsCollectionDto,
   NoteReactionPayload,
   NoteStats,
   NoteStatsDto,
@@ -23,6 +25,7 @@ import {
   mapNoteListDto,
   mapNoteStatsDto,
   mapNoteTreeDto,
+  mapPublicStatsCollectionDto,
   mapTagDto,
 } from '../models/notes.model';
 
@@ -31,7 +34,7 @@ export class NotesService {
   private readonly api = inject(ApiClient);
 
   getNotes(params: NoteListParams): Observable<NoteList> {
-    const queryParams: Record<string, string> = {
+    const queryParams: Record<string, string | readonly string[]> = {
       page: String(params.page),
       pageSize: String(params.pageSize),
       language: params.language,
@@ -49,7 +52,17 @@ export class NotesService {
     if (params.searchQuery) {
       queryParams['searchQuery'] = params.searchQuery;
     }
-    return this.api.get<NoteListDto>('/api/notes', queryParams).pipe(map(mapNoteListDto));
+    return this.api.get<NoteListDto>('/api/notes', queryParams).pipe(
+      switchMap((dto) => {
+        const noteIds = dto.notes.map((note) => note.id);
+        if (noteIds.length === 0) {
+          return of(mapNoteListDto(dto, new Map<string, NotePublicStats>()));
+        }
+        return this.getPublicStats(noteIds).pipe(
+          map((statsByNoteId) => mapNoteListDto(dto, statsByNoteId)),
+        );
+      }),
+    );
   }
 
   getNote(slug: string, onlyPublished: boolean, language: LanguageCode): Observable<NoteDetail> {
@@ -58,7 +71,11 @@ export class NotesService {
         language,
         onlyPublished: String(onlyPublished),
       })
-      .pipe(map(mapNoteDetailDto));
+      .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
+  }
+
+  trackView(slug: string, language: LanguageCode): Observable<void> {
+    return this.api.post<void>(`/api/notes/detail/${slug}/analytics/view`, {}, { language });
   }
 
   trackEngagedView(slug: string, language: LanguageCode): Observable<void> {
@@ -94,13 +111,13 @@ export class NotesService {
   createNote(payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
     return this.api
       .post<NoteDetailDto>('/api/notes', payload, { language })
-      .pipe(map(mapNoteDetailDto));
+      .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
   }
 
   updateNote(slug: string, payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
     return this.api
       .put<NoteDetailDto>(`/api/notes/detail/${slug}`, payload, { language })
-      .pipe(map(mapNoteDetailDto));
+      .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
   }
 
   deleteNote(slug: string): Observable<void> {
@@ -153,5 +170,19 @@ export class NotesService {
 
   restoreTag(tagId: number): Observable<void> {
     return this.api.post<void>(`/api/notes/tags/${tagId}/restore`, {});
+  }
+
+  private mapDetailWithPublicStats(dto: NoteDetailDto): Observable<NoteDetail> {
+    return this.getPublicStats([dto.id]).pipe(
+      map((statsByNoteId) => mapNoteDetailDto(dto, statsByNoteId)),
+    );
+  }
+
+  private getPublicStats(
+    noteIds: readonly string[],
+  ): Observable<ReadonlyMap<string, NotePublicStats>> {
+    return this.api
+      .get<NotePublicStatsCollectionDto>('/api/notes/public-stats', { noteIds })
+      .pipe(map(mapPublicStatsCollectionDto));
   }
 }

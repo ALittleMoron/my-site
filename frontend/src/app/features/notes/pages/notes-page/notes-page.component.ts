@@ -493,6 +493,7 @@ export class NotesPageComponent implements OnInit {
           this.selectedReaction.set(
             toNoteReactionKind(this.anonymousReactionService.getReaction(note.slug)),
           );
+          this.trackPublicView(note);
           this.scheduleEngagedView(note);
           this.detailLoading.set(false);
         },
@@ -559,6 +560,14 @@ export class NotesPageComponent implements OnInit {
         next: () => this.trackedEngagedViewSlugs.add(state.slug),
         error: () => undefined,
       });
+  }
+
+  private trackPublicView(note: NoteDetail): void {
+    if (this.isAdmin() || note.publishStatus !== 'Published') return;
+    this.notesService
+      .trackView(note.slug, this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ error: () => undefined });
   }
 
   private clearEngagedViewTimer(): void {

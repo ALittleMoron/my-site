@@ -132,7 +132,6 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     updated_at: Annotated[str, Field(title="Дата обновления")]
     excerpt: Annotated[str, Field(title="Короткое превью")]
-    view_count: Annotated[int, Field(title="Количество просмотров")]
     tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
 
     @classmethod
@@ -140,7 +139,6 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
         cls,
         *,
         schema: Note,
-        stats: NotePublicStats,
         language: LanguageEnum,
     ) -> Self:
         return cls(
@@ -155,7 +153,6 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
             publish_status=schema.publish_status,
             updated_at=schema.updated_at.isoformat(),
             excerpt=cls.build_excerpt(content=schema.localized_content(language=language)),
-            view_count=stats.view_count,
             tags=[
                 TagResponseSchema.from_domain_schema(schema=tag, language=language)
                 for tag in schema.tags
@@ -172,7 +169,6 @@ class NoteSummaryResponseSchema(CamelCaseSchema):
 class NoteDetailResponseSchema(NoteSummaryResponseSchema):
     content: Annotated[str, Field(title="Содержимое")]
     created_at: Annotated[str, Field(title="Дата создания")]
-    reaction_counts: Annotated[NoteReactionCountsResponseSchema, Field(title="Реакции")]
     translations: Annotated[NoteTranslationsResponseSchema, Field(title="Переводы")]
 
     @classmethod
@@ -180,12 +176,10 @@ class NoteDetailResponseSchema(NoteSummaryResponseSchema):
         cls,
         *,
         schema: Note,
-        stats: NotePublicStats,
         language: LanguageEnum,
     ) -> Self:
         summary = NoteSummaryResponseSchema.from_domain_schema(
             schema=schema,
-            stats=stats,
             language=language,
         )
         return cls(
@@ -193,9 +187,6 @@ class NoteDetailResponseSchema(NoteSummaryResponseSchema):
             content=schema.localized_content(language=language),
             created_at=schema.created_at.isoformat(),
             translations=NoteTranslationsResponseSchema.from_domain_schema(schema=schema),
-            reaction_counts=NoteReactionCountsResponseSchema.from_domain_schema(
-                schema=stats.reaction_counts,
-            ),
         )
 
 
@@ -209,7 +200,6 @@ class NoteListResponseSchema(CamelCaseSchema):
         cls,
         *,
         schema: Notes,
-        stats: NotePublicStatsCollection,
         language: LanguageEnum,
     ) -> Self:
         return cls(
@@ -218,10 +208,38 @@ class NoteListResponseSchema(CamelCaseSchema):
             notes=[
                 NoteSummaryResponseSchema.from_domain_schema(
                     schema=note,
-                    stats=stats.by_note_id(note.id),
                     language=language,
                 )
                 for note in schema.values
+            ],
+        )
+
+
+class NotePublicStatsResponseSchema(CamelCaseSchema):
+    note_id: Annotated[str, Field(title="Идентификатор заметки")]
+    view_count: Annotated[int, Field(title="Количество просмотров")]
+    reaction_counts: Annotated[NoteReactionCountsResponseSchema, Field(title="Реакции")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: NotePublicStats) -> Self:
+        return cls(
+            note_id=str(schema.note_id),
+            view_count=schema.view_count,
+            reaction_counts=NoteReactionCountsResponseSchema.from_domain_schema(
+                schema=schema.reaction_counts,
+            ),
+        )
+
+
+class NotePublicStatsCollectionResponseSchema(CamelCaseSchema):
+    stats: Annotated[list[NotePublicStatsResponseSchema], Field(title="Публичная статистика")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: NotePublicStatsCollection) -> Self:
+        return cls(
+            stats=[
+                NotePublicStatsResponseSchema.from_domain_schema(schema=item)
+                for item in schema.values
             ],
         )
 

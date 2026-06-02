@@ -31,6 +31,11 @@ class _ValkeyConstants:
     namespaces: _ValkeyNamespaceConstants = _ValkeyNamespaceConstants()
 
 
+class _ResponseCacheConstants:
+    store_name: Literal["litestar_cache"] = "litestar_cache"
+    domain_key_separator: Literal[":"] = ":"
+
+
 class _FilesConstants:
     allowed_to_upload_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 
@@ -43,6 +48,7 @@ class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
     valkey: _ValkeyConstants = _ValkeyConstants()
+    response_cache: _ResponseCacheConstants = _ResponseCacheConstants()
     files: _FilesConstants = _FilesConstants()
     search: _SearchConstants = _SearchConstants()
 

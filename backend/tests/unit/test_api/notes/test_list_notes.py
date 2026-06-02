@@ -7,7 +7,7 @@ from httpx import codes
 from core.auth.exceptions import ForbiddenError
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import NoteFilters, NotePublicStats, NotePublicStatsCollection
+from core.notes.schemas import NoteFilters, NotePublicStatsCollection
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -40,15 +40,6 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             total_count=1,
             total_pages=1,
         )
-        self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
-            values=[
-                NotePublicStats(
-                    note_id=note.id,
-                    view_count=12,
-                    reaction_counts=self.factory.core.note_reaction_counts(),
-                ),
-            ],
-        )
 
         response = self.api.get_notes(page=1, page_size=10, only_published=True, tag_slug="python")
 
@@ -67,7 +58,6 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     "publishStatus": "Published",
                     "updatedAt": "2026-01-03T03:04:05+00:00",
                     "excerpt": "Typed notes content for excerpt.",
-                    "viewCount": 12,
                     "tags": [
                         {
                             "id": 1,
@@ -95,6 +85,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 search_query=None,
             ),
         )
+        self.analytics_use_case.get_public_stats.assert_not_called()
 
     def test_list_notes_with_publish_date_range_and_search_query(self) -> None:
         self.use_case.list_notes.return_value = self.factory.core.note_list(

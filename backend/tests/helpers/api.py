@@ -145,6 +145,21 @@ class APIHelper:
             params["onlyPublished"] = only_published
         return self.client.get(f"/api/notes/detail/{slug}", params=params)
 
+    def get_note_public_stats(self, note_ids: list[str] | None) -> Response:
+        params: dict[str, list[str]] = {}
+        if note_ids is not None:
+            params["noteIds"] = note_ids
+        return self.client.get("/api/notes/public-stats", params=params)
+
+    def post_note_view(self, slug: str, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post(
+            f"/api/notes/detail/{slug}/analytics/view",
+            params=params,
+        )
+
     def post_note_engaged_view(self, slug: str, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:

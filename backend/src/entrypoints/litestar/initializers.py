@@ -24,6 +24,10 @@ from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
+from entrypoints.litestar.response_cache import (
+    ResponseCacheDomain,
+    ResponseCacheDomainStore,
+)
 from infra.config import loggers
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -32,15 +36,30 @@ Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | Abstract
 
 
 def create_stores() -> dict[str, Store]:
+    response_cache_domain_stores = (
+        {
+            domain: ValkeyStore.with_client(
+                url=settings.valkey.url_for_http_cache.get_secret_value(),
+                db=constants.valkey.databases.response_cache,
+                port=settings.valkey.port,
+                namespace=f"{constants.valkey.namespaces.framework}_{domain.value}",
+            )
+            for domain in ResponseCacheDomain
+        }
+        if settings.app.use_cache
+        else {}
+    )
+    store_name = constants.response_cache.store_name
     return {
         **(
             {
-                "litestar_cache": ValkeyStore.with_client(
-                    url=settings.valkey.url_for_http_cache.get_secret_value(),
-                    db=constants.valkey.databases.response_cache,
-                    port=settings.valkey.port,
-                    namespace=constants.valkey.namespaces.framework,
+                store_name: ResponseCacheDomainStore(
+                    stores=response_cache_domain_stores,
                 ),
+                **{
+                    f"{store_name}_{domain.value}": store
+                    for domain, store in response_cache_domain_stores.items()
+                },
             }
             if settings.app.use_cache
             else {}
@@ -126,7 +145,9 @@ def create_litestar_app(
         exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
         stores=create_stores(),
         response_cache_config=(
-            ResponseCacheConfig(store="litestar_cache") if settings.app.use_cache else None
+            ResponseCacheConfig(store=constants.response_cache.store_name)
+            if settings.app.use_cache
+            else None
         ),
         middleware=[*create_middlewares(container), *extra_middlewares],
         plugins=[*create_plugins(), *extra_plugins],

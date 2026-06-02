@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { NotesService } from './notes.service';
 
+const NOTE_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('NotesService', () => {
   let service: NotesService;
   let httpMock: HttpTestingController;
@@ -53,7 +55,7 @@ describe('NotesService', () => {
       totalPages: 1,
       notes: [
         {
-          id: '00000000-0000-0000-0000-000000000001',
+          id: NOTE_ID,
           title: 'Typed notes',
           content: 'Ignored in list',
           slug: 'typed-notes',
@@ -63,7 +65,6 @@ describe('NotesService', () => {
           publishStatus: 'Published',
           updatedAt: '2026-01-03T03:04:05+00:00',
           excerpt: 'Excerpt',
-          viewCount: 42,
           tags: [
             {
               id: 1,
@@ -76,6 +77,7 @@ describe('NotesService', () => {
         },
       ],
     });
+    flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 42 }]);
 
     expect(firstTitle).toBe('Typed notes');
     expect(firstViewCount).toBe(42);
@@ -95,7 +97,7 @@ describe('NotesService', () => {
     expect(req.request.params.get('language')).toBe('ru');
     expect(req.request.params.get('onlyPublished')).toBe('true');
     req.flush({
-      id: '00000000-0000-0000-0000-000000000001',
+      id: NOTE_ID,
       title: 'Typed notes',
       content: '# Markdown',
       slug: 'typed-notes',
@@ -106,16 +108,33 @@ describe('NotesService', () => {
       createdAt: '2026-01-01T03:04:05+00:00',
       updatedAt: '2026-01-03T03:04:05+00:00',
       excerpt: 'Markdown',
-      viewCount: 5,
-      reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
       tags: [],
+      translations: {
+        ru: { title: 'Типизированные заметки', content: '# Markdown', folder: 'Инженерия' },
+        en: { title: 'Typed notes', content: '# Markdown', folder: 'Engineering' },
+      },
     });
+    flushPublicStats(httpMock, [
+      {
+        noteId: NOTE_ID,
+        viewCount: 5,
+        reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
+      },
+    ]);
 
     expect(content).toBe('# Markdown');
     expect(fireCount).toBe(2);
   });
 
   it('tracks engagement and reactions', () => {
+    service.trackView('typed-notes', 'ru').subscribe();
+    const viewReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/notes/detail/typed-notes/analytics/view'),
+    );
+    expect(viewReq.request.method).toBe('POST');
+    expect(viewReq.request.params.get('language')).toBe('ru');
+    viewReq.flush(null);
+
     service.trackEngagedView('typed-notes', 'ru').subscribe();
     const engagedReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/notes/detail/typed-notes/analytics/engaged-view'),
@@ -236,6 +255,7 @@ describe('NotesService', () => {
     expect(createReq.request.body.tagIds).toEqual([1]);
     expect(createReq.request.body.translations.en.title).toBe('New note');
     createReq.flush(noteDetailDto());
+    flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
 
     service
       .updateNote(
@@ -259,6 +279,7 @@ describe('NotesService', () => {
     expect(updateReq.request.body.publishStatus).toBe('Published');
     expect(updateReq.request.body.tagIds).toEqual([1, 2]);
     updateReq.flush(noteDetailDto());
+    flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
   });
 
   it('calls note publish endpoints', () => {
@@ -343,7 +364,7 @@ describe('NotesService', () => {
 
 function noteDetailDto(): unknown {
   return {
-    id: '00000000-0000-0000-0000-000000000001',
+    id: NOTE_ID,
     title: 'New note',
     content: 'Content',
     slug: 'new-note',
@@ -354,12 +375,42 @@ function noteDetailDto(): unknown {
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-03T03:04:05+00:00',
     excerpt: 'Content',
-    viewCount: 0,
-    reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     tags: [],
     translations: {
       ru: { title: 'Новая заметка', content: 'Содержимое', folder: 'Входящие' },
       en: { title: 'New note', content: 'Content', folder: 'Inbox' },
     },
   };
+}
+
+function flushPublicStats(
+  httpMock: HttpTestingController,
+  stats: {
+    noteId: string;
+    viewCount: number;
+    reactionCounts?: {
+      heart: number;
+      fire: number;
+      thinking: number;
+      neutral: number;
+      poop: number;
+    };
+  }[],
+): void {
+  const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/public-stats'));
+  expect(req.request.method).toBe('GET');
+  expect(req.request.params.getAll('noteIds')).toEqual(stats.map((item) => item.noteId));
+  req.flush({
+    stats: stats.map((item) => ({
+      noteId: item.noteId,
+      viewCount: item.viewCount,
+      reactionCounts: item.reactionCounts ?? {
+        heart: 0,
+        fire: 0,
+        thinking: 0,
+        neutral: 0,
+        poop: 0,
+      },
+    })),
+  });
 }

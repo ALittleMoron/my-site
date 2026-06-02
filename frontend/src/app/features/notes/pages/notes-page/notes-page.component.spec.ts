@@ -6,7 +6,7 @@ import {
   convertToParamMap,
   provideRouter,
 } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
@@ -26,6 +26,7 @@ describe('NotesPageComponent', () => {
     getTree: jest.Mock;
     getNote: jest.Mock;
     getNotes: jest.Mock;
+    trackView: jest.Mock;
     trackEngagedView: jest.Mock;
     setReaction: jest.Mock;
     getStats: jest.Mock;
@@ -40,8 +41,10 @@ describe('NotesPageComponent', () => {
     setMeta: jest.Mock;
   };
   let router: { navigate: jest.Mock };
+  let isAdmin: boolean;
 
   beforeEach(async () => {
+    isAdmin = false;
     paramMap = new BehaviorSubject(convertToParamMap({ slug: 'typed-notes' }));
     queryParamMap = new BehaviorSubject(convertToParamMap({}));
     notesService = {
@@ -51,6 +54,7 @@ describe('NotesPageComponent', () => {
       getNotes: jest
         .fn()
         .mockReturnValue(of({ notes: [], totalCount: 0, totalPages: 0 } satisfies NoteList)),
+      trackView: jest.fn().mockReturnValue(of(undefined)),
       trackEngagedView: jest.fn().mockReturnValue(of(undefined)),
       setReaction: jest.fn().mockReturnValue(of(undefined)),
       getStats: jest.fn().mockReturnValue(of(noteStats())),
@@ -71,7 +75,7 @@ describe('NotesPageComponent', () => {
       providers: [
         provideRouter([]),
         { provide: NotesService, useValue: notesService },
-        { provide: AuthService, useValue: { isAdmin: () => false } },
+        { provide: AuthService, useValue: { isAdmin: () => isAdmin } },
         { provide: SeoService, useValue: seoService },
         provideI18nTesting(),
         {
@@ -122,6 +126,35 @@ describe('NotesPageComponent', () => {
       description: 'Excerpt',
       canonicalPath: '/notes/typed-notes',
     });
+  });
+
+  it('tracks public view for public published detail and ignores tracking failure', () => {
+    notesService.trackView.mockReturnValue(throwError(() => new Error('tracking failed')));
+
+    fixture.detectChanges();
+
+    expect(notesService.trackView).toHaveBeenCalledWith('typed-notes', 'ru');
+    expect(seoService.setMeta).toHaveBeenCalledWith({
+      title: 'Typed notes',
+      description: 'Excerpt',
+      canonicalPath: '/notes/typed-notes',
+    });
+  });
+
+  it('does not track public view for admin detail reads', () => {
+    isAdmin = true;
+
+    fixture.detectChanges();
+
+    expect(notesService.trackView).not.toHaveBeenCalled();
+  });
+
+  it('does not track public view for draft detail reads', () => {
+    notesService.getNote.mockReturnValue(of(noteDetail({ publishStatus: 'Draft' })));
+
+    fixture.detectChanges();
+
+    expect(notesService.trackView).not.toHaveBeenCalled();
   });
 
   it('keeps generic translated SEO meta on the notes list route', () => {
@@ -291,7 +324,7 @@ describe('NotesPageComponent', () => {
   });
 });
 
-function noteDetail(): NoteDetail {
+function noteDetail(overrides: Partial<NoteDetail> = {}): NoteDetail {
   return {
     id: '00000000-0000-0000-0000-000000000001',
     title: 'Typed notes',
@@ -311,6 +344,7 @@ function noteDetail(): NoteDetail {
       ru: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
       en: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
     },
+    ...overrides,
   };
 }
 

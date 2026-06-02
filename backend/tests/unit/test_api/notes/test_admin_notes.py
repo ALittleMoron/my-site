@@ -1,5 +1,6 @@
 import uuid
 
+import pytest
 import pytest_asyncio
 from httpx import codes
 
@@ -7,6 +8,7 @@ from core.enums import PublishStatusEnum
 from core.notes.exceptions import NoteNotFoundError
 from core.notes.schemas import NoteCreateParams, NoteUpdateParams
 from core.types import IntId
+from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -118,6 +120,33 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.create_note.assert_not_called()
 
+    def test_create_note_validation_error_does_not_invalidate_response_cache(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        invalidated_domains: list[ResponseCacheDomain] = []
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            invalidated_domains.append(domain)
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+            raising=False,
+        )
+        data = self.factory.api.note_request()
+        del data["translations"]["en"]["content"]
+
+        response = self.api.post_create_note(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert invalidated_domains == []
+
     def test_delete_note_not_found(self) -> None:
         self.use_case.delete_note.side_effect = NoteNotFoundError()
 
@@ -149,3 +178,55 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             slug="published-note",
             publish_status=PublishStatusEnum.DRAFT,
         )
+
+    def test_successful_note_mutations_invalidate_notes_response_cache(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        invalidated_domains: list[ResponseCacheDomain] = []
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            invalidated_domains.append(domain)
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+            raising=False,
+        )
+        created_note = self.factory.core.note(
+            note_id=self.note_id,
+            slug="new-note",
+            publish_status=PublishStatusEnum.DRAFT,
+        )
+        updated_note = self.factory.core.note(
+            note_id=uuid.UUID(int=1),
+            slug="updated-note",
+            publish_status=PublishStatusEnum.PUBLISHED,
+        )
+        self.use_case.create_note.return_value = created_note
+        self.use_case.update_note.return_value = updated_note
+
+        responses = [
+            self.api.post_create_note(data=self.factory.api.note_request(slug="new-note")),
+            self.api.put_update_note(
+                slug="old-note",
+                data=self.factory.api.note_request(slug="updated-note"),
+            ),
+            self.api.delete_note(slug="updated-note"),
+            self.api.post_set_published_status_to_note(slug="draft-note"),
+            self.api.post_set_draft_status_to_note(slug="published-note"),
+        ]
+
+        assert [response.status_code for response in responses] == [
+            codes.CREATED,
+            codes.OK,
+            codes.NO_CONTENT,
+            codes.NO_CONTENT,
+            codes.NO_CONTENT,
+        ]
+        assert invalidated_domains == [ResponseCacheDomain.NOTES] * 5

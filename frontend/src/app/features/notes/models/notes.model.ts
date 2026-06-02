@@ -56,14 +56,12 @@ export interface NoteSummaryDto {
   publishStatus: NotePublishStatus;
   updatedAt: string;
   excerpt: string;
-  viewCount: number;
   tags: NoteTagDto[];
 }
 
 export interface NoteDetailDto extends NoteSummaryDto {
   content: string;
   createdAt: string;
-  reactionCounts: NoteReactionCountsDto;
   translations: NoteTranslationsDto;
 }
 
@@ -71,6 +69,16 @@ export interface NoteListDto {
   totalCount: number;
   totalPages: number;
   notes: NoteSummaryDto[];
+}
+
+export interface NotePublicStatsDto {
+  noteId: string;
+  viewCount: number;
+  reactionCounts: NoteReactionCountsDto;
+}
+
+export interface NotePublicStatsCollectionDto {
+  stats: NotePublicStatsDto[];
 }
 
 export interface NoteTreeItemDto {
@@ -168,6 +176,12 @@ export interface NoteList {
   totalCount: number;
   totalPages: number;
   notes: NoteSummary[];
+}
+
+export interface NotePublicStats {
+  noteId: string;
+  viewCount: number;
+  reactionCounts: NoteReactionCounts;
 }
 
 export interface NoteTreeItem {
@@ -284,7 +298,11 @@ export function mapTagDto(dto: NoteTagDto): NoteTag {
   };
 }
 
-export function mapNoteSummaryDto(dto: NoteSummaryDto): NoteSummary {
+export function mapNoteSummaryDto(
+  dto: NoteSummaryDto,
+  statsByNoteId: ReadonlyMap<string, NotePublicStats>,
+): NoteSummary {
+  const stats = getRequiredPublicStats(dto.id, statsByNoteId);
   return {
     id: dto.id,
     title: dto.title,
@@ -295,26 +313,33 @@ export function mapNoteSummaryDto(dto: NoteSummaryDto): NoteSummary {
     publishStatus: dto.publishStatus,
     updatedAt: dto.updatedAt,
     excerpt: dto.excerpt,
-    viewCount: dto.viewCount,
+    viewCount: stats.viewCount,
     tags: dto.tags.map(mapTagDto),
   };
 }
 
-export function mapNoteDetailDto(dto: NoteDetailDto): NoteDetail {
+export function mapNoteDetailDto(
+  dto: NoteDetailDto,
+  statsByNoteId: ReadonlyMap<string, NotePublicStats>,
+): NoteDetail {
+  const stats = getRequiredPublicStats(dto.id, statsByNoteId);
   return {
-    ...mapNoteSummaryDto(dto),
+    ...mapNoteSummaryDto(dto, statsByNoteId),
     content: dto.content,
     createdAt: dto.createdAt,
-    reactionCounts: mapReactionCountsDto(dto.reactionCounts),
+    reactionCounts: stats.reactionCounts,
     translations: dto.translations,
   };
 }
 
-export function mapNoteListDto(dto: NoteListDto): NoteList {
+export function mapNoteListDto(
+  dto: NoteListDto,
+  statsByNoteId: ReadonlyMap<string, NotePublicStats>,
+): NoteList {
   return {
     totalCount: dto.totalCount,
     totalPages: dto.totalPages,
-    notes: dto.notes.map(mapNoteSummaryDto),
+    notes: dto.notes.map((note) => mapNoteSummaryDto(note, statsByNoteId)),
   };
 }
 
@@ -337,6 +362,21 @@ export function mapReactionCountsDto(dto: NoteReactionCountsDto): NoteReactionCo
   };
 }
 
+export function mapPublicStatsCollectionDto(
+  dto: NotePublicStatsCollectionDto,
+): ReadonlyMap<string, NotePublicStats> {
+  return new Map(
+    dto.stats.map((stats) => [
+      stats.noteId,
+      {
+        noteId: stats.noteId,
+        viewCount: stats.viewCount,
+        reactionCounts: mapReactionCountsDto(stats.reactionCounts),
+      },
+    ]),
+  );
+}
+
 export function mapNoteStatsDto(dto: NoteStatsDto): NoteStats {
   return {
     dateFrom: dto.dateFrom,
@@ -352,4 +392,15 @@ export function mapNoteStatsDto(dto: NoteStatsDto): NoteStats {
     })),
     daily: dto.daily.map((item) => ({ ...item })),
   };
+}
+
+function getRequiredPublicStats(
+  noteId: string,
+  statsByNoteId: ReadonlyMap<string, NotePublicStats>,
+): NotePublicStats {
+  const stats = statsByNoteId.get(noteId);
+  if (stats === undefined) {
+    throw new Error(`Missing public stats for note ${noteId}`);
+  }
+  return stats;
 }

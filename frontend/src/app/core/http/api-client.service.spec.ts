@@ -36,6 +36,14 @@ describe('ApiClient', () => {
     req.flush({});
   });
 
+  it('should pass repeated query params on GET', () => {
+    service.get<unknown>('/api/test', { noteIds: ['one', 'two'] }).subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/test'));
+    expect(req.request.params.getAll('noteIds')).toEqual(['one', 'two']);
+    req.flush({});
+  });
+
   it('should send POST body', () => {
     service.post<unknown>('/api/test', { name: 'x' }).subscribe();
 

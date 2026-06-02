@@ -1,5 +1,6 @@
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, get, status_codes
+from litestar.config.response_cache import CACHE_FOREVER
 from litestar.params import FromPath
 
 from core.i18n.enums import LanguageEnum
@@ -9,6 +10,7 @@ from entrypoints.litestar.api.i18n.schemas import (
     LanguageResponseSchema,
     LanguagesResponseSchema,
 )
+from entrypoints.litestar.response_cache import ResponseCacheDomain
 from infra.config.settings import settings
 
 
@@ -21,6 +23,8 @@ class I18nApiController(Controller):
         description="Получение списка доступных языков интерфейса.",
         name="i18n-languages-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.I18N.cache_key_builder,
     )
     async def list_languages(self) -> LanguagesResponseSchema:
         return LanguagesResponseSchema(
@@ -39,6 +43,8 @@ class I18nApiController(Controller):
         description="Получение i18n bundle для интерфейса.",
         name="i18n-bundle-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.I18N.cache_key_builder,
     )
     async def get_bundle(self, language: FromPath[LanguageEnum]) -> I18nBundleResponseSchema:
         return I18nBundleResponseSchema(

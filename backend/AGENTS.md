@@ -70,6 +70,25 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Use `to_domain_schema` / `from_domain_schema` for same-concept conversions between API schemas, ORM models, and core domain schemas when the method signature already identifies the exact source/target type. Use a more specific conversion method name only when the conversion changes the semantic entity, such as attached resource -> plain external resource.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
 
+## Response Caching
+
+- Cache API GET responses only through the domain response cache helpers in
+  `backend/src/entrypoints/litestar/response_cache.py`. Use a `ResponseCacheDomain`
+  and its `cache_key_builder` property so keys are domain-prefixed and routed to the
+  matching Valkey namespace; do not add ad hoc cache key builders or write directly to a
+  shared response-cache namespace.
+- Safe, stable GET handlers may use Litestar response caching with explicit cache metadata.
+  Keep user-implicit, admin statistics, analytics, presign URL, account/session, and other
+  request-side-effect or user-specific responses uncached unless a new design explicitly
+  makes their cache key and invalidation rules safe.
+- If a cached GET depends on auth-sensitive query parameters, enforce the access check with a
+  Litestar guard or another pre-cache boundary check. Do not rely only on controller body checks
+  because Litestar can return a cached response before executing the handler body.
+- Mutating handlers that change cached domain content must call
+  `invalidate_response_cache_domain(...)` only after the use case succeeds. Do not invalidate on
+  validation/auth failures, and do not invalidate content caches for analytics-only changes when
+  analytics are served from separate uncached endpoints.
+
 ## I18n
 
 - The backend i18n catalog is the source of truth for UI interface strings and enum labels.

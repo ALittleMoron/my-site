@@ -9,9 +9,7 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import NoteNotFoundError
 from core.notes.schemas import (
-    NotePublicStats,
     NotePublicStatsCollection,
-    NoteReactionCounts,
     NoteTree,
     NoteTreeFolder,
     NoteTreeItem,
@@ -49,21 +47,6 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
             tags=[deleted_tag],
         )
         self.use_case.get_note.return_value = note
-        self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
-            values=[
-                NotePublicStats(
-                    note_id=note.id,
-                    view_count=9,
-                    reaction_counts=NoteReactionCounts(
-                        heart=2,
-                        fire=1,
-                        thinking=3,
-                        neutral=4,
-                        poop=5,
-                    ),
-                ),
-            ],
-        )
 
         response = self.api.get_note(slug="detail-note", only_published=False)
 
@@ -78,7 +61,6 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "publishStatus": "Published",
             "updatedAt": "2026-01-03T03:04:05+00:00",
             "excerpt": "Markdown detail",
-            "viewCount": 9,
             "tags": [
                 {
                     "id": 2,
@@ -105,21 +87,15 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     "folder": "General",
                 },
             },
-            "reactionCounts": {
-                "heart": 2,
-                "fire": 1,
-                "thinking": 3,
-                "neutral": 4,
-                "poop": 5,
-            },
         }
         self.use_case.get_note.assert_called_once_with(
             slug="detail-note",
             only_published=False,
         )
+        self.analytics_use_case.get_public_stats.assert_not_called()
         self.analytics_use_case.track_public_view.assert_not_called()
 
-    def test_public_get_note_tracks_view(self) -> None:
+    def test_public_get_note_does_not_track_view(self) -> None:
         note = self.factory.core.note(
             note_id=uuid.UUID(int=2),
             title="Public note",
@@ -127,30 +103,14 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
             publish_status=PublishStatusEnum.PUBLISHED,
         )
         self.use_case.get_note.return_value = note
-        self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
-            values=[
-                NotePublicStats(
-                    note_id=note.id,
-                    view_count=1,
-                    reaction_counts=NoteReactionCounts(
-                        heart=0,
-                        fire=0,
-                        thinking=0,
-                        neutral=0,
-                        poop=0,
-                    ),
-                ),
-            ],
-        )
 
         response = self.no_auth_api.get_note(slug="public-note")
 
         assert response.status_code == codes.OK, response.content
-        assert response.json()["viewCount"] == 1
-        self.analytics_use_case.track_public_view.assert_called_once_with(
-            note=note,
-            referrer=None,
-        )
+        assert "viewCount" not in response.json()
+        assert "reactionCounts" not in response.json()
+        self.analytics_use_case.get_public_stats.assert_not_called()
+        self.analytics_use_case.track_public_view.assert_not_called()
 
     def test_get_note_not_found(self) -> None:
         self.use_case.get_note.side_effect = NoteNotFoundError()

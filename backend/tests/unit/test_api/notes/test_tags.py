@@ -1,3 +1,4 @@
+import pytest
 import pytest_asyncio
 from httpx import codes
 
@@ -6,6 +7,7 @@ from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import TagNotFoundError
 from core.notes.schemas import TagCreateParams, TagUpdateParams
 from core.types import IntId
+from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -188,3 +190,43 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.NO_CONTENT
         self.use_case.restore_tag.assert_called_once_with(tag_id=IntId(3))
+
+    def test_successful_tag_mutations_invalidate_notes_response_cache(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        invalidated_domains: list[ResponseCacheDomain] = []
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            invalidated_domains.append(domain)
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+            raising=False,
+        )
+        self.use_case.create_tag.return_value = self.factory.core.tag(tag_id=self.tag_id)
+        self.use_case.update_tag.return_value = self.factory.core.tag(tag_id=3)
+
+        responses = [
+            self.api.post_create_tag(data=self.factory.api.tag_request(slug="backend")),
+            self.api.put_update_tag(
+                tag_id=3,
+                data=self.factory.api.tag_request(slug="architecture"),
+            ),
+            self.api.delete_tag(tag_id=3),
+            self.api.post_restore_tag(tag_id=3),
+        ]
+
+        assert [response.status_code for response in responses] == [
+            codes.CREATED,
+            codes.OK,
+            codes.NO_CONTENT,
+            codes.NO_CONTENT,
+        ]
+        assert invalidated_domains == [ResponseCacheDomain.NOTES] * 4

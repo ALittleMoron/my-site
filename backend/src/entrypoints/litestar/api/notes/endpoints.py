@@ -4,6 +4,7 @@ from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, Request, delete, get, post, put, status_codes
+from litestar.config.response_cache import CACHE_FOREVER
 from litestar.datastructures import State
 from litestar.params import Body, FromPath, QueryParameter
 
@@ -20,6 +21,7 @@ from entrypoints.litestar.api.notes.schemas import (
     NoteAnalyticsStatsResponseSchema,
     NoteDetailResponseSchema,
     NoteListResponseSchema,
+    NotePublicStatsCollectionResponseSchema,
     NoteReactionRequestSchema,
     NoteRequestSchema,
     NoteTreeResponseSchema,
@@ -27,7 +29,16 @@ from entrypoints.litestar.api.notes.schemas import (
     TagResponseSchema,
     TagsResponseSchema,
 )
-from entrypoints.litestar.guards import admin_user_guard, deleted_tags_access_guard
+from entrypoints.litestar.guards import (
+    admin_user_guard,
+    deleted_tags_access_guard,
+    draft_content_access_guard,
+)
+from entrypoints.litestar.response_cache import (
+    ResponseCacheDomain,
+    invalidate_response_cache_domain,
+)
+from infra.config.settings import settings
 
 
 class NotesApiController(Controller):
@@ -37,8 +48,11 @@ class NotesApiController(Controller):
     @get(
         "",
         description="Получение списка заметок.",
+        guards=[draft_content_access_guard],
         name="notes-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def list_notes(  # noqa: PLR0913
         self,
@@ -48,7 +62,6 @@ class NotesApiController(Controller):
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
         tag_slug: Annotated[str | None, QueryParameter(name="tagSlug")] = None,
         published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
         published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
@@ -71,12 +84,8 @@ class NotesApiController(Controller):
                 search_query=normalized_search_query,
             ),
         )
-        stats = await analytics_use_case.get_public_stats(
-            note_ids=[note.id for note in notes.values],
-        )
         return NoteListResponseSchema.from_domain_schema(
             schema=notes,
-            stats=stats,
             language=language,
         )
 
@@ -87,14 +96,13 @@ class NotesApiController(Controller):
         name="notes-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_note(  # noqa: PLR0913
+    async def create_note(
         self,
         note_id: FromDishka[uuid.UUID],
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[NoteRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
     ) -> NoteDetailResponseSchema:
         note = await use_case.create_note(
             params=data.to_create_schema(
@@ -102,10 +110,9 @@ class NotesApiController(Controller):
                 author_username=request.user.username,
             ),
         )
-        stats = await analytics_use_case.get_public_stats(note_ids=[note.id])
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
-            stats=stats.by_note_id(note.id),
             language=language,
         )
 
@@ -130,15 +137,17 @@ class NotesApiController(Controller):
     @get(
         "/detail/{slug:str}",
         description="Получение подробной информации о заметке.",
+        guards=[draft_content_access_guard],
         name="notes-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
-    async def get_note(  # noqa: PLR0913
+    async def get_note(
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> NoteDetailResponseSchema:
@@ -148,16 +157,45 @@ class NotesApiController(Controller):
             slug=slug,
             only_published=only_published,
         )
-        if not request.user.is_admin and only_published:
-            await analytics_use_case.track_public_view(
-                note=note,
-                referrer=request.headers.get("referer"),
-            )
-        stats = await analytics_use_case.get_public_stats(note_ids=[note.id])
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
-            stats=stats.by_note_id(note.id),
             language=language,
+        )
+
+    @get(
+        "/public-stats",
+        description="Получение публичной статистики заметок.",
+        name="notes-public-stats-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def get_public_stats(
+        self,
+        note_ids: Annotated[list[uuid.UUID], QueryParameter(name="noteIds", min_items=1)],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+    ) -> NotePublicStatsCollectionResponseSchema:
+        stats = await analytics_use_case.get_public_stats(note_ids=note_ids)
+        return NotePublicStatsCollectionResponseSchema.from_domain_schema(schema=stats)
+
+    @post(
+        "/detail/{slug:str}/analytics/view",
+        description="Фиксация публичного просмотра заметки.",
+        name="notes-track-public-view-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def track_public_view(
+        self,
+        slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
+        use_case: FromDishka[AbstractNotesUseCase],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> None:
+        if request.user.is_admin:
+            return
+        note = await use_case.get_note(slug=slug, only_published=True)
+        await analytics_use_case.track_public_view(
+            note=note,
+            referrer=request.headers.get("referer"),
         )
 
     @post(
@@ -230,19 +268,18 @@ class NotesApiController(Controller):
     async def update_note(
         self,
         slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
         data: Annotated[NoteRequestSchema, Body()],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
     ) -> NoteDetailResponseSchema:
         note = await use_case.update_note(
             slug=slug,
             params=data.to_update_schema(),
         )
-        stats = await analytics_use_case.get_public_stats(note_ids=[note.id])
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
-            stats=stats.by_note_id(note.id),
             language=language,
         )
 
@@ -256,9 +293,11 @@ class NotesApiController(Controller):
     async def delete_note(
         self,
         slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.delete_note(slug=slug)
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
     @post(
         "/detail/{slug:str}/set-draft",
@@ -270,12 +309,14 @@ class NotesApiController(Controller):
     async def set_draft_status_to_note(
         self,
         slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.switch_note_publish_status(
             slug=slug,
             publish_status=PublishStatusEnum.DRAFT,
         )
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
     @post(
         "/detail/{slug:str}/set-published",
@@ -287,12 +328,14 @@ class NotesApiController(Controller):
     async def set_published_status_to_note(
         self,
         slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.switch_note_publish_status(
             slug=slug,
             publish_status=PublishStatusEnum.PUBLISHED,
         )
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
     @get(
         "/tags",
@@ -300,6 +343,8 @@ class NotesApiController(Controller):
         guards=[deleted_tags_access_guard],
         name="notes-tags-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def list_tags(
         self,
@@ -316,6 +361,8 @@ class NotesApiController(Controller):
         guards=[deleted_tags_access_guard],
         name="notes-tags-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def search_tags(
         self,
@@ -343,6 +390,7 @@ class NotesApiController(Controller):
     async def create_tag(
         self,
         tag_id: FromDishka[IntId],
+        request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
@@ -350,6 +398,7 @@ class NotesApiController(Controller):
         tag = await use_case.create_tag(
             params=data.to_create_schema(tag_id=tag_id),
         )
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @put(
@@ -362,6 +411,7 @@ class NotesApiController(Controller):
     async def update_tag(
         self,
         tag_id: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[AbstractNotesUseCase],
@@ -370,6 +420,7 @@ class NotesApiController(Controller):
             tag_id=IntId(tag_id),
             params=data.to_update_schema(),
         )
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @delete(
@@ -382,9 +433,11 @@ class NotesApiController(Controller):
     async def delete_tag(
         self,
         tag_id: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.soft_delete_tag(tag_id=IntId(tag_id))
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
     @post(
         "/tags/{tag_id:int}/restore",
@@ -396,9 +449,11 @@ class NotesApiController(Controller):
     async def restore_tag(
         self,
         tag_id: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.restore_tag(tag_id=IntId(tag_id))
+        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
 
 api_router = DishkaRouter("", route_handlers=[NotesApiController])

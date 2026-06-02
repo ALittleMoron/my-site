@@ -3,6 +3,7 @@ from typing import Annotated
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
+from litestar.config.response_cache import CACHE_FOREVER
 from litestar.datastructures import State
 from litestar.params import Body, FromPath, QueryParameter
 
@@ -21,7 +22,12 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
 )
-from entrypoints.litestar.guards import admin_user_guard
+from entrypoints.litestar.guards import admin_user_guard, draft_content_access_guard
+from entrypoints.litestar.response_cache import (
+    ResponseCacheDomain,
+    invalidate_response_cache_domain,
+)
+from infra.config.settings import settings
 
 
 class CompetencyMatrixApiController(Controller):
@@ -37,6 +43,8 @@ class CompetencyMatrixApiController(Controller):
         ),
         name="competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def list_competency_matrix_sheet(
         self,
@@ -54,6 +62,8 @@ class CompetencyMatrixApiController(Controller):
         description="Поиск вопросов по матрице компетенций по названию и url.",
         name="competency-matrix-resources-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def search_competency_matrix_resources(
         self,
@@ -75,8 +85,11 @@ class CompetencyMatrixApiController(Controller):
     @get(
         "/items",
         description="Получение списка вопросов по матрице компетенций.",
+        guards=[draft_content_access_guard],
         name="competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def list_competency_matrix_items(
         self,
@@ -105,10 +118,11 @@ class CompetencyMatrixApiController(Controller):
         name="competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_competency_matrix_item(
+    async def create_competency_matrix_item(  # noqa: PLR0913
         self,
         item_id_generator: FromDishka[ItemIdGenerator],
         resource_id_generator: FromDishka[ResourceIdGenerator],
+        request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
@@ -119,6 +133,10 @@ class CompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
+        await invalidate_response_cache_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+        )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
             language=language,
@@ -127,8 +145,11 @@ class CompetencyMatrixApiController(Controller):
     @get(
         "/items/detail/{pk:int}",
         description="Получение подробной информации о вопросе из матрицы компетенций.",
+        guards=[draft_content_access_guard],
         name="competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def get_competency_matrix_item(
         self,
@@ -153,10 +174,11 @@ class CompetencyMatrixApiController(Controller):
         name="competency-matrix-item-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
-    async def update_competency_matrix_item(
+    async def update_competency_matrix_item(  # noqa: PLR0913
         self,
         pk: FromPath[int],
         resource_id_generator: FromDishka[ResourceIdGenerator],
+        request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
@@ -166,6 +188,10 @@ class CompetencyMatrixApiController(Controller):
                 item_id=IntId(pk),
                 resource_id_generator=resource_id_generator,
             ),
+        )
+        await invalidate_response_cache_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
@@ -182,9 +208,14 @@ class CompetencyMatrixApiController(Controller):
     async def delete_competency_matrix_item(
         self,
         pk: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
         await use_case.delete_item(item_id=IntId(pk))
+        await invalidate_response_cache_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+        )
 
     @post(
         "/items/detail/{pk:int}/set-draft",
@@ -196,11 +227,16 @@ class CompetencyMatrixApiController(Controller):
     async def set_draft_status_to_competency_matrix_item(
         self,
         pk: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
         await use_case.switch_item_publish_status(
             item_id=IntId(pk),
             publish_status=PublishStatusEnum.DRAFT,
+        )
+        await invalidate_response_cache_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
 
     @post(
@@ -213,11 +249,16 @@ class CompetencyMatrixApiController(Controller):
     async def set_published_status_to_competency_matrix_item(
         self,
         pk: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
         await use_case.switch_item_publish_status(
             item_id=IntId(pk),
             publish_status=PublishStatusEnum.PUBLISHED,
+        )
+        await invalidate_response_cache_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
 
 
