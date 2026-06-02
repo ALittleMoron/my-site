@@ -13,7 +13,7 @@ ensure_frontend_deps() {
         return
     fi
 
-    npm ci --legacy-peer-deps
+    npm ci
     mkdir -p node_modules
     touch "$marker"
 }

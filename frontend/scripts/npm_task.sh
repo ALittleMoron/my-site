@@ -10,7 +10,7 @@ action="${1:?action is required}"
 
 case "$action" in
     install)
-        npm ci --legacy-peer-deps
+        npm ci
         mkdir -p node_modules
         touch node_modules/.self-contained-npm-ci
         ;;

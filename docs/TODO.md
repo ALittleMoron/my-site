@@ -232,9 +232,9 @@
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme
 - [x] Add more feedback during API requests (notifications, errors, etc.)
-- [ ] Resolve frontend npm peer dependency conflicts and remove `--legacy-peer-deps` from install flows
-  - [ ] Align TypeScript with Angular CLI/build tooling peer dependency ranges so `npm ls typescript` exits cleanly
-  - [ ] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build
+- [x] Resolve frontend npm peer dependency conflicts and remove `--legacy-peer-deps` from install flows
+  - [x] Align TypeScript with Angular CLI/build tooling peer dependency ranges so `npm ls typescript` exits cleanly
+  - [x] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build
 - [x] Migrate to the Angular
   - [x] Target architecture
     - [x] Use Angular as an SPA served by frontend nginx
