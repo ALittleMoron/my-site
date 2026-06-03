@@ -66,6 +66,9 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.
 - Controllers must receive dependencies through `FromDishka[...]`, preferably typed as abstract use case interfaces.
+- When an endpoint receives many query, path, header, or cookie parameters and only assembles them
+  into one filter/read parameter object, prefer moving that assembly into a Litestar `Provide`
+  dependency in a neighboring `dependencies.py` module so the handler receives the object directly.
 - Public discovery response assembly, such as sitemap URL collection, sitemap XML rendering, and
   robots.txt rendering, must not live in `endpoints.py` controller modules. Keep it in a neighboring
   `backend/src/entrypoints/litestar/**` module owned by the HTTP entrypoint layer, not in `core`.

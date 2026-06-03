@@ -1,13 +1,17 @@
 import uuid
 from datetime import date
+from typing import cast
 
 import pytest_asyncio
 from httpx import codes
+from litestar.di import Provide
 
 from core.auth.exceptions import ForbiddenError
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.schemas import NoteFilters, NotePublicStatsCollection
+from entrypoints.litestar.api.notes.dependencies import provide_note_filters
+from entrypoints.litestar.api.notes.endpoints import NotesApiController
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -19,6 +23,54 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
             values=[],
         )
+
+    def test_list_notes_uses_litestar_dependency_for_filters(self) -> None:
+        handler = NotesApiController.list_notes
+        dependencies = handler.dependencies
+
+        assert dependencies is not None
+        assert "filters" in dependencies
+        provider = cast("Provide", dependencies["filters"])
+        assert provider.dependency is provide_note_filters
+        assert provider.sync_to_thread is False
+
+    def test_provide_note_filters_builds_filters_from_query_parameters(self) -> None:
+        filters = provide_note_filters(
+            page=2,
+            page_size=5,
+            only_published=True,
+            language=LanguageEnum.RU,
+            tag_slug="python",
+            published_from=date(2026, 1, 1),
+            published_to=date(2026, 1, 31),
+            search_query="  typed notes  ",
+        )
+
+        assert filters == NoteFilters(
+            page=2,
+            page_size=5,
+            language=LanguageEnum.RU,
+            only_published=True,
+            tag_slug="python",
+            published_from=date(2026, 1, 1),
+            published_to=date(2026, 1, 31),
+            search_query="typed notes",
+            include_tags=True,
+        )
+
+    def test_provide_note_filters_normalizes_blank_search_query(self) -> None:
+        filters = provide_note_filters(
+            page=1,
+            page_size=10,
+            only_published=True,
+            language=LanguageEnum.RU,
+            tag_slug=None,
+            published_from=None,
+            published_to=None,
+            search_query="   ",
+        )
+
+        assert filters.search_query is None
 
     def test_list_notes(self) -> None:
         tag = self.factory.core.tag(tag_id=1, name="Python", slug="python")

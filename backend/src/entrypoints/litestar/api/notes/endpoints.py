@@ -6,6 +6,7 @@ from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.config.response_cache import CACHE_FOREVER
 from litestar.datastructures import State
+from litestar.di import Provide
 from litestar.params import Body, FromPath, QueryParameter
 
 from core.auth.exceptions import ForbiddenError
@@ -17,6 +18,7 @@ from core.notes.enums import NoteViewSourceCategory
 from core.notes.schemas import NoteFilters
 from core.notes.use_cases import AbstractNoteAnalyticsUseCase, AbstractNotesUseCase
 from core.types import IntId
+from entrypoints.litestar.api.notes.dependencies import provide_note_filters
 from entrypoints.litestar.api.notes.schemas import (
     NoteAnalyticsStatsResponseSchema,
     NoteDetailResponseSchema,
@@ -53,41 +55,20 @@ class NotesApiController(Controller):
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(CACHE_FOREVER),
         cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
+        dependencies={"filters": Provide(provide_note_filters, sync_to_thread=False)},
     )
-    async def list_notes(  # noqa: PLR0913
+    async def list_notes(
         self,
         request: Request[JwtUser, Token | None, State],
-        page: Annotated[int, QueryParameter(name="page", ge=1)],
-        page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
-        only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
-        tag_slug: Annotated[str | None, QueryParameter(name="tagSlug")] = None,
-        published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
-        published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
-        search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
+        filters: NoteFilters,
     ) -> NoteListResponseSchema:
-        if not request.user.is_admin and not only_published:
+        if not request.user.is_admin and not filters.only_published:
             raise ForbiddenError
-        normalized_search_query = (
-            search_query.strip() if search_query is not None and search_query.strip() else None
-        )
-        notes = await use_case.list_notes(
-            filters=NoteFilters(
-                page=page,
-                page_size=page_size,
-                language=language,
-                only_published=only_published,
-                tag_slug=tag_slug,
-                published_from=published_from,
-                published_to=published_to,
-                search_query=normalized_search_query,
-                include_tags=True,
-            ),
-        )
+        notes = await use_case.list_notes(filters=filters)
         return NoteListResponseSchema.from_domain_schema(
             schema=notes,
-            language=language,
+            language=filters.language,
         )
 
     @post(

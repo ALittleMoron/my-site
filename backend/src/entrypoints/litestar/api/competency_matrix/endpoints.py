@@ -106,9 +106,7 @@ class CompetencyMatrixApiController(Controller):
             sheet_key=sheet_key,
             only_published=only_published,
         )
-        items = await use_case.list_items(
-            filters=filters,
-        )
+        items = await use_case.list_items(filters=filters)
         return CompetencyMatrixItemsListResponseSchema.from_domain_schema(
             sheet_key=sheet_key,
             schema=items,
