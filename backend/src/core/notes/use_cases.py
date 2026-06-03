@@ -20,7 +20,7 @@ from core.notes.schemas import (
     Notes,
     NoteTree,
     NoteUpdateParams,
-    PublishedNoteForSeo,
+    PublishedNotesForSeo,
     Tag,
     TagCreateParams,
     Tags,
@@ -41,7 +41,7 @@ class AbstractNotesUseCase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
+    async def list_published_notes_for_seo(self) -> PublishedNotesForSeo:
         raise NotImplementedError
 
     @abstractmethod
@@ -178,6 +178,9 @@ class NotesUseCase(AbstractNotesUseCase):
         return note.public_copy() if only_published else note
 
     async def list_notes(self, *, filters: NoteFilters) -> Notes:
+        if filters.page is None or filters.page_size is None:
+            message = "pagination required"
+            raise ValueError(message)
         notes, total_count = await self.storage.list_notes(filters=filters)
         return Notes.from_page(
             values=notes,
@@ -185,8 +188,12 @@ class NotesUseCase(AbstractNotesUseCase):
             page_size=filters.page_size,
         )
 
-    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
-        return await self.storage.list_published_notes_for_seo()
+    async def list_published_notes_for_seo(self) -> PublishedNotesForSeo:
+        notes, _total_count = await self.storage.list_notes(
+            filters=NoteFilters(only_published=True, include_tags=False, order_for_seo=True),
+        )
+        available_notes = [note for note in notes if note.is_available()]
+        return PublishedNotesForSeo.from_notes(notes=available_notes)
 
     async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
         items = await self.storage.list_tree_items(

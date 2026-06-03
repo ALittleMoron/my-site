@@ -12,7 +12,6 @@ from core.notes.schemas import (
     NotePublicStatsCollection,
     NoteReactionCounts,
     NoteTreeItemData,
-    PublishedNoteForSeo,
     Tag,
     Tags,
 )
@@ -31,10 +30,6 @@ class NotesStorage(ABC):
 
     @abstractmethod
     async def list_notes(self, *, filters: NoteFilters) -> tuple[list[Note], int]:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
         raise NotImplementedError
 
     @abstractmethod

@@ -66,6 +66,7 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
             published_from=date(2025, 1, 1),
             published_to=date(2026, 5, 31),
             search_query="full text search",
+            include_tags=True,
         ),
     )
 
@@ -81,12 +82,15 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
             published_from=None,
             published_to=None,
             search_query="полнотекстовый поиск",
+            include_tags=True,
         ),
     )
 
     notes_seo_session = RecordingSession()
     notes_seo_storage = NotesDatabaseStorage(session=cast("AsyncSession", notes_seo_session))
-    await notes_seo_storage.list_published_notes_for_seo()
+    await notes_seo_storage.list_notes(
+        filters=NoteFilters(only_published=True, include_tags=False, order_for_seo=True),
+    )
 
     matrix_slug_session = RecordingSession(scalar_result=FakeScalarModel())
     matrix_slug_storage = CompetencyMatrixDatabaseStorage(
@@ -146,7 +150,7 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
         ),
         CapturedQuery(
             name="notes_published_for_seo_sitemap",
-            statement=notes_seo_session.execute_statements[0],
+            statement=notes_seo_session.scalars_statements[0],
             expectation=PlanExpectation(
                 max_execution_ms=250.0,
                 expected_index_names=("notes_note_publish_status_published_updated_idx",),

@@ -20,7 +20,6 @@ from core.notes.schemas import (
     NotePublicStatsCollection,
     NoteReactionCounts,
     NoteTreeItemData,
-    PublishedNoteForSeo,
     Tag,
     Tags,
 )
@@ -58,54 +57,40 @@ class NotesDatabaseStorage(NotesStorage):
         note_model = await self.session.scalar(query)
         if note_model is None:
             raise NoteNotFoundError
-        return note_model.to_domain_schema(include_deleted_tags=include_deleted_tags)
+        return note_model.to_domain_schema(
+            include_deleted_tags=include_deleted_tags,
+            include_tags=True,
+        )
 
     async def list_notes(self, *, filters: NoteFilters) -> tuple[list[Note], int]:
-        query = self._apply_note_filters(
-            select(NoteModel).options(
+        query = select(NoteModel)
+        if filters.include_tags:
+            query = query.options(
                 selectinload(NoteModel.tag_links).selectinload(NoteToTagSecondaryModel.tag),
-            ),
-            filters=filters,
-        )
-        query = (
-            query.order_by(
-                *self._note_ordering(
-                    search_query=filters.search_query,
-                    language=filters.language,
-                ),
             )
-            .offset(filters.offset)
-            .limit(filters.limit)
-        )
-        count_query = self._apply_note_filters(
-            select(func.count(func.distinct(NoteModel.id))),
-            filters=filters,
-        )
-        total_count = (await self.session.scalar(count_query)) or 0
+        query = self._apply_note_filters(query, filters=filters)
+        query = query.order_by(*self._note_ordering(filters=filters))
+        is_paginated = filters.page is not None and filters.page_size is not None
+        if is_paginated:
+            query = query.offset(filters.offset).limit(filters.limit)
+            count_query = self._apply_note_filters(
+                select(func.count(func.distinct(NoteModel.id))),
+                filters=filters,
+            )
+            total_count = (await self.session.scalar(count_query)) or 0
+        elif filters.page is not None or filters.page_size is not None:
+            raise ValueError
 
         note_models = await self.session.scalars(query)
-
-        return (
-            [
-                note_model.to_domain_schema(
-                    include_deleted_tags=not filters.only_published,
-                )
-                for note_model in note_models.unique()
-            ],
-            total_count,
-        )
-
-    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
-        query = (
-            select(NoteModel.slug, NoteModel.updated_at, NoteModel.publish_status)
-            .where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
-            .order_by(NoteModel.published_at.desc().nullslast(), NoteModel.updated_at.desc())
-        )
-        rows = await self.session.execute(query)
-        return [
-            PublishedNoteForSeo(slug=slug, updated_at=updated_at, publish_status=publish_status)
-            for slug, updated_at, publish_status in rows
+        notes = [
+            note_model.to_domain_schema(
+                include_deleted_tags=filters.only_published is not True,
+                include_tags=filters.include_tags,
+            )
+            for note_model in note_models.unique()
         ]
+
+        return notes, total_count if is_paginated else len(notes)
 
     def _apply_note_filters(
         self,
@@ -113,7 +98,7 @@ class NotesDatabaseStorage(NotesStorage):
         *,
         filters: NoteFilters,
     ) -> Select[tuple[_SelectT]]:
-        if filters.only_published:
+        if filters.only_published is True:
             query = query.where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
         if filters.tag_slug is not None:
             query = (
@@ -137,24 +122,24 @@ class NotesDatabaseStorage(NotesStorage):
             )
         return query
 
-    def _note_ordering(
-        self,
-        *,
-        search_query: str | None = None,
-        language: LanguageEnum,
-    ) -> tuple[Any, ...]:
+    def _note_ordering(self, *, filters: NoteFilters) -> tuple[Any, ...]:
+        if filters.order_for_seo:
+            return (
+                NoteModel.published_at.desc().nullslast(),
+                NoteModel.updated_at.desc(),
+            )
         default_ordering = (
             case((NoteModel.publish_status == PublishStatusEnum.PUBLISHED, 0), else_=1),
             NoteModel.published_at.desc().nullslast(),
             NoteModel.updated_at.desc(),
-            self._title_column(language=language),
+            self._title_column(language=filters.language),
         )
-        if search_query is None:
+        if filters.search_query is None:
             return default_ordering
         return (
             func.ts_rank_cd(
-                self._search_vector(language=language),
-                func.websearch_to_tsquery("simple", search_query),
+                self._search_vector(language=filters.language),
+                func.websearch_to_tsquery("simple", filters.search_query),
             ).desc(),
             *default_ordering,
         )
@@ -186,9 +171,10 @@ class NotesDatabaseStorage(NotesStorage):
         only_published: bool,
         language: LanguageEnum,
     ) -> list[NoteTreeItemData]:
+        filters = NoteFilters(language=language)
         query = select(NoteModel).order_by(
             self._folder_column(language=language),
-            *self._note_ordering(language=language),
+            *self._note_ordering(filters=filters),
         )
         if only_published:
             query = query.where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)

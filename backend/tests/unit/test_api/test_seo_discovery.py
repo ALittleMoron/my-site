@@ -8,7 +8,7 @@ from core.competency_matrix.schemas import (
     PublishedCompetencyMatrixItemsForSeo,
 )
 from core.enums import PublishStatusEnum
-from core.notes.schemas import PublishedNoteForSeo
+from core.notes.schemas import PublishedNoteForSeo, PublishedNotesForSeo
 from tests.unit.fixtures import ApiFixture, ContainerFixture
 
 
@@ -24,7 +24,9 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             publish_status=PublishStatusEnum.PUBLISHED,
             updated_at=datetime(2026, 2, 4, 4, 5, 6, tzinfo=UTC),
         )
-        self.notes_use_case.list_published_notes_for_seo.return_value = [note]
+        self.notes_use_case.list_published_notes_for_seo.return_value = PublishedNotesForSeo(
+            values=[note],
+        )
         self.matrix_use_case.list_published_items_for_seo.return_value = (
             PublishedCompetencyMatrixItemsForSeo(
                 values=[
@@ -75,7 +77,9 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             publish_status=PublishStatusEnum.DRAFT,
             updated_at=datetime(2026, 2, 4, 4, 5, 6, tzinfo=UTC),
         )
-        self.notes_use_case.list_published_notes_for_seo.return_value = [draft]
+        self.notes_use_case.list_published_notes_for_seo.return_value = PublishedNotesForSeo(
+            values=[draft],
+        )
         self.matrix_use_case.list_published_items_for_seo.return_value = (
             PublishedCompetencyMatrixItemsForSeo(
                 values=[

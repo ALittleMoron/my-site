@@ -153,7 +153,7 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
         assert [note.slug for note in notes] == ["published-python"]
         assert total_count == 1
 
-    async def test_list_published_notes_for_seo_returns_only_published_notes(self) -> None:
+    async def test_list_notes_filters_published_without_pagination_or_tags_for_seo(self) -> None:
         await self.storage_helper.create_notes(
             notes=[
                 self.factory.core.note(
@@ -183,9 +183,17 @@ class TestNotesDatabaseStorage(StorageFixture, FactoryFixture):
             ],
         )
 
-        notes = await self.storage.list_published_notes_for_seo()
+        notes, total_count = await self.storage.list_notes(
+            filters=NoteFilters(
+                only_published=True,
+                include_tags=False,
+                order_for_seo=True,
+            ),
+        )
 
         assert [note.slug for note in notes] == ["newer-published", "older-published"]
+        assert [list(note.tags) for note in notes] == [[], []]
+        assert total_count == 2
 
     async def test_list_notes_sorts_published_before_drafts_for_admin(self) -> None:
         await self.storage_helper.create_notes(

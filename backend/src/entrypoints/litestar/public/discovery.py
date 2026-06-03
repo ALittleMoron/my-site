@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from core.competency_matrix.schemas import PublishedCompetencyMatrixItemsForSeo
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import PublishedNoteForSeo
+from core.notes.schemas import PublishedNotesForSeo
 from infra.config.settings import settings
 
 
@@ -29,7 +29,7 @@ class PublicUrl:
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class PublicDiscoveryUrls:
-    notes: list[PublishedNoteForSeo]
+    notes: PublishedNotesForSeo
     matrix_items: PublishedCompetencyMatrixItemsForSeo
 
     def build(self) -> list[PublicUrl]:

@@ -14,6 +14,7 @@ from core.notes.schemas import (
     NoteTreeItemData,
     NoteUpdateParams,
     PublishedNoteForSeo,
+    PublishedNotesForSeo,
     TagCreateParams,
     TagUpdateParams,
 )
@@ -39,6 +40,7 @@ class TestNotesUseCase(FactoryFixture):
             published_from=None,
             published_to=None,
             search_query=None,
+            include_tags=True,
         )
         note = self.factory.core.note(title="Published note", slug="published-note")
         self.storage.list_notes.return_value = ([note], 11)
@@ -50,23 +52,44 @@ class TestNotesUseCase(FactoryFixture):
         assert result.total_pages == 2
         self.storage.list_notes.assert_called_once_with(filters=filters)
 
-    async def test_list_published_notes_for_seo_delegates_to_storage(self) -> None:
-        first_note = PublishedNoteForSeo(
+    async def test_list_notes_requires_pagination_before_storage_call(self) -> None:
+        with pytest.raises(ValueError, match="pagination required"):
+            await self.use_case.list_notes(filters=NoteFilters())
+
+        self.storage.list_notes.assert_not_called()
+
+    async def test_list_published_notes_for_seo_uses_shared_storage_list_and_available_notes(
+        self,
+    ) -> None:
+        first_updated_at = datetime(2026, 1, 1, tzinfo=UTC)
+        first_note = self.factory.core.note(
+            title="First note",
             slug="first-note",
             publish_status=PublishStatusEnum.PUBLISHED,
-            updated_at=datetime(2026, 1, 1, tzinfo=UTC),
+            updated_at="2026-01-01T00:00:00",
         )
-        second_note = PublishedNoteForSeo(
-            slug="second-note",
-            publish_status=PublishStatusEnum.PUBLISHED,
-            updated_at=datetime(2026, 1, 2, tzinfo=UTC),
+        draft_note = self.factory.core.note(
+            title="Draft note",
+            slug="draft-note",
+            publish_status=PublishStatusEnum.DRAFT,
+            updated_at="2026-01-02T00:00:00",
         )
-        self.storage.list_published_notes_for_seo.return_value = [first_note, second_note]
+        self.storage.list_notes.return_value = ([first_note, draft_note], 2)
 
         result = await self.use_case.list_published_notes_for_seo()
 
-        assert result == [first_note, second_note]
-        self.storage.list_published_notes_for_seo.assert_called_once_with()
+        assert result == PublishedNotesForSeo(
+            values=[
+                PublishedNoteForSeo(
+                    slug="first-note",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    updated_at=first_updated_at,
+                ),
+            ],
+        )
+        self.storage.list_notes.assert_called_once_with(
+            filters=NoteFilters(only_published=True, include_tags=False, order_for_seo=True),
+        )
 
     async def test_list_tree_builds_folders_from_storage_items(self) -> None:
         first_updated_at = datetime(2026, 1, 1, tzinfo=UTC)

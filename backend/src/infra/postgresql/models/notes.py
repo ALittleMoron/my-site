@@ -187,7 +187,7 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         self.published_at = note.published_at
         self.updated_at = note.updated_at
 
-    def to_domain_schema(self, *, include_deleted_tags: bool) -> Note:
+    def to_domain_schema(self, *, include_deleted_tags: bool, include_tags: bool) -> Note:
         return Note(
             id=self.id,
             slug=self.slug,
@@ -208,7 +208,9 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
                     link.tag.to_domain_schema()
                     for link in self.tag_links
                     if include_deleted_tags or link.tag.deleted_at is None
-                ],
+                ]
+                if include_tags
+                else [],
             ),
         )
 

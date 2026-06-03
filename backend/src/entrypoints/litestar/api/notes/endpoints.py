@@ -82,6 +82,7 @@ class NotesApiController(Controller):
                 published_from=published_from,
                 published_to=published_to,
                 search_query=normalized_search_query,
+                include_tags=True,
             ),
         )
         return NoteListResponseSchema.from_domain_schema(

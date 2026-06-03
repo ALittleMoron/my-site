@@ -92,6 +92,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 published_from=None,
                 published_to=None,
                 search_query=None,
+                include_tags=True,
             ),
         )
         self.analytics_use_case.get_public_stats.assert_not_called()
@@ -123,6 +124,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 published_from=date(2026, 1, 1),
                 published_to=date(2026, 1, 31),
                 search_query="typed notes",
+                include_tags=True,
             ),
         )
 

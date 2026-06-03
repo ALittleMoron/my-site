@@ -147,7 +147,7 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
 
     async def list_published_items_for_seo(self) -> PublishedCompetencyMatrixItemsForSeo:
         items = await self.storage.list_competency_matrix_items(
-            filters=CompetencyMatrixItemFilters(sheet_key=None, only_published=True),
+            filters=CompetencyMatrixItemFilters(only_published=True),
         )
         return CompetencyMatrixItems(values=items).only_available().to_published_for_seo()
 

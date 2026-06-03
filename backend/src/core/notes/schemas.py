@@ -103,6 +103,29 @@ class Note:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedNoteForSeo:
+    slug: str
+    publish_status: PublishStatusEnum
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedNotesForSeo(ValuedDataclass[PublishedNoteForSeo]):
+    @classmethod
+    def from_notes(cls, *, notes: list[Note]) -> Self:
+        return cls(
+            values=[
+                PublishedNoteForSeo(
+                    slug=note.slug,
+                    publish_status=note.publish_status,
+                    updated_at=note.updated_at,
+                )
+                for note in notes
+            ],
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Notes(ValuedDataclass[Note]):
     total_count: int
     total_pages: int
@@ -118,21 +141,27 @@ class Notes(ValuedDataclass[Note]):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NoteFilters:
-    page: int
-    page_size: int
-    language: LanguageEnum
-    only_published: bool
-    tag_slug: str | None
-    published_from: date | None
-    published_to: date | None
-    search_query: str | None
+    page: int | None = None
+    page_size: int | None = None
+    language: LanguageEnum = LanguageEnum.EN
+    only_published: bool | None = None
+    tag_slug: str | None = None
+    published_from: date | None = None
+    published_to: date | None = None
+    search_query: str | None = None
+    include_tags: bool = True
+    order_for_seo: bool = False
 
     @property
     def limit(self) -> int:
+        if self.page_size is None:
+            raise ValueError
         return self.page_size
 
     @property
     def offset(self) -> int:
+        if self.page is None or self.page_size is None:
+            raise ValueError
         return (self.page - 1) * self.page_size
 
 
@@ -349,13 +378,6 @@ class NoteAnalyticsNoteStats:
             engaged_view_count=self.engaged_view_count + daily.engaged_view_count,
             reaction_counts=self.reaction_counts,
         )
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class PublishedNoteForSeo:
-    slug: str
-    publish_status: PublishStatusEnum
-    updated_at: datetime
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -246,8 +246,8 @@ class CompetencyMatrixItemUpdateParams(CompetencyMatrixItemWriteParams): ...
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItemFilters:
-    sheet_key: str | None
-    only_published: bool | None
+    sheet_key: str | None = None
+    only_published: bool | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

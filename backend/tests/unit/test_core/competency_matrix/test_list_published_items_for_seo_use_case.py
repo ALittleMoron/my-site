@@ -58,5 +58,5 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
             ],
         )
         self.storage.list_competency_matrix_items.assert_called_once_with(
-            filters=CompetencyMatrixItemFilters(sheet_key=None, only_published=True),
+            filters=CompetencyMatrixItemFilters(only_published=True),
         )

@@ -118,6 +118,23 @@ class TestQueryCapture:
         assert isinstance(query_by_name["tags_fuzzy_en"].statement, Select)
         assert isinstance(query_by_name["resources_fuzzy_en"].statement, Select)
 
+    async def test_notes_seo_capture_uses_index_aligned_ordering(self) -> None:
+        queries = await capture_balanced_queries()
+        query = next(item for item in queries if item.name == "notes_published_for_seo_sitemap")
+
+        compiled = str(
+            query.statement.compile(
+                dialect=postgresql.dialect(),
+                compile_kwargs={"literal_binds": True},
+            ),
+        )
+        order_by_clause = compiled.split(" ORDER BY ", maxsplit=1)[1]
+
+        assert "ORDER BY notes__note_model.published_at DESC NULLS LAST" in compiled
+        assert "notes__note_model.updated_at DESC" in compiled
+        assert "notes__note_model.title_en" not in order_by_clause
+        assert "CASE WHEN" not in order_by_clause
+
     async def test_compile_captured_query_keeps_sql_and_params_separate(self) -> None:
         queries = await capture_balanced_queries()
         query = next(item for item in queries if item.name == "tags_fuzzy_en")
