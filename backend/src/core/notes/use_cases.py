@@ -20,6 +20,7 @@ from core.notes.schemas import (
     Notes,
     NoteTree,
     NoteUpdateParams,
+    PublishedNoteForSeo,
     Tag,
     TagCreateParams,
     Tags,
@@ -37,6 +38,10 @@ class AbstractNotesUseCase(ABC):
 
     @abstractmethod
     async def list_notes(self, *, filters: NoteFilters) -> Notes:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
         raise NotImplementedError
 
     @abstractmethod
@@ -179,6 +184,9 @@ class NotesUseCase(AbstractNotesUseCase):
             total_count=total_count,
             page_size=filters.page_size,
         )
+
+    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
+        return await self.storage.list_published_notes_for_seo()
 
     async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> NoteTree:
         items = await self.storage.list_tree_items(

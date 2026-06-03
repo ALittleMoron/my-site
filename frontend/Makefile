@@ -38,6 +38,10 @@ typecheck:
 build:
 	bash scripts/npm_task.sh build
 
+.PHONY: ssr-smoke
+ssr-smoke:
+	bash scripts/npm_task.sh ssr-smoke
+
 .PHONY: quality
 quality:
 	bash scripts/npm_task.sh quality

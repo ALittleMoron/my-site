@@ -7,11 +7,15 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.29.4-alpine
+FROM node:24.16.0-alpine AS runtime
+WORKDIR /app
 
-RUN rm -f /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker-entrypoint.d/ /docker-entrypoint.d/
-RUN chmod +x /docker-entrypoint.d/20-envsubst-sitemap.sh
-COPY --from=builder /app/dist/my-site-frontend/browser /usr/share/nginx/html
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/dist/my-site-frontend ./dist/my-site-frontend
+
+EXPOSE 4000
+CMD ["node", "dist/my-site-frontend/server/server.mjs"]

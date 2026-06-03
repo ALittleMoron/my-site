@@ -1,4 +1,5 @@
-import { Injectable, inject, signal, DOCUMENT } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal } from '@angular/core';
 
 export type ThemeName = 'light' | 'dark';
 
@@ -14,7 +15,7 @@ export class ThemeService {
   }
 
   setTheme(theme: ThemeName): void {
-    localStorage.setItem(STORAGE_KEY, theme);
+    this.storage()?.setItem(STORAGE_KEY, theme);
     this.theme.set(theme);
     this.applyTheme(theme);
   }
@@ -24,11 +25,15 @@ export class ThemeService {
   }
 
   private readInitialTheme(): ThemeName {
-    const value = localStorage.getItem(STORAGE_KEY);
+    const value = this.storage()?.getItem(STORAGE_KEY);
     return value === 'dark' || value === 'light' ? value : 'light';
   }
 
   private applyTheme(theme: ThemeName): void {
     this.document.documentElement.setAttribute('data-bs-theme', theme);
+  }
+
+  private storage(): Storage | null {
+    return this.document.defaultView?.localStorage ?? null;
   }
 }

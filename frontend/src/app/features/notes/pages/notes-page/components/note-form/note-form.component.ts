@@ -65,6 +65,7 @@ interface NotePreviewState {
   coverImageAlt: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
+  language: LanguageCode;
 }
 
 interface TagFormControls {
@@ -208,6 +209,7 @@ export class NoteFormComponent implements OnInit {
       coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
       seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
       seoDescription: language === 'ru' ? metadata.seoDescriptionRu : metadata.seoDescriptionEn,
+      language,
     };
   });
 

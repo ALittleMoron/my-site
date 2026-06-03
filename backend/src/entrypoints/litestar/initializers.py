@@ -24,6 +24,7 @@ from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
+from entrypoints.litestar.public.endpoints import public_router
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,
@@ -116,7 +117,7 @@ def create_middlewares(container: AsyncContainer) -> list[Middleware]:
 
 
 def create_routers() -> list[Router]:
-    return [api_router]
+    return [api_router, public_router]
 
 
 def create_cli_app(

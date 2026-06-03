@@ -33,7 +33,7 @@
 ```
 my-site/
 ├── infra/          # nginx reverse proxy, скрипты запуска
-├── frontend/       # Angular 21 SPA (собственный nginx-образ)
+├── frontend/       # Angular 21 hybrid SSR/CSR (собственный Node.js-образ)
 ├── backend/        # Litestar API + доменная логика
 │   ├── src/        # Исходный код приложения
 │   ├── tests/      # Backend-тесты (pytest)
@@ -47,7 +47,7 @@ my-site/
 ## ✨ Возможности
 
 - Матрица компетенций: локализованные листы и разделы, поиск, список/таблица, детальные ответы и внешние ресурсы
-- Заметки: RU/EN-контент, папки, теги, поиск, фильтры по датам/тегам и управление публикацией
+- Заметки: RU/EN-контент, папки, теги, поиск, фильтры по датам/тегам, управление публикацией и SSR-страницы публичных статей
 - Встроенный режим администратора: создание, редактирование, публикация и снятие с публикации заметок и вопросов матрицы
 - Приватная аналитика заметок: публичные счётчики просмотров, вовлечённые просмотры, категории источников и анонимные реакции
 - Локализация интерфейса и контента на русском и английском языках
@@ -105,6 +105,7 @@ make test-env-down              # остановить test PostgreSQL и уда
 make test-backend-unit          # unit-тесты backend, DB не нужна
 make test-backend-integration   # интеграционные тесты backend, test DB готовится автоматически
 make test-frontend              # только frontend (jest)
+make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи
 make performance-smoke          # автоматический local backend + короткий Locust smoke-профиль
 make query-plans-balanced       # автоматическая test DB, seed data и EXPLAIN ANALYZE search-запросов
 ```

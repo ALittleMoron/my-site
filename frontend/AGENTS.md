@@ -5,10 +5,12 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 ## Stack
 
 - Angular 21, standalone components only
+- Angular hybrid rendering with `@angular/ssr`: public article routes use SSR, interactive/admin-heavy routes remain CSR/hydrated Angular.
 - Keep Angular framework packages, Angular CLI/build tooling, and `angular-eslint` on the same Angular major.
 - SCSS for styles
 - Bootstrap 5 via `styles/main.scss`
 - Jest via `jest-preset-angular` for tests
+- Node.js production runtime for the frontend Docker image; do not reintroduce a frontend-owned nginx runtime unless a new design explicitly asks for it.
 
 ## TypeScript
 
@@ -50,10 +52,10 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Services return `Observable<T>` — no Promises
 - Components consume via `toSignal()` or explicit `subscribe` with `DestroyRef` cleanup
 - DTOs mapped to UI models explicitly when field names or shapes differ
-- Sanitize any backend or user-provided Markdown/HTML before binding it with `[innerHTML]`.
+- Sanitize any backend or user-provided Markdown/HTML before binding it with `[innerHTML]`; SSR paths must not depend on browser-only sanitizer APIs.
 - Put reusable frontend upload helpers under `core/uploads/`, not `core/media/`; the latter matches
   a repository ignore pattern.
-- Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests.
+- Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so article SSR can render without browser APIs.
 
 ## Forms
 
@@ -124,6 +126,7 @@ TestBed.configureTestingModule({
 - Use `HttpTestingController` to assert requests and flush responses.
 - Test: correct URL called, response mapped to expected model shape.
 - Always call `httpMock.verify()` after each test.
+- When changing SSR route config, server entrypoints, public article SEO, or transfer-cache behavior, update focused unit tests and `make ssr-smoke`.
 
 ### Signals in Tests
 

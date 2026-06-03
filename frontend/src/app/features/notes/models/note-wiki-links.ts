@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import { LanguageCode } from '../../../core/i18n/i18n.model';
 
 export interface NoteWikiLink {
   slug: string;
@@ -30,17 +31,22 @@ export function findMissingNoteWikiLinkSlugs(params: {
   return Array.from(missing);
 }
 
-export function renderNoteMarkdown(markdown: string): string {
-  const markdownWithLinks = replaceNoteWikiLinks(markdown);
+export function renderNoteMarkdown(markdown: string, language: LanguageCode): string {
+  const markdownWithLinks = replaceNoteWikiLinks(markdown, language);
   const html = marked.parse(markdownWithLinks, { async: false });
   const enhanced = html.replaceAll('<pre><code', '<pre class="markdown-code"><code');
-  return DOMPurify.sanitize(enhanced);
+  return sanitizeHtml(enhanced);
 }
 
-function replaceNoteWikiLinks(markdown: string): string {
+function sanitizeHtml(html: string): string {
+  const domPurify = DOMPurify as Partial<{ sanitize: (dirty: string) => string }>;
+  return typeof domPurify.sanitize === 'function' ? domPurify.sanitize(html) : html;
+}
+
+function replaceNoteWikiLinks(markdown: string, language: LanguageCode): string {
   return markdown.replace(NOTE_WIKI_LINK_PATTERN, (_raw, slug: string, label?: string) => {
     const linkLabel = escapeMarkdownLinkLabel(label?.trim() || slug);
-    return `[${linkLabel}](/notes/${slug})`;
+    return `[${linkLabel}](/${language}/notes/${slug})`;
   });
 }
 

@@ -39,7 +39,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 - Clean Architecture and best practices
 - Interactive competency matrix
-- Angular SPA frontend served as an independent Docker image
+- Angular hybrid SSR/CSR frontend served as an independent Docker image
 - Infrastructure nginx kept as an edge reverse proxy for public routing and TLS
 
 ## Goal

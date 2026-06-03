@@ -31,14 +31,14 @@ Never violate these boundaries:
 | `core/editor/editor-image-upload.service.ts` | Presign + unsigned upload flow for editor images                      |
 | `core/auth/auth.service.ts`                  | Login/logout, `isAdmin()` signal, session state                       |
 | `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
-| `core/auth/auth-token.service.ts`            | Token read/write from `localStorage`                                  |
+| `core/auth/auth-token.service.ts`            | SSR-safe token read/write from `localStorage`                         |
 | `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                         |
 | `core/auth/auth.guard.ts`                    | `CanActivateFn` — redirects to `/about-me` if not admin               |
-| `core/layout/theme.service.ts`               | Dark/light theme toggle, persists to `localStorage`                   |
+| `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`          |
 | `core/layout/layout-preferences.service.ts`  | Layout state shared across shell components                           |
-| `core/seo/seo.service.ts`                    | Sets `<title>` and meta tags per route                                |
+| `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD |
 | `core/notifications/notification.service.ts` | App-wide transient success/error notifications                        |
-| `core/privacy/consent.service.ts`            | Frontend-only local consent persistence                               |
+| `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                      |
 | `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence      |
 | `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
 | `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
@@ -47,6 +47,8 @@ Never violate these boundaries:
 
 - Runtime i18n is loaded once on app startup from the backend: request available languages first,
   then request the selected language bundle.
+- Public prefixed routes (`/ru/...` and `/en/...`) must initialize UI/content language from the URL.
+  Keep legacy unprefixed routes only for compatibility/admin-style SPA access, not canonical SEO.
 - Do not hardcode user-facing interface strings in Angular templates or components. Use
   `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
 - Persist only supported language codes returned by the backend. Do not introduce frontend-only
@@ -56,9 +58,9 @@ Never violate these boundaries:
   localized read requests, edit both RU/EN note and tag `translations` in authoring forms, and send
   both languages in write payloads.
 - Note article authoring must send an explicit `metadata` object with note create/update payloads.
-  Individual metadata fields may be null until the planned metadata-hardening release. Keep SEO
-  analysis advisory-only, keep in-form article/social previews derived from the active language,
-  and do not block save/publish on SEO warnings. Render note wiki links from Markdown
+  Individual metadata fields may be null. Keep SEO analysis advisory-only, keep in-form
+  article/social previews derived from the active language, and do not block save/publish on SEO
+  warnings. Render note wiki links from Markdown
   `[[note-slug]]` / `[[note-slug|Custom label]]` as internal note links, and only warn about missing
   targets when existing note slugs are known.
 - Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
@@ -100,19 +102,21 @@ features/<name>/
 
 ## Existing Features
 
-| Feature     | Route                | Notes                                                                             |
-| ----------- | -------------------- | --------------------------------------------------------------------------------- |
-| `about`     | `/about-me`          | Static page with contact form                                                     |
-| `auth`      | `/login`             | Login page, no guard                                                              |
-| `matrix`    | `/competency-matrix` | Auth-guarded, filter/grid/detail                                                  |
-| `notes`     | `/notes`             | Public list/detail, admin CRUD, folders side-panel, tags                          |
-| `sitemap`   | `/sitemap`           | Static                                                                            |
-| `not-found` | `/404`               | Wildcard redirect target                                                          |
-| `shell`     | n/a                  | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent` |
+| Feature     | Route                                            | Notes                                                                             |
+| ----------- | ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `about`     | `/ru/about-me`, `/en/about-me`                   | Public page with contact form; unprefixed compatibility route remains             |
+| `auth`      | `/login`                                         | Login page, no guard                                                              |
+| `matrix`    | `/ru/competency-matrix`, `/en/competency-matrix` | CSR/hydrated matrix overview; unprefixed compatibility route remains              |
+| `notes`     | `/ru/notes/:slug`, `/en/notes/:slug`             | SSR public article detail, CSR list/admin authoring, folders side-panel, tags     |
+| `sitemap`   | `/ru/sitemap`, `/en/sitemap`                     | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`   |
+| `not-found` | `/404`                                           | Wildcard redirect target                                                          |
+| `shell`     | n/a                                              | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent` |
 
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.
+- Public canonical routes are language-prefixed. Keep `/ru/notes/:slug` and `/en/notes/:slug` as
+  SSR article routes, and render internal note/wiki links with the active language prefix.
 - Feature `routes.ts` — owns all sub-routes for that feature (`''`, `':id'`, etc.).
 - Use `loadChildren` (not `loadComponent`) so adding sub-routes never touches `app.routes.ts`.
 - Auth guard applied at protected parent route level — not per-leaf-route.
@@ -123,10 +127,22 @@ Single place for all providers:
 
 - `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' }))`
 - `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
+- `provideClientHydration(...)` with transfer cache limited to safe public GETs only. Do not transfer
+  auth, account, analytics, reaction, upload, presign, or other private/side-effect endpoints.
 - `{ provide: ErrorHandler, useClass: GlobalErrorHandler }`
 
 No `AppModule`. No `NgModule` anywhere.
 Keep `app.config.ts` as the only place for app-wide providers, interceptors, and global error-handler wiring.
+
+## `app.config.server.ts` / SSR
+
+- Server-only providers belong in `app.config.server.ts`.
+- SSR API calls must rewrite relative `/api/*` URLs through the required `SSR_API_ORIGIN`
+  environment variable.
+- Public origin for canonical/transfer-cache mapping must come from explicit `SSR_PUBLIC_ORIGIN` or
+  required `APP_URL_SCHEMA` + `APP_DOMAIN`.
+- Browser-only features such as view tracking, engaged-view timers, reaction selection, downloads,
+  storage-backed preferences, and admin authoring interactions must not run during SSR.
 
 ## `ApiError` Shape
 

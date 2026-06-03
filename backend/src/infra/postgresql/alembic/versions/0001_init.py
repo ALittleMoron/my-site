@@ -111,6 +111,16 @@ def upgrade() -> None:
         ["publish_status", "published_at"],
         unique=False,
     )
+    op.create_index(
+        "notes_note_publish_status_published_updated_idx",
+        "notes__note_model",
+        [
+            "publish_status",
+            sa.text("published_at DESC NULLS LAST"),
+            sa.text("updated_at DESC"),
+        ],
+        unique=False,
+    )
     op.create_table(
         "notes__tag_model",
         sa.Column("name_ru", sa.String(length=255), nullable=False),
@@ -417,6 +427,10 @@ def downgrade() -> None:
     op.drop_index("notes_tag_name_ru_trgm_idx", table_name="notes__tag_model")
     op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
     op.drop_table("notes__tag_model")
+    op.drop_index(
+        "notes_note_publish_status_published_updated_idx",
+        table_name="notes__note_model",
+    )
     op.drop_index(
         "notes_note_publish_status_published_at_idx",
         table_name="notes__note_model",

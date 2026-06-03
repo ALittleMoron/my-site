@@ -1,8 +1,10 @@
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   OnInit,
+  PLATFORM_ID,
   computed,
   effect,
   inject,
@@ -19,7 +21,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
-import { SeoService } from '../../../../core/seo/seo.service';
+import { SeoAlternate, SeoService } from '../../../../core/seo/seo.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
@@ -76,14 +78,17 @@ export class NotesPageComponent implements OnInit {
   private readonly anonymousReactionService = inject(AnonymousReactionService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private engagedViewTimerId: ReturnType<typeof setInterval> | null = null;
   private engagedViewState: EngagedViewState | null = null;
   private readonly trackedEngagedViewSlugs = new Set<string>();
   private languageReloadInitialized = false;
 
   readonly isAdmin = this.authService.isAdmin;
-  readonly sidePanelOpen = signal(localStorage.getItem(SIDE_PANEL_STORAGE_KEY) === 'true');
+  readonly sidePanelOpen = signal(this.readSidePanelPreference());
   readonly onlyPublished = signal(true);
   readonly currentSlug = signal<string | null>(null);
   readonly activeTagSlug = signal<string | null>(null);
@@ -181,14 +186,14 @@ export class NotesPageComponent implements OnInit {
   toggleSidePanel(): void {
     this.sidePanelOpen.update((value) => {
       const next = !value;
-      localStorage.setItem(SIDE_PANEL_STORAGE_KEY, String(next));
+      this.storage()?.setItem(SIDE_PANEL_STORAGE_KEY, String(next));
       return next;
     });
   }
 
   closeSidePanel(): void {
     this.sidePanelOpen.set(false);
-    localStorage.setItem(SIDE_PANEL_STORAGE_KEY, 'false');
+    this.storage()?.setItem(SIDE_PANEL_STORAGE_KEY, 'false');
   }
 
   setOnlyPublished(value: boolean): void {
@@ -202,31 +207,31 @@ export class NotesPageComponent implements OnInit {
   }
 
   openNote(slug: string): void {
-    this.router.navigate(['/notes', slug], {
+    this.router.navigate(this.localizedNoteCommands(slug), {
       queryParams: this.buildListQueryParams({ page: this.page() }),
     });
   }
 
   backToList(): void {
-    this.router.navigate(['/notes'], {
+    this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: this.page() }),
     });
   }
 
   selectTag(slug: string): void {
-    this.router.navigate(['/notes'], {
+    this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: 1, tagSlug: slug }),
     });
   }
 
   clearTag(): void {
-    this.router.navigate(['/notes'], {
+    this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: 1, tagSlug: null }),
     });
   }
 
   changePage(page: number): void {
-    this.router.navigate(['/notes'], {
+    this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page }),
     });
   }
@@ -256,7 +261,7 @@ export class NotesPageComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.router.navigate(['/notes'], {
+    this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: 1 }),
     });
   }
@@ -265,7 +270,7 @@ export class NotesPageComponent implements OnInit {
     this.searchQuery.set('');
     this.publishedFrom.set('');
     this.publishedTo.set('');
-    this.router.navigate(['/notes'], { queryParams: { page: 1 } });
+    this.router.navigate(this.localizedListCommands(), { queryParams: { page: 1 } });
   }
 
   openCreate(): void {
@@ -298,7 +303,7 @@ export class NotesPageComponent implements OnInit {
         this.closeForm();
         this.loadTags();
         this.loadTree();
-        this.router.navigate(['/notes', note.slug]);
+        this.router.navigate(this.localizedNoteCommands(note.slug));
       },
       error: (err: ApiError) => {
         this.formError.set(err);
@@ -355,7 +360,7 @@ export class NotesPageComponent implements OnInit {
         next: () => {
           this.notifications.success(this.i18n.translate('notes.notify.deleted'));
           this.loadTree();
-          this.router.navigate(['/notes']);
+          this.router.navigate(this.localizedListCommands());
         },
         error: (err: ApiError) => {
           this.detailError.set(err);
@@ -365,6 +370,7 @@ export class NotesPageComponent implements OnInit {
   }
 
   selectReaction(kind: NoteReactionKind): void {
+    if (!this.isBrowser) return;
     const note = this.selectedNote();
     if (!note || note.publishStatus !== 'Published') return;
     const previousReaction = this.selectedReaction();
@@ -441,11 +447,12 @@ export class NotesPageComponent implements OnInit {
   }
 
   exportStatsCsv(): void {
+    if (!this.isBrowser) return;
     const stats = this.stats();
     if (!stats) return;
     const csv = buildStatsCsv(stats);
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
+    const link = this.document.createElement('a');
     link.href = url;
     link.download = `notes-stats-${stats.dateFrom}-${stats.dateTo}.csv`;
     link.click();
@@ -490,9 +497,7 @@ export class NotesPageComponent implements OnInit {
         next: (note) => {
           this.selectedNote.set(note);
           this.setNoteDetailSeo(note);
-          this.selectedReaction.set(
-            toNoteReactionKind(this.anonymousReactionService.getReaction(note.slug)),
-          );
+          this.selectedReaction.set(this.readSelectedReaction(note.slug));
           this.trackPublicView(note);
           this.scheduleEngagedView(note);
           this.detailLoading.set(false);
@@ -525,6 +530,7 @@ export class NotesPageComponent implements OnInit {
   }
 
   private scheduleEngagedView(note: NoteDetail): void {
+    if (!this.isBrowser) return;
     if (this.isAdmin() || note.publishStatus !== 'Published') return;
     if (this.trackedEngagedViewSlugs.has(note.slug)) return;
     this.engagedViewState = {
@@ -539,7 +545,7 @@ export class NotesPageComponent implements OnInit {
 
   private trackEngagedViewProgress(): void {
     const state = this.engagedViewState;
-    if (state === null || document.visibilityState !== 'visible') return;
+    if (state === null || this.document.visibilityState !== 'visible') return;
     state.visibleMs += ENGAGED_VIEW_TICK_MS;
     if (state.visibleMs < ENGAGED_VIEW_DELAY_MS) return;
     this.trackScheduledEngagedView();
@@ -563,6 +569,7 @@ export class NotesPageComponent implements OnInit {
   }
 
   private trackPublicView(note: NoteDetail): void {
+    if (!this.isBrowser) return;
     if (this.isAdmin() || note.publishStatus !== 'Published') return;
     this.notesService
       .trackView(note.slug, this.currentLanguage())
@@ -624,19 +631,79 @@ export class NotesPageComponent implements OnInit {
   }
 
   private setNotesListSeo(): void {
+    const path = '/notes';
     this.seoService.setTranslatedMeta({
       titleKey: 'notes.seo.title',
       descriptionKey: 'notes.seo.description',
-      canonicalPath: '/notes',
+      canonicalPath: this.localizedPublicPath(path),
+      alternates: this.localizedAlternates(path),
     });
   }
 
   private setNoteDetailSeo(note: NoteDetail): void {
+    const language = this.currentLanguage();
+    const path = `/notes/${note.slug}`;
+    const metadata = note.metadata;
+    const seoTitle = localizedMetadataValue(
+      language,
+      metadata.seoTitleRu,
+      metadata.seoTitleEn,
+      note.title,
+    );
+    const seoDescription = localizedMetadataValue(
+      language,
+      metadata.seoDescriptionRu,
+      metadata.seoDescriptionEn,
+      note.excerpt,
+    );
+    const coverImageUrl = normalizeOptionalString(metadata.coverImageUrl);
     this.seoService.setMeta({
-      title: note.title,
-      description: note.excerpt,
-      canonicalPath: `/notes/${note.slug}`,
+      title: seoTitle,
+      description: seoDescription,
+      canonicalPath: this.localizedPublicPath(path),
+      ogImage: coverImageUrl ?? undefined,
+      ogType: 'article',
+      alternates: this.localizedAlternates(path),
+      structuredData: buildArticleStructuredData({
+        note,
+        language,
+        headline: seoTitle,
+        description: seoDescription,
+        image: coverImageUrl,
+      }),
     });
+  }
+
+  private readSelectedReaction(slug: string): NoteReactionKind | null {
+    if (!this.isBrowser) return null;
+    return toNoteReactionKind(this.anonymousReactionService.getReaction(slug));
+  }
+
+  private localizedPublicPath(path: string): string {
+    return `/${this.currentLanguage()}${path}`;
+  }
+
+  private localizedAlternates(path: string): SeoAlternate[] {
+    return [
+      { language: 'ru', path: `/ru${path}` },
+      { language: 'en', path: `/en${path}` },
+    ];
+  }
+
+  private localizedListCommands(): string[] {
+    return ['/', this.currentLanguage(), 'notes'];
+  }
+
+  private localizedNoteCommands(slug: string): string[] {
+    return ['/', this.currentLanguage(), 'notes', slug];
+  }
+
+  private readSidePanelPreference(): boolean {
+    return this.storage()?.getItem(SIDE_PANEL_STORAGE_KEY) === 'true';
+  }
+
+  private storage(): Storage | null {
+    return this.document.defaultView?.localStorage ?? null;
   }
 }
 
@@ -664,6 +731,46 @@ function toNoteReactionKind(value: string | null): NoteReactionKind | null {
     return value;
   }
   return null;
+}
+
+function localizedMetadataValue(
+  language: LanguageCode,
+  ru: string | null,
+  en: string | null,
+  fallback: string,
+): string {
+  return normalizeOptionalString(language === 'ru' ? ru : en) ?? fallback;
+}
+
+function normalizeOptionalString(value: string | null): string | null {
+  const normalized = value?.trim() ?? '';
+  return normalized === '' ? null : normalized;
+}
+
+function buildArticleStructuredData(params: {
+  note: NoteDetail;
+  language: LanguageCode;
+  headline: string;
+  description: string;
+  image: string | null;
+}): Record<string, unknown> {
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: params.headline,
+    description: params.description,
+    author: {
+      '@type': 'Person',
+      name: params.note.authorUsername,
+    },
+    datePublished: params.note.publishedAt ?? params.note.createdAt,
+    dateModified: params.note.updatedAt,
+    inLanguage: params.language,
+  };
+  if (params.image) {
+    data['image'] = [params.image];
+  }
+  return data;
 }
 
 function applyReactionChange(params: {

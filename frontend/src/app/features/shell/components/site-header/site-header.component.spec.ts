@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { SiteHeaderComponent } from './site-header.component';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { ThemeName } from '../../../../core/layout/theme.service';
@@ -16,6 +17,7 @@ describe('SiteHeaderComponent', () => {
   let currentUserSignal: ReturnType<typeof signal<AccountInfo | null>>;
   let languageSignal: ReturnType<typeof signal<LanguageCode | null>>;
   let languagesSignal: ReturnType<typeof signal<I18nLanguage[]>>;
+  let router: Router;
   let mockThemeService: {
     theme: ReturnType<typeof signal<ThemeName>>;
     toggleTheme: jest.Mock;
@@ -60,7 +62,7 @@ describe('SiteHeaderComponent', () => {
     mockI18nService = {
       language: languageSignal,
       languages: languagesSignal,
-      switchLanguage: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
+      switchLanguage: jest.fn().mockReturnValue(of(void 0)),
       translate: jest.fn((key: string, params?: Record<string, string | number>) => {
         const messages: Record<string, string> = {
           'shell.nav.about': 'Обо мне',
@@ -98,30 +100,19 @@ describe('SiteHeaderComponent', () => {
     fixture = TestBed.createComponent(SiteHeaderComponent);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
+    router = TestBed.inject(Router);
   });
 
-  it('renders nav link to /about-me', () => {
-    const links = el.querySelectorAll('a[routerLink]');
-    const hrefs = Array.from(links).map(
-      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
-    );
-    expect(hrefs).toContain('/about-me');
+  it('renders nav link to the localized about page', () => {
+    expect(fixture.componentInstance.aboutLink()).toBe('/ru/about-me');
   });
 
-  it('renders nav link to /competency-matrix', () => {
-    const links = el.querySelectorAll('a[routerLink]');
-    const hrefs = Array.from(links).map(
-      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
-    );
-    expect(hrefs).toContain('/competency-matrix');
+  it('renders nav link to the localized competency matrix page', () => {
+    expect(fixture.componentInstance.matrixLink()).toBe('/ru/competency-matrix');
   });
 
-  it('renders nav link to /notes', () => {
-    const links = el.querySelectorAll('a[routerLink]');
-    const hrefs = Array.from(links).map(
-      (a) => a.getAttribute('routerLink') ?? a.getAttribute('href'),
-    );
-    expect(hrefs).toContain('/notes');
+  it('renders nav link to the localized notes page', () => {
+    expect(fixture.componentInstance.notesLink()).toBe('/ru/notes');
   });
 
   it('theme toggle button calls themeService.toggleTheme()', () => {
@@ -195,7 +186,9 @@ describe('SiteHeaderComponent', () => {
     expect(buttons[1].getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('switches language when another language is clicked', () => {
+  it('switches language and rewrites the current localized URL', () => {
+    jest.spyOn(router, 'url', 'get').mockReturnValue('/ru/notes/typed-notes?tag=angular');
+    const navigateByUrlSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const englishButton = Array.from(el.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === 'EN',
     ) as HTMLButtonElement;
@@ -203,5 +196,6 @@ describe('SiteHeaderComponent', () => {
     englishButton.click();
 
     expect(mockI18nService.switchLanguage).toHaveBeenCalledWith('en');
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/en/notes/typed-notes?tag=angular');
   });
 });

@@ -253,7 +253,7 @@ describe('NoteFormComponent', () => {
 
     expect(preview.textContent).toContain('Предпросмотр заметки');
     expect(preview.textContent).toContain('типизированную заметку');
-    expect(link.getAttribute('href')).toBe('/notes/typed-note');
+    expect(link.getAttribute('href')).toBe('/ru/notes/typed-note');
   });
 });
 

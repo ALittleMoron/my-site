@@ -23,7 +23,12 @@ services:
     image: my_site_frontend:latest
     container_name: my_site_frontend
     environment:
+      - PORT=4000
+      - APP_URL_SCHEMA=${APP_URL_SCHEMA}
       - APP_DOMAIN=${APP_DOMAIN}
+      - SSR_API_ORIGIN=http://backend:8080
+      - SSR_PUBLIC_ORIGIN=${APP_URL_SCHEMA}://${APP_DOMAIN}
+      - NG_ALLOWED_HOSTS=${APP_DOMAIN}
     restart: unless-stopped
     networks:
       - app-network

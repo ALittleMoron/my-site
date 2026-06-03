@@ -20,6 +20,7 @@ from core.notes.schemas import (
     NotePublicStatsCollection,
     NoteReactionCounts,
     NoteTreeItemData,
+    PublishedNoteForSeo,
     Tag,
     Tags,
 )
@@ -93,6 +94,18 @@ class NotesDatabaseStorage(NotesStorage):
             ],
             total_count,
         )
+
+    async def list_published_notes_for_seo(self) -> list[PublishedNoteForSeo]:
+        query = (
+            select(NoteModel.slug, NoteModel.updated_at, NoteModel.publish_status)
+            .where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
+            .order_by(NoteModel.published_at.desc().nullslast(), NoteModel.updated_at.desc())
+        )
+        rows = await self.session.execute(query)
+        return [
+            PublishedNoteForSeo(slug=slug, updated_at=updated_at, publish_status=publish_status)
+            for slug, updated_at, publish_status in rows
+        ]
 
     def _apply_note_filters(
         self,

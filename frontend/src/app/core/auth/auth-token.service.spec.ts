@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
 import { AuthTokenService } from './auth-token.service';
 
 describe('AuthTokenService', () => {
@@ -11,6 +12,7 @@ describe('AuthTokenService', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     localStorage.clear();
   });
 
@@ -29,5 +31,36 @@ describe('AuthTokenService', () => {
     service.clearToken();
     expect(service.token()).toBeNull();
     expect(localStorage.getItem('accessToken')).toBeNull();
+  });
+
+  it('does not read localStorage when a server document has no defaultView', () => {
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: DOCUMENT,
+          useValue: {
+            defaultView: null,
+          },
+        },
+      ],
+    });
+
+    const serverService = TestBed.inject(AuthTokenService);
+
+    expect(serverService.token()).toBeNull();
+    serverService.setToken('ignored-on-server');
+    expect(serverService.token()).toBe('ignored-on-server');
+    serverService.clearToken();
+    expect(serverService.token()).toBeNull();
   });
 });

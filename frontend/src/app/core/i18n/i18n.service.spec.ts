@@ -76,6 +76,29 @@ describe('I18nService', () => {
     expect(service.translate('shell.nav.about')).toBe('About');
   });
 
+  it('uses the URL language prefix before the stored language', () => {
+    window.history.pushState({}, '', '/en/notes/typed-notes');
+    localStorage.setItem('chosenLanguage', 'ru');
+
+    service.initialize().subscribe();
+    httpMock
+      .expectOne((req) => req.url.endsWith('/api/i18n/languages'))
+      .flush({
+        defaultLanguage: 'ru',
+        languages: [
+          { code: 'ru', label: 'Русский' },
+          { code: 'en', label: 'English' },
+        ],
+      });
+
+    const bundleReq = httpMock.expectOne((req) => req.url.endsWith('/api/i18n/bundles/en'));
+    bundleReq.flush({ language: 'en', messages: { 'shell.nav.about': 'About' } });
+
+    expect(service.language()).toBe('en');
+    expect(localStorage.getItem('chosenLanguage')).toBe('en');
+    window.history.pushState({}, '', '/');
+  });
+
   it('ignores a stale stored language and uses backend default language', () => {
     localStorage.setItem('chosenLanguage', 'de');
 

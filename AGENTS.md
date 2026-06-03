@@ -14,8 +14,8 @@ Portfolio/notes site and knowledge database
 - File storage: MinIO (miniopy-async)
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK
-- Frontend: Angular 21 SPA + Bootstrap 5, served by a frontend-owned nginx image
-- Edge: nginx reverse proxy for TLS, `/api/*`, frontend, MinIO, and backup UI routing
+- Frontend: Angular 21 hybrid SSR/CSR + Bootstrap 5, served by a frontend-owned Node.js SSR image
+- Edge: nginx reverse proxy for TLS, `/api/*`, exact `/sitemap.xml` and `/robots.txt`, frontend, MinIO, and backup UI routing
 
 ## General rules
 
@@ -63,14 +63,14 @@ Portfolio/notes site and knowledge database
   `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation remains future work until
   explicitly designed.
 - Article authoring uses Notes as the article model. SEO metadata for notes is explicit and
-  nullable until the planned metadata-hardening release: API write payloads must include a
+  nullable: API write payloads must include a
   `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
   `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
   null. SEO analysis is advisory-only and must not block saving or publishing. Wiki-style note
   links use `[[note-slug]]` and `[[note-slug|Custom label]]`; reserve matrix link syntax for a
   later design after matrix question slugs exist.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains and `/api/*`, while frontend nginx serves the SPA and falls back to `index.html`.
+- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains, `/api/*`, `/sitemap.xml`, and `/robots.txt`, while the frontend container runs the Angular Node.js SSR runtime for public article routes and hydrates interactive CSR/admin areas.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created
   for that work, including finished plans in `docs/superpowers/plans/`, specs/design docs in
   `docs/superpowers/specs/`, and similar temporary `.md` handoff files. Keep only documentation

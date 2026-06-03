@@ -12,6 +12,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -130,6 +131,12 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
             "notes_note_publish_status_published_at_idx",
             "publish_status",
             "published_at",
+        ),
+        Index(
+            "notes_note_publish_status_published_updated_idx",
+            "publish_status",
+            text("published_at DESC NULLS LAST"),
+            text("updated_at DESC"),
         ),
     )
 

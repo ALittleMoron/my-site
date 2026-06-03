@@ -31,6 +31,7 @@ describe('NoteAuthoringPreviewComponent', () => {
       'seoDescription',
       'SEO description for social cards and search snippets.',
     );
+    fixture.componentRef.setInput('language', 'ru');
     fixture.detectChanges();
   });
 
@@ -43,7 +44,7 @@ describe('NoteAuthoringPreviewComponent', () => {
 
     expect(text).toContain('Typed notes');
     expect(text).toContain('Angular');
-    expect(link.getAttribute('href')).toBe('/notes/typed-note');
+    expect(link.getAttribute('href')).toBe('/ru/notes/typed-note');
     expect(cover.getAttribute('src')).toBe('https://example.com/cover.jpg');
     expect(cover.getAttribute('alt')).toBe('Cover alt');
   });

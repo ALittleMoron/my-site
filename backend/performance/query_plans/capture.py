@@ -20,10 +20,20 @@ class EmptyScalarResult:
         return iter(())
 
 
+class EmptyRowResult:
+    def __iter__(self) -> Iterator[tuple[object, ...]]:
+        return iter(())
+
+
 class RecordingSession:
     def __init__(self) -> None:
+        self.execute_statements: list[Select[tuple[object, ...]]] = []
         self.scalar_statements: list[Select[tuple[object, ...]]] = []
         self.scalars_statements: list[Select[tuple[object, ...]]] = []
+
+    async def execute(self, statement: Select[tuple[object, ...]]) -> EmptyRowResult:
+        self.execute_statements.append(statement)
+        return EmptyRowResult()
 
     async def scalar(self, statement: Select[tuple[object, ...]]) -> int:
         self.scalar_statements.append(statement)
@@ -66,6 +76,10 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
             search_query="полнотекстовый поиск",
         ),
     )
+
+    notes_seo_session = RecordingSession()
+    notes_seo_storage = NotesDatabaseStorage(session=cast("AsyncSession", notes_seo_session))
+    await notes_seo_storage.list_published_notes_for_seo()
 
     tag_queries = await _capture_tag_queries()
     resource_queries = await _capture_resource_queries()
@@ -113,6 +127,16 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
             expectation=PlanExpectation(
                 max_execution_ms=250.0,
                 expected_index_names=("notes_note_search_vector_gin_idx",),
+                forbidden_seq_scan_relations=("notes__note_model",),
+                allow_seq_scan_reason=None,
+            ),
+        ),
+        CapturedQuery(
+            name="notes_published_for_seo_sitemap",
+            statement=notes_seo_session.execute_statements[0],
+            expectation=PlanExpectation(
+                max_execution_ms=250.0,
+                expected_index_names=("notes_note_publish_status_published_updated_idx",),
                 forbidden_seq_scan_relations=("notes__note_model",),
                 allow_seq_scan_reason=None,
             ),

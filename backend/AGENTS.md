@@ -66,6 +66,9 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.
 - Controllers must receive dependencies through `FromDishka[...]`, preferably typed as abstract use case interfaces.
+- Public discovery response assembly, such as sitemap URL collection, sitemap XML rendering, and
+  robots.txt rendering, must not live in `endpoints.py` controller modules. Keep it in a neighboring
+  `backend/src/entrypoints/litestar/**` module owned by the HTTP entrypoint layer, not in `core`.
 - API schemas must inherit from the shared schema bases and explicitly map to/from domain objects with `to_schema` / `from_domain_schema`.
 - Use `to_domain_schema` / `from_domain_schema` for same-concept conversions between API schemas, ORM models, and core domain schemas when the method signature already identifies the exact source/target type. Use a more specific conversion method name only when the conversion changes the semantic entity, such as attached resource -> plain external resource.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
@@ -107,9 +110,8 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Note article SEO metadata belongs to the note contract, not to a generic translation table.
   Keep the explicit nullable fields `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
   `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` on note
-  domain/API/storage models until a planned metadata-hardening release changes that contract. Note
-  create/update API payloads must require the `metadata` object itself while allowing individual
-  metadata fields to be null, with no production defaults.
+  domain/API/storage models. Note create/update API payloads must require the `metadata` object
+  itself while allowing individual metadata fields to be null, with no production defaults.
 - Read/write APIs that expose localized note, tag, or competency matrix content must use the
   backend language enum and require explicit `LanguageEnum`/`language` selection where localized
   values are returned.

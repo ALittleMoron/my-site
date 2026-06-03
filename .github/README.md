@@ -33,7 +33,7 @@ and an integrated admin authoring mode.
 ```
 my-site/
 ├── infra/          # nginx reverse proxy, run scripts
-├── frontend/       # Angular 21 SPA (served by its own nginx image)
+├── frontend/       # Angular 21 hybrid SSR/CSR (served by its own Node.js image)
 ├── backend/        # Litestar API + domain logic
 │   ├── src/        # Application source
 │   ├── tests/      # Backend tests (pytest)
@@ -47,7 +47,7 @@ my-site/
 ## ✨ Features
 
 - Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, and linked resources
-- Notes with localized RU/EN content, folders, tags, search, date/tag filters, and publish visibility
+- Notes with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
 - Integrated admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
 - Privacy-safe note analytics with public view counters, engaged views, source categories, and anonymous reactions
 - Russian/English UI and content localization driven by the backend
@@ -105,6 +105,7 @@ make test-env-down              # stop reusable test PostgreSQL and remove data
 make test-backend-unit          # backend unit tests, no DB required
 make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
+make -C frontend ssr-smoke      # production SSR build + public article HTML smoke
 make performance-smoke          # auto local backend + short Locust smoke profile
 make query-plans-balanced       # auto test DB, seed data, EXPLAIN ANALYZE search queries
 ```

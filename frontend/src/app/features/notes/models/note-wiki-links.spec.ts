@@ -28,9 +28,18 @@ describe('note wiki links', () => {
   });
 
   it('renders wiki links as sanitized internal note links', () => {
-    const html = renderNoteMarkdown('Read [[typed-notes]] and [[angular-forms|Angular forms]].');
+    const html = renderNoteMarkdown(
+      'Read [[typed-notes]] and [[angular-forms|Angular forms]].',
+      'ru',
+    );
 
-    expect(html).toContain('<a href="/notes/typed-notes">typed-notes</a>');
-    expect(html).toContain('<a href="/notes/angular-forms">Angular forms</a>');
+    expect(html).toContain('<a href="/ru/notes/typed-notes">typed-notes</a>');
+    expect(html).toContain('<a href="/ru/notes/angular-forms">Angular forms</a>');
+  });
+
+  it('renders wiki links with the active language prefix', () => {
+    const html = renderNoteMarkdown('Read [[typed-notes]].', 'en');
+
+    expect(html).toContain('<a href="/en/notes/typed-notes">typed-notes</a>');
   });
 });

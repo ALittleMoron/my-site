@@ -61,7 +61,7 @@
   - [ ] Tune Locust thresholds from real baseline reports
   - [ ] Expand Locust scenarios with seeded note/detail/matrix data
   - [ ] Run scheduled/manual baseline load tests against a production-like environment
-  - [ ] Add Lighthouse CI with performance budgets for Angular SPA routes
+  - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
@@ -86,7 +86,7 @@
 - [ ] VPN for accessing internal systems
 - [ ] Add Dependabot to the repository
 - [ ] Prepare repository split
-    - [x] Move Angular static serving into a frontend-owned Docker image
+    - [x] Move Angular serving into a frontend-owned Docker image
     - [x] Keep infrastructure nginx as the edge reverse proxy
     - [ ] Move backend, frontend, and infrastructure into separate repositories
     - [ ] Configure independent image publishing for backend and frontend
@@ -237,9 +237,9 @@
   - [x] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build
 - [x] Migrate to the Angular
   - [x] Target architecture
-    - [x] Use Angular as an SPA served by frontend nginx
+    - [x] Use Angular as a hybrid SSR/CSR frontend served by a frontend-owned Node.js runtime
     - [x] Keep Litestar as the backend API only (`/api/*`, `/api/docs`, service endpoints)
-    - [x] Configure nginx fallback to Angular `index.html` for frontend routes
+    - [x] Configure frontend fallback/hydration for CSR routes
     - [x] Keep legacy Litestar/Jinja/HTMX views only during migration
     - [x] Remove legacy views, templates, HTMX, Hyperscript, and template-only static files after parity
   - [x] API contracts and client integration
@@ -264,8 +264,8 @@
     - [x] Open Graph and Twitter meta tags for public pages
     - [x] Canonical URL per route
     - [x] favicon and icon variants
-    - [x] `robots.txt`
-    - [x] `sitemap.xml`
+    - [x] Backend-generated `robots.txt`
+    - [x] Backend-generated `sitemap.xml`
     - [x] sitemap page
     - [x] `/.well-known/appspecific/com.chrome.devtools.json`
   - [x] Competency matrix
@@ -302,7 +302,7 @@
   - [x] Deployment and legacy cleanup
     - [x] Build Angular in CI/CD
     - [x] Build Angular as an independent frontend Docker image
-    - [x] Serve Angular static files from frontend nginx
+    - [x] Serve Angular hybrid SSR/CSR from a frontend Node.js runtime
     - [x] Proxy `/api/*` and `/api/docs` from nginx to Litestar
     - [x] Smoke test direct route loads (`/about-me`, `/competency-matrix`, `/sitemap`)
     - [x] Smoke test browser refresh on Angular routes
@@ -350,21 +350,17 @@
   - [x] Add in-form article/social preview for the active language
   - [x] Render `[[note-slug]]` and `[[note-slug|Custom label]]` as internal note links
   - [x] Warn when wiki links point to missing note slugs available in the admin note tree
-- [ ] SEO Foundation release
-  - [ ] Add Angular SSR or hybrid rendering for public routes
-  - [ ] Add `/ru` and `/en` canonical URL prefixes
-  - [ ] Generate dynamic `sitemap.xml` and `robots.txt`
-  - [ ] Emit Article JSON-LD/Open Graph metadata from stored note metadata
-  - [ ] Add HTML snapshot tests for public article pages
+- [x] SEO Foundation release
+  - [x] Add Angular hybrid rendering for public article routes while keeping interactive/admin routes CSR
+  - [x] Add `/ru` and `/en` canonical URL prefixes
+  - [x] Generate dynamic `sitemap.xml` and `robots.txt`
+  - [x] Emit Article JSON-LD/Open Graph metadata from stored note metadata
+  - [x] Add HTML smoke tests for public article pages and missing-article `404/noindex`
 - [ ] Matrix public SEO release
   - [ ] Add explicit matrix question slugs
   - [ ] Add separate public matrix question pages
   - [ ] Preserve modal interaction from the matrix overview
   - [ ] Emit QAPage structured data after public question pages exist
-- [ ] Final article metadata hardening
-  - [ ] Backfill existing article metadata
-  - [ ] Change nullable SEO metadata fields to required
-  - [ ] Update API and form validators for required article metadata
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
     - [x] Tags

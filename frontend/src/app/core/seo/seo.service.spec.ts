@@ -42,11 +42,11 @@ describe('SeoService', () => {
     service.setMeta({
       title: 'Обо мне',
       description: 'Описание страницы.',
-      canonicalPath: '/about-me',
+      canonicalPath: '/ru/about-me',
     });
 
     const link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    expect(link?.href).toBe('http://localhost:4200/about-me');
+    expect(link?.href).toBe('http://localhost:4200/ru/about-me');
   });
 
   it('setMeta() removes stale canonical link when canonical is not provided', () => {
@@ -59,5 +59,53 @@ describe('SeoService', () => {
     service.setMeta({ title: '404', description: 'Страница не найдена.' });
 
     expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+  });
+
+  it('setMeta() writes language alternates', () => {
+    service.setMeta({
+      title: 'Typed notes',
+      description: 'Description.',
+      canonicalPath: '/ru/notes/typed-notes',
+      alternates: [
+        { language: 'ru', path: '/ru/notes/typed-notes' },
+        { language: 'en', path: '/en/notes/typed-notes' },
+      ],
+    });
+
+    const links = Array.from(
+      document.head.querySelectorAll<HTMLLinkElement>('link[rel="alternate"][hreflang]'),
+    );
+
+    expect(links.map((link) => [link.hreflang, link.href])).toEqual([
+      ['ru', 'http://localhost:4200/ru/notes/typed-notes'],
+      ['en', 'http://localhost:4200/en/notes/typed-notes'],
+    ]);
+  });
+
+  it('setMeta() writes JSON-LD structured data and removes stale data', () => {
+    service.setMeta({
+      title: 'Typed notes',
+      description: 'Description.',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: 'Typed notes',
+      },
+    });
+
+    const script = document.head.querySelector<HTMLScriptElement>(
+      'script[type="application/ld+json"]',
+    );
+    expect(script?.textContent).toContain('"@type":"BlogPosting"');
+
+    service.setMeta({ title: '404', description: 'Not found.' });
+
+    expect(document.head.querySelector('script[type="application/ld+json"]')).toBeNull();
+  });
+
+  it('setMeta() can mark a page as noindex', () => {
+    service.setMeta({ title: '404', description: 'Not found.', robots: 'noindex, follow' });
+
+    expect(metaService.getTag('name="robots"')?.content).toBe('noindex, follow');
   });
 });

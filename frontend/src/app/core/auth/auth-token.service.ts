@@ -1,18 +1,25 @@
-import { Injectable, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, signal } from '@angular/core';
 
 const STORAGE_KEY = 'accessToken';
 
 @Injectable({ providedIn: 'root' })
 export class AuthTokenService {
-  readonly token = signal<string | null>(localStorage.getItem(STORAGE_KEY));
+  private readonly document = inject(DOCUMENT);
+
+  readonly token = signal<string | null>(this.storage()?.getItem(STORAGE_KEY) ?? null);
 
   setToken(token: string): void {
-    localStorage.setItem(STORAGE_KEY, token);
+    this.storage()?.setItem(STORAGE_KEY, token);
     this.token.set(token);
   }
 
   clearToken(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    this.storage()?.removeItem(STORAGE_KEY);
     this.token.set(null);
+  }
+
+  private storage(): Storage | null {
+    return this.document.defaultView?.localStorage ?? null;
   }
 }

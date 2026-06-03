@@ -122,9 +122,21 @@ describe('NotesPageComponent', () => {
     fixture.detectChanges();
 
     expect(seoService.setMeta).toHaveBeenCalledWith({
-      title: 'Typed notes',
-      description: 'Excerpt',
-      canonicalPath: '/notes/typed-notes',
+      title: 'SEO Typed notes RU',
+      description:
+        'SEO description RU with enough text to be useful for search snippets and social cards.',
+      canonicalPath: '/ru/notes/typed-notes',
+      ogImage: 'https://example.com/cover.jpg',
+      ogType: 'article',
+      alternates: [
+        { language: 'ru', path: '/ru/notes/typed-notes' },
+        { language: 'en', path: '/en/notes/typed-notes' },
+      ],
+      structuredData: expect.objectContaining({
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: 'SEO Typed notes RU',
+      }),
     });
   });
 
@@ -134,11 +146,40 @@ describe('NotesPageComponent', () => {
     fixture.detectChanges();
 
     expect(notesService.trackView).toHaveBeenCalledWith('typed-notes', 'ru');
-    expect(seoService.setMeta).toHaveBeenCalledWith({
-      title: 'Typed notes',
-      description: 'Excerpt',
-      canonicalPath: '/notes/typed-notes',
-    });
+    expect(seoService.setMeta).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'SEO Typed notes RU',
+        canonicalPath: '/ru/notes/typed-notes',
+      }),
+    );
+  });
+
+  it('falls back to note title and excerpt when SEO metadata is null', () => {
+    notesService.getNote.mockReturnValue(
+      of(
+        noteDetail({
+          metadata: {
+            seoTitleRu: null,
+            seoTitleEn: null,
+            seoDescriptionRu: null,
+            seoDescriptionEn: null,
+            coverImageUrl: null,
+            coverImageAltRu: null,
+            coverImageAltEn: null,
+          },
+        }),
+      ),
+    );
+
+    fixture.detectChanges();
+
+    expect(seoService.setMeta).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Typed notes',
+        description: 'Excerpt',
+        canonicalPath: '/ru/notes/typed-notes',
+      }),
+    );
   });
 
   it('does not track public view for admin detail reads', () => {
@@ -164,7 +205,11 @@ describe('NotesPageComponent', () => {
     expect(seoService.setTranslatedMeta).toHaveBeenCalledWith({
       titleKey: 'notes.seo.title',
       descriptionKey: 'notes.seo.description',
-      canonicalPath: '/notes',
+      canonicalPath: '/ru/notes',
+      alternates: [
+        { language: 'ru', path: '/ru/notes' },
+        { language: 'en', path: '/en/notes' },
+      ],
     });
   });
 
@@ -269,7 +314,7 @@ describe('NotesPageComponent', () => {
     fixture.componentInstance.applyFilters();
 
     expect(notesService.getNotes).not.toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+    expect(router.navigate).toHaveBeenCalledWith(['/', 'ru', 'notes'], {
       queryParams: {
         page: 1,
         searchQuery: 'postgres',
@@ -293,7 +338,7 @@ describe('NotesPageComponent', () => {
 
     fixture.componentInstance.changePage(3);
 
-    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+    expect(router.navigate).toHaveBeenCalledWith(['/', 'ru', 'notes'], {
       queryParams: {
         page: 3,
         tag: 'python',
@@ -318,7 +363,7 @@ describe('NotesPageComponent', () => {
 
     fixture.componentInstance.clearListFilters();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/notes'], {
+    expect(router.navigate).toHaveBeenCalledWith(['/', 'ru', 'notes'], {
       queryParams: { page: 1 },
     });
   });

@@ -50,6 +50,11 @@ case "$action" in
         ensure_frontend_deps
         npm run build
         ;;
+    ssr-smoke)
+        ensure_frontend_deps
+        npm run build
+        node scripts/ssr_smoke.mjs
+        ;;
     quality)
         bash "$script_dir/npm_task.sh" format
         bash "$script_dir/npm_task.sh" lint

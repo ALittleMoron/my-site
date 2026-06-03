@@ -53,7 +53,7 @@ export class NoteDetailComponent {
   readonly contentHtml = computed(() => {
     const note = this.note();
     if (!note?.content) return '';
-    return renderNoteMarkdown(note.content);
+    return renderNoteMarkdown(note.content, this.language());
   });
 
   readonly isDraft = computed(() => this.note()?.publishStatus === 'Draft');

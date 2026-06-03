@@ -50,9 +50,17 @@
             "outputPath": "dist/my-site-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "server": "src/main.server.ts",
+            "outputMode": "server",
+            "ssr": {
+              "entry": "src/server.ts"
+            },
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "security": {
+              "allowedHosts": []
+            },
             "assets": [
               {
                 "glob": "**/*",

@@ -1,5 +1,5 @@
 <nav class="navbar navbar-expand-lg nav nav-pills nav-blur fixed-top px-4 pt-1 pb-1 border-bottom">
-  <a class="navbar-brand fs-4 text-success fw-bold" routerLink="/">ALM</a>
+  <a class="navbar-brand fs-4 text-success fw-bold" [routerLink]="homeLink()">ALM</a>
   <button
     class="navbar-toggler"
     type="button"
@@ -16,7 +16,7 @@
         <li class="nav-item mx-3">
           <a
             class="nav-link link-colored"
-            routerLink="/about-me"
+            [routerLink]="aboutLink()"
             routerLinkActive="link-active"
             [attr.aria-label]="'shell.nav.about' | t"
             (click)="closeNav()"
@@ -42,7 +42,7 @@
         <li class="nav-item mx-3">
           <a
             class="nav-link link-colored"
-            routerLink="/competency-matrix"
+            [routerLink]="matrixLink()"
             routerLinkActive="link-active"
             [attr.aria-label]="'shell.nav.matrix' | t"
             (click)="closeNav()"
@@ -68,7 +68,7 @@
         <li class="nav-item mx-3">
           <a
             class="nav-link link-colored"
-            routerLink="/notes"
+            [routerLink]="notesLink()"
             routerLinkActive="link-active"
             [attr.aria-label]="'shell.nav.notes' | t"
             (click)="closeNav()"

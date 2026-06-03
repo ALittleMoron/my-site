@@ -352,6 +352,13 @@ class NoteAnalyticsNoteStats:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedNoteForSeo:
+    slug: str
+    publish_status: PublishStatusEnum
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class NoteAnalyticsDailyStats:
     note_id: UUID
     title: str

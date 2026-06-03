@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
@@ -26,8 +26,13 @@ export class SiteHeaderComponent {
   private readonly authService = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
   private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
 
   readonly isNavOpen = signal(false);
+  readonly homeLink = computed(() => `/${this.currentLanguage()}/about-me`);
+  readonly aboutLink = computed(() => `/${this.currentLanguage()}/about-me`);
+  readonly matrixLink = computed(() => `/${this.currentLanguage()}/competency-matrix`);
+  readonly notesLink = computed(() => `/${this.currentLanguage()}/notes`);
   readonly toggleLabel = computed(() =>
     this.i18n.translate(
       this.themeService.theme() === 'light' ? 'shell.theme.dark' : 'shell.theme.light',
@@ -71,6 +76,42 @@ export class SiteHeaderComponent {
   }
 
   switchLanguage(language: LanguageCode): void {
-    this.i18n.switchLanguage(language).subscribe();
+    const nextUrl = rewriteLanguagePrefixedUrl(this.router.url, language);
+    this.i18n.switchLanguage(language).subscribe({
+      next: () => this.router.navigateByUrl(nextUrl),
+    });
   }
+
+  private currentLanguage(): LanguageCode {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
+  }
+}
+
+export function rewriteLanguagePrefixedUrl(currentUrl: string, language: LanguageCode): string {
+  const url = new URL(currentUrl, 'http://localhost');
+  const segments = url.pathname.split('/').filter((segment) => segment.length > 0);
+
+  if (segments[0] === 'ru' || segments[0] === 'en') {
+    segments[0] = language;
+  } else if (isPublicRouteSegment(segments[0])) {
+    segments.unshift(language);
+  } else {
+    return currentUrl;
+  }
+
+  return `/${segments.join('/')}${url.search}${url.hash}`;
+}
+
+function isPublicRouteSegment(segment: string | undefined): boolean {
+  return (
+    segment === undefined ||
+    segment === 'about-me' ||
+    segment === 'competency-matrix' ||
+    segment === 'notes' ||
+    segment === 'sitemap'
+  );
 }

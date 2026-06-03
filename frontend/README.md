@@ -1,11 +1,12 @@
 # My Site Frontend
 
-Angular SPA for the personal site. The frontend is packaged as an independent Docker image and serves its compiled static files through its own nginx runtime.
+Angular hybrid SSR/CSR frontend for the personal site. The frontend is packaged as an independent Docker image and runs the Angular Node.js SSR runtime: public article pages are server-rendered for SEO, while admin-heavy and interactive areas stay hydrated Angular.
 
 In the full application stack, infrastructure nginx remains the public edge proxy:
 
-- `/` is proxied to the frontend nginx container.
+- `/` is proxied to the frontend Node.js SSR container.
 - `/api/*` is proxied to the backend service.
+- `/sitemap.xml` and `/robots.txt` are proxied to backend-generated discovery endpoints.
 - TLS, public domains, MinIO, and backup UI routing stay in the infrastructure layer.
 
 ## Development server
@@ -30,6 +31,12 @@ make build
 
 The production build is written to `dist/my-site-frontend/browser`.
 
+SSR output is written to `dist/my-site-frontend/server`. To build and run the public article HTML smoke check, run:
+
+```bash
+make ssr-smoke
+```
+
 ## Docker image
 
 Build the frontend image from this directory:
@@ -41,15 +48,14 @@ docker build -t my_site_frontend:latest .
 The image uses:
 
 - `node:24.16.0-alpine` to install dependencies and run the Angular production build.
-- `nginx:1.29.4-alpine` to serve `/usr/share/nginx/html`.
-- `nginx.conf` for SPA fallback to `index.html`.
-- `docker-entrypoint.d/20-envsubst-sitemap.sh` to substitute `APP_DOMAIN` in `sitemap.xml` at container start.
+- `node:24.16.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
+- Explicit runtime environment: `PORT`, `SSR_API_ORIGIN`, `APP_URL_SCHEMA`, `APP_DOMAIN`, and optionally `SSR_PUBLIC_ORIGIN` / `NG_ALLOWED_HOSTS`.
 
 ## Repository split boundary
 
-This directory is intended to become a standalone frontend repository later. Frontend-owned files should stay here, including Angular source code, public assets, the frontend Dockerfile, and frontend nginx config.
+This directory is intended to become a standalone frontend repository later. Frontend-owned files should stay here, including Angular source code, public assets, the frontend Dockerfile, and the Angular SSR runtime entrypoint.
 
-The frontend should not own TLS, public domain routing, backend proxy rules, MinIO routing, or backup service routing. Those belong to the infrastructure repository.
+The frontend should not own TLS, public domain routing, backend proxy rules, sitemap/robots routing, MinIO routing, or backup service routing. Those belong to the infrastructure repository.
 
 ## Running unit tests
 

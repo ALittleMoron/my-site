@@ -1,7 +1,15 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, effect, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { environment } from '../../../environments/environment';
+import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
+
+export interface SeoAlternate {
+  language: LanguageCode;
+  canonicalUrl?: string;
+  path?: string;
+}
 
 export interface SeoMeta {
   title: string;
@@ -9,6 +17,10 @@ export interface SeoMeta {
   canonicalUrl?: string;
   canonicalPath?: string;
   ogImage?: string;
+  ogType?: 'website' | 'article';
+  alternates?: SeoAlternate[];
+  structuredData?: Record<string, unknown>;
+  robots?: string;
 }
 
 export interface TranslatedSeoMeta {
@@ -17,15 +29,20 @@ export interface TranslatedSeoMeta {
   canonicalUrl?: string;
   canonicalPath?: string;
   ogImage?: string;
+  ogType?: 'website' | 'article';
+  alternates?: SeoAlternate[];
+  robots?: string;
 }
 
 const SITE_NAME_KEY = 'app.siteName';
 const DEFAULT_OG_IMAGE = '/images/personal.jpg';
+const SEO_MANAGED_BY = 'seo-service';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  private readonly document = inject(DOCUMENT);
   private readonly i18n = inject(I18nService);
   private translatedMeta: TranslatedSeoMeta | null = null;
 
@@ -56,6 +73,9 @@ export class SeoService {
         canonicalUrl: data.canonicalUrl,
         canonicalPath: data.canonicalPath,
         ogImage: data.ogImage,
+        ogType: data.ogType,
+        alternates: data.alternates,
+        robots: data.robots,
       },
       this.i18n.translate('app.siteName'),
     );
@@ -70,7 +90,7 @@ export class SeoService {
 
     this.meta.updateTag({ name: 'description', content: data.description });
 
-    this.meta.updateTag({ property: 'og:type', content: 'website' });
+    this.meta.updateTag({ property: 'og:type', content: data.ogType ?? 'website' });
     this.meta.updateTag({ property: 'og:site_name', content: siteName });
     this.meta.updateTag({ property: 'og:title', content: fullTitle });
     this.meta.updateTag({ property: 'og:description', content: data.description });
@@ -80,27 +100,32 @@ export class SeoService {
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
     this.meta.updateTag({ name: 'twitter:title', content: fullTitle });
     this.meta.updateTag({ name: 'twitter:description', content: data.description });
+    this.meta.updateTag({ name: 'twitter:image', content: image });
 
     if (url) {
       this.updateCanonicalLink(url);
     } else {
       this.removeCanonicalLink();
     }
+
+    this.updateAlternateLinks(data.alternates ?? []);
+    this.updateStructuredData(data.structuredData);
+    this.updateRobots(data.robots);
   }
 
   private buildCanonicalUrl(path: string | undefined): string {
     if (!path) return '';
     const baseUrl = environment.siteUrl.replace(/\/$/, '');
-    if (!baseUrl) return path;
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    return `${baseUrl}${normalizedPath}`;
+    if (baseUrl) return `${baseUrl}${normalizedPath}`;
+    return new URL(normalizedPath, this.document.location.origin).toString();
   }
 
   private updateCanonicalLink(url: string): void {
-    const head = document.head;
+    const head = this.document.head;
     let link = head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!link) {
-      link = document.createElement('link');
+      link = this.document.createElement('link');
       link.setAttribute('rel', 'canonical');
       head.appendChild(link);
     }
@@ -108,6 +133,50 @@ export class SeoService {
   }
 
   private removeCanonicalLink(): void {
-    document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
+    this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
+  }
+
+  private updateAlternateLinks(alternates: SeoAlternate[]): void {
+    const head = this.document.head;
+    head
+      .querySelectorAll<HTMLLinkElement>(
+        `link[rel="alternate"][data-managed-by="${SEO_MANAGED_BY}"]`,
+      )
+      .forEach((link) => link.remove());
+
+    for (const alternate of alternates) {
+      const href = alternate.canonicalUrl ?? this.buildCanonicalUrl(alternate.path);
+      if (!href) continue;
+      const link = this.document.createElement('link');
+      link.setAttribute('rel', 'alternate');
+      link.setAttribute('hreflang', alternate.language);
+      link.setAttribute('href', href);
+      link.setAttribute('data-managed-by', SEO_MANAGED_BY);
+      head.appendChild(link);
+    }
+  }
+
+  private updateStructuredData(data: Record<string, unknown> | undefined): void {
+    this.document.head
+      .querySelectorAll<HTMLScriptElement>(
+        `script[type="application/ld+json"][data-managed-by="${SEO_MANAGED_BY}"]`,
+      )
+      .forEach((script) => script.remove());
+
+    if (!data) return;
+
+    const script = this.document.createElement('script');
+    script.setAttribute('type', 'application/ld+json');
+    script.setAttribute('data-managed-by', SEO_MANAGED_BY);
+    script.textContent = JSON.stringify(data);
+    this.document.head.appendChild(script);
+  }
+
+  private updateRobots(value: string | undefined): void {
+    if (value) {
+      this.meta.updateTag({ name: 'robots', content: value });
+      return;
+    }
+    this.meta.removeTag('name="robots"');
   }
 }

@@ -18,6 +18,12 @@ class APIHelper:
     def get_i18n_bundle(self, language: str) -> Response:
         return self.client.get(f"/api/i18n/bundles/{language}")
 
+    def get_sitemap_xml(self) -> Response:
+        return self.client.get("/sitemap.xml")
+
+    def get_robots_txt(self) -> Response:
+        return self.client.get("/robots.txt")
+
     def get_search_competency_matrix_resources(
         self,
         search_name: str,

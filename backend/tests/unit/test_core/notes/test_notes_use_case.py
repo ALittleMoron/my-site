@@ -13,6 +13,7 @@ from core.notes.schemas import (
     NoteMetadata,
     NoteTreeItemData,
     NoteUpdateParams,
+    PublishedNoteForSeo,
     TagCreateParams,
     TagUpdateParams,
 )
@@ -48,6 +49,24 @@ class TestNotesUseCase(FactoryFixture):
         assert result.total_count == 11
         assert result.total_pages == 2
         self.storage.list_notes.assert_called_once_with(filters=filters)
+
+    async def test_list_published_notes_for_seo_delegates_to_storage(self) -> None:
+        first_note = PublishedNoteForSeo(
+            slug="first-note",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            updated_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        second_note = PublishedNoteForSeo(
+            slug="second-note",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            updated_at=datetime(2026, 1, 2, tzinfo=UTC),
+        )
+        self.storage.list_published_notes_for_seo.return_value = [first_note, second_note]
+
+        result = await self.use_case.list_published_notes_for_seo()
+
+        assert result == [first_note, second_note]
+        self.storage.list_published_notes_for_seo.assert_called_once_with()
 
     async def test_list_tree_builds_folders_from_storage_items(self) -> None:
         first_updated_at = datetime(2026, 1, 1, tzinfo=UTC)
