@@ -58,6 +58,7 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
     pathname === '/api/i18n/languages' ||
     pathname.startsWith('/api/i18n/bundles/') ||
     pathname.startsWith('/api/notes/detail/') ||
+    pathname.startsWith('/api/competency-matrix/items/public/') ||
     pathname === '/api/notes/tags' ||
     pathname === '/api/notes/tree' ||
     pathname === '/api/notes'

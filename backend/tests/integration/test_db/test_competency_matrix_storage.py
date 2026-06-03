@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
@@ -61,7 +62,9 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert sheets == self.factory.core.sheets(values=["Python", "SQL"])
 
     async def test_list_items(self) -> None:
-        items = await self.storage.list_competency_matrix_items(sheet_key="python")
+        items = await self.storage.list_competency_matrix_items(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=None),
+        )
         assert items == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -101,10 +104,68 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             ],
         )
 
+    async def test_get_competency_matrix_item_by_slug_found(self) -> None:
+        item = await self.storage.get_competency_matrix_item_by_slug(slug="1")
+        assert item == self.factory.core.competency_matrix_item(
+            item_id=1,
+            question="1",
+            answer="Answer 1",
+            interview_expected_answer="Expected answer 1",
+            sheet="Python",
+            grade=GradeEnum.MIDDLE_PLUS,
+            section="SECTION 1",
+            subsection="SUBSECTION 1",
+            resources=[
+                self.factory.core.attached_external_resource(
+                    resource_id=1,
+                    name="NAME 1",
+                    url="https://example1.com",
+                    context="CONTEXT 1",
+                ),
+            ],
+        )
+
+    async def test_get_competency_matrix_item_by_slug_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixItemNotFoundError):
+            await self.storage.get_competency_matrix_item_by_slug(slug="missing-question")
+
+    async def test_list_items_filters_by_publish_status_without_availability_check(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    question="Draft question",
+                    publish_status=PublishStatusEnum.DRAFT,
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=4,
+                    question="Unavailable question",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    sheet="",
+                    grade=GradeEnum.JUNIOR,
+                    section="",
+                    subsection="",
+                ),
+            ],
+        )
+
+        items = await self.storage.list_competency_matrix_items(
+            filters=CompetencyMatrixItemFilters(sheet_key=None, only_published=True),
+        )
+
+        slugs = {item.slug for item in items}
+        assert slugs == {"1", "2", "unavailable-question"}
+        assert "draft-question" not in slugs
+
     async def test_create_competency_matrix_item(self) -> None:
         item = await self.storage.create_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
+                slug="created-question",
                 question="1",
                 answer="Answer 1",
                 interview_expected_answer="Expected answer 1",
@@ -124,6 +185,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         )
         assert item == self.factory.core.competency_matrix_item(
             item_id=3,
+            slug="created-question",
             question="1",
             answer="Answer 1",
             interview_expected_answer="Expected answer 1",
@@ -146,6 +208,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             items=[
                 self.factory.core.competency_matrix_item(
                     item_id=3,
+                    slug="existing-question-to-update",
                     question="1",
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
@@ -167,6 +230,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         item = await self.storage.update_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
+                slug="updated-question",
                 question="3",
                 answer="Answer 3",
                 interview_expected_answer="Expected answer 3",
@@ -186,6 +250,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         )
         assert item == self.factory.core.competency_matrix_item(
             item_id=3,
+            slug="updated-question",
             question="3",
             answer="Answer 3",
             interview_expected_answer="Expected answer 3",
@@ -208,6 +273,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             items=[
                 self.factory.core.competency_matrix_item(
                     item_id=3,
+                    slug="existing-question-with-resources",
                     question="1",
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
@@ -235,6 +301,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         item = await self.storage.update_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
+                slug="updated-question-with-resources",
                 question="1",
                 answer="Answer 1",
                 interview_expected_answer="Expected answer 1",
@@ -272,6 +339,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             items=[
                 self.factory.core.competency_matrix_item(
                     item_id=3,
+                    slug="publish-status-question",
                     question="1",
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",
@@ -331,6 +399,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             items=[
                 self.factory.core.competency_matrix_item(
                     item_id=3,
+                    slug="delete-question",
                     question="1",
                     answer="Answer 1",
                     interview_expected_answer="Expected answer 1",

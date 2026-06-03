@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
@@ -27,8 +28,13 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.list_items(sheet_key="python", only_published=True)
+        items = await self.use_case.list_items(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
+        )
         assert items.values == []
+        self.storage.list_competency_matrix_items.assert_called_once_with(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
+        )
 
     async def test_available(self) -> None:
         self.storage.list_competency_matrix_items.return_value = [
@@ -43,7 +49,9 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="1",
             ),
         ]
-        items = await self.use_case.list_items(sheet_key="python", only_published=True)
+        items = await self.use_case.list_items(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
+        )
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -69,7 +77,9 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
-        items = await self.use_case.list_items(sheet_key="python", only_published=False)
+        items = await self.use_case.list_items(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=False),
+        )
         assert items.values == [
             self.factory.core.competency_matrix_item(
                 item_id=1,
@@ -81,3 +91,6 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 subsection="",
             ),
         ]
+        self.storage.list_competency_matrix_items.assert_called_once_with(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=False),
+        )

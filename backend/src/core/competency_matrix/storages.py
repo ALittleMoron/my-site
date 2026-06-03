@@ -1,6 +1,11 @@
 from abc import ABC, abstractmethod
 
-from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResources, Sheets
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItem,
+    CompetencyMatrixItemFilters,
+    ExternalResources,
+    Sheets,
+)
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
@@ -12,11 +17,19 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_competency_matrix_items(self, sheet_key: str) -> list[CompetencyMatrixItem]:
+    async def list_competency_matrix_items(
+        self,
+        *,
+        filters: CompetencyMatrixItemFilters,
+    ) -> list[CompetencyMatrixItem]:
         raise NotImplementedError
 
     @abstractmethod
     async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_competency_matrix_item_by_slug(self, slug: str) -> CompetencyMatrixItem:
         raise NotImplementedError
 
     @abstractmethod

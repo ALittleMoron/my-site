@@ -126,6 +126,12 @@ export class MatrixListComponent implements OnInit {
     () =>
       !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
+  readonly selectedQuestionPageLink = computed<string | null>(() => {
+    const question = this.selectedQuestion();
+    const language = this.i18n.language();
+    if (question === null || language === null) return null;
+    return `/${language}/competency-matrix/questions/${question.slug}`;
+  });
 
   private readonly languageReloadEffect = effect(() => {
     const language = this.i18n.language();

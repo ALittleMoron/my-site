@@ -16,6 +16,7 @@ import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 
 interface MatrixQuestionForm {
+  slug: FormControl<string>;
   questionRu: FormControl<string>;
   questionEn: FormControl<string>;
   answerRu: FormControl<string>;
@@ -46,6 +47,8 @@ interface MatrixQuestionForm {
   templateUrl: './matrix-question-form.component.html',
 })
 export class MatrixQuestionFormComponent implements OnInit {
+  private slugEdited = false;
+
   readonly searchResults = input<MatrixResource[]>([]);
   readonly questionSave = output<MatrixQuestionPayload>();
   readonly formCancel = output<void>();
@@ -55,6 +58,10 @@ export class MatrixQuestionFormComponent implements OnInit {
   readonly activeLanguageTab = signal<LanguageCode>('ru');
 
   readonly form = new FormGroup<MatrixQuestionForm>({
+    slug: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(255)],
+    }),
     questionRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     questionEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     answerRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -86,7 +93,9 @@ export class MatrixQuestionFormComponent implements OnInit {
   ngOnInit(): void {
     const question = this.question();
     if (!question) return;
+    this.slugEdited = true;
     this.form.setValue({
+      slug: question.slug,
       questionRu: question.translations.ru.question,
       questionEn: question.translations.en.question,
       answerRu: question.translations.ru.answer,
@@ -108,6 +117,15 @@ export class MatrixQuestionFormComponent implements OnInit {
 
   setActiveLanguageTab(language: LanguageCode): void {
     this.activeLanguageTab.set(language);
+  }
+
+  onQuestionEnInput(): void {
+    if (this.slugEdited) return;
+    this.form.controls.slug.setValue(slugify(this.form.controls.questionEn.value));
+  }
+
+  onSlugInput(): void {
+    this.slugEdited = true;
   }
 
   setAnswerRu(value: string): void {
@@ -133,6 +151,7 @@ export class MatrixQuestionFormComponent implements OnInit {
     }
     const value = this.form.getRawValue();
     this.questionSave.emit({
+      slug: value.slug,
       sheetKey: value.sheetKey,
       grade: value.grade,
       publishStatus: value.publishStatus,
@@ -176,4 +195,13 @@ export class MatrixQuestionFormComponent implements OnInit {
       ),
     });
   }
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }

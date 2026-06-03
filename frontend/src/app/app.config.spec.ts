@@ -2,12 +2,20 @@ import { HttpRequest } from '@angular/common/http';
 import { shouldTransferCacheRequest } from './app.config';
 
 describe('appConfig HTTP transfer cache filter', () => {
-  it('allows safe public GET requests used by SSR article pages', () => {
+  it('allows safe public GET requests used by SSR pages', () => {
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/languages'))).toBe(true);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/bundles/ru'))).toBe(true);
     expect(
       shouldTransferCacheRequest(
         new HttpRequest('GET', 'http://localhost:8000/api/notes/detail/typed-notes?language=ru'),
+      ),
+    ).toBe(true);
+    expect(
+      shouldTransferCacheRequest(
+        new HttpRequest(
+          'GET',
+          'http://localhost:8000/api/competency-matrix/items/public/how-to-write-function?language=ru',
+        ),
       ),
     ).toBe(true);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/notes/tags'))).toBe(true);

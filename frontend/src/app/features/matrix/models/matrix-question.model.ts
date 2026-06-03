@@ -48,6 +48,7 @@ export interface MatrixAttachedResourceDto extends Omit<MatrixResourceDto, 'tran
 
 export interface MatrixItemDto {
   id: number;
+  slug: string;
   question: string;
 }
 
@@ -150,6 +151,7 @@ export interface MatrixAttachedResource extends Omit<MatrixResource, 'translatio
 
 export interface MatrixQuestion {
   id: number;
+  slug: string;
   question: string;
 }
 
@@ -195,6 +197,7 @@ export type MatrixResourceAttachmentPayload =
   | NewMatrixResourceAttachmentPayload;
 
 export interface MatrixQuestionPayload {
+  slug: string;
   sheetKey: string;
   grade: MatrixGrade;
   publishStatus: MatrixPublishStatus;
@@ -242,6 +245,7 @@ export function mapMatrixListDto(dto: MatrixItemsListDto): MatrixQuestionList {
           grade: grade.grade,
           questions: grade.items.map((item) => ({
             id: item.id,
+            slug: item.slug,
             question: item.question,
           })),
         })),
@@ -253,6 +257,7 @@ export function mapMatrixListDto(dto: MatrixItemsListDto): MatrixQuestionList {
 export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDetail {
   return {
     id: dto.id,
+    slug: dto.slug,
     question: dto.question,
     answer: dto.answer,
     interviewExpectedAnswer: dto.interviewExpectedAnswer,

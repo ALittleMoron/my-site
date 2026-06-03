@@ -92,6 +92,7 @@
               [loading]="detailLoading()"
               [error]="detailError()"
               [isAdmin]="isAdmin()"
+              [questionPageLink]="selectedQuestionPageLink()"
               (edit)="openEdit()"
               (publish)="onPublish(selectedQuestion()!.id)"
               (unpublish)="onUnpublish(selectedQuestion()!.id)"

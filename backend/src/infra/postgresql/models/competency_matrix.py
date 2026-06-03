@@ -74,6 +74,12 @@ class ExternalResourceModel(IntegerIDMixin, BaseModel):
 
 
 class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
+    slug: Mapped[str] = mapped_column(
+        String(length=255),
+        unique=True,
+        index=True,
+        doc="URL slug for the competency matrix question",
+    )
     question_ru: Mapped[str] = mapped_column(
         String(length=255),
         doc="Russian question",
@@ -151,6 +157,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
     ) -> Self:
         return cls(
             pk=item.id,
+            slug=item.slug,
             question_ru=item.question_ru,
             question_en=item.question_en,
             answer_ru=item.answer_ru,
@@ -175,6 +182,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         )
 
     def update_from_domain_schema(self, item: CompetencyMatrixItem) -> None:
+        self.slug = item.slug
         self.question_ru = item.question_ru
         self.question_en = item.question_en
         self.answer_ru = item.answer_ru
@@ -195,6 +203,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
     def to_domain_schema(self, *, include_relationships: bool) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
             id=IntId(self.pk),
+            slug=self.slug,
             question_ru=self.question_ru,
             question_en=self.question_en,
             answer_ru=self.answer_ru,

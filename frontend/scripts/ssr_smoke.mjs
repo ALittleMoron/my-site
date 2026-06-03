@@ -58,6 +58,39 @@ const noteDto = {
   },
 };
 
+const matrixQuestionDto = {
+  id: 1,
+  slug: 'how-to-write-function',
+  question: 'Как написать функцию?',
+  answer: '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой.',
+  interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
+  sheetKey: 'python',
+  sheet: 'Python',
+  grade: 'Junior',
+  section: 'Основы',
+  subsection: 'Функции',
+  publishStatus: 'Published',
+  translations: {
+    ru: {
+      question: 'Как написать функцию?',
+      answer: '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой.',
+      interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
+      sheet: 'Python',
+      section: 'Основы',
+      subsection: 'Функции',
+    },
+    en: {
+      question: 'How to write a function?',
+      answer: '## Rendered SSR matrix answer\n\nA function should be small and testable.',
+      interviewExpectedAnswer: 'Show a signature, a branch, and a test.',
+      sheet: 'Python',
+      section: 'Basics',
+      subsection: 'Functions',
+    },
+  },
+  resources: [],
+};
+
 let failure = null;
 const backend = http.createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://backend.local');
@@ -94,6 +127,10 @@ const backend = http.createServer((req, res) => {
         'shell.footer.telegramProfile': 'Telegram',
         'shell.footer.linkedinProfile': 'LinkedIn',
         'notes.views': '{count} views',
+        'matrix.detail.question': 'Question:',
+        'matrix.detail.answer': 'Answer:',
+        'matrix.detail.expectedAnswer': 'Expected interview answer:',
+        'matrix.detail.resources': 'External resources:',
         'shared.back': 'Back',
         'shared.edit': 'Edit',
       },
@@ -150,6 +187,11 @@ const backend = http.createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/competency-matrix/items/public/how-to-write-function') {
+    writeJson(res, matrixQuestionDto);
+    return;
+  }
+
   res.statusCode = 404;
   writeJson(res, { code: 'not_found', type: 'not_found', message: url.pathname });
 });
@@ -182,6 +224,8 @@ process.env.SSR_PUBLIC_ORIGIN = `http://127.0.0.1:${frontendPort}`;
 try {
   await assertPublishedArticleHtml(frontendPort);
   await assertMissingArticleNoindex(frontendPort);
+  await assertPublishedMatrixQuestionHtml(frontendPort);
+  await assertMissingMatrixQuestionNoindex(frontendPort);
   console.log(`SSR smoke passed with ${requests.length} backend requests.`);
   console.log(requests.join('\n'));
 } catch (error) {
@@ -217,6 +261,36 @@ async function assertPublishedArticleHtml(frontendPort) {
   assertExpected(expected, html, 'published article SSR');
 }
 
+async function assertPublishedMatrixQuestionHtml(frontendPort) {
+  const response = await fetch(
+    `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/how-to-write-function`,
+  );
+  const html = await response.text();
+  const expected = [
+    ['status 200', response.status === 200],
+    ['matrix question title', html.includes('Как написать функцию? - My site')],
+    ['matrix question body', html.includes('Rendered SSR matrix answer')],
+    [
+      'canonical',
+      html.includes(
+        `href="http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/how-to-write-function"`,
+      ),
+    ],
+    ['hreflang ru', html.includes('hreflang="ru"')],
+    ['hreflang en', html.includes('hreflang="en"')],
+    ['json-ld faq', html.includes('"@type":"FAQPage"')],
+    ['json-ld question', html.includes('"name":"Как написать функцию?"')],
+    ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
+    [
+      'matrix public detail preflight',
+      hasRequest('/api/competency-matrix/items/public/how-to-write-function', 'language=ru'),
+    ],
+    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+  ];
+  assertExpected(expected, html, 'published matrix question SSR');
+}
+
 async function assertMissingArticleNoindex(frontendPort) {
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/notes/missing-note`);
   const html = await response.text();
@@ -233,6 +307,30 @@ async function assertMissingArticleNoindex(frontendPort) {
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'missing article SSR');
+}
+
+async function assertMissingMatrixQuestionNoindex(frontendPort) {
+  const response = await fetch(
+    `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/missing-question`,
+  );
+  const html = await response.text();
+  const expected = [
+    ['status 404', response.status === 404],
+    ['noindex', html.includes('<meta name="robots" content="noindex, follow">')],
+    [
+      'canonical',
+      html.includes(
+        `href="http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/missing-question"`,
+      ),
+    ],
+    [
+      'missing matrix preflight',
+      hasRequest('/api/competency-matrix/items/public/missing-question', 'language=ru'),
+    ],
+    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+  ];
+  assertExpected(expected, html, 'missing matrix question SSR');
 }
 
 function hasRequest(pathname, searchPart) {

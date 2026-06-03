@@ -109,6 +109,7 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.CREATED, response.json()
         assert response.json() == {
             "id": 1,
+            "slug": "question-1",
             "question": "question 1",
             "answer": "answer 1",
             "interviewExpectedAnswer": "interview expected answer 1",

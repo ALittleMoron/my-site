@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
@@ -6,6 +7,7 @@ import { MatrixQuestionDetailComponent } from './matrix-question-detail.componen
 
 const mockDetail: MatrixQuestionDetail = {
   id: 1,
+  slug: 'what-is-a-closure',
   question: 'What is a closure?',
   answer: 'A **closure** is a function with access to its outer scope.',
   interviewExpectedAnswer: 'Demonstrate understanding of lexical scoping.',
@@ -62,7 +64,7 @@ describe('MatrixQuestionDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MatrixQuestionDetailComponent],
-      providers: [provideI18nTesting()],
+      providers: [provideI18nTesting(), provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixQuestionDetailComponent);
@@ -103,6 +105,39 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('isAdmin', false);
     fixture.detectChanges();
     expect(el.textContent).toContain('What is a closure?');
+  });
+
+  it('should render a link to the public question page when link is provided', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', mockDetail);
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput(
+      'questionPageLink',
+      '/ru/competency-matrix/questions/what-is-a-closure',
+    );
+    fixture.detectChanges();
+
+    const link = el.querySelector<HTMLAnchorElement>(
+      'a[href="/ru/competency-matrix/questions/what-is-a-closure"]',
+    );
+    expect(link?.textContent).toContain('К вопросу');
+  });
+
+  it('should hide the public question page link for drafts', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput(
+      'questionPageLink',
+      '/ru/competency-matrix/questions/what-is-a-closure',
+    );
+    fixture.detectChanges();
+
+    expect(
+      el.querySelector('a[href="/ru/competency-matrix/questions/what-is-a-closure"]'),
+    ).toBeNull();
   });
 
   it('should render detail headings in Russian', () => {

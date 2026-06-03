@@ -356,11 +356,11 @@
   - [x] Generate dynamic `sitemap.xml` and `robots.txt`
   - [x] Emit Article JSON-LD/Open Graph metadata from stored note metadata
   - [x] Add HTML smoke tests for public article pages and missing-article `404/noindex`
-- [ ] Matrix public SEO release
-  - [ ] Add explicit matrix question slugs
-  - [ ] Add separate public matrix question pages
-  - [ ] Preserve modal interaction from the matrix overview
-  - [ ] Emit QAPage structured data after public question pages exist
+- [x] Matrix public SEO release
+  - [x] Add explicit matrix question slugs
+  - [x] Add separate public matrix question pages
+  - [x] Preserve modal interaction from the matrix overview
+  - [x] Emit FAQPage structured data after public question pages exist
 - [ ] Obsidian-like note editor
     - [ ] Rich text editor
     - [x] Tags

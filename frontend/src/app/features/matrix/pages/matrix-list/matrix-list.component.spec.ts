@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { MatrixListComponent } from './matrix-list.component';
 import { MatrixService } from '../../services/matrix.service';
@@ -52,8 +53,8 @@ const mockQuestionList: MatrixQuestionList = {
             {
               grade: 'Junior',
               questions: [
-                { id: 1, question: 'What is a closure?' },
-                { id: 2, question: 'What is hoisting?' },
+                { id: 1, slug: 'what-is-a-closure', question: 'What is a closure?' },
+                { id: 2, slug: 'what-is-hoisting', question: 'What is hoisting?' },
               ],
             },
           ],
@@ -75,7 +76,13 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
           grades: [
             {
               grade: 'Junior',
-              questions: [{ id: 1, question: 'How does the event loop work?' }],
+              questions: [
+                {
+                  id: 1,
+                  slug: 'how-does-the-event-loop-work',
+                  question: 'How does the event loop work?',
+                },
+              ],
             },
           ],
         },
@@ -89,7 +96,13 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
           grades: [
             {
               grade: 'Junior',
-              questions: [{ id: 2, question: 'What is DOM event delegation?' }],
+              questions: [
+                {
+                  id: 2,
+                  slug: 'what-is-dom-event-delegation',
+                  question: 'What is DOM event delegation?',
+                },
+              ],
             },
           ],
         },
@@ -100,6 +113,7 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
 
 const mockDetail: MatrixQuestionDetail = {
   id: 1,
+  slug: 'what-is-a-closure',
   question: 'What is a closure?',
   answer: 'A **closure** is a function.',
   interviewExpectedAnswer: 'Lexical scoping.',
@@ -199,6 +213,7 @@ describe('MatrixListComponent', () => {
         { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
+        provideRouter([]),
       ],
     }).compileComponents();
 
@@ -386,6 +401,17 @@ describe('MatrixListComponent', () => {
     component.openDetail(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-matrix-question-detail')).toBeTruthy();
+  });
+
+  it('should render link from detail modal to public question page', () => {
+    fixture.detectChanges();
+    component.openDetail(1);
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      'a[href="/ru/competency-matrix/questions/what-is-a-closure"]',
+    ) as HTMLAnchorElement | null;
+    expect(link?.textContent).toContain('К вопросу');
   });
 
   it('should set detailLoading when loading a question', () => {

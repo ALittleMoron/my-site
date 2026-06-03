@@ -118,6 +118,7 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
         assert response.status_code == codes.OK, response.json()
+        assert response.json()["slug"] == "question-1"
         assert response.json()["question"] == "question 1"
         assert response.json()["sheetKey"] == "python"
         assert response.json()["resources"][0]["translations"] == {

@@ -114,6 +114,7 @@ class TestQueryCapture:
 
         assert isinstance(query_by_name["notes_list_en_full_text_tag_date"].statement, Select)
         assert isinstance(query_by_name["notes_count_en_full_text_tag_date"].statement, Select)
+        assert isinstance(query_by_name["matrix_public_detail_by_slug"].statement, Select)
         assert isinstance(query_by_name["tags_fuzzy_en"].statement, Select)
         assert isinstance(query_by_name["resources_fuzzy_en"].statement, Select)
 

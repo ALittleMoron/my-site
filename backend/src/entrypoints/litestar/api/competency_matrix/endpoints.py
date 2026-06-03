@@ -11,6 +11,7 @@ from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
+from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
@@ -101,9 +102,12 @@ class CompetencyMatrixApiController(Controller):
     ) -> CompetencyMatrixItemsListResponseSchema:
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
-        items = await use_case.list_items(
+        filters = CompetencyMatrixItemFilters(
             sheet_key=sheet_key,
             only_published=only_published,
+        )
+        items = await use_case.list_items(
+            filters=filters,
         )
         return CompetencyMatrixItemsListResponseSchema.from_domain_schema(
             sheet_key=sheet_key,
@@ -162,6 +166,26 @@ class CompetencyMatrixApiController(Controller):
         if not request.user.is_admin and not only_published:
             raise ForbiddenError
         item = await use_case.get_item(item_id=IntId(pk), only_published=only_published)
+        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
+            schema=item,
+            language=language,
+        )
+
+    @get(
+        "/items/public/{slug:str}",
+        description="Получение публичной подробной информации о вопросе матрицы по slug.",
+        name="competency-matrix-public-item-detail-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
+    )
+    async def get_public_competency_matrix_item(
+        self,
+        slug: FromPath[str],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> CompetencyMatrixItemDetailResponseSchema:
+        item = await use_case.get_item_by_slug(slug=slug, only_published=True)
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
             language=language,

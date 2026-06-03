@@ -10,6 +10,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'ru/competency-matrix/questions/:slug',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'en/competency-matrix/questions/:slug',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Client,
   },

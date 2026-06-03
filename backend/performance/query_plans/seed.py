@@ -39,6 +39,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await insert_notes(connection=connection, profile=profile)
     await insert_note_tag_links(connection=connection, profile=profile)
     await insert_resources(connection=connection, profile=profile)
+    await insert_competency_matrix_items(connection=connection, profile=profile)
 
 
 async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
@@ -213,6 +214,59 @@ async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfi
     )
 
 
+async def insert_competency_matrix_items(
+    *,
+    connection: AsyncConnection,
+    profile: DatasetProfile,
+) -> None:
+    series = generate_series_subquery(end=profile.resource_count, name="matrix_item_series")
+    value = sql_cast(series.c.value, Integer)
+    await connection.execute(
+        insert(CompetencyMatrixItemModel.__table__).from_select(
+            [
+                "id",
+                "slug",
+                "question_ru",
+                "question_en",
+                "answer_ru",
+                "answer_en",
+                "interview_expected_answer_ru",
+                "interview_expected_answer_en",
+                "sheet_key",
+                "sheet_ru",
+                "sheet_en",
+                "section_ru",
+                "section_en",
+                "subsection_ru",
+                "subsection_en",
+                "grade",
+                "published_at",
+                "publish_status",
+            ],
+            select(
+                value,
+                func.concat(literal("matrix-question-"), value),
+                func.concat(literal("Вопрос матрицы "), value),
+                func.concat(literal("Matrix question "), value),
+                func.concat(literal("Ответ матрицы "), value),
+                func.concat(literal("Matrix answer "), value),
+                func.concat(literal("Ожидаемый ответ "), value),
+                func.concat(literal("Expected answer "), value),
+                literal("python"),
+                literal("Питон"),
+                literal("Python"),
+                literal("Основы"),
+                literal("Basics"),
+                literal("Функции"),
+                literal("Functions"),
+                literal("JUNIOR"),
+                literal(SEED_NOW),
+                literal("PUBLISHED"),
+            ).select_from(series),
+        ),
+    )
+
+
 def generate_series_subquery(*, end: int, name: str) -> Subquery:
     return select(func.generate_series(1, end).label("value")).subquery(name)
 
@@ -240,5 +294,6 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "notes__tag_model",
         "notes__note_to_tag_secondary_model",
         "competency_matrix__external_resource_model",
+        "competency_matrix__competency_matrix_item_model",
     ):
         await connection.execute(text(f"VACUUM ANALYZE {table_name}"))

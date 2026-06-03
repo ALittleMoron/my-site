@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import {
   MatrixQuestionDetail,
   MatrixQuestionPayload,
@@ -19,6 +20,7 @@ class MarkdownEditorStubComponent {
 
 const question: MatrixQuestionDetail = {
   id: 7,
+  slug: 'what-is-pep8',
   question: 'What is PEP8?',
   answer: 'Answer',
   interviewExpectedAnswer: 'Expected',
@@ -84,6 +86,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(component.form.getRawValue()).toEqual({
+      slug: 'what-is-pep8',
       questionRu: 'Что такое PEP8?',
       questionEn: 'What is PEP8?',
       answerRu: 'Ответ',
@@ -121,6 +124,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     component.form.setValue({
+      slug: 'what-is-pep8',
       questionRu: 'Вопрос',
       questionEn: 'Question',
       answerRu: 'Ответ',
@@ -166,6 +170,7 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(emitted).toEqual([
       {
+        slug: 'what-is-pep8',
         sheetKey: 'python',
         grade: 'Middle',
         publishStatus: 'Published',
@@ -205,6 +210,28 @@ describe('MatrixQuestionFormComponent', () => {
         ],
       },
     ]);
+  });
+
+  it('suggests slug from English question until slug is edited manually', () => {
+    fixture.detectChanges();
+    const questionEn = fixture.debugElement.query(By.css('#matrixQuestionEn'))
+      .nativeElement as HTMLInputElement;
+    const slug = fixture.debugElement.query(By.css('#matrixSlug'))
+      .nativeElement as HTMLInputElement;
+
+    questionEn.value = 'How to write a function?';
+    questionEn.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(slug.value).toBe('how-to-write-a-function');
+
+    slug.value = 'manual-question-slug';
+    slug.dispatchEvent(new Event('input'));
+    questionEn.value = 'How to write a class?';
+    questionEn.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(slug.value).toBe('manual-question-slug');
   });
 
   it('does not emit when required fields are invalid', () => {

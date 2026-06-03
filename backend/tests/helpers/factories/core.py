@@ -1,3 +1,4 @@
+import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -123,6 +124,7 @@ class CoreFactoryHelper:
     def competency_matrix_item(
         cls,
         item_id: int,
+        slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
         question_en: str | None = None,
@@ -146,10 +148,12 @@ class CoreFactoryHelper:
         subsection_en: str | None = None,
         resources: list[AttachedExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
+        question_en_value = question_en or question
         return CompetencyMatrixItem(
             id=cls.int_id(item_id),
+            slug=slug or slugify(question_en_value),
             question_ru=question_ru or question,
-            question_en=question_en or question,
+            question_en=question_en_value,
             publish_status=publish_status,
             answer_ru=answer_ru or answer,
             answer_en=answer_en or answer,
@@ -170,6 +174,7 @@ class CoreFactoryHelper:
     def competency_matrix_item_create_params(
         cls,
         item_id: int,
+        slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
         question_en: str | None = None,
@@ -195,10 +200,12 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemCreateParams:
+        question_en_value = question_en or question
         return CompetencyMatrixItemCreateParams(
             id=cls.int_id(item_id),
+            slug=slug or slugify(question_en_value),
             question_ru=question_ru or question,
-            question_en=question_en or question,
+            question_en=question_en_value,
             publish_status=publish_status,
             answer_ru=answer_ru or answer,
             answer_en=answer_en or answer,
@@ -219,6 +226,7 @@ class CoreFactoryHelper:
     def competency_matrix_item_update_params(
         cls,
         item_id: int,
+        slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
         question_en: str | None = None,
@@ -244,10 +252,12 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemUpdateParams:
+        question_en_value = question_en or question
         return CompetencyMatrixItemUpdateParams(
             id=cls.int_id(item_id),
+            slug=slug or slugify(question_en_value),
             question_ru=question_ru or question,
-            question_en=question_en or question,
+            question_en=question_en_value,
             publish_status=publish_status,
             answer_ru=answer_ru or answer,
             answer_en=answer_en or answer,
@@ -479,3 +489,7 @@ class CoreFactoryHelper:
     @classmethod
     def search_name(cls, value: Any) -> SearchName:
         return SearchName(value)
+
+
+def slugify(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")

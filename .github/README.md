@@ -46,7 +46,7 @@ my-site/
 
 ## ✨ Features
 
-- Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, and linked resources
+- Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, public SEO question pages, and linked resources
 - Notes with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
 - Integrated admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
 - Privacy-safe note analytics with public view counters, engaged views, source categories, and anonymous reactions
@@ -105,7 +105,7 @@ make test-env-down              # stop reusable test PostgreSQL and remove data
 make test-backend-unit          # backend unit tests, no DB required
 make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
-make -C frontend ssr-smoke      # production SSR build + public article HTML smoke
+make -C frontend ssr-smoke      # production SSR build + public article and matrix question HTML smoke
 make performance-smoke          # auto local backend + short Locust smoke profile
 make query-plans-balanced       # auto test DB, seed data, EXPLAIN ANALYZE search queries
 ```

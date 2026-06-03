@@ -174,6 +174,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "competency_matrix__competency_matrix_item_model",
+        sa.Column("slug", sa.String(length=255), nullable=False),
         sa.Column("question_ru", sa.String(length=255), nullable=False),
         sa.Column("question_en", sa.String(length=255), nullable=False),
         sa.Column("answer_ru", sa.String(), nullable=False),
@@ -223,6 +224,12 @@ def upgrade() -> None:
         "competency_matrix__competency_matrix_item_model",
         [sa.func.lower(sa.column("sheet_key")).label("sheet_key_lower")],
         unique=False,
+    )
+    op.create_index(
+        op.f("ix_competency_matrix__competency_matrix_item_model_slug"),
+        "competency_matrix__competency_matrix_item_model",
+        ["slug"],
+        unique=True,
     )
     op.create_table(
         "competency_matrix__external_resource_model",
@@ -419,6 +426,10 @@ def downgrade() -> None:
     op.drop_table("competency_matrix__external_resource_model")
     op.drop_index(
         "cmi_sheet_key_idx",
+        table_name="competency_matrix__competency_matrix_item_model",
+    )
+    op.drop_index(
+        op.f("ix_competency_matrix__competency_matrix_item_model_slug"),
         table_name="competency_matrix__competency_matrix_item_model",
     )
     op.drop_table("competency_matrix__competency_matrix_item_model")

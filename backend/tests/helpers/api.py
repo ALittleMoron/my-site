@@ -78,6 +78,19 @@ class APIHelper:
             params=params,
         )
 
+    def get_public_competency_matrix_item(
+        self,
+        slug: str,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get(
+            f"/api/competency-matrix/items/public/{slug}",
+            params=params,
+        )
+
     def post_create_item(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:

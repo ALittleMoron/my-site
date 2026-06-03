@@ -1,10 +1,21 @@
 <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="row g-3">
-    <div class="col-md-6">
+    <div class="col-md-4">
+      <label class="form-label" for="matrixSlug">{{ 'matrix.form.slug' | t }}</label>
+      <input
+        id="matrixSlug"
+        type="text"
+        class="form-control"
+        formControlName="slug"
+        maxlength="255"
+        (input)="onSlugInput()"
+      />
+    </div>
+    <div class="col-md-4">
       <label class="form-label" for="matrixSheetKey">{{ 'matrix.form.sheetKey' | t }}</label>
       <input id="matrixSheetKey" type="text" class="form-control" formControlName="sheetKey" />
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
       <label class="form-label" for="matrixGrade">{{ 'matrix.form.grade' | t }}</label>
       <select id="matrixGrade" class="form-select" formControlName="grade">
         <option value="Junior">{{ 'enum.grade.Junior' | t }}</option>
@@ -105,6 +116,7 @@
             type="text"
             class="form-control"
             formControlName="questionEn"
+            (input)="onQuestionEnInput()"
           />
         </div>
         <div class="col-md-4">

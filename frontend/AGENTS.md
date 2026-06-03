@@ -5,7 +5,7 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 ## Stack
 
 - Angular 21, standalone components only
-- Angular hybrid rendering with `@angular/ssr`: public article routes use SSR, interactive/admin-heavy routes remain CSR/hydrated Angular.
+- Angular hybrid rendering with `@angular/ssr`: public article and competency matrix question routes use SSR, interactive/admin-heavy routes remain CSR/hydrated Angular.
 - Keep Angular framework packages, Angular CLI/build tooling, and `angular-eslint` on the same Angular major.
 - SCSS for styles
 - Bootstrap 5 via `styles/main.scss`
@@ -55,7 +55,7 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Sanitize any backend or user-provided Markdown/HTML before binding it with `[innerHTML]`; SSR paths must not depend on browser-only sanitizer APIs.
 - Put reusable frontend upload helpers under `core/uploads/`, not `core/media/`; the latter matches
   a repository ignore pattern.
-- Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so article SSR can render without browser APIs.
+- Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so public SSR detail pages can render without browser APIs.
 
 ## Forms
 
@@ -126,7 +126,7 @@ TestBed.configureTestingModule({
 - Use `HttpTestingController` to assert requests and flush responses.
 - Test: correct URL called, response mapped to expected model shape.
 - Always call `httpMock.verify()` after each test.
-- When changing SSR route config, server entrypoints, public article SEO, or transfer-cache behavior, update focused unit tests and `make ssr-smoke`.
+- When changing SSR route config, server entrypoints, public detail SEO, or transfer-cache behavior, update focused unit tests and `make ssr-smoke`.
 
 ### Signals in Tests
 

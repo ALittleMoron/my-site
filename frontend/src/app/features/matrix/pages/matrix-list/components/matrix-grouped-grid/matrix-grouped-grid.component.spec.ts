@@ -15,11 +15,11 @@ const mockQuestionList: MatrixQuestionList = {
           grades: [
             {
               grade: 'Junior',
-              questions: [{ id: 1, question: 'What is a closure?' }],
+              questions: [{ id: 1, slug: 'what-is-a-closure', question: 'What is a closure?' }],
             },
             {
               grade: 'Middle',
-              questions: [{ id: 2, question: 'What is a generator?' }],
+              questions: [{ id: 2, slug: 'what-is-a-generator', question: 'What is a generator?' }],
             },
           ],
         },

@@ -74,6 +74,7 @@ class ApiFactoryHelper:
     @classmethod
     def competency_matrix_item_request(
         cls,
+        slug: str = "question-1",
         question_ru: str = "вопрос 1",
         question_en: str = "question 1",
         answer_ru: str = "ответ 1",
@@ -92,6 +93,7 @@ class ApiFactoryHelper:
         resources: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return {
+            "slug": slug,
             "sheetKey": sheet_key,
             "grade": grade,
             "publishStatus": publish_status,

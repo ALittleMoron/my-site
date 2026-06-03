@@ -181,11 +181,16 @@ class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
 
 class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
     id: Annotated[int, Field(title="Идентификатор")]
+    slug: Annotated[str, Field(title="Slug")]
     question: Annotated[str, Field(title="Вопрос")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixItem, language: LanguageEnum) -> Self:
-        return cls(id=schema.id, question=schema.localized_question(language=language))
+        return cls(
+            id=schema.id,
+            slug=schema.slug,
+            question=schema.localized_question(language=language),
+        )
 
 
 class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
@@ -235,6 +240,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
 
 
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
+    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
     sheet_key: Annotated[str, Field(title="Ключ листа", min_length=1, max_length=255)]
     grade: Annotated[GradeEnum, Field(title="Компетенция")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
@@ -251,6 +257,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     ) -> CompetencyMatrixItemCreateParams:
         return CompetencyMatrixItemCreateParams(
             id=item_id_generator.get_next(),
+            slug=self.slug,
             question_ru=self.translations.ru.question,
             question_en=self.translations.en.question,
             answer_ru=self.translations.ru.answer,
@@ -276,6 +283,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     ) -> CompetencyMatrixItemUpdateParams:
         return CompetencyMatrixItemUpdateParams(
             id=item_id,
+            slug=self.slug,
             question_ru=self.translations.ru.question,
             question_en=self.translations.en.question,
             answer_ru=self.translations.ru.answer,

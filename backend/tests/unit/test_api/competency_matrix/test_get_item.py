@@ -37,6 +37,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_get_competency_matrix_item(self) -> None:
         self.use_case.get_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
+            slug="how-to-write-function",
             question_ru="Как написать свою функцию?",
             question_en="How to write a function?",
             publish_status=PublishStatusEnum.PUBLISHED,
@@ -67,6 +68,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.OK
         assert response.json() == {
             "id": 1,
+            "slug": "how-to-write-function",
             "question": "How to write a function?",
             "answer": "Just write it.",
             "interviewExpectedAnswer": "Write it!",
@@ -108,3 +110,52 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ],
         }
         self.use_case.get_item.assert_called_once_with(item_id=1, only_published=True)
+
+    def test_get_public_competency_matrix_item_by_slug(self) -> None:
+        self.use_case.get_item_by_slug.return_value = self.factory.core.competency_matrix_item(
+            item_id=1,
+            slug="how-to-write-function",
+            question_ru="Как написать свою функцию?",
+            question_en="How to write a function?",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            answer_ru="Просто берёшь и пишешь!",
+            answer_en="Just write it.",
+            interview_expected_answer_ru="Пиши!",
+            interview_expected_answer_en="Write it!",
+            grade=GradeEnum.JUNIOR,
+            subsection_ru="Функции",
+            subsection_en="Functions",
+            section_ru="Основы",
+            section_en="Basics",
+            sheet_key="python",
+            sheet_ru="Питон",
+            sheet_en="Python",
+        )
+        response = self.no_auth_api.get_public_competency_matrix_item(
+            slug="how-to-write-function",
+            language="en",
+        )
+        assert response.status_code == codes.OK
+        assert response.json()["slug"] == "how-to-write-function"
+        assert response.json()["question"] == "How to write a function?"
+        self.use_case.get_item_by_slug.assert_called_once_with(
+            slug="how-to-write-function",
+            only_published=True,
+        )
+
+    def test_get_public_competency_matrix_item_requires_explicit_language(self) -> None:
+        response = self.no_auth_api.get_public_competency_matrix_item(
+            slug="how-to-write-function",
+            language=None,
+        )
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.get_item_by_slug.assert_not_called()
+
+    def test_get_public_competency_matrix_item_not_found(self) -> None:
+        self.use_case.get_item_by_slug.side_effect = CompetencyMatrixItemNotFoundError()
+        response = self.no_auth_api.get_public_competency_matrix_item(
+            slug="missing-question",
+            language="ru",
+        )
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json()["message"] == "Competency matrix item not found"

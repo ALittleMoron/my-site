@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from core.competency_matrix.schemas import PublishedCompetencyMatrixItemsForSeo
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.schemas import PublishedNoteForSeo
@@ -29,6 +30,7 @@ class PublicUrl:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class PublicDiscoveryUrls:
     notes: list[PublishedNoteForSeo]
+    matrix_items: PublishedCompetencyMatrixItemsForSeo
 
     def build(self) -> list[PublicUrl]:
         urls = [
@@ -42,6 +44,15 @@ class PublicDiscoveryUrls:
             )
             for note in self.notes
             if note.publish_status == PublishStatusEnum.PUBLISHED
+            for language in LanguageEnum
+        )
+        urls.extend(
+            PublicUrl(
+                path=f"/{language.value}/competency-matrix/questions/{item.slug}",
+                updated_at=None,
+            )
+            for item in self.matrix_items
+            if item.publish_status == PublishStatusEnum.PUBLISHED
             for language in LanguageEnum
         )
         return urls

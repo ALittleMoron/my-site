@@ -102,21 +102,22 @@ features/<name>/
 
 ## Existing Features
 
-| Feature     | Route                                            | Notes                                                                             |
-| ----------- | ------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `about`     | `/ru/about-me`, `/en/about-me`                   | Public page with contact form; unprefixed compatibility route remains             |
-| `auth`      | `/login`                                         | Login page, no guard                                                              |
-| `matrix`    | `/ru/competency-matrix`, `/en/competency-matrix` | CSR/hydrated matrix overview; unprefixed compatibility route remains              |
-| `notes`     | `/ru/notes/:slug`, `/en/notes/:slug`             | SSR public article detail, CSR list/admin authoring, folders side-panel, tags     |
-| `sitemap`   | `/ru/sitemap`, `/en/sitemap`                     | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`   |
-| `not-found` | `/404`                                           | Wildcard redirect target                                                          |
-| `shell`     | n/a                                              | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent` |
+| Feature     | Route                                                                                                                              | Notes                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `about`     | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with contact form; unprefixed compatibility route remains                            |
+| `auth`      | `/login`                                                                                                                           | Login page, no guard                                                                             |
+| `matrix`    | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains |
+| `notes`     | `/ru/notes/:slug`, `/en/notes/:slug`                                                                                               | SSR public article detail, CSR list/admin authoring, folders side-panel, tags                    |
+| `sitemap`   | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                  |
+| `not-found` | `/404`                                                                                                                             | Wildcard redirect target                                                                         |
+| `shell`     | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                |
 
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.
-- Public canonical routes are language-prefixed. Keep `/ru/notes/:slug` and `/en/notes/:slug` as
-  SSR article routes, and render internal note/wiki links with the active language prefix.
+- Public canonical routes are language-prefixed. Keep `/ru/notes/:slug`, `/en/notes/:slug`,
+  `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug` as SSR
+  detail routes, and render internal note/wiki links with the active language prefix.
 - Feature `routes.ts` — owns all sub-routes for that feature (`''`, `':id'`, etc.).
 - Use `loadChildren` (not `loadComponent`) so adding sub-routes never touches `app.routes.ts`.
 - Auth guard applied at protected parent route level — not per-leaf-route.

@@ -6,6 +6,11 @@
   <div class="question-detail">
     <h2 class="h5">{{ 'matrix.detail.question' | t }}</h2>
     <p>{{ question()!.question }}</p>
+    @if (canOpenQuestionPage()) {
+      <a class="btn btn-sm btn-outline-primary" [routerLink]="questionPageLink()">
+        {{ 'matrix.detail.openQuestion' | t }}
+      </a>
+    }
 
     <hr />
 

@@ -100,6 +100,7 @@ class NewExternalResourceAttachment:
 @dataclass(slots=True, kw_only=True)
 class BaseCompetencyMatrixItem:
     id: IntId
+    slug: str
     question_ru: str
     question_en: str
     publish_status: PublishStatusEnum
@@ -120,6 +121,7 @@ class BaseCompetencyMatrixItem:
         return all(
             [
                 self.publish_status == PublishStatusEnum.PUBLISHED,
+                self.slug != "",
                 self.sheet_key != "",
                 self.sheet_ru != "",
                 self.sheet_en != "",
@@ -212,6 +214,7 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
         ]
         return CompetencyMatrixItem(
             id=self.id,
+            slug=self.slug,
             question_ru=self.question_ru,
             question_en=self.question_en,
             publish_status=self.publish_status,
@@ -242,6 +245,35 @@ class CompetencyMatrixItemUpdateParams(CompetencyMatrixItemWriteParams): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemFilters:
+    sheet_key: str | None
+    only_published: bool | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItems(ValuedDataclass[CompetencyMatrixItem]):
     def only_available(self) -> CompetencyMatrixItems:
         return CompetencyMatrixItems(values=[item for item in self if item.is_available()])
+
+    def to_published_for_seo(self) -> PublishedCompetencyMatrixItemsForSeo:
+        return PublishedCompetencyMatrixItemsForSeo(
+            values=[
+                PublishedCompetencyMatrixItemForSeo(
+                    slug=item.slug,
+                    publish_status=item.publish_status,
+                )
+                for item in self
+            ],
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedCompetencyMatrixItemForSeo:
+    slug: str
+    publish_status: PublishStatusEnum
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PublishedCompetencyMatrixItemsForSeo(
+    ValuedDataclass[PublishedCompetencyMatrixItemForSeo],
+): ...

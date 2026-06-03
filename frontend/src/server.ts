@@ -7,10 +7,10 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 import {
-  buildArticleNotFoundHtml,
-  buildPublicArticleApiUrl,
+  buildPublicNotFoundHtml,
+  buildPublicSeoApiUrl,
   normalizeOrigin,
-  parsePublicArticlePath,
+  parsePublicSeoPath,
 } from './server-seo';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -32,14 +32,14 @@ app.use(async (req, res, next) => {
     return;
   }
 
-  const route = parsePublicArticlePath(req.path);
+  const route = parsePublicSeoPath(req.path);
   if (route === null) {
     next();
     return;
   }
 
   try {
-    const apiUrl = buildPublicArticleApiUrl(readRequiredOrigin('SSR_API_ORIGIN'), route);
+    const apiUrl = buildPublicSeoApiUrl(readRequiredOrigin('SSR_API_ORIGIN'), route);
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -49,12 +49,12 @@ app.use(async (req, res, next) => {
     await response.body?.cancel();
 
     if (response.status === 404 || response.status === 403) {
-      res.status(404).type('html').send(buildArticleNotFoundHtml(readPublicOrigin(), route));
+      res.status(404).type('html').send(buildPublicNotFoundHtml(readPublicOrigin(), route));
       return;
     }
 
     if (!response.ok) {
-      next(new Error(`Public article preflight failed with HTTP ${response.status}.`));
+      next(new Error(`Public SEO preflight failed with HTTP ${response.status}.`));
       return;
     }
 

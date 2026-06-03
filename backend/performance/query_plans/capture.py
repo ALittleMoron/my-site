@@ -25,8 +25,15 @@ class EmptyRowResult:
         return iter(())
 
 
+class FakeScalarModel:
+    def to_domain_schema(self, *, include_relationships: bool) -> object:
+        del include_relationships
+        return object()
+
+
 class RecordingSession:
-    def __init__(self) -> None:
+    def __init__(self, *, scalar_result: object = 0) -> None:
+        self.scalar_result = scalar_result
         self.execute_statements: list[Select[tuple[object, ...]]] = []
         self.scalar_statements: list[Select[tuple[object, ...]]] = []
         self.scalars_statements: list[Select[tuple[object, ...]]] = []
@@ -35,9 +42,9 @@ class RecordingSession:
         self.execute_statements.append(statement)
         return EmptyRowResult()
 
-    async def scalar(self, statement: Select[tuple[object, ...]]) -> int:
+    async def scalar(self, statement: Select[tuple[object, ...]]) -> object:
         self.scalar_statements.append(statement)
-        return 0
+        return self.scalar_result
 
     async def scalars(self, statement: Select[tuple[object, ...]]) -> EmptyScalarResult:
         self.scalars_statements.append(statement)
@@ -80,6 +87,12 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
     notes_seo_session = RecordingSession()
     notes_seo_storage = NotesDatabaseStorage(session=cast("AsyncSession", notes_seo_session))
     await notes_seo_storage.list_published_notes_for_seo()
+
+    matrix_slug_session = RecordingSession(scalar_result=FakeScalarModel())
+    matrix_slug_storage = CompetencyMatrixDatabaseStorage(
+        session=cast("AsyncSession", matrix_slug_session),
+    )
+    await matrix_slug_storage.get_competency_matrix_item_by_slug(slug="matrix-question-100")
 
     tag_queries = await _capture_tag_queries()
     resource_queries = await _capture_resource_queries()
@@ -138,6 +151,16 @@ async def capture_balanced_queries() -> tuple[CapturedQuery, ...]:
                 max_execution_ms=250.0,
                 expected_index_names=("notes_note_publish_status_published_updated_idx",),
                 forbidden_seq_scan_relations=("notes__note_model",),
+                allow_seq_scan_reason=None,
+            ),
+        ),
+        CapturedQuery(
+            name="matrix_public_detail_by_slug",
+            statement=matrix_slug_session.scalar_statements[0],
+            expectation=PlanExpectation(
+                max_execution_ms=25.0,
+                expected_index_names=("ix_competency_matrix__competency_matrix_item_model_slug",),
+                forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
                 allow_seq_scan_reason=None,
             ),
         ),

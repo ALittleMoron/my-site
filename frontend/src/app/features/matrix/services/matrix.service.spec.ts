@@ -36,10 +36,12 @@ describe('MatrixService', () => {
   it('loads grouped questions with sheet key, publication, and language filters', () => {
     let resultSheet: string | undefined;
     let firstQuestion: string | undefined;
+    let firstSlug: string | undefined;
 
     service.getQuestions('python', true, 'en').subscribe((list) => {
       resultSheet = list.sheet;
       firstQuestion = list.sections[0].subsections[0].grades[0].questions[0].question;
+      firstSlug = list.sections[0].subsections[0].grades[0].questions[0].slug;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
@@ -55,7 +57,12 @@ describe('MatrixService', () => {
           subsections: [
             {
               subsection: 'Syntax',
-              grades: [{ grade: 'Junior', items: [{ id: 1, question: 'What is PEP8?' }] }],
+              grades: [
+                {
+                  grade: 'Junior',
+                  items: [{ id: 1, slug: 'what-is-pep8', question: 'What is PEP8?' }],
+                },
+              ],
             },
           ],
         },
@@ -64,15 +71,18 @@ describe('MatrixService', () => {
 
     expect(resultSheet).toBe('Python');
     expect(firstQuestion).toBe('What is PEP8?');
+    expect(firstSlug).toBe('what-is-pep8');
   });
 
   it('loads localized question detail from the backend detail endpoint', () => {
     let resultQuestion: string | undefined;
     let resultTranslation: string | undefined;
+    let resultSlug: string | undefined;
 
     service.getQuestion(1, false, 'en').subscribe((question) => {
       resultQuestion = question.question;
       resultTranslation = question.translations.ru.question;
+      resultSlug = question.slug;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
@@ -82,6 +92,25 @@ describe('MatrixService', () => {
 
     expect(resultQuestion).toBe('What is PEP8?');
     expect(resultTranslation).toBe('Что такое PEP8?');
+    expect(resultSlug).toBe('what-is-pep8');
+  });
+
+  it('loads public localized question detail by slug', () => {
+    let resultSlug: string | undefined;
+
+    service.getPublicQuestion('how-to-write-function', 'ru').subscribe((question) => {
+      resultSlug = question.slug;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/items/public/how-to-write-function'),
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('language')).toBe('ru');
+    expect(req.request.params.has('onlyPublished')).toBe(false);
+    req.flush(matrixDetailDto({ slug: 'how-to-write-function' }));
+
+    expect(resultSlug).toBe('how-to-write-function');
   });
 
   it('searchResources loads localized resource matches with limit and language', () => {
@@ -125,6 +154,7 @@ describe('MatrixService', () => {
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('language')).toBe('en');
+    expect(req.request.body.slug).toBe('what-is-pep8');
     expect(req.request.body.resources).toEqual([
       {
         resourceId: 1,
@@ -149,6 +179,7 @@ describe('MatrixService', () => {
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/7'));
     expect(req.request.method).toBe('PUT');
     expect(req.request.params.get('language')).toBe('ru');
+    expect(req.request.body.slug).toBe('what-is-pep8');
     expect(req.request.body.sheetKey).toBe('python');
     req.flush(matrixDetailDto({ question: 'Что такое PEP8?' }));
 
@@ -204,6 +235,7 @@ describe('MatrixService', () => {
 
 function matrixPayload() {
   return {
+    slug: 'what-is-pep8',
     sheetKey: 'python',
     grade: 'Junior',
     publishStatus: 'Draft',
@@ -240,6 +272,7 @@ function matrixPayload() {
 function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 1,
+    slug: 'what-is-pep8',
     question: 'What is PEP8?',
     answer: 'Answer',
     interviewExpectedAnswer: 'Expected answer',

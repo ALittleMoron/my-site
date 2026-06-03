@@ -2,6 +2,7 @@ import pytest_asyncio
 from httpx import codes
 
 from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -37,7 +38,9 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "sheet": "",
             "sections": [],
         }
-        self.use_case.list_items.assert_called_once_with(sheet_key="java", only_published=True)
+        self.use_case.list_items.assert_called_once_with(
+            filters=CompetencyMatrixItemFilters(sheet_key="java", only_published=True),
+        )
 
     def test_list(self) -> None:
         self.use_case.list_items.return_value = self.factory.core.competency_matrix_items(
@@ -73,7 +76,11 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                                 {
                                     "grade": "Junior",
                                     "items": [
-                                        {"id": 1, "question": "How to write a function?"},
+                                        {
+                                            "id": 1,
+                                            "slug": "how-to-write-a-function",
+                                            "question": "How to write a function?",
+                                        },
                                     ],
                                 },
                             ],
@@ -82,7 +89,9 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.list_items.assert_called_once_with(sheet_key="python", only_published=True)
+        self.use_case.list_items.assert_called_once_with(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
+        )
 
     def test_list_requires_only_published(self) -> None:
         response = self.api.get_competency_matrix_items(

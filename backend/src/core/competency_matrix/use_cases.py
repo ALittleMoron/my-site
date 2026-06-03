@@ -5,10 +5,12 @@ from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemCreateParams,
+    CompetencyMatrixItemFilters,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpdateParams,
     CompetencyMatrixItemWriteParams,
     ExternalResources,
+    PublishedCompetencyMatrixItemsForSeo,
     Sheets,
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
@@ -36,8 +38,7 @@ class AbstractCompetencyMatrixUseCase(ABC):
     async def list_items(
         self,
         *,
-        sheet_key: str,
-        only_published: bool,
+        filters: CompetencyMatrixItemFilters,
     ) -> CompetencyMatrixItems:
         raise NotImplementedError
 
@@ -48,6 +49,19 @@ class AbstractCompetencyMatrixUseCase(ABC):
         item_id: IntId,
         only_published: bool,
     ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_item_by_slug(
+        self,
+        *,
+        slug: str,
+        only_published: bool,
+    ) -> CompetencyMatrixItem:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_published_items_for_seo(self) -> PublishedCompetencyMatrixItemsForSeo:
         raise NotImplementedError
 
     @abstractmethod
@@ -103,12 +117,11 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
     async def list_items(
         self,
         *,
-        sheet_key: str,
-        only_published: bool,
+        filters: CompetencyMatrixItemFilters,
     ) -> CompetencyMatrixItems:
-        items = await self.storage.list_competency_matrix_items(sheet_key=sheet_key)
+        items = await self.storage.list_competency_matrix_items(filters=filters)
         matrix = CompetencyMatrixItems(values=items)
-        return matrix.only_available() if only_published else matrix
+        return matrix.only_available() if filters.only_published is True else matrix
 
     async def get_item(
         self,
@@ -120,6 +133,23 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
         if only_published and not item.is_available():
             raise CompetencyMatrixItemNotFoundError
         return item
+
+    async def get_item_by_slug(
+        self,
+        *,
+        slug: str,
+        only_published: bool,
+    ) -> CompetencyMatrixItem:
+        item = await self.storage.get_competency_matrix_item_by_slug(slug=slug)
+        if only_published and not item.is_available():
+            raise CompetencyMatrixItemNotFoundError
+        return item
+
+    async def list_published_items_for_seo(self) -> PublishedCompetencyMatrixItemsForSeo:
+        items = await self.storage.list_competency_matrix_items(
+            filters=CompetencyMatrixItemFilters(sheet_key=None, only_published=True),
+        )
+        return CompetencyMatrixItems(values=items).only_available().to_published_for_seo()
 
     async def create_item(
         self,
