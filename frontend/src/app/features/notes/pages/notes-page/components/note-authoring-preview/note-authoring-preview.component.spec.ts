@@ -14,7 +14,7 @@ describe('NoteAuthoringPreviewComponent', () => {
 
     fixture = TestBed.createComponent(NoteAuthoringPreviewComponent);
     fixture.componentRef.setInput('title', 'Typed notes');
-    fixture.componentRef.setInput('content', 'Read [[typed-note|typed note]].');
+    fixture.componentRef.setInput('content', 'Read [[notes:typed-note|typed note]].');
     fixture.componentRef.setInput('tags', [
       {
         id: 1,

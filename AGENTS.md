@@ -66,9 +66,10 @@ Portfolio/notes site and knowledge database
   nullable: API write payloads must include a
   `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
   `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
-  null. SEO analysis is advisory-only and must not block saving or publishing. Wiki-style note
-  links use `[[note-slug]]` and `[[note-slug|Custom label]]`; matrix link syntax remains reserved
-  for a later explicit design.
+  null. SEO analysis is advisory-only and must not block saving or publishing. Wiki-style content
+  links use typed prefixes, currently `[[notes:<slug>]]` and `[[matrix:<slug>]]`, with optional
+  labels such as `[[matrix:<slug>|Custom label]]`; unprefixed `[[note-slug]]` syntax is not
+  supported.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains, `/api/*`, `/sitemap.xml`, and `/robots.txt`, while the frontend container runs the Angular Node.js SSR runtime for public article and matrix question routes and hydrates interactive CSR/admin areas.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created

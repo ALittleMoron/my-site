@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
+import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
-import { renderNoteMarkdown } from '../../../../models/note-wiki-links';
 import { NoteDetail, NoteReactionKind } from '../../../../models/notes.model';
 import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
@@ -31,6 +31,8 @@ const REACTION_OPTIONS: ReactionOption[] = [
   templateUrl: './note-detail.component.html',
 })
 export class NoteDetailComponent {
+  private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
+
   readonly note = input<NoteDetail | null>(null);
   readonly loading = input(false);
   readonly error = input<ApiError | null>(null);
@@ -53,7 +55,7 @@ export class NoteDetailComponent {
   readonly contentHtml = computed(() => {
     const note = this.note();
     if (!note?.content) return '';
-    return renderNoteMarkdown(note.content, this.language());
+    return this.wikiLinkRenderer.render(note.content, this.language());
   });
 
   readonly isDraft = computed(() => this.note()?.publishStatus === 'Draft');
@@ -74,7 +76,7 @@ export class NoteDetailComponent {
         coverImageUrl: note.metadata.coverImageUrl,
         coverImageAlt:
           this.language() === 'ru' ? note.metadata.coverImageAltRu : note.metadata.coverImageAltEn,
-        missingWikiLinkSlugs: [],
+        missingWikiLinkTargets: [],
         folder: note.folder,
         tags: note.tags,
         language: this.language(),

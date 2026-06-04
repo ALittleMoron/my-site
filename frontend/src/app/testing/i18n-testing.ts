@@ -47,6 +47,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.form.answerEn': 'Ответ EN',
   'matrix.form.expectedAnswerRu': 'Ожидаемый ответ RU',
   'matrix.form.expectedAnswerEn': 'Ожидаемый ответ EN',
+  'matrix.form.wikiLinksMissing': 'Не найдены wiki-цели: {targets}.',
   'matrix.resources.title': 'Внешние ресурсы',
   'matrix.resources.searchPlaceholder': 'Найти ресурс',
   'matrix.resources.newNameRuPlaceholder': 'Название нового ресурса RU',
@@ -148,8 +149,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'notes.seoAnalysis.message.activeTags.good': 'Есть хотя бы один активный тег.',
   'notes.seoAnalysis.message.activeTags.warning':
     'Добавьте активный тег, чтобы уточнить тему заметки.',
-  'notes.seoAnalysis.message.wikiLinks.good': 'Все wiki-ссылки ведут на существующие заметки.',
-  'notes.seoAnalysis.message.wikiLinks.warning': 'Не найдены заметки: {slugs}.',
+  'notes.seoAnalysis.message.wikiLinks.good': 'Все wiki-ссылки ведут на существующие цели.',
+  'notes.seoAnalysis.message.wikiLinks.warning': 'Не найдены wiki-цели: {targets}.',
   'notes.stats.from': 'С',
   'notes.stats.to': 'По',
   'notes.stats.views': 'Просмотры: {count}',

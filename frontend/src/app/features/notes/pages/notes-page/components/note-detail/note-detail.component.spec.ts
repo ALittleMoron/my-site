@@ -23,7 +23,7 @@ describe('NoteDetailComponent', () => {
       createdAt: '2026-01-01T03:04:05+00:00',
       updatedAt: '2026-01-03T03:04:05+00:00',
       excerpt: 'Excerpt',
-      content: '# Content',
+      content: '# Content\n\nRead [[matrix:how-to-write-function|matrix question]].',
       metadata: {
         seoTitleRu: 'SEO Typed notes RU',
         seoTitleEn: 'SEO Typed notes EN',
@@ -47,8 +47,16 @@ describe('NoteDetailComponent', () => {
         },
       ],
       translations: {
-        ru: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
-        en: { title: 'Typed notes', content: '# Content', folder: 'Engineering' },
+        ru: {
+          title: 'Typed notes',
+          content: '# Content\n\nRead [[matrix:how-to-write-function|matrix question]].',
+          folder: 'Engineering',
+        },
+        en: {
+          title: 'Typed notes',
+          content: '# Content\n\nRead [[matrix:how-to-write-function|matrix question]].',
+          folder: 'Engineering',
+        },
       },
     });
     fixture.componentRef.setInput('selectedReaction', 'poop');
@@ -97,5 +105,13 @@ describe('NoteDetailComponent', () => {
     heartButton.nativeElement.click();
 
     expect(reactionSelected).toHaveBeenCalledWith('heart');
+  });
+
+  it('renders typed wiki links to matrix questions', () => {
+    const link = fixture.debugElement.query(By.css('.notes-markdown a'))
+      .nativeElement as HTMLAnchorElement;
+
+    expect(link.getAttribute('href')).toBe('/en/competency-matrix/questions/how-to-write-function');
+    expect(link.textContent).toBe('matrix question');
   });
 });

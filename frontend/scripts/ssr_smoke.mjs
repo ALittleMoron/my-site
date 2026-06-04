@@ -42,12 +42,14 @@ const noteDto = {
       },
     },
   ],
-  content: '## Rendered SSR article body\n\nRead [[typed-notes|another note]].',
+  content:
+    '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
   createdAt: '2026-01-01T03:04:05+00:00',
   translations: {
     ru: {
       title: 'Typed notes',
-      content: '## Rendered SSR article body\n\nRead [[typed-notes|another note]].',
+      content:
+        '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
       folder: 'Engineering',
     },
     en: {
@@ -62,7 +64,8 @@ const matrixQuestionDto = {
   id: 1,
   slug: 'how-to-write-function',
   question: 'Как написать функцию?',
-  answer: '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой.',
+  answer:
+    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
   interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
   sheetKey: 'python',
   sheet: 'Python',
@@ -73,7 +76,8 @@ const matrixQuestionDto = {
   translations: {
     ru: {
       question: 'Как написать функцию?',
-      answer: '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой.',
+      answer:
+        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
       interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
       sheet: 'Python',
       section: 'Основы',
@@ -253,7 +257,10 @@ async function assertPublishedArticleHtml(frontendPort) {
     ['og image', html.includes('property="og:image" content="https://example.com/cover.jpg"')],
     ['json-ld', html.includes('"@type":"BlogPosting"')],
     ['json-ld headline', html.includes('"headline":"SEO Typed notes RU"')],
-    ['wiki link localized', html.includes('href="/ru/notes/typed-notes"')],
+    [
+      'wiki link to matrix localized',
+      html.includes('href="/ru/competency-matrix/questions/how-to-write-function"'),
+    ],
     ['no noindex on published article', !html.includes('name="robots" content="noindex')],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
@@ -280,6 +287,7 @@ async function assertPublishedMatrixQuestionHtml(frontendPort) {
     ['hreflang en', html.includes('hreflang="en"')],
     ['json-ld faq', html.includes('"@type":"FAQPage"')],
     ['json-ld question', html.includes('"name":"Как написать функцию?"')],
+    ['wiki link to note localized', html.includes('href="/ru/notes/typed-notes"')],
     ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
     [
       'matrix public detail preflight',

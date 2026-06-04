@@ -25,6 +25,7 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { SeoAlternate, SeoService } from '../../../../core/seo/seo.service';
+import { replaceWikiLinksWithPlainText } from '../../../../core/wiki-links/wiki-links';
 import { MatrixQuestionDetail } from '../../models/matrix-question.model';
 import { MatrixService } from '../../services/matrix.service';
 import { MatrixQuestionDetailComponent } from '../matrix-list/components/matrix-question-detail/matrix-question-detail.component';
@@ -46,6 +47,7 @@ export class MatrixQuestionPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly language$ = toObservable(this.i18n.language);
 
+  readonly language = this.i18n.language;
   readonly question = signal<MatrixQuestionDetail | null>(null);
   readonly loading = signal(false);
   readonly error = signal<ApiError | null>(null);
@@ -152,7 +154,7 @@ function buildFaqStructuredData(params: {
 }
 
 function plainTextFromMarkdown(markdown: string): string {
-  return markdown
+  return replaceWikiLinksWithPlainText(markdown)
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')

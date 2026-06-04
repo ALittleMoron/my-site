@@ -1,15 +1,7 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  input,
-  output,
-  computed,
-  inject,
-  SecurityContext,
-} from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { Component, ChangeDetectionStrategy, input, output, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { marked } from 'marked';
+import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
+import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
@@ -24,12 +16,13 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
   templateUrl: './matrix-question-detail.component.html',
 })
 export class MatrixQuestionDetailComponent {
-  private readonly sanitizer = inject(DomSanitizer);
+  private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
 
   readonly question = input<MatrixQuestionDetail | null>(null);
   readonly loading = input<boolean>(false);
   readonly error = input<ApiError | null>(null);
   readonly isAdmin = input.required<boolean>();
+  readonly language = input.required<LanguageCode>();
   readonly questionPageLink = input<string | null>(null);
 
   readonly publish = output<void>();
@@ -40,13 +33,13 @@ export class MatrixQuestionDetailComponent {
   readonly answerHtml = computed<string>(() => {
     const q = this.question();
     if (!q?.answer) return '';
-    return renderMarkdown(q.answer, this.sanitizer);
+    return this.wikiLinkRenderer.render(q.answer, this.language());
   });
 
   readonly interviewAnswerHtml = computed<string>(() => {
     const q = this.question();
     if (!q?.interviewExpectedAnswer) return '';
-    return renderMarkdown(q.interviewExpectedAnswer, this.sanitizer);
+    return this.wikiLinkRenderer.render(q.interviewExpectedAnswer, this.language());
   });
 
   readonly isDraft = computed<boolean>(() => this.question()?.publishStatus === 'Draft');
@@ -54,10 +47,4 @@ export class MatrixQuestionDetailComponent {
   readonly canOpenQuestionPage = computed<boolean>(
     () => this.questionPageLink() !== null && this.isPublished(),
   );
-}
-
-function renderMarkdown(markdown: string, sanitizer: DomSanitizer): string {
-  const html = marked.parse(markdown, { async: false });
-  const enhanced = html.replaceAll('<pre><code', '<pre class="markdown-code"><code');
-  return sanitizer.sanitize(SecurityContext.HTML, enhanced) ?? '';
 }

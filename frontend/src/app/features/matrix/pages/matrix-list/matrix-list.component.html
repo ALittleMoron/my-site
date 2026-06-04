@@ -87,17 +87,20 @@
         </div>
         <div class="modal-body">
           @if (detailMode() === 'view') {
-            <app-matrix-question-detail
-              [question]="selectedQuestion()"
-              [loading]="detailLoading()"
-              [error]="detailError()"
-              [isAdmin]="isAdmin()"
-              [questionPageLink]="selectedQuestionPageLink()"
-              (edit)="openEdit()"
-              (publish)="onPublish(selectedQuestion()!.id)"
-              (unpublish)="onUnpublish(selectedQuestion()!.id)"
-              (delete)="onDelete(selectedQuestion()!.id)"
-            />
+            @if (language()) {
+              <app-matrix-question-detail
+                [question]="selectedQuestion()"
+                [loading]="detailLoading()"
+                [error]="detailError()"
+                [isAdmin]="isAdmin()"
+                [language]="language()!"
+                [questionPageLink]="selectedQuestionPageLink()"
+                (edit)="openEdit()"
+                (publish)="onPublish(selectedQuestion()!.id)"
+                (unpublish)="onUnpublish(selectedQuestion()!.id)"
+                (delete)="onDelete(selectedQuestion()!.id)"
+              />
+            }
           } @else {
             <app-matrix-question-form
               [question]="detailMode() === 'edit' ? selectedQuestion() : null"

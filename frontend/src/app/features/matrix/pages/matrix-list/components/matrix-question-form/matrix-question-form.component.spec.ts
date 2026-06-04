@@ -1,11 +1,14 @@
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 import {
   MatrixQuestionDetail,
   MatrixQuestionPayload,
 } from '../../../../models/matrix-question.model';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { MatrixQuestionFormComponent } from './matrix-question-form.component';
 
 @Component({
@@ -65,10 +68,26 @@ const question: MatrixQuestionDetail = {
 describe('MatrixQuestionFormComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionFormComponent>;
   let component: MatrixQuestionFormComponent;
+  let wikiLinkTargetsService: { getTargets: jest.Mock };
 
   beforeEach(async () => {
+    wikiLinkTargetsService = {
+      getTargets: jest.fn().mockReturnValue(
+        of(
+          new Map([
+            ['notes', new Set(['typed-note'])],
+            ['matrix', new Set(['known-question'])],
+          ]),
+        ),
+      ),
+    };
+
     await TestBed.configureTestingModule({
       imports: [MatrixQuestionFormComponent],
+      providers: [
+        { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
+        provideI18nTesting(),
+      ],
     })
       .overrideComponent(MatrixQuestionFormComponent, {
         remove: { imports: [MarkdownEditorComponent] },
@@ -243,5 +262,38 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(emitted).toEqual([]);
     expect(component.form.touched).toBe(true);
+  });
+
+  it('shows non-blocking warnings for missing typed wiki-link targets', () => {
+    const emitted: MatrixQuestionPayload[] = [];
+    component.questionSave.subscribe((payload) => emitted.push(payload));
+    fixture.detectChanges();
+
+    component.form.setValue({
+      slug: 'what-is-pep8',
+      questionRu: 'Вопрос',
+      questionEn: 'Question',
+      answerRu: 'Ответ со ссылкой [[matrix:missing-question|вопрос]].',
+      answerEn: 'Answer',
+      interviewExpectedAnswerRu: 'Ожидаемый ответ со ссылкой [[notes:typed-note]].',
+      interviewExpectedAnswerEn: 'Expected',
+      sheetKey: 'python',
+      sheetRu: 'Python',
+      sheetEn: 'Python',
+      grade: 'Middle',
+      sectionRu: 'Core',
+      sectionEn: 'Core',
+      subsectionRu: 'Syntax',
+      subsectionEn: 'Syntax',
+      publishStatus: 'Published',
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('matrix:missing-question');
+
+    component.submit();
+
+    expect(emitted).toHaveLength(1);
   });
 });

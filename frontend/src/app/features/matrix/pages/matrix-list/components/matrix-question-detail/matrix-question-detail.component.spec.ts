@@ -68,6 +68,7 @@ describe('MatrixQuestionDetailComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixQuestionDetailComponent);
+    fixture.componentRef.setInput('language', 'ru');
     el = fixture.nativeElement as HTMLElement;
   });
 
@@ -178,6 +179,21 @@ describe('MatrixQuestionDetailComponent', () => {
     const code = el.querySelector('code.language-ts');
     expect(pre).toBeTruthy();
     expect(code?.textContent).toContain('const answer = 42;');
+  });
+
+  it('should render typed wiki links with the active language prefix', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', {
+      ...mockDetail,
+      answer: 'Read [[notes:typed-notes|typed note]].',
+    });
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('language', 'en');
+    fixture.detectChanges();
+
+    const link = el.querySelector<HTMLAnchorElement>('a[href="/en/notes/typed-notes"]');
+    expect(link?.textContent).toBe('typed note');
   });
 
   it('should render resources', () => {

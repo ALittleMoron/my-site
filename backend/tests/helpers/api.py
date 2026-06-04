@@ -46,6 +46,12 @@ class APIHelper:
             params["language"] = language
         return self.client.get("/api/competency-matrix/sheets", params=params)
 
+    def get_wiki_link_targets(self, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/wiki-links/targets", params=params)
+
     def get_competency_matrix_items(
         self,
         sheet_key: str = "",

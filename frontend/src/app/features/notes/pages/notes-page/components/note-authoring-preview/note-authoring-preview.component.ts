@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
-import { renderNoteMarkdown } from '../../../../models/note-wiki-links';
+import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { NoteTag } from '../../../../models/notes.model';
 
 @Component({
@@ -12,6 +12,8 @@ import { NoteTag } from '../../../../models/notes.model';
   templateUrl: './note-authoring-preview.component.html',
 })
 export class NoteAuthoringPreviewComponent {
+  private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
+
   readonly title = input.required<string>();
   readonly content = input.required<string>();
   readonly tags = input.required<readonly NoteTag[]>();
@@ -21,7 +23,9 @@ export class NoteAuthoringPreviewComponent {
   readonly seoDescription = input.required<string | null>();
   readonly language = input.required<LanguageCode>();
 
-  readonly contentHtml = computed(() => renderNoteMarkdown(this.content(), this.language()));
+  readonly contentHtml = computed(() =>
+    this.wikiLinkRenderer.render(this.content(), this.language()),
+  );
   readonly socialTitle = computed(() => this.seoTitle()?.trim() || this.title().trim());
   readonly socialDescription = computed(() => this.seoDescription()?.trim() ?? '');
 }

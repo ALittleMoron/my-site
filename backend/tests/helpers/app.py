@@ -17,6 +17,7 @@ from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import AbstractFilesUseCase
 from core.notes.use_cases import AbstractNoteAnalyticsUseCase, AbstractNotesUseCase
 from core.types import IntId
+from core.wiki_links.use_cases import AbstractWikiLinksUseCase
 
 
 @dataclass(kw_only=True)
@@ -53,6 +54,10 @@ class IocContainerHelper:
 
     async def get_note_analytics_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractNoteAnalyticsUseCase)
+        return cast("Mock", use_case)
+
+    async def get_wiki_links_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractWikiLinksUseCase)
         return cast("Mock", use_case)
 
     # AUTH

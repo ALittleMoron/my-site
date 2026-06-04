@@ -10,6 +10,7 @@ from entrypoints.litestar.api.files.endpoints import api_router as files_router
 from entrypoints.litestar.api.healthcheck.endpoints import api_router as healthcheck_router
 from entrypoints.litestar.api.i18n.endpoints import api_router as i18n_router
 from entrypoints.litestar.api.notes.endpoints import api_router as notes_router
+from entrypoints.litestar.api.wiki_links.endpoints import api_router as wiki_links_router
 
 api_router = Router(
     "/api",
@@ -22,6 +23,7 @@ api_router = Router(
         auth_router,
         account_router,
         notes_router,
+        wiki_links_router,
     ],
     tags=["api"],
 )

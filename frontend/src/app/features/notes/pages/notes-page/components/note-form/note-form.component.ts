@@ -16,15 +16,13 @@ import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
-import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
-import { findMissingNoteWikiLinkSlugs } from '../../../../models/note-wiki-links';
 import {
-  NoteDetail,
-  NoteMetadata,
-  NotePayload,
-  NoteTag,
-  NoteTree,
-} from '../../../../models/notes.model';
+  WikiLinkTargetLookup,
+  findMissingWikiLinkTargets,
+} from '../../../../../../core/wiki-links/wiki-links';
+import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
+import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
+import { NoteDetail, NoteMetadata, NotePayload, NoteTag } from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
 import { NoteAuthoringPreviewComponent } from '../note-authoring-preview/note-authoring-preview.component';
 import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
@@ -132,6 +130,7 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
 export class NoteFormComponent implements OnInit {
   private readonly notesService = inject(NotesService);
   private readonly mediaUpload = inject(MediaUploadService);
+  private readonly wikiLinkTargetsService = inject(WikiLinkTargetsService);
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private slugEdited = false;
@@ -144,7 +143,7 @@ export class NoteFormComponent implements OnInit {
 
   readonly tags = signal<TagDraft[]>([]);
   readonly selectedTagIds = signal<ReadonlySet<number>>(new Set<number>());
-  readonly availableNoteSlugs = signal<ReadonlySet<string> | null>(null);
+  readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
   readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
 
@@ -186,9 +185,9 @@ export class NoteFormComponent implements OnInit {
         seoDescription: language === 'ru' ? metadata.seoDescriptionRu : metadata.seoDescriptionEn,
         coverImageUrl: metadata.coverImageUrl,
         coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
-        missingWikiLinkSlugs: missingWikiLinkSlugs({
+        missingWikiLinkTargets: missingWikiLinkTargets({
           markdown: language === 'ru' ? value.contentRu : value.contentEn,
-          availableSlugs: this.availableNoteSlugs(),
+          availableTargets: this.availableWikiLinkTargets(),
         }),
         folder: language === 'ru' ? value.folderRu : value.folderEn,
         language,
@@ -241,7 +240,7 @@ export class NoteFormComponent implements OnInit {
       this.formSnapshot.set(this.form.getRawValue());
     });
     this.loadTags();
-    this.loadNoteTree();
+    this.loadWikiLinkTargets();
   }
 
   onTitleEnInput(): void {
@@ -463,13 +462,13 @@ export class NoteFormComponent implements OnInit {
       });
   }
 
-  private loadNoteTree(): void {
-    this.notesService
-      .getTree(this.currentLanguage())
+  private loadWikiLinkTargets(): void {
+    this.wikiLinkTargetsService
+      .getTargets(this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (tree) => this.availableNoteSlugs.set(noteTreeSlugs(tree)),
-        error: () => this.availableNoteSlugs.set(null),
+        next: (targets) => this.availableWikiLinkTargets.set(targets),
+        error: () => this.availableWikiLinkTargets.set(null),
       });
   }
 
@@ -512,18 +511,14 @@ function toDraft(tag: NoteTag): TagDraft {
   };
 }
 
-function noteTreeSlugs(tree: NoteTree): ReadonlySet<string> {
-  return new Set(tree.folders.flatMap((folder) => folder.notes.map((note) => note.slug)));
-}
-
-function missingWikiLinkSlugs(params: {
+function missingWikiLinkTargets(params: {
   markdown: string;
-  availableSlugs: ReadonlySet<string> | null;
+  availableTargets: WikiLinkTargetLookup | null;
 }): string[] {
-  if (params.availableSlugs === null) return [];
-  return findMissingNoteWikiLinkSlugs({
+  if (params.availableTargets === null) return [];
+  return findMissingWikiLinkTargets({
     markdown: params.markdown,
-    availableSlugs: params.availableSlugs,
+    availableTargets: params.availableTargets,
   });
 }
 

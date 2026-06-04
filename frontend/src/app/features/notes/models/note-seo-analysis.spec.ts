@@ -93,9 +93,9 @@ This note has enough useful words for a reader and a generated search snippet, b
     expect(checkStatus(analysis, 'cover-image-alt')).toBe('warning');
   });
 
-  it('warns when wiki links point to missing notes', () => {
+  it('warns when wiki links point to missing typed targets', () => {
     const analysis = analyzeNoteSeo({
-      input: noteSeoInput({ missingWikiLinkSlugs: ['missing-note'] }),
+      input: noteSeoInput({ missingWikiLinkTargets: ['matrix:missing-question'] }),
       rules: NOTE_SEO_ANALYSIS_RULES,
     });
 
@@ -125,7 +125,7 @@ function noteSeoInput(params: Partial<NoteSeoInput>): NoteSeoInput {
       'A practical note about Angular typed forms, signals, markdown content, and localized article fields in the notes editor.',
     coverImageUrl: 'https://example.com/cover.jpg',
     coverImageAlt: 'Article cover with Angular form controls',
-    missingWikiLinkSlugs: [],
+    missingWikiLinkTargets: [],
     folder: 'Engineering',
     language: 'en',
     tags: [

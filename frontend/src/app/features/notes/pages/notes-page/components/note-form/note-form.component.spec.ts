@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
 import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { NotesService } from '../../../../services/notes.service';
@@ -19,10 +20,21 @@ describe('NoteFormComponent', () => {
     restoreTag: jest.Mock;
   };
   let mediaUpload: { uploadMediaFile: jest.Mock };
+  let wikiLinkTargetsService: { getTargets: jest.Mock };
 
   beforeEach(async () => {
     mediaUpload = {
       uploadMediaFile: jest.fn().mockReturnValue(of('https://cdn.example.com/cover.jpg')),
+    };
+    wikiLinkTargetsService = {
+      getTargets: jest.fn().mockReturnValue(
+        of(
+          new Map([
+            ['notes', new Set(['typed-note'])],
+            ['matrix', new Set(['known-question'])],
+          ]),
+        ),
+      ),
     };
     notesService = {
       getTree: jest.fn().mockReturnValue(
@@ -69,6 +81,7 @@ describe('NoteFormComponent', () => {
       providers: [
         { provide: NotesService, useValue: notesService },
         { provide: MediaUploadService, useValue: mediaUpload },
+        { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
         provideI18nTesting(),
       ],
     })
@@ -222,16 +235,16 @@ describe('NoteFormComponent', () => {
     expect(text).toContain('/notes/typed-note');
   });
 
-  it('warns when wiki links point to missing note slugs', () => {
+  it('warns when typed wiki links point to missing targets', () => {
     const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
 
     contentEditors[0].componentInstance.valueChange.emit(
-      'См. [[typed-note]] и [[missing-note|отсутствующую заметку]].',
+      'См. [[notes:typed-note]] и [[matrix:missing-question|отсутствующий вопрос]].',
     );
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('missing-note');
+    expect(text).toContain('matrix:missing-question');
   });
 
   it('renders active-language preview content with wiki links', () => {
@@ -242,7 +255,7 @@ describe('NoteFormComponent', () => {
     titleRu.value = 'Предпросмотр заметки';
     titleRu.dispatchEvent(new Event('input'));
     contentEditors[0].componentInstance.valueChange.emit(
-      'Откройте [[typed-note|типизированную заметку]].',
+      'Откройте [[notes:typed-note|типизированную заметку]].',
     );
     fixture.detectChanges();
 

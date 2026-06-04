@@ -102,6 +102,13 @@
             (valueChange)="setInterviewExpectedAnswerRu($event)"
           />
         </div>
+        @if (hasMissingWikiLinkTargets()) {
+          <div class="col-12">
+            <div class="form-text text-warning">
+              {{ 'matrix.form.wikiLinksMissing' | t: { targets: missingWikiLinkTargetsText() } }}
+            </div>
+          </div>
+        }
       </div>
     </div>
 
@@ -157,6 +164,13 @@
             (valueChange)="setInterviewExpectedAnswerEn($event)"
           />
         </div>
+        @if (hasMissingWikiLinkTargets()) {
+          <div class="col-12">
+            <div class="form-text text-warning">
+              {{ 'matrix.form.wikiLinksMissing' | t: { targets: missingWikiLinkTargetsText() } }}
+            </div>
+          </div>
+        }
       </div>
     </div>
   </div>

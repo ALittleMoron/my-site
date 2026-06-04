@@ -1,4 +1,5 @@
 import { LanguageCode } from '../../../core/i18n/i18n.model';
+import { replaceWikiLinksWithPlainText } from '../../../core/wiki-links/wiki-links';
 import { NoteTag } from './notes.model';
 
 export type NoteSeoStatus = 'good' | 'warning' | 'missing';
@@ -39,7 +40,7 @@ export interface NoteSeoInput {
   seoDescription: string | null;
   coverImageUrl: string | null;
   coverImageAlt: string | null;
-  missingWikiLinkSlugs: readonly string[];
+  missingWikiLinkTargets: readonly string[];
   folder: string;
   tags: NoteTag[];
   language: LanguageCode;
@@ -206,9 +207,9 @@ export function analyzeNoteSeo(params: {
     }),
     buildCheck({
       id: 'wiki-links',
-      status: params.input.missingWikiLinkSlugs.length === 0 ? 'good' : 'warning',
+      status: params.input.missingWikiLinkTargets.length === 0 ? 'good' : 'warning',
       messageParams: {
-        slugs: params.input.missingWikiLinkSlugs.join(', '),
+        targets: params.input.missingWikiLinkTargets.join(', '),
       },
     }),
   ];
@@ -297,7 +298,7 @@ function overallStatus(checks: NoteSeoCheck[]): NoteSeoStatus {
 }
 
 function markdownToPlainText(markdown: string): string {
-  return markdown
+  return replaceWikiLinksWithPlainText(markdown)
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')

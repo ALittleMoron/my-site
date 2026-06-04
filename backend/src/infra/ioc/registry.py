@@ -11,6 +11,7 @@ from infra.ioc.prodivers.database_provider import DatabaseProvider
 from infra.ioc.prodivers.files_provider import FilesProvider
 from infra.ioc.prodivers.general_provider import GeneralProvider
 from infra.ioc.prodivers.notes_provider import NotesProvider
+from infra.ioc.prodivers.wiki_links_provider import WikiLinksProvider
 
 
 def get_providers() -> Iterable[Provider]:
@@ -24,4 +25,5 @@ def get_providers() -> Iterable[Provider]:
         AuthProvider(),
         ContactsProvider(),
         NotesProvider(),
+        WikiLinksProvider(),
     )

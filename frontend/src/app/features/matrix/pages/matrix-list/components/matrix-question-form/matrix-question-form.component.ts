@@ -1,6 +1,23 @@
-import { ChangeDetectionStrategy, Component, OnInit, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
+import {
+  WikiLinkTargetLookup,
+  findMissingWikiLinkTargets,
+} from '../../../../../../core/wiki-links/wiki-links';
+import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
 import {
   MatrixGrade,
   MatrixQuestionDetail,
@@ -47,6 +64,9 @@ interface MatrixQuestionForm {
   templateUrl: './matrix-question-form.component.html',
 })
 export class MatrixQuestionFormComponent implements OnInit {
+  private readonly wikiLinkTargetsService = inject(WikiLinkTargetsService);
+  private readonly i18n = inject(I18nService);
+  private readonly destroyRef = inject(DestroyRef);
   private slugEdited = false;
 
   readonly searchResults = input<MatrixResource[]>([]);
@@ -56,6 +76,7 @@ export class MatrixQuestionFormComponent implements OnInit {
 
   readonly resources = signal<MatrixResourceDraft[]>([]);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
+  readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
 
   readonly form = new FormGroup<MatrixQuestionForm>({
     slug: new FormControl('', {
@@ -89,30 +110,57 @@ export class MatrixQuestionFormComponent implements OnInit {
   });
 
   readonly question = input<MatrixQuestionDetail | null>(null);
+  readonly formSnapshot = signal(this.form.getRawValue());
+  readonly activeMissingWikiLinkTargets = computed(() => {
+    const value = this.formSnapshot();
+    const language = this.activeLanguageTab();
+    const markdown =
+      language === 'ru'
+        ? `${value.answerRu}\n${value.interviewExpectedAnswerRu}`
+        : `${value.answerEn}\n${value.interviewExpectedAnswerEn}`;
+    return missingWikiLinkTargets({
+      markdown,
+      availableTargets: this.availableWikiLinkTargets(),
+    });
+  });
+  readonly hasMissingWikiLinkTargets = computed(
+    () => this.activeMissingWikiLinkTargets().length > 0,
+  );
+  readonly missingWikiLinkTargetsText = computed(() =>
+    this.activeMissingWikiLinkTargets().join(', '),
+  );
 
   ngOnInit(): void {
     const question = this.question();
-    if (!question) return;
-    this.slugEdited = true;
-    this.form.setValue({
-      slug: question.slug,
-      questionRu: question.translations.ru.question,
-      questionEn: question.translations.en.question,
-      answerRu: question.translations.ru.answer,
-      answerEn: question.translations.en.answer,
-      interviewExpectedAnswerRu: question.translations.ru.interviewExpectedAnswer,
-      interviewExpectedAnswerEn: question.translations.en.interviewExpectedAnswer,
-      sheetKey: question.sheetKey,
-      sheetRu: question.translations.ru.sheet,
-      sheetEn: question.translations.en.sheet,
-      grade: question.grade ?? 'Junior',
-      sectionRu: question.translations.ru.section,
-      sectionEn: question.translations.en.section,
-      subsectionRu: question.translations.ru.subsection,
-      subsectionEn: question.translations.en.subsection,
-      publishStatus: question.publishStatus,
+    if (question) {
+      this.slugEdited = true;
+      this.form.setValue({
+        slug: question.slug,
+        questionRu: question.translations.ru.question,
+        questionEn: question.translations.en.question,
+        answerRu: question.translations.ru.answer,
+        answerEn: question.translations.en.answer,
+        interviewExpectedAnswerRu: question.translations.ru.interviewExpectedAnswer,
+        interviewExpectedAnswerEn: question.translations.en.interviewExpectedAnswer,
+        sheetKey: question.sheetKey,
+        sheetRu: question.translations.ru.sheet,
+        sheetEn: question.translations.en.sheet,
+        grade: question.grade ?? 'Junior',
+        sectionRu: question.translations.ru.section,
+        sectionEn: question.translations.en.section,
+        subsectionRu: question.translations.ru.subsection,
+        subsectionEn: question.translations.en.subsection,
+        publishStatus: question.publishStatus,
+      });
+      this.formSnapshot.set(this.form.getRawValue());
+      this.resources.set(
+        question.resources.map(MatrixResourcePickerComponent.fromAttachedResource),
+      );
+    }
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.formSnapshot.set(this.form.getRawValue());
     });
-    this.resources.set(question.resources.map(MatrixResourcePickerComponent.fromAttachedResource));
+    this.loadWikiLinkTargets();
   }
 
   setActiveLanguageTab(language: LanguageCode): void {
@@ -195,6 +243,35 @@ export class MatrixQuestionFormComponent implements OnInit {
       ),
     });
   }
+
+  private loadWikiLinkTargets(): void {
+    this.wikiLinkTargetsService
+      .getTargets(this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (targets) => this.availableWikiLinkTargets.set(targets),
+        error: () => this.availableWikiLinkTargets.set(null),
+      });
+  }
+
+  private currentLanguage(): LanguageCode {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
+  }
+}
+
+function missingWikiLinkTargets(params: {
+  markdown: string;
+  availableTargets: WikiLinkTargetLookup | null;
+}): string[] {
+  if (params.availableTargets === null) return [];
+  return findMissingWikiLinkTargets({
+    markdown: params.markdown,
+    availableTargets: params.availableTargets,
+  });
 }
 
 function slugify(value: string): string {

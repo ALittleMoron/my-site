@@ -348,8 +348,8 @@
   - [x] Add note form controls for SEO metadata and cover upload through the presign flow
   - [x] Expand the live admin SEO panel with metadata, cover, alt, and wiki-link checks
   - [x] Add in-form article/social preview for the active language
-  - [x] Render `[[note-slug]]` and `[[note-slug|Custom label]]` as internal note links
-  - [x] Warn when wiki links point to missing note slugs available in the admin note tree
+  - [x] Render typed `[[notes:<slug>]]` / `[[matrix:<slug>]]` links as internal localized links
+  - [x] Warn when wiki links point to missing targets available in the admin target registry
 - [x] SEO Foundation release
   - [x] Add Angular hybrid rendering for public article routes while keeping interactive/admin routes CSR
   - [x] Add `/ru` and `/en` canonical URL prefixes
@@ -365,7 +365,7 @@
     - [ ] Rich text editor
     - [x] Tags
     - [ ] Attachments
-    - [x] links with other notes with `[[note-slug]]` syntax
+    - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
     - [ ] Properties
 - [x] Security audit
   - [x] Only admins can edit, add, and delete notes

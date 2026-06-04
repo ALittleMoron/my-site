@@ -60,9 +60,9 @@ Never violate these boundaries:
 - Note article authoring must send an explicit `metadata` object with note create/update payloads.
   Individual metadata fields may be null. Keep SEO analysis advisory-only, keep in-form
   article/social previews derived from the active language, and do not block save/publish on SEO
-  warnings. Render note wiki links from Markdown
-  `[[note-slug]]` / `[[note-slug|Custom label]]` as internal note links, and only warn about missing
-  targets when existing note slugs are known.
+  warnings. Render typed wiki links from Markdown, currently `[[notes:<slug>]]` and
+  `[[matrix:<slug>]]` with optional labels such as `[[matrix:<slug>|Custom label]]`, as internal
+  localized links, and only warn about missing targets when the typed target registry is known.
 - Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
   language fallbacks for localized content.
 - Competency matrix content localises through the matrix API, not through the UI i18n bundle. Pass

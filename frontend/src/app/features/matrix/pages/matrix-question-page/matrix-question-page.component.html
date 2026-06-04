@@ -5,10 +5,13 @@
     </a>
   }
 
-  <app-matrix-question-detail
-    [question]="question()"
-    [loading]="loading()"
-    [error]="error()"
-    [isAdmin]="false"
-  />
+  @if (language()) {
+    <app-matrix-question-detail
+      [question]="question()"
+      [loading]="loading()"
+      [error]="error()"
+      [isAdmin]="false"
+      [language]="language()!"
+    />
+  }
 </main>

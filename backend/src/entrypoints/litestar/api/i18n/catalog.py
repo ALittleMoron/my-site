@@ -187,6 +187,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.expectedAnswer": "Ожидаемый ответ на собеседовании",
         "matrix.form.expectedAnswerRu": "Ожидаемый ответ RU",
         "matrix.form.expectedAnswerEn": "Ожидаемый ответ EN",
+        "matrix.form.wikiLinksMissing": "Не найдены wiki-цели: {targets}.",
         "matrix.resources.title": "Внешние ресурсы",
         "matrix.resources.searchPlaceholder": "Найти ресурс",
         "matrix.resources.newNamePlaceholder": "Название нового ресурса",
@@ -304,10 +305,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.message.activeTags.warning": (
             "Добавьте активный тег, чтобы уточнить тему заметки."
         ),
-        "notes.seoAnalysis.message.wikiLinks.good": (
-            "Все wiki-ссылки ведут на существующие заметки."
-        ),
-        "notes.seoAnalysis.message.wikiLinks.warning": "Не найдены заметки: {slugs}.",
+        "notes.seoAnalysis.message.wikiLinks.good": ("Все wiki-ссылки ведут на существующие цели."),
+        "notes.seoAnalysis.message.wikiLinks.warning": "Не найдены wiki-цели: {targets}.",
         "notes.title": "Заметки",
         "notes.activeTag": "Тег: {name}",
         "notes.add": "Добавить заметку",
@@ -585,6 +584,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.expectedAnswer": "Expected interview answer",
         "matrix.form.expectedAnswerRu": "Expected answer RU",
         "matrix.form.expectedAnswerEn": "Expected answer EN",
+        "matrix.form.wikiLinksMissing": "Missing wiki targets: {targets}.",
         "matrix.resources.title": "External resources",
         "matrix.resources.searchPlaceholder": "Find resource",
         "matrix.resources.newNamePlaceholder": "New resource name",
@@ -702,8 +702,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "notes.seoAnalysis.message.activeTags.warning": (
             "Add an active tag to clarify the note topic."
         ),
-        "notes.seoAnalysis.message.wikiLinks.good": "All wiki links point to existing notes.",
-        "notes.seoAnalysis.message.wikiLinks.warning": "Missing notes: {slugs}.",
+        "notes.seoAnalysis.message.wikiLinks.good": "All wiki links point to existing targets.",
+        "notes.seoAnalysis.message.wikiLinks.warning": "Missing wiki targets: {targets}.",
         "notes.title": "Notes",
         "notes.activeTag": "Tag: {name}",
         "notes.add": "Add note",
