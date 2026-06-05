@@ -8,7 +8,7 @@ Portfolio/notes site and knowledge database
 
 - Runtime: Python 3.14, uv
 - Framework: Litestar 2.23+
-- DB: PostgreSQL 16 + SQLAlchemy 2.0 async + Alembic
+- DB: PostgreSQL 18.4 + SQLAlchemy 2.0 async + Alembic
 - DI: Dishka
 - Cache: Valkey
 - File storage: MinIO (miniopy-async)

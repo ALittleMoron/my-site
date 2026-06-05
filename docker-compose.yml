@@ -42,14 +42,14 @@ services:
       - app-network
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18.4-alpine
     container_name: my_site_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/infra/postgresql/data
+      - postgres_data:/var/lib/postgresql
     networks:
       - app-network
     healthcheck:
