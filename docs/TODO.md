@@ -64,6 +64,13 @@
   - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
+- [ ] Add a protected contact request inbox for moderators/admins: list, filter by status, view details, mark handled, archive/delete.
+- [ ] Add public "how this site is built" portfolio/case-study page.
+- [ ] Add public changelog/updates page.
+- [ ] Add RSS/Atom feeds for published notes and matrix updates.
+- [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
+- [ ] Add public roadmap page for site/product development.
+- [ ] Add beta feedback intake connected to the moderation/contact inbox.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
@@ -93,6 +100,9 @@
     - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
   - [x] Basic nginx edge rate limits for login, contact, notes, and matrix resource search
+- [ ] Pin Docker image tags currently using latest in compose/build workflows.
+- [ ] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
+- [ ] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check
@@ -192,6 +202,9 @@
 - [x] Add optional app-side slow SQL query timing logs without raw parameter values
 - [ ] Enable slow SQL query timing logs in staging/production with explicit thresholds
 - [ ] Error alerts to Telegram bot
+- [ ] Wire frontend GlobalErrorHandler to Sentry in production.
+- [ ] Add Web Vitals collection/reporting for public SSR routes after deployment.
+- [ ] Add maintainer status dashboard for uptime, backups, restore tests, service health, and production errors.
 - [ ] Set up Grafana + Prometheus + Loki
 - [ ] Set up PostgreSQL performance visibility
     - [ ] Enable `pg_stat_statements` for aggregate query timing, calls, rows, and cache-hit signals
@@ -310,6 +323,7 @@
     - [x] Remove `views_router` from Litestar app after Angular parity
     - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
     - [x] Remove backend static vendor files replaced by Angular build assets
+- [ ] Replace static sitemap page with content-driven localized sitemap links.
 - [x] Add and edit competency matrix questions
   - [x] Search through existing external resources
   - [x] Edit mode for a specific question (button and form on question detail)
@@ -362,12 +376,22 @@
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
+- [ ] Add admin/moderator content workspace for notes with richer filters, views, queues, and quick actions.
+- [ ] Add content health checks for notes: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
+- [ ] Add note revision history with diff and restore.
+- [ ] Add autosave / local draft recovery for note editing.
+- [ ] Add protected preview links for unpublished notes.
+- [ ] Add scheduled publishing for notes.
+- [ ] Add editorial workflow statuses for notes: idea, draft, review, ready, published, archived.
+- [ ] Add Obsidian-compatible Markdown import/export for notes.
+- [ ] Add privacy-safe AI-assisted authoring for spelling, SEO hints, tags, and RU/EN consistency.
 - [ ] Obsidian-like note editor
-    - [ ] Rich text editor
+    - [x] Rich text editor
     - [x] Tags
     - [ ] Attachments
     - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
-    - [ ] Properties
+    - [ ] Spell checking for Russian and English.
+    - [ ] Check and warn when a wiki-link references unpublished material.
 - [x] Security audit
   - [x] Moderators and admins can edit, add, and delete notes
   - [x] Regular users cannot view hidden notes
@@ -382,6 +406,7 @@
     - [ ] Files per category count - badge next to folder name with amount of files.
   - [ ] Resume
     - [ ] Generate resume from companies, people with who you work with, projects, technologies, etc.
+    - [ ] Generate project/case-study materials from knowledge database items.
     - [ ] Customization
       - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
       - [ ] Blocks visibility
@@ -439,6 +464,8 @@
 - [ ] Terms of service
 - [x] Personal data processing consent (frontend-only on contact form)
 - [ ] Persist personal data processing consent on the backend with timestamp and source when contact requests or user accounts are stored.
+- [ ] Add personal-data export/delete request flow.
+- [ ] Add retention rules for contact requests, feedback reports, typo reports, subscriptions, and accounts.
 - [ ] Password recovery
 - [ ] Password confirmation
 - [ ] Flashcards from competency matrix (stateful — saved per user)
@@ -465,7 +492,17 @@
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
 - [ ] Add a separate queue list for questions I want to add to the matrix
 - [ ] Ability to suggest a question for the competency matrix
+- [ ] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
+- [ ] Add moderation inbox for report a typo in the matrix questions.
+- [ ] Add admin/moderator content workspace for matrix questions with richer filters, views, queues, and quick actions.
+- [ ] Add content health checks for matrix questions: stale translations, wiki-link issues, resource issues, and broken external links.
+- [ ] Add self-assessment / interview mode with expected-answer reveal.
+- [ ] Track weak matrix topics for later study recommendations.
+- [ ] Add matrix question revision history with diff and restore.
+- [ ] Add matrix analytics panel for views, engagement, typo reports, and suggestions.
+- [ ] Add matrix resource library with deduplication, reuse, tagging, and link checks.
+- [ ] Add public direction roadmaps such as Python Backend, Frontend, and Data Analyst, linked to matrix questions, notes, resources, and courses.
 
 ### Courses
 
@@ -495,6 +532,8 @@
 ## Documentation
 
 - [ ] Add parameter details to the API and include examples and other fields.
+- [ ] Add public architecture, quality, and security notes as portfolio documentation.
+- [ ] Add ADRs for major platform choices.
 
 ## Refactoring
 
