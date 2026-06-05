@@ -48,8 +48,48 @@ reject_file_text() {
     fi
 }
 
+require_nginx_unprivileged_alpine_image() {
+    local file_path="$1"
+    local image_reference
+    local image_tag
+
+    image_reference="$(
+        awk '
+            toupper($1) == "FROM" {
+                for (field_index = 2; field_index <= NF; field_index++) {
+                    if ($field_index ~ /^--/) {
+                        next
+                    }
+                    print $field_index
+                    exit
+                }
+            }
+        ' "$file_path"
+    )"
+
+    if [ -z "$image_reference" ]; then
+        echo "Missing nginx Dockerfile FROM image in ${file_path}." >&2
+        exit 1
+    fi
+
+    case "$image_reference" in
+        nginxinc/nginx-unprivileged:*)
+            image_tag="${image_reference#nginxinc/nginx-unprivileged:}"
+            ;;
+        *)
+            echo "Nginx security baseline requires nginxinc/nginx-unprivileged in ${file_path}: ${image_reference}" >&2
+            exit 1
+            ;;
+    esac
+
+    if [[ ! "$image_tag" =~ (^|-)alpine([0-9.]+)?($|-) ]]; then
+        echo "Nginx security baseline requires an Alpine nginx image tag in ${file_path}: ${image_reference}" >&2
+        exit 1
+    fi
+}
+
 run_static_checks() {
-    require_file_text "$nginx_dockerfile_path" "FROM nginxinc/nginx-unprivileged:1.29.4-alpine"
+    require_nginx_unprivileged_alpine_image "$nginx_dockerfile_path"
     require_file_text "$nginx_dockerfile_path" "USER nginx"
     require_file_text "$nginx_config_path" "pid /tmp/nginx.pid;"
     require_file_text "$nginx_config_path" "proxy_temp_path /tmp/proxy_temp;"
