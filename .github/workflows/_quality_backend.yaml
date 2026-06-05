@@ -40,8 +40,7 @@ jobs:
       - name: "Type check"
         run: make -C backend types
       - name: "Security scan"
-        continue-on-error: true
-        run: make -C backend bandit
+        run: make -C backend security
       - name: "Dead code scan"
         continue-on-error: true
         run: make -C backend vulture

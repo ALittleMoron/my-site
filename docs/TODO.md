@@ -82,9 +82,9 @@
 
 ### Security and Infrastructure
 
-- [ ] Dependency scanning (Safety, Bandit, Trivy)
+- [x] Dependency scanning (pip-audit, Bandit, Trivy)
 - [ ] VPN for accessing internal systems
-- [ ] Add Dependabot to the repository
+- [x] Add Dependabot to the repository
 - [ ] Prepare repository split
     - [x] Move Angular serving into a frontend-owned Docker image
     - [x] Keep infrastructure nginx as the edge reverse proxy
@@ -92,6 +92,7 @@
     - [ ] Configure independent image publishing for backend and frontend
     - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
+  - [x] Basic nginx edge rate limits for login, contact, notes, and matrix resource search
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check
@@ -100,13 +101,13 @@
     - [x] Find a web application security checklist and go through it.
     - [ ] Regular users cannot access internal systems without VPN.
     - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
-    - [ ] HTTP security headers in responses
-        - [ ] Strict-Transport-Security
-        - [ ] X-Content-Type-Options: nosniff
-        - [ ] X-Frame-Options: DENY
-        - [ ] Referrer-Policy: no-referrer
-        - [ ] Content-Security-Policy
-    - [ ] CSRF
+    - [x] HTTP security headers in responses
+        - [x] Strict-Transport-Security
+        - [x] X-Content-Type-Options: nosniff
+        - [x] X-Frame-Options: DENY
+        - [x] Referrer-Policy: no-referrer
+        - [x] Content-Security-Policy
+    - [ ] CSRF (deferred until cookie-based auth; current admin auth uses Authorization bearer tokens)
         - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
         - [ ] CSRF token in cookie + header
         - [ ] CSRF verified on server
@@ -120,7 +121,7 @@
         - [ ] All user-supplied data is escaped
         - [ ] No `| safe` without 100% certainty
         - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
-        - [ ] CSP in place
+        - [x] CSP in place
     - [ ] Passwords never logged
     - [ ] Hashing: unique salt used
     - [ ] Every protected handler checks the user (guards where needed)
@@ -149,7 +150,7 @@
         - [ ] No `latest` tags
         - [ ] Images updated regularly
         - [ ] Minimal packages
-        - [ ] Nginx not root
+        - [x] Nginx not root
         - [ ] Nginx has no write access
         - [ ] No `proxy_pass` to localhost
         - [ ] No `network_mode: host`
@@ -172,10 +173,10 @@
         - [ ] Firewall enabled on host (ufw/iptables)
         - [ ] Only ports 80 and 443 are open
         - [ ] SSH by key only. Password login disabled.
-    - [ ] Rate limiting and bot protection
-        - [ ] Rate limit on login, registration, and password reset
-        - [ ] IP / fingerprint-based limiting
-        - [ ] No unlimited requests to heavy endpoints
+    - [x] Rate limiting and bot protection
+        - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)
+        - [x] IP / fingerprint-based limiting (IP-based at nginx edge)
+        - [x] No unlimited requests to heavy endpoints
     - [ ] Backup & recovery
         - [ ] Backups encrypted
         - [ ] Backups are not publicly accessible
@@ -183,7 +184,7 @@
         - [ ] No access to back up a panel without auth
     - [ ] Supply chain
         - [ ] Dependency versions pinned
-        - [ ] Dependencies updated regularly
+        - [x] Dependencies updated regularly
         - [ ] No pip install from untrusted sources
 
 ### Tracing and Monitoring
@@ -409,12 +410,9 @@
     - [ ] Books to reread page
   - [ ] Companies
   - [ ] Dates
-  - [ ] Offers
-  - [ ] OS
   - [ ] People
   - [ ] Places
   - [ ] Projects
-  - [ ] Prompts
   - [ ] Recipes
   - [ ] Software
   - [ ] Techchecks

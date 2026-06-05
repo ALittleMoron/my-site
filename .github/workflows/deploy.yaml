@@ -11,6 +11,8 @@ jobs:
   docker:
     name: "Docker build and push"
     uses: ./.github/workflows/_docker.yaml
+    with:
+      push-images: true
     secrets: inherit
 
   infrastructure:

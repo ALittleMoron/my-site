@@ -78,6 +78,10 @@ tests-coverage-frontend:
 quality-backend:
 	$(MAKE) -C backend quality
 
+.PHONY: security-backend
+security-backend:
+	$(MAKE) -C backend security
+
 # Frontend
 
 .PHONY: install-frontend
@@ -91,6 +95,19 @@ test-frontend:
 .PHONY: quality-frontend
 quality-frontend:
 	$(MAKE) -C frontend quality
+
+.PHONY: security-frontend
+security-frontend:
+	$(MAKE) -C frontend security
+
+# Security
+
+.PHONY: security-infra
+security-infra:
+	bash infra/scripts/security_check.sh
+
+.PHONY: security
+security: security-backend security-frontend security-infra
 
 # Combined
 

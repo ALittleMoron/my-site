@@ -1,6 +1,7 @@
 name: "test, lint and publish"
 
 on:
+  pull_request:
   push:
   workflow_dispatch:
 
@@ -12,6 +13,21 @@ jobs:
   quality-frontend:
     name: "Frontend quality"
     uses: ./.github/workflows/_quality_frontend.yaml
+
+  docker-security:
+    name: "Docker security"
+    uses: ./.github/workflows/_docker.yaml
+
+  security-infra:
+    name: "Infrastructure security"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+      - name: "Security check"
+        run: make security-infra
 
   performance:
     name: "Performance smoke"

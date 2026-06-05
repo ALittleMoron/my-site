@@ -21,6 +21,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: "Install frontend dependencies"
         run: make install-frontend
+      - name: "Security audit"
+        run: make -C frontend security
       - name: "Format check"
         run: make -C frontend format-check
       - name: "Lint"

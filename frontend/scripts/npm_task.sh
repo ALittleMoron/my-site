@@ -42,6 +42,10 @@ case "$action" in
         ensure_frontend_deps
         npm run lint
         ;;
+    security)
+        ensure_frontend_deps
+        npm audit --omit=dev --audit-level=high
+        ;;
     typecheck)
         ensure_frontend_deps
         npx tsc --noEmit -p tsconfig.app.json

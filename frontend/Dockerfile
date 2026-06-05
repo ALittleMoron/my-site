@@ -13,9 +13,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev \
+ && chown -R node:node /app
 
-COPY --from=builder /app/dist/my-site-frontend ./dist/my-site-frontend
+COPY --from=builder --chown=node:node /app/dist/my-site-frontend ./dist/my-site-frontend
 
+USER node
 EXPOSE 4000
 CMD ["node", "dist/my-site-frontend/server/server.mjs"]

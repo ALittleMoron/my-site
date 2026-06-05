@@ -59,6 +59,18 @@ types:
 bandit:
 	bash scripts/quality.sh bandit
 
+.PHONY: security-bandit
+security-bandit:
+	bash scripts/security.sh bandit
+
+.PHONY: security-pip-audit
+security-pip-audit:
+	bash scripts/security.sh pip-audit
+
+.PHONY: security
+security:
+	bash scripts/security.sh security
+
 .PHONY: vulture
 vulture:
 	bash scripts/quality.sh vulture

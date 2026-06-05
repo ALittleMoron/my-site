@@ -30,6 +30,10 @@ format-check:
 lint:
 	bash scripts/npm_task.sh lint
 
+.PHONY: security
+security:
+	bash scripts/npm_task.sh security
+
 .PHONY: typecheck
 typecheck:
 	bash scripts/npm_task.sh typecheck

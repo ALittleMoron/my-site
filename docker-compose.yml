@@ -88,8 +88,8 @@ services:
       - SSL_CERT=${SSL_CERT}
       - SSL_KEY=${SSL_KEY}
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:8080"
+      - "443:8443"
     depends_on:
       - backend
       - frontend
