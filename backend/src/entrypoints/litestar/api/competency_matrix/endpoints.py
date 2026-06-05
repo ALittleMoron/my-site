@@ -3,7 +3,6 @@ from typing import Annotated
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
-from litestar.config.response_cache import CACHE_FOREVER
 from litestar.datastructures import State
 from litestar.params import Body, FromPath, QueryParameter
 
@@ -28,6 +27,7 @@ from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     invalidate_response_cache_domain,
 )
+from infra.config.constants import constants
 from infra.config.settings import settings
 
 
@@ -44,7 +44,7 @@ class CompetencyMatrixApiController(Controller):
         ),
         name="competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def list_competency_matrix_sheet(
@@ -63,7 +63,7 @@ class CompetencyMatrixApiController(Controller):
         description="Поиск вопросов по матрице компетенций по названию и url.",
         name="competency-matrix-resources-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def search_competency_matrix_resources(
@@ -89,7 +89,7 @@ class CompetencyMatrixApiController(Controller):
         guards=[draft_content_access_guard],
         name="competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def list_competency_matrix_items(
@@ -150,7 +150,7 @@ class CompetencyMatrixApiController(Controller):
         guards=[draft_content_access_guard],
         name="competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def get_competency_matrix_item(
@@ -174,7 +174,7 @@ class CompetencyMatrixApiController(Controller):
         description="Получение публичной подробной информации о вопросе матрицы по slug.",
         name="competency-matrix-public-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(CACHE_FOREVER),
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
     )
     async def get_public_competency_matrix_item(

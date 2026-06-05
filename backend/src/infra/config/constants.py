@@ -34,6 +34,7 @@ class _ValkeyConstants:
 class _ResponseCacheConstants:
     store_name: Literal["litestar_cache"] = "litestar_cache"
     domain_key_separator: Literal[":"] = ":"
+    default_ttl_seconds: int = 86_400
 
 
 class _FilesConstants:

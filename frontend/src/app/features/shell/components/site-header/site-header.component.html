@@ -112,7 +112,7 @@
           <button
             type="button"
             class="btn"
-            [class.btn-primary]="language.selected"
+            [class.button-active]="language.selected"
             [class.button-inactive]="!language.selected"
             [attr.aria-pressed]="language.selected"
             [attr.title]="language.label"
@@ -130,9 +130,10 @@
         >
           {{ username() }}
         </span>
+        <span class="text-body-secondary small" aria-hidden="true">|</span>
         <button
           type="button"
-          class="btn btn-outline-danger btn-sm"
+          class="btn btn-link btn-sm link-danger p-0 text-decoration-none text-nowrap"
           (click)="logout()"
           [attr.aria-label]="'shell.auth.logout' | t"
         >
@@ -141,7 +142,7 @@
       } @else {
         <button
           type="button"
-          class="btn button-inactive btn-sm"
+          class="btn button-inactive btn-sm text-nowrap"
           (click)="openLogin()"
           [attr.aria-label]="'shell.auth.login' | t"
         >

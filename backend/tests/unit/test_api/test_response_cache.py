@@ -2,17 +2,21 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any, cast
 
-from litestar.config.response_cache import CACHE_FOREVER
+import click
+import pytest
+from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 
 from entrypoints.litestar.api.competency_matrix.endpoints import CompetencyMatrixApiController
 from entrypoints.litestar.api.healthcheck.endpoints import HealthcheckController
 from entrypoints.litestar.api.i18n.endpoints import I18nApiController
 from entrypoints.litestar.api.notes.endpoints import NotesApiController
+from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.guards import draft_content_access_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,
+    invalidate_all_response_cache_domains,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -70,6 +74,21 @@ class FakeRequest:
     query_params = FakeQueryParams({"language": "ru", "page": "1"})
 
 
+class FakeStores:
+    def __init__(self, store: Store) -> None:
+        self.store = store
+        self.requested_names: list[str] = []
+
+    def get(self, name: str) -> Store:
+        self.requested_names.append(name)
+        return self.store
+
+
+class FakeApp:
+    def __init__(self, store: Store) -> None:
+        self.stores = FakeStores(store=store)
+
+
 class TestResponseCacheDomainStore:
     async def test_routes_values_to_domain_store(self) -> None:
         notes_store = FakeStore()
@@ -106,6 +125,49 @@ class TestResponseCacheDomainStore:
         assert matrix_store.values == {"GET/api/competency-matrix/sheets": b"matrix"}
 
 
+class TestInvalidateAllResponseCacheDomains:
+    async def test_deletes_all_domain_stores_when_cache_is_enabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        notes_store = FakeStore(values={"GET/api/notes": b"notes"})
+        matrix_store = FakeStore(values={"GET/api/competency-matrix/sheets": b"matrix"})
+        domain_store = ResponseCacheDomainStore(
+            stores={
+                ResponseCacheDomain.NOTES: cast("Store", notes_store),
+                ResponseCacheDomain.COMPETENCY_MATRIX: cast("Store", matrix_store),
+            },
+        )
+        app = FakeApp(store=cast("Store", domain_store))
+        monkeypatch.setattr(settings.app, "use_cache", True)
+
+        await invalidate_all_response_cache_domains(app=cast("Any", app))
+
+        assert app.stores.requested_names == [constants.response_cache.store_name]
+        assert notes_store.delete_all_count == 1
+        assert matrix_store.delete_all_count == 1
+        assert notes_store.values == {}
+        assert matrix_store.values == {}
+
+    async def test_noops_when_cache_is_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        store = FakeStore(values={"GET/api/notes": b"notes"})
+        app = FakeApp(store=cast("Store", store))
+        monkeypatch.setattr(settings.app, "use_cache", False)
+
+        await invalidate_all_response_cache_domains(app=cast("Any", app))
+
+        assert app.stores.requested_names == []
+        assert store.delete_all_count == 0
+        assert store.values == {"GET/api/notes": b"notes"}
+
+    async def test_rejects_non_domain_routed_store(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        app = FakeApp(store=cast("Store", FakeStore()))
+        monkeypatch.setattr(settings.app, "use_cache", True)
+
+        with pytest.raises(ImproperlyConfiguredException):
+            await invalidate_all_response_cache_domains(app=cast("Any", app))
+
+
 class TestResponseCacheKeyBuilder:
     def test_builds_domain_prefixed_sorted_litestar_key(self) -> None:
         cache_key_builder = ResponseCacheDomain.NOTES.cache_key_builder
@@ -125,7 +187,9 @@ class TestResponseCacheRouteConfiguration:
         for handler_name in ("list_notes", "get_note", "list_tags", "search_tags"):
             handler = getattr(NotesApiController, handler_name)
 
-            assert handler.cache == settings.app.get_cache_duration(CACHE_FOREVER)
+            assert handler.cache == settings.app.get_cache_duration(
+                constants.response_cache.default_ttl_seconds,
+            )
             assert handler.cache_key_builder is not None
             assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("notes:")
 
@@ -143,10 +207,13 @@ class TestResponseCacheRouteConfiguration:
             "search_competency_matrix_resources",
             "list_competency_matrix_items",
             "get_competency_matrix_item",
+            "get_public_competency_matrix_item",
         ):
             handler = getattr(CompetencyMatrixApiController, handler_name)
 
-            assert handler.cache == settings.app.get_cache_duration(CACHE_FOREVER)
+            assert handler.cache == settings.app.get_cache_duration(
+                constants.response_cache.default_ttl_seconds,
+            )
             assert handler.cache_key_builder is not None
             assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith(
                 "competency_matrix:",
@@ -163,7 +230,9 @@ class TestResponseCacheRouteConfiguration:
         for handler_name in ("list_languages", "get_bundle"):
             handler = getattr(I18nApiController, handler_name)
 
-            assert handler.cache == settings.app.get_cache_duration(CACHE_FOREVER)
+            assert handler.cache == settings.app.get_cache_duration(
+                constants.response_cache.default_ttl_seconds,
+            )
             assert handler.cache_key_builder is not None
             assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("i18n:")
 
@@ -173,3 +242,14 @@ class TestResponseCacheRouteConfiguration:
         assert handler.cache == settings.app.get_cache_duration(1)
         assert handler.cache_key_builder is not None
         assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("healthcheck:")
+
+
+class TestResponseCacheCli:
+    def test_registers_invalidate_cache_command(self) -> None:
+        cli = click.Group()
+
+        CLIPlugin().on_cli_init(cli)
+
+        assert "invalidatecache" in cli.commands
+        assert "createsuperuser" in cli.commands
+        assert "initbuckets" in cli.commands

@@ -4,8 +4,8 @@
   <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" />
 } @else if (note()) {
   <article>
-    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="back.emit()">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4 pb-3 border-bottom">
+      <button type="button" class="btn btn-sm btn-outline-success" (click)="back.emit()">
         {{ 'shared.back' | t }}
       </button>
       @if (canManageContent()) {
@@ -69,7 +69,7 @@
             <button
               type="button"
               class="btn btn-sm"
-              [class.btn-primary]="selectedReaction() === reaction.kind"
+              [class.btn-success]="selectedReaction() === reaction.kind"
               [class.btn-outline-secondary]="selectedReaction() !== reaction.kind"
               [disabled]="reactionLoading()"
               [attr.aria-pressed]="selectedReaction() === reaction.kind"

@@ -13,10 +13,10 @@
         {{ 'notes.folders' | t }}
       </button>
       @if (canManageContent()) {
-        <button type="button" class="btn btn-primary" (click)="openCreate()">
+        <button type="button" class="btn btn-success" (click)="openCreate()">
           {{ 'notes.add' | t }}
         </button>
-        <button type="button" class="btn btn-outline-secondary" (click)="toggleStats()">
+        <button type="button" class="btn btn-outline-success" (click)="toggleStats()">
           {{ 'notes.stats.button' | t }}
         </button>
       }
@@ -98,7 +98,7 @@
           />
         </div>
         <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-secondary">{{ 'notes.filters.submit' | t }}</button>
+          <button type="submit" class="btn btn-success">{{ 'notes.filters.submit' | t }}</button>
           <button
             type="button"
             class="btn btn-outline-secondary"
