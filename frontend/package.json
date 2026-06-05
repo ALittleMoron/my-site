@@ -24,9 +24,9 @@
     "@angular/ssr": "^21.2.13",
     "@toast-ui/editor": "^3.2.2",
     "bootstrap": "^5.3.8",
-    "dompurify": "^3.4.7",
+    "dompurify": "^3.4.8",
     "express": "^5.2.1",
-    "marked": "^18.0.4",
+    "marked": "^18.0.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.16.2"
@@ -48,7 +48,7 @@
     "prettier": "^3.8.3",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
-    "typescript-eslint": "8.60.0"
+    "typescript-eslint": "8.60.1"
   },
   "overrides": {
     "@babel/plugin-transform-modules-systemjs": "7.29.7",
