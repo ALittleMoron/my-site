@@ -58,8 +58,8 @@
   - [x] Add Locust smoke/baseline scaffolding and CI report artifacts
   - [x] Validate selected Locust API responses against backend response schemas
   - [x] Add reusable PostgreSQL query-plan harness for real compiled search queries
-  - [ ] Tune Locust thresholds from real baseline reports
-  - [ ] Expand Locust scenarios with seeded note/detail/matrix data
+  - [x] Tune Locust thresholds from real baseline reports
+  - [x] Expand Locust scenarios with seeded note/detail/matrix data
   - [ ] Run scheduled/manual baseline load tests against a production-like environment
   - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores

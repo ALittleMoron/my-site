@@ -40,15 +40,15 @@ class PublicSiteUser(HttpUser):
     def on_start(self) -> None:
         self.scenario = PublicSiteScenario(client=self.client, environ=os.environ)
 
-    @task(8)
+    @task(2)
     def healthcheck(self) -> None:
         self.scenario.healthcheck()
 
-    @task(4)
+    @task(2)
     def i18n_languages(self) -> None:
         self.scenario.i18n_languages()
 
-    @task(4)
+    @task(2)
     def i18n_bundle(self) -> None:
         self.scenario.i18n_bundle()
 
@@ -60,7 +60,7 @@ class PublicSiteUser(HttpUser):
     def notes_tree(self) -> None:
         self.scenario.notes_tree()
 
-    @task(2)
+    @task(3)
     def note_detail(self) -> None:
         self.scenario.note_detail()
 
@@ -68,9 +68,13 @@ class PublicSiteUser(HttpUser):
     def matrix_sheets(self) -> None:
         self.scenario.matrix_sheets_task()
 
-    @task(2)
+    @task(3)
     def matrix_items(self) -> None:
         self.scenario.matrix_items()
+
+    @task(3)
+    def matrix_item_detail(self) -> None:
+        self.scenario.matrix_item_detail()
 
     @task(1)
     def matrix_resources_search(self) -> None:

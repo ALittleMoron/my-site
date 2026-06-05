@@ -110,6 +110,6 @@ make test-backend-unit          # backend unit tests, no DB required
 make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
 make -C frontend ssr-smoke      # production SSR build + public article and matrix question HTML smoke
-make performance-smoke          # auto local backend + short Locust smoke profile
+make performance-smoke          # auto local backend + seeded short Locust smoke profile
 make query-plans-balanced       # auto test DB, seed data, EXPLAIN ANALYZE search queries
 ```

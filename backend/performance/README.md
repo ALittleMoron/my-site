@@ -14,9 +14,10 @@ plans.
 ## Local Runs
 
 Local Make targets default to `../.env.test`. They prepare backend dependencies, start or reuse the
-test PostgreSQL service, start a local backend when `PERFORMANCE_HOST` points to localhost, and
-clean up only services/processes they started. For staging or production-like targets, pass an
-explicit `PERFORMANCE_ENV_FILE`.
+test PostgreSQL service, start a local backend when `PERFORMANCE_HOST` points to localhost, seed
+deterministic public content when `PERFORMANCE_SEED_DATA=true`, and clean up only
+services/processes they started. For staging or production-like targets, pass an explicit
+`PERFORMANCE_ENV_FILE`.
 
 ```bash
 make performance-smoke
@@ -61,7 +62,14 @@ Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 ## Profiles
 
 - `performance-smoke` is short and suitable for CI. It is meant to catch obvious latency or error regressions, not to establish production capacity.
-- `performance-baseline` is longer and should run against staging or a production-like environment by passing an explicit `PERFORMANCE_ENV_FILE`.
+- `performance-baseline` is longer. With `../.env.test`, it measures the local backend against the
+  seeded test database; with staging or production-like targets, pass an explicit
+  `PERFORMANCE_ENV_FILE` and set `PERFORMANCE_SEED_DATA=false`.
+
+The checked-in local Locust thresholds are based on a seeded `performance-baseline` run from
+2026-06-06 with 15,169 requests, 0 failures, aggregated average 8.9 ms, and aggregated p95 17 ms.
+The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
+`LOCUST_MAX_AVG_RESPONSE_MS=50`, and `LOCUST_MAX_P95_RESPONSE_MS=75`.
 
 ## Useful Environment Values
 
@@ -70,6 +78,10 @@ Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 - `PERFORMANCE_LANGUAGE`: UI/content language for localized API calls.
 - `PERFORMANCE_INCLUDE_SPA`: set to `true` when the target serves the Angular SPA as well as `/api/*`.
 - `PERFORMANCE_VALIDATE_RESPONSES`: set to `true` to validate selected API responses with backend Pydantic response schemas.
+- `PERFORMANCE_SEED_DATA`: set to `true` only for local test-database runs. It seeds published
+  notes, note detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and
+  resources before Locust starts. The seed runner rejects remote targets, remote databases, and
+  database names that do not contain `test`.
 - `PERFORMANCE_USERS`, `PERFORMANCE_SPAWN_RATE`, `PERFORMANCE_RUN_TIME`: smoke profile shape.
 - `PERFORMANCE_BASELINE_USERS`, `PERFORMANCE_BASELINE_SPAWN_RATE`, `PERFORMANCE_BASELINE_RUN_TIME`: baseline profile shape.
 - `LOCUST_MAX_FAILURE_RATIO`, `LOCUST_MAX_AVG_RESPONSE_MS`, `LOCUST_MAX_P95_RESPONSE_MS`: soft-gate thresholds.

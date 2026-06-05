@@ -25,6 +25,7 @@ require_common_vars() {
     require_var PERFORMANCE_LANGUAGE
     require_var PERFORMANCE_INCLUDE_SPA
     require_var PERFORMANCE_VALIDATE_RESPONSES
+    require_var PERFORMANCE_SEED_DATA
     require_var LOCUST_MAX_FAILURE_RATIO
     require_var LOCUST_MAX_AVG_RESPONSE_MS
     require_var LOCUST_MAX_P95_RESPONSE_MS
@@ -84,6 +85,10 @@ start_local_backend_if_needed() {
     wait_for_backend_healthcheck "$health_url" "$log_file"
 }
 
+seed_performance_data_if_needed() {
+    PYTHONPATH=src uv run --locked --all-groups python -m performance.locust.seed
+}
+
 prepare_performance_run() {
     ensure_backend_deps
     load_env_file "$env_file"
@@ -91,6 +96,7 @@ prepare_performance_run() {
     PERFORMANCE_REPORT_RUN_DIR="$(create_performance_report_run_dir "$PERFORMANCE_REPORT_DIR" "locust")"
     trap cleanup_performance EXIT
     start_local_backend_if_needed
+    seed_performance_data_if_needed
 }
 
 case "$profile" in
