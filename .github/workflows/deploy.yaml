@@ -9,10 +9,10 @@ concurrency:
 
 jobs:
   docker:
-    name: "Docker build and push"
+    name: "Docker build and scan"
     uses: ./.github/workflows/_docker.yaml
     with:
-      push-images: true
+      push-images: false
     secrets: inherit
 
   infrastructure:
