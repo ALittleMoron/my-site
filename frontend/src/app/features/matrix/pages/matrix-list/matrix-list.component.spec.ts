@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
 import { provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { MatrixListComponent } from './matrix-list.component';
@@ -222,6 +223,7 @@ describe('MatrixListComponent', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     localStorage.clear();
   });
 
@@ -284,6 +286,44 @@ describe('MatrixListComponent', () => {
     expect(localStorage.getItem('chosenSheet')).toBe('python');
   });
 
+  it('does not use localStorage when a server document has no defaultView', async () => {
+    const serverDocument = document.implementation.createHTMLDocument('server');
+    Object.defineProperty(serverDocument, 'defaultView', {
+      configurable: true,
+      value: null,
+    });
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [MatrixListComponent],
+      providers: [
+        { provide: MatrixService, useValue: matrixService },
+        { provide: LayoutPreferencesService, useValue: layoutPreferences },
+        { provide: AuthService, useValue: authService },
+        { provide: NotificationService, useValue: notificationService },
+        {
+          provide: DOCUMENT,
+          useValue: serverDocument,
+        },
+        provideI18nTesting(),
+        provideRouter([]),
+      ],
+    }).compileComponents();
+
+    const serverFixture = TestBed.createComponent(MatrixListComponent);
+    const serverComponent = serverFixture.componentInstance;
+    serverFixture.detectChanges();
+
+    expect(serverComponent.selectedSheet()).toEqual(mockSheets[0]);
+    serverComponent.selectSheet('python');
+    expect(serverComponent.selectedSheet()).toEqual(mockSheets[1]);
+  });
+
   it('should load questions for selected sheet', () => {
     fixture.detectChanges();
     component.selectSheet('python');
@@ -314,6 +354,30 @@ describe('MatrixListComponent', () => {
     canManageContentSignal.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).not.toBeNull();
+  });
+
+  it('opens the create question form from the filter bar add question button', () => {
+    canManageContentSignal.set(true);
+    fixture.detectChanges();
+
+    const addButton = fixture.nativeElement.querySelector(
+      '[data-testid="matrix-filter-add-question"]',
+    ) as HTMLButtonElement;
+    addButton.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-matrix-question-form')).toBeTruthy();
+  });
+
+  it('does not render the old page-level add question button above filters', () => {
+    canManageContentSignal.set(true);
+    fixture.detectChanges();
+
+    const pageHeaderAddButton = fixture.nativeElement.querySelector(
+      '[data-testid="matrix-page-add-question"]',
+    );
+
+    expect(pageHeaderAddButton).toBeNull();
   });
 
   it('should render grid layout when layoutMode is grid', () => {

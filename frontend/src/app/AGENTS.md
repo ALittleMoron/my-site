@@ -19,6 +19,9 @@ Never violate these boundaries:
 - `features/<a>/` must not import from `features/<b>/`.
 - `shared/ui/` must not import from `features/` or `core/`.
 - Feature services must not inject `HttpClient` directly; use `ApiClient` from `core/http/`.
+- When one feature needs data that is also used by another feature, do not import that other
+  feature's service or model just for convenience. Add a small feature-owned service/model over the
+  shared backend endpoint, or move a genuinely reusable primitive to an allowed shared layer.
 
 ## `core/` Contents
 
@@ -144,6 +147,9 @@ Keep `app.config.ts` as the only place for app-wide providers, interceptors, and
   required `APP_URL_SCHEMA` + `APP_DOMAIN`.
 - Browser-only features such as view tracking, engaged-view timers, reaction selection, downloads,
   storage-backed preferences, and content authoring interactions must not run during SSR.
+- Browser-only access should go through injected Angular platform/document abstractions or narrowly
+  scoped helpers. Do not read browser globals at module scope, and do not make public SSR routes
+  depend on browser APIs being present.
 
 ## `ApiError` Shape
 

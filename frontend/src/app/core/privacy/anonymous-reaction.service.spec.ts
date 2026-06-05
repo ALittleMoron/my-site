@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
 import { AnonymousReactionService } from './anonymous-reaction.service';
 
 describe('AnonymousReactionService', () => {
@@ -17,6 +18,7 @@ describe('AnonymousReactionService', () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     localStorage.clear();
   });
 
@@ -38,5 +40,35 @@ describe('AnonymousReactionService', () => {
     service.setReaction('typed-notes', null);
 
     expect(service.getReaction('typed-notes')).toBeNull();
+  });
+
+  it('does not use localStorage or crypto when a server document has no defaultView', () => {
+    jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('localStorage is not available on the server');
+    });
+    randomUuid.mockImplementation(() => {
+      throw new Error('crypto is not available on the server');
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        AnonymousReactionService,
+        {
+          provide: DOCUMENT,
+          useValue: {
+            defaultView: null,
+          },
+        },
+      ],
+    });
+
+    const serverService = TestBed.inject(AnonymousReactionService);
+
+    expect(serverService.getOrCreateClientToken()).toBeNull();
+    expect(serverService.getReaction('typed-notes')).toBeNull();
+    serverService.setReaction('typed-notes', 'poop');
   });
 });

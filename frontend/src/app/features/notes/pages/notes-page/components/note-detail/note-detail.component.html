@@ -10,20 +10,20 @@
       </button>
       @if (canManageContent()) {
         <div class="d-flex gap-2 flex-wrap justify-content-end">
-          <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">
+          <button type="button" class="btn btn-sm btn-success" (click)="edit.emit()">
             {{ 'shared.edit' | t }}
           </button>
           @if (isDraft()) {
-            <button type="button" class="btn btn-sm btn-success" (click)="publish.emit()">
+            <button type="button" class="btn btn-sm btn-outline-success" (click)="publish.emit()">
               {{ 'shared.publish' | t }}
             </button>
           }
           @if (isPublished()) {
-            <button type="button" class="btn btn-sm btn-warning" (click)="unpublish.emit()">
+            <button type="button" class="btn btn-sm btn-outline-warning" (click)="unpublish.emit()">
               {{ 'shared.unpublish' | t }}
             </button>
           }
-          <button type="button" class="btn btn-sm btn-danger" (click)="delete.emit()">
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="delete.emit()">
             {{ 'shared.delete' | t }}
           </button>
         </div>

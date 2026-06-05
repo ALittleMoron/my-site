@@ -2,13 +2,32 @@
   <h1 class="fw-bold">{{ 'sitemap.title' | t }}</h1>
   <ul class="list-unstyled mt-4">
     <li>
-      <a routerLink="/about-me">{{ 'shell.nav.about' | t }}</a>
+      <a [routerLink]="['/', language(), 'about-me']">{{ 'shell.nav.about' | t }}</a>
     </li>
     <li>
-      <a routerLink="/competency-matrix">{{ 'shell.nav.matrix' | t }}</a>
+      <a [routerLink]="['/', language(), 'competency-matrix']">{{ 'shell.nav.matrix' | t }}</a>
     </li>
     <li>
-      <a routerLink="/notes">{{ 'shell.nav.notes' | t }}</a>
+      <a [routerLink]="['/', language(), 'notes']">{{ 'shell.nav.notes' | t }}</a>
     </li>
   </ul>
+
+  <section class="mt-4">
+    <h2 class="h5">{{ 'sitemap.notes' | t }}</h2>
+    @if (publishedNotesLoading()) {
+      <p class="text-body-secondary mb-0">{{ 'shared.loading' | t }}</p>
+    } @else if (publishedNotesError()) {
+      <p class="text-body-secondary mb-0">{{ 'sitemap.notesError' | t }}</p>
+    } @else if (publishedNoteLinks().length === 0) {
+      <p class="text-body-secondary mb-0">{{ 'sitemap.notesEmpty' | t }}</p>
+    } @else {
+      <ul class="list-unstyled mt-3">
+        @for (note of publishedNoteLinks(); track note.commands[3]) {
+          <li>
+            <a data-testid="sitemap-note-link" [routerLink]="note.commands">{{ note.title }}</a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
 </main>

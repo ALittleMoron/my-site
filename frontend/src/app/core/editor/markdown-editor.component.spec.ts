@@ -1,11 +1,14 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { ThemeService } from '../layout/theme.service';
 import { provideI18nTesting } from '../../testing/i18n-testing';
 import { EditorImageUploadService } from './editor-image-upload.service';
 import { MarkdownEditorComponent } from './markdown-editor.component';
 
 interface MockEditorOptions {
   initialValue?: string;
+  theme?: string;
   events?: {
     change?: () => void;
   };
@@ -51,6 +54,7 @@ jest.mock('@toast-ui/editor/dist/i18n/ru-ru', () => ({
 describe('MarkdownEditorComponent', () => {
   let fixture: ComponentFixture<MarkdownEditorComponent>;
   let uploadService: { uploadEditorImage: jest.Mock };
+  let themeService: { theme: ReturnType<typeof signal<'light' | 'dark'>> };
 
   beforeEach(async () => {
     MockEditor.instances = [];
@@ -58,11 +62,15 @@ describe('MarkdownEditorComponent', () => {
     uploadService = {
       uploadEditorImage: jest.fn().mockReturnValue(of('https://cdn.example.com/image.png')),
     };
+    themeService = {
+      theme: signal<'light' | 'dark'>('dark'),
+    };
 
     await TestBed.configureTestingModule({
       imports: [MarkdownEditorComponent],
       providers: [
         { provide: EditorImageUploadService, useValue: uploadService },
+        { provide: ThemeService, useValue: themeService },
         provideI18nTesting(),
       ],
     }).compileComponents();
@@ -77,6 +85,13 @@ describe('MarkdownEditorComponent', () => {
 
     expect(MockEditor.setLanguage).toHaveBeenCalledWith('ru-RU', { Markdown: 'Markdown' });
     expect(MockEditor.instances[0].options.initialValue).toBe('Initial **markdown**');
+  });
+
+  it('uses Toast UI dark theme when the app theme is dark', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    expect(MockEditor.instances[0].options.theme).toBe('dark');
   });
 
   it('emits markdown changes from the editor', async () => {

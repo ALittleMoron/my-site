@@ -8,6 +8,7 @@ import { NoteTree, NoteTreeFolder } from '../../../../models/notes.model';
   imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes-side-panel.component.html',
+  styleUrl: './notes-side-panel.component.scss',
 })
 export class NotesSidePanelComponent {
   readonly tree = input.required<NoteTree>();

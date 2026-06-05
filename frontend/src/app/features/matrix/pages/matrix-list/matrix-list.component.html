@@ -1,12 +1,6 @@
 <div class="container py-4 mt-5">
   <h1 class="fw-bold mb-3">{{ 'matrix.title' | t }}</h1>
 
-  @if (canManageContent()) {
-    <button type="button" class="btn btn-primary mb-3" (click)="openCreate()">
-      {{ 'matrix.addQuestion' | t }}
-    </button>
-  }
-
   @if (sheets().length > 0) {
     <app-matrix-sheet-tabs
       [sheets]="sheets()"
@@ -23,6 +17,7 @@
     (searchChange)="setSearch($event)"
     (onlyPublishedChange)="setOnlyPublished($event)"
     (layoutModeChange)="setLayoutMode($event)"
+    (addQuestion)="openCreate()"
   />
 
   @if (loading()) {

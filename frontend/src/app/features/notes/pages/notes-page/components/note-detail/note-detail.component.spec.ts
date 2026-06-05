@@ -114,4 +114,39 @@ describe('NoteDetailComponent', () => {
     expect(link.getAttribute('href')).toBe('/en/competency-matrix/questions/how-to-write-function');
     expect(link.textContent).toBe('matrix question');
   });
+
+  it('renders admin action buttons with green edit and outline-only destructive/publish actions', () => {
+    fixture.componentRef.setInput('canManageContent', true);
+    fixture.componentRef.setInput('note', {
+      ...fixture.componentInstance.note()!,
+      publishStatus: 'Draft',
+      publishedAt: null,
+    });
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('button'),
+    ) as HTMLButtonElement[];
+    const editButton = buttons.find((button) => button.textContent?.trim() === 'Редактировать');
+    const publishButton = buttons.find((button) => button.textContent?.trim() === 'Опубликовать');
+    const deleteButton = buttons.find((button) => button.textContent?.trim() === 'Удалить');
+
+    expect(editButton?.classList).toContain('btn-success');
+    expect(publishButton?.classList).toContain('btn-outline-success');
+    expect(publishButton?.classList).not.toContain('btn-success');
+    expect(deleteButton?.classList).toContain('btn-outline-danger');
+    expect(deleteButton?.classList).not.toContain('btn-danger');
+  });
+
+  it('renders unpublish as an outline-only warning action', () => {
+    fixture.componentRef.setInput('canManageContent', true);
+    fixture.detectChanges();
+
+    const unpublishButton = (
+      Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
+    ).find((button) => button.textContent?.includes('Снять с публикации'));
+
+    expect(unpublishButton?.classList).toContain('btn-outline-warning');
+    expect(unpublishButton?.classList).not.toContain('btn-warning');
+  });
 });

@@ -137,6 +137,16 @@ export class NotesPageComponent implements OnInit {
       this.publishedFrom() !== '' ||
       this.publishedTo() !== '',
   );
+  readonly sidePanelToggleLabel = computed(() => {
+    this.language();
+    return this.i18n.translate(
+      this.sidePanelOpen() ? 'notes.sidePanel.close' : 'notes.sidePanel.open',
+    );
+  });
+  readonly dateFormatHint = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.filters.dateFormatHint');
+  });
   readonly dateLocale = computed(() => this.i18n.dateLocale());
   readonly language = computed(() => {
     const language = this.i18n.language();
@@ -375,13 +385,15 @@ export class NotesPageComponent implements OnInit {
     if (!note || note.publishStatus !== 'Published') return;
     const previousReaction = this.selectedReaction();
     const nextReaction = previousReaction === kind ? null : kind;
+    const clientToken = this.anonymousReactionService.getOrCreateClientToken();
+    if (clientToken === null) return;
     this.reactionLoading.set(true);
     this.notesService
       .setReaction(
         note.slug,
         {
           reactionKind: nextReaction,
-          clientToken: this.anonymousReactionService.getOrCreateClientToken(),
+          clientToken,
         },
         this.currentLanguage(),
       )

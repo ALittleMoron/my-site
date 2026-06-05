@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  PLATFORM_ID,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -31,6 +33,9 @@ export class AboutPageComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly seoService = inject(SeoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   readonly form = new FormGroup({
     name: new FormControl<string>('', {
@@ -103,5 +108,13 @@ export class AboutPageComponent implements OnInit {
           this.notifications.error(this.i18n.translate('about.contact.sendError'));
         },
       });
+  }
+
+  scrollToContact(event: Event): void {
+    event.preventDefault();
+    if (!this.isBrowser) return;
+    this.document
+      .getElementById('mentoring-contact-me-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

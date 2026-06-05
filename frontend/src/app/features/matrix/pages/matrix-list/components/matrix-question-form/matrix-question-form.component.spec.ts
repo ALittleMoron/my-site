@@ -264,6 +264,15 @@ describe('MatrixQuestionFormComponent', () => {
     expect(component.form.touched).toBe(true);
   });
 
+  it('styles the save action as a green button', () => {
+    fixture.detectChanges();
+
+    const saveButton = fixture.debugElement.query(By.css('button[type="submit"]'))
+      .nativeElement as HTMLButtonElement;
+
+    expect(saveButton.classList).toContain('btn-success');
+  });
+
   it('shows non-blocking warnings for missing typed wiki-link targets', () => {
     const emitted: MatrixQuestionPayload[] = [];
     component.questionSave.subscribe((payload) => emitted.push(payload));

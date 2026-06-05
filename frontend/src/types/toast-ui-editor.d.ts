@@ -6,6 +6,7 @@ declare module '@toast-ui/editor' {
     hideModeSwitch?: boolean;
     language?: string;
     previewStyle?: 'tab' | 'vertical';
+    theme?: string;
     usageStatistics?: boolean;
     initialValue?: string;
     toolbarItems?: string[][];

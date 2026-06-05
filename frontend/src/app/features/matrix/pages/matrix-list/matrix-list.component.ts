@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   Component,
   ChangeDetectionStrategy,
@@ -69,6 +70,7 @@ export class MatrixListComponent implements OnInit {
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
+  private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly resourceSearchTerm = new Subject<string>();
   private languageReloadInitialized = false;
@@ -186,7 +188,7 @@ export class MatrixListComponent implements OnInit {
         next: (sheets) => {
           this.sheets.set(sheets);
           if (sheets.length > 0) {
-            const saved = localStorage.getItem(CHOSEN_SHEET_KEY);
+            const saved = this.storage()?.getItem(CHOSEN_SHEET_KEY);
             const initial =
               saved && sheets.some((sheet) => sheet.key === saved) ? saved : sheets[0].key;
             this.selectedSheetKey.set(initial);
@@ -224,7 +226,7 @@ export class MatrixListComponent implements OnInit {
 
   selectSheet(sheetKey: string): void {
     this.selectedSheetKey.set(sheetKey);
-    localStorage.setItem(CHOSEN_SHEET_KEY, sheetKey);
+    this.storage()?.setItem(CHOSEN_SHEET_KEY, sheetKey);
     this.loadQuestions(sheetKey);
   }
 
@@ -303,7 +305,7 @@ export class MatrixListComponent implements OnInit {
         this.detailMode.set('view');
         this.notifications.success(this.i18n.translate('matrix.notify.saved'));
         this.selectedSheetKey.set(detail.sheetKey);
-        localStorage.setItem(CHOSEN_SHEET_KEY, detail.sheetKey);
+        this.storage()?.setItem(CHOSEN_SHEET_KEY, detail.sheetKey);
         this.loadQuestions(detail.sheetKey);
       },
       error: (err: ApiError) => {
@@ -379,5 +381,9 @@ export class MatrixListComponent implements OnInit {
       throw new Error('I18n language is not initialized');
     }
     return language;
+  }
+
+  private storage(): Storage | null {
+    return this.document.defaultView?.localStorage ?? null;
   }
 }

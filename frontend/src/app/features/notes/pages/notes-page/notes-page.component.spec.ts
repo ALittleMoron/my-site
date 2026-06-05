@@ -253,6 +253,17 @@ describe('NotesPageComponent', () => {
     fixture.destroy();
   });
 
+  it('does not submit a reaction when no anonymous client token is available', () => {
+    anonymousReactionService.getOrCreateClientToken.mockReturnValue(null);
+    fixture.detectChanges();
+
+    fixture.componentInstance.selectReaction('poop');
+
+    expect(notesService.setReaction).not.toHaveBeenCalled();
+    expect(anonymousReactionService.setReaction).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.reactionLoading()).toBe(false);
+  });
+
   it('loads list filters from query params and requests notes with them', () => {
     paramMap.next(convertToParamMap({}));
     queryParamMap.next(
@@ -279,6 +290,81 @@ describe('NotesPageComponent', () => {
     });
   });
 
+  it('renders the side panel toggle to the left of the title as an icon-only control with localized state labels', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    const title = fixture.nativeElement.querySelector('h1') as HTMLElement;
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-testid="notes-side-panel-toggle"]',
+    ) as HTMLButtonElement;
+
+    expect(toggle.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(toggle.textContent?.trim()).toBe('');
+    expect(toggle.getAttribute('aria-label')).toBe('Открыть папки');
+    expect(toggle.title).toBe('Открыть папки');
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(toggle.getAttribute('aria-label')).toBe('Скрыть папки');
+    expect(toggle.title).toBe('Скрыть папки');
+    expect(toggle.querySelector('[data-testid="notes-side-panel-close-icon"]')).toBeTruthy();
+  });
+
+  it('hides folders and list filters on note detail routes', () => {
+    fixture.componentInstance.sidePanelOpen.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="notes-side-panel-toggle"]')).toBe(
+      null,
+    );
+    expect(fixture.nativeElement.querySelector('[data-testid="notes-side-panel"]')).toBe(null);
+    expect(fixture.nativeElement.querySelector('[data-testid="notes-filter-form"]')).toBe(null);
+    expect(fixture.nativeElement.querySelector('[data-testid="notes-tag-filters"]')).toBe(null);
+  });
+
+  it('shows localized visible date format hints without changing ISO query params', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    const from = fixture.nativeElement.querySelector('#notesPublishedFrom') as HTMLInputElement;
+    const to = fixture.nativeElement.querySelector('#notesPublishedTo') as HTMLInputElement;
+
+    expect(from.type).toBe('date');
+    expect(to.type).toBe('date');
+    expect(from.title).toBe('дд.мм.гггг');
+    expect(to.title).toBe('дд.мм.гггг');
+    expect(fixture.nativeElement.textContent).toContain('дд.мм.гггг');
+
+    fixture.componentInstance.setPublishedFrom('2026-01-01');
+    fixture.componentInstance.setPublishedTo('2026-01-31');
+    fixture.componentInstance.applyFilters();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/', 'ru', 'notes'], {
+      queryParams: {
+        page: 1,
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-01-31',
+      },
+    });
+  });
+
+  it('wraps the statistics panel in an animated shell when visible', () => {
+    canManageContent = true;
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStats();
+    fixture.detectChanges();
+
+    const shell = fixture.nativeElement.querySelector(
+      '[data-testid="notes-stats-panel-shell"]',
+    ) as HTMLElement;
+    expect(shell).toBeTruthy();
+    expect(shell.classList).toContain('notes-stats-panel-shell');
+  });
+
   it('reloads localized content when language changes', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
@@ -301,6 +387,16 @@ describe('NotesPageComponent', () => {
       publishedTo: null,
       searchQuery: null,
     });
+  });
+
+  it('makes the published only switch green when enabled for content managers', () => {
+    canManageContent = true;
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#notesOnlyPublishedToggle')?.classList).toContain(
+      'text-bg-success',
+    );
   });
 
   it('applies list filters through query params without fetching on input changes', () => {

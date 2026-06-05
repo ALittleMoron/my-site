@@ -88,6 +88,23 @@ describe('AboutPageComponent', () => {
     expect(telegramInput.placeholder).toBe('@your_username');
   });
 
+  it('scrolls to the contact form without hash navigation when the hero contact link is clicked', () => {
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const contactSection = fixture.nativeElement.querySelector(
+      '#mentoring-contact-me-section',
+    ) as HTMLElement;
+    const scrollIntoView = jest.fn();
+    contactSection.scrollIntoView = scrollIntoView;
+    const link = fixture.nativeElement.querySelector(
+      '[data-testid="about-contact-link"]',
+    ) as HTMLAnchorElement;
+
+    link.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
+
   it('submit button is enabled when message is filled', () => {
     component.form.setValue({
       name: '',

@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type Editor from '@toast-ui/editor';
 import { I18nService } from '../i18n/i18n.service';
+import { ThemeService } from '../layout/theme.service';
 import { EditorImageUploadService } from './editor-image-upload.service';
 
 @Component({
@@ -25,6 +26,7 @@ import { EditorImageUploadService } from './editor-image-upload.service';
 export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly imageUpload = inject(EditorImageUploadService);
   private readonly i18n = inject(I18nService);
+  private readonly themeService = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
   private editor: Editor | null = null;
   private syncingInput = false;
@@ -56,6 +58,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       previewStyle: 'vertical',
       usageStatistics: false,
       initialValue: this.value(),
+      ...(this.themeService.theme() === 'dark' ? { theme: 'dark' as const } : {}),
       toolbarItems: [
         ['heading', 'bold', 'italic', 'strike'],
         ['hr', 'quote', 'ul', 'ol', 'task'],

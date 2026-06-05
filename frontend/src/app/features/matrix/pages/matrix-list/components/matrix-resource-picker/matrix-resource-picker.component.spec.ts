@@ -33,6 +33,8 @@ describe('MatrixResourcePickerComponent', () => {
       providers: [
         provideI18nTesting({
           'matrix.resources.urlPlaceholder': 'Ссылка',
+          'matrix.resources.contextRuLabel': 'Контекст RU',
+          'matrix.resources.contextEnLabel': 'Контекст EN',
         }),
       ],
     }).compileComponents();
@@ -58,6 +60,27 @@ describe('MatrixResourcePickerComponent', () => {
     const urlInput = fixture.nativeElement.querySelector('input[type="url"]') as HTMLInputElement;
 
     expect(urlInput.placeholder).toBe('Ссылка');
+  });
+
+  it('shows visible localized labels for resource contexts', () => {
+    fixture.componentRef.setInput('resources', [existingResourceDraft]);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Контекст RU');
+    expect(text).toContain('Контекст EN');
+  });
+
+  it('styles the add action as a green button without the narrow column layout', () => {
+    const addButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (button): button is HTMLButtonElement =>
+        (button as HTMLButtonElement).textContent?.includes('Добавить') ?? false,
+    );
+
+    expect(addButton).toBeDefined();
+    expect(addButton.classList).toContain('btn-success');
+    expect(addButton.closest('div')?.classList).not.toContain('col-md-1');
   });
 
   it('attaches an existing resource once', () => {

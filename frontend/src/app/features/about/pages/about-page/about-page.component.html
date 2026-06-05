@@ -62,7 +62,12 @@
     </div>
     <div class="mt-4"></div>
     <div class="d-inline-flex">
-      <a class="btn btn-lg button-active me-3" href="#mentoring-contact-me-section">
+      <a
+        class="btn btn-lg button-active me-3"
+        href="#mentoring-contact-me-section"
+        data-testid="about-contact-link"
+        (click)="scrollToContact($event)"
+      >
         {{ 'about.hero.contact' | t }}
         <svg
           xmlns="http://www.w3.org/2000/svg"

@@ -101,7 +101,7 @@
 - [ ] Bot protection for the site
   - [x] Basic nginx edge rate limits for login, contact, notes, and matrix resource search
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
-- [ ] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
+- [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [ ] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
@@ -323,7 +323,7 @@
     - [x] Remove `views_router` from Litestar app after Angular parity
     - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
     - [x] Remove backend static vendor files replaced by Angular build assets
-- [ ] Replace static sitemap page with content-driven localized sitemap links.
+- [x] Replace static sitemap page with content-driven localized sitemap links.
 - [x] Add and edit competency matrix questions
   - [x] Search through existing external resources
   - [x] Edit mode for a specific question (button and form on question detail)
@@ -529,32 +529,32 @@
 
 - [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
 - [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
-- [ ] Production public UI QA
+- [x] Production public UI QA
   - [x] Make the active `ru/en` language switch green instead of blue, matching the competency matrix layout switch.
   - [x] Make the "to question" button on the competency matrix detail page green, consistent with the existing project button style.
-  - [ ] Localise the date-range filter placeholder: Russian may stay `дд.мм.гггг`, but English should use a clearer US-style `mm.dd.yyyy` format.
+  - [x] Localise the date-range filter placeholder: Russian may stay `дд.мм.гггг`, but English should use a clearer US-style `mm.dd.yyyy` format.
   - [x] Add comfortable left and right padding to note text in the public notes list.
   - [x] Make the active note reaction state green instead of blue.
   - [x] On note detail pages, visually separate the back button from tags and make it green.
   - [x] Make the notes filter search button green.
   - [x] Prevent the English `Login` button text from wrapping as `Log` / `in`, so the header does not shift when switching languages.
-  - [ ] Move the `Folders` side-panel toggle to the left, replace the text button with an icon-only side-panel toggle whose icon reflects open/closed state, and add a simple open/close animation.
-  - [ ] Restyle the notes side panel so folders and notes read as a tree: reduce the default note background contrast, use hover background for notes, increase note indentation inside folders, and consider cohesive tree connector glyphs.
+  - [x] Move the `Folders` side-panel toggle to the left, replace the text button with an icon-only side-panel toggle whose icon reflects open/closed state, and add a simple open/close animation.
+  - [x] Restyle the notes side panel so folders and notes read as a tree: reduce the default note background contrast, use hover background for notes, increase note indentation inside folders, and consider cohesive tree connector glyphs.
   - [x] Fix the sitemap page title overlapping the header.
-  - [ ] Show the list of published notes on the sitemap page.
-  - [ ] Fix the about page `Contact me` anchor so scrolling to the contact form does not visibly re-render the page.
-- [ ] Production admin UI QA
+  - [x] Show the list of published notes on the sitemap page.
+  - [x] Fix the about page `Contact me` anchor so scrolling to the contact form does not visibly re-render the page.
+- [x] Production admin UI QA
   - [x] Make the logout control borderless: red text only, separated from the username by a vertical `|` delimiter.
   - [x] Prevent the English `Logout` button text from wrapping as `Log` / `out`.
-  - [ ] Make the add competency matrix question button green and move it inline after search.
-  - [ ] Make `published only` toggles green when enabled in both competency matrix and notes views.
-  - [ ] Tone down admin action buttons for matrix questions and notes: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
+  - [x] Make the add competency matrix question button green and move it inline after search.
+  - [x] Make `published only` toggles green when enabled in both competency matrix and notes views.
+  - [x] Tone down admin action buttons for matrix questions and notes: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
   - [x] Make `add notes` and `statistic` buttons green.
-  - [ ] Add a simple animation for showing and hiding statistics.
-  - [ ] Hide folders and filters when opening a note detail page.
-  - [ ] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.
-  - [ ] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.
-  - [ ] Clarify which created external resource context field is Russian and which is English in the competency matrix question form.
+  - [x] Add a simple animation for showing and hiding statistics.
+  - [x] Hide folders and filters when opening a note detail page.
+  - [x] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.
+  - [x] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.
+  - [x] Clarify which created external resource context field is Russian and which is English in the competency matrix question form.
 
 ## Documentation
 

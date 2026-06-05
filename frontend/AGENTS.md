@@ -35,6 +35,14 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - No logic in templates. Move conditions and transforms to component class or `computed()`
 - Semantic HTML. Accessibility attributes where meaningful (`aria-label`, `role`, etc.)
 - Add co-located `.spec.ts` for new components and services unless the behavior is truly trivial.
+- Treat public reading/detail views differently from management workspaces: keep detail pages focused
+  on the content being read, and avoid showing list filters, tree navigation, bulk controls, or other
+  workspace-only controls unless they are directly needed for the detail workflow.
+- Icon-only controls must expose an accessible name and make their current state clear through icon,
+  title, ARIA state, or surrounding context.
+- Prefer native form controls for standard input types. When users need format guidance, provide
+  visible localized hints and titles instead of replacing the control or adding custom parsing unless
+  the product behavior explicitly requires it.
 
 ## State
 
@@ -57,6 +65,17 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
   a repository ignore pattern.
 - Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so public SSR detail pages can render without browser APIs.
 
+## SSR and Browser APIs
+
+- Treat SSR as a pure render path. Browser-only capabilities such as storage, crypto, DOM mutation,
+  timers, analytics, reactions, downloads, uploads, and editor setup must be behind platform guards or
+  injected browser-document accessors and must not run during server rendering.
+- Browser capability helpers should fail closed: return `null`, skip work, or no-op when no browser
+  context exists, and callers must handle that absence explicitly instead of assuming the browser is
+  always available.
+- When adding or changing storage-backed UI preferences, preserve browser persistence and add tests
+  that prove the same code path does not touch browser-only APIs with a server-like document.
+
 ## Forms
 
 - `FormControl<T>` and `FormGroup<T>` — always typed
@@ -73,10 +92,21 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Prefer Bootstrap utilities and existing CSS variables before adding component SCSS.
 - Component SCSS must stay focused on local layout/overrides, not global theme concerns.
 - Add new colors through theme variables, not hardcoded component palettes.
+- Keep action hierarchy consistent across public and admin UI. Primary create/save/edit actions may
+  use the positive accent; destructive or publication-state-changing actions should usually be less
+  visually dominant unless the surrounding design establishes a stronger pattern.
 
 ## Frontend Testing
 
 These testing rules apply when editing `frontend/src/**/*.spec.ts`.
+
+### Manual Browser Checks
+
+- When manually testing frontend routes in a browser, start the local service stack from the
+  repository root with `make run` and test the app served by that stack. Do not replace this with
+  ad hoc Node/SSR harnesses, one-off mock servers, or direct `ng serve` runs unless `make run` is
+  unavailable or the task explicitly needs a narrower fallback; if a fallback is used, state why and
+  clean it up before finishing.
 
 ### Philosophy
 

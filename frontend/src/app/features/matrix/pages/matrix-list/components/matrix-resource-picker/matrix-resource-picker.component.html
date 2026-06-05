@@ -27,7 +27,7 @@
   }
 
   <div class="row g-2 mb-3">
-    <div class="col-md-4">
+    <div class="col-12 col-md-6 col-xl-3">
       <input
         type="text"
         class="form-control form-control-sm"
@@ -36,7 +36,7 @@
         (ngModelChange)="newNameRu.set($event)"
       />
     </div>
-    <div class="col-md-4">
+    <div class="col-12 col-md-6 col-xl-3">
       <input
         type="text"
         class="form-control form-control-sm"
@@ -45,7 +45,7 @@
         (ngModelChange)="newNameEn.set($event)"
       />
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-md-8 col-xl-4">
       <input
         type="url"
         class="form-control form-control-sm"
@@ -54,8 +54,8 @@
         (ngModelChange)="newUrl.set($event)"
       />
     </div>
-    <div class="col-md-1 d-grid">
-      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addNew()">
+    <div class="col-12 col-md-4 col-xl-2 d-grid">
+      <button type="button" class="btn btn-sm btn-success text-nowrap" (click)="addNew()">
         {{ 'shared.add' | t }}
       </button>
     </div>
@@ -74,7 +74,11 @@
       </div>
       <div class="row g-2 mt-2">
         <div class="col-md-6">
+          <label class="form-label small" [for]="'matrixResourceContextRu' + index">
+            {{ 'matrix.resources.contextRuLabel' | t }}
+          </label>
           <textarea
+            [id]="'matrixResourceContextRu' + index"
             class="form-control form-control-sm"
             rows="2"
             [placeholder]="'matrix.resources.contextRuPlaceholder' | t"
@@ -83,7 +87,11 @@
           ></textarea>
         </div>
         <div class="col-md-6">
+          <label class="form-label small" [for]="'matrixResourceContextEn' + index">
+            {{ 'matrix.resources.contextEnLabel' | t }}
+          </label>
           <textarea
+            [id]="'matrixResourceContextEn' + index"
             class="form-control form-control-sm"
             rows="2"
             [placeholder]="'matrix.resources.contextEnPlaceholder' | t"

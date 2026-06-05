@@ -225,6 +225,40 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(buttons.some((b) => b.textContent?.includes('Удалить'))).toBe(true);
   });
 
+  it('should render admin action buttons with green edit and outline-only destructive/publish actions', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('canManageContent', true);
+    fixture.detectChanges();
+
+    const buttons = Array.from(el.querySelectorAll('button'));
+    const editButton = buttons.find((button) => button.textContent?.trim() === 'Редактировать');
+    const publishButton = buttons.find((button) => button.textContent?.trim() === 'Опубликовать');
+    const deleteButton = buttons.find((button) => button.textContent?.trim() === 'Удалить');
+
+    expect(editButton?.classList).toContain('btn-success');
+    expect(publishButton?.classList).toContain('btn-outline-success');
+    expect(publishButton?.classList).not.toContain('btn-success');
+    expect(deleteButton?.classList).toContain('btn-outline-danger');
+    expect(deleteButton?.classList).not.toContain('btn-danger');
+  });
+
+  it('should render unpublish as an outline-only warning action', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Published' });
+    fixture.componentRef.setInput('error', null);
+    fixture.componentRef.setInput('canManageContent', true);
+    fixture.detectChanges();
+
+    const unpublishButton = Array.from(el.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('Снять с публикации'),
+    );
+
+    expect(unpublishButton?.classList).toContain('btn-outline-warning');
+    expect(unpublishButton?.classList).not.toContain('btn-warning');
+  });
+
   it('should show Снять с публикации button when canManageContent is true and question is Published', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Published' });

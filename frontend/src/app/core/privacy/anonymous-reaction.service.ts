@@ -1,17 +1,28 @@
-import { Injectable } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Injectable, inject } from '@angular/core';
 
 const CLIENT_TOKEN_KEY = 'noteReactionClientToken';
 const REACTION_SELECTIONS_KEY = 'noteReactionSelections';
 
 @Injectable({ providedIn: 'root' })
 export class AnonymousReactionService {
-  getOrCreateClientToken(): string {
-    const existingToken = localStorage.getItem(CLIENT_TOKEN_KEY);
+  private readonly document = inject(DOCUMENT);
+
+  getOrCreateClientToken(): string | null {
+    const storage = this.storage();
+    if (storage === null) {
+      return null;
+    }
+    const existingToken = storage.getItem(CLIENT_TOKEN_KEY);
     if (existingToken) {
       return existingToken;
     }
-    const token = crypto.randomUUID();
-    localStorage.setItem(CLIENT_TOKEN_KEY, token);
+    const browserCrypto = this.crypto();
+    if (browserCrypto === null) {
+      return null;
+    }
+    const token = browserCrypto.randomUUID();
+    storage.setItem(CLIENT_TOKEN_KEY, token);
     return token;
   }
 
@@ -26,11 +37,11 @@ export class AnonymousReactionService {
     } else {
       selections[slug] = reactionKind;
     }
-    localStorage.setItem(REACTION_SELECTIONS_KEY, JSON.stringify(selections));
+    this.storage()?.setItem(REACTION_SELECTIONS_KEY, JSON.stringify(selections));
   }
 
   private readSelections(): Record<string, string> {
-    const rawValue = localStorage.getItem(REACTION_SELECTIONS_KEY);
+    const rawValue = this.storage()?.getItem(REACTION_SELECTIONS_KEY);
     if (!rawValue) {
       return {};
     }
@@ -44,6 +55,14 @@ export class AnonymousReactionService {
       return {};
     }
     return parsedValue;
+  }
+
+  private storage(): Storage | null {
+    return this.document.defaultView?.localStorage ?? null;
+  }
+
+  private crypto(): Crypto | null {
+    return this.document.defaultView?.crypto ?? null;
   }
 }
 
