@@ -66,10 +66,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Войти",
         "auth.login.submitting": "Вход...",
         "auth.login.error": "Не удалось войти. Попробуйте ещё раз.",
-        "auth.login.adminOnlyWarning.title": "Пока только для администраторов",
-        "auth.login.adminOnlyWarning.message": (
-            "На данный момент вход работает только для администраторов. В будущем здесь "
-            "появится вход для обычных пользователей."
+        "auth.login.restrictedAccessWarning.title": "Пока только для модераторов и администраторов",
+        "auth.login.restrictedAccessWarning.message": (
+            "На данный момент вход работает только для модераторов и администраторов. "
+            "В будущем здесь появится вход для обычных пользователей."
         ),
         "about.seo.title": "Обо мне",
         "about.seo.description": (
@@ -405,6 +405,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.grade.Senior": "Senior",
         "enum.role.anon": "Анонимный",
         "enum.role.user": "Пользователя",
+        "enum.role.moderator": "Модератор",
         "enum.role.admin": "Администратор",
         "enum.noteReaction.heart": "Понравилось",
         "enum.noteReaction.fire": "Хочу ещё",
@@ -466,10 +467,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Log in",
         "auth.login.submitting": "Signing in...",
         "auth.login.error": "Login failed. Please try again.",
-        "auth.login.adminOnlyWarning.title": "Admins only for now",
-        "auth.login.adminOnlyWarning.message": (
-            "At the moment, login works only for administrators. Regular user login will be "
-            "added in the future."
+        "auth.login.restrictedAccessWarning.title": "Moderators and admins only for now",
+        "auth.login.restrictedAccessWarning.message": (
+            "At the moment, login works only for moderators and administrators. Regular user "
+            "login will be added in the future."
         ),
         "about.seo.title": "About",
         "about.seo.description": (
@@ -802,6 +803,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.grade.Senior": "Senior",
         "enum.role.anon": "Anonymous",
         "enum.role.user": "User",
+        "enum.role.moderator": "Moderator",
         "enum.role.admin": "Admin",
         "enum.noteReaction.heart": "Liked it",
         "enum.noteReaction.fire": "Want more",

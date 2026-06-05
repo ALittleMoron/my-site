@@ -21,7 +21,7 @@
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
 A personal knowledge site with portfolio pages, a competency matrix, localized notes,
-and an integrated admin authoring mode.
+and an integrated content authoring mode.
 
 ## 📖 Documentation
 
@@ -48,10 +48,10 @@ my-site/
 
 - Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, public SEO question pages, and linked resources
 - Notes with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
-- Integrated admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
+- Integrated moderator/admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
 - Privacy-safe note analytics with public view counters, engaged views, source categories, and anonymous reactions
 - Russian/English UI and content localization driven by the backend
-- PASETO-protected admin authentication
+- PASETO-protected moderator/admin authentication
 
 ## 🚀 Quick Start
 

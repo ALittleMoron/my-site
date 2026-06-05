@@ -84,7 +84,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   matching Valkey namespace; do not add ad hoc cache key builders or write directly to a
   shared response-cache namespace.
 - Safe, stable GET handlers may use Litestar response caching with explicit cache metadata.
-  Keep user-implicit, admin statistics, analytics, presign URL, account/session, and other
+  Keep user-implicit, privileged statistics, analytics, presign URL, account/session, and other
   request-side-effect or user-specific responses uncached unless a new design explicitly
   makes their cache key and invalidation rules safe.
 - If a cached GET depends on auth-sensitive query parameters, enforce the access check with a

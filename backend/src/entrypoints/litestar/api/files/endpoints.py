@@ -7,13 +7,13 @@ from litestar.params import QueryParameter
 from core.files.schemas import PresignPutObjectParams
 from core.files.use_cases import AbstractFilesUseCase
 from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
-from entrypoints.litestar.guards import admin_user_guard
+from entrypoints.litestar.guards import content_manager_guard
 
 
 class FilesApiController(Controller):
     path = "/files"
     tags = ["files"]
-    guards = [admin_user_guard]
+    guards = [content_manager_guard]
 
     @get(
         "/presign-put",

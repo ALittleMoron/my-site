@@ -17,7 +17,15 @@ def upgrade() -> None:
         sa.Column("password_hash", sa.String(length=127), nullable=False),
         sa.Column(
             "role",
-            sa.Enum("ANON", "USER", "ADMIN", name="role_enum", native_enum=False, length=10),
+            sa.Enum(
+                "ANON",
+                "USER",
+                "MODERATOR",
+                "ADMIN",
+                name="role_enum",
+                native_enum=False,
+                length=10,
+            ),
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("username"),

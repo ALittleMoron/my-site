@@ -87,7 +87,7 @@ export class NotesPageComponent implements OnInit {
   private readonly trackedEngagedViewSlugs = new Set<string>();
   private languageReloadInitialized = false;
 
-  readonly isAdmin = this.authService.isAdmin;
+  readonly canManageContent = this.authService.canManageContent;
   readonly sidePanelOpen = signal(this.readSidePanelPreference());
   readonly onlyPublished = signal(true);
   readonly currentSlug = signal<string | null>(null);
@@ -491,7 +491,7 @@ export class NotesPageComponent implements OnInit {
     this.detailLoading.set(true);
     this.detailError.set(null);
     this.notesService
-      .getNote(slug, !this.isAdmin(), this.currentLanguage())
+      .getNote(slug, !this.canManageContent(), this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (note) => {
@@ -531,7 +531,7 @@ export class NotesPageComponent implements OnInit {
 
   private scheduleEngagedView(note: NoteDetail): void {
     if (!this.isBrowser) return;
-    if (this.isAdmin() || note.publishStatus !== 'Published') return;
+    if (this.canManageContent() || note.publishStatus !== 'Published') return;
     if (this.trackedEngagedViewSlugs.has(note.slug)) return;
     this.engagedViewState = {
       slug: note.slug,
@@ -570,7 +570,7 @@ export class NotesPageComponent implements OnInit {
 
   private trackPublicView(note: NoteDetail): void {
     if (!this.isBrowser) return;
-    if (this.isAdmin() || note.publishStatus !== 'Published') return;
+    if (this.canManageContent() || note.publishStatus !== 'Published') return;
     this.notesService
       .trackView(note.slug, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))

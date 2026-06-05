@@ -14,9 +14,11 @@ export interface LoginResponse {
   accessToken: string;
 }
 
+export type AccountRole = 'anon' | 'user' | 'moderator' | 'admin';
+
 export interface AccountInfo {
   username: string;
-  role: string;
+  role: AccountRole;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +29,7 @@ export class AuthService {
 
   readonly currentUser = this.session.currentUser;
   readonly isAdmin = this.session.isAdmin;
+  readonly canManageContent = this.session.canManageContent;
   readonly isLoggedIn = this.session.isLoggedIn;
 
   constructor() {

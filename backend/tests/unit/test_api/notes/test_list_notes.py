@@ -6,7 +6,9 @@ import pytest_asyncio
 from httpx import codes
 from litestar.di import Provide
 
+from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError
+from core.auth.schemas import JwtUser
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.schemas import NoteFilters, NotePublicStatsCollection
@@ -18,6 +20,7 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
         self.use_case = await self.container.get_notes_use_case()
         self.analytics_use_case = await self.container.get_note_analytics_use_case()
         self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
@@ -198,3 +201,31 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.FORBIDDEN
         assert response.json()["message"] == ForbiddenError.message
         self.use_case.list_notes.assert_not_called()
+
+    def test_moderator_can_request_all_notes(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.use_case.list_notes.return_value = self.factory.core.note_list(
+            notes=[],
+            total_count=0,
+            total_pages=0,
+        )
+
+        response = self.api.get_notes(page=1, page_size=10, only_published=False)
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_notes.assert_called_once_with(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.RU,
+                only_published=False,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query=None,
+                include_tags=True,
+            ),
+        )

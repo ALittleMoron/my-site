@@ -21,7 +21,7 @@ export class MatrixQuestionDetailComponent {
   readonly question = input<MatrixQuestionDetail | null>(null);
   readonly loading = input<boolean>(false);
   readonly error = input<ApiError | null>(null);
-  readonly isAdmin = input.required<boolean>();
+  readonly canManageContent = input.required<boolean>();
   readonly language = input.required<LanguageCode>();
   readonly questionPageLink = input<string | null>(null);
 

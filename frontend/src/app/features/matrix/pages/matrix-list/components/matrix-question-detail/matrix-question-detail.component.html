@@ -44,7 +44,7 @@
       </ul>
     }
 
-    @if (isAdmin()) {
+    @if (canManageContent()) {
       <hr />
       <div class="d-flex gap-2 mt-2">
         <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">

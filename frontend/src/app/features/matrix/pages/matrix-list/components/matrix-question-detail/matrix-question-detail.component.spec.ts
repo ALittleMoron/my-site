@@ -76,7 +76,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.componentRef.setInput('question', null);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.querySelector('app-loading-spinner')).toBeTruthy();
   });
@@ -85,7 +85,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', null);
     fixture.componentRef.setInput('error', mockError);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.querySelector('app-error-message')).toBeTruthy();
   });
@@ -94,7 +94,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', null);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.querySelector('.question-detail')).toBeFalsy();
   });
@@ -103,7 +103,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.textContent).toContain('What is a closure?');
   });
@@ -112,7 +112,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.componentRef.setInput(
       'questionPageLink',
       '/ru/competency-matrix/questions/what-is-a-closure',
@@ -129,7 +129,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.componentRef.setInput(
       'questionPageLink',
       '/ru/competency-matrix/questions/what-is-a-closure',
@@ -145,7 +145,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     const headings = Array.from(el.querySelectorAll('h2')).map((heading) =>
       heading.textContent?.trim(),
@@ -159,7 +159,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     const answerDiv = el.querySelector('.question-detail div');
     expect(answerDiv?.innerHTML).toContain('<strong>');
@@ -172,7 +172,7 @@ describe('MatrixQuestionDetailComponent', () => {
       answer: '```ts\nconst answer = 42;\n```',
     });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
 
     const pre = el.querySelector('pre.markdown-code');
@@ -188,7 +188,7 @@ describe('MatrixQuestionDetailComponent', () => {
       answer: 'Read [[notes:typed-notes|typed note]].',
     });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.componentRef.setInput('language', 'en');
     fixture.detectChanges();
 
@@ -200,47 +200,47 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.textContent).toContain('MDN');
     expect(el.querySelector('a[href="https://mdn.io"]')).toBeTruthy();
   });
 
-  it('should hide admin buttons when isAdmin is false', () => {
+  it('should hide content controls when canManageContent is false', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     expect(el.querySelector('button')).toBeFalsy();
   });
 
-  it('should show Удалить button when isAdmin is true', () => {
+  it('should show Удалить button when canManageContent is true', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
     expect(buttons.some((b) => b.textContent?.includes('Удалить'))).toBe(true);
   });
 
-  it('should show Снять с публикации button when isAdmin is true and question is Published', () => {
+  it('should show Снять с публикации button when canManageContent is true and question is Published', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Published' });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
     expect(buttons.some((b) => b.textContent?.includes('Снять с публикации'))).toBe(true);
     expect(buttons.some((b) => b.textContent?.includes('Опубликовать'))).toBe(false);
   });
 
-  it('should show Опубликовать button when isAdmin is true and question is Draft', () => {
+  it('should show Опубликовать button when canManageContent is true and question is Draft', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
     const buttons = Array.from(el.querySelectorAll('button'));
     expect(buttons.some((b) => b.textContent?.trim() === 'Опубликовать')).toBe(true);
@@ -251,7 +251,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
 
     let emitted = false;
@@ -272,7 +272,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Published' });
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
 
     let emitted = false;
@@ -293,7 +293,7 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
 
     let emitted = false;

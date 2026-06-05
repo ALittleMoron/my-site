@@ -73,7 +73,7 @@ export class MatrixListComponent implements OnInit {
   private readonly resourceSearchTerm = new Subject<string>();
   private languageReloadInitialized = false;
 
-  readonly isAdmin = this.authService.isAdmin;
+  readonly canManageContent = this.authService.canManageContent;
   readonly language = this.i18n.language;
 
   readonly sheets = signal<MatrixSheet[]>([]);

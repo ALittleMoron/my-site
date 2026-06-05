@@ -38,6 +38,10 @@ class TestTokenHandler:
         payload_dict = {"username": "test", "role": "admin"}
         assert TokenHandler.validate_payload_dict(payload_dict) is True
 
+    def test_valid_payload_moderator_role(self) -> None:
+        payload_dict = {"username": "test", "role": "moderator"}
+        assert TokenHandler.validate_payload_dict(payload_dict) is True
+
 
 class TestPasetoTokenHandler:
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")

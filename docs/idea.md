@@ -14,7 +14,8 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 ## Non-goals (will not build)
 
 - Paid features. All functionality will be free.
-- Complex role/permission system. No moderator or multi-admin roles. Only authenticated users and guests. I am the only admin.
+- Complex role/permission system. Keep only guests, regular users, moderators for content
+  authoring, and administrators for future closed functionality.
 - Complex third-party integrations (CRM, ERP, etc.).
 - Complex notification systems (email, SMS, etc.). A subscription to new notes, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
 - Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.
@@ -32,7 +33,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 1. **Competency matrix** — localized interactive Q&A with topic filtering, detailed answers, and linked resources
 2. **Notes** — localized content, folders, tags, search/filtering, and publish visibility
-3. **Integrated admin authoring mode** — content management through the main frontend, no separate admin UI
+3. **Integrated content authoring mode** — content management through the main frontend, no separate back-office UI
 4. **Privacy-safe note analytics** — public counters and anonymous reactions
 
 ## Highlights

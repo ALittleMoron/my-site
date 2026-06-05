@@ -38,7 +38,7 @@ export class NoteDetailComponent {
   readonly error = input<ApiError | null>(null);
   readonly dateLocale = input.required<string>();
   readonly language = input.required<LanguageCode>();
-  readonly isAdmin = input(false);
+  readonly canManageContent = input(false);
   readonly selectedReaction = input<NoteReactionKind | null>(null);
   readonly reactionLoading = input(false);
 

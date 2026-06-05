@@ -8,7 +8,7 @@
       <button type="button" class="btn btn-sm btn-outline-secondary" (click)="back.emit()">
         {{ 'shared.back' | t }}
       </button>
-      @if (isAdmin()) {
+      @if (canManageContent()) {
         <div class="d-flex gap-2 flex-wrap justify-content-end">
           <button type="button" class="btn btn-sm btn-primary" (click)="edit.emit()">
             {{ 'shared.edit' | t }}
@@ -36,7 +36,7 @@
       <span>{{ note()!.authorUsername }}</span>
       <span>{{ note()!.folder }}</span>
       <span>{{ 'notes.views' | t: { count: note()!.viewCount } }}</span>
-      @if (isAdmin() && isDraft()) {
+      @if (canManageContent() && isDraft()) {
         <span class="badge text-bg-warning">{{ 'shared.draft' | t }}</span>
       }
     </div>
@@ -58,7 +58,7 @@
 
     <div class="notes-markdown" [innerHTML]="contentHtml()"></div>
 
-    @if (isAdmin() && seoAnalysis()) {
+    @if (canManageContent() && seoAnalysis()) {
       <app-note-seo-panel [analysis]="seoAnalysis()!" />
     }
 

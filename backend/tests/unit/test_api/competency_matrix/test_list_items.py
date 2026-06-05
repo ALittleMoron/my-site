@@ -1,6 +1,8 @@
 import pytest_asyncio
 from httpx import codes
 
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.enums import PublishStatusEnum
@@ -10,6 +12,7 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
         self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_list_not_correct_sheet_key(self) -> None:
@@ -105,3 +108,22 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.api.get_competency_matrix_items(sheet_key="python", language=None)
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_items.assert_not_called()
+
+    def test_moderator_can_request_all_items(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.use_case.list_items.return_value = self.factory.core.competency_matrix_items(
+            values=[],
+        )
+
+        response = self.api.get_competency_matrix_items(
+            sheet_key="python",
+            only_published=False,
+        )
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_items.assert_called_once_with(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=False),
+        )

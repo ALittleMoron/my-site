@@ -12,7 +12,7 @@
       <button type="button" class="btn btn-outline-secondary" (click)="toggleSidePanel()">
         {{ 'notes.folders' | t }}
       </button>
-      @if (isAdmin()) {
+      @if (canManageContent()) {
         <button type="button" class="btn btn-primary" (click)="openCreate()">
           {{ 'notes.add' | t }}
         </button>
@@ -23,7 +23,7 @@
     </div>
   </div>
 
-  @if (isAdmin() && statsVisible()) {
+  @if (canManageContent() && statsVisible()) {
     <app-notes-stats-panel
       [stats]="stats()"
       [loading]="statsLoading()"
@@ -130,7 +130,7 @@
           }
         </div>
 
-        @if (isAdmin()) {
+        @if (canManageContent()) {
           <div class="form-check form-switch mb-0">
             <input
               id="notesOnlyPublishedToggle"
@@ -154,7 +154,7 @@
           [error]="detailError()"
           [dateLocale]="dateLocale()"
           [language]="language()"
-          [isAdmin]="isAdmin()"
+          [canManageContent]="canManageContent()"
           [selectedReaction]="selectedReaction()"
           [reactionLoading]="reactionLoading()"
           (back)="backToList()"
@@ -181,7 +181,7 @@
           [page]="page()"
           [totalPages]="notes()!.totalPages"
           [dateLocale]="dateLocale()"
-          [isAdmin]="isAdmin()"
+          [canManageContent]="canManageContent()"
           (noteSelected)="openNote($event)"
           (tagSelected)="selectTag($event)"
           (pageChange)="changePage($event)"

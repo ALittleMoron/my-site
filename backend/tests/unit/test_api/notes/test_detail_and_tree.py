@@ -4,7 +4,9 @@ from datetime import UTC, datetime
 import pytest_asyncio
 from httpx import codes
 
+from core.auth.enums import RoleEnum
 from core.auth.exceptions import ForbiddenError
+from core.auth.schemas import JwtUser
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import NoteNotFoundError
@@ -20,6 +22,7 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
         self.use_case = await self.container.get_notes_use_case()
         self.analytics_use_case = await self.container.get_note_analytics_use_case()
         self.analytics_use_case.get_public_stats.return_value = NotePublicStatsCollection(
@@ -142,6 +145,23 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["message"] == ForbiddenError.message
         self.use_case.get_note.assert_not_called()
 
+    def test_moderator_can_request_draft_note(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.use_case.get_note.return_value = self.factory.core.note(
+            note_id=uuid.UUID(int=3),
+            title="Draft note",
+            slug="draft",
+            publish_status=PublishStatusEnum.DRAFT,
+        )
+
+        response = self.api.get_note(slug="draft", only_published=False)
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.get_note.assert_called_once_with(slug="draft", only_published=False)
+
     def test_tree_uses_public_visibility_for_anonymous_users(self) -> None:
         self.use_case.list_tree.return_value = NoteTree(
             folders=[
@@ -185,6 +205,21 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
         }
         self.use_case.list_tree.assert_called_once_with(
             only_published=True,
+            language=LanguageEnum.RU,
+        )
+
+    def test_tree_uses_all_visibility_for_moderator(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.use_case.list_tree.return_value = NoteTree(folders=[])
+
+        response = self.api.get_notes_tree()
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_tree.assert_called_once_with(
+            only_published=False,
             language=LanguageEnum.RU,
         )
 

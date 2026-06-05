@@ -8,7 +8,7 @@ from litestar.params import QueryParameter
 from core.i18n.enums import LanguageEnum
 from core.wiki_links.use_cases import AbstractWikiLinksUseCase
 from entrypoints.litestar.api.wiki_links.schemas import WikiLinkTargetsResponseSchema
-from entrypoints.litestar.guards import admin_user_guard
+from entrypoints.litestar.guards import content_manager_guard
 
 
 class WikiLinksApiController(Controller):
@@ -18,7 +18,7 @@ class WikiLinksApiController(Controller):
     @get(
         "/targets",
         description="Получение доступных целей для typed wiki-links.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="wiki-links-targets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )

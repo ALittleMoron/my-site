@@ -156,7 +156,7 @@ describe('SiteHeaderComponent', () => {
   });
 
   it('shows username and logout button when logged in', () => {
-    currentUserSignal.set({ username: 'admin', role: 'Admin' });
+    currentUserSignal.set({ username: 'admin', role: 'admin' });
     fixture.detectChanges();
 
     const logoutBtn = el.querySelector('button[aria-label="Выйти"]') as HTMLButtonElement;
@@ -168,7 +168,7 @@ describe('SiteHeaderComponent', () => {
   });
 
   it('calls authService.logout() when logout button is clicked', () => {
-    currentUserSignal.set({ username: 'admin', role: 'Admin' });
+    currentUserSignal.set({ username: 'admin', role: 'admin' });
     fixture.detectChanges();
 
     const logoutBtn = el.querySelector('button[aria-label="Выйти"]') as HTMLButtonElement;

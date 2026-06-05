@@ -34,7 +34,7 @@ describe('AuthService', () => {
     beforeEach(() => setup());
 
     it('stores token and loads user', () => {
-      const mockAccount: AccountInfo = { username: 'admin', role: 'Admin' };
+      const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
 
       service.login('admin', 'secret').subscribe();
 
@@ -49,6 +49,7 @@ describe('AuthService', () => {
       expect(tokenService.token()).toBe('new-token');
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
+      expect(service.canManageContent()).toBe(true);
     });
   });
 
@@ -56,7 +57,7 @@ describe('AuthService', () => {
     beforeEach(() => setup());
 
     it('clears token and user', () => {
-      service.currentUser.set({ username: 'admin', role: 'Admin' });
+      service.currentUser.set({ username: 'admin', role: 'admin' });
       tokenService.setToken('some-token');
 
       service.logout().subscribe();
@@ -71,7 +72,7 @@ describe('AuthService', () => {
     });
 
     it('clears token and user when logout request fails', (done) => {
-      service.currentUser.set({ username: 'admin', role: 'Admin' });
+      service.currentUser.set({ username: 'admin', role: 'admin' });
       tokenService.setToken('some-token');
 
       service.logout().subscribe({
@@ -99,7 +100,7 @@ describe('AuthService', () => {
     beforeEach(() => setup());
 
     it('populates currentUser signal', () => {
-      const mockAccount: AccountInfo = { username: 'admin', role: 'Admin' };
+      const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
 
       service.loadCurrentUser().subscribe();
 
@@ -108,6 +109,7 @@ describe('AuthService', () => {
 
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
+      expect(service.canManageContent()).toBe(true);
     });
   });
 
@@ -116,9 +118,11 @@ describe('AuthService', () => {
       setup(true);
 
       const req = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
-      req.flush({ username: 'admin', role: 'Admin' });
+      req.flush({ username: 'admin', role: 'admin' });
 
       expect(service.currentUser()?.username).toBe('admin');
+      expect(service.isAdmin()).toBe(true);
+      expect(service.canManageContent()).toBe(true);
     });
   });
 });

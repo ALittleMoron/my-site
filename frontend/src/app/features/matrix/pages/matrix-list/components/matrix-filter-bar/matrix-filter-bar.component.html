@@ -38,7 +38,7 @@
     </div>
 
     <div class="col d-flex justify-content-end align-items-center gap-3 mt-2 mt-md-0">
-      @if (isAdmin()) {
+      @if (canManageContent()) {
         <div class="form-check form-switch mb-0">
           <input
             class="form-check-input"

@@ -41,10 +41,10 @@ describe('NotesPageComponent', () => {
     setMeta: jest.Mock;
   };
   let router: { navigate: jest.Mock };
-  let isAdmin: boolean;
+  let canManageContent: boolean;
 
   beforeEach(async () => {
-    isAdmin = false;
+    canManageContent = false;
     paramMap = new BehaviorSubject(convertToParamMap({ slug: 'typed-notes' }));
     queryParamMap = new BehaviorSubject(convertToParamMap({}));
     notesService = {
@@ -75,7 +75,7 @@ describe('NotesPageComponent', () => {
       providers: [
         provideRouter([]),
         { provide: NotesService, useValue: notesService },
-        { provide: AuthService, useValue: { isAdmin: () => isAdmin } },
+        { provide: AuthService, useValue: { canManageContent: () => canManageContent } },
         { provide: SeoService, useValue: seoService },
         provideI18nTesting(),
         {
@@ -182,8 +182,8 @@ describe('NotesPageComponent', () => {
     );
   });
 
-  it('does not track public view for admin detail reads', () => {
-    isAdmin = true;
+  it('does not track public view for content manager detail reads', () => {
+    canManageContent = true;
 
     fixture.detectChanges();
 

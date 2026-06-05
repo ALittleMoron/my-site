@@ -4,6 +4,8 @@ from datetime import date
 import pytest_asyncio
 from httpx import codes
 
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
 from core.i18n.enums import LanguageEnum
 from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from core.notes.schemas import (
@@ -21,6 +23,7 @@ from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 class TestNoteAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
         self.notes_use_case = await self.container.get_notes_use_case()
         self.analytics_use_case = await self.container.get_note_analytics_use_case()
 
@@ -44,6 +47,18 @@ class TestNoteAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             referrer=None,
         )
 
+    def test_moderator_public_view_is_not_tracked(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+
+        response = self.api.post_note_view(slug="public-note")
+
+        assert response.status_code == codes.NO_CONTENT, response.content
+        self.notes_use_case.get_note.assert_not_called()
+        self.analytics_use_case.track_public_view.assert_not_called()
+
     def test_track_engaged_view(self) -> None:
         response = self.no_auth_api.post_note_engaged_view(slug="public-note")
 
@@ -52,6 +67,17 @@ class TestNoteAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             slug="public-note",
             source_category=NoteViewSourceCategory.UNKNOWN,
         )
+
+    def test_moderator_engaged_view_is_not_tracked(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+
+        response = self.api.post_note_engaged_view(slug="public-note")
+
+        assert response.status_code == codes.NO_CONTENT, response.content
+        self.analytics_use_case.track_engaged_view.assert_not_called()
 
     def test_set_reaction(self) -> None:
         response = self.no_auth_api.post_note_reaction(
@@ -123,11 +149,37 @@ class TestNoteAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.BAD_REQUEST
         self.analytics_use_case.get_public_stats.assert_not_called()
 
-    def test_get_stats_requires_admin(self) -> None:
+    def test_get_stats_requires_content_access(self) -> None:
         response = self.no_auth_api.get_note_stats(date_from="2026-01-01", date_to="2026-01-31")
 
         assert response.status_code == codes.UNAUTHORIZED
         self.analytics_use_case.get_stats.assert_not_called()
+
+    def test_get_stats_allows_moderator(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.analytics_use_case.get_stats.return_value = NoteAnalyticsStats(
+            date_from=date(2026, 1, 1),
+            date_to=date(2026, 1, 31),
+            totals=NoteAnalyticsTotals(
+                view_count=0,
+                engaged_view_count=0,
+                reaction_count=0,
+            ),
+            notes=[],
+            daily=[],
+        )
+
+        response = self.api.get_note_stats(date_from="2026-01-01", date_to="2026-01-31")
+
+        assert response.status_code == codes.OK, response.content
+        self.analytics_use_case.get_stats.assert_called_once_with(
+            date_from=date(2026, 1, 1),
+            date_to=date(2026, 1, 31),
+            language=LanguageEnum.RU,
+        )
 
     def test_get_stats(self) -> None:
         note_id = uuid.UUID(int=1)

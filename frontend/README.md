@@ -1,6 +1,6 @@
 # My Site Frontend
 
-Angular hybrid SSR/CSR frontend for the personal site. The frontend is packaged as an independent Docker image and runs the Angular Node.js SSR runtime: public article pages and public competency matrix question pages are server-rendered for SEO, while admin-heavy and interactive areas stay hydrated Angular.
+Angular hybrid SSR/CSR frontend for the personal site. The frontend is packaged as an independent Docker image and runs the Angular Node.js SSR runtime: public article pages and public competency matrix question pages are server-rendered for SEO, while protected content-authoring and interactive areas stay hydrated Angular.
 
 In the full application stack, infrastructure nginx remains the public edge proxy:
 

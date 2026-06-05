@@ -58,8 +58,10 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
         async with self.container() as request_container:
             use_case = await request_container.get(AbstractAuthUseCase)
             try:
-                # NOTE: пока только админы могут логиниться
-                user = await use_case.authenticate(token=clear_token, required_role=RoleEnum.ADMIN)
+                user = await use_case.authenticate(
+                    token=clear_token,
+                    required_role=RoleEnum.MODERATOR,
+                )
             except UnauthorizedError:
                 return anon_result
         return AuthenticationResult(user=JwtUser.from_user(user), auth=token)

@@ -10,7 +10,7 @@
           >
             {{ note.title }}
           </button>
-          @if (isAdmin() && note.publishStatus === 'Draft') {
+          @if (canManageContent() && note.publishStatus === 'Draft') {
             <span class="badge text-bg-warning ms-2">{{ 'shared.draft' | t }}</span>
           }
           <p class="text-body-secondary small mb-2 mt-1">{{ note.excerpt }}</p>

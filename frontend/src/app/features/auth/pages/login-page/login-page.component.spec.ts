@@ -39,12 +39,12 @@ describe('LoginPageComponent', () => {
     expect(compiled.querySelector('#password')).not.toBeNull();
   });
 
-  it('renders admin-only login warning', () => {
+  it('renders content-staff-only login warning', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const alert = compiled.querySelector('.alert-warning');
 
     expect(alert).not.toBeNull();
-    expect(alert?.textContent).toContain('Пока только для администраторов');
+    expect(alert?.textContent).toContain('Пока только для модераторов и администраторов');
     expect(alert?.textContent).toContain('обычных пользователей');
   });
 

@@ -12,12 +12,18 @@ class AdminUserGuard:
             raise UnauthorizedError
 
 
+class ContentManagerGuard:
+    def __call__(self, connection: ASGIConnection, _: BaseRouteHandler) -> None:
+        if not connection.user.can_manage_content:
+            raise UnauthorizedError
+
+
 class DeletedTagsAccessGuard:
     true_query_values: ClassVar[frozenset[str]] = frozenset({"1", "true", "yes", "on"})
 
     def __call__(self, connection: ASGIConnection, _: BaseRouteHandler) -> None:
         include_deleted = str(connection.query_params.get("includeDeleted", "false")).lower()
-        if include_deleted in self.true_query_values and not connection.user.is_admin:
+        if include_deleted in self.true_query_values and not connection.user.can_manage_content:
             raise ForbiddenError
 
 
@@ -28,10 +34,14 @@ class DraftContentAccessGuard:
         only_published = connection.query_params.get("onlyPublished")
         if only_published is None:
             return
-        if str(only_published).lower() in self.false_query_values and not connection.user.is_admin:
+        if (
+            str(only_published).lower() in self.false_query_values
+            and not connection.user.can_manage_content
+        ):
             raise ForbiddenError
 
 
 admin_user_guard = AdminUserGuard()
+content_manager_guard = ContentManagerGuard()
 deleted_tags_access_guard = DeletedTagsAccessGuard()
 draft_content_access_guard = DraftContentAccessGuard()

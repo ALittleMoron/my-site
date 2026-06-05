@@ -171,9 +171,9 @@ describe('MatrixListComponent', () => {
     setMatrixLayout: jest.Mock;
   };
   let authService: {
-    isAdmin: ReturnType<typeof import('@angular/core').computed<boolean>>;
+    canManageContent: ReturnType<typeof import('@angular/core').computed<boolean>>;
   };
-  let isAdminSignal: ReturnType<typeof import('@angular/core').signal<boolean>>;
+  let canManageContentSignal: ReturnType<typeof import('@angular/core').signal<boolean>>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
@@ -196,9 +196,9 @@ describe('MatrixListComponent', () => {
       setMatrixLayout: jest.fn((mode: 'list' | 'grid') => layoutSignal.set(mode)),
     };
 
-    isAdminSignal = signal(false);
+    canManageContentSignal = signal(false);
     authService = {
-      isAdmin: computed(() => isAdminSignal()),
+      canManageContent: computed(() => canManageContentSignal()),
     };
     notificationService = {
       success: jest.fn(),
@@ -305,13 +305,13 @@ describe('MatrixListComponent', () => {
     expect(title.textContent?.trim()).toBe('Матрица компетенций');
   });
 
-  it('should not show published/all filter for non-admin users', () => {
+  it('should not show published/all filter for users without content access', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).toBeNull();
   });
 
-  it('should show published/all filter for admin users', () => {
-    isAdminSignal.set(true);
+  it('should show published/all filter for content managers', () => {
+    canManageContentSignal.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).not.toBeNull();
   });

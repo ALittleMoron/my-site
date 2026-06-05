@@ -25,6 +25,11 @@ class TestUserAccountStorage(FactoryFixture, StorageFixture):
                     password_hash="password2",
                     role=RoleEnum.ADMIN,
                 ),
+                self.factory.core.user(
+                    username="moderator",
+                    password_hash="password3",
+                    role=RoleEnum.MODERATOR,
+                ),
             ],
         )
 
@@ -38,4 +43,13 @@ class TestUserAccountStorage(FactoryFixture, StorageFixture):
             username="user1",
             password_hash="password1",
             role=RoleEnum.USER,
+        )
+
+    async def test_get_user_by_username_returns_moderator_role(self) -> None:
+        user = await self.storage.get_user_by_username(username="moderator")
+
+        assert user == self.factory.core.user(
+            username="moderator",
+            password_hash="password3",
+            role=RoleEnum.MODERATOR,
         )

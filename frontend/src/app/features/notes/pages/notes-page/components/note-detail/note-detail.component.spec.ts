@@ -73,7 +73,7 @@ describe('NoteDetailComponent', () => {
   });
 
   it('shows SEO analysis for admins on published and draft notes', () => {
-    fixture.componentRef.setInput('isAdmin', true);
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
 
     let text = fixture.nativeElement.textContent as string;
@@ -91,7 +91,7 @@ describe('NoteDetailComponent', () => {
     expect(text).toContain('SEO-анализ');
   });
 
-  it('hides SEO analysis from non-admin readers', () => {
+  it('hides SEO analysis from users without content access readers', () => {
     const text = fixture.nativeElement.textContent as string;
 
     expect(text).not.toContain('SEO-анализ');

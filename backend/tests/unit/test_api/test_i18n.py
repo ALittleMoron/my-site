@@ -25,8 +25,8 @@ class TestI18nApi(ApiFixture):
         assert body["messages"]["shell.nav.about"] == "Обо мне"
         assert body["messages"]["enum.publishStatus.Draft"] == "Черновик"
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
-        assert body["messages"]["auth.login.adminOnlyWarning.title"] == (
-            "Пока только для администраторов"
+        assert body["messages"]["auth.login.restrictedAccessWarning.title"] == (
+            "Пока только для модераторов и администраторов"
         )
 
     def test_get_english_bundle(self) -> None:
@@ -38,7 +38,10 @@ class TestI18nApi(ApiFixture):
         assert body["messages"]["shell.nav.about"] == "About"
         assert body["messages"]["enum.publishStatus.Draft"] == "Draft"
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
-        assert body["messages"]["auth.login.adminOnlyWarning.title"] == "Admins only for now"
+        assert (
+            body["messages"]["auth.login.restrictedAccessWarning.title"]
+            == "Moderators and admins only for now"
+        )
 
     def test_unknown_bundle_language_is_rejected(self) -> None:
         response = self.api.get_i18n_bundle(language="de")

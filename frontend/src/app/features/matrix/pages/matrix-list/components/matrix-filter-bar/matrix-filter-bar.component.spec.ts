@@ -21,7 +21,7 @@ describe('MatrixFilterBarComponent', () => {
     fixture.componentRef.setInput('search', '');
     fixture.componentRef.setInput('onlyPublished', true);
     fixture.componentRef.setInput('layoutMode', 'list' as MatrixLayoutMode);
-    fixture.componentRef.setInput('isAdmin', false);
+    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
   });
@@ -63,12 +63,12 @@ describe('MatrixFilterBarComponent', () => {
     expect(emitted).toEqual(['']);
   });
 
-  it('should hide published/all switch for non-admin users', () => {
+  it('should hide published/all switch for users without content access users', () => {
     expect(el.querySelector('#onlyPublishedToggle')).toBeNull();
   });
 
-  it('should show published/all switch for admin users', () => {
-    fixture.componentRef.setInput('isAdmin', true);
+  it('should show published/all switch for content managers', () => {
+    fixture.componentRef.setInput('canManageContent', true);
     fixture.detectChanges();
     expect(el.querySelector('#onlyPublishedToggle')).not.toBeNull();
   });

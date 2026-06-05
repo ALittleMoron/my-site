@@ -14,7 +14,7 @@ export class NoteListComponent {
   readonly page = input.required<number>();
   readonly totalPages = input.required<number>();
   readonly dateLocale = input.required<string>();
-  readonly isAdmin = input(false);
+  readonly canManageContent = input(false);
 
   readonly noteSelected = output<string>();
   readonly tagSelected = output<string>();

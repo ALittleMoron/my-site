@@ -125,7 +125,7 @@
     - [ ] Passwords never logged
     - [ ] Hashing: unique salt used
     - [ ] Every protected handler checks the user (guards where needed)
-    - [ ] No "hide button if not admin" logic without backend enforcement
+    - [ ] No role-based "hide button" logic without backend enforcement
     - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
     - [ ] Docker and infrastructure
         - [ ] App runs with `read_only: true`
@@ -277,7 +277,7 @@
     - [x] List layout
     - [x] Grid/table layout
     - [x] Search that hides empty sections and subsections
-    - [x] Admin-only published/all toggle using `onlyPublished`
+    - [x] Moderator/admin published/all toggle using `onlyPublished`
     - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
     - [x] Markdown rendering for answers and resource context
     - [x] Code highlighting for Markdown code blocks
@@ -299,7 +299,7 @@
     - [x] Logout button
     - [x] navbar profile info
     - [x] Current user loading from `/api/account/base`
-    - [x] Admin-only controls based on account role, with backend guards still enforced
+    - [x] Moderator/admin controls based on account role, with backend guards still enforced
   - [x] Deployment and legacy cleanup
     - [x] Build Angular in CI/CD
     - [x] Build Angular as an independent frontend Docker image
@@ -318,7 +318,7 @@
 - [x] "404" page 
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [x] Security audit
-  - [x] Only admins can edit, add, and delete matrix questions
+  - [x] Moderators and admins can edit, add, and delete matrix questions
 
 ### Notes
 
@@ -330,7 +330,7 @@
   - [x] Read note list, detail, tree, tag list, and tag search results in the selected content language
   - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
   - [x] Keep `tagSlug` as one language-neutral English filter
-  - [x] Add admin UI controls for editing RU and EN note and tag fields in one form
+  - [x] Add content authoring UI controls for editing RU and EN note and tag fields in one form
   - [x] Update the init Alembic migration because the service is not deployed yet
   - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
   - [x] Cover backend and frontend behaviour with focused tests
@@ -369,7 +369,7 @@
     - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
     - [ ] Properties
 - [x] Security audit
-  - [x] Only admins can edit, add, and delete notes
+  - [x] Moderators and admins can edit, add, and delete notes
   - [x] Regular users cannot view hidden notes
 
 ### Knowledge database
@@ -431,7 +431,7 @@
 - [ ] User authentication improvements (possibly via OAuth2)
   - [ ] (FRONT) Register button and form
   - [ ] (BACK) Registration logic
-  - [ ] Remove the admin-only login warning after regular-user authorization/login is implemented
+  - [ ] Remove the moderator/admin-only login warning after regular-user authorization/login is implemented
   - [ ] (FRONT) Password recovery button and form (simple confirmation email)
   - [ ] (BACK) Password recovery logic
   - [ ] (BACK) Add session cookie (set on login/register, delete on logout)

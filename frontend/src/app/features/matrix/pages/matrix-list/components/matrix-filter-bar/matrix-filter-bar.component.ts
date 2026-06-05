@@ -13,7 +13,7 @@ export class MatrixFilterBarComponent {
   readonly search = input.required<string>();
   readonly onlyPublished = input.required<boolean>();
   readonly layoutMode = input.required<MatrixLayoutMode>();
-  readonly isAdmin = input(false);
+  readonly canManageContent = input(false);
 
   readonly searchChange = output<string>();
   readonly onlyPublishedChange = output<boolean>();

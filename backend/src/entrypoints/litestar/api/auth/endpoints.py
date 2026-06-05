@@ -33,7 +33,7 @@ class AuthApiController(Controller):
         token = await use_case.login(
             username=data.username,
             password=data.password,
-            required_role=RoleEnum.ADMIN,  # NOTE: пока только админы могут логиниться
+            required_role=RoleEnum.MODERATOR,
         )
         return AccessTokenResponseSchema.from_domain_schema(schema=token)
 

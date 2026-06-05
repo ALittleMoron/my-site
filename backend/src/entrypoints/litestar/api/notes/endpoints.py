@@ -32,7 +32,7 @@ from entrypoints.litestar.api.notes.schemas import (
     TagsResponseSchema,
 )
 from entrypoints.litestar.guards import (
-    admin_user_guard,
+    content_manager_guard,
     deleted_tags_access_guard,
     draft_content_access_guard,
 )
@@ -63,7 +63,7 @@ class NotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
         filters: NoteFilters,
     ) -> NoteListResponseSchema:
-        if not request.user.is_admin and not filters.only_published:
+        if not request.user.can_manage_content and not filters.only_published:
             raise ForbiddenError
         notes = await use_case.list_notes(filters=filters)
         return NoteListResponseSchema.from_domain_schema(
@@ -74,7 +74,7 @@ class NotesApiController(Controller):
     @post(
         "",
         description="Создание заметки.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -111,7 +111,7 @@ class NotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> NoteTreeResponseSchema:
         tree = await use_case.list_tree(
-            only_published=not request.user.is_admin,
+            only_published=not request.user.can_manage_content,
             language=language,
         )
         return NoteTreeResponseSchema.from_domain_schema(schema=tree)
@@ -133,7 +133,7 @@ class NotesApiController(Controller):
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> NoteDetailResponseSchema:
-        if not request.user.is_admin and not only_published:
+        if not request.user.can_manage_content and not only_published:
             raise ForbiddenError
         note = await use_case.get_note(
             slug=slug,
@@ -172,7 +172,7 @@ class NotesApiController(Controller):
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
         _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
-        if request.user.is_admin:
+        if request.user.can_manage_content:
             return
         note = await use_case.get_note(slug=slug, only_published=True)
         await analytics_use_case.track_public_view(
@@ -193,7 +193,7 @@ class NotesApiController(Controller):
         analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
         _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
-        if request.user.is_admin:
+        if request.user.can_manage_content:
             return
         await analytics_use_case.track_engaged_view(
             slug=slug,
@@ -222,7 +222,7 @@ class NotesApiController(Controller):
     @get(
         "/stats",
         description="Получение статистики заметок.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-stats-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -243,7 +243,7 @@ class NotesApiController(Controller):
     @put(
         "/detail/{slug:str}",
         description="Обновление заметки.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -268,7 +268,7 @@ class NotesApiController(Controller):
     @delete(
         "/detail/{slug:str}",
         description="Удаление заметки.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -284,7 +284,7 @@ class NotesApiController(Controller):
     @post(
         "/detail/{slug:str}/set-draft",
         description='Установка статуса "Черновик" на заметку.',
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -303,7 +303,7 @@ class NotesApiController(Controller):
     @post(
         "/detail/{slug:str}/set-published",
         description='Установка статуса "Опубликовано" на заметку.',
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -365,7 +365,7 @@ class NotesApiController(Controller):
     @post(
         "/tags",
         description="Создание тега.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-tags-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -386,7 +386,7 @@ class NotesApiController(Controller):
     @put(
         "/tags/{tag_id:int}",
         description="Обновление тега.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-tags-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -408,7 +408,7 @@ class NotesApiController(Controller):
     @delete(
         "/tags/{tag_id:int}",
         description="Удаление тега.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-tags-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -424,7 +424,7 @@ class NotesApiController(Controller):
     @post(
         "/tags/{tag_id:int}/restore",
         description="Восстановление тега.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="notes-tags-restore-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )

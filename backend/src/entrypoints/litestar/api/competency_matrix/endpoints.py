@@ -23,7 +23,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
 )
-from entrypoints.litestar.guards import admin_user_guard, draft_content_access_guard
+from entrypoints.litestar.guards import content_manager_guard, draft_content_access_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     invalidate_response_cache_domain,
@@ -100,7 +100,7 @@ class CompetencyMatrixApiController(Controller):
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemsListResponseSchema:
-        if not request.user.is_admin and not only_published:
+        if not request.user.can_manage_content and not only_published:
             raise ForbiddenError
         filters = CompetencyMatrixItemFilters(
             sheet_key=sheet_key,
@@ -116,7 +116,7 @@ class CompetencyMatrixApiController(Controller):
     @post(
         "/items",
         description="Создание вопроса в матрице компетенций.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -161,7 +161,7 @@ class CompetencyMatrixApiController(Controller):
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
-        if not request.user.is_admin and not only_published:
+        if not request.user.can_manage_content and not only_published:
             raise ForbiddenError
         item = await use_case.get_item(item_id=IntId(pk), only_published=only_published)
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
@@ -192,7 +192,7 @@ class CompetencyMatrixApiController(Controller):
     @put(
         "/items/detail/{pk:int}",
         description="Обновление вопроса в матрице компетенций.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="competency-matrix-item-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -223,7 +223,7 @@ class CompetencyMatrixApiController(Controller):
     @delete(
         "/items/detail/{pk:int}",
         description="Удаление вопроса в матрице компетенций.",
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="competency-matrix-item-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -242,7 +242,7 @@ class CompetencyMatrixApiController(Controller):
     @post(
         "/items/detail/{pk:int}/set-draft",
         description='Установка статуса "Черновик" на вопрос в матрице компетенций.',
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="competency-matrix-item-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -264,7 +264,7 @@ class CompetencyMatrixApiController(Controller):
     @post(
         "/items/detail/{pk:int}/set-published",
         description='Установка статуса "Опубликовано" на вопрос в матрице компетенций.',
-        guards=[admin_user_guard],
+        guards=[content_manager_guard],
         name="competency-matrix-item-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )

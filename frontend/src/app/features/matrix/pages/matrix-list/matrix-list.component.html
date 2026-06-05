@@ -1,7 +1,7 @@
 <div class="container py-4 mt-5">
   <h1 class="fw-bold mb-3">{{ 'matrix.title' | t }}</h1>
 
-  @if (isAdmin()) {
+  @if (canManageContent()) {
     <button type="button" class="btn btn-primary mb-3" (click)="openCreate()">
       {{ 'matrix.addQuestion' | t }}
     </button>
@@ -19,7 +19,7 @@
     [search]="search()"
     [onlyPublished]="onlyPublished()"
     [layoutMode]="layoutMode()"
-    [isAdmin]="isAdmin()"
+    [canManageContent]="canManageContent()"
     (searchChange)="setSearch($event)"
     (onlyPublishedChange)="setOnlyPublished($event)"
     (layoutModeChange)="setLayoutMode($event)"
@@ -92,7 +92,7 @@
                 [question]="selectedQuestion()"
                 [loading]="detailLoading()"
                 [error]="detailError()"
-                [isAdmin]="isAdmin()"
+                [canManageContent]="canManageContent()"
                 [language]="language()!"
                 [questionPageLink]="selectedQuestionPageLink()"
                 (edit)="openEdit()"

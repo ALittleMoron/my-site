@@ -7,9 +7,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'app.siteName': 'Мой сайт',
   'shared.back': 'Назад',
   'shared.next': 'Вперёд',
-  'auth.login.adminOnlyWarning.title': 'Пока только для администраторов',
-  'auth.login.adminOnlyWarning.message':
-    'На данный момент вход работает только для администраторов. В будущем здесь появится вход для обычных пользователей.',
+  'auth.login.restrictedAccessWarning.title': 'Пока только для модераторов и администраторов',
+  'auth.login.restrictedAccessWarning.message':
+    'На данный момент вход работает только для модераторов и администраторов. В будущем здесь появится вход для обычных пользователей.',
   'shared.edit': 'Редактировать',
   'shared.delete': 'Удалить',
   'shared.publish': 'Опубликовать',

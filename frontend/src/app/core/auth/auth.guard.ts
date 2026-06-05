@@ -5,5 +5,5 @@ import { AuthService } from './auth.service';
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.isAdmin() || router.createUrlTree(['/about-me']);
+  return auth.canManageContent() || router.createUrlTree(['/about-me']);
 };

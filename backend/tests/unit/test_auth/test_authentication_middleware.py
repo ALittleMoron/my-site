@@ -40,12 +40,16 @@ class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
     async def test_authenticate(self) -> None:
         self.use_case.authenticate.return_value = self.factory.core.jwt_user(
             username="test",
-            role=RoleEnum.ADMIN,
+            role=RoleEnum.MODERATOR,
         )
         connection_mock = Mock()
         connection_mock.headers = {"Authorization": "Bearer token"}
         result = await self.middleware.authenticate_request(connection=connection_mock)
         assert result == AuthenticationResult(
-            user=self.factory.core.jwt_user(username="test", role=RoleEnum.ADMIN),
+            user=self.factory.core.jwt_user(username="test", role=RoleEnum.MODERATOR),
             auth="Bearer token",
+        )
+        self.use_case.authenticate.assert_called_once_with(
+            token=b"token",
+            required_role=RoleEnum.MODERATOR,
         )
