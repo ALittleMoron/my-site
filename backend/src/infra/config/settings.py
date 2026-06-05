@@ -27,7 +27,6 @@ class _AppSettings(_ProjectBaseSettings):
     secret_key: SecretStrExtended
     domain: str
     use_cache: bool
-    use_rate_limit: bool
 
     @property
     def is_local_domain(self) -> bool:

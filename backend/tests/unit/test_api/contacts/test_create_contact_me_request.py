@@ -1,7 +1,6 @@
 import pytest_asyncio
 from verbose_http_exceptions import status
 
-from infra.config.settings import Settings
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -30,8 +29,7 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
 
-    def test_contact_me_request_rate_limit(self, test_settings: Settings) -> None:
-        test_settings.app.use_rate_limit = True
+    def test_contact_me_request_is_not_rate_limited_by_backend(self) -> None:
         data = self.factory.api.contact_me_request(
             name="NAME",
             email="example@mail.ru",
@@ -39,9 +37,8 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
             message="MESSAGE",
         )
         self.api.post_create_contact_me_request(data=data)
-        response = self.api.post_create_contact_me_request(data=data)
-        assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
-        test_settings.app.use_rate_limit = False
+        self.api.post_create_contact_me_request(data=data)
+        assert self.use_case.create_contact_me_request.call_count == 2
 
     def test_contact_me_request_no_contact_data(self) -> None:
         response = self.api.post_create_contact_me_request(

@@ -31,7 +31,6 @@ jobs:
       APP_SECRET_KEY: TEST_SECRET_KEY
       APP_DOMAIN: localhost
       APP_USE_CACHE: "false"
-      APP_USE_RATE_LIMIT: "true"
       I18N_DEFAULT_LANGUAGE: ru
       ADMIN_INIT_LOGIN: admin
       ADMIN_INIT_PASSWORD: admin

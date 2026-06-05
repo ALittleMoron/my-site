@@ -72,6 +72,10 @@ Portfolio/notes site and knowledge database
   supported.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains, `/api/*`, `/sitemap.xml`, and `/robots.txt`, while the frontend container runs the Angular Node.js SSR runtime for public article and matrix question routes and hydrates interactive CSR/admin areas.
+- Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
+  backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
+  identity-aware or business-quota design requires application-level limits by user, account, API
+  key, tenant, or subscription plan.
 - When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created
   for that work, including finished plans in `docs/superpowers/plans/`, specs/design docs in
   `docs/superpowers/specs/`, and similar temporary `.md` handoff files. Keep only documentation

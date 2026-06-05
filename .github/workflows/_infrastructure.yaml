@@ -30,7 +30,6 @@ jobs:
           echo "APP_SECRET_KEY=${{ secrets.APP_SECRET_KEY }}" >> .env
           echo "APP_DOMAIN=${{ secrets.APP_DOMAIN }}" >> .env
           echo "APP_USE_CACHE=${{ secrets.APP_USE_CACHE }}" >> .env
-          echo "APP_USE_RATE_LIMIT=${{ secrets.APP_USE_RATE_LIMIT }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
