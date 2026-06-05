@@ -102,6 +102,14 @@ security-frontend:
 
 # Security
 
+.PHONY: lint-dockerfiles
+lint-dockerfiles:
+	bash infra/scripts/docker_lint.sh hadolint
+
+.PHONY: lint-docker-images
+lint-docker-images:
+	bash infra/scripts/docker_lint.sh dockle $(DOCKLE_IMAGE_REFS)
+
 .PHONY: security-infra
 security-infra:
 	bash infra/scripts/security_check.sh

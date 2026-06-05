@@ -17,6 +17,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
       APPLICATION_IMAGE: my_site_application
       FRONTEND_IMAGE: my_site_frontend
+      NGINX_IMAGE: my_site_nginx
 
     steps:
       - name: Checkout code
@@ -26,6 +27,9 @@ jobs:
         uses: docker/setup-buildx-action@v4
         with:
           driver: docker-container
+
+      - name: Lint Dockerfiles
+        run: make lint-dockerfiles
 
       - name: Build Application docker image
         uses: docker/build-push-action@v7
@@ -50,6 +54,23 @@ jobs:
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+
+      - name: Build Nginx docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./infra/nginx/Dockerfile
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+          tags: |
+            ${{ env.NGINX_IMAGE }}:latest
+            ${{ env.NGINX_IMAGE }}:${{ env.IMAGE_TAG }}
+
+      - name: Lint docker images
+        run: >
+          make lint-docker-images
+          DOCKLE_IMAGE_REFS="${APPLICATION_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:${IMAGE_TAG} ${NGINX_IMAGE}:${IMAGE_TAG}"
 
       - name: Trivy infrastructure config scan
         uses: aquasecurity/trivy-action@v0.36.0
