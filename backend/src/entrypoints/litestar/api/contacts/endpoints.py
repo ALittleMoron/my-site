@@ -9,6 +9,7 @@ from verbose_http_exceptions import status
 
 from core.contacts.use_cases import AbstractContactsUseCase
 from entrypoints.litestar.api.contacts.schemas import ContactMeRequest
+from infra.config.settings import settings
 
 
 class ContactsApiController(Controller):
@@ -26,6 +27,8 @@ class ContactsApiController(Controller):
         data: Annotated[ContactMeRequest, Body()],
         use_case: FromDishka[AbstractContactsUseCase],
     ) -> None:
+        if not settings.app.contact_requests_enabled:
+            return
         await use_case.create_contact_me_request(form=data.to_schema(contact_me_id=contact_me_id))
 
 

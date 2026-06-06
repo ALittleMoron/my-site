@@ -60,32 +60,6 @@
         <span>GMT+3</span>
       </div>
     </div>
-    <div class="mt-4"></div>
-    <div class="d-inline-flex">
-      <a
-        class="btn btn-lg button-active me-3"
-        href="#mentoring-contact-me-section"
-        data-testid="about-contact-link"
-        (click)="scrollToContact($event)"
-      >
-        {{ 'about.hero.contact' | t }}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="mb-1"
-        >
-          <path d="M5 12h14"></path>
-          <path d="m12 5 7 7-7 7"></path>
-        </svg>
-      </a>
-    </div>
   </section>
 
   <div style="margin-top: 17rem"></div>
@@ -503,7 +477,7 @@
 
   <div style="margin-top: 7rem"></div>
 
-  <!-- Contact form section -->
+  <!-- Contact section -->
   <section
     id="mentoring-contact-me-section"
     class="col-lg-7 mx-auto text-md-center justify-content-center align-items-center mb-md-5"
@@ -512,9 +486,8 @@
     <p class="mt-3 mx-md-5 text-secondary" style="font-size: 1.2rem">
       {{ 'about.contact.description' | t }}
     </p>
-    <div class="row mt-md-5 gx-5">
-      <div class="col">
-        <p style="font-size: 1.2rem">{{ 'about.contact.sideTitle' | t }}</p>
+    <div class="row mt-md-5 gx-5 justify-content-center">
+      <div class="col col-lg-8">
         <div class="card rounded rounded-3">
           <div class="row p-2">
             <div class="col col-sm-2">
@@ -574,127 +547,6 @@
             </div>
           </div>
         </div>
-        <div class="text-md-start mt-3">
-          <p>{{ 'about.contact.responseTimeTitle' | t }}</p>
-          <p class="text-secondary">{{ 'about.contact.responseTime' | t }}</p>
-        </div>
-      </div>
-      <div class="col">
-        @if (submitted()) {
-          <div class="alert alert-success" role="alert">
-            <p class="m-0 fw-semibold">{{ 'about.contact.successTitle' | t }}</p>
-            <p class="m-0">{{ 'about.contact.successText' | t }}</p>
-          </div>
-        } @else {
-          <form
-            [formGroup]="form"
-            (ngSubmit)="submit()"
-            class="card rounded rounded-3 h-100 p-2"
-            novalidate
-          >
-            <p style="font-size: 1.2rem">{{ 'about.contact.formTitle' | t }}</p>
-
-            @if (submitError()) {
-              <div class="alert alert-danger" role="alert" data-testid="submit-error">
-                @if (hasNestedErrors()) {
-                  <h5>{{ 'about.contact.validationTitle' | t }}</h5>
-                  @for (nested of submitError()!.nested_errors!; track nested.attr) {
-                    <p class="mb-0">{{ nested.attr }}: {{ nested.message }}</p>
-                  }
-                } @else {
-                  <p class="m-0">{{ submitError()?.message }}</p>
-                }
-              </div>
-            }
-
-            <div class="text-md-start justify-content-start align-items-start px-3">
-              <div class="mb-3">
-                <label for="contact-me-name-field" class="form-label">
-                  {{ 'about.contact.name' | t }}
-                </label>
-                <input
-                  formControlName="name"
-                  class="form-control"
-                  id="contact-me-name-field"
-                  [attr.placeholder]="'about.contact.namePlaceholder' | t"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="contact-me-email-field" class="form-label">
-                  {{ 'about.contact.email' | t }}
-                </label>
-                <input
-                  formControlName="email"
-                  type="email"
-                  class="form-control"
-                  id="contact-me-email-field"
-                  [attr.placeholder]="'about.contact.emailPlaceholder' | t"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="contact-me-telegram-field" class="form-label">
-                  {{ 'about.contact.telegram' | t }}
-                </label>
-                <input
-                  formControlName="telegram"
-                  class="form-control"
-                  id="contact-me-telegram-field"
-                  [attr.placeholder]="'about.contact.telegramPlaceholder' | t"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="contact-me-message-field" class="form-label">
-                  {{ 'about.contact.message' | t }}
-                </label>
-                <textarea
-                  formControlName="message"
-                  class="form-control"
-                  id="contact-me-message-field"
-                  [attr.placeholder]="'about.contact.messagePlaceholder' | t"
-                  rows="5"
-                ></textarea>
-              </div>
-              <div class="form-check text-start mb-3">
-                <input
-                  id="contact-me-personal-data-consent"
-                  type="checkbox"
-                  class="form-check-input"
-                  formControlName="personalDataConsent"
-                />
-                <label class="form-check-label" for="contact-me-personal-data-consent">
-                  {{ 'about.contact.personalDataConsent' | t }}
-                </label>
-              </div>
-              <div class="text-md-center justify-content-center align-items-center">
-                <button
-                  type="submit"
-                  class="btn button-active"
-                  [disabled]="form.invalid || submitting()"
-                  [attr.aria-label]="'about.contact.submit' | t"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="me-4"
-                  >
-                    <path
-                      d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
-                    ></path>
-                    <path d="m21.854 2.147-10.94 10.939"></path>
-                  </svg>
-                  <span>{{ 'about.contact.submit' | t }}</span>
-                </button>
-              </div>
-            </div>
-          </form>
-        }
       </div>
     </div>
   </section>

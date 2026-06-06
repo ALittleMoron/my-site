@@ -43,3 +43,6 @@ class TestSettings:
 
     def test_i18n_default_language(self) -> None:
         assert self.settings.i18n.default_language == LanguageEnum.RU
+
+    def test_contact_requests_disabled_by_test_settings(self) -> None:
+        assert self.settings.app.contact_requests_enabled is False

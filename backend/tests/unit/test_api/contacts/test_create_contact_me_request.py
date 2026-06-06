@@ -1,6 +1,8 @@
+import pytest
 import pytest_asyncio
 from verbose_http_exceptions import status
 
+from infra.config.settings import settings
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -10,7 +12,8 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
         self.uuid = await self.container.get_random_uuid()
         self.use_case = await self.container.get_contacts_use_case()
 
-    def test_contact_me_request(self) -> None:
+    def test_contact_me_request(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings.app, "contact_requests_enabled", True)
         self.api.post_create_contact_me_request(
             data=self.factory.api.contact_me_request(
                 name="NAME",
@@ -29,7 +32,27 @@ class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
 
-    def test_contact_me_request_is_not_rate_limited_by_backend(self) -> None:
+    def test_contact_me_request_returns_204_without_use_case_when_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings.app, "contact_requests_enabled", False)
+        response = self.api.post_create_contact_me_request(
+            data=self.factory.api.contact_me_request(
+                name="NAME",
+                email="example@mail.ru",
+                telegram="@telegram",
+                message="MESSAGE",
+            ),
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        self.use_case.create_contact_me_request.assert_not_called()
+
+    def test_contact_me_request_is_not_rate_limited_by_backend(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings.app, "contact_requests_enabled", True)
         data = self.factory.api.contact_me_request(
             name="NAME",
             email="example@mail.ru",

@@ -27,6 +27,7 @@ class _AppSettings(_ProjectBaseSettings):
     secret_key: SecretStrExtended
     domain: str
     use_cache: bool
+    contact_requests_enabled: bool
 
     @property
     def is_local_domain(self) -> bool:

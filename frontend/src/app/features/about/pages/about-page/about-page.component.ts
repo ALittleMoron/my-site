@@ -1,69 +1,17 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  PLATFORM_ID,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
-import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
-import { ApiError } from '../../../../core/models/api-error.model';
-import { NotificationService } from '../../../../core/notifications/notification.service';
 import { SeoService } from '../../../../core/seo/seo.service';
-import { ContactService } from '../../services/contact.service';
 
 @Component({
   selector: 'app-about-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
+  imports: [RouterLink, TranslatePipe],
   templateUrl: './about-page.component.html',
 })
 export class AboutPageComponent implements OnInit {
-  private readonly contactService = inject(ContactService);
-  private readonly i18n = inject(I18nService);
-  private readonly notifications = inject(NotificationService);
   private readonly seoService = inject(SeoService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly document = inject(DOCUMENT);
-  private readonly platformId = inject(PLATFORM_ID);
-  private readonly isBrowser = isPlatformBrowser(this.platformId);
-
-  readonly form = new FormGroup({
-    name: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(255)],
-    }),
-    email: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.email, Validators.maxLength(255)],
-    }),
-    telegram: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.minLength(2), Validators.maxLength(256)],
-    }),
-    message: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(10000)],
-    }),
-    personalDataConsent: new FormControl<boolean>(false, {
-      nonNullable: true,
-      validators: [Validators.requiredTrue],
-    }),
-  });
-
-  readonly submitting = signal(false);
-  readonly submitted = signal(false);
-  readonly submitError = signal<ApiError | null>(null);
-  readonly hasNestedErrors = computed(() => !!this.submitError()?.nested_errors?.length);
 
   ngOnInit(): void {
     this.seoService.setTranslatedMeta({
@@ -71,50 +19,5 @@ export class AboutPageComponent implements OnInit {
       descriptionKey: 'about.seo.description',
       canonicalPath: '/about-me',
     });
-  }
-
-  submit(): void {
-    if (this.form.invalid || this.submitting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const raw = this.form.getRawValue();
-    const request = {
-      name: raw.name.trim() || null,
-      email: raw.email.trim() || null,
-      telegram: raw.telegram.trim() || null,
-      message: raw.message,
-    };
-
-    this.submitting.set(true);
-    this.submitError.set(null);
-
-    this.contactService
-      .createContactRequest(request)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.submitting.set(false)),
-      )
-      .subscribe({
-        next: () => {
-          this.submitted.set(true);
-          this.notifications.success(this.i18n.translate('about.contact.sent'));
-          this.form.reset();
-          this.form.controls.personalDataConsent.setValue(false);
-        },
-        error: (err: ApiError) => {
-          this.submitError.set(err);
-          this.notifications.error(this.i18n.translate('about.contact.sendError'));
-        },
-      });
-  }
-
-  scrollToContact(event: Event): void {
-    event.preventDefault();
-    if (!this.isBrowser) return;
-    this.document
-      .getElementById('mentoring-contact-me-section')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
