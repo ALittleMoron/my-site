@@ -95,6 +95,7 @@
 - [ ] Prepare repository split
     - [x] Move Angular serving into a frontend-owned Docker image
     - [x] Keep infrastructure nginx as the edge reverse proxy
+    - [ ] Move root AGENTS.md rules to backend and frontend
     - [ ] Move backend, frontend, and infrastructure into separate repositories
     - [ ] Configure independent image publishing for backend and frontend
     - [ ] Update deployment workflow to consume published images from the infrastructure repository
