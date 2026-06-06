@@ -1,24 +1,41 @@
 <section class="border rounded p-3 mb-4" [attr.aria-label]="'notes.stats.aria' | t">
   <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
-    <label class="form-label mb-0">
-      <span class="small text-body-secondary d-block mb-1">{{ 'notes.stats.from' | t }}</span>
-      <input
-        type="date"
-        class="form-control form-control-sm"
+    <div>
+      <label class="form-label small text-body-secondary d-block mb-1" for="notesStatsDateFrom">
+        {{ 'notes.stats.from' | t }}
+      </label>
+      <app-localized-date-picker
+        inputId="notesStatsDateFrom"
         [value]="dateFrom()"
-        (input)="onDateFromInput($event)"
+        [dateLocale]="dateLocale()"
+        [placeholder]="datePlaceholder()"
+        [openCalendarLabel]="openCalendarLabel()"
+        [previousMonthLabel]="previousMonthLabel()"
+        [nextMonthLabel]="nextMonthLabel()"
+        (valueChange)="setDateFrom($event)"
       />
-    </label>
-    <label class="form-label mb-0">
-      <span class="small text-body-secondary d-block mb-1">{{ 'notes.stats.to' | t }}</span>
-      <input
-        type="date"
-        class="form-control form-control-sm"
+    </div>
+    <div>
+      <label class="form-label small text-body-secondary d-block mb-1" for="notesStatsDateTo">
+        {{ 'notes.stats.to' | t }}
+      </label>
+      <app-localized-date-picker
+        inputId="notesStatsDateTo"
         [value]="dateTo()"
-        (input)="onDateToInput($event)"
+        [dateLocale]="dateLocale()"
+        [placeholder]="datePlaceholder()"
+        [openCalendarLabel]="openCalendarLabel()"
+        [previousMonthLabel]="previousMonthLabel()"
+        [nextMonthLabel]="nextMonthLabel()"
+        (valueChange)="setDateTo($event)"
       />
-    </label>
-    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="refresh.emit()">
+    </div>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary"
+      data-testid="notes-stats-refresh"
+      (click)="refresh.emit()"
+    >
       {{ 'shared.update' | t }}
     </button>
     @if (stats()) {

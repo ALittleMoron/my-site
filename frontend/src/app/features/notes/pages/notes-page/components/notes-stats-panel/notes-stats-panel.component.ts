@@ -5,11 +5,18 @@ import { EmptyStateComponent } from '../../../../../../shared/ui/empty-state/emp
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { NoteStats } from '../../../../models/notes.model';
+import { LocalizedDatePickerComponent } from '../localized-date-picker/localized-date-picker.component';
 
 @Component({
   selector: 'app-notes-stats-panel',
   standalone: true,
-  imports: [EmptyStateComponent, ErrorMessageComponent, LoadingSpinnerComponent, TranslatePipe],
+  imports: [
+    EmptyStateComponent,
+    ErrorMessageComponent,
+    LoadingSpinnerComponent,
+    LocalizedDatePickerComponent,
+    TranslatePipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes-stats-panel.component.html',
 })
@@ -19,21 +26,22 @@ export class NotesStatsPanelComponent {
   readonly error = input<ApiError | null>(null);
   readonly dateFrom = input.required<string>();
   readonly dateTo = input.required<string>();
+  readonly dateLocale = input.required<string>();
+  readonly datePlaceholder = input.required<string>();
+  readonly openCalendarLabel = input.required<string>();
+  readonly previousMonthLabel = input.required<string>();
+  readonly nextMonthLabel = input.required<string>();
 
   readonly dateFromChange = output<string>();
   readonly dateToChange = output<string>();
   readonly refresh = output<void>();
   readonly exportCsv = output<void>();
 
-  onDateFromInput(event: Event): void {
-    this.dateFromChange.emit(inputValue(event));
+  setDateFrom(value: string): void {
+    this.dateFromChange.emit(value);
   }
 
-  onDateToInput(event: Event): void {
-    this.dateToChange.emit(inputValue(event));
+  setDateTo(value: string): void {
+    this.dateToChange.emit(value);
   }
-}
-
-function inputValue(event: Event): string {
-  return (event.target as HTMLInputElement).value;
 }

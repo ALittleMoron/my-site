@@ -1,0 +1,34 @@
+.localized-date-picker {
+  position: relative;
+}
+
+.localized-date-picker-toggle,
+.localized-date-picker-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.localized-date-picker-calendar {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  z-index: 1050;
+  width: min(18rem, 90vw);
+}
+
+.localized-date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.localized-date-picker-day {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.localized-date-picker-today:not(.btn-success) {
+  border-color: var(--bs-success);
+}

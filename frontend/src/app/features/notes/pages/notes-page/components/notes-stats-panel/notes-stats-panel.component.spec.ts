@@ -14,6 +14,11 @@ describe('NotesStatsPanelComponent', () => {
     fixture = TestBed.createComponent(NotesStatsPanelComponent);
     fixture.componentRef.setInput('dateFrom', '2026-01-01');
     fixture.componentRef.setInput('dateTo', '2026-01-31');
+    fixture.componentRef.setInput('dateLocale', 'ru-RU');
+    fixture.componentRef.setInput('datePlaceholder', 'дд/мм/гггг');
+    fixture.componentRef.setInput('openCalendarLabel', 'Открыть календарь');
+    fixture.componentRef.setInput('previousMonthLabel', 'Предыдущий месяц');
+    fixture.componentRef.setInput('nextMonthLabel', 'Следующий месяц');
   });
 
   it('renders totals and note rows', () => {
@@ -48,13 +53,28 @@ describe('NotesStatsPanelComponent', () => {
     fixture.componentInstance.refresh.subscribe(refresh);
     fixture.detectChanges();
 
-    const dateInput = fixture.debugElement.query(By.css('input[type="date"]'))
+    const dateInput = fixture.debugElement.query(By.css('input[type="text"]'))
       .nativeElement as HTMLInputElement;
-    dateInput.value = '2026-01-02';
+    dateInput.value = '02/01/2026';
     dateInput.dispatchEvent(new Event('input'));
-    fixture.debugElement.query(By.css('button')).nativeElement.click();
+    fixture.debugElement.query(By.css('[data-testid="notes-stats-refresh"]')).nativeElement.click();
 
     expect(dateFromChange).toHaveBeenCalledWith('2026-01-02');
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it('renders localized date pickers with calendar buttons', () => {
+    fixture.detectChanges();
+
+    const inputs = fixture.debugElement
+      .queryAll(By.css('input[type="text"]'))
+      .map((input) => input.nativeElement as HTMLInputElement);
+
+    expect(inputs).toHaveLength(2);
+    expect(inputs[0].value).toBe('01/01/2026');
+    expect(inputs[1].value).toBe('31/01/2026');
+    expect(
+      fixture.debugElement.queryAll(By.css('[data-testid="date-picker-toggle"]')),
+    ).toHaveLength(2);
   });
 });

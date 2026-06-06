@@ -247,6 +247,11 @@
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme
 - [x] Add more feedback during API requests (notifications, errors, etc.)
+- [ ] Improve the custom date picker with in-calendar month and year selection.
+  - [ ] Make the current month and year in the calendar header clickable.
+  - [ ] Open month/year selection in the same calendar popover.
+  - [ ] Use a predefined localized month list for month selection.
+  - [ ] Support year selection by scrolling and manual input.
 - [x] Resolve frontend npm peer dependency conflicts and remove `--legacy-peer-deps` from install flows
   - [x] Align TypeScript with Angular CLI/build tooling peer dependency ranges so `npm ls typescript` exits cleanly
   - [x] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build

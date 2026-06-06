@@ -87,6 +87,11 @@
         [error]="statsError()"
         [dateFrom]="statsDateFrom()"
         [dateTo]="statsDateTo()"
+        [dateLocale]="dateLocale()"
+        [datePlaceholder]="datePlaceholder()"
+        [openCalendarLabel]="openCalendarLabel()"
+        [previousMonthLabel]="previousMonthLabel()"
+        [nextMonthLabel]="nextMonthLabel()"
         (dateFromChange)="setStatsDateFrom($event)"
         (dateToChange)="setStatsDateTo($event)"
         (refresh)="loadStats()"
@@ -146,31 +151,31 @@
             <label class="form-label small text-body-secondary mb-1" for="notesPublishedFrom">
               {{ 'notes.filters.from' | t }}
             </label>
-            <input
-              id="notesPublishedFrom"
-              type="date"
-              class="form-control"
-              [attr.title]="dateFormatHint()"
-              aria-describedby="notesPublishedFromHint"
+            <app-localized-date-picker
+              inputId="notesPublishedFrom"
               [value]="publishedFrom()"
-              (input)="onPublishedFromInput($event)"
+              [dateLocale]="dateLocale()"
+              [placeholder]="datePlaceholder()"
+              [openCalendarLabel]="openCalendarLabel()"
+              [previousMonthLabel]="previousMonthLabel()"
+              [nextMonthLabel]="nextMonthLabel()"
+              (valueChange)="setPublishedFrom($event)"
             />
-            <div id="notesPublishedFromHint" class="form-text">{{ dateFormatHint() }}</div>
           </div>
           <div class="notes-filter-date">
             <label class="form-label small text-body-secondary mb-1" for="notesPublishedTo">
               {{ 'notes.filters.to' | t }}
             </label>
-            <input
-              id="notesPublishedTo"
-              type="date"
-              class="form-control"
-              [attr.title]="dateFormatHint()"
-              aria-describedby="notesPublishedToHint"
+            <app-localized-date-picker
+              inputId="notesPublishedTo"
               [value]="publishedTo()"
-              (input)="onPublishedToInput($event)"
+              [dateLocale]="dateLocale()"
+              [placeholder]="datePlaceholder()"
+              [openCalendarLabel]="openCalendarLabel()"
+              [previousMonthLabel]="previousMonthLabel()"
+              [nextMonthLabel]="nextMonthLabel()"
+              (valueChange)="setPublishedTo($event)"
             />
-            <div id="notesPublishedToHint" class="form-text">{{ dateFormatHint() }}</div>
           </div>
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-success">{{ 'notes.filters.submit' | t }}</button>

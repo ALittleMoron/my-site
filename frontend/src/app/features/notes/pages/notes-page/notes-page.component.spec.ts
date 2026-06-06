@@ -324,18 +324,22 @@ describe('NotesPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="notes-tag-filters"]')).toBe(null);
   });
 
-  it('shows localized visible date format hints without changing ISO query params', () => {
+  it('renders localized date pickers without visible format hints and keeps ISO query params', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
 
     const from = fixture.nativeElement.querySelector('#notesPublishedFrom') as HTMLInputElement;
     const to = fixture.nativeElement.querySelector('#notesPublishedTo') as HTMLInputElement;
 
-    expect(from.type).toBe('date');
-    expect(to.type).toBe('date');
-    expect(from.title).toBe('дд.мм.гггг');
-    expect(to.title).toBe('дд.мм.гггг');
-    expect(fixture.nativeElement.textContent).toContain('дд.мм.гггг');
+    expect(from.type).toBe('text');
+    expect(to.type).toBe('text');
+    expect(from.placeholder).toBe('дд/мм/гггг');
+    expect(to.placeholder).toBe('дд/мм/гггг');
+    expect(fixture.nativeElement.querySelector('[data-testid="date-picker-toggle"]')).toBeTruthy();
+    expect(from.title).toBe('');
+    expect(to.title).toBe('');
+    expect(fixture.nativeElement.querySelector('#notesPublishedFromHint')).toBe(null);
+    expect(fixture.nativeElement.querySelector('#notesPublishedToHint')).toBe(null);
 
     fixture.componentInstance.setPublishedFrom('2026-01-01');
     fixture.componentInstance.setPublishedTo('2026-01-31');
@@ -348,6 +352,14 @@ describe('NotesPageComponent', () => {
         publishedTo: '2026-01-31',
       },
     });
+
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    expect(from.value).toBe('01/01/2026');
+    expect(to.value).toBe('01/31/2026');
+    expect(from.placeholder).toBe('mm/dd/yyyy');
+    expect(to.placeholder).toBe('mm/dd/yyyy');
   });
 
   it('wraps the statistics panel in an animated shell when visible', () => {

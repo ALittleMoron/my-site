@@ -37,6 +37,7 @@ import {
 import { NotesService } from '../../services/notes.service';
 import { NoteDetailComponent } from './components/note-detail/note-detail.component';
 import { NoteFormComponent } from './components/note-form/note-form.component';
+import { LocalizedDatePickerComponent } from './components/localized-date-picker/localized-date-picker.component';
 import { NoteListComponent } from './components/note-list/note-list.component';
 import { NotesStatsPanelComponent } from './components/notes-stats-panel/notes-stats-panel.component';
 import { NotesSidePanelComponent } from './components/notes-side-panel/notes-side-panel.component';
@@ -61,6 +62,7 @@ interface EngagedViewState {
     TranslatePipe,
     NoteDetailComponent,
     NoteFormComponent,
+    LocalizedDatePickerComponent,
     NoteListComponent,
     NotesStatsPanelComponent,
     NotesSidePanelComponent,
@@ -143,11 +145,23 @@ export class NotesPageComponent implements OnInit {
       this.sidePanelOpen() ? 'notes.sidePanel.close' : 'notes.sidePanel.open',
     );
   });
-  readonly dateFormatHint = computed(() => {
-    this.language();
-    return this.i18n.translate('notes.filters.dateFormatHint');
-  });
   readonly dateLocale = computed(() => this.i18n.dateLocale());
+  readonly datePlaceholder = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.placeholder');
+  });
+  readonly openCalendarLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.open');
+  });
+  readonly previousMonthLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.previousMonth');
+  });
+  readonly nextMonthLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.nextMonth');
+  });
   readonly language = computed(() => {
     const language = this.i18n.language();
     if (language === null) {
@@ -262,14 +276,6 @@ export class NotesPageComponent implements OnInit {
     this.setSearchQuery(readInputValue(event));
   }
 
-  onPublishedFromInput(event: Event): void {
-    this.setPublishedFrom(readInputValue(event));
-  }
-
-  onPublishedToInput(event: Event): void {
-    this.setPublishedTo(readInputValue(event));
-  }
-
   applyFilters(): void {
     this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: 1 }),
@@ -278,8 +284,8 @@ export class NotesPageComponent implements OnInit {
 
   clearListFilters(): void {
     this.searchQuery.set('');
-    this.publishedFrom.set('');
-    this.publishedTo.set('');
+    this.setPublishedFrom('');
+    this.setPublishedTo('');
     this.router.navigate(this.localizedListCommands(), { queryParams: { page: 1 } });
   }
 

@@ -29,6 +29,13 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'shell.nav.matrix': 'Матрица',
   'shell.nav.notes': 'Заметки',
   'shell.nav.adminPanel': 'Админ-панель',
+  'shell.theme.dark': 'Dark',
+  'shell.theme.light': 'Light',
+  'shell.theme.toggle': 'Переключить тему',
+  'shell.auth.login': 'Войти',
+  'shell.auth.logout': 'Выйти',
+  'shell.auth.loggedInAs': 'Вы вошли как {username}',
+  'shell.language.label': 'Язык',
   'adminPanel.title': 'Админ-панель',
   'adminPanel.header.backToHome': 'На главную',
   'adminPanel.sidePanel.open': 'Открыть разделы',
@@ -104,7 +111,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'notes.filters.searchPlaceholder': 'Заголовок или текст',
   'notes.filters.from': 'С',
   'notes.filters.to': 'По',
-  'notes.filters.dateFormatHint': 'дд.мм.гггг',
+  'notes.datePicker.placeholder': 'дд/мм/гггг',
+  'notes.datePicker.open': 'Открыть календарь',
+  'notes.datePicker.previousMonth': 'Предыдущий месяц',
+  'notes.datePicker.nextMonth': 'Следующий месяц',
   'notes.filters.submit': 'Найти',
   'notes.filters.reset': 'Сбросить',
   'notes.filters.resetTag': 'Сбросить тег',
@@ -238,6 +248,13 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'enum.noteReaction.poop': 'Не зашло',
 };
 
+const I18N_TEST_MESSAGES_EN: Record<string, string> = {
+  'notes.datePicker.placeholder': 'mm/dd/yyyy',
+  'notes.datePicker.open': 'Open calendar',
+  'notes.datePicker.previousMonth': 'Previous month',
+  'notes.datePicker.nextMonth': 'Next month',
+};
+
 export function provideI18nTesting(messages: Record<string, string> = {}): Provider {
   return {
     provide: I18nService,
@@ -269,10 +286,12 @@ export function createI18nTestingValue(
       language.set(nextLanguage);
       return of(void 0);
     },
-    translate: (key: string, params?: I18nParams) =>
-      interpolate(mergedMessages[key] ?? key, params),
+    translate: (key: string, params?: I18nParams) => {
+      const languageMessages = language() === 'en' ? I18N_TEST_MESSAGES_EN : {};
+      return interpolate(languageMessages[key] ?? mergedMessages[key] ?? key, params);
+    },
     enumGradeKey: (grade: string) => `enum.grade.${grade.replace('+', 'Plus')}`,
-    dateLocale: () => 'ru-RU',
+    dateLocale: () => (language() === 'en' ? 'en-US' : 'ru-RU'),
   };
 }
 
