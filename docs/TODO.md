@@ -83,14 +83,14 @@
     - [ ] Separate production and local Docker Compose
     - [ ] Configure the project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
   - [ ] Run deployment strictly from the GitHub workflow
-  - [ ] After deployment, log in to exposed services and verify auth
-    - [ ] MinIO admin panel
-    - [ ] Databasus
+  - [ ] After deployment, log in to internal services over WireGuard and verify auth
+    - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
+    - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
 
 ### Security and Infrastructure
 
 - [x] Dependency scanning (pip-audit, Bandit, Trivy)
-- [ ] VPN for accessing internal systems
+- [x] VPN for accessing internal systems
 - [x] Add Dependabot to the repository
 - [ ] Prepare repository split
     - [x] Move Angular serving into a frontend-owned Docker image
@@ -109,7 +109,7 @@
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
     - [x] Find a web application security checklist and go through it.
-    - [ ] Regular users cannot access internal systems without VPN.
+    - [x] Regular users cannot access internal web panels without VPN.
     - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
     - [x] HTTP security headers in responses
         - [x] Strict-Transport-Security
@@ -123,7 +123,7 @@
         - [ ] CSRF verified on server
     - [ ] HTTPS and TLS
         - [ ] Everything redirects to HTTPS
-        - [ ] HTTP isn’t served at all
+        - [ ] Public HTTP redirects to HTTPS; internal VPN panels may use HTTP over WireGuard.
         - [ ] TLS ≥ 1.2
         - [ ] Certbot auto-renews
         - [ ] No internal services are exposed to the public
@@ -181,7 +181,7 @@
         - [ ] All keys are long and random
         - [ ] No stacktrace shown to users
         - [ ] Firewall enabled on host (ufw/iptables)
-        - [ ] Only ports 80 and 443 are open
+        - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
         - [ ] SSH by key only. Password login disabled.
     - [x] Rate limiting and bot protection
         - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)

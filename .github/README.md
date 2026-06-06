@@ -72,9 +72,7 @@ cp .env.example .env
 mkcert -install
 mkcert \
   <your-domain> \
-  s3.<your-domain> \
-  s3-panel.<your-domain> \
-  backup.<your-domain>
+  s3.<your-domain>
 mv <your-domain>.pem ./infra/nginx/certs/
 mv <your-domain>-key.pem ./infra/nginx/certs/
 ```
@@ -96,6 +94,15 @@ make run
 - API: `http://localhost/api`
 - API docs: `http://localhost/api/docs`
 - OpenAPI spec: `http://localhost/api/docs/openapi.json`
+
+Internal web panels are available only through host-level WireGuard and nginx
+ports bound to `VPN_BIND_ADDRESS`:
+
+- MinIO Console: `http://<VPN_BIND_ADDRESS>:18081`
+- Databasus: `http://<VPN_BIND_ADDRESS>:18082`
+
+The production public firewall baseline is `80/tcp`, `443/tcp`, and the chosen
+WireGuard UDP port. See [WireGuard internal access](../docs/wireguard-internal-access.md).
 
 See [docker-compose.yml](../docker-compose.yml) for all services.
 

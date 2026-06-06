@@ -29,32 +29,6 @@ server {
 }
 
 server {
-    listen 8080;
-    server_name s3-panel.${APP_DOMAIN};
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 8080;
-    server_name backup.${APP_DOMAIN};
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
    listen 8080;
    server_name s3.${APP_DOMAIN};
 
@@ -147,18 +121,9 @@ server {
 }
 
 server {
-    listen 8443 ssl;
-    http2 on;
-    server_name s3-panel.${APP_DOMAIN};
+    listen 18081;
+    server_name _;
 
-    ssl_certificate     ${SSL_CERT};
-    ssl_certificate_key ${SSL_KEY};
-
-    ssl_session_cache   shared:SSL:10m;
-    ssl_session_timeout 10m;
-    ssl_protocols       TLSv1.2 TLSv1.3;
-
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "no-referrer" always;
@@ -179,18 +144,9 @@ server {
 }
 
 server {
-    listen 8443 ssl;
-    http2 on;
-    server_name backup.${APP_DOMAIN};
+    listen 18082;
+    server_name _;
 
-    ssl_certificate     ${SSL_CERT};
-    ssl_certificate_key ${SSL_KEY};
-
-    ssl_session_cache   shared:SSL:10m;
-    ssl_session_timeout 10m;
-    ssl_protocols       TLSv1.2 TLSv1.3;
-
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "no-referrer" always;

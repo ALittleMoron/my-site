@@ -24,6 +24,50 @@ require_command() {
     fi
 }
 
+require_file_contains() {
+    local file_path="$1"
+    local pattern="$2"
+    local description="$3"
+
+    if ! grep -Fq -- "$pattern" "$file_path"; then
+        echo "Missing ${description} in ${file_path}: ${pattern}" >&2
+        exit 1
+    fi
+}
+
+require_file_not_contains() {
+    local file_path="$1"
+    local pattern="$2"
+    local description="$3"
+
+    if grep -Fq -- "$pattern" "$file_path"; then
+        echo "Unexpected ${description} in ${file_path}: ${pattern}" >&2
+        exit 1
+    fi
+}
+
+run_private_panel_configuration_check() {
+    local compose_file="${repo_dir}/docker-compose.yml"
+    local deploy_workflow="${repo_dir}/.github/workflows/_infrastructure.yaml"
+    local env_example="${repo_dir}/.env.example"
+    local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
+    local run_script="${repo_dir}/infra/scripts/run.sh"
+
+    require_file_contains "$env_example" "VPN_BIND_ADDRESS=" "VPN bind address example"
+    require_file_contains "$deploy_workflow" "VPN_BIND_ADDRESS" "VPN bind address deployment secret"
+    require_file_contains "$run_script" "VPN_BIND_ADDRESS must be set" "VPN bind address startup guard"
+
+    require_file_contains "$compose_file" '"${VPN_BIND_ADDRESS}:18081:18081"' "MinIO Console VPN-only port binding"
+    require_file_contains "$compose_file" '"${VPN_BIND_ADDRESS}:18082:18082"' "Databasus VPN-only port binding"
+    require_file_not_contains "$compose_file" "-d s3-panel.\${APP_DOMAIN}" "public MinIO Console certificate domain"
+    require_file_not_contains "$compose_file" "-d backup.\${APP_DOMAIN}" "public Databasus certificate domain"
+
+    require_file_not_contains "$nginx_template" "server_name s3-panel.\${APP_DOMAIN};" "public MinIO Console virtual host"
+    require_file_not_contains "$nginx_template" "server_name backup.\${APP_DOMAIN};" "public Databasus virtual host"
+    require_file_contains "$nginx_template" "listen 18081;" "private MinIO Console listener"
+    require_file_contains "$nginx_template" "listen 18082;" "private Databasus listener"
+}
+
 run_nginx_syntax_check() {
     local cert_dir
 
@@ -64,4 +108,5 @@ run_nginx_syntax_check() {
         nginx -t
 }
 
+run_private_panel_configuration_check
 run_nginx_syntax_check

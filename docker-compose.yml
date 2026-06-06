@@ -90,6 +90,8 @@ services:
     ports:
       - "80:8080"
       - "443:8443"
+      - "${VPN_BIND_ADDRESS}:18081:18081"
+      - "${VPN_BIND_ADDRESS}:18082:18082"
     depends_on:
       - backend
       - frontend
@@ -113,8 +115,6 @@ services:
       --no-eff-email
       -d ${APP_DOMAIN}
       -d s3.${APP_DOMAIN}
-      -d s3-panel.${APP_DOMAIN}
-      -d backup.${APP_DOMAIN}
     networks:
       - app-network
 

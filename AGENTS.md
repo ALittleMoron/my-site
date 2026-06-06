@@ -15,7 +15,7 @@ Portfolio/notes site and knowledge database
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK
 - Frontend: Angular 21 hybrid SSR/CSR + Bootstrap 5, served by a frontend-owned Node.js SSR image
-- Edge: nginx reverse proxy for TLS, `/api/*`, exact `/sitemap.xml` and `/robots.txt`, frontend, MinIO, and backup UI routing
+- Edge: nginx reverse proxy for TLS, `/api/*`, exact `/sitemap.xml` and `/robots.txt`, frontend, the public MinIO object endpoint, and VPN-only internal web panel routing
 
 ## General rules
 
@@ -35,6 +35,21 @@ Portfolio/notes site and knowledge database
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
+- The following Make commands are trusted for agent use and may be approved as recurring command
+  prefixes when the local Codex permission flow asks for them:
+  `make test-backend-unit`, `make test-backend`, `make test-backend-integration`,
+  `make test-frontend`, `make tests`, `make tests-fast`, `make tests-coverage`,
+  `make tests-coverage-frontend`, `make -C backend test-unit`, `make -C backend test`,
+  `make -C backend test-integration`, `make -C backend tests-coverage`,
+  `make -C backend types`, `make -C backend lint-check`, `make -C backend bandit`,
+  `make -C backend vulture`, `make -C backend security`, `make -C frontend test`,
+  `make -C frontend test-coverage`, `make -C frontend tests-coverage`,
+  `make -C frontend lint`, `make -C frontend typecheck`, `make -C frontend format-check`,
+  and `make -C frontend build`.
+- Before adding any new Make command to the trusted-for-agents list, inspect the target and the
+  scripts it delegates to for agent-safety risks, including repository writes, destructive file or
+  Docker operations, database migrations or downgrades, dependency installation, network access,
+  secret exposure, long-running services, and other broad side effects.
 - Check, test, coverage, quality, query-plan, and performance Make targets must be self-contained:
   they should conditionally prepare dependencies, load the required test environment, start required
   test services or local backend processes, prepare deterministic data where applicable, and clean
@@ -74,7 +89,7 @@ Portfolio/notes site and knowledge database
   labels such as `[[matrix:<slug>|Custom label]]`; unprefixed `[[note-slug]]` syntax is not
   supported.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes domains, `/api/*`, `/sitemap.xml`, and `/robots.txt`, while the frontend container runs the Angular Node.js SSR runtime for public article and matrix question routes and hydrates interactive CSR/content-authoring areas.
+- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article and matrix question routes and hydrates interactive CSR/content-authoring areas.
 - Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
   backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
   identity-aware or business-quota design requires application-level limits by user, account, API

@@ -20,4 +20,9 @@ set -a
 . .env
 set +a
 
+if [ -z "${VPN_BIND_ADDRESS:-}" ]; then
+    echo "VPN_BIND_ADDRESS must be set to a host address that Docker can bind for internal panels." >&2
+    exit 1
+fi
+
 docker compose up --build -d
