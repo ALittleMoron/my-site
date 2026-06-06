@@ -1,40 +1,38 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  FoldableTreeComponent,
+  FoldableTreeSection,
+} from '../../../../../../shared/ui/foldable-tree/foldable-tree.component';
+import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
-import { NoteTree, NoteTreeFolder } from '../../../../models/notes.model';
+import { NoteTree } from '../../../../models/notes.model';
 
 @Component({
   selector: 'app-notes-side-panel',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [FoldableTreeComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notes-side-panel.component.html',
-  styleUrl: './notes-side-panel.component.scss',
 })
 export class NotesSidePanelComponent {
+  private readonly i18n = inject(I18nService);
+
   readonly tree = input.required<NoteTree>();
   readonly currentSlug = input<string | null>(null);
   readonly noteSelected = output<string>();
   readonly closePanel = output<void>();
 
-  readonly expandedFolders = signal<ReadonlySet<string>>(new Set<string>());
-
-  isExpanded(folder: string): boolean {
-    return this.expandedFolders().has(folder);
-  }
-
-  toggleFolder(folder: string): void {
-    this.expandedFolders.update((current) => {
-      const next = new Set(current);
-      if (next.has(folder)) {
-        next.delete(folder);
-      } else {
-        next.add(folder);
-      }
-      return next;
-    });
-  }
-
-  folderNoteCount(folder: NoteTreeFolder): number {
-    return folder.notes.length;
-  }
+  readonly sections = computed<readonly FoldableTreeSection[]>(() => {
+    this.i18n.language();
+    return this.tree().folders.map((folder) => ({
+      key: folder.folder,
+      label: folder.folder,
+      trailingText: String(folder.notes.length),
+      items: folder.notes.map((note) => ({
+        key: note.slug,
+        label: note.title,
+        badgeText: note.publishStatus === 'Draft' ? this.i18n.translate('shared.draft') : null,
+      })),
+    }));
+  });
 }

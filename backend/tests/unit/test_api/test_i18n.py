@@ -23,6 +23,8 @@ class TestI18nApi(ApiFixture):
         body = response.json()
         assert body["language"] == "ru"
         assert body["messages"]["shell.nav.about"] == "Обо мне"
+        assert body["messages"]["shell.nav.adminPanel"] == "Админ-панель"
+        assert body["messages"]["adminPanel.title"] == "Админ-панель"
         assert body["messages"]["enum.publishStatus.Draft"] == "Черновик"
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
         assert body["messages"]["auth.login.restrictedAccessWarning.title"] == (
@@ -36,6 +38,8 @@ class TestI18nApi(ApiFixture):
         body = response.json()
         assert body["language"] == "en"
         assert body["messages"]["shell.nav.about"] == "About"
+        assert body["messages"]["shell.nav.adminPanel"] == "Admin panel"
+        assert body["messages"]["adminPanel.title"] == "Admin panel"
         assert body["messages"]["enum.publishStatus.Draft"] == "Draft"
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
         assert (

@@ -1,20 +1,21 @@
-.notes-tree-folder {
+.foldable-tree-section {
   color: var(--bs-body-color);
+  background: transparent;
 }
 
-.notes-tree-toggle {
+.foldable-tree-toggle {
   width: 1rem;
   color: var(--bs-secondary-color);
   text-align: center;
 }
 
-.notes-tree-notes {
+.foldable-tree-items {
   margin-left: 1.25rem;
   padding-left: 0.75rem;
   border-left: 1px solid var(--bs-border-color);
 }
 
-.notes-tree-note {
+.foldable-tree-item {
   display: flex;
   align-items: center;
   min-width: 0;
@@ -25,23 +26,23 @@
   border-radius: var(--bs-border-radius-sm);
 }
 
-.notes-tree-note:hover,
-.notes-tree-note:focus-visible {
+.foldable-tree-item:hover,
+.foldable-tree-item:focus-visible {
   background-color: var(--bs-tertiary-bg);
 }
 
-.notes-tree-note.active {
+.foldable-tree-item.active {
   color: var(--bs-primary-text-emphasis);
   background-color: var(--bs-primary-bg-subtle);
 }
 
-.notes-tree-connector {
+.foldable-tree-connector {
   flex: 0 0 auto;
   margin-right: 0.5rem;
   color: var(--bs-secondary-color);
   font-family: var(--bs-font-monospace);
 }
 
-.notes-tree-note-title {
+.foldable-tree-item-label {
   min-width: 0;
 }

@@ -33,12 +33,14 @@ export class SiteHeaderComponent {
   readonly aboutLink = computed(() => `/${this.currentLanguage()}/about-me`);
   readonly matrixLink = computed(() => `/${this.currentLanguage()}/competency-matrix`);
   readonly notesLink = computed(() => `/${this.currentLanguage()}/notes`);
+  readonly adminPanelLink = computed(() => '/admin-panel');
   readonly toggleLabel = computed(() =>
     this.i18n.translate(
       this.themeService.theme() === 'light' ? 'shell.theme.dark' : 'shell.theme.light',
     ),
   );
   readonly isLoggedIn = computed(() => this.authService.isLoggedIn());
+  readonly canManageContent = computed(() => this.authService.canManageContent());
   readonly username = computed(() => this.authService.currentUser()?.username ?? null);
   readonly languageOptions = computed<LanguageOption[]>(() => {
     const currentLanguage = this.i18n.language();

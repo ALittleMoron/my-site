@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { AuthModalService } from './core/auth/auth-modal.service';
 import { I18nService } from './core/i18n/i18n.service';
 import { LoginPageComponent } from './features/auth/pages/login-page/login-page.component';
@@ -35,10 +37,14 @@ import { SiteHeaderComponent } from './features/shell/components/site-header/sit
       </main>
     } @else {
       <div class="app-shell gradient-body d-flex flex-column min-vh-100">
-        <app-site-header />
+        @if (!isAdminPanelRoute()) {
+          <app-site-header />
+        }
         <app-notification-area />
         <router-outlet />
-        <app-site-footer class="mt-auto" />
+        @if (!isAdminPanelRoute()) {
+          <app-site-footer class="mt-auto" />
+        }
         <app-cookie-consent-banner />
         @if (authModal.isLoginOpen()) {
           <app-login-page />
@@ -48,10 +54,29 @@ import { SiteHeaderComponent } from './features/shell/components/site-header/sit
   `,
 })
 export class AppComponent {
+  private readonly router = inject(Router);
+
   readonly authModal = inject(AuthModalService);
   readonly i18n = inject(I18nService);
+  readonly isAdminPanelRoute = signal(isAdminPanelUrl(this.router.url));
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => {
+        this.isAdminPanelRoute.set(isAdminPanelUrl(event.urlAfterRedirects));
+      });
+  }
 
   retryI18n(): void {
     this.i18n.retryStartup().subscribe();
   }
+}
+
+export function isAdminPanelUrl(url: string): boolean {
+  const pathname = new URL(url, 'http://localhost').pathname;
+  return pathname === '/admin-panel' || pathname.startsWith('/admin-panel/');
 }

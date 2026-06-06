@@ -21,6 +21,7 @@ describe('serverRoutes', () => {
     );
     expect(serverRoutes.find((route) => route.path === 'ru/competency-matrix')).toBeUndefined();
     expect(serverRoutes.find((route) => route.path === 'en/competency-matrix')).toBeUndefined();
+    expect(serverRoutes.find((route) => route.path === 'admin-panel')).toBeUndefined();
   });
 
   it('keeps the rest of the Angular app in CSR mode', () => {

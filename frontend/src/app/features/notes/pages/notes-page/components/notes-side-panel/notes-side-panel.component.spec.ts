@@ -47,9 +47,9 @@ describe('NotesSidePanelComponent', () => {
     ) as HTMLButtonElement;
 
     expect(fixture.nativeElement.querySelector('[role="tree"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-foldable-tree')).not.toBeNull();
     expect(folder.getAttribute('role')).toBe('treeitem');
     expect(note.getAttribute('role')).toBe('treeitem');
-    expect(note.classList).toContain('notes-tree-note');
     expect(note.classList).toContain('active');
   });
 });

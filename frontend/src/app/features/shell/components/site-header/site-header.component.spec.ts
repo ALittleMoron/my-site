@@ -26,6 +26,7 @@ describe('SiteHeaderComponent', () => {
   let mockAuthService: {
     currentUser: ReturnType<typeof signal<AccountInfo | null>>;
     isLoggedIn: () => boolean;
+    canManageContent: () => boolean;
     logout: jest.Mock;
   };
   let mockAuthModalService: { openLogin: jest.Mock };
@@ -54,6 +55,10 @@ describe('SiteHeaderComponent', () => {
     mockAuthService = {
       currentUser: currentUserSignal,
       isLoggedIn: () => currentUserSignal() !== null,
+      canManageContent: () => {
+        const role = currentUserSignal()?.role;
+        return role === 'admin' || role === 'moderator';
+      },
       logout: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     };
     mockAuthModalService = {
@@ -68,6 +73,7 @@ describe('SiteHeaderComponent', () => {
           'shell.nav.about': 'Обо мне',
           'shell.nav.matrix': 'Матрица компетенций',
           'shell.nav.notes': 'Заметки',
+          'shell.nav.adminPanel': 'Админ-панель',
           'shell.nav.toggleNavigation': 'Открыть навигацию',
           'shell.theme.dark': 'Dark',
           'shell.theme.light': 'Light',
@@ -113,6 +119,30 @@ describe('SiteHeaderComponent', () => {
 
   it('renders nav link to the localized notes page', () => {
     expect(fixture.componentInstance.notesLink()).toBe('/ru/notes');
+  });
+
+  it('hides admin-panel navigation from guests and regular users', () => {
+    expect(el.querySelector('a[aria-label="Админ-панель"]')).toBeNull();
+
+    currentUserSignal.set({ username: 'user', role: 'user' });
+    fixture.detectChanges();
+
+    expect(el.querySelector('a[aria-label="Админ-панель"]')).toBeNull();
+  });
+
+  it('shows admin-panel navigation to moderators and admins', () => {
+    currentUserSignal.set({ username: 'moderator', role: 'moderator' });
+    fixture.detectChanges();
+
+    let adminLink = el.querySelector('a[aria-label="Админ-панель"]') as HTMLAnchorElement;
+    expect(adminLink).not.toBeNull();
+    expect(adminLink.getAttribute('href')).toBe('/admin-panel');
+
+    currentUserSignal.set({ username: 'admin', role: 'admin' });
+    fixture.detectChanges();
+
+    adminLink = el.querySelector('a[aria-label="Админ-панель"]') as HTMLAnchorElement;
+    expect(adminLink).not.toBeNull();
   });
 
   it('theme toggle button calls themeService.toggleTheme()', () => {

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'about-me', pathMatch: 'full' },
@@ -19,6 +20,12 @@ export const routes: Routes = [
   {
     path: 'login',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes),
+  },
+  {
+    path: 'admin-panel',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/admin-panel/admin-panel.routes').then((m) => m.adminPanelRoutes),
   },
   { path: '**', redirectTo: '404' },
 ];

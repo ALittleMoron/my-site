@@ -8,51 +8,11 @@
   ></button>
 </div>
 
-@if (tree().folders.length === 0) {
-  <p class="text-body-secondary small mb-0">{{ 'notes.emptyTree' | t }}</p>
-} @else {
-  <div class="notes-tree vstack gap-1" role="tree">
-    @for (folder of tree().folders; track folder.folder) {
-      <div class="notes-tree-folder-group">
-        <button
-          type="button"
-          class="btn btn-sm w-100 d-flex justify-content-between align-items-center text-start notes-folder-button notes-tree-folder"
-          data-testid="notes-tree-folder"
-          role="treeitem"
-          (click)="toggleFolder(folder.folder)"
-          [attr.aria-expanded]="isExpanded(folder.folder)"
-          aria-selected="false"
-        >
-          <span class="d-inline-flex align-items-center gap-2 min-w-0">
-            <span class="notes-tree-toggle" aria-hidden="true">
-              {{ isExpanded(folder.folder) ? '-' : '+' }}
-            </span>
-            <span class="text-truncate">{{ folder.folder }}</span>
-          </span>
-          <span class="badge rounded-pill text-bg-secondary">{{ folderNoteCount(folder) }}</span>
-        </button>
-        @if (isExpanded(folder.folder)) {
-          <div class="notes-tree-notes mt-1" role="group">
-            @for (note of folder.notes; track note.slug) {
-              <button
-                type="button"
-                class="notes-tree-note btn btn-sm w-100 text-start"
-                data-testid="notes-tree-note"
-                role="treeitem"
-                [class.active]="currentSlug() === note.slug"
-                [attr.aria-selected]="currentSlug() === note.slug"
-                (click)="noteSelected.emit(note.slug)"
-              >
-                <span class="notes-tree-connector" aria-hidden="true">+--</span>
-                <span class="notes-tree-note-title text-truncate">{{ note.title }}</span>
-                @if (note.publishStatus === 'Draft') {
-                  <span class="badge text-bg-warning ms-2">{{ 'shared.draft' | t }}</span>
-                }
-              </button>
-            }
-          </div>
-        }
-      </div>
-    }
-  </div>
-}
+<app-foldable-tree
+  [sections]="sections()"
+  [emptyMessage]="'notes.emptyTree' | t"
+  [selectedItemKey]="currentSlug()"
+  sectionTestId="notes-tree-folder"
+  itemTestId="notes-tree-note"
+  (itemSelected)="noteSelected.emit($event)"
+/>

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Component, signal } from '@angular/core';
+import { Router, provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
 import { AuthService } from './core/auth/auth.service';
 import { AuthModalService } from './core/auth/auth-modal.service';
@@ -8,6 +8,12 @@ import { ThemeService } from './core/layout/theme.service';
 import { NotificationService } from './core/notifications/notification.service';
 import { ConsentService } from './core/privacy/consent.service';
 import { I18nService } from './core/i18n/i18n.service';
+
+@Component({
+  standalone: true,
+  template: '',
+})
+class BlankRouteComponent {}
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
@@ -23,7 +29,7 @@ describe('AppComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'admin-panel', component: BlankRouteComponent }]),
         {
           provide: AuthModalService,
           useValue: {
@@ -37,6 +43,7 @@ describe('AppComponent', () => {
           useValue: {
             currentUser: signal(null),
             isLoggedIn: () => false,
+            canManageContent: () => false,
             logout: jest.fn(),
             login: jest.fn(),
           },
@@ -80,6 +87,7 @@ describe('AppComponent', () => {
                 'shell.nav.about': 'Обо мне',
                 'shell.nav.matrix': 'Матрица компетенций',
                 'shell.nav.notes': 'Заметки',
+                'shell.nav.adminPanel': 'Админ-панель',
                 'shell.nav.toggleNavigation': 'Открыть навигацию',
                 'shell.theme.dark': 'Dark',
                 'shell.theme.light': 'Light',
@@ -135,5 +143,15 @@ describe('AppComponent', () => {
     button.click();
 
     expect(retryStartup).toHaveBeenCalled();
+  });
+
+  it('hides the public site header and footer on admin-panel routes', async () => {
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl('/admin-panel');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-site-header')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-site-footer')).toBeNull();
   });
 });

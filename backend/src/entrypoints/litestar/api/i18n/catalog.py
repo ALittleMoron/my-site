@@ -22,6 +22,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.nav.about": "Обо мне",
         "shell.nav.matrix": "Матрица компетенций",
         "shell.nav.notes": "Заметки",
+        "shell.nav.adminPanel": "Админ-панель",
         "shell.nav.toggleNavigation": "Открыть навигацию",
         "shell.theme.light": "Light",
         "shell.theme.dark": "Dark",
@@ -71,6 +72,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "На данный момент вход работает только для модераторов и администраторов. "
             "В будущем здесь появится вход для обычных пользователей."
         ),
+        "adminPanel.title": "Админ-панель",
+        "adminPanel.header.backToHome": "На главную",
+        "adminPanel.sidePanel.open": "Открыть разделы",
+        "adminPanel.sidePanel.close": "Скрыть разделы",
+        "adminPanel.sections": "Разделы",
+        "adminPanel.emptySections": "Разделы админки появятся позже.",
         "about.seo.title": "Обо мне",
         "about.seo.description": (
             "Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контактная форма."
@@ -432,6 +439,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.nav.about": "About",
         "shell.nav.matrix": "Competency matrix",
         "shell.nav.notes": "Notes",
+        "shell.nav.adminPanel": "Admin panel",
         "shell.nav.toggleNavigation": "Toggle navigation",
         "shell.theme.light": "Light",
         "shell.theme.dark": "Dark",
@@ -480,6 +488,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "At the moment, login works only for moderators and administrators. Regular user "
             "login will be added in the future."
         ),
+        "adminPanel.title": "Admin panel",
+        "adminPanel.header.backToHome": "Home",
+        "adminPanel.sidePanel.open": "Open sections",
+        "adminPanel.sidePanel.close": "Hide sections",
+        "adminPanel.sections": "Sections",
+        "adminPanel.emptySections": "Admin sections will appear later.",
         "about.seo.title": "About",
         "about.seo.description": (
             "Dmitry Lunev's personal site: portfolio, competency matrix, and contact form."
