@@ -1,23 +1,53 @@
+from collections.abc import Mapping, Sequence
+from dataclasses import replace
+from typing import Any, cast
+
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql import Select
+from sqlalchemy.engine import Connection
 
 from performance.query_plans import (
     PlanExpectation,
     analyze_explain_result,
-    capture_balanced_queries,
     compile_captured_query,
     generate_series_subquery,
 )
+from performance.query_plans.discovery import discover_storage_methods
+from performance.query_plans.expectations import (
+    QueryThresholdPolicy,
+    scenario_plan_expectation,
+)
+from performance.query_plans.models import (
+    BALANCED_PROFILE,
+    BenchmarkResult,
+    CapturedQuery,
+    CoverageReport,
+    PlanAnalysis,
+    QueryThresholdGroup,
+    StorageMethod,
+)
+from performance.query_plans.reports import serialize_summary
+from performance.query_plans.runner import apply_query_threshold_overrides
+from performance.query_plans.runtime_capture import RuntimeQueryCapture
+from performance.query_plans.scenarios import (
+    STORAGE_SCENARIOS,
+    evaluate_storage_method_coverage,
+    note_id,
+    write_note_for_existing_note,
+)
+from performance.query_plans.sql import group_queries_by_scenario
 
 
 def test_query_plan_package_is_split_into_focused_modules() -> None:
     module_names = {
         "analysis",
-        "capture",
         "cli",
+        "discovery",
+        "expectations",
         "models",
         "reports",
+        "runtime_capture",
         "runner",
+        "scenarios",
         "seed",
         "sql",
     }
@@ -56,6 +86,7 @@ class TestQueryPlanAnalysis:
             ],
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
+                threshold_source="group:search",
                 expected_index_names=("notes_note_search_vector_en_gin_idx",),
                 forbidden_seq_scan_relations=("notes__note_model",),
                 allow_seq_scan_reason=None,
@@ -82,6 +113,7 @@ class TestQueryPlanAnalysis:
             ],
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
+                threshold_source="group:search",
                 expected_index_names=("notes_note_search_vector_en_gin_idx",),
                 forbidden_seq_scan_relations=("notes__note_model",),
                 allow_seq_scan_reason=None,
@@ -107,40 +139,406 @@ class TestQueryCapture:
         assert "generate_series(1, 3) AS value" in compiled
         assert "sample_series.value" in compiled
 
-    async def test_capture_balanced_queries_uses_real_storage_selects(self) -> None:
-        queries = await capture_balanced_queries()
+    def test_discover_storage_methods_finds_public_async_methods_only(self) -> None:
+        methods = discover_storage_methods()
+        identifiers = {(method.storage_class, method.method_name) for method in methods}
 
-        query_by_name = {query.name: query for query in queries}
+        assert ("NotesDatabaseStorage", "get_note_by_slug") in identifiers
+        assert ("NotesDatabaseStorage", "list_notes") in identifiers
+        assert ("NoteAnalyticsDatabaseStorage", "get_reaction_counts") in identifiers
+        assert ("CompetencyMatrixDatabaseStorage", "search_competency_matrix_resources") in (
+            identifiers
+        )
+        assert ("AuthDatabaseStorage", "update_user_password_hash") in identifiers
+        assert ("UserAccountDatabaseStorage", "get_user_by_username") in identifiers
+        assert ("ContactMeDatabaseStorage", "create_contact_me_request") in identifiers
+        assert ("NotesDatabaseStorage", "_get_note_model") not in identifiers
 
-        assert isinstance(query_by_name["notes_list_en_full_text_tag_date"].statement, Select)
-        assert isinstance(query_by_name["notes_count_en_full_text_tag_date"].statement, Select)
-        assert isinstance(query_by_name["matrix_public_detail_by_slug"].statement, Select)
-        assert isinstance(query_by_name["tags_fuzzy_en"].statement, Select)
-        assert isinstance(query_by_name["resources_fuzzy_en"].statement, Select)
+    def test_storage_scenarios_cover_every_discovered_storage_method(self) -> None:
+        coverage = evaluate_storage_method_coverage(
+            discovered_methods=discover_storage_methods(),
+            scenarios=STORAGE_SCENARIOS,
+        )
 
-    async def test_notes_seo_capture_uses_index_aligned_ordering(self) -> None:
-        queries = await capture_balanced_queries()
-        query = next(item for item in queries if item.name == "notes_published_for_seo_sitemap")
+        assert coverage.missing_methods == ()
+        assert coverage.unexpected_methods == ()
+        assert ("NotesDatabaseStorage", "list_notes") in {
+            (method.storage_class, method.method_name) for method in coverage.covered_methods
+        }
 
-        compiled = str(
-            query.statement.compile(
-                dialect=postgresql.dialect(),
-                compile_kwargs={"literal_binds": True},
+    def test_update_note_scenario_avoids_seeded_target_tag_collision(self) -> None:
+        note = write_note_for_existing_note()
+
+        assert note.id == note_id(99)
+        assert {tag.id for tag in note.tags} == {1, 2}
+
+    def test_runtime_capture_records_statement_without_touching_cursor(self) -> None:
+        capture = RuntimeQueryCapture(clock=FakeClock(1_000_000, 26_000_000))
+        connection = FakeConnection()
+        capture.start_scenario(
+            storage_class="NotesDatabaseStorage",
+            method_name="list_notes",
+            scenario_name="notes_list_en_full_text_tag_date",
+            expectation=PlanExpectation(
+                max_execution_ms=150.0,
+                threshold_source="group:search",
+                expected_index_names=("notes_note_search_vector_en_gin_idx",),
+                forbidden_seq_scan_relations=("notes__note_model",),
+                allow_seq_scan_reason=None,
             ),
         )
-        order_by_clause = compiled.split(" ORDER BY ", maxsplit=1)[1]
 
-        assert "ORDER BY notes__note_model.published_at DESC NULLS LAST" in compiled
-        assert "notes__note_model.updated_at DESC" in compiled
-        assert "notes__note_model.title_en" not in order_by_clause
-        assert "CASE WHEN" not in order_by_clause
+        typed_connection = cast("Connection", connection)
+        capture.before_cursor_execute(
+            typed_connection,
+            object(),
+            "SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
+            {"id": 1},
+            None,
+            False,
+        )
+        capture.after_cursor_execute(
+            typed_connection,
+            ExplodingCursor(),
+            "SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
+            {"id": 1},
+            None,
+            False,
+        )
+        capture.stop_scenario()
 
-    async def test_compile_captured_query_keeps_sql_and_params_separate(self) -> None:
-        queries = await capture_balanced_queries()
-        query = next(item for item in queries if item.name == "tags_fuzzy_en")
+        assert capture.captured_queries == (
+            CapturedQuery(
+                name="notes_list_en_full_text_tag_date__001",
+                storage_class="NotesDatabaseStorage",
+                method_name="list_notes",
+                scenario_name="notes_list_en_full_text_tag_date",
+                ordinal=1,
+                sql="SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
+                normalized_sql="SELECT * FROM notes__note_model WHERE id = %(id)s",
+                params={"id": 1},
+                elapsed_ms=25.0,
+                executemany=False,
+                expectation=PlanExpectation(
+                    max_execution_ms=150.0,
+                    threshold_source="group:search",
+                    expected_index_names=("notes_note_search_vector_en_gin_idx",),
+                    forbidden_seq_scan_relations=("notes__note_model",),
+                    allow_seq_scan_reason=None,
+                ),
+            ),
+        )
+
+    def test_compile_captured_query_keeps_sql_and_params_separate(self) -> None:
+        query = CapturedQuery(
+            name="tags_fuzzy_en__001",
+            storage_class="NotesDatabaseStorage",
+            method_name="search_tags",
+            scenario_name="tags_fuzzy_en",
+            ordinal=1,
+            sql="SELECT * FROM notes__tag_model WHERE lower(name_en) %% %(tag_search_query)s",
+            normalized_sql=(
+                "SELECT * FROM notes__tag_model WHERE lower(name_en) %% %(tag_search_query)s"
+            ),
+            params={"tag_search_query": "pythno"},
+            elapsed_ms=10.0,
+            executemany=False,
+            expectation=PlanExpectation(
+                max_execution_ms=100.0,
+                threshold_source="override:tags_fuzzy_en",
+                expected_index_names=("notes_tag_name_en_trgm_idx",),
+                forbidden_seq_scan_relations=("notes__tag_model",),
+                allow_seq_scan_reason=None,
+            ),
+        )
 
         compiled = compile_captured_query(query=query, dialect=postgresql.dialect())
 
         assert "FROM notes__tag_model" in compiled.sql
-        assert "tag_search_query" in compiled.params
-        assert compiled.params["tag_search_query"] == "pythno"
+        compiled_params = cast("Mapping[str, object]", compiled.params)
+        assert "tag_search_query" in compiled_params
+        assert compiled_params["tag_search_query"] == "pythno"
+
+    def test_compile_captured_query_normalizes_sqlalchemy_insertmanyvalues_sort_alias(
+        self,
+    ) -> None:
+        query = CapturedQuery(
+            name="notes_create__002",
+            storage_class="NotesDatabaseStorage",
+            method_name="create_note",
+            scenario_name="notes_create",
+            ordinal=2,
+            sql=(
+                "INSERT INTO notes__note_to_tag_secondary_model (note_id, tag_id) "
+                "SELECT p0::UUID, p1::BIGINT FROM "
+                "(VALUES (%(note_id)s::UUID, %(tag_id)s::BIGINT)) "
+                "AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter "
+                "RETURNING notes__note_to_tag_secondary_model.id"
+            ),
+            normalized_sql="",
+            params={"note_id": note_id(1), "tag_id": 1},
+            elapsed_ms=10.0,
+            executemany=False,
+            expectation=PlanExpectation(
+                max_execution_ms=100.0,
+                threshold_source="group:small_write",
+                expected_index_names=(),
+                forbidden_seq_scan_relations=(),
+                allow_seq_scan_reason=None,
+            ),
+        )
+
+        compiled = compile_captured_query(query=query, dialect=postgresql.dialect())
+
+        assert "AS imp_sen(p0, p1) RETURNING" in compiled.sql
+        assert "sen_counter" not in compiled.sql
+
+    def test_group_queries_by_scenario_preserves_contiguous_scenario_order(self) -> None:
+        first = make_captured_query(
+            name="notes_create__001",
+            scenario_name="notes_create",
+            ordinal=1,
+        )
+        second = make_captured_query(
+            name="notes_create__002",
+            scenario_name="notes_create",
+            ordinal=2,
+        )
+        third = make_captured_query(
+            name="notes_update__001",
+            scenario_name="notes_update",
+            ordinal=1,
+        )
+
+        groups = group_queries_by_scenario((first, second, third))
+
+        assert groups == ((first, second), (third,))
+
+    def test_threshold_policy_applies_group_thresholds_and_scenario_overrides(self) -> None:
+        policy = QueryThresholdPolicy(
+            group_max_execution_ms={
+                QueryThresholdGroup.POINT_READ: 25.0,
+                QueryThresholdGroup.SEARCH: 150.0,
+            },
+            scenario_max_execution_ms={"tags_short_en": 250.0},
+            query_max_execution_ms={"tags_short_en__001": 300.0},
+        )
+
+        search_expectation = scenario_plan_expectation(
+            scenario_name="tags_fuzzy_en",
+            group=QueryThresholdGroup.SEARCH,
+            policy=policy,
+            query_name=None,
+            expected_index_names=("notes_tag_name_en_trgm_idx",),
+            forbidden_seq_scan_relations=("notes__tag_model",),
+            allow_seq_scan_reason=None,
+        )
+        override_expectation = scenario_plan_expectation(
+            scenario_name="tags_short_en",
+            group=QueryThresholdGroup.SEARCH,
+            policy=policy,
+            query_name=None,
+            expected_index_names=(),
+            forbidden_seq_scan_relations=(),
+            allow_seq_scan_reason="short search string is intentionally non-selective",
+        )
+        statement_override_expectation = scenario_plan_expectation(
+            scenario_name="tags_short_en",
+            group=QueryThresholdGroup.SEARCH,
+            policy=policy,
+            query_name="tags_short_en__001",
+            expected_index_names=(),
+            forbidden_seq_scan_relations=(),
+            allow_seq_scan_reason="short search string is intentionally non-selective",
+        )
+
+        assert search_expectation.max_execution_ms == 150.0
+        assert search_expectation.threshold_source == "group:search"
+        assert override_expectation.max_execution_ms == 250.0
+        assert override_expectation.threshold_source == "override:tags_short_en"
+        assert statement_override_expectation.max_execution_ms == 300.0
+        assert statement_override_expectation.threshold_source == "override:tags_short_en__001"
+
+    def test_runner_applies_statement_threshold_overrides_to_captured_queries(self) -> None:
+        query = make_captured_query(
+            name="notes_list_en_full_text_tag_date__002",
+            scenario_name="notes_list_en_full_text_tag_date",
+            ordinal=2,
+        )
+
+        captured_queries = apply_query_threshold_overrides(
+            queries=(query,),
+            scenarios=STORAGE_SCENARIOS,
+        )
+
+        assert captured_queries[0].expectation.max_execution_ms == 250.0
+        assert captured_queries[0].expectation.threshold_source == (
+            "override:notes_list_en_full_text_tag_date__002"
+        )
+
+    def test_coverage_evaluator_reports_missing_and_unexpected_methods(self) -> None:
+        discovered = (
+            StorageMethod(
+                storage_class="ExampleDatabaseStorage",
+                method_name="covered",
+                module_name="infra.postgresql.storages.example",
+            ),
+            StorageMethod(
+                storage_class="ExampleDatabaseStorage",
+                method_name="missing",
+                module_name="infra.postgresql.storages.example",
+            ),
+        )
+        scenario = replace(
+            STORAGE_SCENARIOS[0],
+            storage_class="ExampleDatabaseStorage",
+            method_name="covered",
+        )
+        unexpected_scenario = replace(
+            STORAGE_SCENARIOS[0],
+            name="unexpected",
+            storage_class="ExampleDatabaseStorage",
+            method_name="unexpected",
+        )
+
+        coverage = evaluate_storage_method_coverage(
+            discovered_methods=discovered,
+            scenarios=(scenario, unexpected_scenario),
+        )
+
+        assert coverage.missing_methods == (discovered[1],)
+        assert coverage.unexpected_methods == (
+            StorageMethod(
+                storage_class="ExampleDatabaseStorage",
+                method_name="unexpected",
+                module_name="",
+            ),
+        )
+
+    def test_report_summary_includes_coverage_and_query_metadata(self) -> None:
+        query = CapturedQuery(
+            name="notes_by_slug__001",
+            storage_class="NotesDatabaseStorage",
+            method_name="get_note_by_slug",
+            scenario_name="notes_by_slug",
+            ordinal=1,
+            sql="SELECT * FROM notes__note_model WHERE slug = %(slug)s",
+            normalized_sql="SELECT * FROM notes__note_model WHERE slug = %(slug)s",
+            params={"slug": "note-100"},
+            elapsed_ms=2.5,
+            executemany=False,
+            expectation=PlanExpectation(
+                max_execution_ms=25.0,
+                threshold_source="group:point_read",
+                expected_index_names=("ix_notes__note_model_slug",),
+                forbidden_seq_scan_relations=("notes__note_model",),
+                allow_seq_scan_reason=None,
+            ),
+        )
+        result = BenchmarkResult(
+            query=query,
+            compiled_query=compile_captured_query(query=query, dialect=postgresql.dialect()),
+            explain_json_runs=({},),
+            analyses=(
+                PlanAnalysis(
+                    name=query.name,
+                    planning_time_ms=1.0,
+                    execution_time_ms=2.0,
+                    node_types=("Index Scan",),
+                    index_names=("ix_notes__note_model_slug",),
+                    seq_scan_relations=(),
+                    temp_blocks=0,
+                    findings=(),
+                ),
+            ),
+            warm_execution_ms=2.0,
+            findings=(),
+        )
+
+        summary = serialize_summary(
+            profile=BALANCED_PROFILE,
+            coverage=CoverageReport(
+                discovered_methods=(
+                    StorageMethod(
+                        storage_class="NotesDatabaseStorage",
+                        method_name="get_note_by_slug",
+                        module_name="infra.postgresql.storages.notes",
+                    ),
+                ),
+                covered_methods=(
+                    StorageMethod(
+                        storage_class="NotesDatabaseStorage",
+                        method_name="get_note_by_slug",
+                        module_name="infra.postgresql.storages.notes",
+                    ),
+                ),
+                missing_methods=(),
+                unexpected_methods=(),
+            ),
+            results=(result,),
+        )
+
+        assert summary["coverage"] == {
+            "discoveredMethodCount": 1,
+            "coveredMethodCount": 1,
+            "missingMethods": [],
+            "unexpectedMethods": [],
+        }
+        summary_results = cast("Sequence[Mapping[str, object]]", summary["results"])
+        assert summary_results[0] == {
+            "name": "notes_by_slug__001",
+            "storageClass": "NotesDatabaseStorage",
+            "methodName": "get_note_by_slug",
+            "scenarioName": "notes_by_slug",
+            "ordinal": 1,
+            "executemany": False,
+            "runtimeElapsedMs": 2.5,
+            "warmExecutionMs": 2.0,
+            "thresholdSource": "group:point_read",
+            "maxExecutionMs": 25.0,
+            "indexes": ("ix_notes__note_model_slug",),
+            "seqScans": (),
+            "nodeTypes": ("Index Scan",),
+            "findings": (),
+        }
+
+
+class FakeConnection:
+    def __init__(self) -> None:
+        self.info: dict[str, Any] = {}
+
+
+class FakeClock:
+    def __init__(self, *values: int) -> None:
+        self.values = list(values)
+
+    def __call__(self) -> int:
+        return self.values.pop(0)
+
+
+class ExplodingCursor:
+    def __getattribute__(self, name: str) -> object:
+        msg = f"cursor attribute must not be read: {name}"
+        raise AssertionError(msg)
+
+
+def make_captured_query(*, name: str, scenario_name: str, ordinal: int) -> CapturedQuery:
+    return CapturedQuery(
+        name=name,
+        storage_class="NotesDatabaseStorage",
+        method_name="create_note",
+        scenario_name=scenario_name,
+        ordinal=ordinal,
+        sql="SELECT 1",
+        normalized_sql="SELECT 1",
+        params={},
+        elapsed_ms=1.0,
+        executemany=False,
+        expectation=PlanExpectation(
+            max_execution_ms=25.0,
+            threshold_source="group:point_read",
+            expected_index_names=(),
+            forbidden_seq_scan_relations=(),
+            allow_seq_scan_reason=None,
+        ),
+    )

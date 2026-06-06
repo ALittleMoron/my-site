@@ -3,15 +3,17 @@ from importlib import import_module
 from typing import cast
 
 from performance.query_plans.analysis import analyze_explain_result
-from performance.query_plans.capture import capture_balanced_queries
 from performance.query_plans.models import (
     BenchmarkResult,
     CapturedQuery,
     CliArgs,
     CompiledQuery,
+    CoverageReport,
     DatasetProfile,
     PlanAnalysis,
     PlanExpectation,
+    QueryThresholdGroup,
+    StorageMethod,
 )
 from performance.query_plans.seed import generate_series_subquery
 from performance.query_plans.sql import compile_captured_query
@@ -31,11 +33,13 @@ __all__ = (
     "CapturedQuery",
     "CliArgs",
     "CompiledQuery",
+    "CoverageReport",
     "DatasetProfile",
     "PlanAnalysis",
     "PlanExpectation",
+    "QueryThresholdGroup",
+    "StorageMethod",
     "analyze_explain_result",
-    "capture_balanced_queries",
     "compile_captured_query",
     "generate_series_subquery",
     "run_query_plan_profile",

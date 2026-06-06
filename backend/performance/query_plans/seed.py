@@ -1,5 +1,7 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from hashlib import md5
 from sys import stdout
+from uuid import UUID
 
 from sqlalchemy import Integer, String, case, delete, func, insert, literal, select, text, union_all
 from sqlalchemy import cast as sql_cast
@@ -7,14 +9,18 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql.selectable import Subquery
 
+from core.auth.enums import RoleEnum
+from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from infra.postgresql.models import (
     CompetencyMatrixItemModel,
+    ContactMeModel,
     ExternalResourceModel,
     NoteDailyAnalyticsModel,
     NoteModel,
     NoteReactionModel,
     NoteToTagSecondaryModel,
     TagModel,
+    UserModel,
 )
 from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
 from performance.query_plans.models import DatasetProfile
@@ -25,6 +31,8 @@ POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
 GENERAL_TAG_START_ID = 4
 TARGET_NOTE_DIVISOR = 100
+USER_SEED_COUNT = 10_000
+NOTE_REACTION_SEED_COUNT = 50_000
 
 
 async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
@@ -35,11 +43,15 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     )
     await connection.execute(text("SET LOCAL synchronous_commit = off"))
     await clear_seeded_tables(connection=connection)
+    await insert_users(connection=connection)
     await insert_tags(connection=connection, profile=profile)
     await insert_notes(connection=connection, profile=profile)
     await insert_note_tag_links(connection=connection, profile=profile)
+    await insert_note_analytics(connection=connection)
+    await insert_note_reactions(connection=connection, profile=profile)
     await insert_resources(connection=connection, profile=profile)
     await insert_competency_matrix_items(connection=connection, profile=profile)
+    await insert_competency_matrix_resource_links(connection=connection)
 
 
 async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
@@ -52,8 +64,28 @@ async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
         NoteToTagSecondaryModel,
         NoteModel,
         TagModel,
+        ContactMeModel,
+        UserModel,
     ):
         await connection.execute(delete(model))
+
+
+async def insert_users(*, connection: AsyncConnection) -> None:
+    series = generate_series_subquery(end=USER_SEED_COUNT, name="user_series")
+    value = sql_cast(series.c.value, Integer)
+    await connection.execute(
+        insert(UserModel.__table__).from_select(
+            ["username", "password_hash", "role"],
+            select(
+                case(
+                    (value == 1, literal("benchmark")),
+                    else_=func.concat(literal("benchmark-user-"), value),
+                ),
+                func.concat(literal("query-plan-seed-password-hash-"), value),
+                literal(RoleEnum.ADMIN.name),
+            ).select_from(series),
+        ),
+    )
 
 
 async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
@@ -82,7 +114,7 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
                     (value == PYDANTIC_ID, literal("pydantic")),
                     else_=func.concat(literal("tag-"), value),
                 ),
-                literal(None),
+                case((value == GENERAL_TAG_START_ID, literal(SEED_NOW)), else_=literal(None)),
             ).select_from(series),
         ),
     )
@@ -92,6 +124,7 @@ async def insert_notes(*, connection: AsyncConnection, profile: DatasetProfile) 
     series = generate_series_subquery(end=profile.note_count, name="note_series")
     value = sql_cast(series.c.value, Integer)
     target_note = func.mod(value, TARGET_NOTE_DIVISOR) == 0
+    published_note = func.mod(value, 4) == 0
     await connection.execute(
         insert(NoteModel.__table__).from_select(
             [
@@ -141,8 +174,8 @@ async def insert_notes(*, connection: AsyncConnection, profile: DatasetProfile) 
                 literal("База знаний"),
                 literal("Knowledge base"),
                 literal("benchmark"),
-                literal(SEED_NOW),
-                literal("PUBLISHED"),
+                case((published_note, literal(SEED_NOW)), else_=literal(None)),
+                case((published_note, literal("PUBLISHED")), else_=literal("DRAFT")),
             ).select_from(series),
         ),
     )
@@ -186,6 +219,59 @@ async def insert_note_tag_links(*, connection: AsyncConnection, profile: Dataset
     )
 
 
+async def insert_note_analytics(*, connection: AsyncConnection) -> None:
+    await connection.execute(
+        insert(NoteDailyAnalyticsModel),
+        [
+            {
+                "note_id": deterministic_python_uuid_from_int(value=note_number),
+                "date": recorded_on,
+                "source_category": source_category,
+                "view_count": 100 + note_number,
+                "engaged_view_count": 10 + note_number,
+            }
+            for note_number in (100, 200)
+            for recorded_on in (date(2026, 1, 14), date(2026, 1, 15))
+            for source_category in (
+                NoteViewSourceCategory.DIRECT,
+                NoteViewSourceCategory.SEARCH,
+            )
+        ],
+    )
+
+
+async def insert_note_reactions(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
+    reaction_count = min(profile.note_count, NOTE_REACTION_SEED_COUNT)
+    series = generate_series_subquery(end=reaction_count, name="note_reaction_series")
+    value = sql_cast(series.c.value, Integer)
+    note_number = func.mod(value - 1, profile.note_count) + 1
+    await connection.execute(
+        insert(NoteReactionModel.__table__).from_select(
+            [
+                "note_id",
+                "note_scoped_voter_hash",
+                "reaction_kind",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                deterministic_uuid_from_int(value=note_number),
+                func.rpad(
+                    func.concat(literal("query-plan-voter-"), value),
+                    64,
+                    literal("x"),
+                ),
+                case(
+                    (func.mod(value, 2) == 0, literal(NoteReactionKind.HEART.name)),
+                    else_=literal(NoteReactionKind.FIRE.name),
+                ),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+        ),
+    )
+
+
 async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
     series = generate_series_subquery(end=profile.resource_count, name="resource_series")
     value = sql_cast(series.c.value, Integer)
@@ -221,6 +307,8 @@ async def insert_competency_matrix_items(
 ) -> None:
     series = generate_series_subquery(end=profile.resource_count, name="matrix_item_series")
     value = sql_cast(series.c.value, Integer)
+    sheet_bucket = func.mod(value, 20)
+    python_sheet = sheet_bucket == 0
     await connection.execute(
         insert(CompetencyMatrixItemModel.__table__).from_select(
             [
@@ -252,9 +340,18 @@ async def insert_competency_matrix_items(
                 func.concat(literal("Matrix answer "), value),
                 func.concat(literal("Ожидаемый ответ "), value),
                 func.concat(literal("Expected answer "), value),
-                literal("python"),
-                literal("Питон"),
-                literal("Python"),
+                case(
+                    (python_sheet, literal("python")),
+                    else_=func.concat(literal("sheet-"), sheet_bucket),
+                ),
+                case(
+                    (python_sheet, literal("Питон")),
+                    else_=func.concat(literal("Лист "), sheet_bucket),
+                ),
+                case(
+                    (python_sheet, literal("Python")),
+                    else_=func.concat(literal("Sheet "), sheet_bucket),
+                ),
                 literal("Основы"),
                 literal("Basics"),
                 literal("Функции"),
@@ -264,6 +361,22 @@ async def insert_competency_matrix_items(
                 literal("PUBLISHED"),
             ).select_from(series),
         ),
+    )
+
+
+async def insert_competency_matrix_resource_links(*, connection: AsyncConnection) -> None:
+    await connection.execute(
+        insert(ResourceToItemSecondaryModel),
+        [
+            {
+                "item_id": item_id,
+                "resource_id": resource_id,
+                "context_ru": "Контекст query-plan ресурса",
+                "context_en": "Query-plan resource context",
+            }
+            for item_id in (100, 101)
+            for resource_id in (PYTHON_ID, POSTGRESQL_ID)
+        ],
     )
 
 
@@ -287,13 +400,24 @@ def deterministic_uuid_from_int(*, value: object) -> object:
     return sql_cast(uuid_text, postgresql.UUID(as_uuid=True))
 
 
+def deterministic_python_uuid_from_int(*, value: int) -> UUID:
+    digest = md5(str(value).encode(), usedforsecurity=False).hexdigest()
+    return UUID(
+        f"{digest[0:8]}-{digest[8:12]}-{digest[12:16]}-{digest[16:20]}-{digest[20:32]}",
+    )
+
+
 async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
     stdout.write("Running VACUUM ANALYZE for seeded query-plan tables\n")
     for table_name in (
         "notes__note_model",
         "notes__tag_model",
         "notes__note_to_tag_secondary_model",
+        "notes__note_daily_analytics_model",
+        "notes__note_reaction_model",
         "competency_matrix__external_resource_model",
         "competency_matrix__competency_matrix_item_model",
+        "competency_matrix__resource_to_item_secondary_model",
+        "auth__user_model",
     ):
         await connection.execute(text(f"VACUUM ANALYZE {table_name}"))

@@ -1,13 +1,13 @@
 # Performance Testing
 
-This directory contains performance tooling for public site behavior and PostgreSQL search query
+This directory contains performance tooling for public site behavior and PostgreSQL storage query
 plans.
 
 ## Layout
 
 - `locust/`: HTTP load-test scenario, response validation, and Locust thresholds.
-- `query_plans/`: deterministic PostgreSQL seed data, real SQLAlchemy query capture, compiled SQL
-  output, EXPLAIN runner, and report rendering.
+- `query_plans/`: deterministic PostgreSQL seed data, public storage method discovery, real
+  SQLAlchemy runtime SQL capture, EXPLAIN runner, thresholds, and report rendering.
 - `reports/`: generated Locust and query-plan reports.
 - `../scripts/`: shell entrypoints used by Make targets.
 
@@ -36,9 +36,11 @@ Reports are written to `backend/performance/reports/locust/<timestamp>/` by defa
 
 ## Query Plan Checks
 
-Use the query-plan harness when changing search queries or PostgreSQL indexes. It starts or reuses
-the test database, migrates it, clears the benchmarked tables, seeds a deterministic balanced
-dataset, compiles the real SQLAlchemy storage queries, then runs:
+Use the query-plan harness when changing PostgreSQL storages, query shapes, seed-sensitive indexes,
+or performance thresholds. It starts or reuses the test database, migrates it, clears the
+benchmarked tables, seeds a deterministic balanced dataset, discovers every public async
+`*DatabaseStorage` method under PostgreSQL storages, runs registered deterministic scenarios for
+those methods, captures the SQL actually emitted through SQLAlchemy engine events, then runs:
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON)
@@ -48,16 +50,25 @@ EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON)
 make query-plans-balanced
 ```
 
-The balanced profile seeds 200k notes, 30k tags, 500k note-tag links, and 200k competency resources.
-Targeted full-text terms are present in 1% of notes so the measured searches are selective while
-still running against large tables. The harness runs `VACUUM ANALYZE` after seeding and before
-measuring plans.
+The balanced profile seeds 200k notes, 30k tags, 500k note-tag links, 200k competency resources,
+representative users, note analytics, reactions, and matrix sheets. Targeted full-text terms are
+present in 1% of notes so the measured searches are selective while still running against large
+tables. The harness runs `VACUUM ANALYZE` after seeding and before measuring plans.
+
+The gate fails when a discovered public storage method has no scenario, a scenario captures no SQL,
+an explained statement exceeds its group or scenario threshold, a configured index is missing, a
+forbidden large sequential scan appears, or the plan uses temp blocks. Mutating statements are
+explained in rollback-only transactions, and statements from the same storage scenario are replayed
+as a group so dependent ORM flush/selectinload/merge SQL remains explainable.
 
 Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 
 - `summary.md`
 - `summary.json`
 - one directory per query with `compiled.sql`, `params.json`, and `explain-run-*.json`
+
+`summary.md` and `summary.json` include storage coverage, scenario-to-method metadata, captured SQL
+counts, runtime capture timings, warm median EXPLAIN timings, plan findings, and threshold sources.
 
 ## Profiles
 

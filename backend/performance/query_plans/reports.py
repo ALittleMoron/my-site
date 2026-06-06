@@ -4,13 +4,14 @@ from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
 
-from performance.query_plans.models import BenchmarkResult, DatasetProfile
+from performance.query_plans.models import BenchmarkResult, CoverageReport, DatasetProfile
 
 
 def write_reports(
     *,
     report_dir: Path,
     profile: DatasetProfile,
+    coverage: CoverageReport,
     results: Sequence[BenchmarkResult],
 ) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -33,12 +34,12 @@ def write_reports(
                 encoding="utf-8",
             )
     (report_dir / "summary.md").write_text(
-        render_markdown_summary(profile=profile, results=results),
+        render_markdown_summary(profile=profile, coverage=coverage, results=results),
         encoding="utf-8",
     )
     (report_dir / "summary.json").write_text(
         json.dumps(
-            serialize_summary(profile=profile, results=results),
+            serialize_summary(profile=profile, coverage=coverage, results=results),
             ensure_ascii=False,
             indent=2,
             default=json_default,
@@ -47,7 +48,12 @@ def write_reports(
     )
 
 
-def render_markdown_summary(*, profile: DatasetProfile, results: Sequence[BenchmarkResult]) -> str:
+def render_markdown_summary(
+    *,
+    profile: DatasetProfile,
+    coverage: CoverageReport,
+    results: Sequence[BenchmarkResult],
+) -> str:
     lines = [
         "# Query Plan Report",
         "",
@@ -57,9 +63,14 @@ def render_markdown_summary(*, profile: DatasetProfile, results: Sequence[Benchm
         f"- Note-tag links: `{profile.note_tag_link_count}`",
         f"- Resources: `{profile.resource_count}`",
         f"- EXPLAIN runs per query: `{profile.explain_runs}`",
+        f"- Storage methods discovered: `{len(coverage.discovered_methods)}`",
+        f"- Storage methods covered: `{len(coverage.covered_methods)}`",
+        f"- Missing storage scenarios: `{len(coverage.missing_methods)}`",
+        f"- Unexpected storage scenarios: `{len(coverage.unexpected_methods)}`",
         "",
-        "| Query | Warm median ms | Indexes | Seq scans | Findings |",
-        "|---|---:|---|---|---|",
+        "| Query | Storage method | Runtime ms | Warm median ms | Threshold | Indexes | "
+        "Seq scans | Findings |",
+        "|---|---|---:|---:|---|---|---|---|",
     ]
     for result in results:
         last_analysis = result.analyses[-1]
@@ -67,7 +78,11 @@ def render_markdown_summary(*, profile: DatasetProfile, results: Sequence[Benchm
         seq_scans = ", ".join(last_analysis.seq_scan_relations) or "-"
         findings = "<br>".join(result.findings) or "OK"
         lines.append(
-            f"| `{result.query.name}` | {result.warm_execution_ms:.2f} | "
+            f"| `{result.query.name}` | "
+            f"`{result.query.storage_class}.{result.query.method_name}` | "
+            f"{result.query.elapsed_ms:.2f} | {result.warm_execution_ms:.2f} | "
+            f"{result.query.expectation.max_execution_ms:.2f} "
+            f"({result.query.expectation.threshold_source}) | "
             f"{indexes} | {seq_scans} | {findings} |",
         )
     lines.append("")
@@ -82,6 +97,7 @@ def render_markdown_summary(*, profile: DatasetProfile, results: Sequence[Benchm
 def serialize_summary(
     *,
     profile: DatasetProfile,
+    coverage: CoverageReport,
     results: Sequence[BenchmarkResult],
 ) -> Mapping[str, object]:
     return {
@@ -93,10 +109,30 @@ def serialize_summary(
             "resourceCount": profile.resource_count,
             "explainRuns": profile.explain_runs,
         },
+        "coverage": {
+            "discoveredMethodCount": len(coverage.discovered_methods),
+            "coveredMethodCount": len(coverage.covered_methods),
+            "missingMethods": [
+                f"{method.storage_class}.{method.method_name}"
+                for method in coverage.missing_methods
+            ],
+            "unexpectedMethods": [
+                f"{method.storage_class}.{method.method_name}"
+                for method in coverage.unexpected_methods
+            ],
+        },
         "results": [
             {
                 "name": result.query.name,
+                "storageClass": result.query.storage_class,
+                "methodName": result.query.method_name,
+                "scenarioName": result.query.scenario_name,
+                "ordinal": result.query.ordinal,
+                "executemany": result.query.executemany,
+                "runtimeElapsedMs": result.query.elapsed_ms,
                 "warmExecutionMs": result.warm_execution_ms,
+                "thresholdSource": result.query.expectation.threshold_source,
+                "maxExecutionMs": result.query.expectation.max_execution_ms,
                 "indexes": result.analyses[-1].index_names,
                 "seqScans": result.analyses[-1].seq_scan_relations,
                 "nodeTypes": result.analyses[-1].node_types,

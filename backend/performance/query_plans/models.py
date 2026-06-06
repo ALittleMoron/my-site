@@ -1,10 +1,19 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
-from sqlalchemy import Select
-
 JsonObject = Mapping[str, object]
+DatabaseParams = Mapping[str, object] | tuple[object, ...]
+
+
+class QueryThresholdGroup(StrEnum):
+    POINT_READ = "point_read"
+    LIST_READ = "list_read"
+    SEARCH = "search"
+    AGGREGATE = "aggregate"
+    SMALL_WRITE = "small_write"
+    HEAVY = "heavy"
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,6 +29,7 @@ class DatasetProfile:
 @dataclass(frozen=True, slots=True)
 class PlanExpectation:
     max_execution_ms: float
+    threshold_source: str
     expected_index_names: tuple[str, ...]
     forbidden_seq_scan_relations: tuple[str, ...]
     allow_seq_scan_reason: str | None
@@ -28,7 +38,15 @@ class PlanExpectation:
 @dataclass(frozen=True, slots=True)
 class CapturedQuery:
     name: str
-    statement: Select[tuple[object, ...]]
+    storage_class: str
+    method_name: str
+    scenario_name: str
+    ordinal: int
+    sql: str
+    normalized_sql: str
+    params: DatabaseParams
+    elapsed_ms: float
+    executemany: bool
     expectation: PlanExpectation
 
 
@@ -36,7 +54,7 @@ class CapturedQuery:
 class CompiledQuery:
     name: str
     sql: str
-    params: Mapping[str, object]
+    params: DatabaseParams
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +77,21 @@ class BenchmarkResult:
     analyses: tuple[PlanAnalysis, ...]
     warm_execution_ms: float
     findings: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class StorageMethod:
+    storage_class: str
+    method_name: str
+    module_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class CoverageReport:
+    discovered_methods: tuple[StorageMethod, ...]
+    covered_methods: tuple[StorageMethod, ...]
+    missing_methods: tuple[StorageMethod, ...]
+    unexpected_methods: tuple[StorageMethod, ...]
 
 
 @dataclass(frozen=True, slots=True)

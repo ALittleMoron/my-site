@@ -143,7 +143,17 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         doc="External resource links",
     )
 
-    __table_args__ = (Index("cmi_sheet_key_idx", func.lower(sheet_key)),)
+    __table_args__ = (
+        Index(
+            "cmi_sheet_key_status_order_idx",
+            func.lower(sheet_key).label("sheet_key_lower"),
+            "publish_status",
+            section_en,
+            subsection_en,
+            grade,
+            "id",
+        ),
+    )
 
     def __str__(self) -> str:
         return f"[{self.section_en} - {self.subsection_en}] {self.question_en}"

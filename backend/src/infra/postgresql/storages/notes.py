@@ -172,23 +172,44 @@ class NotesDatabaseStorage(NotesStorage):
         language: LanguageEnum,
     ) -> list[NoteTreeItemData]:
         filters = NoteFilters(language=language)
-        query = select(NoteModel).order_by(
-            self._folder_column(language=language),
-            *self._note_ordering(filters=filters),
+        folder_column = self._folder_column(language=language).label("folder")
+        title_column = self._title_column(language=language).label("title")
+        ordering = (
+            (
+                self._folder_column(language=language),
+                NoteModel.published_at.desc().nullslast(),
+                NoteModel.updated_at.desc(),
+                self._title_column(language=language),
+            )
+            if only_published
+            else (
+                self._folder_column(language=language),
+                *self._note_ordering(filters=filters),
+            )
+        )
+        query = select(
+            folder_column,
+            title_column,
+            NoteModel.slug,
+            NoteModel.publish_status,
+            NoteModel.published_at,
+            NoteModel.updated_at,
+        ).order_by(
+            *ordering,
         )
         if only_published:
             query = query.where(NoteModel.publish_status == PublishStatusEnum.PUBLISHED)
-        models = await self.session.scalars(query)
+        rows = await self.session.execute(query)
         return [
             NoteTreeItemData(
-                folder=model.folder_ru if language == LanguageEnum.RU else model.folder_en,
-                title=model.title_ru if language == LanguageEnum.RU else model.title_en,
-                slug=model.slug,
-                publish_status=model.publish_status,
-                published_at=model.published_at,
-                updated_at=model.updated_at,
+                folder=row.folder,
+                title=row.title,
+                slug=row.slug,
+                publish_status=row.publish_status,
+                published_at=row.published_at,
+                updated_at=row.updated_at,
             )
-            for model in models
+            for row in rows
         ]
 
     async def create_note(self, *, note: Note) -> Note:

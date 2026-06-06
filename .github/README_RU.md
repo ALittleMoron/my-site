@@ -119,5 +119,5 @@ make test-backend-integration   # интеграционные тесты backen
 make test-frontend              # только frontend (jest)
 make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи и вопроса матрицы
 make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
-make query-plans-balanced       # автоматическая test DB, seed data и EXPLAIN ANALYZE search-запросов
+make query-plans-balanced       # test DB, storage-wide SQL capture и EXPLAIN ANALYZE gate
 ```

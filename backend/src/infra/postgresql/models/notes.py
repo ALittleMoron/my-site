@@ -138,6 +138,24 @@ class NoteModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
             text("published_at DESC NULLS LAST"),
             text("updated_at DESC"),
         ),
+        Index(
+            "notes_note_tree_ru_published_idx",
+            "folder_ru",
+            text("published_at DESC NULLS LAST"),
+            text("updated_at DESC"),
+            "title_ru",
+            postgresql_include=("slug", "publish_status"),
+            postgresql_where=text("publish_status = 'PUBLISHED'"),
+        ),
+        Index(
+            "notes_note_tree_en_published_idx",
+            "folder_en",
+            text("published_at DESC NULLS LAST"),
+            text("updated_at DESC"),
+            "title_en",
+            postgresql_include=("slug", "publish_status"),
+            postgresql_where=text("publish_status = 'PUBLISHED'"),
+        ),
     )
 
     def __str__(self) -> str:
