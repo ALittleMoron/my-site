@@ -1,5 +1,6 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
+
+from performance.locust.settings import LocustThresholdSettings
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,11 +17,11 @@ class PerformanceThresholds:
     max_p95_response_ms: float
 
 
-def thresholds_from_environment(environ: Mapping[str, str]) -> PerformanceThresholds:
+def thresholds_from_settings(settings: LocustThresholdSettings) -> PerformanceThresholds:
     return PerformanceThresholds(
-        max_failure_ratio=read_float(environ=environ, key="LOCUST_MAX_FAILURE_RATIO"),
-        max_average_response_ms=read_float(environ=environ, key="LOCUST_MAX_AVG_RESPONSE_MS"),
-        max_p95_response_ms=read_float(environ=environ, key="LOCUST_MAX_P95_RESPONSE_MS"),
+        max_failure_ratio=settings.max_failure_ratio,
+        max_average_response_ms=settings.max_avg_response_ms,
+        max_p95_response_ms=settings.max_p95_response_ms,
     )
 
 
@@ -46,16 +47,3 @@ def evaluate_performance(
             f"{thresholds.max_p95_response_ms:.2f} ms",
         )
     return tuple(violations)
-
-
-def read_float(*, environ: Mapping[str, str], key: str) -> float:
-    try:
-        raw_value = environ[key]
-    except KeyError as exc:
-        msg = f"{key} is required"
-        raise ValueError(msg) from exc
-    try:
-        return float(raw_value)
-    except ValueError as exc:
-        msg = f"{key} must be a number"
-        raise ValueError(msg) from exc

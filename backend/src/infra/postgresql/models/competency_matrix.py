@@ -1,8 +1,10 @@
+from datetime import datetime
 from typing import Self
 
 from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
+from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import (
@@ -10,6 +12,8 @@ from core.competency_matrix.schemas import (
     AttachedExternalResources,
     CompetencyMatrixItem,
     ExternalResource,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateParams,
 )
 from core.enums import PublishStatusEnum
 from core.types import IntId
@@ -236,6 +240,85 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
                     else []
                 ),
             ),
+        )
+
+
+class QueuedQuestionModel(IntegerIDMixin, BaseModel):
+    question: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Suggested or imported raw competency matrix question",
+    )
+    grade: Mapped[GradeEnum | None] = mapped_column(
+        Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
+        doc="Optional competency grade",
+    )
+    sheet: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="Optional sheet name or key",
+    )
+    section: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="Optional section",
+    )
+    subsection: Mapped[str | None] = mapped_column(
+        String(length=255),
+        doc="Optional subsection",
+    )
+    suggested_by_username: Mapped[str | None] = mapped_column(
+        String(length=255),
+        ForeignKey("auth__user_model.username", ondelete="SET NULL"),
+        doc="Username that suggested the question",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        UTCDateTime(timezone=True),
+        doc="Queue insertion time",
+    )
+
+    __table_args__ = (
+        Index("cm_queued_question_fifo_idx", created_at),
+        Index("cm_queued_question_suggested_by_idx", suggested_by_username),
+    )
+
+    @classmethod
+    def from_create_params(
+        cls,
+        *,
+        params: QueuedCompetencyMatrixQuestionCreateParams,
+        created_at: datetime,
+    ) -> Self:
+        return cls(
+            question=params.question,
+            grade=None,
+            sheet=None,
+            section=None,
+            subsection=None,
+            suggested_by_username=None,
+            created_at=created_at,
+        )
+
+    @classmethod
+    def from_domain_schema(cls, schema: QueuedCompetencyMatrixQuestion) -> Self:
+        return cls(
+            id=schema.id,
+            question=schema.question,
+            grade=schema.grade,
+            sheet=schema.sheet,
+            section=schema.section,
+            subsection=schema.subsection,
+            suggested_by_username=schema.suggested_by_username,
+            created_at=schema.created_at,
+        )
+
+    def to_domain_schema(self) -> QueuedCompetencyMatrixQuestion:
+        return QueuedCompetencyMatrixQuestion(
+            id=IntId(self.id),
+            question=self.question,
+            grade=self.grade,
+            sheet=self.sheet,
+            section=self.section,
+            subsection=self.subsection,
+            suggested_by_username=self.suggested_by_username,
+            created_at=self.created_at,
         )
 
 

@@ -1,14 +1,21 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy import ARRAY, Integer, String, and_, bindparam, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    QueuedCompetencyMatrixQuestionNotFoundError,
+)
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     ExternalResources,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
     Sheet,
     Sheets,
 )
@@ -18,7 +25,10 @@ from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.config.constants import constants
 from infra.postgresql.models import CompetencyMatrixItemModel, ExternalResourceModel
-from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
+from infra.postgresql.models.competency_matrix import (
+    QueuedQuestionModel,
+    ResourceToItemSecondaryModel,
+)
 
 
 @dataclass(kw_only=True)
@@ -263,6 +273,42 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         )
         resources = await self.session.scalars(stmt)
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
+
+    async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
+        stmt = select(QueuedQuestionModel).order_by(QueuedQuestionModel.created_at)
+        questions = await self.session.scalars(stmt)
+        return QueuedCompetencyMatrixQuestions(
+            values=[question.to_domain_schema() for question in questions],
+        )
+
+    async def get_queued_question(self, question_id: IntId) -> QueuedCompetencyMatrixQuestion:
+        question = await self._get_queued_question_model(question_id=question_id)
+        return question.to_domain_schema()
+
+    async def create_queued_question(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionCreateParams,
+    ) -> QueuedCompetencyMatrixQuestion:
+        question = QueuedQuestionModel.from_create_params(
+            params=params,
+            created_at=datetime.now(tz=UTC),
+        )
+        self.session.add(question)
+        await self.session.flush()
+        return question.to_domain_schema()
+
+    async def delete_queued_question(self, question_id: IntId) -> None:
+        question = await self._get_queued_question_model(question_id=question_id)
+        await self.session.delete(question)
+        await self.session.flush()
+
+    async def _get_queued_question_model(self, question_id: IntId) -> QueuedQuestionModel:
+        stmt = select(QueuedQuestionModel).where(QueuedQuestionModel.id == question_id)
+        question = await self.session.scalar(stmt)
+        if question is None:
+            raise QueuedCompetencyMatrixQuestionNotFoundError
+        return question
 
     def _resource_name_column(
         self,

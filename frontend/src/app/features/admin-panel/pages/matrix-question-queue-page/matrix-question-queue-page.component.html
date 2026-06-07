@@ -1,0 +1,167 @@
+<div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+  <h2 class="h4 mb-0">{{ 'adminMatrixQueue.title' | t }}</h2>
+  <button type="button" class="btn btn-outline-secondary btn-sm" (click)="loadQueue()">
+    {{ 'shared.update' | t }}
+  </button>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+} @else if (error()) {
+  <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" (retry)="loadQueue()" />
+} @else if (!hasQuestions()) {
+  <app-empty-state [message]="'adminMatrixQueue.empty' | t" />
+} @else {
+  <div class="row g-4">
+    <div class="col-12 col-xl-5">
+      <div class="list-group">
+        @for (question of questions(); track question.id) {
+          <button
+            type="button"
+            class="list-group-item list-group-item-action"
+            [class.list-group-item-success]="selectedQuestion()?.id === question.id"
+            [attr.aria-current]="selectedQuestion()?.id === question.id ? 'true' : null"
+            [attr.data-testid]="'matrix-queue-question-' + question.id"
+            (click)="selectQuestion(question)"
+          >
+            <span class="d-block fw-semibold">{{ question.question }}</span>
+            <span class="d-block small">
+              {{ 'adminMatrixQueue.createdAt' | t }}: {{ question.createdAt }}
+            </span>
+            <span class="d-block small">
+              {{ 'adminMatrixQueue.suggestedBy' | t }}:
+              {{ question.suggestedByUsername ?? ('shared.notSet' | t) }}
+            </span>
+            @if (questionStructure(question)) {
+              <span class="d-block small">
+                {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
+              </span>
+            }
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-danger btn-sm mt-2 mb-3"
+            [disabled]="rejectingQuestionId() === question.id"
+            (click)="rejectQuestion(question)"
+          >
+            {{ 'adminMatrixQueue.reject' | t }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-7">
+      @if (selectedQuestion()) {
+        <form class="row g-3" [formGroup]="form" (ngSubmit)="createQuestion()">
+          <div class="col-12">
+            <label class="form-label" for="queue-question-slug">{{ 'matrix.form.slug' | t }}</label>
+            <input id="queue-question-slug" class="form-control" formControlName="slug" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-question-sheet-key">
+              {{ 'matrix.form.sheetKey' | t }}
+            </label>
+            <input id="queue-question-sheet-key" class="form-control" formControlName="sheetKey" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-question-grade">
+              {{ 'matrix.form.grade' | t }}
+            </label>
+            <select id="queue-question-grade" class="form-select" formControlName="grade">
+              @for (grade of grades; track grade) {
+                <option [ngValue]="grade">{{ i18n.enumGradeKey(grade) | t }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-question-ru">
+              {{ 'matrix.form.questionRu' | t }}
+            </label>
+            <input id="queue-question-ru" class="form-control" formControlName="questionRu" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-question-en">
+              {{ 'matrix.form.questionEn' | t }}
+            </label>
+            <input id="queue-question-en" class="form-control" formControlName="questionEn" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-sheet-ru">{{ 'matrix.form.sheetRu' | t }}</label>
+            <input id="queue-sheet-ru" class="form-control" formControlName="sheetRu" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-sheet-en">{{ 'matrix.form.sheetEn' | t }}</label>
+            <input id="queue-sheet-en" class="form-control" formControlName="sheetEn" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-section-ru">
+              {{ 'matrix.form.sectionRu' | t }}
+            </label>
+            <input id="queue-section-ru" class="form-control" formControlName="sectionRu" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-section-en">
+              {{ 'matrix.form.sectionEn' | t }}
+            </label>
+            <input id="queue-section-en" class="form-control" formControlName="sectionEn" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-subsection-ru">
+              {{ 'matrix.form.subsectionRu' | t }}
+            </label>
+            <input id="queue-subsection-ru" class="form-control" formControlName="subsectionRu" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-subsection-en">
+              {{ 'matrix.form.subsectionEn' | t }}
+            </label>
+            <input id="queue-subsection-en" class="form-control" formControlName="subsectionEn" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-answer-ru">
+              {{ 'matrix.form.answerRu' | t }}
+            </label>
+            <textarea id="queue-answer-ru" class="form-control" rows="4" formControlName="answerRu">
+            </textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-answer-en">
+              {{ 'matrix.form.answerEn' | t }}
+            </label>
+            <textarea id="queue-answer-en" class="form-control" rows="4" formControlName="answerEn">
+            </textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-expected-answer-ru">
+              {{ 'matrix.form.expectedAnswerRu' | t }}
+            </label>
+            <textarea
+              id="queue-expected-answer-ru"
+              class="form-control"
+              rows="4"
+              formControlName="expectedAnswerRu"
+            ></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="queue-expected-answer-en">
+              {{ 'matrix.form.expectedAnswerEn' | t }}
+            </label>
+            <textarea
+              id="queue-expected-answer-en"
+              class="form-control"
+              rows="4"
+              formControlName="expectedAnswerEn"
+            ></textarea>
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-success" [disabled]="submitting()">
+              {{ 'adminMatrixQueue.create' | t }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <app-empty-state [message]="'shared.empty' | t" />
+      }
+    </div>
+  </div>
+}

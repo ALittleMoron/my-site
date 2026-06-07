@@ -68,6 +68,7 @@
         [sections]="sections()"
         [emptyMessage]="'adminPanel.emptySections' | t"
         [selectedItemKey]="selectedPageKey()"
+        [defaultExpandedSectionKeys]="defaultExpandedSectionKeys"
         sectionTestId="admin-panel-tree-section"
         itemTestId="admin-panel-tree-item"
         (itemSelected)="selectPage($event)"
@@ -83,7 +84,7 @@
     }
 
     <section class="admin-panel-content">
-      <p class="text-body-secondary mb-0">{{ 'adminPanel.emptySections' | t }}</p>
+      <router-outlet />
     </section>
   </div>
 </main>

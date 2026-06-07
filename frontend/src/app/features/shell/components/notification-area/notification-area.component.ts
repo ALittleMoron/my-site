@@ -11,7 +11,13 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
     @if (notificationService.notifications().length > 0) {
       <section class="alerts-section position-fixed top-0 end-0" aria-live="polite">
         @for (notification of notificationService.notifications(); track notification.id) {
-          <div class="alert alert-{{ notification.type }} alert-dismissible shadow-sm" role="alert">
+          <div
+            class="alert alert-dismissible shadow-sm notification-alert"
+            [class.alert-success]="notification.type === 'success'"
+            [class.alert-danger]="notification.type === 'danger'"
+            [class.notification-alert-dismissing]="notification.dismissing === true"
+            role="alert"
+          >
             {{ notification.message }}
             <button
               type="button"
@@ -24,6 +30,40 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       </section>
     }
   `,
+  styles: [
+    `
+      .alerts-section {
+        z-index: 1080;
+        inline-size: min(24rem, calc(100vw - 2rem));
+        margin: 1rem;
+      }
+
+      .notification-alert {
+        animation: notification-alert-enter 160ms ease-out;
+        transition:
+          opacity 200ms ease,
+          transform 200ms ease;
+      }
+
+      .notification-alert-dismissing {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-0.5rem);
+      }
+
+      @keyframes notification-alert-enter {
+        from {
+          opacity: 0;
+          transform: translateY(-0.5rem);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `,
+  ],
 })
 export class NotificationAreaComponent {
   readonly notificationService = inject(NotificationService);

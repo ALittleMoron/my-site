@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 export interface FoldableTreeItem {
   key: string;
@@ -24,24 +24,30 @@ export class FoldableTreeComponent {
   readonly sections = input.required<readonly FoldableTreeSection[]>();
   readonly emptyMessage = input.required<string>();
   readonly selectedItemKey = input.required<string | null>();
+  readonly defaultExpandedSectionKeys = input.required<readonly string[]>();
   readonly sectionTestId = input.required<string>();
   readonly itemTestId = input.required<string>();
   readonly itemSelected = output<string>();
 
-  readonly expandedSections = signal<ReadonlySet<string>>(new Set<string>());
+  private readonly defaultExpandedSectionKeySet = computed(
+    () => new Set(this.defaultExpandedSectionKeys()),
+  );
+  readonly sectionExpansionOverrides = signal<ReadonlyMap<string, boolean>>(
+    new Map<string, boolean>(),
+  );
 
   isExpanded(sectionKey: string): boolean {
-    return this.expandedSections().has(sectionKey);
+    return (
+      this.sectionExpansionOverrides().get(sectionKey) ??
+      this.defaultExpandedSectionKeySet().has(sectionKey)
+    );
   }
 
   toggleSection(sectionKey: string): void {
-    this.expandedSections.update((current) => {
-      const next = new Set(current);
-      if (next.has(sectionKey)) {
-        next.delete(sectionKey);
-      } else {
-        next.add(sectionKey);
-      }
+    const expanded = !this.isExpanded(sectionKey);
+    this.sectionExpansionOverrides.update((current) => {
+      const next = new Map(current);
+      next.set(sectionKey, expanded);
       return next;
     });
   }

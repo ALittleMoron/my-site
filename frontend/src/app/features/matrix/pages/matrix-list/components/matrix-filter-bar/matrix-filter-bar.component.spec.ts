@@ -14,6 +14,7 @@ describe('MatrixFilterBarComponent', () => {
         provideI18nTesting({
           'matrix.filter.clearSearch': 'Очистить поиск',
           'matrix.addQuestion': 'Добавить вопрос',
+          'matrix.suggestQuestion': 'Предложить вопрос',
         }),
       ],
     }).compileComponents();
@@ -100,6 +101,27 @@ describe('MatrixFilterBarComponent', () => {
     el.querySelector<HTMLButtonElement>('[data-testid="matrix-filter-add-question"]')!.click();
 
     expect(emitted.length).toBe(1);
+  });
+
+  it('should emit suggestQuestion when the suggestion button is clicked', () => {
+    const emitted: void[] = [];
+    fixture.componentInstance.suggestQuestion.subscribe(() => emitted.push(undefined));
+
+    el.querySelector<HTMLButtonElement>('[data-testid="matrix-filter-suggest-question"]')!.click();
+
+    expect(emitted.length).toBe(1);
+  });
+
+  it('should render suggestion button with note-tag gray styling instead of accent styling', () => {
+    const button = el.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-filter-suggest-question"]',
+    );
+
+    expect(button).toBeTruthy();
+    expect(button?.classList).toContain('btn-outline-secondary');
+    expect(button?.classList).not.toContain('btn-success');
+    expect(button?.classList).not.toContain('btn-primary');
+    expect(button?.classList).not.toContain('btn-outline-primary');
   });
 
   it('should make the published only switch green when enabled', () => {

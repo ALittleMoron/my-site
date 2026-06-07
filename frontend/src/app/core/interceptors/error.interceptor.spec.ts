@@ -32,6 +32,7 @@ describe('errorInterceptor', () => {
           code: 'server_error',
           type: 'server_error',
           message: 'Broken',
+          status: 500,
           location: null,
           attr: null,
           nested_errors: undefined,
@@ -68,6 +69,42 @@ describe('errorInterceptor', () => {
         expect(clearToken).toHaveBeenCalled();
         expect(clearSession).toHaveBeenCalled();
         expect(openLogin).toHaveBeenCalled();
+        done();
+      },
+    });
+  });
+
+  it('preserves status when backend returns non-json error body', (done) => {
+    const req = new HttpRequest('POST', '/api/competency-matrix/question-suggestions');
+    const next: HttpHandlerFn = () =>
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 429,
+            statusText: 'Too Many Requests',
+            error: '<html>Too many requests</html>',
+          }),
+      );
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthTokenService, useValue: { clearToken: jest.fn() } },
+        { provide: AuthModalService, useValue: { openLogin: jest.fn() } },
+        { provide: AuthSessionService, useValue: { clear: jest.fn() } },
+      ],
+    });
+
+    TestBed.runInInjectionContext(() => errorInterceptor(req, next)).subscribe({
+      error: (err: unknown) => {
+        expect(err).toEqual({
+          code: 'unknown',
+          type: 'unknown',
+          message: expect.any(String),
+          status: 429,
+          location: null,
+          attr: null,
+          nested_errors: undefined,
+        });
         done();
       },
     });

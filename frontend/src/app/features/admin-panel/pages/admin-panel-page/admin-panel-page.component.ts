@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import {
   FoldableTreeComponent,
   FoldableTreeSection,
@@ -12,7 +12,7 @@ import { AdminPanelHeaderComponent } from '../../components/admin-panel-header/a
 @Component({
   selector: 'app-admin-panel-page',
   standalone: true,
-  imports: [AdminPanelHeaderComponent, FoldableTreeComponent, TranslatePipe],
+  imports: [AdminPanelHeaderComponent, FoldableTreeComponent, RouterOutlet, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-panel-page.component.html',
   styleUrl: './admin-panel-page.component.scss',
@@ -23,6 +23,9 @@ export class AdminPanelPageComponent {
 
   readonly sidePanelOpen = signal(true);
   readonly selectedPageKey = signal<string | null>(null);
+  readonly defaultExpandedSectionKeys: readonly string[] = ADMIN_PANEL_NAVIGATION_SECTIONS.map(
+    (section) => section.key,
+  );
   readonly sidePanelToggleLabel = computed(() =>
     this.i18n.translate(
       this.sidePanelOpen() ? 'adminPanel.sidePanel.close' : 'adminPanel.sidePanel.open',

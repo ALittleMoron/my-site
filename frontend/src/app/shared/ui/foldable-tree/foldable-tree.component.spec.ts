@@ -25,6 +25,7 @@ describe('FoldableTreeComponent', () => {
     fixture.componentRef.setInput('sections', sections);
     fixture.componentRef.setInput('emptyMessage', 'Разделы появятся позже.');
     fixture.componentRef.setInput('selectedItemKey', 'typos');
+    fixture.componentRef.setInput('defaultExpandedSectionKeys', []);
     fixture.componentRef.setInput('sectionTestId', 'admin-tree-section');
     fixture.componentRef.setInput('itemTestId', 'admin-tree-item');
     fixture.detectChanges();
@@ -53,6 +54,19 @@ describe('FoldableTreeComponent', () => {
     ]);
     expect(items[1].classList).toContain('active');
     expect(items[1].getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('renders sections from explicit default expanded keys without a toggle click', () => {
+    fixture.componentRef.setInput('defaultExpandedSectionKeys', ['matrix']);
+    fixture.detectChanges();
+
+    const section = fixture.nativeElement.querySelector(
+      '[data-testid="admin-tree-section"]',
+    ) as HTMLButtonElement;
+    const items = fixture.nativeElement.querySelectorAll('[data-testid="admin-tree-item"]');
+
+    expect(section.getAttribute('aria-expanded')).toBe('true');
+    expect(items).toHaveLength(2);
   });
 
   it('emits selected item keys', () => {

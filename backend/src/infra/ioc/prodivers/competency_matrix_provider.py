@@ -1,13 +1,18 @@
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
+from valkey.asyncio import Valkey
 
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
-from core.competency_matrix.storages import CompetencyMatrixStorage
+from core.competency_matrix.services import QuestionSuggestionLimiter
+from core.competency_matrix.storages import CompetencyMatrixStorage, QuestionSuggestionQuotaStorage
 from core.competency_matrix.use_cases import (
     AbstractCompetencyMatrixUseCase,
     CompetencyMatrixUseCase,
 )
+from infra.config.constants import constants
+from infra.config.settings import settings
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
+from infra.valkey.storages import ValkeyQuestionSuggestionQuotaStorage
 
 
 class CompetencyMatrixProvider(Provider):
@@ -26,9 +31,37 @@ class CompetencyMatrixProvider(Provider):
     ) -> CompetencyMatrixStorage:
         return CompetencyMatrixDatabaseStorage(session=session)
 
+    @provide(scope=Scope.APP)
+    async def provide_question_suggestion_quota_storage(self) -> QuestionSuggestionQuotaStorage:
+        return ValkeyQuestionSuggestionQuotaStorage(
+            valkey=Valkey.from_url(
+                settings.valkey.get_url(
+                    db=constants.valkey.databases.question_suggestion_quota,
+                ).get_secret_value(),
+            ),
+            namespace=constants.valkey.namespaces.matrix_question_suggestions,
+        )
+
+    @provide(scope=Scope.APP)
+    async def provide_question_suggestion_limiter(
+        self,
+        quota_storage: QuestionSuggestionQuotaStorage,
+    ) -> QuestionSuggestionLimiter:
+        return QuestionSuggestionLimiter(
+            quota_storage=quota_storage,
+            quota_secret=settings.app.secret_key.to_domain_secret(),
+            anonymous_daily_limit=(
+                settings.competency_matrix.question_suggestion_anonymous_daily_limit
+            ),
+        )
+
     @provide(scope=Scope.REQUEST)
     async def provide_competency_matrix_use_case(
         self,
         storage: CompetencyMatrixStorage,
+        question_suggestion_limiter: QuestionSuggestionLimiter,
     ) -> AbstractCompetencyMatrixUseCase:
-        return CompetencyMatrixUseCase(storage=storage)
+        return CompetencyMatrixUseCase(
+            storage=storage,
+            question_suggestion_limiter=question_suggestion_limiter,
+        )

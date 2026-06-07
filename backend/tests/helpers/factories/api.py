@@ -119,6 +119,10 @@ class ApiFactoryHelper:
         }
 
     @classmethod
+    def question_suggestion_request(cls, question: str = "What is PEP 8?") -> dict[str, Any]:
+        return {"question": question}
+
+    @classmethod
     def existing_matrix_resource_attachment_request(
         cls,
         resource_id: int = 1,

@@ -21,6 +21,7 @@ export class NotesSidePanelComponent {
   readonly currentSlug = input<string | null>(null);
   readonly noteSelected = output<string>();
   readonly closePanel = output<void>();
+  readonly defaultExpandedSectionKeys: readonly string[] = [];
 
   readonly sections = computed<readonly FoldableTreeSection[]>(() => {
     this.i18n.language();

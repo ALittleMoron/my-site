@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from datetime import datetime
 
 from core.competency_matrix.enums import GradeEnum
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
-from core.types import IntId
+from core.types import IntId, SearchName
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -25,6 +28,76 @@ class Sheets(ValuedDataclass[Sheet]): ...
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Subsections(ValuedDataclass[str]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QueuedCompetencyMatrixQuestion:
+    id: IntId
+    question: str
+    grade: GradeEnum | None
+    sheet: str | None
+    section: str | None
+    subsection: str | None
+    suggested_by_username: str | None
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QueuedCompetencyMatrixQuestions(ValuedDataclass[QueuedCompetencyMatrixQuestion]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QueuedCompetencyMatrixQuestionCreateParams:
+    question: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionSuggestionLimitParams:
+    client_identifier: str
+    now: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionSuggestionCreateParams:
+    question: QueuedCompetencyMatrixQuestionCreateParams
+    limit: QuestionSuggestionLimitParams
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QueuedCompetencyMatrixQuestionCreateItemParams:
+    queued_question_id: IntId
+    item: CompetencyMatrixItemCreateParams
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixResourceSearchParams:
+    search_name: SearchName
+    limit: int
+    language: LanguageEnum
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemGetParams:
+    item_id: IntId
+    only_published: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemBySlugGetParams:
+    slug: str
+    only_published: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemPublishStatusSwitchParams:
+    item_id: IntId
+    publish_status: PublishStatusEnum
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionSuggestionQuota:
+    allowed: bool
+    remaining: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

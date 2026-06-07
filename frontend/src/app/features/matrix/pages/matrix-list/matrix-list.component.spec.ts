@@ -166,6 +166,7 @@ describe('MatrixListComponent', () => {
     publishQuestion: jest.Mock;
     unpublishQuestion: jest.Mock;
     deleteQuestion: jest.Mock;
+    suggestQuestion: jest.Mock;
   };
   let layoutPreferences: {
     matrixLayout: ReturnType<typeof import('@angular/core').signal<'list' | 'grid'>>;
@@ -188,6 +189,7 @@ describe('MatrixListComponent', () => {
       publishQuestion: jest.fn().mockReturnValue(of(undefined)),
       unpublishQuestion: jest.fn().mockReturnValue(of(undefined)),
       deleteQuestion: jest.fn().mockReturnValue(of(undefined)),
+      suggestQuestion: jest.fn().mockReturnValue(of(undefined)),
     };
 
     const { signal, computed } = await import('@angular/core');
@@ -620,5 +622,67 @@ describe('MatrixListComponent', () => {
     component.onDelete(1);
     expect(component.error()).toEqual(mockError);
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось удалить вопрос.');
+  });
+
+  it('shows quota notification when anonymous suggestion is rate limited', () => {
+    const quotaError: ApiError = {
+      code: 'too_many_requests',
+      type: 'too_many_requests',
+      message: 'Question suggestion daily quota exceeded',
+      status: 429,
+      location: null,
+      attr: null,
+    };
+    matrixService.suggestQuestion.mockReturnValue(throwError(() => quotaError));
+
+    fixture.detectChanges();
+    component.setQuestionSuggestion('What is PEP 8?');
+    component.sendQuestionSuggestion();
+
+    expect(matrixService.suggestQuestion).toHaveBeenCalledWith('What is PEP 8?');
+    expect(notificationService.error).toHaveBeenCalledWith(
+      'Лимит предложений на сегодня исчерпан.',
+    );
+  });
+
+  it('renders question suggestion as a one-line input', () => {
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-question-suggestion',
+    );
+
+    expect(input).toBeTruthy();
+    expect(input?.tagName).toBe('INPUT');
+    expect(input?.type).toBe('text');
+    expect(fixture.nativeElement.querySelector('textarea#matrix-question-suggestion')).toBeNull();
+  });
+
+  it('normalizes multiline pasted suggestion text before sending it', () => {
+    fixture.detectChanges();
+    component.setQuestionSuggestion('What is PEP 8?\nHow should it be used?');
+
+    component.sendQuestionSuggestion();
+
+    expect(matrixService.suggestQuestion).toHaveBeenCalledWith(
+      'What is PEP 8? How should it be used?',
+    );
+  });
+
+  it('renders question suggestion submit button with gray styling instead of accent styling', () => {
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    fixture.detectChanges();
+
+    const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-question-suggestion-submit"]',
+    );
+
+    expect(submitButton).toBeTruthy();
+    expect(submitButton?.classList).toContain('btn-secondary');
+    expect(submitButton?.classList).not.toContain('btn-success');
+    expect(submitButton?.classList).not.toContain('btn-primary');
   });
 });

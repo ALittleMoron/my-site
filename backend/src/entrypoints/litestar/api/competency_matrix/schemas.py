@@ -1,8 +1,9 @@
 from collections.abc import Iterable
+from datetime import datetime
 from itertools import groupby
 from typing import Annotated, Self
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
@@ -16,6 +17,12 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     ExternalResources,
     NewExternalResourceAttachment,
+    QuestionSuggestionCreateParams,
+    QuestionSuggestionLimitParams,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateItemParams,
+    QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
     Sheet,
     Sheets,
 )
@@ -32,6 +39,65 @@ class ResourceTranslationSchema(CamelCaseSchema):
 class ResourceTranslationsSchema(CamelCaseSchema):
     ru: Annotated[ResourceTranslationSchema, Field(title="Русский перевод")]
     en: Annotated[ResourceTranslationSchema, Field(title="Английский перевод")]
+
+
+class QuestionSuggestionRequestSchema(CamelCaseSchema):
+    question: Annotated[str, Field(title="Вопрос", min_length=1, max_length=255)]
+
+    @field_validator("question", mode="after")
+    @classmethod
+    def normalize_question(cls, value: str) -> str:
+        question = value.strip()
+        if not question:
+            msg = "question must not be blank"
+            raise ValueError(msg)
+        return question
+
+    def to_schema(self, *, client_identifier: str, now: datetime) -> QuestionSuggestionCreateParams:
+        return QuestionSuggestionCreateParams(
+            question=QueuedCompetencyMatrixQuestionCreateParams(question=self.question),
+            limit=QuestionSuggestionLimitParams(
+                client_identifier=client_identifier,
+                now=now,
+            ),
+        )
+
+
+class QueuedQuestionResponseSchema(CamelCaseSchema):
+    id: Annotated[int, Field(title="Идентификатор")]
+    question: Annotated[str, Field(title="Вопрос")]
+    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    sheet: Annotated[str | None, Field(title="Лист")]
+    section: Annotated[str | None, Field(title="Раздел")]
+    subsection: Annotated[str | None, Field(title="Подраздел")]
+    suggested_by_username: Annotated[str | None, Field(title="Кто предложил")]
+    created_at: Annotated[datetime, Field(title="Дата создания")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: QueuedCompetencyMatrixQuestion) -> Self:
+        return cls(
+            id=schema.id,
+            question=schema.question,
+            grade=schema.grade,
+            sheet=schema.sheet,
+            section=schema.section,
+            subsection=schema.subsection,
+            suggested_by_username=schema.suggested_by_username,
+            created_at=schema.created_at,
+        )
+
+
+class QueuedQuestionsResponseSchema(CamelCaseSchema):
+    questions: Annotated[list[QueuedQuestionResponseSchema], Field(title="Список")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: QueuedCompetencyMatrixQuestions) -> Self:
+        return cls(
+            questions=[
+                QueuedQuestionResponseSchema.from_domain_schema(schema=question)
+                for question in schema
+            ],
+        )
 
 
 class ResourceResponseSchema(CamelCaseSchema):
@@ -274,6 +340,20 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             subsection_en=self.translations.en.subsection,
             publish_status=self.publish_status,
             resources=self._to_resource_attachments(resource_id_generator=resource_id_generator),
+        )
+
+    def to_create_from_queue_schema(
+        self,
+        queued_question_id: IntId,
+        item_id_generator: ItemIdGenerator,
+        resource_id_generator: ResourceIdGenerator,
+    ) -> QueuedCompetencyMatrixQuestionCreateItemParams:
+        return QueuedCompetencyMatrixQuestionCreateItemParams(
+            queued_question_id=queued_question_id,
+            item=self.to_create_schema(
+                item_id_generator=item_id_generator,
+                resource_id_generator=resource_id_generator,
+            ),
         )
 
     def to_update_schema(

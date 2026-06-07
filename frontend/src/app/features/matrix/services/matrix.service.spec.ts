@@ -169,6 +169,23 @@ describe('MatrixService', () => {
     expect(resultId).toBe(7);
   });
 
+  it('suggestQuestion posts anonymous question suggestion', () => {
+    let completed = false;
+
+    service.suggestQuestion('What is PEP 8?').subscribe(() => {
+      completed = true;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/question-suggestions'),
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ question: 'What is PEP 8?' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(completed).toBe(true);
+  });
+
   it('updateQuestion puts localized payload to detail endpoint and maps saved detail', () => {
     let resultQuestion: string | undefined;
 

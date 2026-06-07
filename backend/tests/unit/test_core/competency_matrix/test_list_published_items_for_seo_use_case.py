@@ -8,6 +8,7 @@ from core.competency_matrix.schemas import (
     PublishedCompetencyMatrixItemForSeo,
     PublishedCompetencyMatrixItemsForSeo,
 )
+from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
@@ -18,7 +19,11 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
+        self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
+        self.use_case = CompetencyMatrixUseCase(
+            storage=self.storage,
+            question_suggestion_limiter=self.question_suggestion_limiter,
+        )
 
     async def test_list_published_items_for_seo_uses_shared_storage_list_and_available_items(
         self,

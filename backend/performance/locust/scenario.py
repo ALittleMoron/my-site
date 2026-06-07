@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from secrets import choice
 
 from core.i18n.enums import LanguageEnum
@@ -17,8 +16,9 @@ from entrypoints.litestar.api.notes.schemas import (
     NoteListResponseSchema,
     NoteTreeResponseSchema,
 )
-from performance.locust.contracts import performance_language_from_environment
+from performance.locust import constants
 from performance.locust.http import LocustHttpClient, PerformanceApiClient
+from performance.locust.settings import LocustScenarioSettings
 
 
 class PublicSiteDiscovery:
@@ -38,7 +38,9 @@ class PublicSiteDiscovery:
 
     def discover_note_slugs(self) -> list[str]:
         schema = self.api_client.get_validated(
-            f"/api/notes?page=1&pageSize=100&onlyPublished=true&language={self.language.value}",
+            "/api/notes"
+            f"?page=1&pageSize={constants.DISCOVERY_NOTES_PAGE_SIZE}"
+            f"&onlyPublished=true&language={self.language.value}",
             name="GET /api/notes",
             schema_type=NoteListResponseSchema,
         )
@@ -69,12 +71,14 @@ class PublicSiteDiscovery:
 
 
 class PublicSiteScenario:
-    def __init__(self, *, client: LocustHttpClient, environ: Mapping[str, str]) -> None:
-        self.language = performance_language_from_environment(environ)
-        self.include_spa = environ["PERFORMANCE_INCLUDE_SPA"].lower() == "true"
+    def __init__(self, *, client: LocustHttpClient, settings: LocustScenarioSettings) -> None:
+        self.language = settings.language
+        self.include_spa = settings.include_spa
+        self.include_matrix_suggestions = settings.include_matrix_suggestions
+        self.matrix_suggestion_number = 0
         self.api_client = PerformanceApiClient(
             client=client,
-            validate_responses=environ["PERFORMANCE_VALIDATE_RESPONSES"].lower() == "true",
+            validate_responses=settings.validate_responses,
         )
         self.discovery = PublicSiteDiscovery(
             api_client=self.api_client,
@@ -105,7 +109,9 @@ class PublicSiteScenario:
 
     def notes_list(self) -> None:
         self.api_client.get(
-            f"/api/notes?page=1&pageSize=10&onlyPublished=true&language={self.language.value}",
+            "/api/notes"
+            f"?page=1&pageSize={constants.NOTES_LIST_PAGE_SIZE}"
+            f"&onlyPublished=true&language={self.language.value}",
             name="GET /api/notes",
             schema_type=NoteListResponseSchema,
         )
@@ -165,10 +171,33 @@ class PublicSiteScenario:
     def matrix_resources_search(self) -> None:
         self.api_client.get(
             "/api/competency-matrix/resources/search"
-            f"?searchName=python&limit=5&language={self.language.value}",
+            f"?searchName={constants.MATRIX_RESOURCE_SEARCH_NAME}"
+            f"&limit={constants.MATRIX_RESOURCE_SEARCH_LIMIT}"
+            f"&language={self.language.value}",
             name="GET /api/competency-matrix/resources/search",
             schema_type=CompetencyMatrixResourcesResponseSchema,
         )
+
+    def matrix_question_suggestion(self) -> None:
+        if not self.include_matrix_suggestions:
+            return
+        self.matrix_suggestion_number += 1
+        with self.api_client.client.post(
+            "/api/competency-matrix/question-suggestions",
+            name="POST /api/competency-matrix/question-suggestions",
+            json={
+                "question": (
+                    f"{constants.MATRIX_QUESTION_SUGGESTION_PREFIX} "
+                    f"{self.language.value}-{self.matrix_suggestion_number}"
+                ),
+            },
+            catch_response=True,
+        ) as response:
+            if response.status_code in constants.MATRIX_QUESTION_SUGGESTION_SUCCESS_STATUSES:
+                return
+            response.failure(
+                f"POST /api/competency-matrix/question-suggestions returned {response.status_code}",
+            )
 
     def spa_root(self) -> None:
         if self.include_spa:

@@ -19,11 +19,13 @@ class _MinioBucketNamesConstants:
 class _ValkeyDatabaseConstants:
     response_cache: int = 0
     auth_revocations: int = 1
+    question_suggestion_quota: int = 2
 
 
 class _ValkeyNamespaceConstants:
     auth_revocations: str = "AUTH_REVOCATIONS"
     framework: str = "LITESTAR"
+    matrix_question_suggestions: str = "MATRIX_QUESTION_SUGGESTIONS"
 
 
 class _ValkeyConstants:

@@ -1,9 +1,21 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from hashlib import md5
 from sys import stdout
 from uuid import UUID
 
-from sqlalchemy import Integer, String, case, delete, func, insert, literal, select, text, union_all
+from sqlalchemy import (
+    Integer,
+    String,
+    case,
+    delete,
+    func,
+    insert,
+    literal,
+    select,
+    text,
+    true,
+    union_all,
+)
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -19,6 +31,7 @@ from infra.postgresql.models import (
     NoteModel,
     NoteReactionModel,
     NoteToTagSecondaryModel,
+    QueuedQuestionModel,
     TagModel,
     UserModel,
 )
@@ -26,6 +39,7 @@ from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryMod
 from performance.query_plans.models import DatasetProfile
 
 SEED_NOW = datetime(2026, 1, 15, 12, 0, tzinfo=UTC)
+SEED_USERNAME = "benchmark"
 PYTHON_ID = 1
 POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
@@ -33,6 +47,7 @@ GENERAL_TAG_START_ID = 4
 TARGET_NOTE_DIVISOR = 100
 USER_SEED_COUNT = 10_000
 NOTE_REACTION_SEED_COUNT = 50_000
+QUEUED_QUESTION_SEED_COUNT = 50_000
 
 
 async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
@@ -52,11 +67,13 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await insert_resources(connection=connection, profile=profile)
     await insert_competency_matrix_items(connection=connection, profile=profile)
     await insert_competency_matrix_resource_links(connection=connection)
+    await insert_queued_competency_matrix_questions(connection=connection)
 
 
 async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
     for model in (
         ResourceToItemSecondaryModel,
+        QueuedQuestionModel,
         CompetencyMatrixItemModel,
         ExternalResourceModel,
         NoteReactionModel,
@@ -78,7 +95,7 @@ async def insert_users(*, connection: AsyncConnection) -> None:
             ["username", "password_hash", "role"],
             select(
                 case(
-                    (value == 1, literal("benchmark")),
+                    (value == 1, literal(SEED_USERNAME)),
                     else_=func.concat(literal("benchmark-user-"), value),
                 ),
                 func.concat(literal("query-plan-seed-password-hash-"), value),
@@ -380,6 +397,34 @@ async def insert_competency_matrix_resource_links(*, connection: AsyncConnection
     )
 
 
+async def insert_queued_competency_matrix_questions(*, connection: AsyncConnection) -> None:
+    await connection.execute(
+        insert(QueuedQuestionModel.__table__),
+        [
+            {
+                "id": value,
+                "question": f"Queued matrix question {value}",
+                "grade": "JUNIOR" if value % 5 == 0 else None,
+                "sheet": "Python" if value % 7 == 0 else None,
+                "section": "Basics" if value % 7 == 0 else None,
+                "subsection": "Functions" if value % 7 == 0 else None,
+                "suggested_by_username": SEED_USERNAME if value % 10 == 0 else None,
+                "created_at": SEED_NOW + timedelta(seconds=value),
+            }
+            for value in range(1, QUEUED_QUESTION_SEED_COUNT + 1)
+        ],
+    )
+    await connection.execute(
+        select(
+            func.setval(
+                func.pg_get_serial_sequence(QueuedQuestionModel.__tablename__, "id"),
+                QUEUED_QUESTION_SEED_COUNT,
+                true(),
+            ),
+        ),
+    )
+
+
 def generate_series_subquery(*, end: int, name: str) -> Subquery:
     return select(func.generate_series(1, end).label("value")).subquery(name)
 
@@ -418,6 +463,7 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "competency_matrix__external_resource_model",
         "competency_matrix__competency_matrix_item_model",
         "competency_matrix__resource_to_item_secondary_model",
+        "competency_matrix__queued_question_model",
         "auth__user_model",
     ):
         await connection.execute(text(f"VACUUM ANALYZE {table_name}"))

@@ -25,6 +25,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           code: body?.code ?? 'unknown',
           type: body?.type ?? 'unknown',
           message: body?.message ?? error.message,
+          status: error.status,
           location: body?.location ?? null,
           attr: body?.attr ?? null,
           nested_errors: body?.nested_errors,

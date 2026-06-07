@@ -4,6 +4,8 @@ import pytest
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.schemas import CompetencyMatrixItemGetParams
+from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
@@ -14,7 +16,11 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
+        self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
+        self.use_case = CompetencyMatrixUseCase(
+            storage=self.storage,
+            question_suggestion_limiter=self.question_suggestion_limiter,
+        )
 
     async def test_not_available(self) -> None:
         item = self.factory.core.competency_matrix_item(
@@ -29,8 +35,10 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         self.storage.get_competency_matrix_item.return_value = item
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.get_item(
-                item_id=self.factory.core.int_id(2),
-                only_published=True,
+                params=CompetencyMatrixItemGetParams(
+                    item_id=self.factory.core.int_id(2),
+                    only_published=True,
+                ),
             )
 
     async def test_available(self) -> None:
@@ -45,8 +53,10 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         )
         self.storage.get_competency_matrix_item.return_value = item
         res_item = await self.use_case.get_item(
-            item_id=self.factory.core.int_id(1),
-            only_published=True,
+            params=CompetencyMatrixItemGetParams(
+                item_id=self.factory.core.int_id(1),
+                only_published=True,
+            ),
         )
         assert item == res_item
 
@@ -62,7 +72,9 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         )
         self.storage.get_competency_matrix_item.return_value = item
         res_item = await self.use_case.get_item(
-            item_id=self.factory.core.int_id(1),
-            only_published=False,
+            params=CompetencyMatrixItemGetParams(
+                item_id=self.factory.core.int_id(1),
+                only_published=False,
+            ),
         )
         assert item == res_item

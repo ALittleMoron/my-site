@@ -2,6 +2,7 @@ import pytest_asyncio
 from httpx import codes
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.schemas import CompetencyMatrixItemPublishStatusSwitchParams
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -27,6 +28,8 @@ class TestSetPublishedStatusToItemAPI(ContainerFixture, ApiFixture, FactoryFixtu
         response = self.api.post_set_published_status_to_item(pk=1)
         assert response.status_code == codes.NO_CONTENT, response.content
         self.use_case.switch_item_publish_status.assert_called_once_with(
-            item_id=self.factory.core.int_id(1),
-            publish_status=PublishStatusEnum.PUBLISHED,
+            params=CompetencyMatrixItemPublishStatusSwitchParams(
+                item_id=self.factory.core.int_id(1),
+                publish_status=PublishStatusEnum.PUBLISHED,
+            ),
         )

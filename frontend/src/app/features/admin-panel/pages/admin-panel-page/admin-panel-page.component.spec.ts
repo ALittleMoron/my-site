@@ -16,13 +16,13 @@ describe('AdminPanelPageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the admin header and empty admin sections side panel', () => {
+  it('renders the admin header and matrix question queue section', () => {
     expect(fixture.nativeElement.querySelector('app-admin-panel-header')).not.toBeNull();
     expect(
       fixture.nativeElement.querySelector('[data-testid="admin-panel-side-panel"]'),
     ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Разделы');
-    expect(fixture.nativeElement.textContent).toContain('Разделы админки появятся позже.');
+    expect(fixture.nativeElement.textContent).toContain('Очередь вопросов матрицы');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

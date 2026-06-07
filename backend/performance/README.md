@@ -88,6 +88,9 @@ The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
 - `PERFORMANCE_REPORT_DIR`: report output directory, relative to `backend/` when using Make.
 - `PERFORMANCE_LANGUAGE`: UI/content language for localized API calls.
 - `PERFORMANCE_INCLUDE_SPA`: set to `true` when the target serves the Angular SPA as well as `/api/*`.
+- `PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS`: set to `true` only for targeted mutation runs that
+  should exercise `POST /api/competency-matrix/question-suggestions`; the default test env keeps it
+  `false` so smoke/baseline runs remain read-heavy and do not spend the daily suggestion quota.
 - `PERFORMANCE_VALIDATE_RESPONSES`: set to `true` to validate selected API responses with backend Pydantic response schemas.
 - `PERFORMANCE_SEED_DATA`: set to `true` only for local test-database runs. It seeds published
   notes, note detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and

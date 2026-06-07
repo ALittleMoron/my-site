@@ -43,6 +43,7 @@ import { MatrixQuestionFormComponent } from './components/matrix-question-form/m
 
 const CHOSEN_SHEET_KEY = 'chosenSheet';
 const RESOURCE_SEARCH_LIMIT = 10;
+const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 
 @Component({
   selector: 'app-matrix-list',
@@ -91,6 +92,10 @@ export class MatrixListComponent implements OnInit {
   readonly detailVisible = signal(false);
   readonly detailMode = signal<'view' | 'edit' | 'create'>('view');
   readonly resourceSearchResults = signal<MatrixResource[]>([]);
+  readonly suggestionVisible = signal(false);
+  readonly suggestionQuestion = signal('');
+  readonly suggestionSubmitting = signal(false);
+  readonly suggestionError = signal<ApiError | null>(null);
 
   readonly layoutMode = this.layoutPreferences.matrixLayout;
   readonly selectedSheet = computed<MatrixSheet | null>(() => {
@@ -129,6 +134,7 @@ export class MatrixListComponent implements OnInit {
     () =>
       !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
+  readonly canSubmitSuggestion = computed(() => this.suggestionQuestion().trim().length > 0);
   readonly selectedQuestionPageLink = computed<string | null>(() => {
     const question = this.selectedQuestion();
     const language = this.i18n.language();
@@ -276,6 +282,59 @@ export class MatrixListComponent implements OnInit {
     this.resourceSearchResults.set([]);
   }
 
+  openQuestionSuggestion(): void {
+    this.suggestionVisible.set(true);
+    this.suggestionQuestion.set('');
+    this.suggestionSubmitting.set(false);
+    this.suggestionError.set(null);
+  }
+
+  closeQuestionSuggestion(): void {
+    if (this.suggestionSubmitting()) return;
+    this.suggestionVisible.set(false);
+    this.suggestionQuestion.set('');
+    this.suggestionError.set(null);
+  }
+
+  setQuestionSuggestion(value: string): void {
+    this.suggestionQuestion.set(normalizeSuggestionQuestion(value));
+    this.suggestionError.set(null);
+  }
+
+  onQuestionSuggestionInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    const value = normalizeSuggestionQuestion(target?.value ?? '');
+    if (target !== null && target.value !== value) {
+      target.value = value;
+    }
+    this.setQuestionSuggestion(value);
+  }
+
+  sendQuestionSuggestion(): void {
+    const trimmedQuestion = normalizeSuggestionQuestion(this.suggestionQuestion()).trim();
+    if (!trimmedQuestion) return;
+    this.suggestionSubmitting.set(true);
+    this.suggestionError.set(null);
+    this.matrixService
+      .suggestQuestion(trimmedQuestion)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.suggestionSubmitting.set(false);
+          this.suggestionVisible.set(false);
+          this.suggestionQuestion.set('');
+          this.notifications.success(this.i18n.translate('matrix.suggestion.sent'));
+        },
+        error: (err: ApiError) => {
+          this.suggestionSubmitting.set(false);
+          this.suggestionError.set(err);
+          const messageKey =
+            err.status === 429 ? 'matrix.suggestion.quotaExceeded' : 'matrix.suggestion.error';
+          this.notifications.error(this.i18n.translate(messageKey));
+        },
+      });
+  }
+
   openEdit(): void {
     this.detailMode.set('edit');
     this.resourceSearchResults.set([]);
@@ -386,4 +445,8 @@ export class MatrixListComponent implements OnInit {
   private storage(): Storage | null {
     return this.document.defaultView?.localStorage ?? null;
   }
+}
+
+function normalizeSuggestionQuestion(value: string): string {
+  return value.replace(LINE_BREAKS_PATTERN, ' ');
 }

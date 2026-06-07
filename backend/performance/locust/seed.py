@@ -1,7 +1,4 @@
 import asyncio
-import os
-from collections.abc import Mapping
-from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from urllib.parse import urlparse
 from uuid import UUID
@@ -25,6 +22,10 @@ from infra.postgresql.models import (
     UserModel,
 )
 from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
+from performance.locust.settings import (
+    LocustSeedConfig,
+    settings,
+)
 
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})  # noqa: S104
 SEED_AUTHOR_USERNAME = "performance-seed-admin"
@@ -61,58 +62,19 @@ TAG_SPECS = (
 )
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class PerformanceSeedConfig:
-    enabled: bool
-    performance_host: str
-    db_host: str
-    db_name: str
-
-
-def seed_config_from_environment(environ: Mapping[str, str]) -> PerformanceSeedConfig:
-    return PerformanceSeedConfig(
-        enabled=read_bool(environ=environ, key="PERFORMANCE_SEED_DATA"),
-        performance_host=read_required(environ=environ, key="PERFORMANCE_HOST"),
-        db_host=read_required(environ=environ, key="DB_HOST"),
-        db_name=read_required(environ=environ, key="DB_NAME"),
-    )
-
-
-def validate_seed_config(config: PerformanceSeedConfig) -> bool:
-    if not config.enabled:
+def validate_seed_config(config: LocustSeedConfig) -> bool:
+    if not config.seed.seed_data:
         return False
-    if host_from_url(config.performance_host) not in LOCAL_HOSTS:
+    if host_from_url(config.seed.host) not in LOCAL_HOSTS:
         msg = "PERFORMANCE_SEED_DATA requires a local target"
         raise ValueError(msg)
-    if config.db_host not in LOCAL_HOSTS:
+    if config.database.host not in LOCAL_HOSTS:
         msg = "PERFORMANCE_SEED_DATA requires a local database host"
         raise ValueError(msg)
-    if "test" not in config.db_name:
+    if "test" not in config.database.name:
         msg = "PERFORMANCE_SEED_DATA requires a test database"
         raise ValueError(msg)
     return True
-
-
-def read_required(*, environ: Mapping[str, str], key: str) -> str:
-    try:
-        value = environ[key]
-    except KeyError as exc:
-        msg = f"{key} is required"
-        raise ValueError(msg) from exc
-    if not value:
-        msg = f"{key} is required"
-        raise ValueError(msg)
-    return value
-
-
-def read_bool(*, environ: Mapping[str, str], key: str) -> bool:
-    raw_value = read_required(environ=environ, key=key).lower()
-    if raw_value == "true":
-        return True
-    if raw_value == "false":
-        return False
-    msg = f"{key} must be true or false"
-    raise ValueError(msg)
 
 
 def host_from_url(value: str) -> str:
@@ -122,8 +84,7 @@ def host_from_url(value: str) -> str:
     return value.split(":", maxsplit=1)[0]
 
 
-async def run_seed_from_environment(environ: Mapping[str, str]) -> None:
-    config = seed_config_from_environment(environ)
+async def run_seed_from_settings(config: LocustSeedConfig) -> None:
     if not validate_seed_config(config):
         logger.info("Performance seed skipped")
         return
@@ -442,7 +403,7 @@ def matrix_item_id(item_index: int) -> int:
 
 
 def main() -> None:
-    asyncio.run(run_seed_from_environment(environ=os.environ))
+    asyncio.run(run_seed_from_settings(config=settings.seed))
 
 
 if __name__ == "__main__":

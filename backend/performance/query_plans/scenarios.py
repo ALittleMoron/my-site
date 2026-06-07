@@ -12,6 +12,7 @@ from core.competency_matrix.schemas import (
     AttachedExternalResources,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    QueuedCompetencyMatrixQuestionCreateParams,
 )
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
@@ -373,6 +374,26 @@ async def run_update_competency_matrix_item_publish_status(session: AsyncSession
         IntId(100),
         PublishStatusEnum.DRAFT,
     )
+
+
+async def run_list_queued_questions(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).list_queued_questions()
+
+
+async def run_get_queued_question(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).get_queued_question(IntId(100))
+
+
+async def run_create_queued_question(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).create_queued_question(
+        params=QueuedCompetencyMatrixQuestionCreateParams(
+            question="How should query-plan checks cover the matrix queue?",
+        ),
+    )
+
+
+async def run_delete_queued_question(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).delete_queued_question(IntId(101))
 
 
 async def run_get_resources_by_ids(session: AsyncSession) -> None:
@@ -902,6 +923,46 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
         allow_seq_scan_reason=None,
         run=run_update_competency_matrix_item_publish_status,
+    ),
+    scenario(
+        name="matrix_queue_list_fifo",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="list_queued_questions",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=("cm_queued_question_fifo_idx",),
+        forbidden_seq_scan_relations=("competency_matrix__queued_question_model",),
+        allow_seq_scan_reason=None,
+        run=run_list_queued_questions,
+    ),
+    scenario(
+        name="matrix_queue_detail_by_id",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="get_queued_question",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("competency_matrix__queued_question_model_pkey",),
+        forbidden_seq_scan_relations=("competency_matrix__queued_question_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_queued_question,
+    ),
+    scenario(
+        name="matrix_queue_create",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="create_queued_question",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_queued_question,
+    ),
+    scenario(
+        name="matrix_queue_delete",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="delete_queued_question",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("competency_matrix__queued_question_model_pkey",),
+        forbidden_seq_scan_relations=("competency_matrix__queued_question_model",),
+        allow_seq_scan_reason=None,
+        run=run_delete_queued_question,
     ),
     scenario(
         name="matrix_resources_by_ids",

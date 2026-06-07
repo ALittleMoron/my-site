@@ -2,6 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.competency_matrix.schemas import CompetencyMatrixItemPublishStatusSwitchParams
+from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.enums import PublishStatusEnum
@@ -12,12 +14,18 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
-        self.use_case = CompetencyMatrixUseCase(storage=self.storage)
+        self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
+        self.use_case = CompetencyMatrixUseCase(
+            storage=self.storage,
+            question_suggestion_limiter=self.question_suggestion_limiter,
+        )
 
     async def test_set_draft(self) -> None:
         await self.use_case.switch_item_publish_status(
-            item_id=self.factory.core.int_id(1),
-            publish_status=PublishStatusEnum.DRAFT,
+            params=CompetencyMatrixItemPublishStatusSwitchParams(
+                item_id=self.factory.core.int_id(1),
+                publish_status=PublishStatusEnum.DRAFT,
+            ),
         )
         self.storage.get_competency_matrix_item.assert_not_called()
         self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
@@ -27,8 +35,10 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
 
     async def test_set_published(self) -> None:
         await self.use_case.switch_item_publish_status(
-            item_id=self.factory.core.int_id(1),
-            publish_status=PublishStatusEnum.PUBLISHED,
+            params=CompetencyMatrixItemPublishStatusSwitchParams(
+                item_id=self.factory.core.int_id(1),
+                publish_status=PublishStatusEnum.PUBLISHED,
+            ),
         )
         self.storage.get_competency_matrix_item.assert_not_called()
         self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(

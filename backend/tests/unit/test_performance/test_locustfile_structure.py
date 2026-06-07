@@ -48,5 +48,6 @@ class TestLocustfileStructure:
             "matrix_items",
             "matrix_item_detail",
             "matrix_resources_search",
+            "matrix_question_suggestion",
             "spa_root",
         }

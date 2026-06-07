@@ -45,6 +45,14 @@
           {{ 'matrix.addQuestion' | t }}
         </button>
       }
+      <button
+        type="button"
+        class="btn btn-outline-secondary flex-shrink-0"
+        data-testid="matrix-filter-suggest-question"
+        (click)="suggestQuestion.emit()"
+      >
+        {{ 'matrix.suggestQuestion' | t }}
+      </button>
     </div>
 
     <div class="col d-flex justify-content-end align-items-center gap-3 mt-2 mt-md-0">

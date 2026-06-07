@@ -4,6 +4,10 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     ExternalResources,
+    QuestionSuggestionQuota,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
     Sheets,
 )
 from core.enums import PublishStatusEnum
@@ -72,4 +76,36 @@ class CompetencyMatrixStorage(ABC):
         limit: int,
         language: LanguageEnum,
     ) -> ExternalResources:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_queued_question(self, question_id: IntId) -> QueuedCompetencyMatrixQuestion:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_queued_question(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionCreateParams,
+    ) -> QueuedCompetencyMatrixQuestion:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_queued_question(self, question_id: IntId) -> None:
+        raise NotImplementedError
+
+
+class QuestionSuggestionQuotaStorage(ABC):
+    @abstractmethod
+    async def consume_question_suggestion_quota(
+        self,
+        *,
+        actor_key: str,
+        limit: int,
+        ttl_seconds: int,
+    ) -> QuestionSuggestionQuota:
         raise NotImplementedError

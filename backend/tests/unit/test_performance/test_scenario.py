@@ -2,8 +2,10 @@ from typing import Any, Self
 
 import pytest
 
+from core.i18n.enums import LanguageEnum
 from performance.locust import scenario as scenario_module
 from performance.locust.scenario import PublicSiteScenario
+from performance.locust.settings import LocustScenarioSettings
 
 
 class FakeResponse:
@@ -28,10 +30,18 @@ class FakeResponse:
 class FakeHttpClient:
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
+        self.post_status_code = 204
+        self.responses: list[FakeResponse] = []
 
     def get(self, path: str, **kwargs: object) -> FakeResponse:
         self.calls.append({"path": path, **kwargs})
         return FakeResponse(status_code=200, payload=self._payload_for_path(path))
+
+    def post(self, path: str, **kwargs: object) -> FakeResponse:
+        self.calls.append({"path": path, **kwargs})
+        response = FakeResponse(status_code=self.post_status_code, payload={})
+        self.responses.append(response)
+        return response
 
     def _payload_for_path(self, path: str) -> object:
         payload: object = {}
@@ -173,6 +183,19 @@ def matrix_item_detail_payload(*, slug: str) -> dict[str, object]:
 
 
 class TestPublicSiteScenario:
+    def scenario_settings(
+        self,
+        *,
+        include_matrix_suggestions: bool,
+    ) -> LocustScenarioSettings:
+        return LocustScenarioSettings(
+            _env_file=None,
+            language=LanguageEnum.EN,
+            include_spa=False,
+            include_matrix_suggestions=include_matrix_suggestions,
+            validate_responses=True,
+        )
+
     def test_matrix_requests_include_required_language_and_sheet_key(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -182,11 +205,7 @@ class TestPublicSiteScenario:
         client = FakeHttpClient()
         scenario = PublicSiteScenario(
             client=client,
-            environ={
-                "PERFORMANCE_LANGUAGE": "en",
-                "PERFORMANCE_INCLUDE_SPA": "false",
-                "PERFORMANCE_VALIDATE_RESPONSES": "true",
-            },
+            settings=self.scenario_settings(include_matrix_suggestions=False),
         )
 
         assert client.calls[0] == {
@@ -225,11 +244,7 @@ class TestPublicSiteScenario:
         client = FakeHttpClient()
         scenario = PublicSiteScenario(
             client=client,
-            environ={
-                "PERFORMANCE_LANGUAGE": "en",
-                "PERFORMANCE_INCLUDE_SPA": "false",
-                "PERFORMANCE_VALIDATE_RESPONSES": "true",
-            },
+            settings=self.scenario_settings(include_matrix_suggestions=False),
         )
 
         assert scenario.note_slugs == ["seeded-note"]
@@ -271,11 +286,7 @@ class TestPublicSiteScenario:
         client = FakeHttpClient()
         scenario = PublicSiteScenario(
             client=client,
-            environ={
-                "PERFORMANCE_LANGUAGE": "en",
-                "PERFORMANCE_INCLUDE_SPA": "false",
-                "PERFORMANCE_VALIDATE_RESPONSES": "true",
-            },
+            settings=self.scenario_settings(include_matrix_suggestions=False),
         )
         client.calls.clear()
 
@@ -294,3 +305,48 @@ class TestPublicSiteScenario:
                 "catch_response": True,
             },
         ]
+
+    def test_matrix_question_suggestion_is_skipped_when_disabled(self) -> None:
+        client = FakeHttpClient()
+        scenario = PublicSiteScenario(
+            client=client,
+            settings=self.scenario_settings(include_matrix_suggestions=False),
+        )
+        client.calls.clear()
+
+        scenario.matrix_question_suggestion()
+
+        assert client.calls == []
+
+    def test_matrix_question_suggestion_posts_when_enabled(self) -> None:
+        client = FakeHttpClient()
+        scenario = PublicSiteScenario(
+            client=client,
+            settings=self.scenario_settings(include_matrix_suggestions=True),
+        )
+        client.calls.clear()
+
+        scenario.matrix_question_suggestion()
+
+        assert client.calls == [
+            {
+                "path": "/api/competency-matrix/question-suggestions",
+                "name": "POST /api/competency-matrix/question-suggestions",
+                "json": {"question": "Locust matrix suggestion en-1"},
+                "catch_response": True,
+            },
+        ]
+        assert client.responses[-1].failure_message is None
+
+    def test_matrix_question_suggestion_accepts_expected_rate_limit(self) -> None:
+        client = FakeHttpClient()
+        client.post_status_code = 429
+        scenario = PublicSiteScenario(
+            client=client,
+            settings=self.scenario_settings(include_matrix_suggestions=True),
+        )
+        client.calls.clear()
+
+        scenario.matrix_question_suggestion()
+
+        assert client.responses[-1].failure_message is None

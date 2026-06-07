@@ -39,6 +39,8 @@
     - [x] (BACK) Guard on /api/files/presign-put
     - [x] (FRONT) Delete button on question detail
     - [x] (FRONT) Publish/Unpublish button (depending on status)
+    - [ ] Import competency matrix questions into the shared queued-question model
+    - [ ] Quick-create competency matrix questions into the shared queued-question model
   - [x] Basic auth and edit permissions (PASETO without sessions. Sessions later)
     - [x] (FRONT) Login page with login button on the main page (hidden for now)
     - [x] (BACK) Login logic
@@ -71,6 +73,7 @@
 - [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.
 - [ ] Add beta feedback intake connected to the moderation/contact inbox.
+- [ ] Избавиться от Bootstrap и писать все стили самостоятельно.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.

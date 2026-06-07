@@ -3,7 +3,12 @@ from httpx import codes
 
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItemBySlugGetParams,
+    CompetencyMatrixItemGetParams,
+)
 from core.enums import PublishStatusEnum
+from core.types import IntId
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -109,7 +114,12 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 },
             ],
         }
-        self.use_case.get_item.assert_called_once_with(item_id=1, only_published=True)
+        self.use_case.get_item.assert_called_once_with(
+            params=CompetencyMatrixItemGetParams(
+                item_id=IntId(1),
+                only_published=True,
+            ),
+        )
 
     def test_get_public_competency_matrix_item_by_slug(self) -> None:
         self.use_case.get_item_by_slug.return_value = self.factory.core.competency_matrix_item(
@@ -139,8 +149,10 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["slug"] == "how-to-write-function"
         assert response.json()["question"] == "How to write a function?"
         self.use_case.get_item_by_slug.assert_called_once_with(
-            slug="how-to-write-function",
-            only_published=True,
+            params=CompetencyMatrixItemBySlugGetParams(
+                slug="how-to-write-function",
+                only_published=True,
+            ),
         )
 
     def test_get_public_competency_matrix_item_requires_explicit_language(self) -> None:

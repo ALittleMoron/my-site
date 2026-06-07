@@ -24,6 +24,7 @@ require_common_vars() {
     require_var PERFORMANCE_REPORT_DIR
     require_var PERFORMANCE_LANGUAGE
     require_var PERFORMANCE_INCLUDE_SPA
+    require_var PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS
     require_var PERFORMANCE_VALIDATE_RESPONSES
     require_var PERFORMANCE_SEED_DATA
     require_var LOCUST_MAX_FAILURE_RATIO

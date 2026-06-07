@@ -84,6 +84,10 @@ export class MatrixService {
       .pipe(map(mapMatrixDetailDto));
   }
 
+  suggestQuestion(question: string): Observable<void> {
+    return this.api.post<void>('/api/competency-matrix/question-suggestions', { question });
+  }
+
   updateQuestion(
     id: number,
     payload: MatrixQuestionPayload,

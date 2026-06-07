@@ -12,6 +12,7 @@
   [sections]="sections()"
   [emptyMessage]="'notes.emptyTree' | t"
   [selectedItemKey]="currentSlug()"
+  [defaultExpandedSectionKeys]="defaultExpandedSectionKeys"
   sectionTestId="notes-tree-folder"
   itemTestId="notes-tree-note"
   (itemSelected)="noteSelected.emit($event)"

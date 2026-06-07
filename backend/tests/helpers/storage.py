@@ -5,7 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.schemas import User
-from core.competency_matrix.schemas import CompetencyMatrixItem, ExternalResource
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItem,
+    ExternalResource,
+    QueuedCompetencyMatrixQuestion,
+)
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
 from core.notes.schemas import Note, Tag
@@ -15,6 +19,7 @@ from infra.postgresql.models import (
     ExternalResourceModel,
     NoteModel,
     NoteToTagSecondaryModel,
+    QueuedQuestionModel,
     TagModel,
     UserModel,
 )
@@ -51,6 +56,17 @@ class StorageHelper:
         self.session.add_all(db_items)
         await self.session.flush()
         return db_items
+
+    async def create_queued_matrix_questions(
+        self,
+        questions: list[QueuedCompetencyMatrixQuestion],
+    ) -> list[QueuedQuestionModel]:
+        db_questions = [
+            QueuedQuestionModel.from_domain_schema(schema=question) for question in questions
+        ]
+        self.session.add_all(db_questions)
+        await self.session.flush()
+        return db_questions
 
     async def create_user(self, user: User) -> UserModel:
         model = UserModel.from_domain_schema(schema=user)

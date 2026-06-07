@@ -19,6 +19,7 @@ export class MatrixFilterBarComponent {
   readonly onlyPublishedChange = output<boolean>();
   readonly layoutModeChange = output<MatrixLayoutMode>();
   readonly addQuestion = output<void>();
+  readonly suggestQuestion = output<void>();
 
   isListMode(): boolean {
     return this.layoutMode() === 'list';

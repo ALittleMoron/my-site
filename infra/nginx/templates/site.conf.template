@@ -7,6 +7,7 @@ limit_req_status 429;
 limit_req_zone $binary_remote_addr zone=api_per_ip:20m rate=120r/m;
 limit_req_zone $binary_remote_addr zone=login_per_ip:10m rate=5r/m;
 limit_req_zone $binary_remote_addr zone=contact_per_ip:10m rate=3r/m;
+limit_req_zone $binary_remote_addr zone=matrix_suggestion_per_ip:10m rate=10r/m;
 limit_req_zone $binary_remote_addr zone=heavy_read_per_ip:10m rate=30r/m;
 
 upstream backend { server backend:8080; }
@@ -79,6 +80,12 @@ server {
         auth_basic off;
         limit_req zone=contact_per_ip burst=3 nodelay;
         proxy_pass http://backend/api/contacts;
+    }
+
+    location = /api/competency-matrix/question-suggestions {
+        auth_basic off;
+        limit_req zone=matrix_suggestion_per_ip burst=5 nodelay;
+        proxy_pass http://backend/api/competency-matrix/question-suggestions;
     }
 
     location = /api/notes {

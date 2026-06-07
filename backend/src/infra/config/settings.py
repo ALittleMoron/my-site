@@ -1,7 +1,7 @@
 from typing import Literal
 
 from litestar.config.response_cache import CACHE_FOREVER
-from pydantic import SecretStr
+from pydantic import PositiveInt, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from core.files.types import Namespace
@@ -125,10 +125,17 @@ class _I18nSettings(_ProjectBaseSettings):
     default_language: LanguageEnum
 
 
+class _CompetencyMatrixSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="COMPETENCY_MATRIX_")
+
+    question_suggestion_anonymous_daily_limit: PositiveInt
+
+
 class Settings:
     app: _AppSettings
     admin: _AdminSettings
     auth: _AuthSettings
+    competency_matrix: _CompetencyMatrixSettings
     database: _DatabaseSettings
     i18n: _I18nSettings
     minio: _MinioSettings
@@ -139,6 +146,7 @@ class Settings:
         self.app = _AppSettings()
         self.admin = _AdminSettings()
         self.auth = _AuthSettings()
+        self.competency_matrix = _CompetencyMatrixSettings()
         self.database = _DatabaseSettings()
         self.i18n = _I18nSettings()
         self.minio = _MinioSettings()

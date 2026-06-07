@@ -1,25 +1,21 @@
-import pytest
-
+from performance.locust.settings import LocustThresholdSettings
 from performance.locust.thresholds import (
     PerformanceStats,
     PerformanceThresholds,
     evaluate_performance,
-    thresholds_from_environment,
+    thresholds_from_settings,
 )
 
 
 class TestPerformanceThresholds:
-    def test_thresholds_from_environment_requires_failure_ratio(self) -> None:
-        with pytest.raises(ValueError, match="LOCUST_MAX_FAILURE_RATIO"):
-            thresholds_from_environment({})
-
-    def test_thresholds_from_environment_parses_explicit_values(self) -> None:
-        thresholds = thresholds_from_environment(
-            {
-                "LOCUST_MAX_FAILURE_RATIO": "0.0",
-                "LOCUST_MAX_AVG_RESPONSE_MS": "50",
-                "LOCUST_MAX_P95_RESPONSE_MS": "75",
-            },
+    def test_thresholds_from_settings_maps_explicit_values(self) -> None:
+        thresholds = thresholds_from_settings(
+            LocustThresholdSettings(
+                _env_file=None,
+                max_failure_ratio=0.0,
+                max_avg_response_ms=50.0,
+                max_p95_response_ms=75.0,
+            ),
         )
 
         assert thresholds == PerformanceThresholds(

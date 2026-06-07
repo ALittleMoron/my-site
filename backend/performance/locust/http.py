@@ -3,9 +3,8 @@ from typing import Protocol, Self
 
 from pydantic import BaseModel
 
+from performance.locust.constants import HTTP_OK
 from performance.locust.contracts import validate_response_payload
-
-HTTP_OK = 200
 
 
 class LocustResponse(Protocol):
@@ -27,6 +26,8 @@ class LocustResponse(Protocol):
 
 class LocustHttpClient(Protocol):
     def get(self, path: str, **kwargs: object) -> LocustResponse: ...
+
+    def post(self, path: str, **kwargs: object) -> LocustResponse: ...
 
 
 class PerformanceApiClient:

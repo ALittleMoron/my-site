@@ -18,6 +18,9 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     ExternalResources,
     NewExternalResourceAttachment,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
     Sheet,
     Sheets,
 )
@@ -294,6 +297,43 @@ class CoreFactoryHelper:
                 for value in values
             ],
         )
+
+    @classmethod
+    def queued_competency_matrix_question(
+        cls,
+        question_id: int,
+        question: str = "What is PEP 8?",
+        grade: GradeEnum | None = None,
+        sheet: str | None = None,
+        section: str | None = None,
+        subsection: str | None = None,
+        suggested_by_username: str | None = None,
+        created_at: datetime | None = None,
+    ) -> QueuedCompetencyMatrixQuestion:
+        return QueuedCompetencyMatrixQuestion(
+            id=cls.int_id(question_id),
+            question=question,
+            grade=grade,
+            sheet=sheet,
+            section=section,
+            subsection=subsection,
+            suggested_by_username=suggested_by_username,
+            created_at=created_at or datetime.now(tz=UTC),
+        )
+
+    @classmethod
+    def queued_competency_matrix_questions(
+        cls,
+        values: list[QueuedCompetencyMatrixQuestion] | None = None,
+    ) -> QueuedCompetencyMatrixQuestions:
+        return QueuedCompetencyMatrixQuestions(values=values or [])
+
+    @classmethod
+    def queued_competency_matrix_question_create_params(
+        cls,
+        question: str = "What is PEP 8?",
+    ) -> QueuedCompetencyMatrixQuestionCreateParams:
+        return QueuedCompetencyMatrixQuestionCreateParams(question=question)
 
     @classmethod
     def user(

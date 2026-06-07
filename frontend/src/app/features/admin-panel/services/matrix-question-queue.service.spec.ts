@@ -1,0 +1,118 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApiClient } from '../../../core/http/api-client.service';
+import { MatrixQuestionQueueService } from './matrix-question-queue.service';
+
+describe('MatrixQuestionQueueService', () => {
+  let service: MatrixQuestionQueueService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        MatrixQuestionQueueService,
+        ApiClient,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    service = TestBed.inject(MatrixQuestionQueueService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  it('loads queued questions in backend order', () => {
+    let firstQuestion: string | undefined;
+
+    service.listQueuedQuestions().subscribe((questions) => {
+      firstQuestion = questions[0].question;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/queued-questions'),
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      questions: [
+        {
+          id: 1,
+          question: 'What is PEP 8?',
+          grade: null,
+          sheet: null,
+          section: null,
+          subsection: null,
+          suggestedByUsername: null,
+          createdAt: '2026-06-07T12:00:00+00:00',
+        },
+      ],
+    });
+
+    expect(firstQuestion).toBe('What is PEP 8?');
+  });
+
+  it('rejects queued question', () => {
+    let completed = false;
+
+    service.rejectQueuedQuestion(7).subscribe(() => {
+      completed = true;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/queued-questions/7'),
+    );
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(completed).toBe(true);
+  });
+
+  it('creates matrix question from queued question', () => {
+    let createdId: number | undefined;
+
+    service
+      .createQuestionFromQueue(
+        7,
+        {
+          slug: 'pep-8',
+          sheetKey: 'python',
+          grade: 'Junior',
+          publishStatus: 'Draft',
+          translations: {
+            ru: {
+              question: 'Что такое PEP 8?',
+              answer: 'Ответ',
+              interviewExpectedAnswer: 'Ожидаемый ответ',
+              sheet: 'Питон',
+              section: 'Основы',
+              subsection: 'Стиль',
+            },
+            en: {
+              question: 'What is PEP 8?',
+              answer: 'Answer',
+              interviewExpectedAnswer: 'Expected answer',
+              sheet: 'Python',
+              section: 'Core',
+              subsection: 'Style',
+            },
+          },
+          resources: [],
+        },
+        'en',
+      )
+      .subscribe((created) => {
+        createdId = created.id;
+      });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/queued-questions/7/create-item'),
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.params.get('language')).toBe('en');
+    expect(req.request.body.slug).toBe('pep-8');
+    req.flush({ id: 10, slug: 'pep-8', question: 'What is PEP 8?' });
+
+    expect(createdId).toBe(10);
+  });
+});

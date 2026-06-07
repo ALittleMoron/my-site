@@ -18,7 +18,7 @@ describe('NotificationAreaComponent', () => {
           useValue: {
             notifications: signal([
               { id: 1, type: 'success', message: 'Saved' },
-              { id: 2, type: 'danger', message: 'Failed' },
+              { id: 2, type: 'danger', message: 'Failed', dismissing: true },
             ]),
             dismiss,
           },
@@ -35,6 +35,7 @@ describe('NotificationAreaComponent', () => {
     expect(alerts.length).toBe(2);
     expect(alerts[0].textContent).toContain('Saved');
     expect(alerts[1].textContent).toContain('Failed');
+    expect(alerts[1].classList).toContain('notification-alert-dismissing');
   });
 
   it('dismisses a notification from the close button', () => {

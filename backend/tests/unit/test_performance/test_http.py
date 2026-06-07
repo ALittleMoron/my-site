@@ -32,6 +32,10 @@ class FakeHttpClient:
         self.calls.append({"path": path, **kwargs})
         return self.response
 
+    def post(self, path: str, **kwargs: object) -> FakeResponse:
+        self.calls.append({"path": path, **kwargs})
+        return self.response
+
 
 class TestPerformanceApiClient:
     def test_get_without_validation_delegates_to_locust_client(self) -> None:

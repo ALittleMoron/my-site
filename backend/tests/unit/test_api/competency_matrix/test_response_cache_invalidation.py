@@ -43,9 +43,19 @@ class TestCompetencyMatrixResponseCacheInvalidation(
             item_id=1,
             publish_status=PublishStatusEnum.PUBLISHED,
         )
+        self.use_case.create_item_from_queue.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=2,
+                publish_status=PublishStatusEnum.DRAFT,
+            )
+        )
 
         responses = [
             self.api.post_create_item(data=self.factory.api.competency_matrix_item_request()),
+            self.api.post_create_item_from_queue(
+                question_id=1,
+                data=self.factory.api.competency_matrix_item_request(slug="queued-question"),
+            ),
             self.api.put_update_item(pk=1, data=self.factory.api.competency_matrix_item_request()),
             self.api.delete_item(pk=1),
             self.api.post_set_published_status_to_item(pk=1),
@@ -54,12 +64,13 @@ class TestCompetencyMatrixResponseCacheInvalidation(
 
         assert [response.status_code for response in responses] == [
             codes.CREATED,
+            codes.CREATED,
             codes.OK,
             codes.NO_CONTENT,
             codes.NO_CONTENT,
             codes.NO_CONTENT,
         ]
-        assert invalidated_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 5
+        assert invalidated_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 6
 
     def test_item_validation_error_does_not_invalidate_matrix_response_cache(
         self,

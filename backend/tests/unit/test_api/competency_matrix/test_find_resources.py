@@ -1,6 +1,7 @@
 import pytest_asyncio
 from httpx import codes
 
+from core.competency_matrix.schemas import CompetencyMatrixResourceSearchParams
 from core.i18n.enums import LanguageEnum
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -40,9 +41,11 @@ class TestFindResourcesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ],
         }
         self.use_case.find_resources.assert_called_once_with(
-            search_name=self.factory.core.search_name("test"),
-            limit=10,
-            language=LanguageEnum.EN,
+            params=CompetencyMatrixResourceSearchParams(
+                search_name=self.factory.core.search_name("test"),
+                limit=10,
+                language=LanguageEnum.EN,
+            ),
         )
 
     def test_search_resources_requires_limit(self) -> None:

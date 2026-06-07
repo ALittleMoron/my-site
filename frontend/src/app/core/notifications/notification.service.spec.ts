@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
@@ -19,12 +19,42 @@ describe('NotificationService', () => {
     ]);
   });
 
-  it('dismisses notification by id', () => {
+  it('dismisses notification by id with exit state before removal', fakeAsync(() => {
     service.success('Saved');
     service.error('Failed');
 
     service.dismiss(1);
 
+    expect(service.notifications()).toEqual([
+      { id: 1, type: 'success', message: 'Saved', dismissing: true },
+      { id: 2, type: 'danger', message: 'Failed' },
+    ]);
+
+    tick(200);
+
     expect(service.notifications()).toEqual([{ id: 2, type: 'danger', message: 'Failed' }]);
-  });
+  }));
+
+  it('auto-dismisses success notifications after five seconds', fakeAsync(() => {
+    service.success('Saved');
+
+    tick(4999);
+    expect(service.notifications()).toEqual([{ id: 1, type: 'success', message: 'Saved' }]);
+
+    tick(1);
+    expect(service.notifications()).toEqual([
+      { id: 1, type: 'success', message: 'Saved', dismissing: true },
+    ]);
+
+    tick(200);
+    expect(service.notifications()).toEqual([]);
+  }));
+
+  it('keeps error notifications until manual dismissal', fakeAsync(() => {
+    service.error('Failed');
+
+    tick(5200);
+
+    expect(service.notifications()).toEqual([{ id: 1, type: 'danger', message: 'Failed' }]);
+  }));
 });

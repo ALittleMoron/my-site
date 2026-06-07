@@ -18,6 +18,7 @@
     (onlyPublishedChange)="setOnlyPublished($event)"
     (layoutModeChange)="setLayoutMode($event)"
     (addQuestion)="openCreate()"
+    (suggestQuestion)="openQuestionSuggestion()"
   />
 
   @if (loading()) {
@@ -107,6 +108,76 @@
           }
         </div>
       </div>
+    </div>
+  </div>
+}
+
+@if (suggestionVisible()) {
+  <div
+    class="modal d-block modal-backdrop-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'matrix.suggestion.title' | t"
+    (click)="closeQuestionSuggestion()"
+    (keyup.escape)="closeQuestionSuggestion()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <form class="modal-content" (submit)="$event.preventDefault(); sendQuestionSuggestion()">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ 'matrix.suggestion.title' | t }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            [disabled]="suggestionSubmitting()"
+            [attr.aria-label]="'shared.close' | t"
+            (click)="closeQuestionSuggestion()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label" for="matrix-question-suggestion">
+            {{ 'matrix.suggestion.question' | t }}
+          </label>
+          <input
+            type="text"
+            id="matrix-question-suggestion"
+            class="form-control form-bordered"
+            maxlength="255"
+            [placeholder]="'matrix.suggestion.placeholder' | t"
+            [value]="suggestionQuestion()"
+            [disabled]="suggestionSubmitting()"
+            (input)="onQuestionSuggestionInput($event)"
+          />
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="suggestionSubmitting()"
+            (click)="closeQuestionSuggestion()"
+          >
+            {{ 'shared.cancel' | t }}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-secondary"
+            data-testid="matrix-question-suggestion-submit"
+            [disabled]="!canSubmitSuggestion() || suggestionSubmitting()"
+          >
+            @if (suggestionSubmitting()) {
+              {{ 'matrix.suggestion.submitting' | t }}
+            } @else {
+              {{ 'matrix.suggestion.submit' | t }}
+            }
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 }

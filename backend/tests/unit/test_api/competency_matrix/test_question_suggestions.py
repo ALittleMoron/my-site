@@ -1,0 +1,219 @@
+from datetime import UTC, datetime
+from unittest.mock import ANY
+
+import pytest_asyncio
+from httpx import codes
+
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
+from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.exceptions import (
+    QuestionSuggestionQuotaExceededError,
+    QueuedCompetencyMatrixQuestionNotFoundError,
+)
+from core.competency_matrix.schemas import (
+    QuestionSuggestionCreateParams,
+    QueuedCompetencyMatrixQuestion,
+    QueuedCompetencyMatrixQuestionCreateItemParams,
+    QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
+)
+from core.enums import PublishStatusEnum
+from core.types import IntId
+from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+
+
+class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
+        self.use_case = await self.container.get_competency_matrix_use_case()
+
+    def test_anonymous_user_can_suggest_question(self) -> None:
+        response = self.no_auth_api.post_question_suggestion(question="  What is PEP 8?  ")
+
+        assert response.status_code == codes.NO_CONTENT, response.content
+        self.use_case.suggest_question.assert_called_once_with(
+            params=ANY,
+        )
+        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
+        assert isinstance(call_params, QuestionSuggestionCreateParams)
+        assert call_params.question == QueuedCompetencyMatrixQuestionCreateParams(
+            question="What is PEP 8?",
+        )
+        assert call_params.limit.client_identifier != ""
+        assert call_params.limit.now.tzinfo is not None
+
+    def test_anonymous_suggestion_uses_forwarded_client_identifier(self) -> None:
+        response = self.no_auth_api.post_question_suggestion(
+            question="What is PEP 8?",
+            headers={"X-Forwarded-For": "203.0.113.10, 10.0.0.2"},
+        )
+
+        assert response.status_code == codes.NO_CONTENT, response.content
+        self.use_case.suggest_question.assert_called_once_with(
+            params=ANY,
+        )
+        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
+        assert call_params == QuestionSuggestionCreateParams(
+            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            limit=call_params.limit,
+        )
+        assert call_params.limit.client_identifier == "203.0.113.10"
+        assert call_params.limit.now.tzinfo is not None
+
+    def test_suggest_question_rejects_empty_question(self) -> None:
+        response = self.no_auth_api.post_question_suggestion(question="")
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.suggest_question.assert_not_called()
+
+    def test_suggest_question_rejects_blank_question(self) -> None:
+        response = self.no_auth_api.post_question_suggestion(question="   ")
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.suggest_question.assert_not_called()
+
+    def test_suggest_question_returns_429_when_daily_quota_is_exhausted(self) -> None:
+        self.use_case.suggest_question.side_effect = QuestionSuggestionQuotaExceededError
+
+        response = self.no_auth_api.post_question_suggestion(question="What is PEP 8?")
+
+        assert response.status_code == codes.TOO_MANY_REQUESTS
+        assert response.json()["message"] == "Question suggestion daily quota exceeded"
+
+    def test_content_manager_can_list_queue_in_fifo_order(self) -> None:
+        self.use_case.list_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                QueuedCompetencyMatrixQuestion(
+                    id=IntId(1),
+                    question="First question",
+                    grade=None,
+                    sheet=None,
+                    section=None,
+                    subsection=None,
+                    suggested_by_username=None,
+                    created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+                ),
+                QueuedCompetencyMatrixQuestion(
+                    id=IntId(2),
+                    question="Second question",
+                    grade=GradeEnum.JUNIOR,
+                    sheet="Python",
+                    section="Core",
+                    subsection="Syntax",
+                    suggested_by_username="alice",
+                    created_at=datetime(2026, 6, 7, 12, 1, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.get_queued_matrix_questions()
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json() == {
+            "questions": [
+                {
+                    "id": 1,
+                    "question": "First question",
+                    "grade": None,
+                    "sheet": None,
+                    "section": None,
+                    "subsection": None,
+                    "suggestedByUsername": None,
+                    "createdAt": "2026-06-07T12:00:00+00:00",
+                },
+                {
+                    "id": 2,
+                    "question": "Second question",
+                    "grade": "Junior",
+                    "sheet": "Python",
+                    "section": "Core",
+                    "subsection": "Syntax",
+                    "suggestedByUsername": "alice",
+                    "createdAt": "2026-06-07T12:01:00+00:00",
+                },
+            ],
+        }
+        self.use_case.list_queued_questions.assert_called_once_with()
+
+    def test_regular_user_cannot_list_queue(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="user",
+            role=RoleEnum.USER,
+        )
+
+        response = self.api.get_queued_matrix_questions()
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.list_queued_questions.assert_not_called()
+
+    def test_content_manager_can_reject_queue_entry(self) -> None:
+        response = self.api.delete_queued_matrix_question(question_id=7)
+
+        assert response.status_code == codes.NO_CONTENT
+        self.use_case.delete_queued_question.assert_called_once_with(question_id=IntId(7))
+
+    def test_reject_queue_entry_returns_not_found(self) -> None:
+        self.use_case.delete_queued_question.side_effect = (
+            QueuedCompetencyMatrixQuestionNotFoundError
+        )
+
+        response = self.api.delete_queued_matrix_question(question_id=404)
+
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json()["message"] == "Queued competency matrix question not found"
+
+    def test_content_manager_can_create_matrix_item_from_queue_entry(self) -> None:
+        self.use_case.create_item_from_queue.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=10,
+                question_ru="Что такое PEP 8?",
+                question_en="What is PEP 8?",
+                answer_ru="Ответ",
+                answer_en="Answer",
+                interview_expected_answer_ru="Ожидаемый ответ",
+                interview_expected_answer_en="Expected answer",
+                sheet_key="python",
+                sheet_ru="Питон",
+                sheet_en="Python",
+                grade=GradeEnum.JUNIOR,
+                section_ru="Основы",
+                section_en="Core",
+                subsection_ru="Стиль",
+                subsection_en="Style",
+                publish_status=PublishStatusEnum.DRAFT,
+            )
+        )
+
+        response = self.api.post_create_item_from_queue(
+            question_id=7,
+            data=self.factory.api.competency_matrix_item_request(
+                question_ru="Что такое PEP 8?",
+                question_en="What is PEP 8?",
+                answer_ru="Ответ",
+                answer_en="Answer",
+                interview_expected_answer_ru="Ожидаемый ответ",
+                interview_expected_answer_en="Expected answer",
+                sheet_key="python",
+                sheet_ru="Питон",
+                sheet_en="Python",
+                grade="Junior",
+                section_ru="Основы",
+                section_en="Core",
+                subsection_ru="Стиль",
+                subsection_en="Style",
+                resources=[],
+            ),
+            language="en",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        assert response.json()["id"] == 10
+        assert response.json()["question"] == "What is PEP 8?"
+        self.use_case.create_item_from_queue.assert_called_once_with(
+            params=ANY,
+        )
+        call_params = self.use_case.create_item_from_queue.call_args.kwargs["params"]
+        assert isinstance(call_params, QueuedCompetencyMatrixQuestionCreateItemParams)
+        assert call_params.queued_question_id == IntId(7)
