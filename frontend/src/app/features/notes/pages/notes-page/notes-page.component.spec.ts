@@ -341,6 +341,14 @@ describe('NotesPageComponent', () => {
     expect(fixture.nativeElement.querySelector('#notesPublishedFromHint')).toBe(null);
     expect(fixture.nativeElement.querySelector('#notesPublishedToHint')).toBe(null);
 
+    fixture.nativeElement.querySelector('[data-testid="date-picker-toggle"]').click();
+    fixture.detectChanges();
+
+    const monthYearToggle = fixture.nativeElement.querySelector(
+      '[data-testid="date-picker-month-year-toggle"]',
+    ) as HTMLButtonElement | null;
+    expect(monthYearToggle?.getAttribute('aria-label')).toBe('Выбрать месяц и год');
+
     fixture.componentInstance.setPublishedFrom('2026-01-01');
     fixture.componentInstance.setPublishedTo('2026-01-31');
     fixture.componentInstance.applyFilters();

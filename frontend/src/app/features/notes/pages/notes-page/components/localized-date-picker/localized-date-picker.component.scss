@@ -9,6 +9,16 @@
   justify-content: center;
 }
 
+.localized-date-picker-month-year-toggle {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: center;
+  padding-inline: 0.25rem;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .localized-date-picker-calendar {
   position: absolute;
   top: calc(100% + 0.25rem);
@@ -27,6 +37,16 @@
   aspect-ratio: 1;
   min-width: 0;
   padding: 0;
+}
+
+.localized-date-picker-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.localized-date-picker-month {
+  min-width: 0;
 }
 
 .localized-date-picker-today:not(.btn-success) {

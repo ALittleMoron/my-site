@@ -66,13 +66,11 @@
   - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
-- [ ] Add a protected contact request inbox for moderators/admins: list, filter by status, view details, mark handled, archive/delete.
 - [ ] Add public "how this site is built" portfolio/case-study page.
 - [ ] Add public changelog/updates page.
 - [ ] Add RSS/Atom feeds for published notes and matrix updates.
 - [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.
-- [ ] Add beta feedback intake connected to the moderation/contact inbox.
 - [ ] Избавиться от Bootstrap и писать все стили самостоятельно.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
@@ -250,11 +248,11 @@
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme
 - [x] Add more feedback during API requests (notifications, errors, etc.)
-- [ ] Improve the custom date picker with in-calendar month and year selection.
-  - [ ] Make the current month and year in the calendar header clickable.
-  - [ ] Open month/year selection in the same calendar popover.
-  - [ ] Use a predefined localized month list for month selection.
-  - [ ] Support year selection by scrolling and manual input.
+- [x] Improve the custom date picker with in-calendar month and year selection.
+  - [x] Make the current month and year in the calendar header clickable.
+  - [x] Open month/year selection in the same calendar popover.
+  - [x] Use a predefined localized month list for month selection.
+  - [x] Support year selection with an in-calendar stepper.
 - [x] Resolve frontend npm peer dependency conflicts and remove `--legacy-peer-deps` from install flows
   - [x] Align TypeScript with Angular CLI/build tooling peer dependency ranges so `npm ls typescript` exits cleanly
   - [x] Remove `--legacy-peer-deps` from frontend dependency installation scripts and Docker build
@@ -407,36 +405,32 @@
 
 ### Knowledge database
 
+Each knowledge item has its own subfolder in "knowledge database" folder on side-panel in admin panel.
+
+- [ ] Resume
+  - [ ] Generate resume from companies, people with who you work with, projects, technologies, etc.
+  - [ ] Generate project/case-study materials from knowledge database items.
+  - [ ] Customization
+    - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
+    - [ ] Blocks visibility
+    - [ ] Themes
+  - [ ] Export
+    - [ ] To PDF
+    - [ ] To Docx
 - [ ] Dashboard
-  - [ ] Important info (in-dashboard CRUD – only text items)
-  - [ ] Dates and birthdays (current and next month)
-  - [ ] Recently changed files
-  - [ ] Statistics
-    - [ ] Files per category count - badge next to folder name with amount of files.
-  - [ ] Resume
-    - [ ] Generate resume from companies, people with who you work with, projects, technologies, etc.
-    - [ ] Generate project/case-study materials from knowledge database items.
-    - [ ] Customization
-      - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
-      - [ ] Blocks visibility
-      - [ ] Themes
-    - [ ] Export
-      - [ ] To PDF
-      - [ ] To Docx
+  - [ ] Main page
+    - [ ] Important info (in-dashboard CRUD – only text oneline items)
+    - [ ] Dates and birthdays (current and next month)
+    - [ ] Recently changed files
+    - [ ] Statistics
+      - [ ] Files per category count - badge next to folder name with amount of files.
+  - [ ] Calendar (separated page. List of all dates and people birthdays in interactive calendar)
   - [ ] Access
     - [ ] V1: Admins only, Per admin knowledge items (admins can see only their own items)
     - [ ] V2: Public knowledge items, users access to shared dashboard
     - [ ] V3: All users public and private items, per user dashboard
 - [ ] Knowledge item
-  - [ ] Shared logic
-    - [ ] CRUD with a rich text editor
-    - [ ] Tags
-    - [ ] Attachments
-  - [ ] General knowledge item
-    - [ ] Folders
-    - [ ] 
   - [ ] Books
-    - [ ] Shared logic
     - [ ] All books page
     - [ ] All read books page
     - [ ] Books to buy page
@@ -499,9 +493,10 @@
 - [x] Content localisation for competency matrix
   - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
-- [ ] Add a separate queue list for questions I want to add to the matrix
-- [ ] Ability to suggest a question for the competency matrix
-- [ ] Add moderation inbox for suggested matrix questions.
+- [ ] Priority for sections and subsections (drag and drop in admin panel?)
+- [ ] Add a queue list for questions I want to add to the matrix
+- [x] Ability to suggest a question for the competency matrix
+- [x] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
 - [ ] Add admin/moderator content workspace for matrix questions with richer filters, views, queues, and quick actions.
@@ -511,14 +506,23 @@
 - [ ] Add matrix question revision history with diff and restore.
 - [ ] Add matrix analytics panel for views, engagement, typo reports, and suggestions.
 - [ ] Add matrix resource library with deduplication, reuse, tagging, and link checks.
-- [ ] Add public direction roadmaps such as Python Backend, Frontend, and Data Analyst, linked to matrix questions, notes, resources, and courses.
+
+### Competency roadmaps
+
+- [ ] Add public direction roadmaps such as Python Backend, Frontend, etc.
+- [ ] Dynamic roadmap rendering
+- [ ] Links to matrix questions
+- [ ] Links to notes
+- [ ] Links to resources
+- [ ] Links to courses
+- [ ] Links to another roadmap (step, after which you may go to the next roadmap)
 
 ### Courses
 
 - [ ] Link courses to competency matrix
 - [ ] Browse available courses
 - [ ] Create a course material step (can include video, text, images, files, tests)
-- [ ] Playground for course tests
+- [ ] Playground for course tests (leetcode- or codewars-like checks)
 - [ ] Create courses consisting of material steps
 - [ ] Security audit
     - [ ] User cannot edit another user's course progress
@@ -533,6 +537,7 @@
 - [x] Refactor project scripts so `make <command>` fully prepares and runs tests, linters, checkers, and similar commands without manual setup (start required Docker services, prepare data, and run other prerequisites as needed).
 - [x] Cache on API get methods + cache invalidation on changes
 - [ ] Background cache warm
+- [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
 
 ## Bugs
 

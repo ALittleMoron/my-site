@@ -19,6 +19,9 @@ describe('NotesStatsPanelComponent', () => {
     fixture.componentRef.setInput('openCalendarLabel', 'Открыть календарь');
     fixture.componentRef.setInput('previousMonthLabel', 'Предыдущий месяц');
     fixture.componentRef.setInput('nextMonthLabel', 'Следующий месяц');
+    fixture.componentRef.setInput('openMonthYearPickerLabel', 'Выбрать месяц и год');
+    fixture.componentRef.setInput('previousYearLabel', 'Предыдущий год');
+    fixture.componentRef.setInput('nextYearLabel', 'Следующий год');
   });
 
   it('renders totals and note rows', () => {
@@ -76,5 +79,13 @@ describe('NotesStatsPanelComponent', () => {
     expect(
       fixture.debugElement.queryAll(By.css('[data-testid="date-picker-toggle"]')),
     ).toHaveLength(2);
+
+    fixture.debugElement.query(By.css('[data-testid="date-picker-toggle"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    const monthYearToggle = fixture.debugElement.query(
+      By.css('[data-testid="date-picker-month-year-toggle"]'),
+    ).nativeElement as HTMLButtonElement;
+    expect(monthYearToggle.getAttribute('aria-label')).toBe('Выбрать месяц и год');
   });
 });

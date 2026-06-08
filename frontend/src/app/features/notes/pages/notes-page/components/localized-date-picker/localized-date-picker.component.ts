@@ -17,6 +17,15 @@ interface CalendarCell {
   today: boolean;
 }
 
+interface MonthOption {
+  index: number;
+  label: string;
+  ariaLabel: string;
+  selected: boolean;
+}
+
+type CalendarMode = 'days' | 'monthYear';
+
 const DATE_SEPARATOR_PATTERN = /[./-]/;
 let nextCalendarId = 0;
 
@@ -35,17 +44,29 @@ export class LocalizedDatePickerComponent {
   readonly openCalendarLabel = input.required<string>();
   readonly previousMonthLabel = input.required<string>();
   readonly nextMonthLabel = input.required<string>();
+  readonly openMonthYearPickerLabel = input.required<string>();
+  readonly previousYearLabel = input.required<string>();
+  readonly nextYearLabel = input.required<string>();
 
   readonly valueChange = output<string>();
 
   readonly calendarOpen = signal(false);
+  readonly calendarMode = signal<CalendarMode>('days');
   readonly displayValue = signal('');
   readonly visibleMonth = signal(startOfMonth(new Date()));
   readonly calendarId = `localizedDatePicker${nextCalendarId++}`;
+  readonly monthYearPanelId = `${this.calendarId}MonthYear`;
   readonly monthLabel = computed(() =>
     new Intl.DateTimeFormat(this.dateLocale(), { month: 'long', year: 'numeric' }).format(
       this.visibleMonth(),
     ),
+  );
+  readonly visibleYearLabel = computed(() => String(this.visibleMonth().getFullYear()));
+  readonly monthOptions = computed(() =>
+    monthOptions({
+      month: this.visibleMonth(),
+      dateLocale: this.dateLocale(),
+    }),
   );
   readonly weekdayLabels = computed(() => weekdayLabels(this.dateLocale()));
   readonly calendarCells = computed(() =>
@@ -66,7 +87,12 @@ export class LocalizedDatePickerComponent {
   });
 
   toggleCalendar(): void {
-    this.calendarOpen.update((open) => !open);
+    this.calendarOpen.update((open) => {
+      if (open) {
+        this.calendarMode.set('days');
+      }
+      return !open;
+    });
   }
 
   showPreviousMonth(): void {
@@ -77,10 +103,28 @@ export class LocalizedDatePickerComponent {
     this.visibleMonth.update((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1));
   }
 
+  toggleMonthYearPicker(): void {
+    this.calendarMode.update((mode) => (mode === 'days' ? 'monthYear' : 'days'));
+  }
+
+  showPreviousYear(): void {
+    this.visibleMonth.update((month) => new Date(month.getFullYear() - 1, month.getMonth(), 1));
+  }
+
+  showNextYear(): void {
+    this.visibleMonth.update((month) => new Date(month.getFullYear() + 1, month.getMonth(), 1));
+  }
+
+  selectMonth(monthIndex: number): void {
+    this.visibleMonth.update((month) => new Date(month.getFullYear(), monthIndex, 1));
+    this.calendarMode.set('days');
+  }
+
   selectDate(iso: string): void {
     this.valueChange.emit(iso);
     this.displayValue.set(formatDateForLocale(iso, this.dateLocale()));
     this.calendarOpen.set(false);
+    this.calendarMode.set('days');
   }
 
   onTextInput(event: Event): void {
@@ -102,6 +146,7 @@ export class LocalizedDatePickerComponent {
   @HostListener('keydown.escape')
   closeCalendar(): void {
     this.calendarOpen.set(false);
+    this.calendarMode.set('days');
   }
 }
 
@@ -149,6 +194,23 @@ function calendarCells(params: {
   }
 
   return cells;
+}
+
+function monthOptions(params: { month: Date; dateLocale: string }): MonthOption[] {
+  const year = params.month.getFullYear();
+  const selectedMonth = params.month.getMonth();
+  const shortMonthFormatter = new Intl.DateTimeFormat(params.dateLocale, { month: 'short' });
+  const longMonthFormatter = new Intl.DateTimeFormat(params.dateLocale, { month: 'long' });
+
+  return Array.from({ length: 12 }, (_, monthIndex) => {
+    const date = new Date(year, monthIndex, 1);
+    return {
+      index: monthIndex,
+      label: shortMonthFormatter.format(date),
+      ariaLabel: longMonthFormatter.format(date),
+      selected: monthIndex === selectedMonth,
+    };
+  });
 }
 
 function weekStartOffset(day: number, dateLocale: string): number {

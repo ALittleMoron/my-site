@@ -140,6 +140,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'notes.datePicker.open': 'Открыть календарь',
   'notes.datePicker.previousMonth': 'Предыдущий месяц',
   'notes.datePicker.nextMonth': 'Следующий месяц',
+  'notes.datePicker.openMonthYearPicker': 'Выбрать месяц и год',
+  'notes.datePicker.previousYear': 'Предыдущий год',
+  'notes.datePicker.nextYear': 'Следующий год',
   'notes.filters.submit': 'Найти',
   'notes.filters.reset': 'Сбросить',
   'notes.filters.resetTag': 'Сбросить тег',
@@ -278,6 +281,9 @@ const I18N_TEST_MESSAGES_EN: Record<string, string> = {
   'notes.datePicker.open': 'Open calendar',
   'notes.datePicker.previousMonth': 'Previous month',
   'notes.datePicker.nextMonth': 'Next month',
+  'notes.datePicker.openMonthYearPicker': 'Choose month and year',
+  'notes.datePicker.previousYear': 'Previous year',
+  'notes.datePicker.nextYear': 'Next year',
 };
 
 export function provideI18nTesting(messages: Record<string, string> = {}): Provider {

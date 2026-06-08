@@ -18,6 +18,9 @@ describe('LocalizedDatePickerComponent', () => {
     fixture.componentRef.setInput('openCalendarLabel', 'Открыть календарь');
     fixture.componentRef.setInput('previousMonthLabel', 'Предыдущий месяц');
     fixture.componentRef.setInput('nextMonthLabel', 'Следующий месяц');
+    fixture.componentRef.setInput('openMonthYearPickerLabel', 'Выбрать месяц и год');
+    fixture.componentRef.setInput('previousYearLabel', 'Предыдущий год');
+    fixture.componentRef.setInput('nextYearLabel', 'Следующий год');
   });
 
   it('renders a localized text field with a calendar button', () => {
@@ -46,6 +49,45 @@ describe('LocalizedDatePickerComponent', () => {
 
     expect(valueChange).toHaveBeenCalledWith('2026-02-15');
     expect(fixture.debugElement.query(By.css('[data-testid="date-picker-calendar"]'))).toBe(null);
+  });
+
+  it('changes visible month and year inside the calendar before selecting a day', () => {
+    const valueChange = jest.fn();
+    fixture.componentInstance.valueChange.subscribe(valueChange);
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('[data-testid="date-picker-toggle"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    const monthYearToggle = fixture.debugElement.query(
+      By.css('[data-testid="date-picker-month-year-toggle"]'),
+    );
+    expect(monthYearToggle).not.toBeNull();
+
+    monthYearToggle.nativeElement.click();
+    fixture.detectChanges();
+
+    const monthYearPanel = fixture.debugElement.query(
+      By.css('[data-testid="date-picker-month-year-panel"]'),
+    );
+    expect(monthYearPanel).not.toBeNull();
+
+    fixture.debugElement
+      .query(By.css('[data-testid="date-picker-next-year"]'))
+      .nativeElement.click();
+    fixture.detectChanges();
+    fixture.debugElement.query(By.css('[data-month-index="11"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    expect(valueChange).not.toHaveBeenCalled();
+    expect(fixture.debugElement.query(By.css('[data-testid="date-picker-month-year-panel"]'))).toBe(
+      null,
+    );
+
+    fixture.debugElement.query(By.css('[data-date="2027-12-15"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    expect(valueChange).toHaveBeenCalledWith('2027-12-15');
   });
 
   it('parses English month-first typed dates as ISO', () => {

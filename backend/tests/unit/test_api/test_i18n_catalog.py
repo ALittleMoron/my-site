@@ -28,6 +28,17 @@ class TestI18nCatalog:
             for source in NoteViewSourceCategory:
                 assert f"enum.noteViewSource.{source.value}" in messages
 
+    def test_date_picker_catalog_has_month_year_navigation_labels(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["notes.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
+        assert russian_messages["notes.datePicker.previousYear"] == "Предыдущий год"
+        assert russian_messages["notes.datePicker.nextYear"] == "Следующий год"
+        assert english_messages["notes.datePicker.openMonthYearPicker"] == "Choose month and year"
+        assert english_messages["notes.datePicker.previousYear"] == "Previous year"
+        assert english_messages["notes.datePicker.nextYear"] == "Next year"
+
     def test_about_catalog_matches_current_resume_experience(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

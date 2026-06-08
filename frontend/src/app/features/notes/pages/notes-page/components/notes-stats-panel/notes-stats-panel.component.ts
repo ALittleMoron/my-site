@@ -31,6 +31,9 @@ export class NotesStatsPanelComponent {
   readonly openCalendarLabel = input.required<string>();
   readonly previousMonthLabel = input.required<string>();
   readonly nextMonthLabel = input.required<string>();
+  readonly openMonthYearPickerLabel = input.required<string>();
+  readonly previousYearLabel = input.required<string>();
+  readonly nextYearLabel = input.required<string>();
 
   readonly dateFromChange = output<string>();
   readonly dateToChange = output<string>();

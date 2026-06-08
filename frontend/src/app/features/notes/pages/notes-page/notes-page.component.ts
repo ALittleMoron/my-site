@@ -162,6 +162,18 @@ export class NotesPageComponent implements OnInit {
     this.language();
     return this.i18n.translate('notes.datePicker.nextMonth');
   });
+  readonly openMonthYearPickerLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.openMonthYearPicker');
+  });
+  readonly previousYearLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.previousYear');
+  });
+  readonly nextYearLabel = computed(() => {
+    this.language();
+    return this.i18n.translate('notes.datePicker.nextYear');
+  });
   readonly language = computed(() => {
     const language = this.i18n.language();
     if (language === null) {

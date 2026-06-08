@@ -57,7 +57,17 @@
         >
           ‹
         </button>
-        <div class="small fw-semibold text-center text-capitalize">{{ monthLabel() }}</div>
+        <button
+          type="button"
+          class="btn btn-sm btn-link localized-date-picker-month-year-toggle text-capitalize"
+          data-testid="date-picker-month-year-toggle"
+          [attr.aria-label]="openMonthYearPickerLabel()"
+          [attr.aria-controls]="monthYearPanelId"
+          [attr.aria-expanded]="calendarMode() === 'monthYear'"
+          (click)="toggleMonthYearPicker()"
+        >
+          {{ monthLabel() }}
+        </button>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
@@ -68,32 +78,78 @@
         </button>
       </div>
 
-      <div class="localized-date-picker-grid localized-date-picker-weekdays mb-1">
-        @for (weekday of weekdayLabels(); track weekday) {
-          <div class="text-body-secondary small text-center">{{ weekday }}</div>
-        }
-      </div>
-      <div class="localized-date-picker-grid">
-        @for (cell of calendarCells(); track $index) {
-          @if (cell) {
+      @if (calendarMode() === 'days') {
+        <div class="localized-date-picker-grid localized-date-picker-weekdays mb-1">
+          @for (weekday of weekdayLabels(); track weekday) {
+            <div class="text-body-secondary small text-center">{{ weekday }}</div>
+          }
+        </div>
+        <div class="localized-date-picker-grid">
+          @for (cell of calendarCells(); track $index) {
+            @if (cell) {
+              <button
+                type="button"
+                class="btn btn-sm localized-date-picker-day"
+                [class.btn-success]="cell.selected"
+                [class.btn-outline-secondary]="!cell.selected"
+                [class.localized-date-picker-today]="cell.today"
+                [attr.aria-label]="cell.ariaLabel"
+                [attr.aria-pressed]="cell.selected"
+                [attr.data-date]="cell.iso"
+                (click)="selectDate(cell.iso)"
+              >
+                {{ cell.label }}
+              </button>
+            } @else {
+              <span aria-hidden="true"></span>
+            }
+          }
+        </div>
+      } @else {
+        <div
+          [id]="monthYearPanelId"
+          class="localized-date-picker-month-year-panel"
+          data-testid="date-picker-month-year-panel"
+        >
+          <div class="localized-date-picker-year-row d-flex align-items-center gap-2 mb-2">
             <button
               type="button"
-              class="btn btn-sm localized-date-picker-day"
-              [class.btn-success]="cell.selected"
-              [class.btn-outline-secondary]="!cell.selected"
-              [class.localized-date-picker-today]="cell.today"
-              [attr.aria-label]="cell.ariaLabel"
-              [attr.aria-pressed]="cell.selected"
-              [attr.data-date]="cell.iso"
-              (click)="selectDate(cell.iso)"
+              class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
+              data-testid="date-picker-previous-year"
+              [attr.aria-label]="previousYearLabel()"
+              (click)="showPreviousYear()"
             >
-              {{ cell.label }}
+              ‹
             </button>
-          } @else {
-            <span aria-hidden="true"></span>
-          }
-        }
-      </div>
+            <div class="small fw-semibold text-center flex-grow-1">{{ visibleYearLabel() }}</div>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
+              data-testid="date-picker-next-year"
+              [attr.aria-label]="nextYearLabel()"
+              (click)="showNextYear()"
+            >
+              ›
+            </button>
+          </div>
+          <div class="localized-date-picker-month-grid">
+            @for (month of monthOptions(); track month.index) {
+              <button
+                type="button"
+                class="btn btn-sm localized-date-picker-month text-capitalize"
+                [class.btn-success]="month.selected"
+                [class.btn-outline-secondary]="!month.selected"
+                [attr.aria-label]="month.ariaLabel"
+                [attr.aria-pressed]="month.selected"
+                [attr.data-month-index]="month.index"
+                (click)="selectMonth(month.index)"
+              >
+                {{ month.label }}
+              </button>
+            }
+          </div>
+        </div>
+      }
     </div>
   }
 </div>
