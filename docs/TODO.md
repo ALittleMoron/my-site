@@ -392,6 +392,7 @@
 - [ ] Add editorial workflow statuses for notes: idea, draft, review, ready, published, archived.
 - [ ] Add Obsidian-compatible Markdown import/export for notes.
 - [ ] Add privacy-safe AI-assisted authoring for spelling, SEO hints, tags, and RU/EN consistency.
+- [ ] TTL (5 min) cache for analytics data
 - [ ] Obsidian-like note editor
     - [x] Rich text editor
     - [x] Tags
@@ -493,6 +494,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Content localisation for competency matrix
   - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
+- [ ] badge "Draft" for not published items (moderators and admins only)
 - [ ] Priority for sections and subsections (drag and drop in admin panel?)
 - [ ] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix
@@ -538,9 +540,11 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Cache on API get methods + cache invalidation on changes
 - [ ] Background cache warm
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
+- [ ] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
 
 ## Bugs
 
+- [ ] Fix initial bundle big size.
 - [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
 - [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
 - [x] Production public UI QA
