@@ -27,3 +27,22 @@ class TestI18nCatalog:
                 assert f"enum.noteReaction.{reaction.value}" in messages
             for source in NoteViewSourceCategory:
                 assert f"enum.noteViewSource.{source.value}" in messages
+
+    def test_about_catalog_matches_current_resume_experience(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert "более чем 6 годами опыта" in russian_messages["about.hero.description"]
+        assert "более чем 6 годами опыта" in russian_messages["about.experience.description"]
+        assert "more than 6 years of experience" in english_messages["about.hero.description"]
+        assert "more than 6 years of experience" in english_messages["about.experience.description"]
+        assert russian_messages["about.job.seniorBackendDeveloper"] == "Старший backend-разработчик"
+        assert english_messages["about.job.seniorBackendDeveloper"] == "Senior backend developer"
+        assert (
+            russian_messages["about.job.seniorBackendPythonTechLead"]
+            == "Старший backend-разработчик / технический руководитель Python"
+        )
+        assert (
+            english_messages["about.job.seniorBackendPythonTechLead"]
+            == "Senior backend developer / Python Tech Lead"
+        )

@@ -57,6 +57,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixQueue.createError': 'Не удалось создать вопрос из очереди.',
   'adminMatrixQueue.rejected': 'Вопрос отклонён.',
   'adminMatrixQueue.rejectError': 'Не удалось отклонить вопрос.',
+  'about.contact.phone': 'Телефон',
   'about.contact.email': 'Эл. почта',
   'about.contact.emailPlaceholder': 'you@example.com',
   'about.contact.telegram': 'Телеграм',

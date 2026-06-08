@@ -93,30 +93,53 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.rejectError": "Не удалось отклонить вопрос.",
         "about.seo.title": "Обо мне",
         "about.seo.description": (
-            "Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контактная форма."
+            "Личный сайт Дмитрия Лунева: портфолио, матрица компетенций и контакты."
         ),
         "about.photoAlt": "Моё фото",
         "about.hero.name": "Дмитрий Лунев",
-        "about.hero.role": "Python Backend Developer",
+        "about.hero.role": "Backend Software Engineer (Python)",
         "about.hero.description": (
-            "Backend разработчик с более чем 5 летним опытом в разработки коммерческих "
-            "продуктов. Также занимаюсь наставничеством и повышением компетенций других "
-            "разработчиков."
+            "Backend Software Engineer с более чем 6 годами опыта разработки масштабируемых "
+            "backend-платформ и микросервисов на Python. Занимаюсь архитектурой, "
+            "production-разработкой, наставничеством и развитием инженерных практик."
         ),
         "about.hero.contact": "Связаться со мной",
         "about.experience.title": "Мой опыт",
         "about.experience.description": (
-            "Backend Python разработчик с более чем 4-летним коммерческим опытом работы "
-            "в различных сферах, таких как B2B, здравоохранение, ветеринария, HR и другие. "
-            "Имею 2 года опыта руководства сотрудниками. Работал в командах от 4 до 30 "
-            "членов, как удаленно, так и в офисе. Участвовал во всех этапах полного цикла "
-            "разработки: от сбора требований заказчика до создания полного "
-            "автоматизированного процесса сборки и релизов (CI/CD)."
+            "Backend Python разработчик с более чем 6 годами опыта в B2B, healthcare, "
+            "veterinary, HR и AI-платформах. Проектировал высоконагруженные API, "
+            "микросервисы, event-driven системы и CI/CD-процессы, руководил backend-командами "
+            "и помогал повышать качество разработки через архитектурные решения, BDD и "
+            "quality gates."
         ),
         "about.job.leadingPythonDeveloper": "Ведущий Python разработчик",
         "about.job.pythonLead": "Руководитель Python направления",
         "about.job.pythonDeveloper": "Python разработчик",
-        "about.job.backendDeveloper": "Backend разработчик",
+        "about.job.backendDeveloper": "Backend-разработчик",
+        "about.job.seniorBackendDeveloper": "Старший backend-разработчик",
+        "about.job.seniorBackendPythonTechLead": (
+            "Старший backend-разработчик / технический руководитель Python"
+        ),
+        "about.job.leadBackendHeadOfPython": (
+            "Ведущий backend-разработчик / руководитель Python направления"
+        ),
+        "about.job.startStreaming": "Backend-разработка продуктов видеосервиса START",
+        "about.job.compelB2bAi": (
+            "B2B микросервисы для электронных компонентов и внутренняя AI-платформа "
+            "формализации бизнес-требований"
+        ),
+        "about.job.fortechFitnessPets": (
+            "Фитнес-приложение и мобильное приложение для владельцев питомцев; "
+            "наставничество, найм и развитие Python-направления"
+        ),
+        "about.job.fortechHrRecruitment": (
+            "HR КЭДО и онлайн-рекрутинг: документы, роли, Kafka-нотификации и "
+            "микросервисная миграция"
+        ),
+        "about.job.fortechEarlyProjects": (
+            "Админ-панель отгрузок, приложение для сети медклиник и desktop-сервис "
+            "распознавания номеров"
+        ),
         "about.job.components": "B2B и B2C микросервисы для торговли электронными компонентами",
         "about.job.outsource": "Аутсорст и аутстаф для крупных компаний России",
         "about.job.hr": "HR системы, КЭДО, УНЭП и УКЭП",
@@ -161,6 +184,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.validationTitle": "Несколько ошибок:",
         "about.contact.name": "Имя",
         "about.contact.namePlaceholder": "Ваше Имя",
+        "about.contact.phone": "Телефон",
         "about.contact.email": "Эл. почта",
         "about.contact.emailPlaceholder": "you@example.com",
         "about.contact.telegram": "Телеграм",
@@ -534,28 +558,48 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.rejectError": "Failed to reject the question.",
         "about.seo.title": "About",
         "about.seo.description": (
-            "Dmitry Lunev's personal site: portfolio, competency matrix, and contact form."
+            "Dmitry Lunev's personal site: portfolio, competency matrix, and contacts."
         ),
         "about.photoAlt": "My photo",
         "about.hero.name": "Dmitry Lunev",
-        "about.hero.role": "Python Backend Developer",
+        "about.hero.role": "Backend Software Engineer (Python)",
         "about.hero.description": (
-            "Backend developer with more than 5 years of experience building commercial "
-            "products. I also mentor developers and help others grow their engineering skills."
+            "Backend Software Engineer with more than 6 years of experience building scalable "
+            "backend platforms and microservices in Python. I work on architecture, production "
+            "development, mentoring, and improving engineering practices."
         ),
         "about.hero.contact": "Contact me",
         "about.experience.title": "My experience",
         "about.experience.description": (
-            "Backend Python developer with more than 4 years of commercial experience across "
-            "B2B, healthcare, veterinary, HR, and other domains. I have 2 years of people "
-            "leadership experience. I worked in teams from 4 to 30 people, both remotely and "
-            "in office, and participated in the full development cycle: from gathering customer "
-            "requirements to building automated CI/CD release processes."
+            "Backend Python developer with more than 6 years of experience across B2B, "
+            "healthcare, veterinary, HR, and AI platforms. I designed high-load APIs, "
+            "microservices, event-driven systems, and CI/CD processes, led backend teams, "
+            "and improved engineering quality through architecture, BDD, and quality gates."
         ),
         "about.job.leadingPythonDeveloper": "Lead Python developer",
         "about.job.pythonLead": "Head of Python",
         "about.job.pythonDeveloper": "Python developer",
         "about.job.backendDeveloper": "Backend developer",
+        "about.job.seniorBackendDeveloper": "Senior backend developer",
+        "about.job.seniorBackendPythonTechLead": "Senior backend developer / Python Tech Lead",
+        "about.job.leadBackendHeadOfPython": "Lead backend developer / Head of Python",
+        "about.job.startStreaming": "Backend development for START video streaming products",
+        "about.job.compelB2bAi": (
+            "B2B microservices for electronic components and an internal AI platform for "
+            "formalizing business requirements"
+        ),
+        "about.job.fortechFitnessPets": (
+            "Fitness management and pet owner mobile products, plus mentoring, hiring, and "
+            "Python practice leadership"
+        ),
+        "about.job.fortechHrRecruitment": (
+            "HR electronic document management and online recruitment: documents, RBAC, "
+            "Kafka notifications, and microservices migration"
+        ),
+        "about.job.fortechEarlyProjects": (
+            "Shipment admin panel, private medical clinic application, and desktop license "
+            "plate recognition service"
+        ),
         "about.job.components": "B2B and B2C microservices for electronic components trading",
         "about.job.outsource": "Outsourcing and outstaffing for large Russian companies",
         "about.job.hr": "HR systems, electronic HR documents, electronic signatures",
@@ -599,6 +643,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.validationTitle": "Several errors:",
         "about.contact.name": "Name",
         "about.contact.namePlaceholder": "Your name",
+        "about.contact.phone": "Phone",
         "about.contact.email": "Email",
         "about.contact.emailPlaceholder": "you@example.com",
         "about.contact.telegram": "Telegram",
