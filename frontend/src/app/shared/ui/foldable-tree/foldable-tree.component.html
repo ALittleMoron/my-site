@@ -12,12 +12,17 @@
           (click)="toggleSection(section.key)"
           [attr.aria-expanded]="isExpanded(section.key)"
           aria-selected="false"
+          [attr.title]="conditionalTitleFor('section', section.key)"
+          (mouseenter)="showConditionalTitle('section', section.key, section.label, sectionLabel)"
+          (focus)="showConditionalTitle('section', section.key, section.label, sectionLabel)"
+          (mouseleave)="clearConditionalTitle('section', section.key)"
+          (blur)="clearConditionalTitle('section', section.key)"
         >
           <span class="d-inline-flex align-items-center gap-2 min-w-0">
             <span class="foldable-tree-toggle" aria-hidden="true">
               {{ isExpanded(section.key) ? '-' : '+' }}
             </span>
-            <span class="text-truncate">{{ section.label }}</span>
+            <span #sectionLabel class="text-truncate">{{ section.label }}</span>
           </span>
           @if (section.trailingText !== null) {
             <span class="badge rounded-pill text-bg-secondary">{{ section.trailingText }}</span>
@@ -33,10 +38,17 @@
                 role="treeitem"
                 [class.active]="selectedItemKey() === item.key"
                 [attr.aria-selected]="selectedItemKey() === item.key"
+                [attr.title]="conditionalTitleFor('item', item.key)"
+                (mouseenter)="showConditionalTitle('item', item.key, item.label, itemLabel)"
+                (focus)="showConditionalTitle('item', item.key, item.label, itemLabel)"
+                (mouseleave)="clearConditionalTitle('item', item.key)"
+                (blur)="clearConditionalTitle('item', item.key)"
                 (click)="itemSelected.emit(item.key)"
               >
                 <span class="foldable-tree-connector" aria-hidden="true">+--</span>
-                <span class="foldable-tree-item-label text-truncate">{{ item.label }}</span>
+                <span #itemLabel class="foldable-tree-item-label text-truncate">{{
+                  item.label
+                }}</span>
                 @if (item.badgeText !== null) {
                   <span class="badge text-bg-warning ms-2">{{ item.badgeText }}</span>
                 }

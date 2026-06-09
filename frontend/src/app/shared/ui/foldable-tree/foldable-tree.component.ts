@@ -13,6 +13,12 @@ export interface FoldableTreeSection {
   items: readonly FoldableTreeItem[];
 }
 
+interface FoldableTreeTitleTarget {
+  kind: 'section' | 'item';
+  key: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-foldable-tree',
   standalone: true,
@@ -35,6 +41,7 @@ export class FoldableTreeComponent {
   readonly sectionExpansionOverrides = signal<ReadonlyMap<string, boolean>>(
     new Map<string, boolean>(),
   );
+  readonly truncatedTitleTarget = signal<FoldableTreeTitleTarget | null>(null);
 
   isExpanded(sectionKey: string): boolean {
     return (
@@ -50,5 +57,37 @@ export class FoldableTreeComponent {
       next.set(sectionKey, expanded);
       return next;
     });
+  }
+
+  showConditionalTitle(
+    kind: FoldableTreeTitleTarget['kind'],
+    key: string,
+    label: string,
+    labelElement: HTMLElement,
+  ): void {
+    if (!this.isTextTruncated(labelElement)) {
+      this.clearConditionalTitle(kind, key);
+      return;
+    }
+    this.truncatedTitleTarget.set({ kind, key, label });
+  }
+
+  clearConditionalTitle(kind: FoldableTreeTitleTarget['kind'], key: string): void {
+    const current = this.truncatedTitleTarget();
+    if (current?.kind === kind && current.key === key) {
+      this.truncatedTitleTarget.set(null);
+    }
+  }
+
+  conditionalTitleFor(kind: FoldableTreeTitleTarget['kind'], key: string): string | null {
+    const current = this.truncatedTitleTarget();
+    if (current?.kind !== kind || current.key !== key) {
+      return null;
+    }
+    return current.label;
+  }
+
+  private isTextTruncated(element: HTMLElement): boolean {
+    return element.scrollWidth > element.clientWidth;
   }
 }

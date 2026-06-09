@@ -16,6 +16,31 @@ describe('FoldableTreeComponent', () => {
     },
   ];
 
+  function openSection(): void {
+    (
+      fixture.nativeElement.querySelector('[data-testid="admin-tree-section"]') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+  }
+
+  function itemButton(index: number): HTMLButtonElement {
+    return fixture.nativeElement.querySelectorAll('[data-testid="admin-tree-item"]')[
+      index
+    ] as HTMLButtonElement;
+  }
+
+  function itemLabel(index: number): HTMLElement {
+    return itemButton(index).querySelector('.foldable-tree-item-label') as HTMLElement;
+  }
+
+  function setRenderedWidths(
+    element: HTMLElement,
+    widths: { client: number; scroll: number },
+  ): void {
+    Object.defineProperty(element, 'clientWidth', { configurable: true, value: widths.client });
+    Object.defineProperty(element, 'scrollWidth', { configurable: true, value: widths.scroll });
+  }
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FoldableTreeComponent],
@@ -69,14 +94,46 @@ describe('FoldableTreeComponent', () => {
     expect(items).toHaveLength(2);
   });
 
+  it('sets the full item label title when the rendered label is truncated', () => {
+    openSection();
+    const item = itemButton(1);
+    setRenderedWidths(itemLabel(1), { client: 80, scroll: 160 });
+
+    item.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+
+    expect(item.getAttribute('title')).toBe('Опечатки от пользователей');
+  });
+
+  it('does not set an item label title when the rendered label fits', () => {
+    openSection();
+    const item = itemButton(0);
+    setRenderedWidths(itemLabel(0), { client: 120, scroll: 120 });
+
+    item.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+
+    expect(item.getAttribute('title')).toBeNull();
+  });
+
+  it('clears a truncated item label title after pointer leaves the item', () => {
+    openSection();
+    const item = itemButton(1);
+    setRenderedWidths(itemLabel(1), { client: 80, scroll: 160 });
+
+    item.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+    item.dispatchEvent(new Event('mouseleave'));
+    fixture.detectChanges();
+
+    expect(item.getAttribute('title')).toBeNull();
+  });
+
   it('emits selected item keys', () => {
     const selected: string[] = [];
     fixture.componentInstance.itemSelected.subscribe((key) => selected.push(key));
 
-    (
-      fixture.nativeElement.querySelector('[data-testid="admin-tree-section"]') as HTMLButtonElement
-    ).click();
-    fixture.detectChanges();
+    openSection();
     (
       fixture.nativeElement.querySelector('[data-testid="admin-tree-item"]') as HTMLButtonElement
     ).click();
