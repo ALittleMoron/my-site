@@ -14,7 +14,12 @@ from performance.locust.settings import (
 
 
 class TestLocustPerformanceSeed:
-    def test_seed_settings_require_explicit_seed_flag(self) -> None:
+    def test_seed_settings_require_explicit_seed_flag(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("PERFORMANCE_SEED_DATA", raising=False)
+
         with pytest.raises(ValidationError, match="seed_data"):
             LocustSeedSettings(
                 _env_file=None,

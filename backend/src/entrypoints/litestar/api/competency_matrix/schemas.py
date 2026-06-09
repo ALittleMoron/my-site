@@ -71,7 +71,7 @@ class QueuedQuestionResponseSchema(CamelCaseSchema):
     section: Annotated[str | None, Field(title="Раздел")]
     subsection: Annotated[str | None, Field(title="Подраздел")]
     suggested_by_username: Annotated[str | None, Field(title="Кто предложил")]
-    created_at: Annotated[datetime, Field(title="Дата создания")]
+    created_at: Annotated[str, Field(title="Дата создания")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: QueuedCompetencyMatrixQuestion) -> Self:
@@ -83,7 +83,7 @@ class QueuedQuestionResponseSchema(CamelCaseSchema):
             section=schema.section,
             subsection=schema.subsection,
             suggested_by_username=schema.suggested_by_username,
-            created_at=schema.created_at,
+            created_at=schema.created_at.isoformat(),
         )
 
 

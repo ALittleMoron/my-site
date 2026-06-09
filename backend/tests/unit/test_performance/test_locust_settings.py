@@ -14,7 +14,12 @@ class TestLocustSettings:
     def test_global_settings_is_single_locust_settings_instance(self) -> None:
         assert isinstance(settings, LocustSettings)
 
-    def test_scenario_settings_require_explicit_values(self) -> None:
+    def test_scenario_settings_require_explicit_values(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("PERFORMANCE_LANGUAGE", raising=False)
+
         with pytest.raises(ValidationError, match="language"):
             LocustScenarioSettings(
                 _env_file=None,
@@ -41,7 +46,12 @@ class TestLocustSettings:
         assert settings.include_matrix_suggestions is True
         assert settings.validate_responses is True
 
-    def test_threshold_settings_require_explicit_values(self) -> None:
+    def test_threshold_settings_require_explicit_values(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("LOCUST_MAX_FAILURE_RATIO", raising=False)
+
         with pytest.raises(ValidationError, match="max_failure_ratio"):
             LocustThresholdSettings(
                 _env_file=None,
