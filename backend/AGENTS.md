@@ -37,6 +37,10 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Business logic must live in domain use cases under `backend/src/core/**/use_cases.py`.
   Shared domain behavior may live in explicit core domain services when a use case would otherwise
   duplicate meaningful logic.
+- When an existing use-case operation already represents the business action, reuse it with
+  explicit parameters that model transport/auth/quota differences instead of adding a parallel
+  use-case method for the same action. Do not use sentinel values such as arbitrarily large quotas;
+  make the variation explicit in the parameter contract.
 - API controllers, Litestar handlers, schemas, Dishka providers, storages, ORM models, settings,
   event dispatchers, and infrastructure adapters must not own business decisions. They may validate
   transport shape, map data, wire dependencies, persist/load data, or call a use case.
@@ -66,6 +70,9 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.
 - Controllers must receive dependencies through `FromDishka[...]`, preferably typed as abstract use case interfaces.
+- Endpoint/controller modules must not define `@staticmethod`, `@classmethod`, or private helper
+  methods for request-derived values or parameter assembly when a Litestar `Provide` dependency can
+  own that logic. Put those dependencies in a neighboring `dependencies.py` module.
 - When an endpoint receives many query, path, header, or cookie parameters and only assembles them
   into one filter/read parameter object, prefer moving that assembly into a Litestar `Provide`
   dependency in a neighboring `dependencies.py` module so the handler receives the object directly.
