@@ -117,6 +117,12 @@ class APIHelper:
     def get_queued_matrix_questions(self) -> Response:
         return self.client.get("/api/competency-matrix/queued-questions")
 
+    def post_create_queued_matrix_question(self, question: str) -> Response:
+        return self.client.post(
+            "/api/competency-matrix/queued-questions",
+            json={"question": question},
+        )
+
     def delete_queued_matrix_question(self, question_id: int) -> Response:
         return self.client.delete(f"/api/competency-matrix/queued-questions/{question_id}")
 

@@ -1,12 +1,18 @@
+from datetime import UTC, datetime
 from typing import Annotated
 
+from litestar import Request
+from litestar.datastructures import State
 from litestar.params import FromPath, QueryParameter
 
+from core.auth.schemas import JwtUser
+from core.auth.types import Token
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemGetParams,
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixResourceSearchParams,
+    QuestionSuggestionLimitParams,
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
@@ -59,4 +65,29 @@ def provide_competency_matrix_item_published_status_params(
     return CompetencyMatrixItemPublishStatusSwitchParams(
         item_id=IntId(pk),
         publish_status=PublishStatusEnum.PUBLISHED,
+    )
+
+
+def provide_question_suggestion_limit_params(
+    request: Request[JwtUser, Token | None, State],
+) -> QuestionSuggestionLimitParams:
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for is not None:
+        forwarded_client = forwarded_for.split(",", maxsplit=1)[0].strip()
+        if forwarded_client:
+            return QuestionSuggestionLimitParams(
+                client_identifier=forwarded_client,
+                now=datetime.now(tz=UTC),
+            )
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip is not None:
+        real_client = real_ip.strip()
+        if real_client:
+            return QuestionSuggestionLimitParams(
+                client_identifier=real_client,
+                now=datetime.now(tz=UTC),
+            )
+    return QuestionSuggestionLimitParams(
+        client_identifier=request.client.host if request.client is not None else "",
+        now=datetime.now(tz=UTC),
     )

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
@@ -22,6 +23,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   let component: MatrixQuestionQueuePageComponent;
   let queueService: {
     listQueuedQuestions: jest.Mock;
+    createQueuedQuestion: jest.Mock;
     rejectQueuedQuestion: jest.Mock;
     createQuestionFromQueue: jest.Mock;
   };
@@ -30,6 +32,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   beforeEach(async () => {
     queueService = {
       listQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion])),
+      createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
       createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: 1, slug: 'pep-8' })),
     };
@@ -55,6 +58,125 @@ describe('MatrixQuestionQueuePageComponent', () => {
   it('renders queued questions from service', () => {
     expect(queueService.listQueuedQuestions).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('What is PEP 8?');
+  });
+
+  it('renders manual add button next to refresh button', () => {
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>(
+        'h2 + div button, .d-flex > button',
+      ),
+    ).map((button) => button.textContent?.trim());
+
+    expect(buttons).toContain('Добавить в очередь');
+    expect(buttons).toContain('Обновить');
+  });
+
+  it('opens manual queue add modal with a one-line question input', () => {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-queue-manual-question',
+    );
+
+    expect(input).toBeTruthy();
+    expect(input?.tagName).toBe('INPUT');
+    expect(input?.type).toBe('text');
+    expect(fixture.nativeElement.querySelector('textarea#matrix-queue-manual-question')).toBeNull();
+  });
+
+  it('disables manual queue submit for blank input', () => {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+
+    const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-queue-manual-submit"]',
+    );
+
+    expect(submitButton?.disabled).toBe(true);
+  });
+
+  it('normalizes multiline manual question text before adding it to the queue', () => {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-queue-manual-question',
+    )!;
+    const pasteEvent = new Event('paste') as ClipboardEvent;
+    Object.defineProperty(pasteEvent, 'clipboardData', {
+      value: {
+        getData: (format: string) =>
+          format === 'text' ? 'What is PEP 8?\nHow should it be used?' : '',
+      },
+    });
+    input.dispatchEvent(pasteEvent);
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-submit"]')!
+      .click();
+
+    expect(queueService.createQueuedQuestion).toHaveBeenCalledWith(
+      'What is PEP 8? How should it be used?',
+    );
+  });
+
+  it('closes manual queue modal and reloads queue after successful add', () => {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-queue-manual-question',
+    )!;
+    input.value = 'What is PEP 8?';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-submit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(notificationService.success).toHaveBeenCalledWith('Вопрос добавлен в очередь.');
+    expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeNull();
+  });
+
+  it('keeps manual queue modal open and notifies when add fails', () => {
+    const error: ApiError = {
+      code: 'bad_request',
+      type: 'bad_request',
+      message: 'Failed',
+      status: 400,
+      location: null,
+      attr: null,
+    };
+    queueService.createQueuedQuestion.mockReturnValue(throwError(() => error));
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-queue-manual-question',
+    )!;
+    input.value = 'What is PEP 8?';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-submit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось добавить вопрос в очередь.');
+    expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
   });
 
   it('prefills create form from selected queued question', () => {

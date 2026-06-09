@@ -16,6 +16,7 @@ from core.competency_matrix.schemas import (
     ExternalResources,
     PublishedCompetencyMatrixItemsForSeo,
     QuestionSuggestionCreateParams,
+    QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateItemParams,
     QueuedCompetencyMatrixQuestions,
     Sheets,
@@ -99,7 +100,7 @@ class AbstractCompetencyMatrixUseCase(ABC):
         self,
         *,
         params: QuestionSuggestionCreateParams,
-    ) -> None:
+    ) -> QueuedCompetencyMatrixQuestion:
         raise NotImplementedError
 
     @abstractmethod
@@ -232,9 +233,10 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
         self,
         *,
         params: QuestionSuggestionCreateParams,
-    ) -> None:
-        await self.question_suggestion_limiter.check_create_allowed(params=params.limit)
-        await self.storage.create_queued_question(params=params.question)
+    ) -> QueuedCompetencyMatrixQuestion:
+        if params.limit is not None:
+            await self.question_suggestion_limiter.check_create_allowed(params=params.limit)
+        return await self.storage.create_queued_question(params=params.question)
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
         return await self.storage.list_queued_questions()

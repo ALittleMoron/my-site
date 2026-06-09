@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from datetime import datetime
 from itertools import groupby
 from typing import Annotated, Self
 
@@ -53,13 +52,14 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
             raise ValueError(msg)
         return question
 
-    def to_schema(self, *, client_identifier: str, now: datetime) -> QuestionSuggestionCreateParams:
+    def to_schema(
+        self,
+        *,
+        limit: QuestionSuggestionLimitParams | None,
+    ) -> QuestionSuggestionCreateParams:
         return QuestionSuggestionCreateParams(
             question=QueuedCompetencyMatrixQuestionCreateParams(question=self.question),
-            limit=QuestionSuggestionLimitParams(
-                client_identifier=client_identifier,
-                now=now,
-            ),
+            limit=limit,
         )
 
 

@@ -1,8 +1,18 @@
-<div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
   <h2 class="h4 mb-0">{{ 'adminMatrixQueue.title' | t }}</h2>
-  <button type="button" class="btn btn-outline-secondary btn-sm" (click)="loadQueue()">
-    {{ 'shared.update' | t }}
-  </button>
+  <div class="d-flex flex-wrap gap-2">
+    <button
+      type="button"
+      class="btn btn-outline-success btn-sm"
+      data-testid="matrix-queue-open-manual-add"
+      (click)="openManualAdd()"
+    >
+      {{ 'adminMatrixQueue.addToQueue' | t }}
+    </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="loadQueue()">
+      {{ 'shared.update' | t }}
+    </button>
+  </div>
 </div>
 
 @if (loading()) {
@@ -162,6 +172,77 @@
       } @else {
         <app-empty-state [message]="'shared.empty' | t" />
       }
+    </div>
+  </div>
+}
+
+@if (manualAddVisible()) {
+  <div
+    class="modal d-block bg-dark bg-opacity-50"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'adminMatrixQueue.addManualTitle' | t"
+    (click)="closeManualAdd()"
+    (keyup.escape)="closeManualAdd()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <form class="modal-content" (submit)="$event.preventDefault(); createQueuedQuestion()">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ 'adminMatrixQueue.addManualTitle' | t }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            [disabled]="manualAddSubmitting()"
+            [attr.aria-label]="'shared.close' | t"
+            (click)="closeManualAdd()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label" for="matrix-queue-manual-question">
+            {{ 'matrix.suggestion.question' | t }}
+          </label>
+          <input
+            type="text"
+            id="matrix-queue-manual-question"
+            class="form-control"
+            maxlength="255"
+            [placeholder]="'adminMatrixQueue.addManualPlaceholder' | t"
+            [value]="manualAddQuestion()"
+            [disabled]="manualAddSubmitting()"
+            (input)="onManualAddQuestionInput($event)"
+            (paste)="onManualAddQuestionPaste($event)"
+          />
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="manualAddSubmitting()"
+            (click)="closeManualAdd()"
+          >
+            {{ 'shared.cancel' | t }}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-success"
+            data-testid="matrix-queue-manual-submit"
+            [disabled]="!canSubmitManualAdd() || manualAddSubmitting()"
+          >
+            @if (manualAddSubmitting()) {
+              {{ 'adminMatrixQueue.addManualSubmitting' | t }}
+            } @else {
+              {{ 'adminMatrixQueue.addToQueue' | t }}
+            }
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 }

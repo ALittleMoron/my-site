@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -18,6 +17,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemGetParams,
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixResourceSearchParams,
+    QuestionSuggestionLimitParams,
 )
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
@@ -28,6 +28,7 @@ from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_competency_matrix_item_published_status_params,
     provide_competency_matrix_public_item_get_params,
     provide_competency_matrix_resource_search_params,
+    provide_question_suggestion_limit_params,
 )
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
@@ -36,6 +37,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
     QuestionSuggestionRequestSchema,
+    QueuedQuestionResponseSchema,
     QueuedQuestionsResponseSchema,
 )
 from entrypoints.litestar.guards import content_manager_guard, draft_content_access_guard
@@ -104,33 +106,20 @@ class CompetencyMatrixApiController(Controller):
         description="Анонимное предложение вопроса для матрицы компетенций.",
         name="competency-matrix-question-suggestion-create-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
+        dependencies={
+            "limit": Provide(
+                provide_question_suggestion_limit_params,
+                sync_to_thread=False,
+            ),
+        },
     )
     async def suggest_competency_matrix_question(
         self,
-        request: Request[JwtUser, Token | None, State],
         data: Annotated[QuestionSuggestionRequestSchema, Body()],
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        limit: QuestionSuggestionLimitParams,
     ) -> None:
-        await use_case.suggest_question(
-            params=data.to_schema(
-                client_identifier=self._client_identifier(request=request),
-                now=datetime.now(tz=UTC),
-            ),
-        )
-
-    @staticmethod
-    def _client_identifier(*, request: Request[JwtUser, Token | None, State]) -> str:
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for is not None:
-            forwarded_client = forwarded_for.split(",", maxsplit=1)[0].strip()
-            if forwarded_client:
-                return forwarded_client
-        real_ip = request.headers.get("x-real-ip")
-        if real_ip is not None:
-            real_client = real_ip.strip()
-            if real_client:
-                return real_client
-        return request.client.host if request.client is not None else ""
+        await use_case.suggest_question(params=data.to_schema(limit=limit))
 
     @get(
         "/queued-questions",
@@ -145,6 +134,21 @@ class CompetencyMatrixApiController(Controller):
     ) -> QueuedQuestionsResponseSchema:
         questions = await use_case.list_queued_questions()
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
+
+    @post(
+        "/queued-questions",
+        description="Ручное добавление вопроса в очередь матрицы компетенций.",
+        guards=[content_manager_guard],
+        name="competency-matrix-queued-question-create-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def create_queued_competency_matrix_question(
+        self,
+        data: Annotated[QuestionSuggestionRequestSchema, Body()],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+    ) -> QueuedQuestionResponseSchema:
+        question = await use_case.suggest_question(params=data.to_schema(limit=None))
+        return QueuedQuestionResponseSchema.from_domain_schema(schema=question)
 
     @delete(
         "/queued-questions/{pk:int}",

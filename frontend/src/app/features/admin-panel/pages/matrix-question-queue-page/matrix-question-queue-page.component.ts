@@ -25,6 +25,7 @@ import {
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
+const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 
 @Component({
   selector: 'app-matrix-question-queue-page',
@@ -53,7 +54,11 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly selectedQuestion = signal<QueuedMatrixQuestion | null>(null);
   readonly submitting = signal(false);
   readonly rejectingQuestionId = signal<number | null>(null);
+  readonly manualAddVisible = signal(false);
+  readonly manualAddQuestion = signal('');
+  readonly manualAddSubmitting = signal(false);
   readonly hasQuestions = computed(() => this.questions().length > 0);
+  readonly canSubmitManualAdd = computed(() => this.manualAddQuestion().trim().length > 0);
 
   readonly form = this.formBuilder.group({
     slug: ['', [Validators.required, Validators.maxLength(255)]],
@@ -120,6 +125,60 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       subsectionRu: subsection,
       subsectionEn: subsection,
     });
+  }
+
+  openManualAdd(): void {
+    this.manualAddVisible.set(true);
+    this.manualAddQuestion.set('');
+    this.manualAddSubmitting.set(false);
+  }
+
+  closeManualAdd(): void {
+    if (this.manualAddSubmitting()) return;
+    this.manualAddVisible.set(false);
+    this.manualAddQuestion.set('');
+  }
+
+  setManualAddQuestion(value: string): void {
+    this.manualAddQuestion.set(normalizeManualQuestion(value));
+  }
+
+  onManualAddQuestionInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    const value = normalizeManualQuestion(target?.value ?? '');
+    if (target !== null && target.value !== value) {
+      target.value = value;
+    }
+    this.setManualAddQuestion(value);
+  }
+
+  onManualAddQuestionPaste(event: ClipboardEvent): void {
+    const text = event.clipboardData?.getData('text') ?? '';
+    if (!text) return;
+    event.preventDefault();
+    this.setManualAddQuestion(text);
+  }
+
+  createQueuedQuestion(): void {
+    const question = normalizeManualQuestion(this.manualAddQuestion()).trim();
+    if (!question) return;
+    this.manualAddSubmitting.set(true);
+    this.queueService
+      .createQueuedQuestion(question)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.manualAddSubmitting.set(false);
+          this.manualAddVisible.set(false);
+          this.manualAddQuestion.set('');
+          this.notifications.success(this.i18n.translate('adminMatrixQueue.addManualAdded'));
+          this.loadQueue();
+        },
+        error: () => {
+          this.manualAddSubmitting.set(false);
+          this.notifications.error(this.i18n.translate('adminMatrixQueue.addManualError'));
+        },
+      });
   }
 
   rejectQuestion(question: QueuedMatrixQuestion): void {
@@ -209,4 +268,8 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     }
     return language;
   }
+}
+
+function normalizeManualQuestion(value: string): string {
+  return value.replace(LINE_BREAKS_PATTERN, ' ');
 }

@@ -68,6 +68,32 @@ describe('MatrixQuestionQueueService', () => {
     expect(completed).toBe(true);
   });
 
+  it('creates queued question manually', () => {
+    let createdQuestion: string | undefined;
+
+    service.createQueuedQuestion('What is PEP 8?').subscribe((question) => {
+      createdQuestion = question.question;
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/queued-questions'),
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ question: 'What is PEP 8?' });
+    req.flush({
+      id: 7,
+      question: 'What is PEP 8?',
+      grade: null,
+      sheet: null,
+      section: null,
+      subsection: null,
+      suggestedByUsername: null,
+      createdAt: '2026-06-07T12:00:00+00:00',
+    });
+
+    expect(createdQuestion).toBe('What is PEP 8?');
+  });
+
   it('creates matrix question from queued question', () => {
     let createdId: number | undefined;
 

@@ -60,7 +60,7 @@ class QuestionSuggestionLimitParams:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class QuestionSuggestionCreateParams:
     question: QueuedCompetencyMatrixQuestionCreateParams
-    limit: QuestionSuggestionLimitParams
+    limit: QuestionSuggestionLimitParams | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

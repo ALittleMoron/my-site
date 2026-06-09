@@ -1,11 +1,15 @@
 from datetime import UTC, datetime
-from unittest.mock import ANY
+from typing import cast
+from unittest.mock import ANY, Mock
 
 import pytest_asyncio
 from httpx import codes
+from litestar import Request
+from litestar.datastructures import State
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
+from core.auth.types import Token
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import (
     QuestionSuggestionQuotaExceededError,
@@ -20,6 +24,10 @@ from core.competency_matrix.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.types import IntId
+from entrypoints.litestar.api.competency_matrix.dependencies import (
+    provide_question_suggestion_limit_params,
+)
+from entrypoints.litestar.api.competency_matrix.endpoints import CompetencyMatrixApiController
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -41,6 +49,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
         assert call_params.question == QueuedCompetencyMatrixQuestionCreateParams(
             question="What is PEP 8?",
         )
+        assert call_params.limit is not None
         assert call_params.limit.client_identifier != ""
         assert call_params.limit.now.tzinfo is not None
 
@@ -59,8 +68,26 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
             limit=call_params.limit,
         )
+        assert call_params.limit is not None
         assert call_params.limit.client_identifier == "203.0.113.10"
         assert call_params.limit.now.tzinfo is not None
+
+    def test_question_suggestion_limit_dependency_uses_forwarded_client_identifier(self) -> None:
+        request = cast(
+            "Request[JwtUser, Token | None, State]",
+            Mock(
+                headers={"x-forwarded-for": "203.0.113.10, 10.0.0.2"},
+                client=Mock(host="198.51.100.4"),
+            ),
+        )
+
+        params = provide_question_suggestion_limit_params(request=request)
+
+        assert params.client_identifier == "203.0.113.10"
+        assert params.now.tzinfo is not None
+
+    def test_competency_matrix_controller_does_not_keep_client_identifier_helper(self) -> None:
+        assert "_client_identifier" not in CompetencyMatrixApiController.__dict__
 
     def test_suggest_question_rejects_empty_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="")
@@ -147,6 +174,55 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.UNAUTHORIZED
         self.use_case.list_queued_questions.assert_not_called()
+
+    def test_content_manager_can_create_queued_question(self) -> None:
+        self.use_case.suggest_question.return_value = QueuedCompetencyMatrixQuestion(
+            id=IntId(3),
+            question="What is PEP 8?",
+            grade=None,
+            sheet=None,
+            section=None,
+            subsection=None,
+            suggested_by_username=None,
+            created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
+        )
+
+        response = self.api.post_create_queued_matrix_question(question="  What is PEP 8?  ")
+
+        assert response.status_code == codes.CREATED, response.content
+        assert response.json() == {
+            "id": 3,
+            "question": "What is PEP 8?",
+            "grade": None,
+            "sheet": None,
+            "section": None,
+            "subsection": None,
+            "suggestedByUsername": None,
+            "createdAt": "2026-06-07T12:03:00+00:00",
+        }
+        self.use_case.suggest_question.assert_called_once_with(params=ANY)
+        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
+        assert call_params == QuestionSuggestionCreateParams(
+            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            limit=None,
+        )
+
+    def test_regular_user_cannot_create_queued_question(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="user",
+            role=RoleEnum.USER,
+        )
+
+        response = self.api.post_create_queued_matrix_question(question="What is PEP 8?")
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.suggest_question.assert_not_called()
+
+    def test_create_queued_question_rejects_blank_question(self) -> None:
+        response = self.api.post_create_queued_matrix_question(question="   ")
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.suggest_question.assert_not_called()
 
     def test_content_manager_can_reject_queue_entry(self) -> None:
         response = self.api.delete_queued_matrix_question(question_id=7)

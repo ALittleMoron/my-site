@@ -51,14 +51,39 @@ class TestQuestionSuggestionsUseCase(FactoryFixture):
                 now=now,
             ),
         )
-        await self.use_case.suggest_question(params=params)
+        created_question = await self.use_case.suggest_question(params=params)
 
+        assert created_question.question == "What is PEP 8?"
         self.question_suggestion_limiter.check_create_allowed.assert_called_once_with(
             params=params.limit,
         )
         self.storage.create_queued_question.assert_called_once_with(
             params=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
         )
+
+    async def test_suggest_question_skips_quota_limiter_when_limit_is_absent(self) -> None:
+        now = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
+        queued_question = QueuedCompetencyMatrixQuestion(
+            id=IntId(1),
+            question="What is PEP 8?",
+            grade=None,
+            sheet=None,
+            section=None,
+            subsection=None,
+            suggested_by_username=None,
+            created_at=now,
+        )
+        params = QuestionSuggestionCreateParams(
+            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            limit=None,
+        )
+        self.storage.create_queued_question.return_value = queued_question
+
+        created_question = await self.use_case.suggest_question(params=params)
+
+        assert created_question == queued_question
+        self.question_suggestion_limiter.check_create_allowed.assert_not_called()
+        self.storage.create_queued_question.assert_called_once_with(params=params.question)
 
     async def test_create_item_from_queue_creates_item_then_removes_queue_entry(self) -> None:
         queued_question = QueuedCompetencyMatrixQuestion(

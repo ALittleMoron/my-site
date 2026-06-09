@@ -6,6 +6,7 @@ import {
   AdminMatrixItemDetailDto,
   AdminMatrixItemPayload,
   QueuedMatrixQuestion,
+  QueuedMatrixQuestionDto,
   QueuedMatrixQuestionsDto,
   mapQueuedMatrixQuestionDto,
 } from '../models/matrix-question-queue.model';
@@ -18,6 +19,12 @@ export class MatrixQuestionQueueService {
     return this.api
       .get<QueuedMatrixQuestionsDto>('/api/competency-matrix/queued-questions')
       .pipe(map((dto) => dto.questions.map(mapQueuedMatrixQuestionDto)));
+  }
+
+  createQueuedQuestion(question: string): Observable<QueuedMatrixQuestion> {
+    return this.api
+      .post<QueuedMatrixQuestionDto>('/api/competency-matrix/queued-questions', { question })
+      .pipe(map(mapQueuedMatrixQuestionDto));
   }
 
   rejectQueuedQuestion(questionId: number): Observable<void> {
