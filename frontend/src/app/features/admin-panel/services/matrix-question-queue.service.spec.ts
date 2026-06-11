@@ -94,6 +94,48 @@ describe('MatrixQuestionQueueService', () => {
     expect(createdQuestion).toBe('What is PEP 8?');
   });
 
+  it('imports queued questions from file upload form data', () => {
+    let importedQuestions: string[] | undefined;
+    const file = new File(['What is PEP 8?'], 'questions.txt', { type: 'text/plain' });
+
+    service.importQueuedQuestions(file).subscribe((questions) => {
+      importedQuestions = questions.map((question) => question.question);
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/competency-matrix/queued-questions/import'),
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeInstanceOf(FormData);
+    expect((req.request.body as FormData).get('file')).toBe(file);
+    req.flush({
+      questions: [
+        {
+          id: 7,
+          question: 'What is PEP 8?',
+          grade: null,
+          sheet: null,
+          section: null,
+          subsection: null,
+          suggestedByUsername: null,
+          createdAt: '2026-06-07T12:00:00+00:00',
+        },
+        {
+          id: 8,
+          question: 'What is Black?',
+          grade: null,
+          sheet: null,
+          section: null,
+          subsection: null,
+          suggestedByUsername: null,
+          createdAt: '2026-06-07T12:01:00+00:00',
+        },
+      ],
+    });
+
+    expect(importedQuestions).toEqual(['What is PEP 8?', 'What is Black?']);
+  });
+
   it('creates matrix question from queued question', () => {
     let createdId: number | undefined;
 

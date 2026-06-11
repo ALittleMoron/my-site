@@ -52,6 +52,35 @@ class QueuedCompetencyMatrixQuestionCreateParams:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class QueuedCompetencyMatrixQuestionsCreateParams:
+    questions: list[QueuedCompetencyMatrixQuestionCreateParams]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportRules:
+    supported_text_extensions: frozenset[str]
+    supported_excel_extensions: frozenset[str]
+    unsupported_legacy_excel_extensions: frozenset[str]
+    supported_extensions_for_message: tuple[str, ...]
+    question_headers: frozenset[str]
+    question_headers_for_message: tuple[str, ...]
+    csv_delimiters: str
+    question_max_length: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportFile:
+    filename: str
+    content: bytes
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ParsedQuestionRow:
+    row_number: int
+    value: object
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class QuestionSuggestionLimitParams:
     client_identifier: str
     now: datetime

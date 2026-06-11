@@ -16,6 +16,7 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestions,
+    QueuedCompetencyMatrixQuestionsCreateParams,
     Sheet,
     Sheets,
 )
@@ -275,7 +276,10 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
-        stmt = select(QueuedQuestionModel).order_by(QueuedQuestionModel.created_at)
+        stmt = select(QueuedQuestionModel).order_by(
+            QueuedQuestionModel.created_at,
+            QueuedQuestionModel.id,
+        )
         questions = await self.session.scalars(stmt)
         return QueuedCompetencyMatrixQuestions(
             values=[question.to_domain_schema() for question in questions],
@@ -297,6 +301,22 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self.session.add(question)
         await self.session.flush()
         return question.to_domain_schema()
+
+    async def create_queued_questions(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionsCreateParams,
+    ) -> QueuedCompetencyMatrixQuestions:
+        created_at = datetime.now(tz=UTC)
+        questions = [
+            QueuedQuestionModel.from_create_params(params=question, created_at=created_at)
+            for question in params.questions
+        ]
+        self.session.add_all(questions)
+        await self.session.flush()
+        return QueuedCompetencyMatrixQuestions(
+            values=[question.to_domain_schema() for question in questions],
+        )
 
     async def delete_queued_question(self, question_id: IntId) -> None:
         question = await self._get_queued_question_model(question_id=question_id)

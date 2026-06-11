@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Literal
 
+from core.competency_matrix.schemas import QuestionQueueImportRules
+
 
 class _PathConstants:
     src_dir: Path = Path(__file__).resolve().parent.parent.parent
@@ -47,6 +49,19 @@ class _SearchConstants:
     min_trigram_fuzzy_query_length: int = 6
 
 
+class _QuestionQueueImportConstants:
+    rules: QuestionQueueImportRules = QuestionQueueImportRules(
+        supported_text_extensions=frozenset({".txt", ".csv"}),
+        supported_excel_extensions=frozenset({".xlsx", ".xlsm"}),
+        unsupported_legacy_excel_extensions=frozenset({".xls"}),
+        supported_extensions_for_message=(".txt", ".csv", ".xlsx", ".xlsm"),
+        question_headers=frozenset({"question", "questions", "вопрос", "вопросы"}),
+        question_headers_for_message=("question", "questions", "вопрос", "вопросы"),
+        csv_delimiters=",;\t|",
+        question_max_length=255,
+    )
+
+
 class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
@@ -54,6 +69,7 @@ class Constants:
     response_cache: _ResponseCacheConstants = _ResponseCacheConstants()
     files: _FilesConstants = _FilesConstants()
     search: _SearchConstants = _SearchConstants()
+    question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()
 
 
 constants = Constants()

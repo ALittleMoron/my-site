@@ -10,9 +10,12 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - mypy: strict mode (`disallow_untyped_defs = true` etc.)
 - No docstrings unless interface is non-obvious from types
 - Comments: only for non-obvious WHY, never WHAT
-- Keep reusable backend tuning values, such as search thresholds, in
-  `backend/src/infra/config/constants.py` and import `constants`; do not define module-local
-  constants for those values in services, storages, or adapters.
+- Keep reusable backend tuning values, parser rules, supported formats, limits, headers, and other
+  code-owned constants in `backend/src/infra/config/constants.py`; do not create feature-specific
+  constants modules or module-local constants for those values in services, storages, parsers, or
+  adapters. Core code must receive such values through schemas/constructor parameters or IOC
+  wiring, while infra and entrypoint code may import `constants` directly when that layer owns the
+  wiring.
 
 ## Layers
 
@@ -51,6 +54,10 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   Put the behavior on the real owning class or use case instead.
 - Do not create classes that exist only to wrap one or more `@classmethod` helpers. A class must
   represent a real domain concept, interface, adapter, provider, guard, schema, model, or service.
+- Put reusable domain parsers in the domain `parsers.py`, reader interfaces in `readers.py`,
+  parser/request DTOs and rule objects in `schemas.py`, and parser/domain errors in
+  `exceptions.py`. Do not name domain files after one narrow feature when an existing standard
+  file type fits the object.
 - Top-level functions are acceptable when the framework or tool naturally requires them or when a
   callable class would add ceremony without improving ownership: app factories, Litestar lifespan
   hooks, CLI commands, Alembic migration functions, and small pure infrastructure entrypoints.

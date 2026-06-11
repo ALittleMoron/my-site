@@ -105,6 +105,8 @@
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [ ] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
+- [ ] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
+  `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check

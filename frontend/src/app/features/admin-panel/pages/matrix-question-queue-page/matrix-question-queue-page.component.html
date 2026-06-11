@@ -193,54 +193,147 @@
       (click)="$event.stopPropagation()"
       (keydown)="$event.stopPropagation()"
     >
-      <form class="modal-content" (submit)="$event.preventDefault(); createQueuedQuestion()">
+      <form class="modal-content" (submit)="$event.preventDefault(); submitQueueAdd()">
         <div class="modal-header">
           <h5 class="modal-title">{{ 'adminMatrixQueue.addManualTitle' | t }}</h5>
           <button
             type="button"
             class="btn-close"
-            [disabled]="manualAddSubmitting()"
+            [disabled]="manualAddSubmitting() || importSubmitting()"
             [attr.aria-label]="'shared.close' | t"
             (click)="closeManualAdd()"
           ></button>
         </div>
         <div class="modal-body">
-          <label class="form-label" for="matrix-queue-manual-question">
-            {{ 'matrix.suggestion.question' | t }}
-          </label>
-          <input
-            type="text"
-            id="matrix-queue-manual-question"
-            class="form-control"
-            maxlength="255"
-            [placeholder]="'adminMatrixQueue.addManualPlaceholder' | t"
-            [value]="manualAddQuestion()"
-            [disabled]="manualAddSubmitting()"
-            (input)="onManualAddQuestionInput($event)"
-            (paste)="onManualAddQuestionPaste($event)"
-          />
+          <div
+            class="btn-group w-100 mb-3"
+            role="group"
+            [attr.aria-label]="'adminMatrixQueue.addModeLabel' | t"
+          >
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-testid="matrix-queue-manual-mode"
+              [class.active]="addMode() === 'manual'"
+              [attr.aria-pressed]="addMode() === 'manual'"
+              [disabled]="manualAddSubmitting() || importSubmitting()"
+              (click)="setAddMode('manual')"
+            >
+              {{ 'adminMatrixQueue.addModeManual' | t }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-testid="matrix-queue-import-mode"
+              [class.active]="addMode() === 'import'"
+              [attr.aria-pressed]="addMode() === 'import'"
+              [disabled]="manualAddSubmitting() || importSubmitting()"
+              (click)="setAddMode('import')"
+            >
+              {{ 'adminMatrixQueue.addModeImport' | t }}
+            </button>
+          </div>
+
+          @if (addMode() === 'manual') {
+            <label class="form-label" for="matrix-queue-manual-question">
+              {{ 'matrix.suggestion.question' | t }}
+            </label>
+            <input
+              type="text"
+              id="matrix-queue-manual-question"
+              class="form-control"
+              maxlength="255"
+              [placeholder]="'adminMatrixQueue.addManualPlaceholder' | t"
+              [value]="manualAddQuestion()"
+              [disabled]="manualAddSubmitting()"
+              (input)="onManualAddQuestionInput($event)"
+              (paste)="onManualAddQuestionPaste($event)"
+            />
+          } @else {
+            <input
+              type="file"
+              id="matrix-queue-import-file"
+              class="visually-hidden"
+              data-testid="matrix-queue-import-file-input"
+              [accept]="importFileAccept"
+              [disabled]="importSubmitting()"
+              (change)="onImportFileInputChange($event)"
+            />
+            <label
+              class="d-block border rounded-2 p-4 text-center"
+              for="matrix-queue-import-file"
+              data-testid="matrix-queue-import-drop-zone"
+              (dragover)="onImportDragOver($event)"
+              (drop)="onImportDrop($event)"
+            >
+              <span class="d-block fw-semibold">
+                {{ 'adminMatrixQueue.importDrop' | t }}
+              </span>
+              <span class="btn btn-outline-secondary btn-sm mt-3">
+                {{ 'adminMatrixQueue.importChooseFile' | t }}
+              </span>
+            </label>
+            <p class="form-text mb-2">{{ 'adminMatrixQueue.importHelp' | t }}</p>
+            @if (selectedImportFileLabel(); as selectedFileLabel) {
+              <p class="mb-2 small fw-semibold">{{ selectedFileLabel }}</p>
+            }
+            @if (importFileSelectionErrorKey(); as errorKey) {
+              <div class="alert alert-danger py-2 mb-2">{{ errorKey | t }}</div>
+            }
+            @if (importError(); as error) {
+              <div
+                class="alert alert-danger mb-0"
+                data-testid="matrix-queue-import-error"
+                role="alert"
+              >
+                <p class="mb-2">{{ error.message }}</p>
+                @if (importNestedErrors().length > 0) {
+                  <ul class="mb-0 ps-3">
+                    @for (nestedError of importNestedErrors(); track nestedError.message) {
+                      <li>{{ nestedError.message }}</li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          }
         </div>
         <div class="modal-footer">
           <button
             type="button"
             class="btn btn-outline-secondary"
-            [disabled]="manualAddSubmitting()"
+            [disabled]="manualAddSubmitting() || importSubmitting()"
             (click)="closeManualAdd()"
           >
             {{ 'shared.cancel' | t }}
           </button>
-          <button
-            type="submit"
-            class="btn btn-success"
-            data-testid="matrix-queue-manual-submit"
-            [disabled]="!canSubmitManualAdd() || manualAddSubmitting()"
-          >
-            @if (manualAddSubmitting()) {
-              {{ 'adminMatrixQueue.addManualSubmitting' | t }}
-            } @else {
-              {{ 'adminMatrixQueue.addToQueue' | t }}
-            }
-          </button>
+          @if (addMode() === 'manual') {
+            <button
+              type="submit"
+              class="btn btn-success"
+              data-testid="matrix-queue-manual-submit"
+              [disabled]="!canSubmitManualAdd() || manualAddSubmitting()"
+            >
+              @if (manualAddSubmitting()) {
+                {{ 'adminMatrixQueue.addManualSubmitting' | t }}
+              } @else {
+                {{ 'adminMatrixQueue.addToQueue' | t }}
+              }
+            </button>
+          } @else {
+            <button
+              type="submit"
+              class="btn btn-success"
+              data-testid="matrix-queue-import-submit"
+              [disabled]="!canSubmitImport()"
+            >
+              @if (importSubmitting()) {
+                {{ 'adminMatrixQueue.importSubmitting' | t }}
+              } @else {
+                {{ 'adminMatrixQueue.importSubmit' | t }}
+              }
+            </button>
+          }
         </div>
       </form>
     </div>

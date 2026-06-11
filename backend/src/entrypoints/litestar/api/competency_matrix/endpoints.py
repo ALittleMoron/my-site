@@ -1,22 +1,26 @@
+from dataclasses import dataclass
 from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
+from litestar.datastructures.upload_file import UploadFile
 from litestar.di import Provide
-from litestar.params import Body, FromPath, QueryParameter
+from litestar.params import Body, FromPath, MultipartBody, QueryParameter
 
 from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
+from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemGetParams,
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixResourceSearchParams,
+    QuestionQueueImportFile,
     QuestionSuggestionLimitParams,
 )
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
@@ -47,6 +51,11 @@ from entrypoints.litestar.response_cache import (
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
+
+
+@dataclass(frozen=True, slots=True)
+class QueuedQuestionsImportRequestSchema:
+    file: UploadFile
 
 
 class CompetencyMatrixApiController(Controller):
@@ -149,6 +158,28 @@ class CompetencyMatrixApiController(Controller):
     ) -> QueuedQuestionResponseSchema:
         question = await use_case.suggest_question(params=data.to_schema(limit=None))
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)
+
+    @post(
+        "/queued-questions/import",
+        description="Импорт вопросов в очередь матрицы компетенций из файла.",
+        guards=[content_manager_guard],
+        name="competency-matrix-queued-questions-import-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def import_queued_competency_matrix_questions(
+        self,
+        data: MultipartBody[QueuedQuestionsImportRequestSchema],
+        parser: FromDishka[QuestionQueueImportParser],
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+    ) -> QueuedQuestionsResponseSchema:
+        params = parser.parse(
+            file=QuestionQueueImportFile(
+                filename=data.file.filename,
+                content=await data.file.read(),
+            ),
+        )
+        questions = await use_case.import_queued_questions(params=params)
+        return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
 
     @delete(
         "/queued-questions/{pk:int}",

@@ -8,6 +8,7 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestions,
+    QueuedCompetencyMatrixQuestionsCreateParams,
     Sheets,
 )
 from core.enums import PublishStatusEnum
@@ -92,6 +93,14 @@ class CompetencyMatrixStorage(ABC):
         *,
         params: QueuedCompetencyMatrixQuestionCreateParams,
     ) -> QueuedCompetencyMatrixQuestion:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_queued_questions(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionsCreateParams,
+    ) -> QueuedCompetencyMatrixQuestions:
         raise NotImplementedError
 
     @abstractmethod

@@ -18,12 +18,19 @@ const queuedQuestion: QueuedMatrixQuestion = {
   createdAt: '2026-06-07T12:00:00+00:00',
 };
 
+const importedQuestion: QueuedMatrixQuestion = {
+  ...queuedQuestion,
+  id: 8,
+  question: 'What is Black?',
+};
+
 describe('MatrixQuestionQueuePageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionQueuePageComponent>;
   let component: MatrixQuestionQueuePageComponent;
   let queueService: {
     listQueuedQuestions: jest.Mock;
     createQueuedQuestion: jest.Mock;
+    importQueuedQuestions: jest.Mock;
     rejectQueuedQuestion: jest.Mock;
     createQuestionFromQueue: jest.Mock;
   };
@@ -33,6 +40,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     queueService = {
       listQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion])),
       createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
+      importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
       createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: 1, slug: 'pep-8' })),
     };
@@ -72,10 +80,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   });
 
   it('opens manual queue add modal with a one-line question input', () => {
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
-      .click();
-    fixture.detectChanges();
+    openAddModal();
 
     const input = fixture.nativeElement.querySelector<HTMLInputElement>(
       '#matrix-queue-manual-question',
@@ -87,11 +92,36 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.querySelector('textarea#matrix-queue-manual-question')).toBeNull();
   });
 
-  it('disables manual queue submit for blank input', () => {
+  it('switches queue add modal between manual input and import upload', () => {
+    openAddModal();
+
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-mode"]')!
       .click();
     fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector<HTMLInputElement>(
+        '[data-testid="matrix-queue-import-file-input"]',
+      ),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector<HTMLElement>(
+        '[data-testid="matrix-queue-import-drop-zone"]',
+      ),
+    ).toBeTruthy();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-mode"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
+  });
+
+  it('disables manual queue submit for blank input', () => {
+    openAddModal();
 
     const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
       '[data-testid="matrix-queue-manual-submit"]',
@@ -101,10 +131,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   });
 
   it('normalizes multiline manual question text before adding it to the queue', () => {
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
-      .click();
-    fixture.detectChanges();
+    openAddModal();
     const input = fixture.nativeElement.querySelector<HTMLInputElement>(
       '#matrix-queue-manual-question',
     )!;
@@ -128,10 +155,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   });
 
   it('closes manual queue modal and reloads queue after successful add', () => {
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
-      .click();
-    fixture.detectChanges();
+    openAddModal();
     const input = fixture.nativeElement.querySelector<HTMLInputElement>(
       '#matrix-queue-manual-question',
     )!;
@@ -159,10 +183,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       attr: null,
     };
     queueService.createQueuedQuestion.mockReturnValue(throwError(() => error));
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
-      .click();
-    fixture.detectChanges();
+    openAddModal();
     const input = fixture.nativeElement.querySelector<HTMLInputElement>(
       '#matrix-queue-manual-question',
     )!;
@@ -177,6 +198,99 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось добавить вопрос в очередь.');
     expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
+  });
+
+  it('disables import submit until a file is selected', () => {
+    openImportMode();
+
+    const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-queue-import-submit"]',
+    );
+
+    expect(submitButton?.disabled).toBe(true);
+  });
+
+  it('selects one import file from file input', () => {
+    openImportMode();
+    chooseImportFile(new File(['question'], 'questions.txt', { type: 'text/plain' }));
+
+    expect(fixture.nativeElement.textContent).toContain('Выбран файл: questions.txt');
+  });
+
+  it('selects one import file from drop zone', () => {
+    openImportMode();
+    dropImportFiles([new File(['question'], 'questions.csv', { type: 'text/csv' })]);
+
+    expect(fixture.nativeElement.textContent).toContain('Выбран файл: questions.csv');
+  });
+
+  it('keeps import submit disabled when more than one file is dropped', () => {
+    openImportMode();
+    dropImportFiles([
+      new File(['first'], 'first.txt', { type: 'text/plain' }),
+      new File(['second'], 'second.txt', { type: 'text/plain' }),
+    ]);
+
+    const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-queue-import-submit"]',
+    );
+
+    expect(fixture.nativeElement.textContent).toContain('Выберите один файл.');
+    expect(submitButton?.disabled).toBe(true);
+  });
+
+  it('closes import modal, reloads queue, and shows imported count after success', () => {
+    openImportMode();
+    const file = new File(['question'], 'questions.txt', { type: 'text/plain' });
+    chooseImportFile(file);
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-submit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.importQueuedQuestions).toHaveBeenCalledWith(file);
+    expect(notificationService.success).toHaveBeenCalledWith('Импортировано вопросов: 2.');
+    expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-queue-import-file-input"]'),
+    ).toBeNull();
+  });
+
+  it('keeps import modal open and renders backend nested errors when import fails', () => {
+    const error: ApiError = {
+      code: 'bad_request',
+      type: 'bad_request',
+      message: 'Question queue import file is invalid.',
+      status: 400,
+      location: null,
+      attr: null,
+      nested_errors: [
+        {
+          code: 'bad_request',
+          type: 'bad_request',
+          message: 'Row 2: question must not be empty.',
+          status: 400,
+          location: 'body',
+          attr: 'row_2',
+        },
+      ],
+    };
+    queueService.importQueuedQuestions.mockReturnValue(throwError(() => error));
+    openImportMode();
+    chooseImportFile(new File(['question'], 'questions.txt', { type: 'text/plain' }));
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-submit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось импортировать вопросы.');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-queue-import-file-input"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Question queue import file is invalid.');
+    expect(fixture.nativeElement.textContent).toContain('Row 2: question must not be empty.');
   });
 
   it('prefills create form from selected queued question', () => {
@@ -232,4 +346,43 @@ describe('MatrixQuestionQueuePageComponent', () => {
       'ru',
     );
   });
+
+  function openAddModal(): void {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
+      .click();
+    fixture.detectChanges();
+  }
+
+  function openImportMode(): void {
+    openAddModal();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-mode"]')!
+      .click();
+    fixture.detectChanges();
+  }
+
+  function chooseImportFile(file: File): void {
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '[data-testid="matrix-queue-import-file-input"]',
+    )!;
+    Object.defineProperty(input, 'files', {
+      value: [file],
+      configurable: true,
+    });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function dropImportFiles(files: File[]): void {
+    const dropZone = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-queue-import-drop-zone"]',
+    )!;
+    const event = new Event('drop', { bubbles: true }) as DragEvent;
+    Object.defineProperty(event, 'dataTransfer', {
+      value: { files },
+    });
+    dropZone.dispatchEvent(event);
+    fixture.detectChanges();
+  }
 });

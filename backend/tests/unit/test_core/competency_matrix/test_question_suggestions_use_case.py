@@ -13,6 +13,8 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateItemParams,
     QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestions,
+    QueuedCompetencyMatrixQuestionsCreateParams,
 )
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
@@ -84,6 +86,35 @@ class TestQuestionSuggestionsUseCase(FactoryFixture):
         assert created_question == queued_question
         self.question_suggestion_limiter.check_create_allowed.assert_not_called()
         self.storage.create_queued_question.assert_called_once_with(params=params.question)
+
+    async def test_import_queued_questions_creates_questions_without_quota_limiter(self) -> None:
+        params = QueuedCompetencyMatrixQuestionsCreateParams(
+            questions=[
+                QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+                QueuedCompetencyMatrixQuestionCreateParams(question="How does mypy help?"),
+            ],
+        )
+        queued_questions = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=1,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+                ),
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=2,
+                    question="How does mypy help?",
+                    created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+                ),
+            ],
+        )
+        self.storage.create_queued_questions.return_value = queued_questions
+
+        created_questions = await self.use_case.import_queued_questions(params=params)
+
+        assert created_questions == queued_questions
+        self.question_suggestion_limiter.check_create_allowed.assert_not_called()
+        self.storage.create_queued_questions.assert_called_once_with(params=params)
 
     async def test_create_item_from_queue_creates_item_then_removes_queue_entry(self) -> None:
         queued_question = QueuedCompetencyMatrixQuestion(

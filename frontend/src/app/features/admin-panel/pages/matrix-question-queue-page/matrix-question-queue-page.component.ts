@@ -26,6 +26,10 @@ import { MatrixQuestionQueueService } from '../../services/matrix-question-queue
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
+const IMPORT_FILE_ACCEPT =
+  '.txt,.csv,.xlsx,.xlsm,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12';
+
+type QueueAddMode = 'manual' | 'import';
 
 @Component({
   selector: 'app-matrix-question-queue-page',
@@ -55,10 +59,25 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly submitting = signal(false);
   readonly rejectingQuestionId = signal<number | null>(null);
   readonly manualAddVisible = signal(false);
+  readonly addMode = signal<QueueAddMode>('manual');
   readonly manualAddQuestion = signal('');
   readonly manualAddSubmitting = signal(false);
+  readonly importFileAccept = IMPORT_FILE_ACCEPT;
+  readonly selectedImportFile = signal<File | null>(null);
+  readonly importSubmitting = signal(false);
+  readonly importError = signal<ApiError | null>(null);
+  readonly importFileSelectionErrorKey = signal<string | null>(null);
   readonly hasQuestions = computed(() => this.questions().length > 0);
   readonly canSubmitManualAdd = computed(() => this.manualAddQuestion().trim().length > 0);
+  readonly canSubmitImport = computed(
+    () => this.selectedImportFile() !== null && !this.importSubmitting(),
+  );
+  readonly selectedImportFileLabel = computed(() => {
+    const file = this.selectedImportFile();
+    if (file === null) return null;
+    return this.i18n.translate('adminMatrixQueue.importSelectedFile', { filename: file.name });
+  });
+  readonly importNestedErrors = computed(() => this.importError()?.nested_errors ?? []);
 
   readonly form = this.formBuilder.group({
     slug: ['', [Validators.required, Validators.maxLength(255)]],
@@ -129,14 +148,24 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   openManualAdd(): void {
     this.manualAddVisible.set(true);
+    this.addMode.set('manual');
     this.manualAddQuestion.set('');
     this.manualAddSubmitting.set(false);
+    this.resetImportState();
   }
 
   closeManualAdd(): void {
-    if (this.manualAddSubmitting()) return;
+    if (this.manualAddSubmitting() || this.importSubmitting()) return;
     this.manualAddVisible.set(false);
     this.manualAddQuestion.set('');
+    this.addMode.set('manual');
+    this.resetImportState();
+  }
+
+  setAddMode(mode: QueueAddMode): void {
+    this.addMode.set(mode);
+    this.importError.set(null);
+    this.importFileSelectionErrorKey.set(null);
   }
 
   setManualAddQuestion(value: string): void {
@@ -159,6 +188,14 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.setManualAddQuestion(text);
   }
 
+  submitQueueAdd(): void {
+    if (this.addMode() === 'manual') {
+      this.createQueuedQuestion();
+      return;
+    }
+    this.importQueuedQuestions();
+  }
+
   createQueuedQuestion(): void {
     const question = normalizeManualQuestion(this.manualAddQuestion()).trim();
     if (!question) return;
@@ -177,6 +214,49 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
         error: () => {
           this.manualAddSubmitting.set(false);
           this.notifications.error(this.i18n.translate('adminMatrixQueue.addManualError'));
+        },
+      });
+  }
+
+  onImportFileInputChange(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.selectImportFiles(target?.files ?? null);
+  }
+
+  onImportDragOver(event: DragEvent): void {
+    event.preventDefault();
+  }
+
+  onImportDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.selectImportFiles(event.dataTransfer?.files ?? null);
+  }
+
+  importQueuedQuestions(): void {
+    const file = this.selectedImportFile();
+    if (file === null) return;
+    this.importSubmitting.set(true);
+    this.importError.set(null);
+    this.importFileSelectionErrorKey.set(null);
+    this.queueService
+      .importQueuedQuestions(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (questions) => {
+          this.importSubmitting.set(false);
+          this.manualAddVisible.set(false);
+          this.manualAddQuestion.set('');
+          this.addMode.set('manual');
+          this.resetImportState();
+          this.notifications.success(
+            this.i18n.translate('adminMatrixQueue.importAdded', { count: questions.length }),
+          );
+          this.loadQueue();
+        },
+        error: (err: ApiError) => {
+          this.importSubmitting.set(false);
+          this.importError.set(err);
+          this.notifications.error(this.i18n.translate('adminMatrixQueue.importError'));
         },
       });
   }
@@ -267,6 +347,25 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       throw new Error('I18n language is not initialized');
     }
     return language;
+  }
+
+  private selectImportFiles(files: FileList | File[] | null): void {
+    const selectedFiles = files === null ? [] : Array.from(files);
+    this.importError.set(null);
+    if (selectedFiles.length !== 1) {
+      this.selectedImportFile.set(null);
+      this.importFileSelectionErrorKey.set('adminMatrixQueue.importOneFileOnly');
+      return;
+    }
+    this.selectedImportFile.set(selectedFiles[0]);
+    this.importFileSelectionErrorKey.set(null);
+  }
+
+  private resetImportState(): void {
+    this.selectedImportFile.set(null);
+    this.importSubmitting.set(false);
+    this.importError.set(null);
+    this.importFileSelectionErrorKey.set(null);
   }
 }
 

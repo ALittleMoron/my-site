@@ -6,9 +6,17 @@ These rules apply to backend core code under `backend/src/core/**/*.py`.
 
 Never violate these boundaries:
 
-- `backend/src/core/**` must not import `sqlalchemy`, `litestar`, `dishka`, `miniopy`, `pyseto`, `structlog`, `sentry_sdk`, or any third-party packages.
+- `backend/src/core/**` must not import `sqlalchemy`, `litestar`, `dishka`, `miniopy`,
+  `pyseto`, `structlog`, `sentry_sdk`, `verbose_http_exceptions`, or any other third-party
+  framework/infrastructure packages.
 - `backend/src/core/**` must not import from `infra/postgresql/`, `entrypoints/`, `infra/ioc/`, `infra/minio`, or any outer layers.
 - Do not add new imports from `infra.config` or logging into core; pass configurable values through parameters or injected abstractions.
+- Keep reusable parser rules, supported formats, limits, headers, and other code-owned constants in
+  `backend/src/infra/config/constants.py`. Core code must receive those values through schemas,
+  constructor parameters, or IOC wiring, never by importing infra config or creating feature-local
+  constants modules.
+- Existing `verbose_http_exceptions` imports in core exception modules are legacy refactoring debt;
+  do not add new ones or expand that pattern. The planned refactor is tracked in `docs/TODO.md`.
 
 ## Shared Core Files
 
@@ -32,6 +40,8 @@ use_cases.py            # Business logic - use cases or controllers with not ABC
 storages.py             # Storage ABC - repository pattern (SQLAlchemy, Mongo, etc.)
 file_storages.py        # File storages ABC - for manipluating files (MinIO, local files, etc.)
 exceptions.py           # Domain exceptions
+parsers.py              # Domain parsers
+readers.py              # Reader interfaces
 enums.py                # Domain enumerations
 types.py                # Domain type aliases or NewType
 services.py             # Domain services - shared business logic, uses in use cases
@@ -44,5 +54,12 @@ event_dispatchers.py    # Domain event dispatchers - kafka or rest event publish
 - Use cases must not depend on or call other use cases. When the logic belongs to only one
   use case, keep it in that use case and inject storage abstractions directly. Put shared
   cross-use-case business logic in the relevant domain `services.py` as a concrete service.
-- Core exceptions must express domain failures; HTTP representation belongs at the entrypoint boundary.
+- Core exceptions must express domain failures and inherit only from `Exception` or project domain
+  exception bases that themselves inherit from `Exception`. Litestar/HTTP representation belongs in
+  the Litestar entrypoint layer, where core exceptions should be mapped to
+  `verbose_http_exceptions`.
+- Put parser input/output schemas, parser rule objects, and value objects in `schemas.py`; put
+  parser classes in `parsers.py`; put reader interfaces in `readers.py`; put parser/domain errors
+  in `exceptions.py`. Do not create feature-specific modules when an existing standard domain file
+  type fits the object.
 - Do not log secrets, password hashes, tokens, raw credentials, or other sensitive values.

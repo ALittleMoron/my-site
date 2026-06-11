@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from valkey.asyncio import Valkey
 
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
+from core.competency_matrix.parsers import QuestionQueueImportParser
+from core.competency_matrix.readers import QuestionQueueImportExcelReader
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage, QuestionSuggestionQuotaStorage
 from core.competency_matrix.use_cases import (
@@ -11,6 +13,7 @@ from core.competency_matrix.use_cases import (
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.openpyxl.readers import OpenpyxlQuestionQueueImportExcelReader
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.valkey.storages import ValkeyQuestionSuggestionQuotaStorage
 
@@ -23,6 +26,22 @@ class CompetencyMatrixProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_resource_id_generator(self) -> ResourceIdGenerator:
         return ResourceIdGenerator()
+
+    @provide(scope=Scope.APP)
+    async def provide_question_queue_import_excel_reader(
+        self,
+    ) -> QuestionQueueImportExcelReader:
+        return OpenpyxlQuestionQueueImportExcelReader()
+
+    @provide(scope=Scope.APP)
+    async def provide_question_queue_import_parser(
+        self,
+        excel_reader: QuestionQueueImportExcelReader,
+    ) -> QuestionQueueImportParser:
+        return QuestionQueueImportParser(
+            rules=constants.question_queue_import.rules,
+            excel_reader=excel_reader,
+        )
 
     @provide(scope=Scope.REQUEST)
     async def provide_competency_matrix_storage(

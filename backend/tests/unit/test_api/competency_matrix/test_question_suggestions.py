@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from io import BytesIO
 from typing import cast
 from unittest.mock import ANY, Mock
 
@@ -6,6 +7,7 @@ import pytest_asyncio
 from httpx import codes
 from litestar import Request
 from litestar.datastructures import State
+from openpyxl import Workbook
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
@@ -207,6 +209,225 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             limit=None,
         )
 
+    def test_content_manager_can_import_txt_queued_questions(self) -> None:
+        self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=3,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
+                ),
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=4,
+                    question="How does mypy help?",
+                    created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.txt",
+            content=b"What is PEP 8?\nHow does mypy help?",
+            content_type="text/plain",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        assert response.json()["questions"] == [
+            {
+                "id": 3,
+                "question": "What is PEP 8?",
+                "grade": None,
+                "sheet": None,
+                "section": None,
+                "subsection": None,
+                "suggestedByUsername": None,
+                "createdAt": "2026-06-07T12:03:00+00:00",
+            },
+            {
+                "id": 4,
+                "question": "How does mypy help?",
+                "grade": None,
+                "sheet": None,
+                "section": None,
+                "subsection": None,
+                "suggestedByUsername": None,
+                "createdAt": "2026-06-07T12:03:00+00:00",
+            },
+        ]
+        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert [question.question for question in call_params.questions] == [
+            "What is PEP 8?",
+            "How does mypy help?",
+        ]
+
+    def test_content_manager_can_import_csv_queued_questions(self) -> None:
+        self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=5,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 5, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.csv",
+            content="ignored;вопрос\nx;Что такое PEP 8?".encode(),
+            content_type="text/csv",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert [question.question for question in call_params.questions] == ["Что такое PEP 8?"]
+
+    def test_import_normalizes_line_breaks_inside_question_text(self) -> None:
+        self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=8,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 8, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.csv",
+            content=b'question\n"What is PEP 8?\nHow should it be used?"',
+            content_type="text/csv",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert [question.question for question in call_params.questions] == [
+            "What is PEP 8? How should it be used?",
+        ]
+
+    def test_content_manager_can_import_xlsx_queued_questions(self) -> None:
+        self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=6,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 6, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.xlsx",
+            content=xlsx_bytes([["questions"], ["What is PEP 8?"]]),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert [question.question for question in call_params.questions] == ["What is PEP 8?"]
+
+    def test_content_manager_can_import_xlsm_queued_questions_without_header(self) -> None:
+        self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=7,
+                    question="What is PEP 8?",
+                    created_at=datetime(2026, 6, 7, 12, 7, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.xlsm",
+            content=xlsx_bytes([["What is PEP 8?"]]),
+            content_type="application/vnd.ms-excel.sheet.macroEnabled.12",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert [question.question for question in call_params.questions] == ["What is PEP 8?"]
+
+    def test_regular_user_cannot_import_queued_questions(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="user",
+            role=RoleEnum.USER,
+        )
+
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.txt",
+            content=b"What is PEP 8?",
+            content_type="text/plain",
+        )
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.import_queued_questions.assert_not_called()
+
+    def test_import_rejects_csv_without_question_header(self) -> None:
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.csv",
+            content=b"title\nWhat is PEP 8?",
+            content_type="text/csv",
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["message"] == "Question queue import file is invalid."
+        assert response.json()["nested_errors"][0]["message"] == (
+            "CSV header must contain one of: question, questions, вопрос, вопросы."
+        )
+        self.use_case.import_queued_questions.assert_not_called()
+
+    def test_import_rejects_legacy_xls_file(self) -> None:
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.xls",
+            content=b"not an xls file",
+            content_type="application/vnd.ms-excel",
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["nested_errors"][0]["message"] == (
+            "Unsupported import file extension: .xls."
+        )
+        self.use_case.import_queued_questions.assert_not_called()
+
+    def test_import_rejects_empty_txt_lines_without_creating_questions(self) -> None:
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.txt",
+            content=b"What is PEP 8?\n\nHow does mypy help?",
+            content_type="text/plain",
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["nested_errors"][0]["message"] == "Row 2 question must not be blank."
+        self.use_case.import_queued_questions.assert_not_called()
+
+    def test_import_rejects_long_questions_without_creating_questions(self) -> None:
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.txt",
+            content=("x" * 256).encode(),
+            content_type="text/plain",
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["nested_errors"][0]["message"] == (
+            "Row 1 question must be at most 255 characters."
+        )
+        self.use_case.import_queued_questions.assert_not_called()
+
+    def test_import_rejects_non_text_excel_cells_without_creating_questions(self) -> None:
+        response = self.api.post_import_queued_matrix_questions(
+            filename="questions.xlsx",
+            content=xlsx_bytes([["questions"], [42]]),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["nested_errors"][0]["message"] == "Row 2 question must be text."
+        self.use_case.import_queued_questions.assert_not_called()
+
     def test_regular_user_cannot_create_queued_question(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="user",
@@ -293,3 +514,13 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
         call_params = self.use_case.create_item_from_queue.call_args.kwargs["params"]
         assert isinstance(call_params, QueuedCompetencyMatrixQuestionCreateItemParams)
         assert call_params.queued_question_id == IntId(7)
+
+
+def xlsx_bytes(rows: list[list[object]]) -> bytes:
+    workbook = Workbook()
+    worksheet = workbook.active
+    for row in rows:
+        worksheet.append(row)
+    stream = BytesIO()
+    workbook.save(stream)
+    return stream.getvalue()

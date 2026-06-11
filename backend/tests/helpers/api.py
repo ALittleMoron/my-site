@@ -123,6 +123,18 @@ class APIHelper:
             json={"question": question},
         )
 
+    def post_import_queued_matrix_questions(
+        self,
+        *,
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> Response:
+        return self.client.post(
+            "/api/competency-matrix/queued-questions/import",
+            files={"file": (filename, content, content_type)},
+        )
+
     def delete_queued_matrix_question(self, question_id: int) -> Response:
         return self.client.delete(f"/api/competency-matrix/queued-questions/{question_id}")
 

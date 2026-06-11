@@ -13,6 +13,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestionsCreateParams,
 )
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
@@ -388,6 +389,21 @@ async def run_create_queued_question(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).create_queued_question(
         params=QueuedCompetencyMatrixQuestionCreateParams(
             question="How should query-plan checks cover the matrix queue?",
+        ),
+    )
+
+
+async def run_create_queued_questions(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).create_queued_questions(
+        params=QueuedCompetencyMatrixQuestionsCreateParams(
+            questions=[
+                QueuedCompetencyMatrixQuestionCreateParams(
+                    question="How should query-plan checks cover matrix imports?",
+                ),
+                QueuedCompetencyMatrixQuestionCreateParams(
+                    question="How should FIFO ordering behave for imported questions?",
+                ),
+            ],
         ),
     )
 
@@ -953,6 +969,16 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason=None,
         run=run_create_queued_question,
+    ),
+    scenario(
+        name="matrix_queue_batch_create",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="create_queued_questions",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_queued_questions,
     ),
     scenario(
         name="matrix_queue_delete",

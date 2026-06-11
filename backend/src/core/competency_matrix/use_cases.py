@@ -19,6 +19,7 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateItemParams,
     QueuedCompetencyMatrixQuestions,
+    QueuedCompetencyMatrixQuestionsCreateParams,
     Sheets,
 )
 from core.competency_matrix.services import QuestionSuggestionLimiter
@@ -105,6 +106,14 @@ class AbstractCompetencyMatrixUseCase(ABC):
 
     @abstractmethod
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def import_queued_questions(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionsCreateParams,
+    ) -> QueuedCompetencyMatrixQuestions:
         raise NotImplementedError
 
     @abstractmethod
@@ -240,6 +249,13 @@ class CompetencyMatrixUseCase(AbstractCompetencyMatrixUseCase):
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
         return await self.storage.list_queued_questions()
+
+    async def import_queued_questions(
+        self,
+        *,
+        params: QueuedCompetencyMatrixQuestionsCreateParams,
+    ) -> QueuedCompetencyMatrixQuestions:
+        return await self.storage.create_queued_questions(params=params)
 
     async def delete_queued_question(self, *, question_id: IntId) -> None:
         await self.storage.delete_queued_question(question_id=question_id)

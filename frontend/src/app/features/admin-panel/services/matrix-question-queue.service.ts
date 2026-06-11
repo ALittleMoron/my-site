@@ -27,6 +27,14 @@ export class MatrixQuestionQueueService {
       .pipe(map(mapQueuedMatrixQuestionDto));
   }
 
+  importQueuedQuestions(file: File): Observable<QueuedMatrixQuestion[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.api
+      .post<QueuedMatrixQuestionsDto>('/api/competency-matrix/queued-questions/import', formData)
+      .pipe(map((dto) => dto.questions.map(mapQueuedMatrixQuestionDto)));
+  }
+
   rejectQueuedQuestion(questionId: number): Observable<void> {
     return this.api.delete<void>(`/api/competency-matrix/queued-questions/${questionId}`);
   }

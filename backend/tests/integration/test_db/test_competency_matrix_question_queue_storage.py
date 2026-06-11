@@ -9,6 +9,7 @@ from core.competency_matrix.exceptions import QueuedCompetencyMatrixQuestionNotF
 from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
+    QueuedCompetencyMatrixQuestionsCreateParams,
 )
 from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
@@ -72,6 +73,54 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageFixture):
         assert question.question == "What is PEP 8?"
         assert question.grade is None
         assert question.suggested_by_username is None
+
+    async def test_create_queued_questions_returns_persisted_questions_in_input_order(self) -> None:
+        questions = await self.storage.create_queued_questions(
+            params=QueuedCompetencyMatrixQuestionsCreateParams(
+                questions=[
+                    QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+                    QueuedCompetencyMatrixQuestionCreateParams(question="How does mypy help?"),
+                ],
+            ),
+        )
+
+        assert [question.question for question in questions] == [
+            "What is PEP 8?",
+            "How does mypy help?",
+        ]
+        assert questions.values[0].id < questions.values[1].id
+        assert questions.values[0].created_at == questions.values[1].created_at
+
+    async def test_list_queued_questions_breaks_fifo_ties_by_id(self) -> None:
+        created_at = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
+        await self.storage_helper.create_queued_matrix_questions(
+            questions=[
+                QueuedCompetencyMatrixQuestion(
+                    id=IntId(2),
+                    question="Second",
+                    grade=None,
+                    sheet=None,
+                    section=None,
+                    subsection=None,
+                    suggested_by_username=None,
+                    created_at=created_at,
+                ),
+                QueuedCompetencyMatrixQuestion(
+                    id=IntId(1),
+                    question="First",
+                    grade=None,
+                    sheet=None,
+                    section=None,
+                    subsection=None,
+                    suggested_by_username=None,
+                    created_at=created_at,
+                ),
+            ],
+        )
+
+        questions = await self.storage.list_queued_questions()
+
+        assert [question.id for question in questions] == [1, 2]
 
     async def test_get_queued_question_not_found(self) -> None:
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
