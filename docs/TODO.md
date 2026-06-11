@@ -104,7 +104,7 @@
     - [x] Basic nginx edge rate limits for login, contact, public notes, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
-- [ ] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
+- [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
 - [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check

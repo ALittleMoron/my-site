@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
 
-from core.files.schemas import FileUploadResult
+from core.files.schemas import FileUploadResult, PresignPutObject
 
 
 class FileStorage(ABC):
@@ -24,5 +24,5 @@ class FileStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def presign_put_object(self, object_name: str, namespace: str) -> str:
+    async def presign_put_object(self, object_name: str, namespace: str) -> PresignPutObject:
         raise NotImplementedError

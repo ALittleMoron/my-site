@@ -1,3 +1,4 @@
+from datetime import timedelta
 from io import BytesIO
 from unittest.mock import Mock, patch
 
@@ -6,7 +7,7 @@ from miniopy_async.api import Minio
 from miniopy_async.error import MinioException
 
 from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
-from core.files.schemas import FileUploadResult
+from core.files.schemas import FileUploadResult, PresignPutObject
 from infra.minio.file_storages import MinioFileStorage
 
 
@@ -98,3 +99,31 @@ class TestMinioFileStorage:
             mock_ensure.return_value = None
             await self.storage.init_storage()
             mock_ensure.assert_called_once_with(namespace="media")
+
+    @patch("infra.minio.file_storages.settings")
+    async def test_presign_put_object_returns_upload_and_access_urls(
+        self,
+        mock_settings: Mock,
+    ) -> None:
+        mock_settings.minio.presign_put_expires_seconds = 60
+        mock_settings.get_minio_object_url.return_value = "http://localhost/media/test.txt"
+        self.mock_minio_client.presigned_put_object.return_value = "http://minio/upload"
+
+        result = await self.storage.presign_put_object(
+            object_name="test.txt",
+            namespace="media",
+        )
+
+        assert result == PresignPutObject(
+            upload_url="http://minio/upload",
+            access_url="http://localhost/media/test.txt",
+        )
+        self.mock_minio_client.presigned_put_object.assert_called_once_with(
+            bucket_name="media",
+            object_name="test.txt",
+            expires=timedelta(seconds=60),
+        )
+        mock_settings.get_minio_object_url.assert_called_once_with(
+            bucket="media",
+            object_path="test.txt",
+        )

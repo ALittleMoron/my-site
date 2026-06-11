@@ -41,6 +41,12 @@ Portfolio/notes site and knowledge database
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
+- Never bypass Make targets for tests or checks. Test, lint, type-check, security, format-check,
+  coverage, quality, build-verification, and similar validation commands must be run only through
+  existing `make` targets. Do not call lower-level tools such as `pytest`, `ruff`, `mypy`,
+  `coverage`, `bandit`, `vulture`, `npm`, or framework CLIs directly unless I explicitly instruct
+  that exact bypass for the current task. If a Make target cannot run because of local environment
+  or permission issues, report the blocker instead of bypassing Make.
 - The following Make commands are trusted for agent use and may be approved as recurring command
   prefixes when the local Codex permission flow asks for them:
   `make test-backend-unit`, `make test-backend`, `make test-backend-integration`,

@@ -5,12 +5,12 @@ import pytest
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 
-from core.auth.password_hashers import Argon2PasswordHasher
+from infra.auth.password_hashers import Argon2PasswordHasher
 
 
-class TestPasswordHasher:
+class TestArgon2PasswordHasher:
     @pytest.fixture(autouse=True)
-    async def setup(self) -> None:
+    def setup(self) -> None:
         self.context_mock = Mock(spec=PasswordHasher)
         self.hasher = Argon2PasswordHasher(context=self.context_mock)
 
@@ -19,7 +19,7 @@ class TestPasswordHasher:
         hash_ = self.hasher.hash_password("password")
         assert hash_ == "hashed_password"
 
-    def test_verify_password_verify_false(self) -> None:
+    def test_verify_password_returns_false_and_rehash_on_verification_error(self) -> None:
         self.context_mock.verify.side_effect = VerificationError
         verified, need_rehash = self.hasher.verify_password(
             plain_password="password",
@@ -27,7 +27,7 @@ class TestPasswordHasher:
         )
         assert (verified, need_rehash) == (False, True)
 
-    def test_verify_password(self) -> None:
+    def test_verify_password_returns_verification_and_rehash_flags(self) -> None:
         self.context_mock.verify.return_value = True
         self.context_mock.check_needs_rehash.return_value = True
         verified, need_rehash = self.hasher.verify_password(

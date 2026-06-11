@@ -6,6 +6,12 @@ from core.schemas import Secret
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class TokenPayloadValidationResult:
+    is_valid: bool
+    message: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BaseUser:
     username: str
     role: RoleEnum

@@ -9,7 +9,7 @@ from miniopy_async.error import MinioException
 
 from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
 from core.files.file_storages import FileStorage
-from core.files.schemas import FileUploadResult
+from core.files.schemas import FileUploadResult, PresignPutObject
 from core.files.types import Namespace
 from infra.config.loggers import logger
 from infra.config.settings import settings
@@ -105,10 +105,17 @@ class MinioFileStorage(FileStorage):
         self,
         object_name: str,
         namespace: str,
-    ) -> str:
+    ) -> PresignPutObject:
         _namespace = self._ensure_valid_namespace(namespace)
-        return await self.client.presigned_put_object(
+        upload_url = await self.client.presigned_put_object(
             bucket_name=_namespace,
             object_name=object_name,
             expires=timedelta(seconds=settings.minio.presign_put_expires_seconds),
+        )
+        return PresignPutObject(
+            upload_url=upload_url,
+            access_url=settings.get_minio_object_url(
+                bucket=_namespace,
+                object_path=object_name,
+            ),
         )

@@ -5,11 +5,14 @@ from litestar.stores.valkey import ValkeyStore
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.account.storages import UserAccountStorage
-from core.auth.password_hashers import Argon2PasswordHasher, PasswordHasher
+from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage, TokenRevocationStorage
-from core.auth.token_handlers import PasetoTokenHandler, TokenHandler
+from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
 from core.auth.use_cases import AbstractAuthUseCase, AuthUseCase
+from infra.auth.event_dispatchers import StructlogAuthEventReporter
+from infra.auth.password_hashers import Argon2PasswordHasher
+from infra.auth.token_handlers import PasetoTokenHandler
 from infra.config.constants import constants
 from infra.config.settings import settings
 from infra.postgresql.storages.auth import AuthDatabaseStorage
@@ -69,4 +72,5 @@ class AuthProvider(Provider):
             auth_storage=auth_storage,
             token_revocation_storage=token_revocation_storage,
             user_storage=user_storage,
+            event_reporter=StructlogAuthEventReporter(),
         )

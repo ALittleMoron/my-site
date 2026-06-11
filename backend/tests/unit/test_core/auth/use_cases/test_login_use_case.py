@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
+from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.schemas import JwtUser
 from core.auth.storages import TokenRevocationStorage
@@ -20,12 +21,14 @@ class TestAuthUseCase(ContainerFixture, FactoryFixture):
         self.auth_storage = await self.container.get_auth_storage()
         self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
         self.user_storage = await self.container.get_user_storage()
+        self.auth_event_reporter = Mock(spec=AuthEventReporter)
         self.use_case = AuthUseCase(
             hasher=self.hasher,
             token_handler=self.token_handler,
             auth_storage=self.auth_storage,
             token_revocation_storage=self.token_revocation_storage,
             user_storage=self.user_storage,
+            event_reporter=self.auth_event_reporter,
         )
 
     async def test_login_user_not_found(self) -> None:
@@ -36,6 +39,9 @@ class TestAuthUseCase(ContainerFixture, FactoryFixture):
                 password="test",
                 required_role=RoleEnum.ADMIN,
             )
+        self.auth_event_reporter.report_login_user_not_found.assert_called_once_with(
+            username="test",
+        )
 
     async def test_login_user_role_not_has_role(self) -> None:
         self.user_storage.get_user_by_username.return_value = self.factory.core.user(
@@ -49,6 +55,10 @@ class TestAuthUseCase(ContainerFixture, FactoryFixture):
                 password="test",
                 required_role=RoleEnum.ADMIN,
             )
+        self.auth_event_reporter.report_login_role_forbidden.assert_called_once_with(
+            username="test",
+            required_role=RoleEnum.ADMIN,
+        )
 
     async def test_login_not_verified_password(self) -> None:
         self.hasher.verify_password.return_value = (False, False)
@@ -63,6 +73,9 @@ class TestAuthUseCase(ContainerFixture, FactoryFixture):
                 password="test",
                 required_role=RoleEnum.ADMIN,
             )
+        self.auth_event_reporter.report_login_password_verification_failed.assert_called_once_with(
+            username="test",
+        )
 
     async def test_login_rehash_on_password_expire(self) -> None:
         self.token_handler.encode_token.return_value = b"TOKEN"

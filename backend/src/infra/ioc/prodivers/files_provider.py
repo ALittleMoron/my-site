@@ -6,6 +6,7 @@ from miniopy_async.api import Minio
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import AbstractFilesUseCase, FilesUseCase
+from infra.config.constants import constants
 from infra.config.settings import settings
 from infra.minio.file_storages import MinioFileStorage
 
@@ -40,4 +41,5 @@ class FilesProvider(Provider):
         return FilesUseCase(
             file_storage=file_storage,
             file_name_generator=file_name_generator,
+            allowed_upload_media_types=constants.files.allowed_to_upload_media_types,
         )

@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest_asyncio
 
+from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import UnauthorizedError
 from core.auth.storages import TokenRevocationStorage
 from core.auth.types import Token
@@ -14,12 +15,14 @@ class TestLogoutUseCase(ContainerFixture, FactoryFixture):
     async def setup(self) -> None:
         self.token_handler = await self.container.get_token_handler()
         self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
+        self.auth_event_reporter = Mock(spec=AuthEventReporter)
         self.use_case = AuthUseCase(
             hasher=await self.container.get_hasher(),
             auth_storage=await self.container.get_auth_storage(),
             token_handler=self.token_handler,
             token_revocation_storage=self.token_revocation_storage,
             user_storage=await self.container.get_user_storage(),
+            event_reporter=self.auth_event_reporter,
         )
 
     async def test_logout_revokes_valid_token_until_it_expires(self) -> None:
@@ -41,6 +44,7 @@ class TestLogoutUseCase(ContainerFixture, FactoryFixture):
         await self.use_case.logout(token=token)
 
         self.token_revocation_storage.revoke_token.assert_not_called()
+        self.auth_event_reporter.report_logout_invalid_token.assert_called_once_with()
 
     async def test_logout_ignores_token_without_remaining_lifetime(self) -> None:
         token = Token(b"expired_token")
@@ -49,3 +53,4 @@ class TestLogoutUseCase(ContainerFixture, FactoryFixture):
         await self.use_case.logout(token=token)
 
         self.token_revocation_storage.revoke_token.assert_not_called()
+        self.auth_event_reporter.report_logout_token_without_remaining_lifetime.assert_called_once_with()
