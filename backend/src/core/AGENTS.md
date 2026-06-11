@@ -6,6 +6,8 @@ These rules apply to backend core code under `backend/src/core/**/*.py`.
 
 Never violate these boundaries:
 
+- `backend/src/core/**` may import only the Python standard library and other objects from
+  `backend/src/core/**` (`core.*`). All external imports are forbidden.
 - `backend/src/core/**` must not import `sqlalchemy`, `litestar`, `dishka`, `miniopy`,
   `pyseto`, `structlog`, `sentry_sdk`, `verbose_http_exceptions`, or any other third-party
   framework/infrastructure packages.
@@ -15,8 +17,7 @@ Never violate these boundaries:
   `backend/src/infra/config/constants.py`. Core code must receive those values through schemas,
   constructor parameters, or IOC wiring, never by importing infra config or creating feature-local
   constants modules.
-- Existing `verbose_http_exceptions` imports in core exception modules are legacy refactoring debt;
-  do not add new ones or expand that pattern. The planned refactor is tracked in `docs/TODO.md`.
+- Core exception modules must stay free of `verbose_http_exceptions` imports.
 
 ## Shared Core Files
 

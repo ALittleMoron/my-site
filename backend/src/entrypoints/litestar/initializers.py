@@ -15,11 +15,11 @@ from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
 from litestar.stores.base import Store
 from litestar.stores.valkey import ValkeyStore
 from litestar.types import Middleware
-from verbose_http_exceptions.ext.litestar import ALL_EXCEPTION_HANDLERS_MAP
 
 from entrypoints.litestar.api.routers import api_router
 from entrypoints.litestar.auth import AuthenticationMiddleware
 from entrypoints.litestar.cli.plugins import CLIPlugin
+from entrypoints.litestar.exception_handlers import get_litestar_exception_handlers
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
@@ -126,7 +126,7 @@ def create_cli_app(
     return Litestar(
         lifespan=lifespan,
         debug=settings.app.debug,
-        exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
+        exception_handlers=get_litestar_exception_handlers(),
         stores=create_stores(),
         plugins=[CLIPlugin()],
         openapi_config=create_openapi_config(),
@@ -143,7 +143,7 @@ def create_litestar_app(
         route_handlers=create_routers(),
         lifespan=lifespan,
         debug=settings.app.debug,
-        exception_handlers=ALL_EXCEPTION_HANDLERS_MAP,
+        exception_handlers=get_litestar_exception_handlers(),
         stores=create_stores(),
         response_cache_config=(
             ResponseCacheConfig(store=constants.response_cache.store_name)

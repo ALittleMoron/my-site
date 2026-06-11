@@ -25,7 +25,7 @@ class PresignPutObjectParams:
 
     def validate_content_type(self, allowed_types: set[str] | list[str] | tuple[str, ...]) -> None:
         if self.content_type not in allowed_types:
-            raise ContentTypeNotAllowedError(template_vars={"content_type": self.content_type})
+            raise ContentTypeNotAllowedError(content_type=self.content_type)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

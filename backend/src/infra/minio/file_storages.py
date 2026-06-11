@@ -43,7 +43,7 @@ class MinioFileStorage(FileStorage):
     def _ensure_valid_namespace(namespace: str) -> Namespace:
         if namespace != "media":
             logger.error("Passed incorrect namespace:", bucket_name=namespace)
-            raise NamespaceNotAllowedError(template_vars={"namespace": namespace})
+            raise NamespaceNotAllowedError(namespace=namespace)
         return namespace  # type: ignore[return-value]
 
     async def ensure_namespace_exists(self, namespace: str) -> None:

@@ -1,6 +1,6 @@
-from verbose_http_exceptions import BadRequestHTTPException, TooManyRequestsHTTPException
+from dataclasses import dataclass
 
-from core.exceptions import EntryNotFoundError
+from core.exceptions import DomainError, EntryNotFoundError
 
 
 class CompetencyMatrixItemNotFoundError(EntryNotFoundError):
@@ -11,18 +11,14 @@ class QueuedCompetencyMatrixQuestionNotFoundError(EntryNotFoundError):
     message = "Queued competency matrix question not found"
 
 
-class QuestionSuggestionQuotaExceededError(TooManyRequestsHTTPException):
+class QuestionSuggestionQuotaExceededError(DomainError):
     message = "Question suggestion daily quota exceeded"
 
 
-class QuestionQueueImportIssue(BadRequestHTTPException):
-    def __init__(self, *, message: str, row_number: int | None) -> None:
-        self.row_number = row_number
-        super().__init__(
-            message=message,
-            location="body",
-            attr_name=self.attr_name,
-        )
+@dataclass(frozen=True, kw_only=True, slots=True)
+class QuestionQueueImportIssue:
+    message: str
+    row_number: int | None
 
     @property
     def attr_name(self) -> str:
@@ -31,9 +27,9 @@ class QuestionQueueImportIssue(BadRequestHTTPException):
         return f"file.row.{self.row_number}"
 
 
-class QuestionQueueImportInvalidError(BadRequestHTTPException):
+class QuestionQueueImportInvalidError(DomainError):
     message = "Question queue import file is invalid."
 
     def __init__(self, *, issues: list[QuestionQueueImportIssue]) -> None:
         self.issues = tuple(issues)
-        super().__init__(*self.issues, message=self.message)
+        super().__init__()

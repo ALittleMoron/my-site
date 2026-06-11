@@ -1,13 +1,11 @@
-from verbose_http_exceptions import ForbiddenHTTPException, UnauthorizedHTTPException
-
-from core.exceptions import EntryNotFoundError
+from core.exceptions import DomainError, EntryNotFoundError
 
 
-class UnauthorizedError(UnauthorizedHTTPException):
+class UnauthorizedError(DomainError):
     message = "Unauthorized error"
 
 
-class ForbiddenError(ForbiddenHTTPException):
+class ForbiddenError(DomainError):
     message = "Forbidden error"
 
 
