@@ -20,17 +20,16 @@ describe('NotesService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('loads notes with pagination, visibility, and tag filters', () => {
+  it('loads public notes with pagination and public-safe filters', () => {
     let firstTitle: string | undefined;
     let firstViewCount: number | undefined;
     let firstSeoTitle: string | null | undefined;
 
     service
-      .getNotes({
+      .getPublicNotes({
         page: 2,
         pageSize: 10,
         language: 'en',
-        onlyPublished: false,
         tagSlug: 'python',
         publishedFrom: '2026-01-01',
         publishedTo: '2026-01-31',
@@ -47,7 +46,7 @@ describe('NotesService', () => {
     expect(req.request.params.get('page')).toBe('2');
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.params.get('pageSize')).toBe('10');
-    expect(req.request.params.get('onlyPublished')).toBe('false');
+    expect(req.request.params.has('onlyPublished')).toBe(false);
     expect(req.request.params.get('tagSlug')).toBe('python');
     expect(req.request.params.get('publishedFrom')).toBe('2026-01-01');
     expect(req.request.params.get('publishedTo')).toBe('2026-01-31');
@@ -87,12 +86,35 @@ describe('NotesService', () => {
     expect(firstSeoTitle).toBe('SEO Typed notes');
   });
 
-  it('loads detail with explicit visibility', () => {
+  it('loads admin notes with explicit visibility', () => {
+    service
+      .getAdminNotes({
+        page: 1,
+        pageSize: 10,
+        language: 'en',
+        onlyPublished: false,
+        tagSlug: null,
+        publishedFrom: null,
+        publishedTo: null,
+        searchQuery: null,
+      })
+      .subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('pageSize')).toBe('10');
+    expect(req.request.params.get('language')).toBe('en');
+    expect(req.request.params.get('onlyPublished')).toBe('false');
+    req.flush({ totalCount: 0, totalPages: 0, notes: [] });
+  });
+
+  it('loads public detail without visibility query params', () => {
     let content: string | undefined;
     let fireCount: number | undefined;
     let seoDescription: string | null | undefined;
 
-    service.getNote('typed-notes', true, 'ru').subscribe((note) => {
+    service.getPublicNote('typed-notes', 'ru').subscribe((note) => {
       content = note.content;
       fireCount = note.reactionCounts.fire;
       seoDescription = note.metadata.seoDescriptionRu;
@@ -101,7 +123,7 @@ describe('NotesService', () => {
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/detail/typed-notes'));
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('language')).toBe('ru');
-    expect(req.request.params.get('onlyPublished')).toBe('true');
+    expect(req.request.params.has('onlyPublished')).toBe(false);
     req.flush({
       id: NOTE_ID,
       title: 'Typed notes',
@@ -134,8 +156,19 @@ describe('NotesService', () => {
     expect(seoDescription).toBe('SEO описание');
   });
 
+  it('loads admin detail with explicit visibility', () => {
+    service.getAdminNote('typed-notes', false, 'en').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/detail/typed-notes'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('language')).toBe('en');
+    expect(req.request.params.get('onlyPublished')).toBe('false');
+    req.flush(noteDetailDto());
+    flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
+  });
+
   it('tracks engagement and reactions', () => {
-    service.trackView('typed-notes', 'ru').subscribe();
+    service.trackPublicView('typed-notes', 'ru').subscribe();
     const viewReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/notes/detail/typed-notes/analytics/view'),
     );
@@ -143,7 +176,7 @@ describe('NotesService', () => {
     expect(viewReq.request.params.get('language')).toBe('ru');
     viewReq.flush(null);
 
-    service.trackEngagedView('typed-notes', 'ru').subscribe();
+    service.trackPublicEngagedView('typed-notes', 'ru').subscribe();
     const engagedReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/notes/detail/typed-notes/analytics/engaged-view'),
     );
@@ -152,7 +185,7 @@ describe('NotesService', () => {
     engagedReq.flush(null);
 
     service
-      .setReaction('typed-notes', { reactionKind: 'poop', clientToken: 'client-token' }, 'en')
+      .setPublicReaction('typed-notes', { reactionKind: 'poop', clientToken: 'client-token' }, 'en')
       .subscribe();
     const reactionReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/notes/detail/typed-notes/reaction'),
@@ -170,12 +203,12 @@ describe('NotesService', () => {
     let reactionTotal: number | undefined;
 
     service
-      .getStats({ dateFrom: '2026-01-01', dateTo: '2026-01-31', language: 'en' })
+      .getAdminStats({ dateFrom: '2026-01-01', dateTo: '2026-01-31', language: 'en' })
       .subscribe((stats) => {
         reactionTotal = stats.totals.reactionCount;
       });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/notes/stats'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/stats'));
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.params.get('dateFrom')).toBe('2026-01-01');
@@ -213,7 +246,7 @@ describe('NotesService', () => {
   it('loads tree without tag filters', () => {
     let firstFolder: string | undefined;
 
-    service.getTree('ru').subscribe((tree) => {
+    service.getPublicTree('ru').subscribe((tree) => {
       firstFolder = tree.folders[0].folder;
     });
 
@@ -240,9 +273,18 @@ describe('NotesService', () => {
     expect(firstFolder).toBe('Engineering');
   });
 
+  it('loads admin tree from the admin surface', () => {
+    service.getAdminTree('en').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tree'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('language')).toBe('en');
+    req.flush({ folders: [] });
+  });
+
   it('creates and updates notes with editable slug and tags', () => {
     service
-      .createNote(
+      .createAdminNote(
         {
           slug: 'new-note',
           publishStatus: 'Draft',
@@ -257,7 +299,7 @@ describe('NotesService', () => {
       )
       .subscribe();
 
-    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes'));
+    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes'));
     expect(createReq.request.method).toBe('POST');
     expect(createReq.request.params.get('language')).toBe('ru');
     expect(createReq.request.body.slug).toBe('new-note');
@@ -268,7 +310,7 @@ describe('NotesService', () => {
     flushPublicStats(httpMock, [{ noteId: NOTE_ID, viewCount: 0 }]);
 
     service
-      .updateNote(
+      .updateAdminNote(
         'old-note',
         {
           slug: 'new-note',
@@ -288,7 +330,7 @@ describe('NotesService', () => {
       )
       .subscribe();
 
-    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/detail/old-note'));
+    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/detail/old-note'));
     expect(updateReq.request.method).toBe('PUT');
     expect(updateReq.request.params.get('language')).toBe('en');
     expect(updateReq.request.body.publishStatus).toBe('Published');
@@ -300,30 +342,39 @@ describe('NotesService', () => {
   });
 
   it('calls note publish endpoints', () => {
-    service.publishNote('draft-note').subscribe();
+    service.publishAdminNote('draft-note').subscribe();
     const publishReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/notes/detail/draft-note/set-published'),
+      r.url.endsWith('/api/admin/notes/detail/draft-note/set-published'),
     );
     expect(publishReq.request.method).toBe('POST');
     publishReq.flush(null);
 
-    service.unpublishNote('published-note').subscribe();
+    service.unpublishAdminNote('published-note').subscribe();
     const unpublishReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/notes/detail/published-note/set-draft'),
+      r.url.endsWith('/api/admin/notes/detail/published-note/set-draft'),
     );
     expect(unpublishReq.request.method).toBe('POST');
     unpublishReq.flush(null);
   });
 
-  it('manages tags', () => {
-    service.getTags(true, 'en').subscribe();
+  it('loads public tags without deleted-content controls', () => {
+    service.getPublicTags('en').subscribe();
+
     const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/tags'));
+    expect(listReq.request.params.has('includeDeleted')).toBe(false);
+    expect(listReq.request.params.get('language')).toBe('en');
+    listReq.flush({ tags: [] });
+  });
+
+  it('manages tags through admin endpoints', () => {
+    service.getAdminTags(true, 'en').subscribe();
+    const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tags'));
     expect(listReq.request.params.get('includeDeleted')).toBe('true');
     expect(listReq.request.params.get('language')).toBe('en');
     listReq.flush({ tags: [] });
 
     service
-      .createTag(
+      .createAdminTag(
         {
           slug: 'backend',
           translations: { ru: { name: 'Бэкенд' }, en: { name: 'Backend' } },
@@ -331,7 +382,7 @@ describe('NotesService', () => {
         'ru',
       )
       .subscribe();
-    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/tags'));
+    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tags'));
     expect(createReq.request.method).toBe('POST');
     expect(createReq.request.params.get('language')).toBe('ru');
     expect(createReq.request.body).toEqual({
@@ -347,7 +398,7 @@ describe('NotesService', () => {
     });
 
     service
-      .updateTag(
+      .updateAdminTag(
         1,
         {
           slug: 'architecture',
@@ -356,7 +407,7 @@ describe('NotesService', () => {
         'en',
       )
       .subscribe();
-    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/tags/1'));
+    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tags/1'));
     expect(updateReq.request.method).toBe('PUT');
     expect(updateReq.request.params.get('language')).toBe('en');
     updateReq.flush({
@@ -367,13 +418,13 @@ describe('NotesService', () => {
       translations: { ru: { name: 'Архитектура' }, en: { name: 'Architecture' } },
     });
 
-    service.deleteTag(1).subscribe();
-    const deleteReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/tags/1'));
+    service.deleteAdminTag(1).subscribe();
+    const deleteReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tags/1'));
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
 
-    service.restoreTag(1).subscribe();
-    const restoreReq = httpMock.expectOne((r) => r.url.endsWith('/api/notes/tags/1/restore'));
+    service.restoreAdminTag(1).subscribe();
+    const restoreReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/notes/tags/1/restore'));
     expect(restoreReq.request.method).toBe('POST');
     restoreReq.flush(null);
   });

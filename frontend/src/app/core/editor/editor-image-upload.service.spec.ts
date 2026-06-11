@@ -36,7 +36,7 @@ describe('EditorImageUploadService', () => {
       result = accessUrl;
     });
 
-    const presignReq = httpMock.expectOne((r) => r.url.endsWith('/api/files/presign-put'));
+    const presignReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/files/presign-put'));
     expect(presignReq.request.method).toBe('GET');
     expect(presignReq.request.params.get('contentType')).toBe('image/png');
     presignReq.flush({

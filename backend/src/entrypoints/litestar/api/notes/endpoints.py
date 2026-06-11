@@ -8,7 +8,6 @@ from litestar.datastructures import State
 from litestar.di import Provide
 from litestar.params import Body, FromPath, QueryParameter
 
-from core.auth.exceptions import ForbiddenError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.enums import PublishStatusEnum
@@ -17,7 +16,10 @@ from core.notes.enums import NoteViewSourceCategory
 from core.notes.schemas import NoteFilters
 from core.notes.use_cases import AbstractNoteAnalyticsUseCase, AbstractNotesUseCase
 from core.types import IntId
-from entrypoints.litestar.api.notes.dependencies import provide_note_filters
+from entrypoints.litestar.api.notes.dependencies import (
+    provide_note_filters,
+    provide_public_note_filters,
+)
 from entrypoints.litestar.api.notes.schemas import (
     NoteAnalyticsStatsResponseSchema,
     NoteDetailResponseSchema,
@@ -30,11 +32,7 @@ from entrypoints.litestar.api.notes.schemas import (
     TagResponseSchema,
     TagsResponseSchema,
 )
-from entrypoints.litestar.guards import (
-    content_manager_guard,
-    deleted_tags_access_guard,
-    draft_content_access_guard,
-)
+from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     invalidate_response_cache_domain,
@@ -43,28 +41,175 @@ from infra.config.constants import constants
 from infra.config.settings import settings
 
 
-class NotesApiController(Controller):
+class PublicNotesApiController(Controller):
     path = "/notes"
-    tags = ["notes"]
+    tags = ["public notes"]
 
     @get(
         "",
-        description="Получение списка заметок.",
-        guards=[draft_content_access_guard],
-        name="notes-list-api-handler",
+        description="Получение публичного списка заметок.",
+        name="public-notes-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
         cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
+        dependencies={"filters": Provide(provide_public_note_filters, sync_to_thread=False)},
+    )
+    async def list_notes(
+        self,
+        use_case: FromDishka[AbstractNotesUseCase],
+        filters: NoteFilters,
+    ) -> NoteListResponseSchema:
+        notes = await use_case.list_notes(filters=filters)
+        return NoteListResponseSchema.from_domain_schema(
+            schema=notes,
+            language=filters.language,
+        )
+
+    @get(
+        "/tree",
+        description="Получение публичного дерева папок и заметок.",
+        name="public-notes-tree-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
+    )
+    async def list_notes_tree(
+        self,
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        use_case: FromDishka[AbstractNotesUseCase],
+    ) -> NoteTreeResponseSchema:
+        tree = await use_case.list_tree(only_published=True, language=language)
+        return NoteTreeResponseSchema.from_domain_schema(schema=tree)
+
+    @get(
+        "/detail/{slug:str}",
+        description="Получение публичной подробной информации о заметке.",
+        name="public-notes-detail-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
+    )
+    async def get_note(
+        self,
+        slug: FromPath[str],
+        use_case: FromDishka[AbstractNotesUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> NoteDetailResponseSchema:
+        note = await use_case.get_note(slug=slug, only_published=True)
+        return NoteDetailResponseSchema.from_domain_schema(
+            schema=note,
+            language=language,
+        )
+
+    @get(
+        "/public-stats",
+        description="Получение публичной статистики заметок.",
+        name="public-notes-public-stats-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def get_public_stats(
+        self,
+        note_ids: Annotated[list[uuid.UUID], QueryParameter(name="noteIds", min_items=1)],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+    ) -> NotePublicStatsCollectionResponseSchema:
+        stats = await analytics_use_case.get_public_stats(note_ids=note_ids)
+        return NotePublicStatsCollectionResponseSchema.from_domain_schema(schema=stats)
+
+    @post(
+        "/detail/{slug:str}/analytics/view",
+        description="Фиксация публичного просмотра заметки.",
+        name="public-notes-track-public-view-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def track_public_view(
+        self,
+        slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
+        use_case: FromDishka[AbstractNotesUseCase],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> None:
+        if request.user.can_manage_content:
+            return
+        note = await use_case.get_note(slug=slug, only_published=True)
+        await analytics_use_case.track_public_view(
+            note=note,
+            referrer=request.headers.get("referer"),
+        )
+
+    @post(
+        "/detail/{slug:str}/analytics/engaged-view",
+        description="Фиксация вовлечённого просмотра заметки.",
+        name="public-notes-track-engaged-view-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def track_engaged_view(
+        self,
+        slug: FromPath[str],
+        request: Request[JwtUser, Token | None, State],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> None:
+        if request.user.can_manage_content:
+            return
+        await analytics_use_case.track_engaged_view(
+            slug=slug,
+            source_category=NoteViewSourceCategory.UNKNOWN,
+        )
+
+    @post(
+        "/detail/{slug:str}/reaction",
+        description="Установка или снятие анонимной реакции на заметку.",
+        name="public-notes-set-reaction-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def set_reaction(
+        self,
+        slug: FromPath[str],
+        data: Annotated[NoteReactionRequestSchema, Body()],
+        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
+        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> None:
+        await analytics_use_case.set_reaction(
+            slug=slug,
+            client_token=data.client_token,
+            reaction_kind=data.reaction_kind,
+        )
+
+    @get(
+        "/tags",
+        description="Получение публичного списка тегов.",
+        name="public-notes-tags-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
+        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
+    )
+    async def list_tags(
+        self,
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        use_case: FromDishka[AbstractNotesUseCase],
+    ) -> TagsResponseSchema:
+        tags = await use_case.list_tags(include_deleted=False, language=language)
+        return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
+
+
+class AdminNotesApiController(Controller):
+    path = "/notes"
+    tags = ["admin notes"]
+    guards = [content_manager_guard]
+
+    @get(
+        "",
+        description="Получение админского списка заметок.",
+        name="admin-notes-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
         dependencies={"filters": Provide(provide_note_filters, sync_to_thread=False)},
     )
     async def list_notes(
         self,
-        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
         filters: NoteFilters,
     ) -> NoteListResponseSchema:
-        if not request.user.can_manage_content and not filters.only_published:
-            raise ForbiddenError
         notes = await use_case.list_notes(filters=filters)
         return NoteListResponseSchema.from_domain_schema(
             schema=notes,
@@ -74,8 +219,7 @@ class NotesApiController(Controller):
     @post(
         "",
         description="Создание заметки.",
-        guards=[content_manager_guard],
-        name="notes-create-api-handler",
+        name="admin-notes-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_note(
@@ -100,130 +244,41 @@ class NotesApiController(Controller):
 
     @get(
         "/tree",
-        description="Получение дерева папок и заметок.",
-        name="notes-tree-api-handler",
+        description="Получение админского дерева папок и заметок.",
+        name="admin-notes-tree-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def list_notes_tree(
         self,
-        request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> NoteTreeResponseSchema:
-        tree = await use_case.list_tree(
-            only_published=not request.user.can_manage_content,
-            language=language,
-        )
+        tree = await use_case.list_tree(only_published=False, language=language)
         return NoteTreeResponseSchema.from_domain_schema(schema=tree)
 
     @get(
         "/detail/{slug:str}",
-        description="Получение подробной информации о заметке.",
-        guards=[draft_content_access_guard],
-        name="notes-detail-api-handler",
+        description="Получение админской подробной информации о заметке.",
+        name="admin-notes-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
-        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def get_note(
         self,
         slug: FromPath[str],
-        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AbstractNotesUseCase],
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> NoteDetailResponseSchema:
-        if not request.user.can_manage_content and not only_published:
-            raise ForbiddenError
-        note = await use_case.get_note(
-            slug=slug,
-            only_published=only_published,
-        )
+        note = await use_case.get_note(slug=slug, only_published=only_published)
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
             language=language,
         )
 
     @get(
-        "/public-stats",
-        description="Получение публичной статистики заметок.",
-        name="notes-public-stats-api-handler",
-        status_code=status_codes.HTTP_200_OK,
-    )
-    async def get_public_stats(
-        self,
-        note_ids: Annotated[list[uuid.UUID], QueryParameter(name="noteIds", min_items=1)],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-    ) -> NotePublicStatsCollectionResponseSchema:
-        stats = await analytics_use_case.get_public_stats(note_ids=note_ids)
-        return NotePublicStatsCollectionResponseSchema.from_domain_schema(schema=stats)
-
-    @post(
-        "/detail/{slug:str}/analytics/view",
-        description="Фиксация публичного просмотра заметки.",
-        name="notes-track-public-view-api-handler",
-        status_code=status_codes.HTTP_204_NO_CONTENT,
-    )
-    async def track_public_view(
-        self,
-        slug: FromPath[str],
-        request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractNotesUseCase],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> None:
-        if request.user.can_manage_content:
-            return
-        note = await use_case.get_note(slug=slug, only_published=True)
-        await analytics_use_case.track_public_view(
-            note=note,
-            referrer=request.headers.get("referer"),
-        )
-
-    @post(
-        "/detail/{slug:str}/analytics/engaged-view",
-        description="Фиксация вовлечённого просмотра заметки.",
-        name="notes-track-engaged-view-api-handler",
-        status_code=status_codes.HTTP_204_NO_CONTENT,
-    )
-    async def track_engaged_view(
-        self,
-        slug: FromPath[str],
-        request: Request[JwtUser, Token | None, State],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> None:
-        if request.user.can_manage_content:
-            return
-        await analytics_use_case.track_engaged_view(
-            slug=slug,
-            source_category=NoteViewSourceCategory.UNKNOWN,
-        )
-
-    @post(
-        "/detail/{slug:str}/reaction",
-        description="Установка или снятие анонимной реакции на заметку.",
-        name="notes-set-reaction-api-handler",
-        status_code=status_codes.HTTP_204_NO_CONTENT,
-    )
-    async def set_reaction(
-        self,
-        slug: FromPath[str],
-        data: Annotated[NoteReactionRequestSchema, Body()],
-        analytics_use_case: FromDishka[AbstractNoteAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> None:
-        await analytics_use_case.set_reaction(
-            slug=slug,
-            client_token=data.client_token,
-            reaction_kind=data.reaction_kind,
-        )
-
-    @get(
         "/stats",
-        description="Получение статистики заметок.",
-        guards=[content_manager_guard],
-        name="notes-stats-api-handler",
+        description="Получение админской статистики заметок.",
+        name="admin-notes-stats-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def get_stats(
@@ -243,8 +298,7 @@ class NotesApiController(Controller):
     @put(
         "/detail/{slug:str}",
         description="Обновление заметки.",
-        guards=[content_manager_guard],
-        name="notes-update-api-handler",
+        name="admin-notes-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_note(
@@ -268,8 +322,7 @@ class NotesApiController(Controller):
     @delete(
         "/detail/{slug:str}",
         description="Удаление заметки.",
-        guards=[content_manager_guard],
-        name="notes-delete-api-handler",
+        name="admin-notes-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_note(
@@ -284,8 +337,7 @@ class NotesApiController(Controller):
     @post(
         "/detail/{slug:str}/set-draft",
         description='Установка статуса "Черновик" на заметку.',
-        guards=[content_manager_guard],
-        name="notes-set-draft-api-handler",
+        name="admin-notes-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def set_draft_status_to_note(
@@ -303,8 +355,7 @@ class NotesApiController(Controller):
     @post(
         "/detail/{slug:str}/set-published",
         description='Установка статуса "Опубликовано" на заметку.',
-        guards=[content_manager_guard],
-        name="notes-set-published-api-handler",
+        name="admin-notes-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def set_published_status_to_note(
@@ -321,12 +372,9 @@ class NotesApiController(Controller):
 
     @get(
         "/tags",
-        description="Получение списка тегов.",
-        guards=[deleted_tags_access_guard],
-        name="notes-tags-list-api-handler",
+        description="Получение админского списка тегов.",
+        name="admin-notes-tags-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
-        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def list_tags(
         self,
@@ -339,12 +387,9 @@ class NotesApiController(Controller):
 
     @get(
         "/tags/search",
-        description="Поиск тегов.",
-        guards=[deleted_tags_access_guard],
-        name="notes-tags-search-api-handler",
+        description="Админский поиск тегов.",
+        name="admin-notes-tags-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
-        cache_key_builder=ResponseCacheDomain.NOTES.cache_key_builder,
     )
     async def search_tags(
         self,
@@ -365,8 +410,7 @@ class NotesApiController(Controller):
     @post(
         "/tags",
         description="Создание тега.",
-        guards=[content_manager_guard],
-        name="notes-tags-create-api-handler",
+        name="admin-notes-tags-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_tag(
@@ -386,8 +430,7 @@ class NotesApiController(Controller):
     @put(
         "/tags/{tag_id:int}",
         description="Обновление тега.",
-        guards=[content_manager_guard],
-        name="notes-tags-update-api-handler",
+        name="admin-notes-tags-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_tag(
@@ -408,8 +451,7 @@ class NotesApiController(Controller):
     @delete(
         "/tags/{tag_id:int}",
         description="Удаление тега.",
-        guards=[content_manager_guard],
-        name="notes-tags-delete-api-handler",
+        name="admin-notes-tags-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_tag(
@@ -424,8 +466,7 @@ class NotesApiController(Controller):
     @post(
         "/tags/{tag_id:int}/restore",
         description="Восстановление тега.",
-        guards=[content_manager_guard],
-        name="notes-tags-restore-api-handler",
+        name="admin-notes-tags-restore-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def restore_tag(
@@ -438,4 +479,5 @@ class NotesApiController(Controller):
         await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
 
 
-api_router = DishkaRouter("", route_handlers=[NotesApiController])
+api_router = DishkaRouter("", route_handlers=[PublicNotesApiController])
+admin_router = DishkaRouter("", route_handlers=[AdminNotesApiController])

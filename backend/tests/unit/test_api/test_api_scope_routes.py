@@ -1,0 +1,171 @@
+from datetime import date
+
+import pytest_asyncio
+from httpx import codes
+
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
+from core.i18n.enums import LanguageEnum
+from core.notes.schemas import NoteFilters
+from entrypoints.litestar.api.competency_matrix.endpoints import (
+    AdminCompetencyMatrixApiController,
+    PublicCompetencyMatrixApiController,
+)
+from entrypoints.litestar.api.files.endpoints import FilesApiController
+from entrypoints.litestar.api.notes.endpoints import (
+    AdminNotesApiController,
+    PublicNotesApiController,
+)
+from entrypoints.litestar.api.wiki_links.endpoints import WikiLinksApiController
+from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+
+
+class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
+        self.notes_use_case = await self.container.get_notes_use_case()
+
+    def test_public_notes_list_keeps_public_visibility_even_with_legacy_query_flag(self) -> None:
+        self.notes_use_case.list_notes.return_value = self.factory.core.note_list(
+            notes=[],
+            total_count=0,
+            total_pages=0,
+        )
+
+        response = self.no_auth_api.client.get(
+            "/api/notes",
+            params={
+                "page": 1,
+                "pageSize": 10,
+                "language": "ru",
+                "onlyPublished": "false",
+            },
+        )
+
+        assert response.status_code == codes.OK, response.content
+        self.notes_use_case.list_notes.assert_called_once_with(
+            filters=NoteFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.RU,
+                only_published=True,
+                tag_slug=None,
+                published_from=None,
+                published_to=None,
+                search_query=None,
+                include_tags=True,
+            ),
+        )
+
+    def test_admin_notes_list_uses_admin_prefix_for_draft_visibility(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+        self.notes_use_case.list_notes.return_value = self.factory.core.note_list(
+            notes=[],
+            total_count=0,
+            total_pages=0,
+        )
+
+        response = self.api.client.get(
+            "/api/admin/notes",
+            params={
+                "page": 2,
+                "pageSize": 5,
+                "language": "en",
+                "onlyPublished": "false",
+                "publishedFrom": "2026-01-01",
+                "publishedTo": "2026-01-31",
+                "searchQuery": "  typed notes  ",
+            },
+        )
+
+        assert response.status_code == codes.OK, response.content
+        self.notes_use_case.list_notes.assert_called_once_with(
+            filters=NoteFilters(
+                page=2,
+                page_size=5,
+                language=LanguageEnum.EN,
+                only_published=False,
+                tag_slug=None,
+                published_from=date(2026, 1, 1),
+                published_to=date(2026, 1, 31),
+                search_query="typed notes",
+                include_tags=True,
+            ),
+        )
+
+    def test_swagger_tags_are_scope_explicit_for_split_controllers(self) -> None:
+        assert PublicNotesApiController.tags == ["public notes"]
+        assert AdminNotesApiController.tags == ["admin notes"]
+        assert PublicCompetencyMatrixApiController.tags == ["public competency matrix"]
+        assert AdminCompetencyMatrixApiController.tags == ["admin competency matrix"]
+        assert FilesApiController.tags == ["admin files"]
+        assert WikiLinksApiController.tags == ["admin wiki links"]
+
+    def test_operation_names_are_scope_explicit_for_split_controllers(self) -> None:
+        assert PublicNotesApiController.list_notes.name == "public-notes-list-api-handler"
+        assert AdminNotesApiController.list_notes.name == "admin-notes-list-api-handler"
+        assert (
+            PublicCompetencyMatrixApiController.suggest_competency_matrix_question.name
+            == "public-competency-matrix-question-suggestion-create-api-handler"
+        )
+        assert (
+            PublicCompetencyMatrixApiController.list_competency_matrix_items.name
+            == "public-competency-matrix-items-list-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.list_competency_matrix_items.name
+            == "admin-competency-matrix-items-list-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.list_queued_competency_matrix_questions.name
+            == "admin-competency-matrix-queued-questions-list-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.create_queued_competency_matrix_question.name
+            == "admin-competency-matrix-queued-question-create-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.import_queued_competency_matrix_questions.name
+            == "admin-competency-matrix-queued-questions-import-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.delete_queued_competency_matrix_question.name
+            == "admin-competency-matrix-queued-question-delete-api-handler"
+        )
+        assert (
+            AdminCompetencyMatrixApiController.create_competency_matrix_item_from_queue.name
+            == "admin-competency-matrix-queued-question-create-item-api-handler"
+        )
+        assert (
+            FilesApiController.presign_put_media_file.name == "admin-files-presign-put-api-handler"
+        )
+        assert (
+            WikiLinksApiController.list_wiki_link_targets.name
+            == "admin-wiki-links-targets-list-api-handler"
+        )
+
+    def test_old_matrix_admin_urls_are_not_left_as_public_aliases(self) -> None:
+        response = self.no_auth_api.client.get(
+            "/api/competency-matrix/resources/search",
+            params={"searchName": "python", "limit": 10, "language": "ru"},
+        )
+        assert response.status_code == codes.NOT_FOUND
+
+        response = self.no_auth_api.client.get("/api/competency-matrix/queued-questions")
+        assert response.status_code == codes.NOT_FOUND
+
+        response = self.no_auth_api.client.post(
+            "/api/competency-matrix/queued-questions",
+            json={"question": "What is PEP 8?"},
+        )
+        assert response.status_code == codes.NOT_FOUND
+
+        response = self.no_auth_api.client.post(
+            "/api/competency-matrix/queued-questions/import",
+            files={"file": ("questions.txt", b"What is PEP 8?", "text/plain")},
+        )
+        assert response.status_code == codes.NOT_FOUND

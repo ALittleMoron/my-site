@@ -340,7 +340,7 @@ export class NoteFormComponent implements OnInit {
     this.tagError.set(null);
     const value = this.newTagForm.getRawValue();
     this.notesService
-      .createTag(
+      .createAdminTag(
         {
           slug: value.slug,
           translations: {
@@ -365,7 +365,7 @@ export class NoteFormComponent implements OnInit {
   updateTag(tag: TagDraft): void {
     this.tagError.set(null);
     this.notesService
-      .updateTag(
+      .updateAdminTag(
         tag.id,
         {
           slug: tag.draftSlug,
@@ -393,7 +393,7 @@ export class NoteFormComponent implements OnInit {
   deleteTag(tagId: number): void {
     this.tagError.set(null);
     this.notesService
-      .deleteTag(tagId)
+      .deleteAdminTag(tagId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -412,7 +412,7 @@ export class NoteFormComponent implements OnInit {
   restoreTag(tagId: number): void {
     this.tagError.set(null);
     this.notesService
-      .restoreTag(tagId)
+      .restoreAdminTag(tagId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -454,7 +454,7 @@ export class NoteFormComponent implements OnInit {
 
   private loadTags(): void {
     this.notesService
-      .getTags(true, this.currentLanguage())
+      .getAdminTags(true, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags.map(toDraft).sort(compareTags)),

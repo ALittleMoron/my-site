@@ -36,7 +36,7 @@ class APIHelper:
         if limit is not None:
             params["limit"] = limit
         return self.client.get(
-            "/api/competency-matrix/resources/search",
+            "/api/admin/competency-matrix/resources/search",
             params=params,
         )
 
@@ -50,9 +50,22 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.get("/api/wiki-links/targets", params=params)
+        return self.client.get("/api/admin/wiki-links/targets", params=params)
 
     def get_competency_matrix_items(
+        self,
+        sheet_key: str = "",
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {"sheetKey": sheet_key}
+        if language is not None:
+            params["language"] = language
+        return self.client.get(
+            "/api/competency-matrix/items",
+            params=params,
+        )
+
+    def get_admin_competency_matrix_items(
         self,
         sheet_key: str = "",
         only_published: bool | None = True,
@@ -64,11 +77,24 @@ class APIHelper:
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(
-            "/api/competency-matrix/items",
+            "/api/admin/competency-matrix/items",
             params=params,
         )
 
     def get_competency_matrix_item(
+        self,
+        pk: int,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get(
+            f"/api/competency-matrix/items/detail/{pk}",
+            params=params,
+        )
+
+    def get_admin_competency_matrix_item(
         self,
         pk: int,
         only_published: bool | None = True,
@@ -80,7 +106,7 @@ class APIHelper:
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(
-            f"/api/competency-matrix/items/detail/{pk}",
+            f"/api/admin/competency-matrix/items/detail/{pk}",
             params=params,
         )
 
@@ -101,7 +127,7 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post("/api/competency-matrix/items", params=params, json=data)
+        return self.client.post("/api/admin/competency-matrix/items", params=params, json=data)
 
     def post_question_suggestion(
         self,
@@ -115,11 +141,11 @@ class APIHelper:
         )
 
     def get_queued_matrix_questions(self) -> Response:
-        return self.client.get("/api/competency-matrix/queued-questions")
+        return self.client.get("/api/admin/competency-matrix/queued-questions")
 
     def post_create_queued_matrix_question(self, question: str) -> Response:
         return self.client.post(
-            "/api/competency-matrix/queued-questions",
+            "/api/admin/competency-matrix/queued-questions",
             json={"question": question},
         )
 
@@ -131,12 +157,12 @@ class APIHelper:
         content_type: str,
     ) -> Response:
         return self.client.post(
-            "/api/competency-matrix/queued-questions/import",
+            "/api/admin/competency-matrix/queued-questions/import",
             files={"file": (filename, content, content_type)},
         )
 
     def delete_queued_matrix_question(self, question_id: int) -> Response:
-        return self.client.delete(f"/api/competency-matrix/queued-questions/{question_id}")
+        return self.client.delete(f"/api/admin/competency-matrix/queued-questions/{question_id}")
 
     def post_create_item_from_queue(
         self,
@@ -148,7 +174,7 @@ class APIHelper:
         if language is not None:
             params["language"] = language
         return self.client.post(
-            f"/api/competency-matrix/queued-questions/{question_id}/create-item",
+            f"/api/admin/competency-matrix/queued-questions/{question_id}/create-item",
             params=params,
             json=data,
         )
@@ -163,21 +189,48 @@ class APIHelper:
         if language is not None:
             params["language"] = language
         return self.client.put(
-            f"/api/competency-matrix/items/detail/{pk}",
+            f"/api/admin/competency-matrix/items/detail/{pk}",
             params=params,
             json=data,
         )
 
     def delete_item(self, pk: int) -> Response:
-        return self.client.delete(f"/api/competency-matrix/items/detail/{pk}")
+        return self.client.delete(f"/api/admin/competency-matrix/items/detail/{pk}")
 
     def post_set_draft_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/competency-matrix/items/detail/{pk}/set-draft")
+        return self.client.post(f"/api/admin/competency-matrix/items/detail/{pk}/set-draft")
 
     def post_set_published_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/competency-matrix/items/detail/{pk}/set-published")
+        return self.client.post(f"/api/admin/competency-matrix/items/detail/{pk}/set-published")
 
     def get_notes(
+        self,
+        page: int | None = 1,
+        page_size: int | None = 10,
+        language: str | None = "ru",
+        tag_slug: str | None = None,
+        published_from: str | None = None,
+        published_to: str | None = None,
+        search_query: str | None = None,
+    ) -> Response:
+        params: dict[str, str | int] = {}
+        if language is not None:
+            params["language"] = language
+        if page is not None:
+            params["page"] = page
+        if page_size is not None:
+            params["pageSize"] = page_size
+        if tag_slug is not None:
+            params["tagSlug"] = tag_slug
+        if published_from is not None:
+            params["publishedFrom"] = published_from
+        if published_to is not None:
+            params["publishedTo"] = published_to
+        if search_query is not None:
+            params["searchQuery"] = search_query
+        return self.client.get("/api/notes", params=params)
+
+    def get_admin_notes(
         self,
         page: int | None = 1,
         page_size: int | None = 10,
@@ -205,9 +258,19 @@ class APIHelper:
             params["publishedTo"] = published_to
         if search_query is not None:
             params["searchQuery"] = search_query
-        return self.client.get("/api/notes", params=params)
+        return self.client.get("/api/admin/notes", params=params)
 
     def get_note(
+        self,
+        slug: str,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get(f"/api/notes/detail/{slug}", params=params)
+
+    def get_admin_note(
         self,
         slug: str,
         only_published: bool | None = True,
@@ -218,7 +281,7 @@ class APIHelper:
             params["language"] = language
         if only_published is not None:
             params["onlyPublished"] = only_published
-        return self.client.get(f"/api/notes/detail/{slug}", params=params)
+        return self.client.get(f"/api/admin/notes/detail/{slug}", params=params)
 
     def get_note_public_stats(self, note_ids: list[str] | None) -> Response:
         params: dict[str, list[str]] = {}
@@ -268,7 +331,7 @@ class APIHelper:
             params["dateFrom"] = date_from
         if date_to is not None:
             params["dateTo"] = date_to
-        return self.client.get("/api/notes/stats", params=params)
+        return self.client.get("/api/admin/notes/stats", params=params)
 
     def get_notes_tree(self, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
@@ -276,11 +339,17 @@ class APIHelper:
             params["language"] = language
         return self.client.get("/api/notes/tree", params=params)
 
+    def get_admin_notes_tree(self, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/admin/notes/tree", params=params)
+
     def post_create_note(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post("/api/notes", params=params, json=data)
+        return self.client.post("/api/admin/notes", params=params, json=data)
 
     def put_update_note(
         self,
@@ -291,18 +360,27 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.put(f"/api/notes/detail/{slug}", params=params, json=data)
+        return self.client.put(f"/api/admin/notes/detail/{slug}", params=params, json=data)
 
     def delete_note(self, slug: str) -> Response:
-        return self.client.delete(f"/api/notes/detail/{slug}")
+        return self.client.delete(f"/api/admin/notes/detail/{slug}")
 
     def post_set_draft_status_to_note(self, slug: str) -> Response:
-        return self.client.post(f"/api/notes/detail/{slug}/set-draft")
+        return self.client.post(f"/api/admin/notes/detail/{slug}/set-draft")
 
     def post_set_published_status_to_note(self, slug: str) -> Response:
-        return self.client.post(f"/api/notes/detail/{slug}/set-published")
+        return self.client.post(f"/api/admin/notes/detail/{slug}/set-published")
 
     def get_tags(
+        self,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/notes/tags", params=params)
+
+    def get_admin_tags(
         self,
         include_deleted: bool | None = False,
         language: str | None = "ru",
@@ -312,7 +390,7 @@ class APIHelper:
             params["language"] = language
         if include_deleted is not None:
             params["includeDeleted"] = include_deleted
-        return self.client.get("/api/notes/tags", params=params)
+        return self.client.get("/api/admin/notes/tags", params=params)
 
     def get_search_tags(
         self,
@@ -328,13 +406,13 @@ class APIHelper:
             params["includeDeleted"] = include_deleted
         if limit is not None:
             params["limit"] = limit
-        return self.client.get("/api/notes/tags/search", params=params)
+        return self.client.get("/api/admin/notes/tags/search", params=params)
 
     def post_create_tag(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post("/api/notes/tags", params=params, json=data)
+        return self.client.post("/api/admin/notes/tags", params=params, json=data)
 
     def put_update_tag(
         self,
@@ -345,20 +423,20 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.put(f"/api/notes/tags/{tag_id}", params=params, json=data)
+        return self.client.put(f"/api/admin/notes/tags/{tag_id}", params=params, json=data)
 
     def delete_tag(self, tag_id: int) -> Response:
-        return self.client.delete(f"/api/notes/tags/{tag_id}")
+        return self.client.delete(f"/api/admin/notes/tags/{tag_id}")
 
     def post_restore_tag(self, tag_id: int) -> Response:
-        return self.client.post(f"/api/notes/tags/{tag_id}/restore")
+        return self.client.post(f"/api/admin/notes/tags/{tag_id}/restore")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/contacts", json=data)
 
     def get_presign_put_url(self, content_type: str) -> Response:
         return self.client.get(
-            "/api/files/presign-put",
+            "/api/admin/files/presign-put",
             params={"contentType": content_type},
         )
 

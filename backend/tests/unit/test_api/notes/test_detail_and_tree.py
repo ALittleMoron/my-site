@@ -5,7 +5,7 @@ import pytest_asyncio
 from httpx import codes
 
 from core.auth.enums import RoleEnum
-from core.auth.exceptions import ForbiddenError
+from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
@@ -51,7 +51,7 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
         self.use_case.get_note.return_value = note
 
-        response = self.api.get_note(slug="detail-note", only_published=False)
+        response = self.api.get_admin_note(slug="detail-note", only_published=False)
 
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
@@ -138,11 +138,11 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.get_note.assert_not_called()
 
-    def test_anonymous_cannot_request_draft_note(self) -> None:
-        response = self.no_auth_api.get_note(slug="draft", only_published=False)
+    def test_anonymous_cannot_request_admin_draft_note(self) -> None:
+        response = self.no_auth_api.get_admin_note(slug="draft", only_published=False)
 
-        assert response.status_code == codes.FORBIDDEN
-        assert response.json()["message"] == ForbiddenError.message
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json()["message"] == UnauthorizedError.message
         self.use_case.get_note.assert_not_called()
 
     def test_moderator_can_request_draft_note(self) -> None:
@@ -157,7 +157,7 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
             publish_status=PublishStatusEnum.DRAFT,
         )
 
-        response = self.api.get_note(slug="draft", only_published=False)
+        response = self.api.get_admin_note(slug="draft", only_published=False)
 
         assert response.status_code == codes.OK, response.content
         self.use_case.get_note.assert_called_once_with(slug="draft", only_published=False)
@@ -215,7 +215,7 @@ class TestNoteDetailAndTreeAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
         self.use_case.list_tree.return_value = NoteTree(folders=[])
 
-        response = self.api.get_notes_tree()
+        response = self.api.get_admin_notes_tree()
 
         assert response.status_code == codes.OK, response.content
         self.use_case.list_tree.assert_called_once_with(

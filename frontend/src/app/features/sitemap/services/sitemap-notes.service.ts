@@ -43,7 +43,6 @@ export class SitemapNotesService {
       page: String(page),
       pageSize: String(SITEMAP_NOTES_PAGE_SIZE),
       language,
-      onlyPublished: 'true',
     });
   }
 }

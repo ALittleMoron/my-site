@@ -7,12 +7,17 @@ import pytest
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 
-from entrypoints.litestar.api.competency_matrix.endpoints import CompetencyMatrixApiController
+from entrypoints.litestar.api.competency_matrix.endpoints import (
+    AdminCompetencyMatrixApiController,
+    PublicCompetencyMatrixApiController,
+)
 from entrypoints.litestar.api.healthcheck.endpoints import HealthcheckController
 from entrypoints.litestar.api.i18n.endpoints import I18nApiController
-from entrypoints.litestar.api.notes.endpoints import NotesApiController
+from entrypoints.litestar.api.notes.endpoints import (
+    AdminNotesApiController,
+    PublicNotesApiController,
+)
 from entrypoints.litestar.cli.plugins import CLIPlugin
-from entrypoints.litestar.guards import draft_content_access_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,
@@ -184,8 +189,8 @@ class TestResponseCacheKeyBuilder:
 
 class TestResponseCacheRouteConfiguration:
     def test_safe_notes_get_handlers_use_notes_cache(self) -> None:
-        for handler_name in ("list_notes", "get_note", "list_tags", "search_tags"):
-            handler = getattr(NotesApiController, handler_name)
+        for handler_name in ("list_notes", "list_notes_tree", "get_note", "list_tags"):
+            handler = getattr(PublicNotesApiController, handler_name)
 
             assert handler.cache == settings.app.get_cache_duration(
                 constants.response_cache.default_ttl_seconds,
@@ -194,22 +199,28 @@ class TestResponseCacheRouteConfiguration:
             assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("notes:")
 
     def test_dynamic_notes_get_handlers_are_not_cached(self) -> None:
-        for handler_name in ("list_notes_tree", "get_public_stats", "get_stats"):
-            assert getattr(NotesApiController, handler_name).cache is False
+        for handler_name in ("get_public_stats",):
+            assert getattr(PublicNotesApiController, handler_name).cache is False
 
-    def test_draft_notes_get_handlers_use_pre_cache_guard(self) -> None:
-        for handler_name in ("list_notes", "get_note"):
-            assert draft_content_access_guard in getattr(NotesApiController, handler_name).guards
+    def test_admin_notes_get_handlers_are_not_cached(self) -> None:
+        for handler_name in (
+            "list_notes",
+            "list_notes_tree",
+            "get_note",
+            "get_stats",
+            "list_tags",
+            "search_tags",
+        ):
+            assert getattr(AdminNotesApiController, handler_name).cache is False
 
     def test_competency_matrix_get_handlers_use_matrix_cache(self) -> None:
         for handler_name in (
             "list_competency_matrix_sheet",
-            "search_competency_matrix_resources",
             "list_competency_matrix_items",
             "get_competency_matrix_item",
             "get_public_competency_matrix_item",
         ):
-            handler = getattr(CompetencyMatrixApiController, handler_name)
+            handler = getattr(PublicCompetencyMatrixApiController, handler_name)
 
             assert handler.cache == settings.app.get_cache_duration(
                 constants.response_cache.default_ttl_seconds,
@@ -219,12 +230,15 @@ class TestResponseCacheRouteConfiguration:
                 "competency_matrix:",
             )
 
-    def test_draft_matrix_get_handlers_use_pre_cache_guard(self) -> None:
-        for handler_name in ("list_competency_matrix_items", "get_competency_matrix_item"):
-            assert (
-                draft_content_access_guard
-                in getattr(CompetencyMatrixApiController, handler_name).guards
-            )
+    def test_admin_competency_matrix_get_handlers_are_not_cached(self) -> None:
+        for handler_name in (
+            "list_competency_matrix_sheet",
+            "search_competency_matrix_resources",
+            "list_queued_competency_matrix_questions",
+            "list_competency_matrix_items",
+            "get_competency_matrix_item",
+        ):
+            assert getattr(AdminCompetencyMatrixApiController, handler_name).cache is False
 
     def test_i18n_get_handlers_use_i18n_cache(self) -> None:
         for handler_name in ("list_languages", "get_bundle"):

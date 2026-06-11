@@ -170,7 +170,7 @@ export class MatrixListComponent implements OnInit {
             return EMPTY;
           }
           return this.matrixService
-            .searchResources(trimmedSearchName, RESOURCE_SEARCH_LIMIT, this.currentLanguage())
+            .searchAdminResources(trimmedSearchName, RESOURCE_SEARCH_LIMIT, this.currentLanguage())
             .pipe(
               catchError(() => {
                 this.resourceSearchResults.set([]);
@@ -187,47 +187,47 @@ export class MatrixListComponent implements OnInit {
   loadSheets(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.matrixService
-      .getSheets(this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (sheets) => {
-          this.sheets.set(sheets);
-          if (sheets.length > 0) {
-            const saved = this.storage()?.getItem(CHOSEN_SHEET_KEY);
-            const initial =
-              saved && sheets.some((sheet) => sheet.key === saved) ? saved : sheets[0].key;
-            this.selectedSheetKey.set(initial);
-            this.loadQuestions(initial);
-          } else {
-            this.selectedSheetKey.set(null);
-            this.questions.set(null);
-            this.loading.set(false);
-          }
-        },
-        error: (err: ApiError) => {
-          this.error.set(err);
+    const request = this.canManageContent()
+      ? this.matrixService.getAdminSheets(this.currentLanguage())
+      : this.matrixService.getPublicSheets(this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (sheets) => {
+        this.sheets.set(sheets);
+        if (sheets.length > 0) {
+          const saved = this.storage()?.getItem(CHOSEN_SHEET_KEY);
+          const initial =
+            saved && sheets.some((sheet) => sheet.key === saved) ? saved : sheets[0].key;
+          this.selectedSheetKey.set(initial);
+          this.loadQuestions(initial);
+        } else {
+          this.selectedSheetKey.set(null);
+          this.questions.set(null);
           this.loading.set(false);
-        },
-      });
+        }
+      },
+      error: (err: ApiError) => {
+        this.error.set(err);
+        this.loading.set(false);
+      },
+    });
   }
 
   loadQuestions(sheetKey: string): void {
     this.loading.set(true);
     this.error.set(null);
-    this.matrixService
-      .getQuestions(sheetKey, this.onlyPublished(), this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (list) => {
-          this.questions.set(list);
-          this.loading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.error.set(err);
-          this.loading.set(false);
-        },
-      });
+    const request = this.canManageContent()
+      ? this.matrixService.getAdminQuestions(sheetKey, this.onlyPublished(), this.currentLanguage())
+      : this.matrixService.getPublicQuestions(sheetKey, this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (list) => {
+        this.questions.set(list);
+        this.loading.set(false);
+      },
+      error: (err: ApiError) => {
+        this.error.set(err);
+        this.loading.set(false);
+      },
+    });
   }
 
   selectSheet(sheetKey: string): void {
@@ -258,19 +258,19 @@ export class MatrixListComponent implements OnInit {
     this.selectedQuestion.set(null);
     this.detailLoading.set(true);
     this.detailError.set(null);
-    this.matrixService
-      .getQuestion(id, this.onlyPublished(), this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (detail) => {
-          this.selectedQuestion.set(detail);
-          this.detailLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.detailError.set(err);
-          this.detailLoading.set(false);
-        },
-      });
+    const request = this.canManageContent()
+      ? this.matrixService.getAdminQuestion(id, this.onlyPublished(), this.currentLanguage())
+      : this.matrixService.getPublicQuestion(id, this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (detail) => {
+        this.selectedQuestion.set(detail);
+        this.detailLoading.set(false);
+      },
+      error: (err: ApiError) => {
+        this.detailError.set(err);
+        this.detailLoading.set(false);
+      },
+    });
   }
 
   openCreate(): void {
@@ -356,8 +356,8 @@ export class MatrixListComponent implements OnInit {
     const current = this.selectedQuestion();
     const request =
       this.detailMode() === 'edit' && current
-        ? this.matrixService.updateQuestion(current.id, payload, this.currentLanguage())
-        : this.matrixService.createQuestion(payload, this.currentLanguage());
+        ? this.matrixService.updateAdminQuestion(current.id, payload, this.currentLanguage())
+        : this.matrixService.createAdminQuestion(payload, this.currentLanguage());
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (detail) => {
         this.selectedQuestion.set(detail);
@@ -376,7 +376,7 @@ export class MatrixListComponent implements OnInit {
 
   onPublish(id: number): void {
     this.matrixService
-      .publishQuestion(id)
+      .publishAdminQuestion(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -393,7 +393,7 @@ export class MatrixListComponent implements OnInit {
 
   onUnpublish(id: number): void {
     this.matrixService
-      .unpublishQuestion(id)
+      .unpublishAdminQuestion(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -410,7 +410,7 @@ export class MatrixListComponent implements OnInit {
 
   onDelete(id: number): void {
     this.matrixService
-      .deleteQuestion(id)
+      .deleteAdminQuestion(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

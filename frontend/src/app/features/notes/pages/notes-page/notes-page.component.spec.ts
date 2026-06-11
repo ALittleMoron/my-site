@@ -22,14 +22,18 @@ describe('NotesPageComponent', () => {
   let paramMap: BehaviorSubject<ParamMap>;
   let queryParamMap: BehaviorSubject<ParamMap>;
   let notesService: {
-    getTags: jest.Mock;
-    getTree: jest.Mock;
-    getNote: jest.Mock;
-    getNotes: jest.Mock;
-    trackView: jest.Mock;
-    trackEngagedView: jest.Mock;
-    setReaction: jest.Mock;
-    getStats: jest.Mock;
+    getPublicTags: jest.Mock;
+    getAdminTags: jest.Mock;
+    getPublicTree: jest.Mock;
+    getAdminTree: jest.Mock;
+    getPublicNote: jest.Mock;
+    getAdminNote: jest.Mock;
+    getPublicNotes: jest.Mock;
+    getAdminNotes: jest.Mock;
+    trackPublicView: jest.Mock;
+    trackPublicEngagedView: jest.Mock;
+    setPublicReaction: jest.Mock;
+    getAdminStats: jest.Mock;
   };
   let anonymousReactionService: {
     getOrCreateClientToken: jest.Mock;
@@ -48,16 +52,22 @@ describe('NotesPageComponent', () => {
     paramMap = new BehaviorSubject(convertToParamMap({ slug: 'typed-notes' }));
     queryParamMap = new BehaviorSubject(convertToParamMap({}));
     notesService = {
-      getTags: jest.fn().mockReturnValue(of([])),
-      getTree: jest.fn().mockReturnValue(of({ folders: [] } satisfies NoteTree)),
-      getNote: jest.fn().mockReturnValue(of(noteDetail())),
-      getNotes: jest
+      getPublicTags: jest.fn().mockReturnValue(of([])),
+      getAdminTags: jest.fn().mockReturnValue(of([])),
+      getPublicTree: jest.fn().mockReturnValue(of({ folders: [] } satisfies NoteTree)),
+      getAdminTree: jest.fn().mockReturnValue(of({ folders: [] } satisfies NoteTree)),
+      getPublicNote: jest.fn().mockReturnValue(of(noteDetail())),
+      getAdminNote: jest.fn().mockReturnValue(of(noteDetail())),
+      getPublicNotes: jest
         .fn()
         .mockReturnValue(of({ notes: [], totalCount: 0, totalPages: 0 } satisfies NoteList)),
-      trackView: jest.fn().mockReturnValue(of(undefined)),
-      trackEngagedView: jest.fn().mockReturnValue(of(undefined)),
-      setReaction: jest.fn().mockReturnValue(of(undefined)),
-      getStats: jest.fn().mockReturnValue(of(noteStats())),
+      getAdminNotes: jest
+        .fn()
+        .mockReturnValue(of({ notes: [], totalCount: 0, totalPages: 0 } satisfies NoteList)),
+      trackPublicView: jest.fn().mockReturnValue(of(undefined)),
+      trackPublicEngagedView: jest.fn().mockReturnValue(of(undefined)),
+      setPublicReaction: jest.fn().mockReturnValue(of(undefined)),
+      getAdminStats: jest.fn().mockReturnValue(of(noteStats())),
     };
     anonymousReactionService = {
       getOrCreateClientToken: jest.fn().mockReturnValue('client-token'),
@@ -105,17 +115,17 @@ describe('NotesPageComponent', () => {
 
   it('sends engaged view once after detail stays open for 30 seconds', fakeAsync(() => {
     fixture.detectChanges();
-    notesService.trackEngagedView.mockClear();
+    notesService.trackPublicEngagedView.mockClear();
 
     fixture.componentInstance.loadDetail('typed-notes');
 
     tick(30_000);
 
-    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
+    expect(notesService.trackPublicEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
 
     tick(30_000);
 
-    expect(notesService.trackEngagedView).toHaveBeenCalledTimes(1);
+    expect(notesService.trackPublicEngagedView).toHaveBeenCalledTimes(1);
   }));
 
   it('sets note-specific SEO meta after loading detail', () => {
@@ -141,11 +151,11 @@ describe('NotesPageComponent', () => {
   });
 
   it('tracks public view for public published detail and ignores tracking failure', () => {
-    notesService.trackView.mockReturnValue(throwError(() => new Error('tracking failed')));
+    notesService.trackPublicView.mockReturnValue(throwError(() => new Error('tracking failed')));
 
     fixture.detectChanges();
 
-    expect(notesService.trackView).toHaveBeenCalledWith('typed-notes', 'ru');
+    expect(notesService.trackPublicView).toHaveBeenCalledWith('typed-notes', 'ru');
     expect(seoService.setMeta).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'SEO Typed notes RU',
@@ -155,7 +165,7 @@ describe('NotesPageComponent', () => {
   });
 
   it('falls back to note title and excerpt when SEO metadata is null', () => {
-    notesService.getNote.mockReturnValue(
+    notesService.getPublicNote.mockReturnValue(
       of(
         noteDetail({
           metadata: {
@@ -187,15 +197,17 @@ describe('NotesPageComponent', () => {
 
     fixture.detectChanges();
 
-    expect(notesService.trackView).not.toHaveBeenCalled();
+    expect(notesService.getAdminNote).toHaveBeenCalledWith('typed-notes', false, 'ru');
+    expect(notesService.getPublicNote).not.toHaveBeenCalled();
+    expect(notesService.trackPublicView).not.toHaveBeenCalled();
   });
 
   it('does not track public view for draft detail reads', () => {
-    notesService.getNote.mockReturnValue(of(noteDetail({ publishStatus: 'Draft' })));
+    notesService.getPublicNote.mockReturnValue(of(noteDetail({ publishStatus: 'Draft' })));
 
     fixture.detectChanges();
 
-    expect(notesService.trackView).not.toHaveBeenCalled();
+    expect(notesService.trackPublicView).not.toHaveBeenCalled();
   });
 
   it('keeps generic translated SEO meta on the notes list route', () => {
@@ -215,7 +227,7 @@ describe('NotesPageComponent', () => {
 
   it('pauses engaged view timer while document is hidden', fakeAsync(() => {
     fixture.detectChanges();
-    notesService.trackEngagedView.mockClear();
+    notesService.trackPublicEngagedView.mockClear();
 
     fixture.componentInstance.loadDetail('typed-notes');
 
@@ -223,16 +235,16 @@ describe('NotesPageComponent', () => {
     setDocumentVisibility('hidden');
     tick(30_000);
 
-    expect(notesService.trackEngagedView).not.toHaveBeenCalled();
+    expect(notesService.trackPublicEngagedView).not.toHaveBeenCalled();
 
     setDocumentVisibility('visible');
     tick(19_999);
 
-    expect(notesService.trackEngagedView).not.toHaveBeenCalled();
+    expect(notesService.trackPublicEngagedView).not.toHaveBeenCalled();
 
     tick(1);
 
-    expect(notesService.trackEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
+    expect(notesService.trackPublicEngagedView).toHaveBeenCalledWith('typed-notes', 'ru');
   }));
 
   it('creates reaction token lazily and persists selected reaction after success', () => {
@@ -241,7 +253,7 @@ describe('NotesPageComponent', () => {
     fixture.componentInstance.selectReaction('poop');
 
     expect(anonymousReactionService.getOrCreateClientToken).toHaveBeenCalled();
-    expect(notesService.setReaction).toHaveBeenCalledWith(
+    expect(notesService.setPublicReaction).toHaveBeenCalledWith(
       'typed-notes',
       {
         reactionKind: 'poop',
@@ -259,7 +271,7 @@ describe('NotesPageComponent', () => {
 
     fixture.componentInstance.selectReaction('poop');
 
-    expect(notesService.setReaction).not.toHaveBeenCalled();
+    expect(notesService.setPublicReaction).not.toHaveBeenCalled();
     expect(anonymousReactionService.setReaction).not.toHaveBeenCalled();
     expect(fixture.componentInstance.reactionLoading()).toBe(false);
   });
@@ -278,16 +290,35 @@ describe('NotesPageComponent', () => {
 
     fixture.detectChanges();
 
-    expect(notesService.getNotes).toHaveBeenCalledWith({
+    expect(notesService.getPublicNotes).toHaveBeenCalledWith({
       page: 2,
       pageSize: 10,
       language: 'ru',
-      onlyPublished: true,
       tagSlug: 'python',
       publishedFrom: '2026-01-01',
       publishedTo: '2026-01-31',
       searchQuery: 'postgres search',
     });
+  });
+
+  it('uses admin list API with visibility filter for content managers', () => {
+    canManageContent = true;
+    paramMap.next(convertToParamMap({}));
+    queryParamMap.next(convertToParamMap({ tag: 'python' }));
+
+    fixture.detectChanges();
+
+    expect(notesService.getAdminNotes).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 10,
+      language: 'ru',
+      onlyPublished: true,
+      tagSlug: 'python',
+      publishedFrom: null,
+      publishedTo: null,
+      searchQuery: null,
+    });
+    expect(notesService.getPublicNotes).not.toHaveBeenCalled();
   });
 
   it('renders the side panel toggle to the left of the title as an icon-only control with localized state labels', () => {
@@ -388,20 +419,19 @@ describe('NotesPageComponent', () => {
   it('reloads localized content when language changes', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
-    notesService.getNotes.mockClear();
-    notesService.getTags.mockClear();
-    notesService.getTree.mockClear();
+    notesService.getPublicNotes.mockClear();
+    notesService.getPublicTags.mockClear();
+    notesService.getPublicTree.mockClear();
 
     TestBed.inject(I18nService).switchLanguage('en').subscribe();
     fixture.detectChanges();
 
-    expect(notesService.getTags).toHaveBeenCalledWith(false, 'en');
-    expect(notesService.getTree).toHaveBeenCalledWith('en');
-    expect(notesService.getNotes).toHaveBeenCalledWith({
+    expect(notesService.getPublicTags).toHaveBeenCalledWith('en');
+    expect(notesService.getPublicTree).toHaveBeenCalledWith('en');
+    expect(notesService.getPublicNotes).toHaveBeenCalledWith({
       page: 1,
       pageSize: 10,
       language: 'en',
-      onlyPublished: true,
       tagSlug: null,
       publishedFrom: null,
       publishedTo: null,
@@ -422,14 +452,14 @@ describe('NotesPageComponent', () => {
   it('applies list filters through query params without fetching on input changes', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
-    notesService.getNotes.mockClear();
+    notesService.getPublicNotes.mockClear();
 
     fixture.componentInstance.setSearchQuery('  postgres  ');
     fixture.componentInstance.setPublishedFrom('2026-01-01');
     fixture.componentInstance.setPublishedTo('2026-01-31');
     fixture.componentInstance.applyFilters();
 
-    expect(notesService.getNotes).not.toHaveBeenCalled();
+    expect(notesService.getPublicNotes).not.toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/', 'ru', 'notes'], {
       queryParams: {
         page: 1,

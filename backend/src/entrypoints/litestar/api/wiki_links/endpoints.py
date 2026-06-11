@@ -13,13 +13,13 @@ from entrypoints.litestar.guards import content_manager_guard
 
 class WikiLinksApiController(Controller):
     path = "/wiki-links"
-    tags = ["wiki links"]
+    tags = ["admin wiki links"]
+    guards = [content_manager_guard]
 
     @get(
         "/targets",
         description="Получение доступных целей для typed wiki-links.",
-        guards=[content_manager_guard],
-        name="wiki-links-targets-list-api-handler",
+        name="admin-wiki-links-targets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def list_wiki_link_targets(
@@ -31,4 +31,4 @@ class WikiLinksApiController(Controller):
         return WikiLinkTargetsResponseSchema.from_domain_schema(schema=targets)
 
 
-api_router = DishkaRouter("", route_handlers=[WikiLinksApiController])
+admin_router = DishkaRouter("", route_handlers=[WikiLinksApiController])

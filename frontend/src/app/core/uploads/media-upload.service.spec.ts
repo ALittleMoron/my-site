@@ -39,7 +39,7 @@ describe('MediaUploadService', () => {
     });
 
     const presignReq = httpMock.expectOne((request) =>
-      request.url.endsWith('/api/files/presign-put'),
+      request.url.endsWith('/api/admin/files/presign-put'),
     );
     expect(presignReq.request.params.get('contentType')).toBe('image/png');
     presignReq.flush({

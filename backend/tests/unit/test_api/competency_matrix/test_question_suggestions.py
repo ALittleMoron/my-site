@@ -29,7 +29,7 @@ from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_question_suggestion_limit_params,
 )
-from entrypoints.litestar.api.competency_matrix.endpoints import CompetencyMatrixApiController
+from entrypoints.litestar.api.competency_matrix.endpoints import PublicCompetencyMatrixApiController
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -89,7 +89,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
         assert params.now.tzinfo is not None
 
     def test_competency_matrix_controller_does_not_keep_client_identifier_helper(self) -> None:
-        assert "_client_identifier" not in CompetencyMatrixApiController.__dict__
+        assert "_client_identifier" not in PublicCompetencyMatrixApiController.__dict__
 
     def test_suggest_question_rejects_empty_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="")

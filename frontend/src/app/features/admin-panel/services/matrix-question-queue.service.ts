@@ -17,13 +17,13 @@ export class MatrixQuestionQueueService {
 
   listQueuedQuestions(): Observable<QueuedMatrixQuestion[]> {
     return this.api
-      .get<QueuedMatrixQuestionsDto>('/api/competency-matrix/queued-questions')
+      .get<QueuedMatrixQuestionsDto>('/api/admin/competency-matrix/queued-questions')
       .pipe(map((dto) => dto.questions.map(mapQueuedMatrixQuestionDto)));
   }
 
   createQueuedQuestion(question: string): Observable<QueuedMatrixQuestion> {
     return this.api
-      .post<QueuedMatrixQuestionDto>('/api/competency-matrix/queued-questions', { question })
+      .post<QueuedMatrixQuestionDto>('/api/admin/competency-matrix/queued-questions', { question })
       .pipe(map(mapQueuedMatrixQuestionDto));
   }
 
@@ -31,12 +31,15 @@ export class MatrixQuestionQueueService {
     const formData = new FormData();
     formData.append('file', file);
     return this.api
-      .post<QueuedMatrixQuestionsDto>('/api/competency-matrix/queued-questions/import', formData)
+      .post<QueuedMatrixQuestionsDto>(
+        '/api/admin/competency-matrix/queued-questions/import',
+        formData,
+      )
       .pipe(map((dto) => dto.questions.map(mapQueuedMatrixQuestionDto)));
   }
 
   rejectQueuedQuestion(questionId: number): Observable<void> {
-    return this.api.delete<void>(`/api/competency-matrix/queued-questions/${questionId}`);
+    return this.api.delete<void>(`/api/admin/competency-matrix/queued-questions/${questionId}`);
   }
 
   createQuestionFromQueue(
@@ -45,7 +48,7 @@ export class MatrixQuestionQueueService {
     language: LanguageCode,
   ): Observable<AdminMatrixItemDetailDto> {
     return this.api.post<AdminMatrixItemDetailDto>(
-      `/api/competency-matrix/queued-questions/${questionId}/create-item`,
+      `/api/admin/competency-matrix/queued-questions/${questionId}/create-item`,
       payload,
       { language },
     );

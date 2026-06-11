@@ -80,10 +80,6 @@ class PublicSiteUser(HttpUser):
     def matrix_item_detail(self) -> None:
         self.scenario.matrix_item_detail()
 
-    @task(constants.TASK_WEIGHT_MATRIX_RESOURCES_SEARCH)
-    def matrix_resources_search(self) -> None:
-        self.scenario.matrix_resources_search()
-
     @task(constants.TASK_WEIGHT_MATRIX_QUESTION_SUGGESTION)
     def matrix_question_suggestion(self) -> None:
         self.scenario.matrix_question_suggestion()

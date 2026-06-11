@@ -32,7 +32,7 @@ describe('WikiLinkTargetsService', () => {
       matrixTargets = targets.get('matrix');
     });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/wiki-links/targets'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/wiki-links/targets'));
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('language')).toBe('ru');
     req.flush({

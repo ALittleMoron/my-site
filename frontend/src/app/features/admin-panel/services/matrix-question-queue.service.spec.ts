@@ -31,7 +31,7 @@ describe('MatrixQuestionQueueService', () => {
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/queued-questions'),
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions'),
     );
     expect(req.request.method).toBe('GET');
     req.flush({
@@ -60,7 +60,7 @@ describe('MatrixQuestionQueueService', () => {
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/queued-questions/7'),
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions/7'),
     );
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
@@ -76,7 +76,7 @@ describe('MatrixQuestionQueueService', () => {
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/queued-questions'),
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions'),
     );
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ question: 'What is PEP 8?' });
@@ -103,7 +103,7 @@ describe('MatrixQuestionQueueService', () => {
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/queued-questions/import'),
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions/import'),
     );
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toBeInstanceOf(FormData);
@@ -174,7 +174,7 @@ describe('MatrixQuestionQueueService', () => {
       });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/queued-questions/7/create-item'),
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions/7/create-item'),
     );
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('language')).toBe('en');

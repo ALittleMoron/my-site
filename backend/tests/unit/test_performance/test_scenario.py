@@ -65,8 +65,6 @@ class FakeHttpClient:
         elif path.startswith("/api/competency-matrix/items"):
             sheet_key = "backend" if "sheetKey=backend" in path else "python"
             payload = matrix_items_payload(sheet_key=sheet_key)
-        elif path.startswith("/api/competency-matrix/resources/search"):
-            payload = {"resources": []}
         return payload
 
 
@@ -218,7 +216,6 @@ class TestPublicSiteScenario:
 
         scenario.matrix_sheets_task()
         scenario.matrix_items()
-        scenario.matrix_resources_search()
 
         assert client.calls == [
             {
@@ -227,15 +224,8 @@ class TestPublicSiteScenario:
                 "catch_response": True,
             },
             {
-                "path": "/api/competency-matrix/items"
-                "?sheetKey=python&onlyPublished=true&language=en",
+                "path": "/api/competency-matrix/items?sheetKey=python&language=en",
                 "name": "GET /api/competency-matrix/items",
-                "catch_response": True,
-            },
-            {
-                "path": "/api/competency-matrix/resources/search"
-                "?searchName=python&limit=5&language=en",
-                "name": "GET /api/competency-matrix/resources/search",
                 "catch_response": True,
             },
         ]
@@ -259,19 +249,17 @@ class TestPublicSiteScenario:
                 "catch_response": True,
             },
             {
-                "path": "/api/notes?page=1&pageSize=100&onlyPublished=true&language=en",
+                "path": "/api/notes?page=1&pageSize=100&language=en",
                 "name": "GET /api/notes",
                 "catch_response": True,
             },
             {
-                "path": "/api/competency-matrix/items"
-                "?sheetKey=python&onlyPublished=true&language=en",
+                "path": "/api/competency-matrix/items?sheetKey=python&language=en",
                 "name": "GET /api/competency-matrix/items",
                 "catch_response": True,
             },
             {
-                "path": "/api/competency-matrix/items"
-                "?sheetKey=backend&onlyPublished=true&language=en",
+                "path": "/api/competency-matrix/items?sheetKey=backend&language=en",
                 "name": "GET /api/competency-matrix/items",
                 "catch_response": True,
             },
@@ -295,7 +283,7 @@ class TestPublicSiteScenario:
 
         assert client.calls == [
             {
-                "path": "/api/notes/detail/seeded-note?onlyPublished=true&language=en",
+                "path": "/api/notes/detail/seeded-note?language=en",
                 "name": "GET /api/notes/detail/:slug",
                 "catch_response": True,
             },

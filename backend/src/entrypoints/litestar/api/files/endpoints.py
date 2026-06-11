@@ -12,12 +12,13 @@ from entrypoints.litestar.guards import content_manager_guard
 
 class FilesApiController(Controller):
     path = "/files"
-    tags = ["files"]
+    tags = ["admin files"]
     guards = [content_manager_guard]
 
     @get(
         "/presign-put",
         description="Получение предподписанной ссылки для загрузки медиа-файла.",
+        name="admin-files-presign-put-api-handler",
     )
     async def presign_put_media_file(
         self,
@@ -33,4 +34,4 @@ class FilesApiController(Controller):
         return FilePresignPutResponseSchema.from_domain_schema(schema=urls)
 
 
-api_router = DishkaRouter("", route_handlers=[FilesApiController])
+admin_router = DishkaRouter("", route_handlers=[FilesApiController])

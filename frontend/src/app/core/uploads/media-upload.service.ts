@@ -16,7 +16,7 @@ export class MediaUploadService {
   uploadMediaFile(file: Blob): Observable<string> {
     const contentType = file.type || 'application/octet-stream';
     return this.api
-      .get<PresignPutResponseDto>('/api/files/presign-put', { contentType })
+      .get<PresignPutResponseDto>('/api/admin/files/presign-put', { contentType })
       .pipe(
         switchMap((presign) =>
           this.unsignedUpload

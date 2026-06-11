@@ -42,13 +42,11 @@ describe('SitemapNotesService', () => {
       page: '1',
       pageSize: '100',
       language: 'en',
-      onlyPublished: 'true',
     });
     expect(api.get).toHaveBeenNthCalledWith(2, '/api/notes', {
       page: '2',
       pageSize: '100',
       language: 'en',
-      onlyPublished: 'true',
     });
     expect(slugs).toEqual(['typed-notes', 'angular-ssr']);
   });

@@ -36,11 +36,11 @@
       - [x] Delete
       - [x] Publish
       - [x] Unpublish
-    - [x] (BACK) Guard on /api/files/presign-put
+    - [x] (BACK) Guard on /api/admin/files/presign-put
     - [x] (FRONT) Delete button on question detail
     - [x] (FRONT) Publish/Unpublish button (depending on status)
-    - [ ] Import competency matrix questions into the shared queued-question model
-    - [ ] Quick-create competency matrix questions into the shared queued-question model
+    - [x] Import competency matrix questions into the shared queued-question model
+    - [x] Quick-create competency matrix questions into the shared queued-question model
   - [x] Basic auth and edit permissions (PASETO without sessions. Sessions later)
     - [x] (FRONT) Login page with login button on the main page (hidden for now)
     - [x] (BACK) Login logic
@@ -101,7 +101,7 @@
     - [ ] Configure independent image publishing for backend and frontend
     - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
-  - [x] Basic nginx edge rate limits for login, contact, notes, and matrix resource search
+    - [x] Basic nginx edge rate limits for login, contact, public notes, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [ ] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
@@ -266,7 +266,7 @@
     - [x] Keep legacy Litestar/Jinja/HTMX views only during migration
     - [x] Remove legacy views, templates, HTMX, Hyperscript, and template-only static files after parity
   - [x] API contracts and client integration
-    - [x] Align Angular services with existing backend endpoints (`/api/competency-matrix/*`, `/api/contacts`, `/api/auth`, `/api/account`, `/api/files`)
+    - [x] Align Angular services with public/admin backend endpoints (`/api/competency-matrix/*`, `/api/admin/competency-matrix/*`, `/api/contacts`, `/api/auth`, `/api/account`, `/api/admin/files`, `/api/admin/wiki-links`)
     - [x] Add DTO interfaces matching backend camelCase response aliases
     - [x] Add explicit DTO -> UI model mapping functions in feature `models/`
     - [x] Add frontend service tests for endpoint URLs, query params, and response mapping
@@ -299,7 +299,7 @@
     - [x] List layout
     - [x] Grid/table layout
     - [x] Search that hides empty sections and subsections
-    - [x] Moderator/admin published/all toggle using `onlyPublished`
+    - [x] Moderator/admin published/all toggle using admin `onlyPublished`
     - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
     - [x] Markdown rendering for answers and resource context
     - [x] Code highlighting for Markdown code blocks

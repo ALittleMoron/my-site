@@ -12,12 +12,11 @@ import { NoteFormComponent } from './note-form.component';
 describe('NoteFormComponent', () => {
   let fixture: ComponentFixture<NoteFormComponent>;
   let notesService: {
-    getTree: jest.Mock;
-    getTags: jest.Mock;
-    createTag: jest.Mock;
-    updateTag: jest.Mock;
-    deleteTag: jest.Mock;
-    restoreTag: jest.Mock;
+    getAdminTags: jest.Mock;
+    createAdminTag: jest.Mock;
+    updateAdminTag: jest.Mock;
+    deleteAdminTag: jest.Mock;
+    restoreAdminTag: jest.Mock;
   };
   let mediaUpload: { uploadMediaFile: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
@@ -37,25 +36,7 @@ describe('NoteFormComponent', () => {
       ),
     };
     notesService = {
-      getTree: jest.fn().mockReturnValue(
-        of({
-          folders: [
-            {
-              folder: 'Engineering',
-              notes: [
-                {
-                  title: 'Typed note',
-                  slug: 'typed-note',
-                  publishStatus: 'Published',
-                  publishedAt: '2026-01-02T03:04:05+00:00',
-                  updatedAt: '2026-01-03T03:04:05+00:00',
-                },
-              ],
-            },
-          ],
-        }),
-      ),
-      getTags: jest.fn().mockReturnValue(
+      getAdminTags: jest.fn().mockReturnValue(
         of([
           tag({ id: 1, name: 'Python', slug: 'python', deletedAt: null }),
           tag({
@@ -66,14 +47,14 @@ describe('NoteFormComponent', () => {
           }),
         ]),
       ),
-      createTag: jest
+      createAdminTag: jest
         .fn()
         .mockReturnValue(of(tag({ id: 3, name: 'Backend', slug: 'backend', deletedAt: null }))),
-      updateTag: jest
+      updateAdminTag: jest
         .fn()
         .mockReturnValue(of(tag({ id: 1, name: 'Py', slug: 'py', deletedAt: null }))),
-      deleteTag: jest.fn().mockReturnValue(of(undefined)),
-      restoreTag: jest.fn().mockReturnValue(of(undefined)),
+      deleteAdminTag: jest.fn().mockReturnValue(of(undefined)),
+      restoreAdminTag: jest.fn().mockReturnValue(of(undefined)),
     };
 
     await TestBed.configureTestingModule({

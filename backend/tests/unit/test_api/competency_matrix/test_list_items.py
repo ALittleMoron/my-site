@@ -96,8 +96,8 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
         )
 
-    def test_list_requires_only_published(self) -> None:
-        response = self.api.get_competency_matrix_items(
+    def test_admin_list_requires_only_published(self) -> None:
+        response = self.api.get_admin_competency_matrix_items(
             sheet_key="python",
             only_published=None,
         )
@@ -118,7 +118,7 @@ class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             values=[],
         )
 
-        response = self.api.get_competency_matrix_items(
+        response = self.api.get_admin_competency_matrix_items(
             sheet_key="python",
             only_published=False,
         )

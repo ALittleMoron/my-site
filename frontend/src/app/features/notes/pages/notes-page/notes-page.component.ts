@@ -323,8 +323,8 @@ export class NotesPageComponent implements OnInit {
     const editing = this.formNote();
     const language = this.currentLanguage();
     const request = editing
-      ? this.notesService.updateNote(editing.slug, payload, language)
-      : this.notesService.createNote(payload, language);
+      ? this.notesService.updateAdminNote(editing.slug, payload, language)
+      : this.notesService.createAdminNote(payload, language);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (note) => {
         this.notifications.success(this.i18n.translate('notes.notify.saved'));
@@ -344,7 +344,7 @@ export class NotesPageComponent implements OnInit {
     const note = this.selectedNote();
     if (!note) return;
     this.notesService
-      .publishNote(note.slug)
+      .publishAdminNote(note.slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -363,7 +363,7 @@ export class NotesPageComponent implements OnInit {
     const note = this.selectedNote();
     if (!note) return;
     this.notesService
-      .unpublishNote(note.slug)
+      .unpublishAdminNote(note.slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -382,7 +382,7 @@ export class NotesPageComponent implements OnInit {
     const note = this.selectedNote();
     if (!note) return;
     this.notesService
-      .deleteNote(note.slug)
+      .deleteAdminNote(note.slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -407,7 +407,7 @@ export class NotesPageComponent implements OnInit {
     if (clientToken === null) return;
     this.reactionLoading.set(true);
     this.notesService
-      .setReaction(
+      .setPublicReaction(
         note.slug,
         {
           reactionKind: nextReaction,
@@ -458,7 +458,7 @@ export class NotesPageComponent implements OnInit {
     this.statsLoading.set(true);
     this.statsError.set(null);
     this.notesService
-      .getStats({
+      .getAdminStats({
         dateFrom: this.statsDateFrom(),
         dateTo: this.statsDateTo(),
         language: this.currentLanguage(),
@@ -492,71 +492,71 @@ export class NotesPageComponent implements OnInit {
   loadNotes(): void {
     this.listLoading.set(true);
     this.listError.set(null);
-    this.notesService
-      .getNotes({
-        page: this.page(),
-        pageSize: PAGE_SIZE,
-        language: this.currentLanguage(),
-        onlyPublished: this.onlyPublished(),
-        tagSlug: this.activeTagSlug(),
-        publishedFrom: this.publishedFrom() || null,
-        publishedTo: this.publishedTo() || null,
-        searchQuery: this.normalizedSearchQuery(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (notes) => {
-          this.notes.set(notes);
-          this.listLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.listError.set(err);
-          this.listLoading.set(false);
-        },
-      });
+    const params = {
+      page: this.page(),
+      pageSize: PAGE_SIZE,
+      language: this.currentLanguage(),
+      tagSlug: this.activeTagSlug(),
+      publishedFrom: this.publishedFrom() || null,
+      publishedTo: this.publishedTo() || null,
+      searchQuery: this.normalizedSearchQuery(),
+    };
+    const request = this.canManageContent()
+      ? this.notesService.getAdminNotes({ ...params, onlyPublished: this.onlyPublished() })
+      : this.notesService.getPublicNotes(params);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (notes) => {
+        this.notes.set(notes);
+        this.listLoading.set(false);
+      },
+      error: (err: ApiError) => {
+        this.listError.set(err);
+        this.listLoading.set(false);
+      },
+    });
   }
 
   loadDetail(slug: string): void {
     this.clearEngagedViewTimer();
     this.detailLoading.set(true);
     this.detailError.set(null);
-    this.notesService
-      .getNote(slug, !this.canManageContent(), this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (note) => {
-          this.selectedNote.set(note);
-          this.setNoteDetailSeo(note);
-          this.selectedReaction.set(this.readSelectedReaction(note.slug));
-          this.trackPublicView(note);
-          this.scheduleEngagedView(note);
-          this.detailLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.detailError.set(err);
-          this.detailLoading.set(false);
-        },
-      });
+    const request = this.canManageContent()
+      ? this.notesService.getAdminNote(slug, false, this.currentLanguage())
+      : this.notesService.getPublicNote(slug, this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (note) => {
+        this.selectedNote.set(note);
+        this.setNoteDetailSeo(note);
+        this.selectedReaction.set(this.readSelectedReaction(note.slug));
+        this.trackPublicView(note);
+        this.scheduleEngagedView(note);
+        this.detailLoading.set(false);
+      },
+      error: (err: ApiError) => {
+        this.detailError.set(err);
+        this.detailLoading.set(false);
+      },
+    });
   }
 
   loadTags(): void {
-    this.notesService
-      .getTags(false, this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (tags) => this.tags.set(tags),
-        error: () => this.tags.set([]),
-      });
+    const request = this.canManageContent()
+      ? this.notesService.getAdminTags(false, this.currentLanguage())
+      : this.notesService.getPublicTags(this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (tags) => this.tags.set(tags),
+      error: () => this.tags.set([]),
+    });
   }
 
   loadTree(): void {
-    this.notesService
-      .getTree(this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (tree) => this.tree.set(tree),
-        error: () => this.tree.set({ folders: [] }),
-      });
+    const request = this.canManageContent()
+      ? this.notesService.getAdminTree(this.currentLanguage())
+      : this.notesService.getPublicTree(this.currentLanguage());
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (tree) => this.tree.set(tree),
+      error: () => this.tree.set({ folders: [] }),
+    });
   }
 
   private scheduleEngagedView(note: NoteDetail): void {
@@ -590,7 +590,7 @@ export class NotesPageComponent implements OnInit {
     this.engagedViewTimerId = null;
     this.engagedViewState = null;
     this.notesService
-      .trackEngagedView(state.slug, this.currentLanguage())
+      .trackPublicEngagedView(state.slug, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.trackedEngagedViewSlugs.add(state.slug),
@@ -602,7 +602,7 @@ export class NotesPageComponent implements OnInit {
     if (!this.isBrowser) return;
     if (this.canManageContent() || note.publishStatus !== 'Published') return;
     this.notesService
-      .trackView(note.slug, this.currentLanguage())
+      .trackPublicView(note.slug, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ error: () => undefined });
   }

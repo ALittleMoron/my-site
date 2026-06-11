@@ -22,19 +22,34 @@ import {
 export class MatrixService {
   private readonly api = inject(ApiClient);
 
-  getSheets(language: LanguageCode): Observable<MatrixSheet[]> {
+  getPublicSheets(language: LanguageCode): Observable<MatrixSheet[]> {
     return this.api
       .get<MatrixSheetsDto>('/api/competency-matrix/sheets', { language })
       .pipe(map((dto) => dto.sheets.map(mapMatrixSheetDto)));
   }
 
-  getQuestions(
+  getAdminSheets(language: LanguageCode): Observable<MatrixSheet[]> {
+    return this.api
+      .get<MatrixSheetsDto>('/api/admin/competency-matrix/sheets', { language })
+      .pipe(map((dto) => dto.sheets.map(mapMatrixSheetDto)));
+  }
+
+  getPublicQuestions(sheetKey: string, language: LanguageCode): Observable<MatrixQuestionList> {
+    return this.api
+      .get<MatrixItemsListDto>('/api/competency-matrix/items', {
+        sheetKey,
+        language,
+      })
+      .pipe(map(mapMatrixListDto));
+  }
+
+  getAdminQuestions(
     sheetKey: string,
     onlyPublished: boolean,
     language: LanguageCode,
   ): Observable<MatrixQuestionList> {
     return this.api
-      .get<MatrixItemsListDto>('/api/competency-matrix/items', {
+      .get<MatrixItemsListDto>('/api/admin/competency-matrix/items', {
         sheetKey,
         onlyPublished: String(onlyPublished),
         language,
@@ -42,32 +57,38 @@ export class MatrixService {
       .pipe(map(mapMatrixListDto));
   }
 
-  getQuestion(
+  getPublicQuestion(id: number, language: LanguageCode): Observable<MatrixQuestionDetail> {
+    return this.api
+      .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, { language })
+      .pipe(map(mapMatrixDetailDto));
+  }
+
+  getAdminQuestion(
     id: number,
     onlyPublished: boolean,
     language: LanguageCode,
   ): Observable<MatrixQuestionDetail> {
     return this.api
-      .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, {
+      .get<MatrixItemDetailDto>(`/api/admin/competency-matrix/items/detail/${id}`, {
         onlyPublished: String(onlyPublished),
         language,
       })
       .pipe(map(mapMatrixDetailDto));
   }
 
-  getPublicQuestion(slug: string, language: LanguageCode): Observable<MatrixQuestionDetail> {
+  getPublicQuestionBySlug(slug: string, language: LanguageCode): Observable<MatrixQuestionDetail> {
     return this.api
       .get<MatrixItemDetailDto>(`/api/competency-matrix/items/public/${slug}`, { language })
       .pipe(map(mapMatrixDetailDto));
   }
 
-  searchResources(
+  searchAdminResources(
     searchName: string,
     limit: number,
     language: LanguageCode,
   ): Observable<MatrixResource[]> {
     return this.api
-      .get<MatrixResourcesDto>('/api/competency-matrix/resources/search', {
+      .get<MatrixResourcesDto>('/api/admin/competency-matrix/resources/search', {
         searchName,
         limit: String(limit),
         language,
@@ -75,12 +96,12 @@ export class MatrixService {
       .pipe(map((dto) => dto.resources.map(mapMatrixResourceDto)));
   }
 
-  createQuestion(
+  createAdminQuestion(
     payload: MatrixQuestionPayload,
     language: LanguageCode,
   ): Observable<MatrixQuestionDetail> {
     return this.api
-      .post<MatrixItemDetailDto>('/api/competency-matrix/items', payload, { language })
+      .post<MatrixItemDetailDto>('/api/admin/competency-matrix/items', payload, { language })
       .pipe(map(mapMatrixDetailDto));
   }
 
@@ -88,27 +109,27 @@ export class MatrixService {
     return this.api.post<void>('/api/competency-matrix/question-suggestions', { question });
   }
 
-  updateQuestion(
+  updateAdminQuestion(
     id: number,
     payload: MatrixQuestionPayload,
     language: LanguageCode,
   ): Observable<MatrixQuestionDetail> {
     return this.api
-      .put<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, payload, {
+      .put<MatrixItemDetailDto>(`/api/admin/competency-matrix/items/detail/${id}`, payload, {
         language,
       })
       .pipe(map(mapMatrixDetailDto));
   }
 
-  publishQuestion(id: number): Observable<void> {
-    return this.api.post<void>(`/api/competency-matrix/items/detail/${id}/set-published`, {});
+  publishAdminQuestion(id: number): Observable<void> {
+    return this.api.post<void>(`/api/admin/competency-matrix/items/detail/${id}/set-published`, {});
   }
 
-  unpublishQuestion(id: number): Observable<void> {
-    return this.api.post<void>(`/api/competency-matrix/items/detail/${id}/set-draft`, {});
+  unpublishAdminQuestion(id: number): Observable<void> {
+    return this.api.post<void>(`/api/admin/competency-matrix/items/detail/${id}/set-draft`, {});
   }
 
-  deleteQuestion(id: number): Observable<void> {
-    return this.api.delete<void>(`/api/competency-matrix/items/detail/${id}`);
+  deleteAdminQuestion(id: number): Observable<void> {
+    return this.api.delete<void>(`/api/admin/competency-matrix/items/detail/${id}`);
   }
 }

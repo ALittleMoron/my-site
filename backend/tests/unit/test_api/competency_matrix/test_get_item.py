@@ -19,7 +19,7 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
     def test_get_competency_matrix_item_not_found(self) -> None:
         self.use_case.get_item.side_effect = CompetencyMatrixItemNotFoundError()
-        response = self.api.get_competency_matrix_item(pk=-100)
+        response = self.api.get_admin_competency_matrix_item(pk=-100)
         assert response.status_code == codes.NOT_FOUND
         assert response.json() == {
             "code": "client_error",
@@ -29,8 +29,8 @@ class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "location": None,
         }
 
-    def test_get_competency_matrix_item_requires_only_published(self) -> None:
-        response = self.api.get_competency_matrix_item(pk=1, only_published=None)
+    def test_admin_get_competency_matrix_item_requires_only_published(self) -> None:
+        response = self.api.get_admin_competency_matrix_item(pk=1, only_published=None)
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.get_item.assert_not_called()
 

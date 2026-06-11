@@ -310,7 +310,6 @@ async function assertMissingArticleNoindex(frontendPort) {
       html.includes(`href="http://127.0.0.1:${frontendPort}/ru/notes/missing-note"`),
     ],
     ['missing detail preflight', hasRequest('/api/notes/detail/missing-note', 'language=ru')],
-    ['only published preflight', hasRequest('/api/notes/detail/missing-note', 'onlyPublished=true')],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
   ];

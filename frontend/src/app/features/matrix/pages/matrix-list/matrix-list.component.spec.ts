@@ -157,15 +157,18 @@ describe('MatrixListComponent', () => {
   let fixture: ComponentFixture<MatrixListComponent>;
   let component: MatrixListComponent;
   let matrixService: {
-    getSheets: jest.Mock;
-    getQuestions: jest.Mock;
-    getQuestion: jest.Mock;
-    searchResources: jest.Mock;
-    createQuestion: jest.Mock;
-    updateQuestion: jest.Mock;
-    publishQuestion: jest.Mock;
-    unpublishQuestion: jest.Mock;
-    deleteQuestion: jest.Mock;
+    getPublicSheets: jest.Mock;
+    getAdminSheets: jest.Mock;
+    getPublicQuestions: jest.Mock;
+    getAdminQuestions: jest.Mock;
+    getPublicQuestion: jest.Mock;
+    getAdminQuestion: jest.Mock;
+    searchAdminResources: jest.Mock;
+    createAdminQuestion: jest.Mock;
+    updateAdminQuestion: jest.Mock;
+    publishAdminQuestion: jest.Mock;
+    unpublishAdminQuestion: jest.Mock;
+    deleteAdminQuestion: jest.Mock;
     suggestQuestion: jest.Mock;
   };
   let layoutPreferences: {
@@ -180,15 +183,18 @@ describe('MatrixListComponent', () => {
 
   beforeEach(async () => {
     matrixService = {
-      getSheets: jest.fn().mockReturnValue(of(mockSheets)),
-      getQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
-      getQuestion: jest.fn().mockReturnValue(of(mockDetail)),
-      searchResources: jest.fn().mockReturnValue(of([])),
-      createQuestion: jest.fn().mockReturnValue(of(mockDetail)),
-      updateQuestion: jest.fn().mockReturnValue(of(mockDetail)),
-      publishQuestion: jest.fn().mockReturnValue(of(undefined)),
-      unpublishQuestion: jest.fn().mockReturnValue(of(undefined)),
-      deleteQuestion: jest.fn().mockReturnValue(of(undefined)),
+      getPublicSheets: jest.fn().mockReturnValue(of(mockSheets)),
+      getAdminSheets: jest.fn().mockReturnValue(of(mockSheets)),
+      getPublicQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
+      getAdminQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
+      getPublicQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      getAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      searchAdminResources: jest.fn().mockReturnValue(of([])),
+      createAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      updateAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      publishAdminQuestion: jest.fn().mockReturnValue(of(undefined)),
+      unpublishAdminQuestion: jest.fn().mockReturnValue(of(undefined)),
+      deleteAdminQuestion: jest.fn().mockReturnValue(of(undefined)),
       suggestQuestion: jest.fn().mockReturnValue(of(undefined)),
     };
 
@@ -264,8 +270,17 @@ describe('MatrixListComponent', () => {
 
   it('should load sheets on init and auto-select first sheet', () => {
     fixture.detectChanges();
-    expect(matrixService.getSheets).toHaveBeenCalledWith('ru');
+    expect(matrixService.getPublicSheets).toHaveBeenCalledWith('ru');
     expect(component.selectedSheet()).toEqual(mockSheets[0]);
+  });
+
+  it('should load admin sheets for content managers', () => {
+    canManageContentSignal.set(true);
+
+    fixture.detectChanges();
+
+    expect(matrixService.getAdminSheets).toHaveBeenCalledWith('ru');
+    expect(matrixService.getPublicSheets).not.toHaveBeenCalled();
   });
 
   it('should restore sheet from localStorage on init', () => {
@@ -329,7 +344,7 @@ describe('MatrixListComponent', () => {
   it('should load questions for selected sheet', () => {
     fixture.detectChanges();
     component.selectSheet('python');
-    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('python', true, 'ru');
+    expect(matrixService.getPublicQuestions).toHaveBeenLastCalledWith('python', 'ru');
   });
 
   it('should render list layout by default', () => {
@@ -408,7 +423,7 @@ describe('MatrixListComponent', () => {
     const consoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
-      matrixService.getQuestions.mockReturnValue(of(duplicateSubsectionQuestionList));
+      matrixService.getPublicQuestions.mockReturnValue(of(duplicateSubsectionQuestionList));
       layoutPreferences.matrixLayout.set('grid');
       fixture.detectChanges();
 
@@ -439,7 +454,7 @@ describe('MatrixListComponent', () => {
   });
 
   it('should handle empty sheet list gracefully', () => {
-    matrixService.getSheets.mockReturnValue(of([]));
+    matrixService.getPublicSheets.mockReturnValue(of([]));
     fixture = TestBed.createComponent(MatrixListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -449,7 +464,7 @@ describe('MatrixListComponent', () => {
   });
 
   it('should show error when getSheets fails', () => {
-    matrixService.getSheets.mockReturnValue(throwError(() => mockError));
+    matrixService.getPublicSheets.mockReturnValue(throwError(() => mockError));
     // Create new component instance so ngOnInit runs with new mock
     fixture = TestBed.createComponent(MatrixListComponent);
     component = fixture.componentInstance;
@@ -469,6 +484,16 @@ describe('MatrixListComponent', () => {
     expect(fixture.nativeElement.querySelector('app-matrix-question-detail')).toBeTruthy();
   });
 
+  it('should load admin question detail for content managers', () => {
+    canManageContentSignal.set(true);
+    fixture.detectChanges();
+
+    component.openDetail(1);
+
+    expect(matrixService.getAdminQuestion).toHaveBeenCalledWith(1, true, 'ru');
+    expect(matrixService.getPublicQuestion).not.toHaveBeenCalled();
+  });
+
   it('should render link from detail modal to public question page', () => {
     fixture.detectChanges();
     component.openDetail(1);
@@ -482,7 +507,7 @@ describe('MatrixListComponent', () => {
 
   it('should set detailLoading when loading a question', () => {
     const subject = new Subject();
-    matrixService.getQuestion.mockReturnValue(subject.asObservable());
+    matrixService.getPublicQuestion.mockReturnValue(subject.asObservable());
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
@@ -502,7 +527,7 @@ describe('MatrixListComponent', () => {
   });
 
   it('should set detailError when detail load fails', () => {
-    matrixService.getQuestion.mockReturnValue(throwError(() => mockError));
+    matrixService.getPublicQuestion.mockReturnValue(throwError(() => mockError));
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
@@ -515,7 +540,7 @@ describe('MatrixListComponent', () => {
   it('uses latest resource search response when requests resolve out of order', fakeAsync(() => {
     const first = new Subject<MatrixResource[]>();
     const second = new Subject<MatrixResource[]>();
-    matrixService.searchResources
+    matrixService.searchAdminResources
       .mockReturnValueOnce(first.asObservable())
       .mockReturnValueOnce(second.asObservable());
 
@@ -539,11 +564,11 @@ describe('MatrixListComponent', () => {
     component.searchResources('  pydantic  ');
     tick(250);
 
-    expect(matrixService.searchResources).toHaveBeenCalledWith('pydantic', 10, 'ru');
+    expect(matrixService.searchAdminResources).toHaveBeenCalledWith('pydantic', 10, 'ru');
   }));
 
   it('clears resource search results when latest search fails', fakeAsync(() => {
-    matrixService.searchResources
+    matrixService.searchAdminResources
       .mockReturnValueOnce(of([pythonResource]))
       .mockReturnValueOnce(throwError(() => mockError));
 
@@ -570,39 +595,42 @@ describe('MatrixListComponent', () => {
   });
 
   it('should call publishQuestion and reload questions on onPublish', () => {
+    canManageContentSignal.set(true);
     fixture.detectChanges();
     component.selectedSheetKey.set('javascript');
     component.onPublish(1);
-    expect(matrixService.publishQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
+    expect(matrixService.publishAdminQuestion).toHaveBeenCalledWith(1);
+    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос опубликован.');
   });
 
   it('should call unpublishQuestion and reload questions on onUnpublish', () => {
+    canManageContentSignal.set(true);
     fixture.detectChanges();
     component.selectedSheetKey.set('javascript');
     component.onUnpublish(1);
-    expect(matrixService.unpublishQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
+    expect(matrixService.unpublishAdminQuestion).toHaveBeenCalledWith(1);
+    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос снят с публикации.');
   });
 
   it('should call deleteQuestion, close detail, and reload questions on onDelete', () => {
+    canManageContentSignal.set(true);
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
     component.selectedSheetKey.set('javascript');
     component.onDelete(1);
     fixture.detectChanges();
-    expect(matrixService.deleteQuestion).toHaveBeenCalledWith(1);
+    expect(matrixService.deleteAdminQuestion).toHaveBeenCalledWith(1);
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeFalsy();
-    expect(matrixService.getQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
+    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос удалён.');
   });
 
   it('should set error when publishQuestion fails', () => {
     fixture.detectChanges();
-    matrixService.publishQuestion.mockReturnValue(throwError(() => mockError));
+    matrixService.publishAdminQuestion.mockReturnValue(throwError(() => mockError));
     component.onPublish(1);
     expect(component.error()).toEqual(mockError);
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось опубликовать вопрос.');
@@ -610,7 +638,7 @@ describe('MatrixListComponent', () => {
 
   it('should set error when unpublishQuestion fails', () => {
     fixture.detectChanges();
-    matrixService.unpublishQuestion.mockReturnValue(throwError(() => mockError));
+    matrixService.unpublishAdminQuestion.mockReturnValue(throwError(() => mockError));
     component.onUnpublish(1);
     expect(component.error()).toEqual(mockError);
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось снять вопрос с публикации.');
@@ -618,7 +646,7 @@ describe('MatrixListComponent', () => {
 
   it('should set error when deleteQuestion fails', () => {
     fixture.detectChanges();
-    matrixService.deleteQuestion.mockReturnValue(throwError(() => mockError));
+    matrixService.deleteAdminQuestion.mockReturnValue(throwError(() => mockError));
     component.onDelete(1);
     expect(component.error()).toEqual(mockError);
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось удалить вопрос.');

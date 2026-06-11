@@ -7,13 +7,19 @@ from httpx import codes
 from litestar.di import Provide
 
 from core.auth.enums import RoleEnum
-from core.auth.exceptions import ForbiddenError
+from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.notes.schemas import NoteFilters, NotePublicStatsCollection
-from entrypoints.litestar.api.notes.dependencies import provide_note_filters
-from entrypoints.litestar.api.notes.endpoints import NotesApiController
+from entrypoints.litestar.api.notes.dependencies import (
+    provide_note_filters,
+    provide_public_note_filters,
+)
+from entrypoints.litestar.api.notes.endpoints import (
+    AdminNotesApiController,
+    PublicNotesApiController,
+)
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
 
@@ -28,7 +34,17 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
 
     def test_list_notes_uses_litestar_dependency_for_filters(self) -> None:
-        handler = NotesApiController.list_notes
+        handler = PublicNotesApiController.list_notes
+        dependencies = handler.dependencies
+
+        assert dependencies is not None
+        assert "filters" in dependencies
+        provider = cast("Provide", dependencies["filters"])
+        assert provider.dependency is provide_public_note_filters
+        assert provider.sync_to_thread is False
+
+    def test_admin_list_notes_uses_litestar_dependency_for_filters(self) -> None:
+        handler = AdminNotesApiController.list_notes
         dependencies = handler.dependencies
 
         assert dependencies is not None
@@ -42,6 +58,29 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             page=2,
             page_size=5,
             only_published=True,
+            language=LanguageEnum.RU,
+            tag_slug="python",
+            published_from=date(2026, 1, 1),
+            published_to=date(2026, 1, 31),
+            search_query="  typed notes  ",
+        )
+
+        assert filters == NoteFilters(
+            page=2,
+            page_size=5,
+            language=LanguageEnum.RU,
+            only_published=True,
+            tag_slug="python",
+            published_from=date(2026, 1, 1),
+            published_to=date(2026, 1, 31),
+            search_query="typed notes",
+            include_tags=True,
+        )
+
+    def test_provide_public_note_filters_builds_published_filters(self) -> None:
+        filters = provide_public_note_filters(
+            page=2,
+            page_size=5,
             language=LanguageEnum.RU,
             tag_slug="python",
             published_from=date(2026, 1, 1),
@@ -96,7 +135,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             total_pages=1,
         )
 
-        response = self.api.get_notes(page=1, page_size=10, only_published=True, tag_slug="python")
+        response = self.api.get_notes(page=1, page_size=10, tag_slug="python")
 
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
@@ -162,7 +201,6 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.api.get_notes(
             page=2,
             page_size=5,
-            only_published=True,
             published_from="2026-01-01",
             published_to="2026-01-31",
             search_query="  typed notes  ",
@@ -184,25 +222,25 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
 
     def test_list_notes_requires_explicit_page(self) -> None:
-        response = self.api.get_notes(page=None, page_size=10, only_published=True)
+        response = self.api.get_notes(page=None, page_size=10)
 
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_notes.assert_not_called()
 
     def test_list_notes_requires_explicit_language(self) -> None:
-        response = self.api.get_notes(page=1, page_size=10, only_published=True, language=None)
+        response = self.api.get_notes(page=1, page_size=10, language=None)
 
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_notes.assert_not_called()
 
-    def test_anonymous_cannot_request_all_notes(self) -> None:
-        response = self.no_auth_api.get_notes(page=1, page_size=10, only_published=False)
+    def test_anonymous_cannot_request_admin_notes(self) -> None:
+        response = self.no_auth_api.get_admin_notes(page=1, page_size=10, only_published=False)
 
-        assert response.status_code == codes.FORBIDDEN
-        assert response.json()["message"] == ForbiddenError.message
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json()["message"] == UnauthorizedError.message
         self.use_case.list_notes.assert_not_called()
 
-    def test_moderator_can_request_all_notes(self) -> None:
+    def test_moderator_can_request_all_notes_from_admin_api(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="moderator",
             role=RoleEnum.MODERATOR,
@@ -213,7 +251,7 @@ class TestListNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             total_pages=0,
         )
 
-        response = self.api.get_notes(page=1, page_size=10, only_published=False)
+        response = self.api.get_admin_notes(page=1, page_size=10, only_published=False)
 
         assert response.status_code == codes.OK, response.content
         self.use_case.list_notes.assert_called_once_with(

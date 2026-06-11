@@ -29,17 +29,37 @@ import {
   mapTagDto,
 } from '../models/notes.model';
 
+type PublicNoteListParams = Omit<NoteListParams, 'onlyPublished'>;
+
 @Injectable({ providedIn: 'root' })
 export class NotesService {
   private readonly api = inject(ApiClient);
 
-  getNotes(params: NoteListParams): Observable<NoteList> {
+  getPublicNotes(params: PublicNoteListParams): Observable<NoteList> {
+    const queryParams: Record<string, string | readonly string[]> = {
+      page: String(params.page),
+      pageSize: String(params.pageSize),
+      language: params.language,
+    };
+    this.applyOptionalListParams(queryParams, params);
+    return this.getNotesFromPath('/api/notes', queryParams);
+  }
+
+  getAdminNotes(params: NoteListParams): Observable<NoteList> {
     const queryParams: Record<string, string | readonly string[]> = {
       page: String(params.page),
       pageSize: String(params.pageSize),
       language: params.language,
       onlyPublished: String(params.onlyPublished),
     };
+    this.applyOptionalListParams(queryParams, params);
+    return this.getNotesFromPath('/api/admin/notes', queryParams);
+  }
+
+  private applyOptionalListParams(
+    queryParams: Record<string, string | readonly string[]>,
+    params: PublicNoteListParams,
+  ): void {
     if (params.tagSlug) {
       queryParams['tagSlug'] = params.tagSlug;
     }
@@ -52,7 +72,13 @@ export class NotesService {
     if (params.searchQuery) {
       queryParams['searchQuery'] = params.searchQuery;
     }
-    return this.api.get<NoteListDto>('/api/notes', queryParams).pipe(
+  }
+
+  private getNotesFromPath(
+    path: string,
+    queryParams: Record<string, string | readonly string[]>,
+  ): Observable<NoteList> {
+    return this.api.get<NoteListDto>(path, queryParams).pipe(
       switchMap((dto) => {
         const noteIds = dto.notes.map((note) => note.id);
         if (noteIds.length === 0) {
@@ -65,20 +91,30 @@ export class NotesService {
     );
   }
 
-  getNote(slug: string, onlyPublished: boolean, language: LanguageCode): Observable<NoteDetail> {
+  getPublicNote(slug: string, language: LanguageCode): Observable<NoteDetail> {
     return this.api
-      .get<NoteDetailDto>(`/api/notes/detail/${slug}`, {
+      .get<NoteDetailDto>(`/api/notes/detail/${slug}`, { language })
+      .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
+  }
+
+  getAdminNote(
+    slug: string,
+    onlyPublished: boolean,
+    language: LanguageCode,
+  ): Observable<NoteDetail> {
+    return this.api
+      .get<NoteDetailDto>(`/api/admin/notes/detail/${slug}`, {
         language,
         onlyPublished: String(onlyPublished),
       })
       .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
   }
 
-  trackView(slug: string, language: LanguageCode): Observable<void> {
+  trackPublicView(slug: string, language: LanguageCode): Observable<void> {
     return this.api.post<void>(`/api/notes/detail/${slug}/analytics/view`, {}, { language });
   }
 
-  trackEngagedView(slug: string, language: LanguageCode): Observable<void> {
+  trackPublicEngagedView(slug: string, language: LanguageCode): Observable<void> {
     return this.api.post<void>(
       `/api/notes/detail/${slug}/analytics/engaged-view`,
       {},
@@ -86,7 +122,7 @@ export class NotesService {
     );
   }
 
-  setReaction(
+  setPublicReaction(
     slug: string,
     payload: NoteReactionPayload,
     language: LanguageCode,
@@ -94,9 +130,9 @@ export class NotesService {
     return this.api.post<void>(`/api/notes/detail/${slug}/reaction`, payload, { language });
   }
 
-  getStats(params: NoteStatsParams): Observable<NoteStats> {
+  getAdminStats(params: NoteStatsParams): Observable<NoteStats> {
     return this.api
-      .get<NoteStatsDto>('/api/notes/stats', {
+      .get<NoteStatsDto>('/api/admin/notes/stats', {
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
         language: params.language,
@@ -104,48 +140,64 @@ export class NotesService {
       .pipe(map(mapNoteStatsDto));
   }
 
-  getTree(language: LanguageCode): Observable<NoteTree> {
+  getPublicTree(language: LanguageCode): Observable<NoteTree> {
     return this.api.get<NoteTreeDto>('/api/notes/tree', { language }).pipe(map(mapNoteTreeDto));
   }
 
-  createNote(payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
+  getAdminTree(language: LanguageCode): Observable<NoteTree> {
     return this.api
-      .post<NoteDetailDto>('/api/notes', payload, { language })
+      .get<NoteTreeDto>('/api/admin/notes/tree', { language })
+      .pipe(map(mapNoteTreeDto));
+  }
+
+  createAdminNote(payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
+    return this.api
+      .post<NoteDetailDto>('/api/admin/notes', payload, { language })
       .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
   }
 
-  updateNote(slug: string, payload: NotePayload, language: LanguageCode): Observable<NoteDetail> {
+  updateAdminNote(
+    slug: string,
+    payload: NotePayload,
+    language: LanguageCode,
+  ): Observable<NoteDetail> {
     return this.api
-      .put<NoteDetailDto>(`/api/notes/detail/${slug}`, payload, { language })
+      .put<NoteDetailDto>(`/api/admin/notes/detail/${slug}`, payload, { language })
       .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
   }
 
-  deleteNote(slug: string): Observable<void> {
-    return this.api.delete<void>(`/api/notes/detail/${slug}`);
+  deleteAdminNote(slug: string): Observable<void> {
+    return this.api.delete<void>(`/api/admin/notes/detail/${slug}`);
   }
 
-  publishNote(slug: string): Observable<void> {
-    return this.api.post<void>(`/api/notes/detail/${slug}/set-published`, {});
+  publishAdminNote(slug: string): Observable<void> {
+    return this.api.post<void>(`/api/admin/notes/detail/${slug}/set-published`, {});
   }
 
-  unpublishNote(slug: string): Observable<void> {
-    return this.api.post<void>(`/api/notes/detail/${slug}/set-draft`, {});
+  unpublishAdminNote(slug: string): Observable<void> {
+    return this.api.post<void>(`/api/admin/notes/detail/${slug}/set-draft`, {});
   }
 
-  getTags(includeDeleted: boolean, language: LanguageCode): Observable<NoteTag[]> {
+  getPublicTags(language: LanguageCode): Observable<NoteTag[]> {
     return this.api
-      .get<TagsDto>('/api/notes/tags', { includeDeleted: String(includeDeleted), language })
+      .get<TagsDto>('/api/notes/tags', { language })
       .pipe(map((dto) => dto.tags.map(mapTagDto)));
   }
 
-  searchTags(
+  getAdminTags(includeDeleted: boolean, language: LanguageCode): Observable<NoteTag[]> {
+    return this.api
+      .get<TagsDto>('/api/admin/notes/tags', { includeDeleted: String(includeDeleted), language })
+      .pipe(map((dto) => dto.tags.map(mapTagDto)));
+  }
+
+  searchAdminTags(
     searchName: string,
     includeDeleted: boolean,
     limit: number,
     language: LanguageCode,
   ): Observable<NoteTag[]> {
     return this.api
-      .get<TagsDto>('/api/notes/tags/search', {
+      .get<TagsDto>('/api/admin/notes/tags/search', {
         searchName,
         includeDeleted: String(includeDeleted),
         limit: String(limit),
@@ -154,22 +206,24 @@ export class NotesService {
       .pipe(map((dto) => dto.tags.map(mapTagDto)));
   }
 
-  createTag(payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
-    return this.api.post<NoteTagDto>('/api/notes/tags', payload, { language }).pipe(map(mapTagDto));
-  }
-
-  updateTag(tagId: number, payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
+  createAdminTag(payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
     return this.api
-      .put<NoteTagDto>(`/api/notes/tags/${tagId}`, payload, { language })
+      .post<NoteTagDto>('/api/admin/notes/tags', payload, { language })
       .pipe(map(mapTagDto));
   }
 
-  deleteTag(tagId: number): Observable<void> {
-    return this.api.delete<void>(`/api/notes/tags/${tagId}`);
+  updateAdminTag(tagId: number, payload: TagPayload, language: LanguageCode): Observable<NoteTag> {
+    return this.api
+      .put<NoteTagDto>(`/api/admin/notes/tags/${tagId}`, payload, { language })
+      .pipe(map(mapTagDto));
   }
 
-  restoreTag(tagId: number): Observable<void> {
-    return this.api.post<void>(`/api/notes/tags/${tagId}/restore`, {});
+  deleteAdminTag(tagId: number): Observable<void> {
+    return this.api.delete<void>(`/api/admin/notes/tags/${tagId}`);
+  }
+
+  restoreAdminTag(tagId: number): Observable<void> {
+    return this.api.post<void>(`/api/admin/notes/tags/${tagId}/restore`, {});
   }
 
   private mapDetailWithPublicStats(dto: NoteDetailDto): Observable<NoteDetail> {

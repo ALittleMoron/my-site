@@ -10,7 +10,7 @@ import { MatrixQuestionPageComponent } from './matrix-question-page.component';
 
 describe('MatrixQuestionPageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionPageComponent>;
-  let matrixService: { getPublicQuestion: jest.Mock };
+  let matrixService: { getPublicQuestionBySlug: jest.Mock };
   let seoService: { setMeta: jest.Mock };
   let paramMap: BehaviorSubject<ParamMap>;
   let el: HTMLElement;
@@ -18,7 +18,7 @@ describe('MatrixQuestionPageComponent', () => {
   beforeEach(async () => {
     paramMap = new BehaviorSubject(convertToParamMap({ slug: 'what-is-a-closure' }));
     matrixService = {
-      getPublicQuestion: jest.fn().mockReturnValue(of(matrixQuestion())),
+      getPublicQuestionBySlug: jest.fn().mockReturnValue(of(matrixQuestion())),
     };
     seoService = { setMeta: jest.fn() };
 
@@ -45,7 +45,7 @@ describe('MatrixQuestionPageComponent', () => {
   it('loads a published matrix question by slug and active language', () => {
     fixture.detectChanges();
 
-    expect(matrixService.getPublicQuestion).toHaveBeenCalledWith('what-is-a-closure', 'ru');
+    expect(matrixService.getPublicQuestionBySlug).toHaveBeenCalledWith('what-is-a-closure', 'ru');
     expect(el.textContent).toContain('Что такое замыкание?');
     expect(el.innerHTML).toContain('<strong>');
   });
@@ -87,7 +87,7 @@ describe('MatrixQuestionPageComponent', () => {
 
   it('shows loading state while the detail request is pending', () => {
     const pending = new Subject<MatrixQuestionDetail>();
-    matrixService.getPublicQuestion.mockReturnValue(pending.asObservable());
+    matrixService.getPublicQuestionBySlug.mockReturnValue(pending.asObservable());
 
     fixture.detectChanges();
 
@@ -97,7 +97,7 @@ describe('MatrixQuestionPageComponent', () => {
   it('ignores stale responses after the route slug changes', () => {
     const first = new Subject<MatrixQuestionDetail>();
     const second = new Subject<MatrixQuestionDetail>();
-    matrixService.getPublicQuestion
+    matrixService.getPublicQuestionBySlug
       .mockReturnValueOnce(first.asObservable())
       .mockReturnValueOnce(second.asObservable());
 
@@ -114,7 +114,7 @@ describe('MatrixQuestionPageComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(matrixService.getPublicQuestion).toHaveBeenNthCalledWith(
+    expect(matrixService.getPublicQuestionBySlug).toHaveBeenNthCalledWith(
       2,
       'dependency-injection',
       'ru',
@@ -124,7 +124,7 @@ describe('MatrixQuestionPageComponent', () => {
   });
 
   it('shows error state and noindex meta when the detail request fails', () => {
-    matrixService.getPublicQuestion.mockReturnValue(throwError(() => apiError()));
+    matrixService.getPublicQuestionBySlug.mockReturnValue(throwError(() => apiError()));
 
     fixture.detectChanges();
 

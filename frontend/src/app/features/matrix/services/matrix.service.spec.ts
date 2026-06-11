@@ -18,10 +18,10 @@ describe('MatrixService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('loads localized sheets from the backend matrix endpoint', () => {
+  it('loads localized public sheets from the backend matrix endpoint', () => {
     let result: { key: string; name: string }[] | undefined;
 
-    service.getSheets('en').subscribe((sheets) => {
+    service.getPublicSheets('en').subscribe((sheets) => {
       result = sheets;
     });
 
@@ -33,12 +33,21 @@ describe('MatrixService', () => {
     expect(result).toEqual([{ key: 'python', name: 'Python' }]);
   });
 
-  it('loads grouped questions with sheet key, publication, and language filters', () => {
+  it('loads localized admin sheets from the admin matrix endpoint', () => {
+    service.getAdminSheets('ru').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/competency-matrix/sheets'));
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('language')).toBe('ru');
+    req.flush({ sheets: [] });
+  });
+
+  it('loads grouped public questions with sheet key and language filters', () => {
     let resultSheet: string | undefined;
     let firstQuestion: string | undefined;
     let firstSlug: string | undefined;
 
-    service.getQuestions('python', true, 'en').subscribe((list) => {
+    service.getPublicQuestions('python', 'en').subscribe((list) => {
       resultSheet = list.sheet;
       firstQuestion = list.sections[0].subsections[0].grades[0].questions[0].question;
       firstSlug = list.sections[0].subsections[0].grades[0].questions[0].slug;
@@ -46,7 +55,7 @@ describe('MatrixService', () => {
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
     expect(req.request.params.get('sheetKey')).toBe('python');
-    expect(req.request.params.get('onlyPublished')).toBe('true');
+    expect(req.request.params.has('onlyPublished')).toBe(false);
     expect(req.request.params.get('language')).toBe('en');
     req.flush({
       sheetKey: 'python',
@@ -74,18 +83,39 @@ describe('MatrixService', () => {
     expect(firstSlug).toBe('what-is-pep8');
   });
 
-  it('loads localized question detail from the backend detail endpoint', () => {
+  it('loads grouped admin questions with explicit publication filter', () => {
+    service.getAdminQuestions('python', false, 'ru').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/competency-matrix/items'));
+    expect(req.request.params.get('sheetKey')).toBe('python');
+    expect(req.request.params.get('onlyPublished')).toBe('false');
+    expect(req.request.params.get('language')).toBe('ru');
+    req.flush({ sheetKey: 'python', sheet: 'Python', sections: [] });
+  });
+
+  it('loads localized public question detail from the backend detail endpoint', () => {
+    service.getPublicQuestion(1, 'en').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
+    expect(req.request.params.has('onlyPublished')).toBe(false);
+    expect(req.request.params.get('language')).toBe('en');
+    req.flush(matrixDetailDto());
+  });
+
+  it('loads localized admin question detail from the admin detail endpoint', () => {
     let resultQuestion: string | undefined;
     let resultTranslation: string | undefined;
     let resultSlug: string | undefined;
 
-    service.getQuestion(1, false, 'en').subscribe((question) => {
+    service.getAdminQuestion(1, false, 'en').subscribe((question) => {
       resultQuestion = question.question;
       resultTranslation = question.translations.ru.question;
       resultSlug = question.slug;
     });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/items/detail/1'),
+    );
     expect(req.request.params.get('onlyPublished')).toBe('false');
     expect(req.request.params.get('language')).toBe('en');
     req.flush(matrixDetailDto());
@@ -98,7 +128,7 @@ describe('MatrixService', () => {
   it('loads public localized question detail by slug', () => {
     let resultSlug: string | undefined;
 
-    service.getPublicQuestion('how-to-write-function', 'ru').subscribe((question) => {
+    service.getPublicQuestionBySlug('how-to-write-function', 'ru').subscribe((question) => {
       resultSlug = question.slug;
     });
 
@@ -113,17 +143,17 @@ describe('MatrixService', () => {
     expect(resultSlug).toBe('how-to-write-function');
   });
 
-  it('searchResources loads localized resource matches with limit and language', () => {
+  it('searchAdminResources loads localized resource matches with limit and language', () => {
     let firstResourceName: string | undefined;
     let firstTranslation: string | undefined;
 
-    service.searchResources('python', 5, 'en').subscribe((resources) => {
+    service.searchAdminResources('python', 5, 'en').subscribe((resources) => {
       firstResourceName = resources[0].name;
       firstTranslation = resources[0].translations.ru.name;
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/resources/search'),
+      r.url.endsWith('/api/admin/competency-matrix/resources/search'),
     );
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('searchName')).toBe('python');
@@ -144,14 +174,14 @@ describe('MatrixService', () => {
     expect(firstTranslation).toBe('Документация Python');
   });
 
-  it('createQuestion posts localized payload and maps saved detail', () => {
+  it('createAdminQuestion posts localized payload and maps saved detail', () => {
     let resultId: number | undefined;
 
-    service.createQuestion(matrixPayload(), 'en').subscribe((question) => {
+    service.createAdminQuestion(matrixPayload(), 'en').subscribe((question) => {
       resultId = question.id;
     });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
+    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/competency-matrix/items'));
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.body.slug).toBe('what-is-pep8');
@@ -186,14 +216,16 @@ describe('MatrixService', () => {
     expect(completed).toBe(true);
   });
 
-  it('updateQuestion puts localized payload to detail endpoint and maps saved detail', () => {
+  it('updateAdminQuestion puts localized payload to detail endpoint and maps saved detail', () => {
     let resultQuestion: string | undefined;
 
-    service.updateQuestion(7, matrixPayload(), 'ru').subscribe((question) => {
+    service.updateAdminQuestion(7, matrixPayload(), 'ru').subscribe((question) => {
       resultQuestion = question.question;
     });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/7'));
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/items/detail/7'),
+    );
     expect(req.request.method).toBe('PUT');
     expect(req.request.params.get('language')).toBe('ru');
     expect(req.request.body.slug).toBe('what-is-pep8');
@@ -203,15 +235,15 @@ describe('MatrixService', () => {
     expect(resultQuestion).toBe('Что такое PEP8?');
   });
 
-  it('publishQuestion posts to set-published endpoint', () => {
+  it('publishAdminQuestion posts to set-published endpoint', () => {
     let completed = false;
 
-    service.publishQuestion(42).subscribe(() => {
+    service.publishAdminQuestion(42).subscribe(() => {
       completed = true;
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/items/detail/42/set-published'),
+      r.url.endsWith('/api/admin/competency-matrix/items/detail/42/set-published'),
     );
     expect(req.request.method).toBe('POST');
     req.flush(null);
@@ -219,15 +251,15 @@ describe('MatrixService', () => {
     expect(completed).toBe(true);
   });
 
-  it('unpublishQuestion posts to set-draft endpoint', () => {
+  it('unpublishAdminQuestion posts to set-draft endpoint', () => {
     let completed = false;
 
-    service.unpublishQuestion(7).subscribe(() => {
+    service.unpublishAdminQuestion(7).subscribe(() => {
       completed = true;
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/competency-matrix/items/detail/7/set-draft'),
+      r.url.endsWith('/api/admin/competency-matrix/items/detail/7/set-draft'),
     );
     expect(req.request.method).toBe('POST');
     req.flush(null);
@@ -235,14 +267,16 @@ describe('MatrixService', () => {
     expect(completed).toBe(true);
   });
 
-  it('deleteQuestion sends DELETE to detail endpoint', () => {
+  it('deleteAdminQuestion sends DELETE to detail endpoint', () => {
     let completed = false;
 
-    service.deleteQuestion(99).subscribe(() => {
+    service.deleteAdminQuestion(99).subscribe(() => {
       completed = true;
     });
 
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/99'));
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/items/detail/99'),
+    );
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
 

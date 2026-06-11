@@ -59,7 +59,6 @@ export function buildPublicSeoApiUrl(apiOrigin: string, route: PublicSeoRoute): 
 export function buildPublicArticleApiUrl(apiOrigin: string, route: PublicArticleRoute): URL {
   const url = new URL(`/api/notes/detail/${route.slug}`, apiOrigin);
   url.searchParams.set('language', route.language);
-  url.searchParams.set('onlyPublished', 'true');
   return url;
 }
 

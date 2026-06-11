@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 from httpx import codes
 
-from core.auth.exceptions import ForbiddenError
+from core.auth.exceptions import UnauthorizedError
 from core.i18n.enums import LanguageEnum
 from core.notes.exceptions import TagNotFoundError
 from core.notes.schemas import TagCreateParams, TagUpdateParams
@@ -30,7 +30,7 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ],
         )
 
-        response = self.api.get_tags(include_deleted=True)
+        response = self.api.get_admin_tags(include_deleted=True)
 
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
@@ -63,27 +63,42 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
 
     def test_list_tags_requires_explicit_language(self) -> None:
-        response = self.api.get_tags(include_deleted=False, language=None)
+        response = self.api.get_tags(language=None)
 
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_tags.assert_not_called()
 
-    def test_anonymous_cannot_list_deleted_tags(self) -> None:
-        response = self.no_auth_api.get_tags(include_deleted=True)
+    def test_public_list_tags_uses_active_tags_only(self) -> None:
+        self.use_case.list_tags.return_value = self.factory.core.tags(values=[])
 
-        assert response.status_code == codes.FORBIDDEN
-        assert response.json()["message"] == ForbiddenError.message
+        response = self.no_auth_api.get_tags()
+
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_tags.assert_called_once_with(
+            include_deleted=False,
+            language=LanguageEnum.RU,
+        )
+
+    def test_anonymous_cannot_list_admin_tags(self) -> None:
+        response = self.no_auth_api.get_admin_tags(include_deleted=True)
+
+        assert response.status_code == codes.UNAUTHORIZED
+        assert response.json()["message"] == UnauthorizedError.message
         self.use_case.list_tags.assert_not_called()
 
-    def test_anonymous_cannot_list_deleted_tags_with_numeric_bool(self) -> None:
+    def test_public_tags_ignore_legacy_include_deleted_query(self) -> None:
+        self.use_case.list_tags.return_value = self.factory.core.tags(values=[])
+
         response = self.no_auth_api.client.get(
             "/api/notes/tags",
             params={"includeDeleted": "1", "language": "ru"},
         )
 
-        assert response.status_code == codes.FORBIDDEN
-        assert response.json()["message"] == ForbiddenError.message
-        self.use_case.list_tags.assert_not_called()
+        assert response.status_code == codes.OK, response.content
+        self.use_case.list_tags.assert_called_once_with(
+            include_deleted=False,
+            language=LanguageEnum.RU,
+        )
 
     def test_search_tags(self) -> None:
         self.use_case.search_tags.return_value = self.factory.core.tags(

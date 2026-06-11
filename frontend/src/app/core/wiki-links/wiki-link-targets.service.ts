@@ -18,7 +18,7 @@ export class WikiLinkTargetsService {
 
   getTargets(language: LanguageCode): Observable<WikiLinkTargetLookup> {
     return this.api
-      .get<WikiLinkTargetsDto>('/api/wiki-links/targets', { language })
+      .get<WikiLinkTargetsDto>('/api/admin/wiki-links/targets', { language })
       .pipe(map((dto) => createWikiLinkTargetLookup(dto.targets)));
   }
 }

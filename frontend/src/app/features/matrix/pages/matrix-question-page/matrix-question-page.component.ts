@@ -80,7 +80,7 @@ export class MatrixQuestionPageComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     this.question.set(null);
-    return this.matrixService.getPublicQuestion(slug, language).pipe(
+    return this.matrixService.getPublicQuestionBySlug(slug, language).pipe(
       tap((question) => {
         this.question.set(question);
         this.loading.set(false);

@@ -28,16 +28,14 @@ describe('server SEO helpers', () => {
     expect(parsePublicSeoPath('/en/competency-matrix/questions/InvalidSlug')).toBeNull();
   });
 
-  it('builds public article API URL with explicit published-only visibility', () => {
+  it('builds public article API URL with explicit language only', () => {
     const url = buildPublicSeoApiUrl('https://api.example.com', {
       kind: 'article',
       language: 'ru',
       slug: 'typed-notes',
     });
 
-    expect(url.toString()).toBe(
-      'https://api.example.com/api/notes/detail/typed-notes?language=ru&onlyPublished=true',
-    );
+    expect(url.toString()).toBe('https://api.example.com/api/notes/detail/typed-notes?language=ru');
   });
 
   it('builds public matrix question API URL with explicit language', () => {

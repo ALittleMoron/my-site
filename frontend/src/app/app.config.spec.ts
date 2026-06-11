@@ -24,7 +24,10 @@ describe('appConfig HTTP transfer cache filter', () => {
 
   it('excludes auth, private, analytics, and reaction requests', () => {
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/auth/me'))).toBe(false);
-    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/notes/stats'))).toBe(false);
+    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/admin/notes/stats'))).toBe(
+      false,
+    );
+    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/admin/notes'))).toBe(false);
     expect(
       shouldTransferCacheRequest(
         new HttpRequest('POST', '/api/notes/detail/typed-notes/analytics/view', {}),

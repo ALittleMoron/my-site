@@ -4,7 +4,6 @@ from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
     CompetencyMatrixItemsListResponseSchema,
-    CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
 )
 from entrypoints.litestar.api.i18n.schemas import (
@@ -40,7 +39,7 @@ class PublicSiteDiscovery:
         schema = self.api_client.get_validated(
             "/api/notes"
             f"?page=1&pageSize={constants.DISCOVERY_NOTES_PAGE_SIZE}"
-            f"&onlyPublished=true&language={self.language.value}",
+            f"&language={self.language.value}",
             name="GET /api/notes",
             schema_type=NoteListResponseSchema,
         )
@@ -52,9 +51,7 @@ class PublicSiteDiscovery:
         slugs: list[str] = []
         for sheet_key in matrix_sheets:
             schema = self.api_client.get_validated(
-                "/api/competency-matrix/items"
-                f"?sheetKey={sheet_key}"
-                f"&onlyPublished=true&language={self.language.value}",
+                f"/api/competency-matrix/items?sheetKey={sheet_key}&language={self.language.value}",
                 name="GET /api/competency-matrix/items",
                 schema_type=CompetencyMatrixItemsListResponseSchema,
             )
@@ -111,7 +108,7 @@ class PublicSiteScenario:
         self.api_client.get(
             "/api/notes"
             f"?page=1&pageSize={constants.NOTES_LIST_PAGE_SIZE}"
-            f"&onlyPublished=true&language={self.language.value}",
+            f"&language={self.language.value}",
             name="GET /api/notes",
             schema_type=NoteListResponseSchema,
         )
@@ -128,8 +125,7 @@ class PublicSiteScenario:
             self.note_slugs = self.discovery.discover_note_slugs()
             return
         self.api_client.get(
-            "/api/notes/detail/"
-            f"{choice(self.note_slugs)}?onlyPublished=true&language={self.language.value}",
+            f"/api/notes/detail/{choice(self.note_slugs)}?language={self.language.value}",
             name="GET /api/notes/detail/:slug",
             schema_type=NoteDetailResponseSchema,
         )
@@ -148,7 +144,7 @@ class PublicSiteScenario:
         self.api_client.get(
             "/api/competency-matrix/items"
             f"?sheetKey={choice(self.matrix_sheets)}"
-            f"&onlyPublished=true&language={self.language.value}",
+            f"&language={self.language.value}",
             name="GET /api/competency-matrix/items",
             schema_type=CompetencyMatrixItemsListResponseSchema,
         )
@@ -166,16 +162,6 @@ class PublicSiteScenario:
             f"{choice(self.matrix_item_slugs)}?language={self.language.value}",
             name="GET /api/competency-matrix/items/public/:slug",
             schema_type=CompetencyMatrixItemDetailResponseSchema,
-        )
-
-    def matrix_resources_search(self) -> None:
-        self.api_client.get(
-            "/api/competency-matrix/resources/search"
-            f"?searchName={constants.MATRIX_RESOURCE_SEARCH_NAME}"
-            f"&limit={constants.MATRIX_RESOURCE_SEARCH_LIMIT}"
-            f"&language={self.language.value}",
-            name="GET /api/competency-matrix/resources/search",
-            schema_type=CompetencyMatrixResourcesResponseSchema,
         )
 
     def matrix_question_suggestion(self) -> None:
