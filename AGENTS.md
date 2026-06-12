@@ -39,6 +39,12 @@ Portfolio/notes site and knowledge database
 - Before claiming completion, run the relevant checks through existing `make` targets: tests, linters, type checks, format checks, migrations, or local-run checks as applicable. For broad or cross-cutting changes, run the full practical check suite. If any relevant check is skipped, explain why in the final response.
 - After each code or configuration change, explicitly check whether infrastructure, documentation, CI/CD, and relevant `AGENTS.md` instructions must be updated; keep them consistent with the change.
   - At minimum, search related terms in `docs/`, `.github/`, root README-style files, and nested `AGENTS.md` files before finishing.
+  - After changes in code, architecture, implementation approach, accepted engineering decisions,
+    quality/security/operations posture, roadmap, or "what next" direction, explicitly analyze
+    whether the public "How this site is built" case-study page (`/ru/how-this-site-is-built`,
+    `/en/how-this-site-is-built`) should be updated. Decide what should be added, removed, or
+    changed there, and keep that page current when the change affects the site's public technical
+    story.
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
@@ -102,7 +108,7 @@ Portfolio/notes site and knowledge database
   labels such as `[[matrix:<slug>|Custom label]]`; unprefixed `[[note-slug]]` syntax is not
   supported.
 - Note analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only note-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article and matrix question routes and hydrates interactive CSR/content-authoring areas.
+- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, and matrix question routes and hydrates interactive CSR/content-authoring areas.
 - Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
   backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
   identity-aware or business-quota design requires application-level limits by user, account, API

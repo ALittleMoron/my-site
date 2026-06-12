@@ -38,6 +38,10 @@ class PublicDiscoveryUrls:
             for language in LanguageEnum
         ]
         urls.extend(
+            PublicUrl(path=f"/{language.value}/how-this-site-is-built", updated_at=None)
+            for language in LanguageEnum
+        )
+        urls.extend(
             PublicUrl(
                 path=f"/{language.value}/notes/{note.slug}",
                 updated_at=note.updated_at.isoformat(),
@@ -108,6 +112,7 @@ class RobotsTxt:
             "Disallow: /api/\n"
             "Disallow: /login\n"
             "Disallow: /about-me\n"
+            "Disallow: /how-this-site-is-built\n"
             "Disallow: /notes\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"

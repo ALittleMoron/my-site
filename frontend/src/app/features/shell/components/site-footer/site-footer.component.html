@@ -19,6 +19,12 @@
           </a>
         </li>
         <li class="nav-item me-2">|</li>
+        <li class="nav-item me-2">
+          <a [routerLink]="siteBuildLink()" class="nav-link p-0 text-body-secondary">
+            <small>{{ 'shell.footer.siteBuild' | t }}</small>
+          </a>
+        </li>
+        <li class="nav-item me-2">|</li>
         <li class="nav-item">
           <a routerLink="/sitemap" class="nav-link p-0 text-body-secondary">
             <small>{{ 'shell.footer.sitemap' | t }}</small>

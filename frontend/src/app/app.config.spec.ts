@@ -1,5 +1,24 @@
+jest.mock('@angular/router', () => {
+  const actual = jest.requireActual('@angular/router') as typeof import('@angular/router');
+
+  return {
+    ...actual,
+    withInMemoryScrolling: jest.fn(actual.withInMemoryScrolling),
+  };
+});
+
 import { HttpRequest } from '@angular/common/http';
+import { withInMemoryScrolling } from '@angular/router';
 import { shouldTransferCacheRequest } from './app.config';
+
+describe('appConfig router scrolling', () => {
+  it('starts regular route navigations at the top while preserving anchor scrolling', () => {
+    expect(withInMemoryScrolling).toHaveBeenCalledWith({
+      anchorScrolling: 'enabled',
+      scrollPositionRestoration: 'enabled',
+    });
+  });
+});
 
 describe('appConfig HTTP transfer cache filter', () => {
   it('allows safe public GET requests used by SSR pages', () => {

@@ -127,9 +127,32 @@ const backend = http.createServer((req, res) => {
         'shell.language.label': 'Language',
         'shell.auth.login': 'Login',
         'shell.footer.sourceCode': 'Source code',
+        'shell.footer.siteBuild': 'How this site is built',
         'shell.footer.githubProfile': 'GitHub',
         'shell.footer.telegramProfile': 'Telegram',
         'shell.footer.linkedinProfile': 'LinkedIn',
+        'siteBuild.seo.title': 'How this site is built',
+        'siteBuild.seo.description': 'A portfolio case study about this site.',
+        'siteBuild.hero.title': 'How this site is built',
+        'siteBuild.hero.lead': 'Portfolio case study about a production-minded personal site.',
+        'siteBuild.hero.sourceCode': 'Source code',
+        'siteBuild.problem.title': 'Problem',
+        'siteBuild.problem.body': 'Portfolio, notes, and competency matrix in one product.',
+        'siteBuild.architecture.title': 'Architecture',
+        'siteBuild.architecture.backendTitle': 'Backend',
+        'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka, and PostgreSQL.',
+        'siteBuild.architecture.frontendTitle': 'Frontend',
+        'siteBuild.architecture.frontendBody': 'Angular hybrid SSR/CSR and backend-driven i18n.',
+        'siteBuild.architecture.infraTitle': 'Infrastructure',
+        'siteBuild.architecture.infraBody': 'nginx, Docker, MinIO, Valkey, and TaskIQ.',
+        'siteBuild.decisions.title': 'Engineering decisions',
+        'siteBuild.decision.cleanArchitecture': 'Clean Architecture',
+        'siteBuild.decision.localizedContent': 'RU/EN localization',
+        'siteBuild.decision.privacyAnalytics': 'Privacy-safe analytics',
+        'siteBuild.quality.title': 'Quality and operations',
+        'siteBuild.quality.body': 'Quality checks, security gates, and SSR smoke.',
+        'siteBuild.next.title': 'Next',
+        'siteBuild.next.body': 'Performance, feeds, roadmap, and deployment hardening.',
         'notes.views': '{count} views',
         'matrix.detail.question': 'Question:',
         'matrix.detail.answer': 'Answer:',
@@ -226,6 +249,7 @@ const frontendPort = frontend.address().port;
 process.env.SSR_PUBLIC_ORIGIN = `http://127.0.0.1:${frontendPort}`;
 
 try {
+  await assertSiteBuildCaseStudyHtml(frontendPort);
   await assertPublishedArticleHtml(frontendPort);
   await assertMissingArticleNoindex(frontendPort);
   await assertPublishedMatrixQuestionHtml(frontendPort);
@@ -241,6 +265,27 @@ try {
 
 if (failure !== null) {
   process.exitCode = 1;
+}
+
+async function assertSiteBuildCaseStudyHtml(frontendPort) {
+  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/how-this-site-is-built`);
+  const html = await response.text();
+  const expected = [
+    ['status 200', response.status === 200],
+    ['title', html.includes('How this site is built - My site')],
+    ['hero', html.includes('Portfolio case study about a production-minded personal site.')],
+    ['architecture', html.includes('Angular hybrid SSR/CSR and backend-driven i18n.')],
+    ['source code CTA', html.includes('href="https://github.com/ALittleMoron/my-site"')],
+    [
+      'canonical',
+      html.includes(`href="http://127.0.0.1:${frontendPort}/ru/how-this-site-is-built"`),
+    ],
+    ['hreflang ru', html.includes('hreflang="ru"')],
+    ['hreflang en', html.includes('hreflang="en"')],
+    ['no API request beyond i18n', requests.every((entry) => !entry.includes('/api/notes/'))],
+    ['no noindex on case study', !html.includes('name="robots" content="noindex')],
+  ];
+  assertExpected(expected, html, 'site-build case study SSR');
 }
 
 async function assertPublishedArticleHtml(frontendPort) {

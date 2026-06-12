@@ -48,5 +48,12 @@ function publicRoutes(): Routes {
       path: 'sitemap',
       loadChildren: () => import('./features/sitemap/sitemap.routes').then((m) => m.sitemapRoutes),
     },
+    {
+      path: 'how-this-site-is-built',
+      loadChildren: () =>
+        import('./features/site-case-study/site-case-study.routes').then(
+          (m) => m.siteCaseStudyRoutes,
+        ),
+    },
   ];
 }

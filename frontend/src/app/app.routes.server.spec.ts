@@ -10,13 +10,15 @@ import { RenderMode } from '@angular/ssr';
 import { serverRoutes } from './app.routes.server';
 
 describe('serverRoutes', () => {
-  it('server-renders only localized public detail pages', () => {
+  it('server-renders localized public SEO pages', () => {
     expect(serverRoutes).toEqual(
       expect.arrayContaining([
         { path: 'ru/notes/:slug', renderMode: RenderMode.Server },
         { path: 'en/notes/:slug', renderMode: RenderMode.Server },
         { path: 'ru/competency-matrix/questions/:slug', renderMode: RenderMode.Server },
         { path: 'en/competency-matrix/questions/:slug', renderMode: RenderMode.Server },
+        { path: 'ru/how-this-site-is-built', renderMode: RenderMode.Server },
+        { path: 'en/how-this-site-is-built', renderMode: RenderMode.Server },
       ]),
     );
     expect(serverRoutes.find((route) => route.path === 'ru/competency-matrix')).toBeUndefined();

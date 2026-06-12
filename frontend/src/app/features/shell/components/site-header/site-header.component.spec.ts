@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { SiteHeaderComponent } from './site-header.component';
+import { SiteHeaderComponent, rewriteLanguagePrefixedUrl } from './site-header.component';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { ThemeName } from '../../../../core/layout/theme.service';
 import { AuthService, AccountInfo } from '../../../../core/auth/auth.service';
@@ -227,5 +227,14 @@ describe('SiteHeaderComponent', () => {
 
     expect(mockI18nService.switchLanguage).toHaveBeenCalledWith('en');
     expect(navigateByUrlSpy).toHaveBeenCalledWith('/en/notes/typed-notes?tag=angular');
+  });
+
+  it('rewrites the site-build case-study URL between localized public routes', () => {
+    expect(rewriteLanguagePrefixedUrl('/ru/how-this-site-is-built#quality', 'en')).toBe(
+      '/en/how-this-site-is-built#quality',
+    );
+    expect(rewriteLanguagePrefixedUrl('/how-this-site-is-built', 'ru')).toBe(
+      '/ru/how-this-site-is-built',
+    );
   });
 });

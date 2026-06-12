@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 
 @Component({
@@ -9,4 +11,16 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './site-footer.component.html',
 })
-export class SiteFooterComponent {}
+export class SiteFooterComponent {
+  private readonly i18n = inject(I18nService);
+
+  readonly siteBuildLink = computed(() => `/${this.currentLanguage()}/how-this-site-is-built`);
+
+  private currentLanguage(): LanguageCode {
+    const language = this.i18n.language();
+    if (language === null) {
+      throw new Error('I18n language is not initialized');
+    }
+    return language;
+  }
+}

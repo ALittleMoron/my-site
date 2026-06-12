@@ -45,6 +45,8 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
         sitemap = response.text
         assert "<loc>http://localhost:8000/ru/about-me</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/about-me</loc>" in sitemap
+        assert "<loc>http://localhost:8000/ru/how-this-site-is-built</loc>" in sitemap
+        assert "<loc>http://localhost:8000/en/how-this-site-is-built</loc>" in sitemap
         assert "<loc>http://localhost:8000/ru/notes/typed-notes</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/notes/typed-notes</loc>" in sitemap
         assert (
@@ -110,6 +112,7 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             "Disallow: /api/\n"
             "Disallow: /login\n"
             "Disallow: /about-me\n"
+            "Disallow: /how-this-site-is-built\n"
             "Disallow: /notes\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"

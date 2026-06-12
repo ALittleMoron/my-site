@@ -14,6 +14,7 @@ describe('SiteFooterComponent', () => {
         provideRouter([]),
         provideI18nTesting({
           'shell.footer.sourceCode': 'Исходный код',
+          'shell.footer.siteBuild': 'Как устроен сайт',
           'shell.footer.githubProfile': 'Профиль GitHub',
           'shell.footer.telegramProfile': 'Профиль Telegram',
           'shell.footer.linkedinProfile': 'Профиль LinkedIn',
@@ -34,6 +35,13 @@ describe('SiteFooterComponent', () => {
   it('renders routerLink to /sitemap', () => {
     const link = el.querySelector('a[routerLink="/sitemap"]');
     expect(link).not.toBeNull();
+  });
+
+  it('renders localized link to the site-build case study', () => {
+    const link = el.querySelector('a[href="/ru/how-this-site-is-built"]');
+
+    expect(link).not.toBeNull();
+    expect(link?.textContent?.trim()).toBe('Как устроен сайт');
   });
 
   it('renders GitHub profile link', () => {

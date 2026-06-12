@@ -1,0 +1,76 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { SeoService } from '../../../../core/seo/seo.service';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { SiteCaseStudyPageComponent } from './site-case-study-page.component';
+
+describe('SiteCaseStudyPageComponent', () => {
+  let fixture: ComponentFixture<SiteCaseStudyPageComponent>;
+  let seoService: { setTranslatedMeta: jest.Mock };
+
+  beforeEach(async () => {
+    seoService = {
+      setTranslatedMeta: jest.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [SiteCaseStudyPageComponent],
+      providers: [
+        provideRouter([]),
+        provideI18nTesting({
+          'siteBuild.hero.title': 'Как устроен этот сайт',
+          'siteBuild.hero.lead': 'Портфолио-кейс о production-подходе.',
+          'siteBuild.hero.sourceCode': 'Исходный код',
+          'siteBuild.problem.title': 'Задача',
+          'siteBuild.problem.body': 'Сайт объединяет портфолио, заметки и матрицу компетенций.',
+          'siteBuild.architecture.title': 'Архитектура',
+          'siteBuild.architecture.backendTitle': 'Backend',
+          'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka и PostgreSQL.',
+          'siteBuild.architecture.frontendTitle': 'Frontend',
+          'siteBuild.architecture.frontendBody': 'Angular hybrid SSR/CSR и backend-driven i18n.',
+          'siteBuild.architecture.infraTitle': 'Infrastructure',
+          'siteBuild.architecture.infraBody': 'nginx, Docker, MinIO, Valkey и TaskIQ.',
+          'siteBuild.decisions.title': 'Инженерные решения',
+          'siteBuild.decision.cleanArchitecture': 'Clean Architecture',
+          'siteBuild.decision.localizedContent': 'RU/EN локализация',
+          'siteBuild.decision.privacyAnalytics': 'Privacy-safe аналитика',
+          'siteBuild.quality.title': 'Качество и эксплуатация',
+          'siteBuild.quality.body': 'Проверки качества, security gates и SSR smoke.',
+          'siteBuild.next.title': 'Что дальше',
+          'siteBuild.next.body': 'Performance, feeds, roadmap и deployment hardening.',
+        }),
+        { provide: SeoService, useValue: seoService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SiteCaseStudyPageComponent);
+    fixture.detectChanges();
+  });
+
+  it('sets localized SEO metadata for the canonical case-study page', () => {
+    expect(seoService.setTranslatedMeta).toHaveBeenCalledWith({
+      titleKey: 'siteBuild.seo.title',
+      descriptionKey: 'siteBuild.seo.description',
+      canonicalPath: '/ru/how-this-site-is-built',
+      alternates: [
+        { language: 'ru', path: '/ru/how-this-site-is-built' },
+        { language: 'en', path: '/en/how-this-site-is-built' },
+      ],
+    });
+  });
+
+  it('renders the public case-study content and source-code CTA', () => {
+    const pageText = fixture.nativeElement.textContent as string;
+    const sourceLink = fixture.nativeElement.querySelector(
+      'a[href="https://github.com/ALittleMoron/my-site"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(pageText).toContain('Как устроен этот сайт');
+    expect(pageText).toContain('Сайт объединяет портфолио, заметки и матрицу компетенций.');
+    expect(pageText).toContain('Litestar, SQLAlchemy, Dishka и PostgreSQL.');
+    expect(pageText).toContain('Angular hybrid SSR/CSR и backend-driven i18n.');
+    expect(pageText).toContain('Privacy-safe аналитика');
+    expect(sourceLink).not.toBeNull();
+    expect(sourceLink?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+});

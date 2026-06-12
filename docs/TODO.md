@@ -66,7 +66,7 @@
   - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores
 - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
-- [ ] Add public "how this site is built" portfolio/case-study page.
+- [x] Add public "how this site is built" portfolio/case-study page.
 - [ ] Add public changelog/updates page.
 - [ ] Add RSS/Atom feeds for published notes and matrix updates.
 - [ ] Add lightweight subscription channel for new notes, matrix items, and courses.

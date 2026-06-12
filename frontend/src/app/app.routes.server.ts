@@ -18,6 +18,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'ru/how-this-site-is-built',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'en/how-this-site-is-built',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Client,
   },

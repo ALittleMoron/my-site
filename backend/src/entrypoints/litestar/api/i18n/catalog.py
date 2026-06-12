@@ -33,6 +33,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.language.label": "Язык",
         "shell.footer.docs": "Документация",
         "shell.footer.sourceCode": "Исходный код",
+        "shell.footer.siteBuild": "Как устроен сайт",
         "shell.footer.sitemap": "Карта сайта",
         "shell.footer.githubProfile": "Профиль GitHub",
         "shell.footer.telegramProfile": "Профиль Telegram",
@@ -270,6 +271,67 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.submit": "Отправить заявку",
         "about.contact.sent": "Заявка отправлена.",
         "about.contact.sendError": "Не удалось отправить заявку.",
+        "siteBuild.seo.title": "Как устроен сайт",
+        "siteBuild.seo.description": (
+            "Портфолио-кейс о том, как устроен личный сайт Дмитрия Лунева."
+        ),
+        "siteBuild.hero.kicker": "Портфолио-кейс",
+        "siteBuild.hero.title": "Как устроен этот сайт",
+        "siteBuild.hero.lead": (
+            "Публичный портфолио-разбор production-подхода: архитектура, локализация, "
+            "контент-редактирование, качество, безопасность и инфраструктура в одном "
+            "личном сайте."
+        ),
+        "siteBuild.hero.sourceCode": "Исходный код",
+        "siteBuild.hero.matrixLink": "Открыть матрицу",
+        "siteBuild.hero.logoAlt": "Логотип сайта",
+        "siteBuild.problem.title": "Задача",
+        "siteBuild.problem.body": (
+            "Сайт объединяет портфолио, заметки и матрицу компетенций. Он должен быть "
+            "полезным читателям, удобным для автора и одновременно показывать реальные "
+            "инженерные решения, а не только список технологий."
+        ),
+        "siteBuild.architecture.title": "Архитектура",
+        "siteBuild.architecture.backendTitle": "Backend",
+        "siteBuild.architecture.backendBody": (
+            "Litestar, SQLAlchemy, Dishka и PostgreSQL образуют API-first backend с "
+            "явными границами между доменом, HTTP-слоем, инфраструктурой и хранением."
+        ),
+        "siteBuild.architecture.frontendTitle": "Frontend",
+        "siteBuild.architecture.frontendBody": (
+            "Angular hybrid SSR/CSR и backend-driven i18n дают SEO для публичных страниц "
+            "и интерактивный интерфейс для матрицы, заметок и authoring-сценариев."
+        ),
+        "siteBuild.architecture.infraTitle": "Infrastructure",
+        "siteBuild.architecture.infraBody": (
+            "nginx, Docker, MinIO, Valkey и TaskIQ разделяют edge routing, файлы, кэш, "
+            "фоновые задачи и runtime frontend/backend контейнеров."
+        ),
+        "siteBuild.decisions.title": "Инженерные решения",
+        "siteBuild.decision.cleanArchitecture": (
+            "Clean Architecture: доменная логика не зависит от Litestar, SQLAlchemy или "
+            "внешних сервисов."
+        ),
+        "siteBuild.decision.localizedContent": (
+            "RU/EN локализация разделена на UI-каталог и контентные поля, чтобы не "
+            "смешивать интерфейс с заметками и матрицей."
+        ),
+        "siteBuild.decision.privacyAnalytics": (
+            "Privacy-safe аналитика считает просмотры и реакции без cookies, raw IP, "
+            "user-agent или сторонних идентификаторов."
+        ),
+        "siteBuild.quality.title": "Качество и эксплуатация",
+        "siteBuild.quality.body": (
+            "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
+            "typecheck, lint, format-check, security gates, SSR smoke и performance "
+            "smoke-сценариями через Make targets."
+        ),
+        "siteBuild.next.title": "Что дальше",
+        "siteBuild.next.body": (
+            "Ближайшие направления: performance-бюджеты, RSS/Atom, changelog, roadmap "
+            "и более жёсткий production deployment baseline."
+        ),
+        "siteBuild.next.notesLink": "Перейти к заметкам",
         "matrix.seo.title": "Матрица компетенций",
         "matrix.seo.description": "Матрица компетенций Junior/Middle/Senior разработчика.",
         "matrix.title": "Матрица компетенций",
@@ -524,6 +586,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "sitemap.seo.description": "Карта сайта.",
         "sitemap.title": "Карта сайта",
         "sitemap.notes": "Опубликованные заметки",
+        "sitemap.siteBuild": "Как устроен сайт",
         "sitemap.notesEmpty": "Опубликованных заметок пока нет.",
         "sitemap.notesError": "Не удалось загрузить заметки.",
         "notFound.seo.title": "Страница не найдена",
@@ -572,6 +635,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.language.label": "Language",
         "shell.footer.docs": "Documentation",
         "shell.footer.sourceCode": "Source code",
+        "shell.footer.siteBuild": "How this site is built",
         "shell.footer.sitemap": "Sitemap",
         "shell.footer.githubProfile": "GitHub profile",
         "shell.footer.telegramProfile": "Telegram profile",
@@ -801,6 +865,67 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "about.contact.submit": "Send request",
         "about.contact.sent": "Request sent.",
         "about.contact.sendError": "Failed to send request.",
+        "siteBuild.seo.title": "How this site is built",
+        "siteBuild.seo.description": (
+            "A portfolio case study about how Dmitry Lunev's personal site is built."
+        ),
+        "siteBuild.hero.kicker": "Portfolio case study",
+        "siteBuild.hero.title": "How this site is built",
+        "siteBuild.hero.lead": (
+            "A public portfolio walkthrough of a production-minded personal site: "
+            "architecture, localization, content authoring, quality, security, and "
+            "infrastructure."
+        ),
+        "siteBuild.hero.sourceCode": "Source code",
+        "siteBuild.hero.matrixLink": "Open the matrix",
+        "siteBuild.hero.logoAlt": "Site logo",
+        "siteBuild.problem.title": "Problem",
+        "siteBuild.problem.body": (
+            "The site combines a portfolio, notes, and a competency matrix. It needs to "
+            "help readers, stay comfortable for authoring, and demonstrate real "
+            "engineering decisions instead of only listing technologies."
+        ),
+        "siteBuild.architecture.title": "Architecture",
+        "siteBuild.architecture.backendTitle": "Backend",
+        "siteBuild.architecture.backendBody": (
+            "Litestar, SQLAlchemy, Dishka, and PostgreSQL form an API-first backend with "
+            "explicit boundaries between domain logic, HTTP, infrastructure, and storage."
+        ),
+        "siteBuild.architecture.frontendTitle": "Frontend",
+        "siteBuild.architecture.frontendBody": (
+            "Angular hybrid SSR/CSR and backend-driven i18n provide SEO for public pages "
+            "and an interactive interface for the matrix, notes, and authoring workflows."
+        ),
+        "siteBuild.architecture.infraTitle": "Infrastructure",
+        "siteBuild.architecture.infraBody": (
+            "nginx, Docker, MinIO, Valkey, and TaskIQ separate edge routing, files, cache, "
+            "background jobs, and frontend/backend container runtimes."
+        ),
+        "siteBuild.decisions.title": "Engineering decisions",
+        "siteBuild.decision.cleanArchitecture": (
+            "Clean Architecture keeps domain logic independent from Litestar, SQLAlchemy, "
+            "and external services."
+        ),
+        "siteBuild.decision.localizedContent": (
+            "RU/EN localization is split between the UI catalog and content fields, so "
+            "interface text is not mixed with notes and matrix content."
+        ),
+        "siteBuild.decision.privacyAnalytics": (
+            "Privacy-safe analytics count views and reactions without cookies, raw IPs, "
+            "user-agent strings, or third-party identifiers."
+        ),
+        "siteBuild.quality.title": "Quality and operations",
+        "siteBuild.quality.body": (
+            "The project is covered by unit/integration tests, frontend Jest checks, "
+            "typecheck, lint, format-check, security gates, SSR smoke, and performance "
+            "smoke scenarios through Make targets."
+        ),
+        "siteBuild.next.title": "What is next",
+        "siteBuild.next.body": (
+            "Near-term work includes performance budgets, RSS/Atom, changelog, roadmap, "
+            "and a stricter production deployment baseline."
+        ),
+        "siteBuild.next.notesLink": "Go to notes",
         "matrix.seo.title": "Competency matrix",
         "matrix.seo.description": "Competency matrix for Junior/Middle/Senior developers.",
         "matrix.title": "Competency matrix",
@@ -1055,6 +1180,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "sitemap.seo.description": "Sitemap.",
         "sitemap.title": "Sitemap",
         "sitemap.notes": "Published notes",
+        "sitemap.siteBuild": "How this site is built",
         "sitemap.notesEmpty": "No published notes yet.",
         "sitemap.notesError": "Failed to load notes.",
         "notFound.seo.title": "Page not found",

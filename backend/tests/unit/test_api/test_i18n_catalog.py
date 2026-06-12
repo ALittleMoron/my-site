@@ -57,3 +57,14 @@ class TestI18nCatalog:
             english_messages["about.job.seniorBackendPythonTechLead"]
             == "Senior backend developer / Python Tech Lead"
         )
+
+    def test_site_build_case_study_catalog_describes_public_portfolio_page(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["shell.footer.siteBuild"] == "Как устроен сайт"
+        assert english_messages["shell.footer.siteBuild"] == "How this site is built"
+        assert "портфолио" in russian_messages["siteBuild.hero.lead"]
+        assert "portfolio" in english_messages["siteBuild.hero.lead"]
+        assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
+        assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]

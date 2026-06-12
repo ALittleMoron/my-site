@@ -104,23 +104,25 @@ features/<name>/
 
 ## Existing Features
 
-| Feature       | Route                                                                                                                              | Notes                                                                                            |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `admin-panel` | `/admin-panel`                                                                                                                     | Protected CSR admin shell for moderators/admins; no SSR                                          |
-| `about`       | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                  |
-| `auth`        | `/login`                                                                                                                           | Login page, no guard                                                                             |
-| `matrix`      | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains |
-| `notes`       | `/ru/notes/:slug`, `/en/notes/:slug`                                                                                               | SSR public article detail, CSR list/content authoring, folders side-panel, tags                  |
-| `sitemap`     | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                  |
-| `not-found`   | `/404`                                                                                                                             | Wildcard redirect target                                                                         |
-| `shell`       | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                |
+| Feature           | Route                                                                                                                              | Notes                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell for moderators/admins; no SSR                                          |
+| `about`           | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                  |
+| `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                             |
+| `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains |
+| `notes`           | `/ru/notes/:slug`, `/en/notes/:slug`                                                                                               | SSR public article detail, CSR list/content authoring, folders side-panel, tags                  |
+| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public portfolio/case-study page; unprefixed compatibility route remains                     |
+| `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                  |
+| `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                         |
+| `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                |
 
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.
 - Public canonical routes are language-prefixed. Keep `/ru/notes/:slug`, `/en/notes/:slug`,
+  `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`,
   `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug` as SSR
-  detail routes, and render internal note/wiki links with the active language prefix.
+  routes, and render internal note/wiki links with the active language prefix.
 - Protected CSR routes such as `/admin-panel` stay unprefixed and use runtime i18n state.
 - Feature `routes.ts` — owns all sub-routes for that feature (`''`, `':id'`, etc.).
 - Use `loadChildren` (not `loadComponent`) so adding sub-routes never touches `app.routes.ts`.
@@ -130,7 +132,7 @@ features/<name>/
 
 Single place for all providers:
 
-- `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' }))`
+- `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }))`
 - `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
 - `provideClientHydration(...)` with transfer cache limited to safe public GETs only. Do not transfer
   auth, account, analytics, reaction, upload, presign, or other private/side-effect endpoints.

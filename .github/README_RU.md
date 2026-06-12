@@ -20,7 +20,7 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Оба генерируются в отдельных CI job-ах.
 
-Личный сайт-база знаний с портфолио, матрицей компетенций, локализованными заметками
+Личный сайт-база знаний с портфолио, case-study страницами, матрицей компетенций, локализованными заметками
 и встроенным режимом редактирования контента.
 
 ## 📖 Документация
@@ -50,6 +50,7 @@ my-site/
 - Заметки: RU/EN-контент, папки, теги, поиск, фильтры по датам/тегам, управление публикацией и SSR-страницы публичных статей
 - Встроенный режим модератора/администратора: создание, редактирование, публикация и снятие с публикации заметок и вопросов матрицы
 - Приватная аналитика заметок: публичные счётчики просмотров, вовлечённые просмотры, категории источников и анонимные реакции
+- Публичная case-study страница «как устроен сайт» про архитектуру, качество и эксплуатацию
 - Локализация интерфейса и контента на русском и английском языках
 - PASETO-аутентификация для защищённого режима модератора/администратора
 
@@ -117,7 +118,7 @@ make test-env-down              # остановить test PostgreSQL и уда
 make test-backend-unit          # unit-тесты backend, DB не нужна
 make test-backend-integration   # интеграционные тесты backend, test DB готовится автоматически
 make test-frontend              # только frontend (jest)
-make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи и вопроса матрицы
+make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, case-study и вопроса матрицы
 make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
 make query-plans-balanced       # test DB, storage-wide SQL capture и EXPLAIN ANALYZE gate
 ```

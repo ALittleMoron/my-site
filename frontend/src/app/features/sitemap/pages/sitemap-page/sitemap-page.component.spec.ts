@@ -51,4 +51,15 @@ describe('SitemapPageComponent', () => {
     expect(link.textContent?.trim()).toBe('Typed notes');
     expect(link.getAttribute('href')).toBe('/ru/notes/typed-notes');
   });
+
+  it('renders a localized link to the site-build case study', () => {
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      'a[href="/ru/how-this-site-is-built"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(link).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Как устроен сайт');
+  });
 });
