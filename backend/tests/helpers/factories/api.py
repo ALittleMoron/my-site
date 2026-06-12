@@ -84,7 +84,7 @@ class ApiFactoryHelper:
         sheet_key: str = "python",
         sheet_ru: str = "Питон",
         sheet_en: str = "Python",
-        grade: str = "Junior",
+        grade: str | None = "Junior",
         section_ru: str = "Основы",
         section_en: str = "Basics",
         subsection_ru: str = "Функции",

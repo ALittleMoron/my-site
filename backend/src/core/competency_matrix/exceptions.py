@@ -1,10 +1,23 @@
 from dataclasses import dataclass
 
+from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
 from core.exceptions import DomainError, EntryNotFoundError
 
 
 class CompetencyMatrixItemNotFoundError(EntryNotFoundError):
     message = "Competency matrix item not found"
+
+
+class CompetencyMatrixItemNotPublicReadyError(DomainError):
+    message = "Competency matrix item is not public-ready."
+
+    def __init__(
+        self,
+        *,
+        missing_fields: tuple[CompetencyMatrixMissingFieldEnum, ...],
+    ) -> None:
+        self.missing_fields = missing_fields
+        super().__init__()
 
 
 class QueuedCompetencyMatrixQuestionNotFoundError(EntryNotFoundError):

@@ -1,17 +1,27 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
+from typing import Any
 
-from sqlalchemy import ARRAY, Integer, String, and_, bindparam, case, func, or_, select
+from sqlalchemy import ARRAY, Integer, Select, String, and_, bindparam, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
+from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
+    CompetencyMatrixFilterOptions,
+    CompetencyMatrixFilterSectionOption,
+    CompetencyMatrixFilterSheetOption,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixWorkspaceFilters,
+    CompetencyMatrixWorkspaceItem,
+    CompetencyMatrixWorkspaceSummary,
     ExternalResources,
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
@@ -76,6 +86,113 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         items = await self.session.scalars(stmt)
         return [item.to_domain_schema(include_relationships=False) for item in items]
 
+    async def list_competency_matrix_workspace_items(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> tuple[
+        list[CompetencyMatrixWorkspaceItem],
+        int,
+        CompetencyMatrixWorkspaceSummary,
+    ]:
+        stmt = self._apply_workspace_filters(
+            select(CompetencyMatrixItemModel),
+            filters=filters,
+        ).order_by(*self._workspace_ordering(filters=filters))
+        items = await self.session.scalars(stmt.offset(filters.offset).limit(filters.limit))
+        count_stmt = self._apply_workspace_filters(
+            select(func.count(CompetencyMatrixItemModel.id)),
+            filters=filters,
+        )
+        total_count = (await self.session.scalar(count_stmt)) or 0
+        summary = await self._workspace_summary(filters=filters)
+        return (
+            [self._to_workspace_item(item=item, language=filters.language) for item in items],
+            total_count,
+            summary,
+        )
+
+    async def list_competency_matrix_workspace_filter_options(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> CompetencyMatrixFilterOptions:
+        sheet_name_column = self._sheet_column(language=language)
+        section_column = self._section_column(language=language)
+        subsection_column = self._subsection_column(language=language)
+        sheets_rows = await self.session.execute(
+            select(
+                CompetencyMatrixItemModel.sheet_key,
+                sheet_name_column.label("sheet"),
+                section_column.label("section"),
+                subsection_column.label("subsection"),
+            )
+            .distinct()
+            .order_by(
+                sheet_name_column,
+                CompetencyMatrixItemModel.sheet_key,
+                section_column,
+                subsection_column,
+            ),
+        )
+        grades = await self.session.scalars(
+            select(CompetencyMatrixItemModel.grade)
+            .distinct()
+            .order_by(CompetencyMatrixItemModel.grade),
+        )
+        sections = await self.session.scalars(
+            select(section_column).distinct().order_by(section_column),
+        )
+        subsections = await self.session.scalars(
+            select(subsection_column).distinct().order_by(subsection_column),
+        )
+        publish_statuses = await self.session.scalars(
+            select(CompetencyMatrixItemModel.publish_status)
+            .distinct()
+            .order_by(CompetencyMatrixItemModel.publish_status),
+        )
+        return CompetencyMatrixFilterOptions(
+            sheets=self._workspace_filter_sheet_options(rows=list(sheets_rows)),
+            grades=[grade for grade in grades if grade is not None],
+            sections=[section for section in sections if section],
+            subsections=[subsection for subsection in subsections if subsection],
+            publish_statuses=[
+                PublishStatusEnum.from_storage_value(publish_status)
+                for publish_status in publish_statuses
+            ],
+        )
+
+    def _workspace_filter_sheet_options(
+        self,
+        *,
+        rows: list[Any],
+    ) -> list[CompetencyMatrixFilterSheetOption]:
+        sheets: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            sheet = sheets.setdefault(
+                row.sheet_key,
+                {"label": row.sheet, "sections": {}},
+            )
+            if not row.section:
+                continue
+            subsections = sheet["sections"].setdefault(row.section, set())
+            if row.subsection:
+                subsections.add(row.subsection)
+        return [
+            CompetencyMatrixFilterSheetOption(
+                key=sheet_key,
+                label=sheet["label"],
+                sections=[
+                    CompetencyMatrixFilterSectionOption(
+                        label=section,
+                        subsections=sorted(subsections),
+                    )
+                    for section, subsections in sheet["sections"].items()
+                ],
+            )
+            for sheet_key, sheet in sheets.items()
+        ]
+
     async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
         stmt = (
             select(CompetencyMatrixItemModel)
@@ -114,6 +231,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             item=item,
             include_relationships=False,
         )
+        self._ensure_first_published_at(item_model=item_model)
         item_model.resource_links = await self._build_resource_links(
             item=item,
             existing_links=None,
@@ -131,6 +249,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             load_resource_links=True,
         )
         item_model.update_from_domain_schema(item=item)
+        self._ensure_first_published_at(item_model=item_model)
         item_model.resource_links = await self._build_resource_links(
             item=item,
             existing_links=item_model.resource_links,
@@ -148,6 +267,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             load_resource_links=False,
         )
         item_model.publish_status = publish_status
+        self._ensure_first_published_at(item_model=item_model)
         await self.session.flush()
 
     async def _get_competency_matrix_item_model(
@@ -185,6 +305,253 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             link.context_en = resource.context_en
             links.append(link)
         return links
+
+    def _apply_workspace_filters(
+        self,
+        stmt: Select[Any],
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> Select[Any]:
+        if filters.sheet_keys:
+            stmt = stmt.where(CompetencyMatrixItemModel.sheet_key.in_(filters.sheet_keys))
+        if filters.grades:
+            stmt = stmt.where(CompetencyMatrixItemModel.grade.in_(filters.grades))
+        if filters.sections:
+            stmt = stmt.where(self._section_column(language=filters.language).in_(filters.sections))
+        if filters.subsections:
+            stmt = stmt.where(
+                self._subsection_column(language=filters.language).in_(filters.subsections),
+            )
+        if filters.publish_statuses:
+            stmt = stmt.where(
+                CompetencyMatrixItemModel.publish_status.in_(filters.publish_statuses),
+            )
+        if filters.published_from is not None:
+            stmt = stmt.where(
+                CompetencyMatrixItemModel.published_at
+                >= self._date_start(value=filters.published_from),
+            )
+        if filters.published_to is not None:
+            stmt = stmt.where(
+                CompetencyMatrixItemModel.published_at
+                <= self._date_end(value=filters.published_to),
+            )
+        if filters.search_query is not None:
+            search_pattern = f"%{filters.search_query.lower()}%"
+            stmt = stmt.where(
+                or_(
+                    func.lower(CompetencyMatrixItemModel.slug).ilike(search_pattern),
+                    func.lower(
+                        self._question_column(language=filters.language),
+                    ).ilike(search_pattern),
+                ),
+            )
+        if filters.has_missing_fields is True:
+            stmt = stmt.where(self._workspace_missing_condition())
+        if filters.has_missing_fields is False:
+            stmt = stmt.where(~self._workspace_missing_condition())
+        return stmt
+
+    async def _workspace_summary(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> CompetencyMatrixWorkspaceSummary:
+        missing_condition = self._workspace_missing_condition()
+        draft_condition = CompetencyMatrixItemModel.publish_status == PublishStatusEnum.DRAFT
+        published_condition = (
+            CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED
+        )
+        stmt = self._apply_workspace_filters(
+            select(
+                func.count(CompetencyMatrixItemModel.id).label("total"),
+                func.sum(case((draft_condition, 1), else_=0)).label("draft"),
+                func.sum(case((and_(draft_condition, missing_condition), 1), else_=0)).label(
+                    "missing_draft",
+                ),
+                func.sum(
+                    case((and_(published_condition, missing_condition), 1), else_=0),
+                ).label("dangerous_published"),
+                func.sum(
+                    case((and_(published_condition, ~missing_condition), 1), else_=0),
+                ).label("ready_published"),
+            ),
+            filters=filters,
+        )
+        row = (await self.session.execute(stmt)).one()
+        return CompetencyMatrixWorkspaceSummary(
+            total=row.total or 0,
+            draft=row.draft or 0,
+            missing_draft=row.missing_draft or 0,
+            dangerous_published=row.dangerous_published or 0,
+            ready_published=row.ready_published or 0,
+        )
+
+    def _workspace_ordering(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> tuple[Any, ...]:
+        section_column = self._section_column(language=filters.language)
+        subsection_column = self._subsection_column(language=filters.language)
+        question_column = self._question_column(language=filters.language)
+        default_ordering = (
+            section_column,
+            subsection_column,
+            CompetencyMatrixItemModel.grade,
+            CompetencyMatrixItemModel.id,
+        )
+        dangerous_published = and_(
+            CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED,
+            self._workspace_missing_condition(),
+        )
+        ordering_by_sort = {
+            CompetencyMatrixWorkspaceSortEnum.GRADE: (
+                CompetencyMatrixItemModel.grade,
+                section_column,
+                subsection_column,
+                question_column,
+                CompetencyMatrixItemModel.id,
+            ),
+            CompetencyMatrixWorkspaceSortEnum.SECTION: default_ordering,
+            CompetencyMatrixWorkspaceSortEnum.SUBSECTION: (
+                subsection_column,
+                section_column,
+                CompetencyMatrixItemModel.grade,
+                question_column,
+                CompetencyMatrixItemModel.id,
+            ),
+            CompetencyMatrixWorkspaceSortEnum.NEWEST: (
+                CompetencyMatrixItemModel.published_at.desc().nullslast(),
+                CompetencyMatrixItemModel.id.desc(),
+            ),
+            CompetencyMatrixWorkspaceSortEnum.OLDEST: (
+                CompetencyMatrixItemModel.published_at.asc().nullslast(),
+                CompetencyMatrixItemModel.id,
+            ),
+            CompetencyMatrixWorkspaceSortEnum.MISSING_FIELDS: (
+                self._workspace_missing_count().desc(),
+                section_column,
+                subsection_column,
+                CompetencyMatrixItemModel.id,
+            ),
+            CompetencyMatrixWorkspaceSortEnum.DANGEROUS_PUBLISHED: (
+                case((dangerous_published, 0), else_=1),
+                CompetencyMatrixItemModel.published_at.desc().nullslast(),
+                CompetencyMatrixItemModel.id,
+            ),
+        }
+        return ordering_by_sort[filters.sort]
+
+    def _to_workspace_item(
+        self,
+        *,
+        item: CompetencyMatrixItemModel,
+        language: LanguageEnum,
+    ) -> CompetencyMatrixWorkspaceItem:
+        schema = item.to_domain_schema(include_relationships=False)
+        return CompetencyMatrixWorkspaceItem(
+            id=schema.id,
+            slug=schema.slug,
+            question=schema.localized_question(language=language),
+            sheet_key=schema.sheet_key,
+            sheet=schema.localized_sheet(language=language),
+            grade=schema.grade,
+            section=schema.localized_section(language=language),
+            subsection=schema.localized_subsection(language=language),
+            publish_status=schema.publish_status,
+            published_at=schema.published_at,
+            missing_fields=schema.missing_publication_fields(),
+        )
+
+    def _workspace_missing_condition(self) -> ColumnElement[bool]:
+        return or_(
+            *[condition for _field, condition in self._workspace_missing_field_conditions()],
+        )
+
+    def _workspace_missing_count(self) -> ColumnElement[int]:
+        conditions = self._workspace_missing_field_conditions()
+        count: ColumnElement[int] = case((conditions[0][1], 1), else_=0)
+        for _field, condition in conditions[1:]:
+            count += case((condition, 1), else_=0)
+        return count
+
+    def _workspace_missing_field_conditions(
+        self,
+    ) -> tuple[tuple[CompetencyMatrixMissingFieldEnum, ColumnElement[bool]], ...]:
+        return (
+            (
+                CompetencyMatrixMissingFieldEnum.SLUG,
+                self._blank_text_condition(CompetencyMatrixItemModel.slug),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SHEET_KEY,
+                self._blank_text_condition(CompetencyMatrixItemModel.sheet_key),
+            ),
+            (CompetencyMatrixMissingFieldEnum.GRADE, CompetencyMatrixItemModel.grade.is_(None)),
+            (
+                CompetencyMatrixMissingFieldEnum.QUESTION_RU,
+                self._blank_text_condition(CompetencyMatrixItemModel.question_ru),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.QUESTION_EN,
+                self._blank_text_condition(CompetencyMatrixItemModel.question_en),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.ANSWER_RU,
+                self._blank_text_condition(CompetencyMatrixItemModel.answer_ru),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.ANSWER_EN,
+                self._blank_text_condition(CompetencyMatrixItemModel.answer_en),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
+                self._blank_text_condition(
+                    CompetencyMatrixItemModel.interview_expected_answer_ru,
+                ),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
+                self._blank_text_condition(
+                    CompetencyMatrixItemModel.interview_expected_answer_en,
+                ),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SHEET_RU,
+                self._blank_text_condition(CompetencyMatrixItemModel.sheet_ru),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SHEET_EN,
+                self._blank_text_condition(CompetencyMatrixItemModel.sheet_en),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SECTION_RU,
+                self._blank_text_condition(CompetencyMatrixItemModel.section_ru),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SECTION_EN,
+                self._blank_text_condition(CompetencyMatrixItemModel.section_en),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SUBSECTION_RU,
+                self._blank_text_condition(CompetencyMatrixItemModel.subsection_ru),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.SUBSECTION_EN,
+                self._blank_text_condition(CompetencyMatrixItemModel.subsection_en),
+            ),
+        )
+
+    def _blank_text_condition(self, column: InstrumentedAttribute[str]) -> ColumnElement[bool]:
+        return func.length(func.trim(column)) == 0
+
+    def _ensure_first_published_at(self, *, item_model: CompetencyMatrixItemModel) -> None:
+        if (
+            item_model.publish_status == PublishStatusEnum.PUBLISHED
+            and item_model.published_at is None
+        ):
+            item_model.published_at = datetime.now(tz=UTC)
 
     async def get_resources_by_ids(
         self,
@@ -347,3 +714,45 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         if language == LanguageEnum.RU:
             return ExternalResourceModel.name_en
         return ExternalResourceModel.name_ru
+
+    def _question_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return CompetencyMatrixItemModel.question_ru
+        return CompetencyMatrixItemModel.question_en
+
+    def _sheet_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return CompetencyMatrixItemModel.sheet_ru
+        return CompetencyMatrixItemModel.sheet_en
+
+    def _section_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return CompetencyMatrixItemModel.section_ru
+        return CompetencyMatrixItemModel.section_en
+
+    def _subsection_column(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> InstrumentedAttribute[str]:
+        if language == LanguageEnum.RU:
+            return CompetencyMatrixItemModel.subsection_ru
+        return CompetencyMatrixItemModel.subsection_en
+
+    def _date_start(self, *, value: date) -> datetime:
+        return datetime.combine(value, time.min, tzinfo=UTC)
+
+    def _date_end(self, *, value: date) -> datetime:
+        return datetime.combine(value, time.max, tzinfo=UTC)

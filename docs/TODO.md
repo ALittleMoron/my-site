@@ -506,7 +506,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
-- [ ] Add admin/moderator content workspace for matrix questions with richer filters, views, queues, and quick actions.
+- [x] Add admin/moderator content workspace for matrix questions with richer filters, public preview, and quick actions.
 - [ ] Add content health checks for matrix questions: stale translations, wiki-link issues, resource issues, and broken external links.
 - [ ] Add self-assessment / interview mode with expected-answer reveal.
 - [ ] Track weak matrix topics for later study recommendations.

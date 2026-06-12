@@ -1,10 +1,17 @@
+from datetime import UTC, datetime
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from core.competency_matrix.schemas import CompetencyMatrixItemFilters
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItemFilters,
+    CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixWorkspaceFilters,
+    CompetencyMatrixWorkspaceSummary,
+)
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
@@ -161,11 +168,277 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert slugs == {"1", "2", "unavailable-question"}
         assert "draft-question" not in slugs
 
+    async def test_list_workspace_items_filters_sorts_summarizes_and_paginates(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    slug="missing-draft-python",
+                    question="Draft Python",
+                    publish_status=PublishStatusEnum.DRAFT,
+                    answer_en="",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=4,
+                    slug="dangerous-published-python",
+                    published_at="2024-02-10T00:00:00",
+                    question="Dangerous Python",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    answer_en="",
+                    sheet="Python",
+                    grade=GradeEnum.SENIOR,
+                    section="Basics",
+                    subsection="Async",
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=5,
+                    slug="ready-published-python",
+                    published_at="2024-03-01T00:00:00",
+                    question="Ready Python",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Async",
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=6,
+                    slug="ready-published-sql",
+                    published_at="2024-04-01T00:00:00",
+                    question="Ready SQL",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    sheet="SQL",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Async",
+                ),
+            ],
+        )
+
+        items, total_count, summary = await self.storage.list_competency_matrix_workspace_items(
+            filters=CompetencyMatrixWorkspaceFilters(
+                page=1,
+                page_size=2,
+                language=LanguageEnum.EN,
+                sort=CompetencyMatrixWorkspaceSortEnum.DANGEROUS_PUBLISHED,
+                search_query=None,
+                sheet_keys=("python",),
+                grades=(),
+                sections=("Basics",),
+                subsections=(),
+                publish_statuses=(),
+                published_from=None,
+                published_to=None,
+                has_missing_fields=None,
+            ),
+        )
+
+        assert total_count == 3
+        assert summary == CompetencyMatrixWorkspaceSummary(
+            total=3,
+            draft=1,
+            missing_draft=1,
+            dangerous_published=1,
+            ready_published=1,
+        )
+        assert [item.slug for item in items] == [
+            "dangerous-published-python",
+            "ready-published-python",
+        ]
+        assert items[0].question == "Dangerous Python"
+        assert items[0].sheet == "Python"
+        assert items[0].section == "Basics"
+        assert items[0].subsection == "Async"
+        assert items[0].missing_fields == (CompetencyMatrixMissingFieldEnum.ANSWER_EN,)
+
+    async def test_list_workspace_items_supports_filters_and_all_sorts(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    slug="searchable-ready-python",
+                    published_at="2024-02-01T00:00:00",
+                    question="Searchable Python Queue",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Async",
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=4,
+                    slug="searchable-missing-python",
+                    published_at="2024-02-15T00:00:00",
+                    question="Searchable Python Missing",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                    answer_en="",
+                    sheet="Python",
+                    grade=GradeEnum.MIDDLE,
+                    section="Basics",
+                    subsection="Async",
+                ),
+            ],
+        )
+
+        for sort in CompetencyMatrixWorkspaceSortEnum:
+            items, total_count, summary = await self.storage.list_competency_matrix_workspace_items(
+                filters=CompetencyMatrixWorkspaceFilters(
+                    page=1,
+                    page_size=10,
+                    language=LanguageEnum.EN,
+                    sort=sort,
+                    search_query="searchable python",
+                    sheet_keys=("python",),
+                    grades=(),
+                    sections=("Basics",),
+                    subsections=("Async",),
+                    publish_statuses=(PublishStatusEnum.PUBLISHED,),
+                    published_from=None,
+                    published_to=None,
+                    has_missing_fields=None,
+                ),
+            )
+
+            assert total_count == 2
+            assert summary.total == 2
+            assert {item.slug for item in items} == {
+                "searchable-ready-python",
+                "searchable-missing-python",
+            }
+
+        (
+            missing_items,
+            missing_total,
+            missing_summary,
+        ) = await self.storage.list_competency_matrix_workspace_items(
+            filters=CompetencyMatrixWorkspaceFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.EN,
+                sort=CompetencyMatrixWorkspaceSortEnum.MISSING_FIELDS,
+                search_query="searchable",
+                sheet_keys=("python",),
+                grades=(),
+                sections=("Basics",),
+                subsections=("Async",),
+                publish_statuses=(PublishStatusEnum.PUBLISHED,),
+                published_from=None,
+                published_to=None,
+                has_missing_fields=True,
+            ),
+        )
+        assert missing_total == 1
+        assert missing_summary.dangerous_published == 1
+        assert [item.slug for item in missing_items] == ["searchable-missing-python"]
+
+        (
+            date_items,
+            date_total,
+            _summary,
+        ) = await self.storage.list_competency_matrix_workspace_items(
+            filters=CompetencyMatrixWorkspaceFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.EN,
+                sort=CompetencyMatrixWorkspaceSortEnum.NEWEST,
+                search_query="searchable",
+                sheet_keys=("python",),
+                grades=(),
+                sections=("Basics",),
+                subsections=("Async",),
+                publish_statuses=(PublishStatusEnum.PUBLISHED,),
+                published_from=datetime(2024, 2, 10, tzinfo=UTC).date(),
+                published_to=datetime(2024, 2, 20, tzinfo=UTC).date(),
+                has_missing_fields=None,
+            ),
+        )
+        assert date_total == 1
+        assert [item.slug for item in date_items] == ["searchable-missing-python"]
+
+    async def test_list_workspace_filter_options_includes_admin_visible_values(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    slug="draft-option-python",
+                    question="Draft option",
+                    publish_status=PublishStatusEnum.DRAFT,
+                    sheet_key="python-draft",
+                    sheet_ru="Питон черновик",
+                    sheet_en="Python draft",
+                    grade=GradeEnum.JUNIOR,
+                    section_ru="Черновики",
+                    section_en="Drafts",
+                    subsection_ru="Очередь",
+                    subsection_en="Queue",
+                ),
+            ],
+        )
+
+        options = await self.storage.list_competency_matrix_workspace_filter_options(
+            language=LanguageEnum.EN,
+        )
+
+        assert [sheet.key for sheet in options.sheets] == ["python", "python-draft", "sql"]
+        assert [sheet.label for sheet in options.sheets] == ["Python", "Python draft", "SQL"]
+        python_draft = next(sheet for sheet in options.sheets if sheet.key == "python-draft")
+        assert [(section.label, section.subsections) for section in python_draft.sections] == [
+            ("Drafts", ["Queue"]),
+        ]
+        assert GradeEnum.JUNIOR in options.grades
+        assert "Drafts" in options.sections
+        assert "Queue" in options.subsections
+        assert PublishStatusEnum.DRAFT in options.publish_statuses
+        assert PublishStatusEnum.PUBLISHED in options.publish_statuses
+
+    async def test_create_competency_matrix_item_allows_draft_without_grade(self) -> None:
+        item = await self.storage.create_competency_matrix_item(
+            item=self.factory.core.competency_matrix_item(
+                item_id=7,
+                slug="draft-without-grade",
+                question_ru="Черновик без грейда",
+                question_en="Draft without grade",
+                publish_status=PublishStatusEnum.DRAFT,
+                answer_ru="",
+                answer_en="",
+                interview_expected_answer_ru="",
+                interview_expected_answer_en="",
+                sheet_key="python",
+                sheet_ru="",
+                sheet_en="",
+                grade=None,
+                section_ru="",
+                section_en="",
+                subsection_ru="",
+                subsection_en="",
+            ),
+        )
+
+        assert item.grade is None
+        assert item.missing_publication_fields() == (
+            CompetencyMatrixMissingFieldEnum.GRADE,
+            CompetencyMatrixMissingFieldEnum.ANSWER_RU,
+            CompetencyMatrixMissingFieldEnum.ANSWER_EN,
+            CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
+            CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
+            CompetencyMatrixMissingFieldEnum.SHEET_RU,
+            CompetencyMatrixMissingFieldEnum.SHEET_EN,
+            CompetencyMatrixMissingFieldEnum.SECTION_RU,
+            CompetencyMatrixMissingFieldEnum.SECTION_EN,
+            CompetencyMatrixMissingFieldEnum.SUBSECTION_RU,
+            CompetencyMatrixMissingFieldEnum.SUBSECTION_EN,
+        )
+
     async def test_create_competency_matrix_item(self) -> None:
         item = await self.storage.create_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
                 slug="created-question",
+                published_at="2024-01-01T00:00:00",
                 question="1",
                 answer="Answer 1",
                 interview_expected_answer="Expected answer 1",
@@ -186,6 +459,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert item == self.factory.core.competency_matrix_item(
             item_id=3,
             slug="created-question",
+            published_at="2024-01-01T00:00:00",
             question="1",
             answer="Answer 1",
             interview_expected_answer="Expected answer 1",
@@ -231,6 +505,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
                 slug="updated-question",
+                published_at="2024-01-02T00:00:00",
                 question="3",
                 answer="Answer 3",
                 interview_expected_answer="Expected answer 3",
@@ -251,6 +526,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         assert item == self.factory.core.competency_matrix_item(
             item_id=3,
             slug="updated-question",
+            published_at="2024-01-02T00:00:00",
             question="3",
             answer="Answer 3",
             interview_expected_answer="Expected answer 3",
@@ -357,6 +633,40 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         )
         item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
         assert item.publish_status == PublishStatusEnum.DRAFT
+
+    async def test_update_publish_status_sets_first_published_at_only_once(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=3,
+                    slug="first-publish-question",
+                    question="First publish",
+                    publish_status=PublishStatusEnum.DRAFT,
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                ),
+            ],
+        )
+
+        await self.storage.update_competency_matrix_item_publish_status(
+            item_id=self.factory.core.int_id(3),
+            publish_status=PublishStatusEnum.PUBLISHED,
+        )
+        first = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        await self.storage.update_competency_matrix_item_publish_status(
+            item_id=self.factory.core.int_id(3),
+            publish_status=PublishStatusEnum.DRAFT,
+        )
+        await self.storage.update_competency_matrix_item_publish_status(
+            item_id=self.factory.core.int_id(3),
+            publish_status=PublishStatusEnum.PUBLISHED,
+        )
+        second = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+
+        assert first.published_at is not None
+        assert second.published_at == first.published_at
 
     async def test_update_publish_status_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):

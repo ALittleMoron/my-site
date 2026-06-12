@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotPublicReadyError
 from core.competency_matrix.schemas import CompetencyMatrixItemPublishStatusSwitchParams
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
@@ -34,14 +35,42 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         )
 
     async def test_set_published(self) -> None:
+        self.storage.get_competency_matrix_item.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=1,
+                publish_status=PublishStatusEnum.DRAFT,
+            )
+        )
+
         await self.use_case.switch_item_publish_status(
             params=CompetencyMatrixItemPublishStatusSwitchParams(
                 item_id=self.factory.core.int_id(1),
                 publish_status=PublishStatusEnum.PUBLISHED,
             ),
         )
-        self.storage.get_competency_matrix_item.assert_not_called()
+        self.storage.get_competency_matrix_item.assert_called_once_with(
+            item_id=self.factory.core.int_id(1),
+        )
         self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
             item_id=self.factory.core.int_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
+
+    async def test_set_published_rejects_item_with_missing_public_fields(self) -> None:
+        self.storage.get_competency_matrix_item.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=1,
+                publish_status=PublishStatusEnum.DRAFT,
+                answer_en="",
+            )
+        )
+
+        with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
+            await self.use_case.switch_item_publish_status(
+                params=CompetencyMatrixItemPublishStatusSwitchParams(
+                    item_id=self.factory.core.int_id(1),
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+            )
+
+        self.storage.update_competency_matrix_item_publish_status.assert_not_called()

@@ -6,12 +6,13 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixWorkspaceFilters,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
 )
@@ -346,6 +347,32 @@ async def run_list_competency_matrix_items(session: AsyncSession) -> None:
     )
 
 
+async def run_list_competency_matrix_workspace_items(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).list_competency_matrix_workspace_items(
+        filters=CompetencyMatrixWorkspaceFilters(
+            page=1,
+            page_size=20,
+            language=LanguageEnum.EN,
+            sort=CompetencyMatrixWorkspaceSortEnum.SECTION,
+            search_query=None,
+            sheet_keys=("python",),
+            grades=(GradeEnum.JUNIOR,),
+            sections=(),
+            subsections=(),
+            publish_statuses=(PublishStatusEnum.PUBLISHED,),
+            published_from=None,
+            published_to=None,
+            has_missing_fields=None,
+        ),
+    )
+
+
+async def run_list_competency_matrix_workspace_filter_options(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(
+        session=session,
+    ).list_competency_matrix_workspace_filter_options(language=LanguageEnum.EN)
+
+
 async def run_get_competency_matrix_item(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).get_competency_matrix_item(IntId(100))
 
@@ -522,6 +549,7 @@ def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
         question_ru="Как smoke проверяет запросы?",
         question_en="How does the smoke check queries?",
         publish_status=PublishStatusEnum.PUBLISHED,
+        published_at=SEED_NOW,
         answer_ru="Через deterministic storage сценарии.",
         answer_en="Through deterministic storage scenarios.",
         interview_expected_answer_ru="Назвать listener, EXPLAIN и thresholds.",
@@ -889,6 +917,26 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
         allow_seq_scan_reason=None,
         run=run_list_competency_matrix_items,
+    ),
+    scenario(
+        name="matrix_workspace_list_items",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="list_competency_matrix_workspace_items",
+        group=QueryThresholdGroup.HEAVY,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_list_competency_matrix_workspace_items,
+    ),
+    scenario(
+        name="matrix_workspace_filter_options",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="list_competency_matrix_workspace_filter_options",
+        group=QueryThresholdGroup.HEAVY,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_list_competency_matrix_workspace_filter_options,
     ),
     scenario(
         name="matrix_detail_by_id",

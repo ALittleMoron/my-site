@@ -4,7 +4,11 @@ import pytest_asyncio
 from httpx import codes
 
 from core.competency_matrix.enums import GradeEnum
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixItemNotPublicReadyError,
+)
+from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -125,6 +129,22 @@ class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
             "ru": {"name": "ресурс 1", "context": "контекст ресурса 1"},
             "en": {"name": "resource 1", "context": "resource context 1"},
         }
+
+    def test_update_item_rejects_incomplete_published_item(self) -> None:
+        self.use_case.update_item.side_effect = CompetencyMatrixItemNotPublicReadyError(
+            missing_fields=(CompetencyMatrixMissingFieldEnum.ANSWER_EN,),
+        )
+
+        response = self.api.put_update_item(
+            pk=100500,
+            data=self.factory.api.competency_matrix_item_request(
+                publish_status=PublishStatusEnum.PUBLISHED,
+                answer_en="",
+            ),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert response.json()["message"] == "Competency matrix item is not public-ready."
 
     def test_update_item_requires_explicit_language(self) -> None:
         response = self.api.put_update_item(

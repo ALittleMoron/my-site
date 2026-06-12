@@ -22,6 +22,7 @@ describe('AdminPanelPageComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="admin-panel-side-panel"]'),
     ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Разделы');
+    expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
     expect(fixture.nativeElement.textContent).toContain('Очередь вопросов матрицы');
   });
 

@@ -1,0 +1,41 @@
+<div class="table-responsive competency-matrix-table-container">
+  <table class="table competency-matrix-table align-top">
+    <thead class="competency-matrix-header">
+      <tr>
+        <th class="p-3 text-start">{{ sectionLabel() }}</th>
+        <th class="p-3 text-start">{{ subsectionLabel() }}</th>
+        @for (grade of grades(); track grade) {
+          <th class="p-3 text-center">{{ gradeLabel(grade) }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.section.section + ':' + row.subsection) {
+        <tr>
+          @if (row.isFirstSubsection) {
+            <td
+              [attr.rowspan]="row.sectionRowspan"
+              class="p-3 fw-semibold align-middle competency-matrix-section-cell"
+            >
+              {{ row.section.section }}
+            </td>
+          }
+          <td class="p-3 fw-medium competency-matrix-subsection-cell">{{ row.subsection }}</td>
+          @for (cell of row.cells; track cell.grade) {
+            <td class="p-3 align-top competency-matrix-grade-cell">
+              @for (question of cell.questions; track question.id) {
+                <button
+                  type="button"
+                  class="btn btn-link p-0 text-start text-decoration-none link-active d-block mb-1"
+                  (click)="selectQuestion(question.id)"
+                >
+                  {{ question.question }}
+                </button>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

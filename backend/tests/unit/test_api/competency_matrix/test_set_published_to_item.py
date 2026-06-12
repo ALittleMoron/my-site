@@ -1,8 +1,14 @@
 import pytest_asyncio
 from httpx import codes
 
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
-from core.competency_matrix.schemas import CompetencyMatrixItemPublishStatusSwitchParams
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixItemNotPublicReadyError,
+)
+from core.competency_matrix.schemas import (
+    CompetencyMatrixItemPublishStatusSwitchParams,
+    CompetencyMatrixMissingFieldEnum,
+)
 from core.enums import PublishStatusEnum
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -20,6 +26,24 @@ class TestSetPublishedStatusToItemAPI(ContainerFixture, ApiFixture, FactoryFixtu
             "code": "client_error",
             "type": "not_found",
             "message": "Competency matrix item not found",
+            "attr": None,
+            "location": None,
+        }
+
+    def test_set_published_status_to_competency_matrix_item_rejects_incomplete_item(self) -> None:
+        self.use_case.switch_item_publish_status.side_effect = (
+            CompetencyMatrixItemNotPublicReadyError(
+                missing_fields=(CompetencyMatrixMissingFieldEnum.ANSWER_EN,),
+            )
+        )
+
+        response = self.api.post_set_published_status_to_item(pk=1)
+
+        assert response.status_code == codes.BAD_REQUEST, response.content
+        assert response.json() == {
+            "code": "client_error",
+            "type": "bad_request",
+            "message": "Competency matrix item is not public-ready.",
             "attr": None,
             "location": None,
         }

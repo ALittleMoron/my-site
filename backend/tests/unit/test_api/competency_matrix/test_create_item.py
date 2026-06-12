@@ -209,3 +209,69 @@ class TestCreateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
         assert response.status_code == codes.BAD_REQUEST, response.json()
         self.use_case.create_item.assert_not_called()
+
+    def test_create_item_allows_incomplete_draft_with_minimum_required_fields(self) -> None:
+        self.use_case.create_item.return_value = self.factory.core.competency_matrix_item(
+            item_id=1,
+            slug="partial-question",
+            question_ru="частичный вопрос",
+            question_en="partial question",
+            publish_status=PublishStatusEnum.DRAFT,
+            grade=None,
+            answer_ru="",
+            answer_en="",
+            interview_expected_answer_ru="",
+            interview_expected_answer_en="",
+            sheet_key="python",
+            sheet_ru="",
+            sheet_en="",
+            section_ru="",
+            section_en="",
+            subsection_ru="",
+            subsection_en="",
+        )
+
+        response = self.api.post_create_item(
+            data=self.factory.api.competency_matrix_item_request(
+                slug="partial-question",
+                sheet_key="python",
+                question_ru="частичный вопрос",
+                question_en="partial question",
+                answer_ru="",
+                answer_en="",
+                interview_expected_answer_ru="",
+                interview_expected_answer_en="",
+                sheet_ru="",
+                sheet_en="",
+                grade=None,
+                section_ru="",
+                section_en="",
+                subsection_ru="",
+                subsection_en="",
+                publish_status="Draft",
+            ),
+            language="en",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        self.use_case.create_item.assert_called_once_with(
+            params=self.factory.core.competency_matrix_item_create_params(
+                item_id=2,
+                slug="partial-question",
+                sheet_key="python",
+                question_ru="частичный вопрос",
+                question_en="partial question",
+                answer_ru="",
+                answer_en="",
+                interview_expected_answer_ru="",
+                interview_expected_answer_en="",
+                sheet_ru="",
+                sheet_en="",
+                grade=None,
+                section_ru="",
+                section_en="",
+                subsection_ru="",
+                subsection_en="",
+                publish_status=PublishStatusEnum.DRAFT,
+            ),
+        )

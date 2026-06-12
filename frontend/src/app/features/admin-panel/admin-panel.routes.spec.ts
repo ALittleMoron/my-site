@@ -6,6 +6,7 @@ describe('adminPanelRoutes', () => {
     expect(adminPanelRoutes[0].loadComponent).toBeDefined();
     expect(adminPanelRoutes[0].children?.map((route) => route.path)).toEqual([
       '',
+      'matrix-questions',
       'matrix-question-queue',
     ]);
   });

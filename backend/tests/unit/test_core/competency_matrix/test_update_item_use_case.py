@@ -3,7 +3,10 @@ from unittest.mock import Mock
 import pytest
 
 from core.competency_matrix.enums import GradeEnum
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixItemNotPublicReadyError,
+)
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
@@ -49,6 +52,18 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )
+        self.storage.update_competency_matrix_item.assert_not_called()
+
+    async def test_update_item_rejects_published_item_with_missing_public_fields(self) -> None:
+        params = self.factory.core.competency_matrix_item_update_params(
+            item_id=2,
+            publish_status=PublishStatusEnum.PUBLISHED,
+            answer_en="",
+        )
+
+        with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
+            await self.use_case.update_item(params=params)
+
         self.storage.update_competency_matrix_item.assert_not_called()
 
     async def test_update_item(self) -> None:

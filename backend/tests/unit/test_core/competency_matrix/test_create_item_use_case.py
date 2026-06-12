@@ -2,10 +2,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixItemNotPublicReadyError,
+)
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
+from core.enums import PublishStatusEnum
 from tests.unit.fixtures import FactoryFixture
 
 
@@ -46,6 +50,18 @@ class TestCompetencyMatrixUseCase(FactoryFixture):
                 ],
             ),
         )
+
+    async def test_create_item_rejects_published_item_with_missing_public_fields(self) -> None:
+        params = self.factory.core.competency_matrix_item_create_params(
+            item_id=2,
+            publish_status=PublishStatusEnum.PUBLISHED,
+            answer_en="",
+        )
+
+        with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
+            await self.use_case.create_item(params=params)
+
+        self.storage.create_competency_matrix_item.assert_not_called()
 
     async def test_create_item_rejects_missing_existing_resource(self) -> None:
         self.storage.get_resources_by_ids.return_value = self.factory.core.external_resources(

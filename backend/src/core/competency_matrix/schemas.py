@@ -1,13 +1,33 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
+from enum import StrEnum
+from math import ceil
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
 from core.types import IntId, SearchName
+
+
+class CompetencyMatrixMissingFieldEnum(StrEnum):
+    SLUG = "slug"
+    SHEET_KEY = "sheetKey"
+    GRADE = "grade"
+    QUESTION_RU = "questionRu"
+    QUESTION_EN = "questionEn"
+    ANSWER_RU = "answerRu"
+    ANSWER_EN = "answerEn"
+    INTERVIEW_EXPECTED_ANSWER_RU = "interviewExpectedAnswerRu"
+    INTERVIEW_EXPECTED_ANSWER_EN = "interviewExpectedAnswerEn"
+    SHEET_RU = "sheetRu"
+    SHEET_EN = "sheetEn"
+    SECTION_RU = "sectionRu"
+    SECTION_EN = "sectionEn"
+    SUBSECTION_RU = "subsectionRu"
+    SUBSECTION_EN = "subsectionEn"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -220,20 +240,39 @@ class BaseCompetencyMatrixItem:
     subsection_en: str
 
     def is_available(self) -> bool:
-        return all(
-            [
-                self.publish_status == PublishStatusEnum.PUBLISHED,
-                self.slug != "",
-                self.sheet_key != "",
-                self.sheet_ru != "",
-                self.sheet_en != "",
-                self.grade is not None,
-                self.section_ru != "",
-                self.section_en != "",
-                self.subsection_ru != "",
-                self.subsection_en != "",
-            ],
+        return (
+            self.publish_status == PublishStatusEnum.PUBLISHED
+            and not self.has_missing_publication_fields()
         )
+
+    def has_missing_publication_fields(self) -> bool:
+        return bool(self.missing_publication_fields())
+
+    def missing_publication_fields(self) -> tuple[CompetencyMatrixMissingFieldEnum, ...]:
+        checks = (
+            (CompetencyMatrixMissingFieldEnum.SLUG, not self.slug.strip()),
+            (CompetencyMatrixMissingFieldEnum.SHEET_KEY, not self.sheet_key.strip()),
+            (CompetencyMatrixMissingFieldEnum.GRADE, self.grade is None),
+            (CompetencyMatrixMissingFieldEnum.QUESTION_RU, not self.question_ru.strip()),
+            (CompetencyMatrixMissingFieldEnum.QUESTION_EN, not self.question_en.strip()),
+            (CompetencyMatrixMissingFieldEnum.ANSWER_RU, not self.answer_ru.strip()),
+            (CompetencyMatrixMissingFieldEnum.ANSWER_EN, not self.answer_en.strip()),
+            (
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
+                not self.interview_expected_answer_ru.strip(),
+            ),
+            (
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
+                not self.interview_expected_answer_en.strip(),
+            ),
+            (CompetencyMatrixMissingFieldEnum.SHEET_RU, not self.sheet_ru.strip()),
+            (CompetencyMatrixMissingFieldEnum.SHEET_EN, not self.sheet_en.strip()),
+            (CompetencyMatrixMissingFieldEnum.SECTION_RU, not self.section_ru.strip()),
+            (CompetencyMatrixMissingFieldEnum.SECTION_EN, not self.section_en.strip()),
+            (CompetencyMatrixMissingFieldEnum.SUBSECTION_RU, not self.subsection_ru.strip()),
+            (CompetencyMatrixMissingFieldEnum.SUBSECTION_EN, not self.subsection_en.strip()),
+        )
+        return tuple(field for field, is_missing in checks if is_missing)
 
     def localized_question(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
@@ -268,12 +307,13 @@ class BaseCompetencyMatrixItem:
 
 @dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItem(BaseCompetencyMatrixItem):
+    published_at: datetime | None
     resources: AttachedExternalResources
 
 
 @dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
-    grade: GradeEnum
+    grade: GradeEnum | None
     resources: list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]
 
     def get_new_resource_attachments(self) -> list[NewExternalResourceAttachment]:
@@ -297,7 +337,12 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
             if isinstance(attachment, ExistingExternalResourceAttachment)
         ]
 
-    def to_item(self, resources: ExternalResources) -> CompetencyMatrixItem:
+    def to_item(
+        self,
+        *,
+        resources: ExternalResources,
+        published_at: datetime | None,
+    ) -> CompetencyMatrixItem:
         resources_by_id = {resource.id: resource for resource in resources}
         attached_existing_resources = [
             AttachedExternalResource(
@@ -320,6 +365,7 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
             question_ru=self.question_ru,
             question_en=self.question_en,
             publish_status=self.publish_status,
+            published_at=published_at,
             answer_ru=self.answer_ru,
             answer_en=self.answer_en,
             interview_expected_answer_ru=self.interview_expected_answer_ru,
@@ -350,6 +396,104 @@ class CompetencyMatrixItemUpdateParams(CompetencyMatrixItemWriteParams): ...
 class CompetencyMatrixItemFilters:
     sheet_key: str | None = None
     only_published: bool | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixWorkspaceFilters:
+    page: int
+    page_size: int
+    language: LanguageEnum
+    sort: CompetencyMatrixWorkspaceSortEnum
+    search_query: str | None = None
+    sheet_keys: tuple[str, ...] = ()
+    grades: tuple[GradeEnum, ...] = ()
+    sections: tuple[str, ...] = ()
+    subsections: tuple[str, ...] = ()
+    publish_statuses: tuple[PublishStatusEnum, ...] = ()
+    published_from: date | None = None
+    published_to: date | None = None
+    has_missing_fields: bool | None = None
+
+    @property
+    def limit(self) -> int:
+        return self.page_size
+
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.page_size
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixWorkspaceSummary:
+    total: int
+    draft: int
+    missing_draft: int
+    dangerous_published: int
+    ready_published: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixWorkspaceItem:
+    id: IntId
+    slug: str
+    question: str
+    sheet_key: str
+    sheet: str
+    grade: GradeEnum | None
+    section: str
+    subsection: str
+    publish_status: PublishStatusEnum
+    published_at: datetime | None
+    missing_fields: tuple[CompetencyMatrixMissingFieldEnum, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixWorkspace(ValuedDataclass[CompetencyMatrixWorkspaceItem]):
+    total_count: int
+    total_pages: int
+    summary: CompetencyMatrixWorkspaceSummary
+
+    @classmethod
+    def from_page(
+        cls,
+        *,
+        values: list[CompetencyMatrixWorkspaceItem],
+        total_count: int,
+        page_size: int,
+        summary: CompetencyMatrixWorkspaceSummary,
+    ) -> CompetencyMatrixWorkspace:
+        return cls(
+            values=values,
+            total_count=total_count,
+            total_pages=ceil(total_count / page_size) if total_count > 0 else 0,
+            summary=summary,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixFilterOption:
+    key: str
+    label: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixFilterSectionOption:
+    label: str
+    subsections: list[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixFilterSheetOption(CompetencyMatrixFilterOption):
+    sections: list[CompetencyMatrixFilterSectionOption]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixFilterOptions:
+    sheets: list[CompetencyMatrixFilterSheetOption]
+    grades: list[GradeEnum]
+    sections: list[str]
+    subsections: list[str]
+    publish_statuses: list[PublishStatusEnum]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

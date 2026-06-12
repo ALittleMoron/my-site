@@ -1,0 +1,81 @@
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ReadonlyMatrixQuestion,
+  ReadonlyMatrixQuestionList,
+  ReadonlyMatrixSectionGroup,
+} from '../matrix-readonly.model';
+
+interface GridCell {
+  grade: string | null;
+  questions: ReadonlyMatrixQuestion[];
+}
+
+interface GridRow {
+  section: ReadonlyMatrixSectionGroup;
+  subsection: string;
+  isFirstSubsection: boolean;
+  sectionRowspan: number;
+  cells: GridCell[];
+}
+
+@Component({
+  selector: 'app-matrix-readonly-grouped-grid',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './matrix-grouped-grid.component.html',
+})
+export class MatrixGroupedGridComponent {
+  readonly questions = input.required<ReadonlyMatrixQuestionList>();
+  readonly sectionLabel = input.required<string>();
+  readonly subsectionLabel = input.required<string>();
+  readonly gradeLabels = input<Record<string, string>>({});
+  readonly notSetLabel = input.required<string>();
+
+  readonly questionSelected = output<number>();
+
+  readonly grades = computed<(string | null)[]>(() => {
+    const seen = new Set<string | null>();
+    const result: (string | null)[] = [];
+    for (const section of this.questions().sections) {
+      for (const subsection of section.subsections) {
+        for (const grade of subsection.grades) {
+          if (!seen.has(grade.grade)) {
+            seen.add(grade.grade);
+            result.push(grade.grade);
+          }
+        }
+      }
+    }
+    return result;
+  });
+
+  readonly rows = computed<GridRow[]>(() => {
+    const gradeList = this.grades();
+    const result: GridRow[] = [];
+    for (const section of this.questions().sections) {
+      for (let i = 0; i < section.subsections.length; i += 1) {
+        const subsection = section.subsections[i];
+        const cells: GridCell[] = gradeList.map((gradeName) => {
+          const gradeGroup = subsection.grades.find((group) => group.grade === gradeName);
+          return { grade: gradeName, questions: gradeGroup ? gradeGroup.questions : [] };
+        });
+        result.push({
+          section,
+          subsection: subsection.subsection,
+          isFirstSubsection: i === 0,
+          sectionRowspan: section.subsections.length,
+          cells,
+        });
+      }
+    }
+    return result;
+  });
+
+  selectQuestion(id: number): void {
+    this.questionSelected.emit(id);
+  }
+
+  gradeLabel(grade: string | null): string {
+    return grade === null ? this.notSetLabel() : (this.gradeLabels()[grade] ?? grade);
+  }
+}

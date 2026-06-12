@@ -34,10 +34,10 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
-import { MatrixSheetTabsComponent } from './components/matrix-sheet-tabs/matrix-sheet-tabs.component';
+import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
 import { MatrixFilterBarComponent } from './components/matrix-filter-bar/matrix-filter-bar.component';
-import { MatrixGroupedListComponent } from './components/matrix-grouped-list/matrix-grouped-list.component';
-import { MatrixGroupedGridComponent } from './components/matrix-grouped-grid/matrix-grouped-grid.component';
+import { MatrixGroupedListComponent } from '../../../../shared/ui/matrix-grouped-list/matrix-grouped-list.component';
+import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixQuestionDetailComponent } from './components/matrix-question-detail/matrix-question-detail.component';
 import { MatrixQuestionFormComponent } from './components/matrix-question-form/matrix-question-form.component';
 
@@ -135,6 +135,21 @@ export class MatrixListComponent implements OnInit {
       !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
   readonly canSubmitSuggestion = computed(() => this.suggestionQuestion().trim().length > 0);
+  readonly readonlyMatrixLabels = computed(() => {
+    this.i18n.language();
+    return {
+      sheetTabsAria: this.i18n.translate('matrix.grid.sheetsAria'),
+      section: this.i18n.translate('matrix.grid.section'),
+      subsection: this.i18n.translate('matrix.grid.subsection'),
+      notSet: this.i18n.translate('shared.notSet'),
+      grades: Object.fromEntries(
+        ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'].map((grade) => [
+          grade,
+          this.i18n.translate(this.i18n.enumGradeKey(grade)),
+        ]),
+      ),
+    };
+  });
   readonly selectedQuestionPageLink = computed<string | null>(() => {
     const question = this.selectedQuestion();
     const language = this.i18n.language();

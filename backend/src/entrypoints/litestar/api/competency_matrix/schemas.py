@@ -8,10 +8,18 @@ from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
+    CompetencyMatrixFilterOption,
+    CompetencyMatrixFilterOptions,
+    CompetencyMatrixFilterSectionOption,
+    CompetencyMatrixFilterSheetOption,
     CompetencyMatrixItem,
     CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpdateParams,
+    CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixWorkspace,
+    CompetencyMatrixWorkspaceItem,
+    CompetencyMatrixWorkspaceSummary,
     ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
@@ -133,7 +141,7 @@ class ResourceRequestSchema(CamelCaseSchema):
 
 
 class AttachmentContextTranslationSchema(CamelCaseSchema):
-    context: Annotated[str, Field(title="Контекст", min_length=1)]
+    context: Annotated[str, Field(title="Контекст")]
 
 
 class AttachmentContextTranslationsSchema(CamelCaseSchema):
@@ -212,11 +220,11 @@ class NewResourceAttachmentRequestSchema(CamelCaseSchema):
 
 class CompetencyMatrixItemTranslationSchema(CamelCaseSchema):
     question: Annotated[str, Field(title="Вопрос", min_length=1, max_length=255)]
-    answer: Annotated[str, Field(title="Ответ", min_length=1)]
-    interview_expected_answer: Annotated[str, Field(title="Ожидаемый ответ", min_length=1)]
-    sheet: Annotated[str, Field(title="Лист", min_length=1, max_length=255)]
-    section: Annotated[str, Field(title="Раздел", min_length=1, max_length=255)]
-    subsection: Annotated[str, Field(title="Подраздел", min_length=1, max_length=255)]
+    answer: Annotated[str, Field(title="Ответ")]
+    interview_expected_answer: Annotated[str, Field(title="Ожидаемый ответ")]
+    sheet: Annotated[str, Field(title="Лист", max_length=255)]
+    section: Annotated[str, Field(title="Раздел", max_length=255)]
+    subsection: Annotated[str, Field(title="Подраздел", max_length=255)]
 
 
 class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
@@ -308,7 +316,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
     sheet_key: Annotated[str, Field(title="Ключ листа", min_length=1, max_length=255)]
-    grade: Annotated[GradeEnum, Field(title="Компетенция")]
+    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Переводы")]
     resources: Annotated[
@@ -560,4 +568,139 @@ class CompetencyMatrixResourcesResponseSchema(CamelCaseSchema):
                 ResourceResponseSchema.from_domain_schema(schema=resource, language=language)
                 for resource in schema
             ],
+        )
+
+
+class CompetencyMatrixWorkspaceSummaryResponseSchema(CamelCaseSchema):
+    total: Annotated[int, Field(title="Всего")]
+    draft: Annotated[int, Field(title="Черновиков")]
+    missing_draft: Annotated[int, Field(title="Черновиков с пропусками")]
+    dangerous_published: Annotated[int, Field(title="Опубликованных с пропусками")]
+    ready_published: Annotated[int, Field(title="Готовых опубликованных")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspaceSummary) -> Self:
+        return cls(
+            total=schema.total,
+            draft=schema.draft,
+            missing_draft=schema.missing_draft,
+            dangerous_published=schema.dangerous_published,
+            ready_published=schema.ready_published,
+        )
+
+
+class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
+    id: Annotated[int, Field(title="Идентификатор")]
+    slug: Annotated[str, Field(title="Slug")]
+    question: Annotated[str, Field(title="Вопрос")]
+    sheet_key: Annotated[str, Field(title="Ключ листа")]
+    sheet: Annotated[str, Field(title="Лист")]
+    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    section: Annotated[str, Field(title="Раздел")]
+    subsection: Annotated[str, Field(title="Подраздел")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
+    published_at: Annotated[str | None, Field(title="Дата публикации")]
+    missing_fields: Annotated[
+        list[CompetencyMatrixMissingFieldEnum],
+        Field(title="Незаполненные поля"),
+    ]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspaceItem) -> Self:
+        return cls(
+            id=schema.id,
+            slug=schema.slug,
+            question=schema.question,
+            sheet_key=schema.sheet_key,
+            sheet=schema.sheet,
+            grade=schema.grade,
+            section=schema.section,
+            subsection=schema.subsection,
+            publish_status=schema.publish_status,
+            published_at=schema.published_at.isoformat()
+            if schema.published_at is not None
+            else None,
+            missing_fields=list(schema.missing_fields),
+        )
+
+
+class CompetencyMatrixWorkspaceResponseSchema(CamelCaseSchema):
+    total_count: Annotated[int, Field(title="Количество вопросов")]
+    total_pages: Annotated[int, Field(title="Количество страниц")]
+    summary: Annotated[CompetencyMatrixWorkspaceSummaryResponseSchema, Field(title="Сводка")]
+    items: Annotated[list[CompetencyMatrixWorkspaceItemResponseSchema], Field(title="Вопросы")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspace) -> Self:
+        return cls(
+            total_count=schema.total_count,
+            total_pages=schema.total_pages,
+            summary=CompetencyMatrixWorkspaceSummaryResponseSchema.from_domain_schema(
+                schema=schema.summary,
+            ),
+            items=[
+                CompetencyMatrixWorkspaceItemResponseSchema.from_domain_schema(schema=item)
+                for item in schema
+            ],
+        )
+
+
+class CompetencyMatrixFilterOptionResponseSchema(CamelCaseSchema):
+    key: Annotated[str, Field(title="Ключ")]
+    label: Annotated[str, Field(title="Подпись")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixFilterOption) -> Self:
+        return cls(key=schema.key, label=schema.label)
+
+
+class CompetencyMatrixFilterSectionOptionResponseSchema(CamelCaseSchema):
+    label: Annotated[str, Field(title="Раздел")]
+    subsections: Annotated[list[str], Field(title="Подразделы")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixFilterSectionOption) -> Self:
+        return cls(label=schema.label, subsections=schema.subsections)
+
+
+class CompetencyMatrixFilterSheetOptionResponseSchema(CamelCaseSchema):
+    key: Annotated[str, Field(title="Ключ")]
+    label: Annotated[str, Field(title="Подпись")]
+    sections: Annotated[
+        list[CompetencyMatrixFilterSectionOptionResponseSchema],
+        Field(title="Разделы"),
+    ]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixFilterSheetOption) -> Self:
+        return cls(
+            key=schema.key,
+            label=schema.label,
+            sections=[
+                CompetencyMatrixFilterSectionOptionResponseSchema.from_domain_schema(
+                    schema=section,
+                )
+                for section in schema.sections
+            ],
+        )
+
+
+class CompetencyMatrixFilterOptionsResponseSchema(CamelCaseSchema):
+    sheets: Annotated[list[CompetencyMatrixFilterSheetOptionResponseSchema], Field(title="Листы")]
+    grades: Annotated[list[GradeEnum], Field(title="Компетенции")]
+    sections: Annotated[list[str], Field(title="Разделы")]
+    subsections: Annotated[list[str], Field(title="Подразделы")]
+    publish_statuses: Annotated[list[PublishStatusEnum], Field(title="Статусы публикации")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixFilterOptions) -> Self:
+        return cls(
+            sheets=[
+                CompetencyMatrixFilterSheetOptionResponseSchema.from_domain_schema(schema=sheet)
+                for sheet in schema.sheets
+            ],
+            grades=schema.grades,
+            sections=schema.sections,
+            subsections=schema.subsections,
+            publish_statuses=schema.publish_statuses,
         )

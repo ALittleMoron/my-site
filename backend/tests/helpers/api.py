@@ -81,6 +81,58 @@ class APIHelper:
             params=params,
         )
 
+    def get_admin_competency_matrix_workspace_items(
+        self,
+        page: int | None = 1,
+        page_size: int | None = 20,
+        language: str | None = "ru",
+        sort: str | None = "newest",
+        search_query: str | None = None,
+        sheet_keys: list[str] | None = None,
+        grades: list[str] | None = None,
+        sections: list[str] | None = None,
+        subsections: list[str] | None = None,
+        publish_statuses: list[str] | None = None,
+        published_from: str | None = None,
+        published_to: str | None = None,
+        has_missing_fields: bool | None = None,
+    ) -> Response:
+        params: dict[str, str | int | bool | list[str]] = {
+            key: value
+            for key, value in (
+                ("page", page),
+                ("pageSize", page_size),
+                ("language", language),
+                ("sort", sort),
+                ("searchQuery", search_query),
+                ("sheetKeys", sheet_keys),
+                ("grades", grades),
+                ("sections", sections),
+                ("subsections", subsections),
+                ("publishStatuses", publish_statuses),
+                ("publishedFrom", published_from),
+                ("publishedTo", published_to),
+                ("hasMissingFields", has_missing_fields),
+            )
+            if value is not None
+        }
+        return self.client.get(
+            "/api/admin/competency-matrix/items/workspace",
+            params=params,
+        )
+
+    def get_admin_competency_matrix_workspace_filter_options(
+        self,
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get(
+            "/api/admin/competency-matrix/items/filter-options",
+            params=params,
+        )
+
     def get_competency_matrix_item(
         self,
         pk: int,

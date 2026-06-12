@@ -45,6 +45,8 @@ POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
 GENERAL_TAG_START_ID = 4
 TARGET_NOTE_DIVISOR = 100
+MATRIX_GRADE_BUCKET_MIDDLE = 2
+MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 USER_SEED_COUNT = 10_000
 NOTE_REACTION_SEED_COUNT = 50_000
 QUEUED_QUESTION_SEED_COUNT = 50_000
@@ -326,6 +328,11 @@ async def insert_competency_matrix_items(
     value = sql_cast(series.c.value, Integer)
     sheet_bucket = func.mod(value, 20)
     python_sheet = sheet_bucket == 0
+    draft_item = func.mod(value, 11) == 0
+    missing_answer_en = func.mod(value, 13) == 0
+    section_bucket = func.mod(value, 8)
+    subsection_bucket = func.mod(value, 12)
+    grade_bucket = func.mod(value, 5)
     await connection.execute(
         insert(CompetencyMatrixItemModel.__table__).from_select(
             [
@@ -354,7 +361,10 @@ async def insert_competency_matrix_items(
                 func.concat(literal("Вопрос матрицы "), value),
                 func.concat(literal("Matrix question "), value),
                 func.concat(literal("Ответ матрицы "), value),
-                func.concat(literal("Matrix answer "), value),
+                case(
+                    (missing_answer_en, literal("")),
+                    else_=func.concat(literal("Matrix answer "), value),
+                ),
                 func.concat(literal("Ожидаемый ответ "), value),
                 func.concat(literal("Expected answer "), value),
                 case(
@@ -369,13 +379,31 @@ async def insert_competency_matrix_items(
                     (python_sheet, literal("Python")),
                     else_=func.concat(literal("Sheet "), sheet_bucket),
                 ),
-                literal("Основы"),
-                literal("Basics"),
-                literal("Функции"),
-                literal("Functions"),
-                literal("JUNIOR"),
-                literal(SEED_NOW),
-                literal("PUBLISHED"),
+                case(
+                    (python_sheet, literal("Основы")),
+                    else_=func.concat(literal("Раздел "), section_bucket),
+                ),
+                case(
+                    (python_sheet, literal("Basics")),
+                    else_=func.concat(literal("Section "), section_bucket),
+                ),
+                case(
+                    (python_sheet, literal("Функции")),
+                    else_=func.concat(literal("Подраздел "), subsection_bucket),
+                ),
+                case(
+                    (python_sheet, literal("Functions")),
+                    else_=func.concat(literal("Subsection "), subsection_bucket),
+                ),
+                case(
+                    (grade_bucket == 0, literal("JUNIOR")),
+                    (grade_bucket == 1, literal("JUNIOR_PLUS")),
+                    (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE, literal("MIDDLE")),
+                    (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE_PLUS, literal("MIDDLE_PLUS")),
+                    else_=literal("SENIOR"),
+                ),
+                case((draft_item, literal(None)), else_=literal(SEED_NOW)),
+                case((draft_item, literal("DRAFT")), else_=literal("PUBLISHED")),
             ).select_from(series),
         ),
     )

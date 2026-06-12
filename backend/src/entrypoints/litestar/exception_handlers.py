@@ -18,6 +18,7 @@ from verbose_http_exceptions.ext.litestar.types import LitestarExceptionHandlers
 
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotPublicReadyError,
     QuestionQueueImportInvalidError,
     QuestionSuggestionQuotaExceededError,
 )
@@ -30,6 +31,7 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     ForbiddenError: ForbiddenHTTPException,
     InvalidFileDataError: BadRequestHTTPException,
     FileStorageInternalError: InternalServerErrorHTTPException,
+    CompetencyMatrixItemNotPublicReadyError: BadRequestHTTPException,
     QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
     QuestionQueueImportInvalidError: BadRequestHTTPException,
 }

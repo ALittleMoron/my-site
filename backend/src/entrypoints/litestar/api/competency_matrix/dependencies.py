@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from litestar import Request
@@ -7,11 +7,13 @@ from litestar.params import FromPath, QueryParameter
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
+from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemGetParams,
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixResourceSearchParams,
+    CompetencyMatrixWorkspaceFilters,
     QuestionSuggestionLimitParams,
 )
 from core.enums import PublishStatusEnum
@@ -65,6 +67,47 @@ def provide_competency_matrix_item_published_status_params(
     return CompetencyMatrixItemPublishStatusSwitchParams(
         item_id=IntId(pk),
         publish_status=PublishStatusEnum.PUBLISHED,
+    )
+
+
+def provide_competency_matrix_workspace_filters(  # noqa: PLR0913
+    page: Annotated[int, QueryParameter(name="page", ge=1)],
+    page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
+    language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    sort: Annotated[CompetencyMatrixWorkspaceSortEnum, QueryParameter(name="sort")],
+    search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
+    sheet_keys: Annotated[list[str] | None, QueryParameter(name="sheetKeys")] = None,
+    grades: Annotated[list[GradeEnum] | None, QueryParameter(name="grades")] = None,
+    sections: Annotated[list[str] | None, QueryParameter(name="sections")] = None,
+    subsections: Annotated[list[str] | None, QueryParameter(name="subsections")] = None,
+    publish_statuses: Annotated[
+        list[PublishStatusEnum] | None,
+        QueryParameter(name="publishStatuses"),
+    ] = None,
+    published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
+    published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
+    has_missing_fields: Annotated[
+        bool | None,
+        QueryParameter(name="hasMissingFields"),
+    ] = None,
+) -> CompetencyMatrixWorkspaceFilters:
+    normalized_search_query = (
+        search_query.strip() if search_query is not None and search_query.strip() else None
+    )
+    return CompetencyMatrixWorkspaceFilters(
+        page=page,
+        page_size=page_size,
+        language=language,
+        sort=sort,
+        search_query=normalized_search_query,
+        sheet_keys=tuple(sheet_keys or ()),
+        grades=tuple(grades or ()),
+        sections=tuple(sections or ()),
+        subsections=tuple(subsections or ()),
+        publish_statuses=tuple(publish_statuses or ()),
+        published_from=published_from,
+        published_to=published_to,
+        has_missing_fields=has_missing_fields,
     )
 
 

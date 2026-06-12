@@ -34,6 +34,10 @@ from core.types import IntId, SearchName
 
 
 class CoreFactoryHelper:
+    @staticmethod
+    def _fallback(value: str | None, fallback: str) -> str:
+        return value if value is not None else fallback
+
     @classmethod
     def external_resource(
         cls,
@@ -128,6 +132,7 @@ class CoreFactoryHelper:
         cls,
         item_id: int,
         slug: str | None = None,
+        published_at: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
         question_en: str | None = None,
@@ -151,25 +156,36 @@ class CoreFactoryHelper:
         subsection_en: str | None = None,
         resources: list[AttachedExternalResource] | None = None,
     ) -> CompetencyMatrixItem:
-        question_en_value = question_en or question
+        question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItem(
             id=cls.int_id(item_id),
-            slug=slug or slugify(question_en_value),
-            question_ru=question_ru or question,
+            slug=cls._fallback(slug, slugify(question_en_value)),
+            question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
             publish_status=publish_status,
-            answer_ru=answer_ru or answer,
-            answer_en=answer_en or answer,
-            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
-            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
-            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
-            sheet_ru=sheet_ru or sheet,
-            sheet_en=sheet_en or sheet,
+            published_at=(
+                datetime.fromisoformat(published_at).replace(tzinfo=UTC)
+                if published_at is not None
+                else None
+            ),
+            answer_ru=cls._fallback(answer_ru, answer),
+            answer_en=cls._fallback(answer_en, answer),
+            interview_expected_answer_ru=cls._fallback(
+                interview_expected_answer_ru,
+                interview_expected_answer,
+            ),
+            interview_expected_answer_en=cls._fallback(
+                interview_expected_answer_en,
+                interview_expected_answer,
+            ),
+            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
+            sheet_ru=cls._fallback(sheet_ru, sheet),
+            sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
-            section_ru=section_ru or section,
-            section_en=section_en or section,
-            subsection_ru=subsection_ru or subsection,
-            subsection_en=subsection_en or subsection,
+            section_ru=cls._fallback(section_ru, section),
+            section_en=cls._fallback(section_en, section),
+            subsection_ru=cls._fallback(subsection_ru, subsection),
+            subsection_en=cls._fallback(subsection_en, subsection),
             resources=AttachedExternalResources(values=resources or []),
         )
 
@@ -192,7 +208,7 @@ class CoreFactoryHelper:
         sheet: str = "Sheet",
         sheet_ru: str | None = None,
         sheet_en: str | None = None,
-        grade: GradeEnum = GradeEnum.JUNIOR,
+        grade: GradeEnum | None = GradeEnum.JUNIOR,
         section: str = "Section",
         section_ru: str | None = None,
         section_en: str | None = None,
@@ -203,25 +219,31 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemCreateParams:
-        question_en_value = question_en or question
+        question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemCreateParams(
             id=cls.int_id(item_id),
-            slug=slug or slugify(question_en_value),
-            question_ru=question_ru or question,
+            slug=cls._fallback(slug, slugify(question_en_value)),
+            question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
             publish_status=publish_status,
-            answer_ru=answer_ru or answer,
-            answer_en=answer_en or answer,
-            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
-            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
-            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
-            sheet_ru=sheet_ru or sheet,
-            sheet_en=sheet_en or sheet,
+            answer_ru=cls._fallback(answer_ru, answer),
+            answer_en=cls._fallback(answer_en, answer),
+            interview_expected_answer_ru=cls._fallback(
+                interview_expected_answer_ru,
+                interview_expected_answer,
+            ),
+            interview_expected_answer_en=cls._fallback(
+                interview_expected_answer_en,
+                interview_expected_answer,
+            ),
+            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
+            sheet_ru=cls._fallback(sheet_ru, sheet),
+            sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
-            section_ru=section_ru or section,
-            section_en=section_en or section,
-            subsection_ru=subsection_ru or subsection,
-            subsection_en=subsection_en or subsection,
+            section_ru=cls._fallback(section_ru, section),
+            section_en=cls._fallback(section_en, section),
+            subsection_ru=cls._fallback(subsection_ru, subsection),
+            subsection_en=cls._fallback(subsection_en, subsection),
             resources=resources or [],
         )
 
@@ -244,7 +266,7 @@ class CoreFactoryHelper:
         sheet: str = "Sheet",
         sheet_ru: str | None = None,
         sheet_en: str | None = None,
-        grade: GradeEnum = GradeEnum.JUNIOR,
+        grade: GradeEnum | None = GradeEnum.JUNIOR,
         section: str = "Section",
         section_ru: str | None = None,
         section_en: str | None = None,
@@ -255,25 +277,31 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemUpdateParams:
-        question_en_value = question_en or question
+        question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemUpdateParams(
             id=cls.int_id(item_id),
-            slug=slug or slugify(question_en_value),
-            question_ru=question_ru or question,
+            slug=cls._fallback(slug, slugify(question_en_value)),
+            question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
             publish_status=publish_status,
-            answer_ru=answer_ru or answer,
-            answer_en=answer_en or answer,
-            interview_expected_answer_ru=interview_expected_answer_ru or interview_expected_answer,
-            interview_expected_answer_en=interview_expected_answer_en or interview_expected_answer,
-            sheet_key=sheet_key or sheet.lower().replace(" ", "-"),
-            sheet_ru=sheet_ru or sheet,
-            sheet_en=sheet_en or sheet,
+            answer_ru=cls._fallback(answer_ru, answer),
+            answer_en=cls._fallback(answer_en, answer),
+            interview_expected_answer_ru=cls._fallback(
+                interview_expected_answer_ru,
+                interview_expected_answer,
+            ),
+            interview_expected_answer_en=cls._fallback(
+                interview_expected_answer_en,
+                interview_expected_answer,
+            ),
+            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
+            sheet_ru=cls._fallback(sheet_ru, sheet),
+            sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
-            section_ru=section_ru or section,
-            section_en=section_en or section,
-            subsection_ru=subsection_ru or subsection,
-            subsection_en=subsection_en or subsection,
+            section_ru=cls._fallback(section_ru, section),
+            section_en=cls._fallback(section_en, section),
+            subsection_ru=cls._fallback(subsection_ru, subsection),
+            subsection_en=cls._fallback(subsection_en, subsection),
             resources=resources or [],
         )
 

@@ -289,7 +289,7 @@ describe('MatrixListComponent', () => {
     fixture = TestBed.createComponent(MatrixListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    const tabs = fixture.nativeElement.querySelectorAll('app-matrix-sheet-tabs button');
+    const tabs = fixture.nativeElement.querySelectorAll('app-matrix-readonly-sheet-tabs button');
     const pythonTab = Array.from(tabs).find(
       (btn: unknown) => (btn as HTMLElement).textContent?.trim() === 'Python',
     ) as HTMLElement | undefined;
@@ -352,8 +352,8 @@ describe('MatrixListComponent', () => {
     component.error.set(null);
     component.questions.set(mockQuestionList);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-matrix-grouped-list')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-matrix-grouped-grid')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeFalsy();
   });
 
   it('should render Russian page title', () => {
@@ -403,8 +403,8 @@ describe('MatrixListComponent', () => {
     component.questions.set(mockQuestionList);
     layoutPreferences.matrixLayout.set('grid');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-matrix-grouped-grid')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-matrix-grouped-list')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeFalsy();
   });
 
   it('should filter questions by search term, removing empty groups', () => {
@@ -432,7 +432,9 @@ describe('MatrixListComponent', () => {
       input.dispatchEvent(new Event('input'));
       fixture.detectChanges();
 
-      const grid = fixture.nativeElement.querySelector('app-matrix-grouped-grid') as HTMLElement;
+      const grid = fixture.nativeElement.querySelector(
+        'app-matrix-readonly-grouped-grid',
+      ) as HTMLElement;
       expect(grid.textContent).toContain('Browser');
       expect(grid.textContent).toContain('What is DOM event delegation?');
       expect(grid.textContent).not.toContain('Runtime');
@@ -459,7 +461,7 @@ describe('MatrixListComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-loading-spinner')).toBeFalsy();
-    expect(fixture.nativeElement.querySelector('app-matrix-sheet-tabs')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-sheet-tabs')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
   });
 

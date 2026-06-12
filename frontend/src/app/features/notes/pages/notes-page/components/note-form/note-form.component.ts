@@ -24,6 +24,7 @@ import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-l
 import { NOTE_SEO_ANALYSIS_RULES, analyzeNoteSeo } from '../../../../models/note-seo-analysis';
 import { NoteDetail, NoteMetadata, NotePayload, NoteTag } from '../../../../models/notes.model';
 import { NotesService } from '../../../../services/notes.service';
+import { slugify } from '../../../../../../shared/utils/slugify';
 import { NoteAuthoringPreviewComponent } from '../note-authoring-preview/note-authoring-preview.component';
 import { NoteSeoPanelComponent } from '../note-seo-panel/note-seo-panel.component';
 
@@ -77,42 +78,6 @@ interface TagDraft extends NoteTag {
   draftNameEn: string;
   draftSlug: string;
 }
-
-const CYRILLIC_TO_LATIN: Record<string, string> = {
-  а: 'a',
-  б: 'b',
-  в: 'v',
-  г: 'g',
-  д: 'd',
-  е: 'e',
-  ё: 'e',
-  ж: 'zh',
-  з: 'z',
-  и: 'i',
-  й: 'y',
-  к: 'k',
-  л: 'l',
-  м: 'm',
-  н: 'n',
-  о: 'o',
-  п: 'p',
-  р: 'r',
-  с: 's',
-  т: 't',
-  у: 'u',
-  ф: 'f',
-  х: 'h',
-  ц: 'c',
-  ч: 'ch',
-  ш: 'sh',
-  щ: 'sch',
-  ъ: '',
-  ы: 'y',
-  ь: '',
-  э: 'e',
-  ю: 'yu',
-  я: 'ya',
-};
 
 @Component({
   selector: 'app-note-form',
@@ -524,17 +489,4 @@ function missingWikiLinkTargets(params: {
 
 function compareTags(a: NoteTag, b: NoteTag): number {
   return a.name.localeCompare(b.name, 'ru');
-}
-
-function slugify(value: string): string {
-  const transliterated = value
-    .toLowerCase()
-    .split('')
-    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
-    .join('');
-  return transliterated
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }

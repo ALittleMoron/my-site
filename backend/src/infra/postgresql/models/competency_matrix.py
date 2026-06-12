@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Self
 
-from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func
+from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
@@ -136,7 +136,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         String(length=255),
         doc="English subsection",
     )
-    grade: Mapped[GradeEnum] = mapped_column(
+    grade: Mapped[GradeEnum | None] = mapped_column(
         Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
         doc="Competency grade",
     )
@@ -156,6 +156,74 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             subsection_en,
             grade,
             "id",
+        ),
+        Index(
+            "cmi_workspace_status_published_at_idx",
+            "publish_status",
+            text("published_at DESC NULLS LAST"),
+            "id",
+        ),
+        Index(
+            "cmi_workspace_sheet_status_grade_idx",
+            sheet_key,
+            "publish_status",
+            grade,
+            "id",
+            postgresql_include=("sheet_key", "sheet_ru", "sheet_en"),
+        ),
+        Index(
+            "cmi_workspace_ru_structure_idx",
+            section_ru,
+            subsection_ru,
+            grade,
+            "id",
+            postgresql_include=("sheet_key", "publish_status"),
+        ),
+        Index(
+            "cmi_workspace_en_structure_idx",
+            section_en,
+            subsection_en,
+            grade,
+            "id",
+            postgresql_include=("sheet_key", "publish_status"),
+        ),
+        Index(
+            "cmi_workspace_missing_fields_idx",
+            text(
+                "((length(trim(slug)) = 0) OR "
+                "(length(trim(sheet_key)) = 0) OR "
+                "(grade IS NULL) OR "
+                "(length(trim(question_ru)) = 0) OR "
+                "(length(trim(question_en)) = 0) OR "
+                "(length(trim(answer_ru)) = 0) OR "
+                "(length(trim(answer_en)) = 0) OR "
+                "(length(trim(interview_expected_answer_ru)) = 0) OR "
+                "(length(trim(interview_expected_answer_en)) = 0) OR "
+                "(length(trim(sheet_ru)) = 0) OR "
+                "(length(trim(sheet_en)) = 0) OR "
+                "(length(trim(section_ru)) = 0) OR "
+                "(length(trim(section_en)) = 0) OR "
+                "(length(trim(subsection_ru)) = 0) OR "
+                "(length(trim(subsection_en)) = 0))",
+            ),
+        ),
+        Index(
+            "cmi_workspace_slug_trgm_idx",
+            func.lower(slug).label("workspace_slug_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"workspace_slug_lower": "gin_trgm_ops"},
+        ),
+        Index(
+            "cmi_workspace_question_ru_trgm_idx",
+            func.lower(question_ru).label("workspace_question_ru_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"workspace_question_ru_lower": "gin_trgm_ops"},
+        ),
+        Index(
+            "cmi_workspace_question_en_trgm_idx",
+            func.lower(question_en).label("workspace_question_en_lower"),
+            postgresql_using="gin",
+            postgresql_ops={"workspace_question_en_lower": "gin_trgm_ops"},
         ),
     )
 
@@ -177,6 +245,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             answer_ru=item.answer_ru,
             answer_en=item.answer_en,
             publish_status=item.publish_status,
+            published_at=item.published_at,
             interview_expected_answer_ru=item.interview_expected_answer_ru,
             interview_expected_answer_en=item.interview_expected_answer_en,
             sheet_key=item.sheet_key,
@@ -202,6 +271,8 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         self.answer_ru = item.answer_ru
         self.answer_en = item.answer_en
         self.publish_status = item.publish_status
+        if item.published_at is not None:
+            self.published_at = item.published_at
         self.interview_expected_answer_ru = item.interview_expected_answer_ru
         self.interview_expected_answer_en = item.interview_expected_answer_en
         self.sheet_key = item.sheet_key
@@ -211,8 +282,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         self.section_en = item.section_en
         self.subsection_ru = item.subsection_ru
         self.subsection_en = item.subsection_en
-        if item.grade is not None:
-            self.grade = item.grade
+        self.grade = item.grade
 
     def to_domain_schema(self, *, include_relationships: bool) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
@@ -223,6 +293,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             answer_ru=self.answer_ru,
             answer_en=self.answer_en,
             publish_status=PublishStatusEnum.from_value(self.publish_status),
+            published_at=self.published_at,
             interview_expected_answer_ru=self.interview_expected_answer_ru,
             interview_expected_answer_en=self.interview_expected_answer_en,
             sheet_key=self.sheet_key,

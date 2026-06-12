@@ -19,6 +19,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemGetParams,
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixResourceSearchParams,
+    CompetencyMatrixWorkspaceFilters,
     QuestionQueueImportFile,
     QuestionSuggestionLimitParams,
 )
@@ -31,14 +32,17 @@ from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_competency_matrix_item_published_status_params,
     provide_competency_matrix_public_item_get_params,
     provide_competency_matrix_resource_search_params,
+    provide_competency_matrix_workspace_filters,
     provide_question_suggestion_limit_params,
 )
 from entrypoints.litestar.api.competency_matrix.schemas import (
+    CompetencyMatrixFilterOptionsResponseSchema,
     CompetencyMatrixItemDetailResponseSchema,
     CompetencyMatrixItemRequestSchema,
     CompetencyMatrixItemsListResponseSchema,
     CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
+    CompetencyMatrixWorkspaceResponseSchema,
     QuestionSuggestionRequestSchema,
     QueuedQuestionResponseSchema,
     QueuedQuestionsResponseSchema,
@@ -311,6 +315,40 @@ class AdminCompetencyMatrixApiController(Controller):
             schema=item,
             language=language,
         )
+
+    @get(
+        "/items/workspace",
+        description="Получение админского рабочего списка вопросов матрицы компетенций.",
+        name="admin-competency-matrix-items-workspace-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+        dependencies={
+            "filters": Provide(
+                provide_competency_matrix_workspace_filters,
+                sync_to_thread=False,
+            ),
+        },
+    )
+    async def list_competency_matrix_workspace_items(
+        self,
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> CompetencyMatrixWorkspaceResponseSchema:
+        workspace = await use_case.list_workspace_items(filters=filters)
+        return CompetencyMatrixWorkspaceResponseSchema.from_domain_schema(schema=workspace)
+
+    @get(
+        "/items/filter-options",
+        description="Получение значений фильтров рабочего списка вопросов матрицы.",
+        name="admin-competency-matrix-items-filter-options-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def list_competency_matrix_workspace_filter_options(
+        self,
+        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> CompetencyMatrixFilterOptionsResponseSchema:
+        options = await use_case.list_workspace_filter_options(language=language)
+        return CompetencyMatrixFilterOptionsResponseSchema.from_domain_schema(schema=options)
 
     @get(
         "/items",

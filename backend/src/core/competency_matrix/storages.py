@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 
 from core.competency_matrix.schemas import (
+    CompetencyMatrixFilterOptions,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixWorkspaceFilters,
+    CompetencyMatrixWorkspaceItem,
+    CompetencyMatrixWorkspaceSummary,
     ExternalResources,
     QuestionSuggestionQuota,
     QueuedCompetencyMatrixQuestion,
@@ -27,6 +31,26 @@ class CompetencyMatrixStorage(ABC):
         *,
         filters: CompetencyMatrixItemFilters,
     ) -> list[CompetencyMatrixItem]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_competency_matrix_workspace_items(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> tuple[
+        list[CompetencyMatrixWorkspaceItem],
+        int,
+        CompetencyMatrixWorkspaceSummary,
+    ]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_competency_matrix_workspace_filter_options(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> CompetencyMatrixFilterOptions:
         raise NotImplementedError
 
     @abstractmethod
