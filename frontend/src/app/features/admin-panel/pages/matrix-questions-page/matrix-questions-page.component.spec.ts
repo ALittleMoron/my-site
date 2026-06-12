@@ -225,6 +225,8 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(service.listPublicPreviewSheets).toHaveBeenCalledWith('ru');
     expect(service.listPublicPreviewQuestions).toHaveBeenCalledWith('python', 'ru');
     expect(fixture.nativeElement.textContent).toContain('What is typing?');
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeNull();
   });
 
   it('disables and resets dependent section filters from selected sheet and section', () => {

@@ -22,10 +22,6 @@ import {
 } from '../../models/matrix-question.model';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { AuthService } from '../../../../core/auth/auth.service';
-import {
-  LayoutPreferencesService,
-  MatrixLayoutMode,
-} from '../../../../core/layout/layout-preferences.service';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -36,7 +32,6 @@ import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
 import { MatrixFilterBarComponent } from './components/matrix-filter-bar/matrix-filter-bar.component';
-import { MatrixGroupedListComponent } from '../../../../shared/ui/matrix-grouped-list/matrix-grouped-list.component';
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixQuestionDetailComponent } from './components/matrix-question-detail/matrix-question-detail.component';
 import { MatrixQuestionFormComponent } from './components/matrix-question-form/matrix-question-form.component';
@@ -55,7 +50,6 @@ const LINE_BREAKS_PATTERN = /[\r\n]+/g;
     EmptyStateComponent,
     MatrixSheetTabsComponent,
     MatrixFilterBarComponent,
-    MatrixGroupedListComponent,
     MatrixGroupedGridComponent,
     MatrixQuestionDetailComponent,
     MatrixQuestionFormComponent,
@@ -67,7 +61,6 @@ const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 export class MatrixListComponent implements OnInit {
   private readonly matrixService = inject(MatrixService);
   private readonly authService = inject(AuthService);
-  private readonly layoutPreferences = inject(LayoutPreferencesService);
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
@@ -97,7 +90,6 @@ export class MatrixListComponent implements OnInit {
   readonly suggestionSubmitting = signal(false);
   readonly suggestionError = signal<ApiError | null>(null);
 
-  readonly layoutMode = this.layoutPreferences.matrixLayout;
   readonly selectedSheet = computed<MatrixSheet | null>(() => {
     const selectedSheetKey = this.selectedSheetKey();
     if (selectedSheetKey === null) return null;
@@ -261,10 +253,6 @@ export class MatrixListComponent implements OnInit {
     if (sheetKey) {
       this.loadQuestions(sheetKey);
     }
-  }
-
-  setLayoutMode(mode: MatrixLayoutMode): void {
-    this.layoutPreferences.setMatrixLayout(mode);
   }
 
   openDetail(id: number): void {

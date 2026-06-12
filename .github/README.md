@@ -46,7 +46,7 @@ my-site/
 
 ## ✨ Features
 
-- Competency matrix with localized sheets and sections, search, list/grid views, detailed Q&A, public SEO question pages, and linked resources
+- Competency matrix with localized sheets and sections, search, a grid/table view, detailed Q&A, public SEO question pages, and linked resources
 - Notes with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
 - Integrated moderator/admin mode for creating, editing, publishing, and unpublishing notes and matrix questions
 - Privacy-safe note analytics with public view counters, engaged views, source categories, and anonymous reactions

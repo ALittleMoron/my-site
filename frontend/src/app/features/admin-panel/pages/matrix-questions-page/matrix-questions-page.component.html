@@ -373,8 +373,10 @@
       (sheetSelected)="selectPreviewSheet($event)"
     />
     @if (previewQuestions()) {
-      <app-matrix-readonly-grouped-list
+      <app-matrix-readonly-grouped-grid
         [questions]="previewQuestions()!"
+        [sectionLabel]="readonlyMatrixLabels().section"
+        [subsectionLabel]="readonlyMatrixLabels().subsection"
         [gradeLabels]="readonlyMatrixLabels().grades"
         [notSetLabel]="readonlyMatrixLabels().notSet"
       />

@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatrixLayoutMode } from '../../../../../../core/layout/layout-preferences.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { MatrixFilterBarComponent } from './matrix-filter-bar.component';
 
@@ -22,7 +21,6 @@ describe('MatrixFilterBarComponent', () => {
     fixture = TestBed.createComponent(MatrixFilterBarComponent);
     fixture.componentRef.setInput('search', '');
     fixture.componentRef.setInput('onlyPublished', true);
-    fixture.componentRef.setInput('layoutMode', 'list' as MatrixLayoutMode);
     fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
@@ -132,17 +130,9 @@ describe('MatrixFilterBarComponent', () => {
     expect(el.querySelector('#onlyPublishedToggle')?.classList).toContain('text-bg-success');
   });
 
-  it('should mark list layout button as primary when layoutMode is list', () => {
-    const buttons = el.querySelectorAll<HTMLButtonElement>('.btn-group button');
-    expect(buttons[0].classList.contains('button-active')).toBe(true);
-    expect(buttons[1].classList.contains('button-active')).toBe(false);
-  });
-
-  it('should emit layoutModeChange when grid button clicked', () => {
-    const emitted: MatrixLayoutMode[] = [];
-    fixture.componentInstance.layoutModeChange.subscribe((v: MatrixLayoutMode) => emitted.push(v));
-    const buttons = el.querySelectorAll<HTMLButtonElement>('.btn-group button');
-    buttons[1].click();
-    expect(emitted).toEqual(['grid']);
+  it('should not render matrix layout switcher controls', () => {
+    expect(el.querySelector('[aria-label="Переключение вида"]')).toBeNull();
+    expect(el.querySelector('button[aria-label="Список"]')).toBeNull();
+    expect(el.querySelector('button[aria-label="Таблица"]')).toBeNull();
   });
 });

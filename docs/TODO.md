@@ -4,7 +4,7 @@
 
 ### Minimum Viable Product (MVP)
 
-- [x] Competency matrix list as grid and list views
+- [x] Competency matrix grid/table view
 - [x] About me section
 - [x] Contact form
 - [x] Notes (previous MVP core-only implementation)
@@ -49,7 +49,7 @@
     - [x] (BACK) Auth guard (only admins can log in for now)
     - [x] (BACK) Anonymous user
 - [x] Smoke test
-  - [x] Competency matrix search works as before: search, layout
+  - [x] Competency matrix search works as before in grid/table view
   - [x] Matrix question modal opens, code blocks render correctly
   - [x] Run docker-compose and verify related services
 
@@ -71,7 +71,6 @@
 - [ ] Add RSS/Atom feeds for published notes and matrix updates.
 - [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.
-- [ ] Избавиться от Bootstrap и писать все стили самостоятельно.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
@@ -79,10 +78,6 @@
 - [ ] Deploy to a remote server
   - [ ] Choose hosting
   - [ ] Wire up missing secrets
-  - [ ] Migrate deployment to Coolify
-    - [ ] Install Coolify
-    - [ ] Separate production and local Docker Compose
-    - [ ] Configure the project per [this guide](https://dev.to/mandrasch/simple-coolify-example-with-docker-compose-github-deployments-53m)
   - [ ] Run deployment strictly from the GitHub workflow
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
     - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
@@ -199,11 +194,6 @@
     - [x] Dependencies updated regularly
     - [ ] No pip install from untrusted sources
 
-### Refactoring
-
-- [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
-  `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
-
 ### Tracing and Monitoring
 
 - [x] Add optional app-side slow SQL query timing logs without raw parameter values
@@ -282,7 +272,7 @@
     - [x] Footer with docs, source, sitemap, and social links
     - [x] Global alert/notification area for API success and error feedback
     - [x] Theme service with `data-bs-theme`, localStorage persistence, and initial theme application
-    - [x] Layout preference service for competency matrix list/grid view
+    - [x] Grid-only competency matrix view
     - [x] Move shared styles from `backend/src/static/styles.css` to Angular SCSS structure
     - [x] Move public assets from `backend/src/static/` to `frontend/public/`
   - [x] SEO and root files
@@ -297,9 +287,8 @@
   - [x] Competency matrix
     - [x] Sheets loading from `/api/competency-matrix/sheets`
     - [x] Selected sheet persistence in localStorage
-    - [x] Question list/table from `/api/competency-matrix/items`
+    - [x] Question grid/table from `/api/competency-matrix/items`
     - [x] Preserve section -> subsection -> grade grouping
-    - [x] List layout
     - [x] Grid/table layout
     - [x] Search that hides empty sections and subsections
     - [x] Moderator/admin published/all toggle using admin `onlyPublished`
@@ -499,7 +488,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Content localisation for competency matrix
   - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
-- [ ] badge "Draft" for not published items (moderators and admins only)
+- [ ] Move sheet, section, subsection to separated tables
 - [ ] Priority for sections and subsections (drag and drop in admin panel?)
 - [ ] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix
@@ -554,7 +543,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
 - [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
 - [x] Production public UI QA
-  - [x] Make the active `ru/en` language switch green instead of blue, matching the competency matrix layout switch.
+  - [x] Make the active `ru/en` language switch green instead of blue, matching the competency matrix active controls.
   - [x] Make the "to question" button on the competency matrix detail page green, consistent with the existing project button style.
   - [x] Localise the date-range filter placeholder: Russian may stay `дд.мм.гггг`, but English should use a clearer US-style `mm.dd.yyyy` format.
   - [x] Add comfortable left and right padding to note text in the public notes list.
@@ -598,3 +587,5 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Fix taskiq not used imports of tasks from subpackages.
 - [ ] Move ResponseCacheKeyBuilder.build to target.
 - [ ] Move ResponseCachePayloadCodec to BaseModel.
+- [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
+  `verbose_http_exceptions` mapping to the Litestar entrypoint layer.

@@ -4,7 +4,6 @@ import { provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { MatrixListComponent } from './matrix-list.component';
 import { MatrixService } from '../../services/matrix.service';
-import { LayoutPreferencesService } from '../../../../core/layout/layout-preferences.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -171,10 +170,6 @@ describe('MatrixListComponent', () => {
     deleteAdminQuestion: jest.Mock;
     suggestQuestion: jest.Mock;
   };
-  let layoutPreferences: {
-    matrixLayout: ReturnType<typeof import('@angular/core').signal<'list' | 'grid'>>;
-    setMatrixLayout: jest.Mock;
-  };
   let authService: {
     canManageContent: ReturnType<typeof import('@angular/core').computed<boolean>>;
   };
@@ -199,11 +194,6 @@ describe('MatrixListComponent', () => {
     };
 
     const { signal, computed } = await import('@angular/core');
-    const layoutSignal = signal<'list' | 'grid'>('list');
-    layoutPreferences = {
-      matrixLayout: layoutSignal,
-      setMatrixLayout: jest.fn((mode: 'list' | 'grid') => layoutSignal.set(mode)),
-    };
 
     canManageContentSignal = signal(false);
     authService = {
@@ -218,7 +208,6 @@ describe('MatrixListComponent', () => {
       imports: [MatrixListComponent],
       providers: [
         { provide: MatrixService, useValue: matrixService },
-        { provide: LayoutPreferencesService, useValue: layoutPreferences },
         { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
@@ -320,7 +309,6 @@ describe('MatrixListComponent', () => {
       imports: [MatrixListComponent],
       providers: [
         { provide: MatrixService, useValue: matrixService },
-        { provide: LayoutPreferencesService, useValue: layoutPreferences },
         { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
         {
@@ -347,13 +335,13 @@ describe('MatrixListComponent', () => {
     expect(matrixService.getPublicQuestions).toHaveBeenLastCalledWith('python', 'ru');
   });
 
-  it('should render list layout by default', () => {
+  it('should render grid layout by default without the list renderer', () => {
     component.loading.set(false);
     component.error.set(null);
     component.questions.set(mockQuestionList);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeFalsy();
   });
 
   it('should render Russian page title', () => {
@@ -397,16 +385,6 @@ describe('MatrixListComponent', () => {
     expect(pageHeaderAddButton).toBeNull();
   });
 
-  it('should render grid layout when layoutMode is grid', () => {
-    component.loading.set(false);
-    component.error.set(null);
-    component.questions.set(mockQuestionList);
-    layoutPreferences.matrixLayout.set('grid');
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeFalsy();
-  });
-
   it('should filter questions by search term, removing empty groups', () => {
     component.questions.set(mockQuestionList);
     component.search.set('closure');
@@ -424,7 +402,6 @@ describe('MatrixListComponent', () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
       matrixService.getPublicQuestions.mockReturnValue(of(duplicateSubsectionQuestionList));
-      layoutPreferences.matrixLayout.set('grid');
       fixture.detectChanges();
 
       const input = fixture.nativeElement.querySelector<HTMLInputElement>('input[type="text"]')!;

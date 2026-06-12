@@ -38,7 +38,6 @@ Never violate these boundaries:
 | `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                          |
 | `core/auth/auth.guard.ts`                    | `CanActivateFn` — redirects to `/about-me` if content access is absent |
 | `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`           |
-| `core/layout/layout-preferences.service.ts`  | Layout state shared across shell components                            |
 | `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD  |
 | `core/notifications/notification.service.ts` | App-wide transient success/error notifications                         |
 | `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                       |

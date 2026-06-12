@@ -25,7 +25,7 @@ import { slugify } from '../../../../shared/utils/slugify';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { MatrixGroupedListComponent } from '../../../../shared/ui/matrix-grouped-list/matrix-grouped-list.component';
+import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
 import {
   AdminMatrixGrade,
@@ -104,7 +104,7 @@ interface AdminMatrixResourceDraft {
     ErrorMessageComponent,
     EmptyStateComponent,
     MatrixSheetTabsComponent,
-    MatrixGroupedListComponent,
+    MatrixGroupedGridComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-questions-page.component.html',
@@ -213,6 +213,8 @@ export class MatrixQuestionsPageComponent implements OnInit {
     this.i18n.language();
     return {
       sheetTabsAria: this.i18n.translate('matrix.grid.sheetsAria'),
+      section: this.i18n.translate('matrix.grid.section'),
+      subsection: this.i18n.translate('matrix.grid.subsection'),
       notSet: this.i18n.translate('shared.notSet'),
       grades: Object.fromEntries(
         GRADES.map((grade) => [grade, this.i18n.translate(this.i18n.enumGradeKey(grade))]),
