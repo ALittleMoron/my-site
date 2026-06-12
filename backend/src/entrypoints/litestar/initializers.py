@@ -25,10 +25,7 @@ from entrypoints.litestar.middlewares.logging import (
     RequestIdLoggingMiddleware,
 )
 from entrypoints.litestar.public.endpoints import public_router
-from entrypoints.litestar.response_cache import (
-    ResponseCacheDomain,
-    ResponseCacheDomainStore,
-)
+from entrypoints.litestar.response_cache import ResponseCacheDomain, ResponseCacheDomainStore
 from infra.config import loggers
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -36,9 +33,9 @@ from infra.config.settings import settings
 Lifespan = Sequence[Callable[[Litestar], AbstractAsyncContextManager] | AbstractAsyncContextManager]
 
 
-def create_stores() -> dict[str, Store]:
-    response_cache_domain_stores = (
-        {
+def create_response_cache_domain_store() -> ResponseCacheDomainStore:
+    return ResponseCacheDomainStore(
+        stores={
             domain: ValkeyStore.with_client(
                 url=settings.valkey.url_for_http_cache.get_secret_value(),
                 db=constants.valkey.databases.response_cache,
@@ -46,23 +43,25 @@ def create_stores() -> dict[str, Store]:
                 namespace=f"{constants.valkey.namespaces.framework}_{domain.value}",
             )
             for domain in ResponseCacheDomain
-        }
-        if settings.app.use_cache
-        else {}
+        },
     )
+
+
+def create_stores() -> dict[str, Store]:
     store_name = constants.response_cache.store_name
+    response_cache_domain_store = (
+        create_response_cache_domain_store() if settings.app.use_cache else None
+    )
     return {
         **(
             {
-                store_name: ResponseCacheDomainStore(
-                    stores=response_cache_domain_stores,
-                ),
+                store_name: response_cache_domain_store,
                 **{
                     f"{store_name}_{domain.value}": store
-                    for domain, store in response_cache_domain_stores.items()
+                    for domain, store in response_cache_domain_store.stores.items()
                 },
             }
-            if settings.app.use_cache
+            if response_cache_domain_store is not None
             else {}
         ),
     }

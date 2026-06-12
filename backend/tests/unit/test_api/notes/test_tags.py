@@ -206,23 +206,23 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.NO_CONTENT
         self.use_case.restore_tag.assert_called_once_with(tag_id=IntId(3))
 
-    def test_successful_tag_mutations_invalidate_notes_response_cache(
+    def test_successful_tag_mutations_enqueue_notes_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        invalidated_domains: list[ResponseCacheDomain] = []
+        warmed_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_response_cache_domain(
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
             *,
             request: object,
             domain: ResponseCacheDomain,
         ) -> None:
             _ = request
-            invalidated_domains.append(domain)
+            warmed_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
+            "entrypoints.litestar.api.notes.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
             raising=False,
         )
         self.use_case.create_tag.return_value = self.factory.core.tag(tag_id=self.tag_id)
@@ -244,4 +244,4 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
             codes.NO_CONTENT,
             codes.NO_CONTENT,
         ]
-        assert invalidated_domains == [ResponseCacheDomain.NOTES] * 4
+        assert warmed_domains == [ResponseCacheDomain.NOTES] * 4

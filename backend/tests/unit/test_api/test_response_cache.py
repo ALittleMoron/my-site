@@ -7,6 +7,8 @@ import pytest
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 
+from entrypoints.litestar import initializers as litestar_initializers
+from entrypoints.litestar import response_cache as response_cache_module
 from entrypoints.litestar.api.competency_matrix.endpoints import (
     AdminCompetencyMatrixApiController,
     PublicCompetencyMatrixApiController,
@@ -17,11 +19,12 @@ from entrypoints.litestar.api.notes.endpoints import (
     AdminNotesApiController,
     PublicNotesApiController,
 )
+from entrypoints.litestar.cli.commands.cache import invalidate_cache_command
 from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,
-    invalidate_all_response_cache_domains,
+    invalidate_and_enqueue_response_cache_warm_domain,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -146,7 +149,7 @@ class TestInvalidateAllResponseCacheDomains:
         app = FakeApp(store=cast("Store", domain_store))
         monkeypatch.setattr(settings.app, "use_cache", True)
 
-        await invalidate_all_response_cache_domains(app=cast("Any", app))
+        await invalidate_cache_command(app=cast("Any", app))
 
         assert app.stores.requested_names == [constants.response_cache.store_name]
         assert notes_store.delete_all_count == 1
@@ -159,7 +162,7 @@ class TestInvalidateAllResponseCacheDomains:
         app = FakeApp(store=cast("Store", store))
         monkeypatch.setattr(settings.app, "use_cache", False)
 
-        await invalidate_all_response_cache_domains(app=cast("Any", app))
+        await invalidate_cache_command(app=cast("Any", app))
 
         assert app.stores.requested_names == []
         assert store.delete_all_count == 0
@@ -170,7 +173,124 @@ class TestInvalidateAllResponseCacheDomains:
         monkeypatch.setattr(settings.app, "use_cache", True)
 
         with pytest.raises(ImproperlyConfiguredException):
-            await invalidate_all_response_cache_domains(app=cast("Any", app))
+            await invalidate_cache_command(app=cast("Any", app))
+
+
+class TestResponseCacheModuleBoundaries:
+    def test_initializer_and_cli_helpers_live_outside_response_cache_module(self) -> None:
+        assert not hasattr(response_cache_module, "create_response_cache_domain_store")
+        assert not hasattr(response_cache_module, "invalidate_cache_command")
+        assert callable(litestar_initializers.create_response_cache_domain_store)
+        assert callable(invalidate_cache_command)
+
+
+class TestInvalidateAndEnqueueResponseCacheWarmDomain:
+    async def test_invalidates_before_enqueueing_cache_warm(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events: list[str] = []
+        monkeypatch.setattr(settings.app, "use_cache", True)
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            events.append(f"invalidate:{domain.value}")
+
+        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
+            events.append(f"enqueue:{domain_value}")
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.response_cache.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+        )
+        monkeypatch.setattr(
+            "entrypoints.taskiq.cache_warm.tasks.cache_warm_domain.kiq",
+            fake_cache_warm_domain_kiq,
+            raising=False,
+        )
+
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=cast("Any", object()),
+            domain=ResponseCacheDomain.NOTES,
+        )
+
+        assert events == ["invalidate:notes", "enqueue:notes"]
+
+    async def test_enqueue_does_not_filter_domains_after_invalidation(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events: list[str] = []
+        monkeypatch.setattr(settings.app, "use_cache", True)
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            events.append(f"invalidate:{domain.value}")
+
+        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
+            events.append(f"enqueue:{domain_value}")
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.response_cache.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+        )
+        monkeypatch.setattr(
+            "entrypoints.taskiq.cache_warm.tasks.cache_warm_domain.kiq",
+            fake_cache_warm_domain_kiq,
+            raising=False,
+        )
+
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=cast("Any", object()),
+            domain=ResponseCacheDomain.HEALTHCHECK,
+        )
+
+        assert events == ["invalidate:healthcheck", "enqueue:healthcheck"]
+
+    async def test_does_not_enqueue_when_invalidation_fails(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        events: list[str] = []
+
+        async def fake_invalidate_response_cache_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request, domain
+            events.append("invalidate")
+            msg = "broken cache"
+            raise ImproperlyConfiguredException(msg)
+
+        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
+            events.append(f"enqueue:{domain_value}")
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.response_cache.invalidate_response_cache_domain",
+            fake_invalidate_response_cache_domain,
+        )
+        monkeypatch.setattr(
+            "entrypoints.taskiq.cache_warm.tasks.cache_warm_domain.kiq",
+            fake_cache_warm_domain_kiq,
+            raising=False,
+        )
+
+        with pytest.raises(ImproperlyConfiguredException):
+            await invalidate_and_enqueue_response_cache_warm_domain(
+                request=cast("Any", object()),
+                domain=ResponseCacheDomain.NOTES,
+            )
+
+        assert events == ["invalidate"]
 
 
 class TestResponseCacheKeyBuilder:

@@ -131,26 +131,43 @@ class _CompetencyMatrixSettings(_ProjectBaseSettings):
     question_suggestion_anonymous_daily_limit: PositiveInt
 
 
+class _TaskiqSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="TASKIQ_")
+
+    cache_warm_interval_seconds: PositiveInt
+    result_expire_seconds: PositiveInt
+
+
+class _CacheWarmSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="CACHE_WARM_")
+
+    notes_page_size: PositiveInt
+
+
 class Settings:
     app: _AppSettings
     admin: _AdminSettings
     auth: _AuthSettings
+    cache_warm: _CacheWarmSettings
     competency_matrix: _CompetencyMatrixSettings
     database: _DatabaseSettings
     i18n: _I18nSettings
     minio: _MinioSettings
     sentry: _SentrySettings
+    taskiq: _TaskiqSettings
     valkey: _ValkeySettings
 
     def __init__(self) -> None:
         self.app = _AppSettings()
         self.admin = _AdminSettings()
         self.auth = _AuthSettings()
+        self.cache_warm = _CacheWarmSettings()
         self.competency_matrix = _CompetencyMatrixSettings()
         self.database = _DatabaseSettings()
         self.i18n = _I18nSettings()
         self.minio = _MinioSettings()
         self.sentry = _SentrySettings()
+        self.taskiq = _TaskiqSettings()
         self.valkey = _ValkeySettings()
 
     @property

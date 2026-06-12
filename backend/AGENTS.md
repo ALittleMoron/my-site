@@ -105,9 +105,29 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   Litestar guard or another pre-cache boundary check. Do not rely only on controller body checks
   because Litestar can return a cached response before executing the handler body.
 - Mutating handlers that change cached domain content must call
-  `invalidate_response_cache_domain(...)` only after the use case succeeds. Do not invalidate on
+  `invalidate_and_enqueue_response_cache_warm_domain(...)` only after the use case succeeds when
+  the caller wants to enqueue a background warm task; use `invalidate_response_cache_domain(...)`
+  for invalidation-only domains. The enqueue helper must not duplicate warmable-domain filtering;
+  the TaskIQ task/service owns unsupported-domain handling. Do not invalidate or enqueue on
   validation/auth failures, and do not invalidate content caches for analytics-only changes when
   analytics are served from separate uncached endpoints.
+- Response-cache warmers live under `backend/src/entrypoints/taskiq/cache_warm/` and must write
+  Litestar-compatible msgpack-encoded ASGI response messages through `ResponseCacheDomainStore`.
+  Do not write raw JSON response-cache payloads.
+
+## Background Tasks
+
+- TaskIQ entrypoints live under `backend/src/entrypoints/taskiq/`.
+- Keep `backend/src/entrypoints/taskiq/broker.py` as the shared broker and
+  `backend/src/entrypoints/taskiq/worker.py` as the worker/scheduler registry entrypoint.
+- Put domain task wrappers in domain packages such as
+  `backend/src/entrypoints/taskiq/cache_warm/tasks.py`; do not collect unrelated tasks in a
+  top-level `tasks.py`.
+- Background tasks are internal worker/scheduler processes, not HTTP handlers.
+- Run exactly one TaskIQ scheduler process in deployment. Scale TaskIQ workers when more background
+  execution capacity is needed.
+- TaskIQ result metadata is operational and ephemeral in Valkey unless a future durable task
+  history/auditing design explicitly chooses another backend.
 
 ## I18n
 

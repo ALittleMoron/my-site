@@ -11,6 +11,7 @@ Portfolio/notes site and knowledge database
 - DB: PostgreSQL 18.4 + SQLAlchemy 2.0 async + Alembic
 - DI: Dishka
 - Cache: Valkey
+- Background tasks: TaskIQ + taskiq-redis over Valkey
 - File storage: MinIO (miniopy-async)
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK

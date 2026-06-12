@@ -4,7 +4,7 @@ from datetime import timedelta
 from enum import StrEnum
 from typing import Any
 
-from litestar import Litestar, Request
+from litestar import Request
 from litestar.config.response_cache import default_cache_key_builder
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
@@ -94,11 +94,14 @@ async def invalidate_response_cache_domain(
     await store.delete_domain(domain=domain)
 
 
-async def invalidate_all_response_cache_domains(*, app: Litestar) -> None:
+async def invalidate_and_enqueue_response_cache_warm_domain(
+    *,
+    request: Request[Any, Any, Any],
+    domain: ResponseCacheDomain,
+) -> None:
+    await invalidate_response_cache_domain(request=request, domain=domain)
     if not settings.app.use_cache:
         return
-    store = app.stores.get(constants.response_cache.store_name)
-    if not isinstance(store, ResponseCacheDomainStore):
-        msg = "Response cache store must be domain-routed."
-        raise ImproperlyConfiguredException(msg)
-    await store.delete_all()
+    from entrypoints.taskiq.cache_warm.tasks import cache_warm_domain  # noqa: PLC0415
+
+    await cache_warm_domain.kiq(domain.value)  # type: ignore[call-overload]

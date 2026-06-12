@@ -22,6 +22,8 @@ class _ValkeyDatabaseConstants:
     response_cache: int = 0
     auth_revocations: int = 1
     question_suggestion_quota: int = 2
+    taskiq_broker: int = 3
+    taskiq_results: int = 4
 
 
 class _ValkeyNamespaceConstants:
@@ -39,6 +41,16 @@ class _ResponseCacheConstants:
     store_name: Literal["litestar_cache"] = "litestar_cache"
     domain_key_separator: Literal[":"] = ":"
     default_ttl_seconds: int = 86_400
+    json_content_type_header_name: bytes = b"content-type"
+    json_content_type_header_value: bytes = b"application/json"
+
+
+class _TaskiqConstants:
+    queue_name: Literal["my_site_background"] = "my_site_background"
+    consumer_group_name: Literal["my_site_background"] = "my_site_background"
+    result_prefix: Literal["my_site_taskiq_results"] = "my_site_taskiq_results"
+    cache_warm_all_task_name: Literal["cache_warm_all"] = "cache_warm_all"
+    cache_warm_domain_task_name: Literal["cache_warm_domain"] = "cache_warm_domain"
 
 
 class _FilesConstants:
@@ -67,6 +79,7 @@ class Constants:
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
     valkey: _ValkeyConstants = _ValkeyConstants()
     response_cache: _ResponseCacheConstants = _ResponseCacheConstants()
+    taskiq: _TaskiqConstants = _TaskiqConstants()
     files: _FilesConstants = _FilesConstants()
     search: _SearchConstants = _SearchConstants()
     question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()

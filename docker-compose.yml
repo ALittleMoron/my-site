@@ -12,6 +12,42 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  taskiq-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
+    env_file:
+      - .env
+    command: bash scripts/app.sh taskiq-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Keep exactly one scheduler process running; scale workers instead.
+  taskiq-scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
+    container_name: my_site_taskiq_scheduler
+    env_file:
+      - .env
+    command: bash scripts/app.sh taskiq-scheduler
+    depends_on:
+      valkey:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - app-network
@@ -40,6 +76,11 @@ services:
       - valkey_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 60s
+      retries: 12
 
   postgres:
     image: postgres:18.4-alpine

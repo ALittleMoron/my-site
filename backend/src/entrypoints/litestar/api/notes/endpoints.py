@@ -35,7 +35,7 @@ from entrypoints.litestar.api.notes.schemas import (
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
-    invalidate_response_cache_domain,
+    invalidate_and_enqueue_response_cache_warm_domain,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -236,7 +236,10 @@ class AdminNotesApiController(Controller):
                 author_username=request.user.username,
             ),
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
             language=language,
@@ -313,7 +316,10 @@ class AdminNotesApiController(Controller):
             slug=slug,
             params=data.to_update_schema(),
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
         return NoteDetailResponseSchema.from_domain_schema(
             schema=note,
             language=language,
@@ -332,7 +338,10 @@ class AdminNotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.delete_note(slug=slug)
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
 
     @post(
         "/detail/{slug:str}/set-draft",
@@ -350,7 +359,10 @@ class AdminNotesApiController(Controller):
             slug=slug,
             publish_status=PublishStatusEnum.DRAFT,
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
 
     @post(
         "/detail/{slug:str}/set-published",
@@ -368,7 +380,10 @@ class AdminNotesApiController(Controller):
             slug=slug,
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
 
     @get(
         "/tags",
@@ -424,7 +439,10 @@ class AdminNotesApiController(Controller):
         tag = await use_case.create_tag(
             params=data.to_create_schema(tag_id=tag_id),
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @put(
@@ -445,7 +463,10 @@ class AdminNotesApiController(Controller):
             tag_id=IntId(tag_id),
             params=data.to_update_schema(),
         )
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @delete(
@@ -461,7 +482,10 @@ class AdminNotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.soft_delete_tag(tag_id=IntId(tag_id))
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
 
     @post(
         "/tags/{tag_id:int}/restore",
@@ -476,7 +500,10 @@ class AdminNotesApiController(Controller):
         use_case: FromDishka[AbstractNotesUseCase],
     ) -> None:
         await use_case.restore_tag(tag_id=IntId(tag_id))
-        await invalidate_response_cache_domain(request=request, domain=ResponseCacheDomain.NOTES)
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.NOTES,
+        )
 
 
 api_router = DishkaRouter("", route_handlers=[PublicNotesApiController])

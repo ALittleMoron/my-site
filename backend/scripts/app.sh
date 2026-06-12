@@ -38,6 +38,12 @@ case "$action" in
     initbuckets)
         run_cli initbuckets
         ;;
+    taskiq-worker)
+        PYTHONPATH=src uv run taskiq worker entrypoints.taskiq.worker:broker
+        ;;
+    taskiq-scheduler)
+        PYTHONPATH=src uv run taskiq scheduler entrypoints.taskiq.worker:scheduler
+        ;;
     shell)
         PYTHONPATH=src uv run ipython --no-confirm-exit --no-banner --quick \
             --InteractiveShellApp.extensions="autoreload" \

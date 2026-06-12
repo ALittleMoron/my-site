@@ -191,23 +191,23 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.create_note.assert_not_called()
 
-    def test_create_note_validation_error_does_not_invalidate_response_cache(
+    def test_create_note_validation_error_does_not_enqueue_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        invalidated_domains: list[ResponseCacheDomain] = []
+        warmed_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_response_cache_domain(
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
             *,
             request: object,
             domain: ResponseCacheDomain,
         ) -> None:
             _ = request
-            invalidated_domains.append(domain)
+            warmed_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
+            "entrypoints.litestar.api.notes.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
             raising=False,
         )
         data = self.factory.api.note_request()
@@ -216,7 +216,7 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.api.post_create_note(data=data)
 
         assert response.status_code == codes.BAD_REQUEST
-        assert invalidated_domains == []
+        assert warmed_domains == []
 
     def test_delete_note_not_found(self) -> None:
         self.use_case.delete_note.side_effect = NoteNotFoundError()
@@ -250,23 +250,23 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             publish_status=PublishStatusEnum.DRAFT,
         )
 
-    def test_successful_note_mutations_invalidate_notes_response_cache(
+    def test_successful_note_mutations_enqueue_notes_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        invalidated_domains: list[ResponseCacheDomain] = []
+        warmed_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_response_cache_domain(
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
             *,
             request: object,
             domain: ResponseCacheDomain,
         ) -> None:
             _ = request
-            invalidated_domains.append(domain)
+            warmed_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.notes.endpoints.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
+            "entrypoints.litestar.api.notes.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
             raising=False,
         )
         created_note = self.factory.core.note(
@@ -300,4 +300,4 @@ class TestAdminNotesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             codes.NO_CONTENT,
             codes.NO_CONTENT,
         ]
-        assert invalidated_domains == [ResponseCacheDomain.NOTES] * 5
+        assert warmed_domains == [ResponseCacheDomain.NOTES] * 5

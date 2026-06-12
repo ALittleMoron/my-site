@@ -66,6 +66,14 @@ test-env-down:
 test-backend-compose:
 	bash infra/scripts/tests_compose.sh backend
 
+.PHONY: taskiq-worker
+taskiq-worker:
+	$(MAKE) -C backend taskiq-worker
+
+.PHONY: taskiq-scheduler
+taskiq-scheduler:
+	$(MAKE) -C backend taskiq-scheduler
+
 .PHONY: tests-coverage
 tests-coverage:
 	$(MAKE) -C backend tests-coverage

@@ -46,7 +46,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
-    invalidate_response_cache_domain,
+    invalidate_and_enqueue_response_cache_warm_domain,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -303,7 +303,7 @@ class AdminCompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
@@ -357,7 +357,7 @@ class AdminCompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
@@ -411,7 +411,7 @@ class AdminCompetencyMatrixApiController(Controller):
                 resource_id_generator=resource_id_generator,
             ),
         )
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
@@ -433,7 +433,7 @@ class AdminCompetencyMatrixApiController(Controller):
         use_case: FromDishka[AbstractCompetencyMatrixUseCase],
     ) -> None:
         await use_case.delete_item(item_id=IntId(pk))
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
@@ -457,7 +457,7 @@ class AdminCompetencyMatrixApiController(Controller):
         params: CompetencyMatrixItemPublishStatusSwitchParams,
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
@@ -481,7 +481,7 @@ class AdminCompetencyMatrixApiController(Controller):
         params: CompetencyMatrixItemPublishStatusSwitchParams,
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
-        await invalidate_response_cache_domain(
+        await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )

@@ -16,23 +16,23 @@ class TestCompetencyMatrixResponseCacheInvalidation(
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()
 
-    def test_successful_item_mutations_invalidate_matrix_response_cache(
+    def test_successful_item_mutations_enqueue_matrix_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        invalidated_domains: list[ResponseCacheDomain] = []
+        warmed_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_response_cache_domain(
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
             *,
             request: object,
             domain: ResponseCacheDomain,
         ) -> None:
             _ = request
-            invalidated_domains.append(domain)
+            warmed_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.competency_matrix.endpoints.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
+            "entrypoints.litestar.api.competency_matrix.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
             raising=False,
         )
         self.use_case.create_item.return_value = self.factory.core.competency_matrix_item(
@@ -70,25 +70,25 @@ class TestCompetencyMatrixResponseCacheInvalidation(
             codes.NO_CONTENT,
             codes.NO_CONTENT,
         ]
-        assert invalidated_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 6
+        assert warmed_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 6
 
-    def test_item_validation_error_does_not_invalidate_matrix_response_cache(
+    def test_item_validation_error_does_not_enqueue_matrix_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        invalidated_domains: list[ResponseCacheDomain] = []
+        warmed_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_response_cache_domain(
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
             *,
             request: object,
             domain: ResponseCacheDomain,
         ) -> None:
             _ = request
-            invalidated_domains.append(domain)
+            warmed_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.competency_matrix.endpoints.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
+            "entrypoints.litestar.api.competency_matrix.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
             raising=False,
         )
 
@@ -98,4 +98,4 @@ class TestCompetencyMatrixResponseCacheInvalidation(
         )
 
         assert response.status_code == codes.BAD_REQUEST
-        assert invalidated_domains == []
+        assert warmed_domains == []

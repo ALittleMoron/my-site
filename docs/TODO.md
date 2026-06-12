@@ -55,7 +55,7 @@
 
 ### MVP Improvements
 
-- [ ] (SEO) Add schemaMarkup link
+- [x] (SEO) Add schemaMarkup link
 - [ ] Check site performance
   - [x] Add Locust smoke/baseline scaffolding and CI report artifacts
   - [x] Validate selected Locust API responses against backend response schemas
@@ -94,14 +94,14 @@
 - [x] VPN for accessing internal systems
 - [x] Add Dependabot to the repository
 - [ ] Prepare repository split
-    - [x] Move Angular serving into a frontend-owned Docker image
-    - [x] Keep infrastructure nginx as the edge reverse proxy
-    - [ ] Move root AGENTS.md rules to backend and frontend
-    - [ ] Move backend, frontend, and infrastructure into separate repositories
-    - [ ] Configure independent image publishing for backend and frontend
-    - [ ] Update deployment workflow to consume published images from the infrastructure repository
+  - [x] Move Angular serving into a frontend-owned Docker image
+  - [x] Keep infrastructure nginx as the edge reverse proxy
+  - [ ] Move root AGENTS.md rules to backend and frontend
+  - [ ] Move backend, frontend, and infrastructure into separate repositories
+  - [ ] Configure independent image publishing for backend and frontend
+  - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
-    - [x] Basic nginx edge rate limits for login, contact, public notes, and admin search endpoints
+  - [x] Basic nginx edge rate limits for login, contact, public notes, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
@@ -110,94 +110,94 @@
 - [ ] OWASP Top 10 compliance check
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
-    - [x] Find a web application security checklist and go through it.
-    - [x] Regular users cannot access internal web panels without VPN.
-    - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
-    - [x] HTTP security headers in responses
-        - [x] Strict-Transport-Security
-        - [x] X-Content-Type-Options: nosniff
-        - [x] X-Frame-Options: DENY
-        - [x] Referrer-Policy: no-referrer
-        - [x] Content-Security-Policy
-    - [ ] CSRF (deferred until cookie-based auth; current admin auth uses Authorization bearer tokens)
-        - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
-        - [ ] CSRF token in cookie + header
-        - [ ] CSRF verified on server
-    - [ ] HTTPS and TLS
-        - [ ] Everything redirects to HTTPS
-        - [ ] Public HTTP redirects to HTTPS; internal VPN panels may use HTTP over WireGuard.
-        - [ ] TLS ≥ 1.2
-        - [ ] Certbot auto-renews
-        - [ ] No internal services are exposed to the public
-    - [ ] XSS
-        - [ ] All user-supplied data is escaped
-        - [ ] No `| safe` without 100% certainty
-        - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
-        - [x] CSP in place
-    - [ ] Passwords never logged
-    - [ ] Hashing: unique salt used
-    - [ ] Every protected handler checks the user (guards where needed)
-    - [ ] No role-based "hide button" logic without backend enforcement
-    - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
-    - [ ] Docker and infrastructure
-        - [ ] App runs with `read_only: true`
-        - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
-        - [ ] No writes to `/etc`, `/usr`, `/bin`
-        - [ ] No bind mounts like: `- ./:/app`
-        - [ ] Containers do not run as root
-        - [ ] UID/GID not 0
-        - [ ] No sudo inside containers
-        - [ ] User-defined networks used
-        - [ ] Only nginx exposed to the public
-        - [ ] No hardcoded IPs
-        - [ ] Services accessible only by network name
-        - [ ] No localhost references between services
-        - [ ] No sensitive data in `docker inspect`
-        - [ ] Logs aren’t written to files inside containers
-        - [ ] Log rotation in place
-        - [ ] All services have health checks
-        - [ ] Nginx does not forward traffic to an unhealthy backend
-        - [ ] Adequate restart policy
-        - [ ] Image versions pinned
-        - [ ] No `latest` tags
-        - [ ] Images updated regularly
-        - [ ] Minimal packages
-        - [x] Nginx not root
-        - [ ] Nginx has no write access
-        - [ ] No `proxy_pass` to localhost
-        - [ ] No `network_mode: host`
-        - [ ] No `privileged: true`
-        - [ ] No `/var/run/docker.sock` bind mount
-        - [ ] No `cap_add` unless strictly necessary
-        - [ ] No `devices:` unless strictly necessary
-        - [ ] `cap_drop: [ALL]` where possible
-        - [ ] No secrets in images
-        - [ ] Infrastructure services are not exposed externally
-            - [ ] PostgreSQL
-            - [ ] Valkey
-        - [ ] Postgres, Valkey, MinIO have no `ports`
-        - [ ] MinIO protected by auth
-        - [ ] Databasus protected by auth
-        - [ ] `.env` not in git
-        - [ ] No secrets in logs
-        - [ ] All keys are long and random
-        - [ ] No stacktrace shown to users
-        - [ ] Firewall enabled on host (ufw/iptables)
-        - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
-        - [ ] SSH by key only. Password login disabled.
-    - [x] Rate limiting and bot protection
-        - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)
-        - [x] IP / fingerprint-based limiting (IP-based at nginx edge)
-        - [x] No unlimited requests to heavy endpoints
-    - [ ] Backup & recovery
-        - [ ] Backups encrypted
-        - [ ] Backups are not publicly accessible
-        - [ ] Restore tested
-        - [ ] No access to back up a panel without auth
-    - [ ] Supply chain
-        - [ ] Dependency versions pinned
-        - [x] Dependencies updated regularly
-        - [ ] No pip install from untrusted sources
+  - [x] Find a web application security checklist and go through it.
+  - [x] Regular users cannot access internal web panels without VPN.
+  - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
+  - [x] HTTP security headers in responses
+    - [x] Strict-Transport-Security
+    - [x] X-Content-Type-Options: nosniff
+    - [x] X-Frame-Options: DENY
+    - [x] Referrer-Policy: no-referrer
+    - [x] Content-Security-Policy
+  - [ ] CSRF (deferred until cookie-based auth; current admin auth uses Authorization bearer tokens)
+    - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
+    - [ ] CSRF token in cookie + header
+    - [ ] CSRF verified on server
+  - [ ] HTTPS and TLS
+    - [ ] Everything redirects to HTTPS
+    - [ ] Public HTTP redirects to HTTPS; internal VPN panels may use HTTP over WireGuard.
+    - [ ] TLS ≥ 1.2
+    - [ ] Certbot auto-renews
+    - [ ] No internal services are exposed to the public
+  - [ ] XSS
+    - [ ] All user-supplied data is escaped
+    - [ ] No `| safe` without 100% certainty
+    - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
+    - [x] CSP in place
+  - [ ] Passwords never logged
+  - [ ] Hashing: unique salt used
+  - [ ] Every protected handler checks the user (guards where needed)
+  - [ ] No role-based "hide button" logic without backend enforcement
+  - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
+  - [ ] Docker and infrastructure
+    - [ ] App runs with `read_only: true`
+    - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
+    - [ ] No writes to `/etc`, `/usr`, `/bin`
+    - [ ] No bind mounts like: `- ./:/app`
+    - [ ] Containers do not run as root
+    - [ ] UID/GID not 0
+    - [ ] No sudo inside containers
+    - [ ] User-defined networks used
+    - [ ] Only nginx exposed to the public
+    - [ ] No hardcoded IPs
+    - [ ] Services accessible only by network name
+    - [ ] No localhost references between services
+    - [ ] No sensitive data in `docker inspect`
+    - [ ] Logs aren’t written to files inside containers
+    - [ ] Log rotation in place
+    - [ ] All services have health checks
+    - [ ] Nginx does not forward traffic to an unhealthy backend
+    - [ ] Adequate restart policy
+    - [ ] Image versions pinned
+    - [ ] No `latest` tags
+    - [ ] Images updated regularly
+    - [ ] Minimal packages
+    - [x] Nginx not root
+    - [ ] Nginx has no write access
+    - [ ] No `proxy_pass` to localhost
+    - [ ] No `network_mode: host`
+    - [ ] No `privileged: true`
+    - [ ] No `/var/run/docker.sock` bind mount
+    - [ ] No `cap_add` unless strictly necessary
+    - [ ] No `devices:` unless strictly necessary
+    - [ ] `cap_drop: [ALL]` where possible
+    - [ ] No secrets in images
+    - [ ] Infrastructure services are not exposed externally
+      - [ ] PostgreSQL
+      - [ ] Valkey
+    - [ ] Postgres, Valkey, MinIO have no `ports`
+    - [ ] MinIO protected by auth
+    - [ ] Databasus protected by auth
+    - [ ] `.env` not in git
+    - [ ] No secrets in logs
+    - [ ] All keys are long and random
+    - [ ] No stacktrace shown to users
+    - [ ] Firewall enabled on host (ufw/iptables)
+    - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
+    - [ ] SSH by key only. Password login disabled.
+  - [x] Rate limiting and bot protection
+    - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)
+    - [x] IP / fingerprint-based limiting (IP-based at nginx edge)
+    - [x] No unlimited requests to heavy endpoints
+  - [ ] Backup & recovery
+    - [ ] Backups encrypted
+    - [ ] Backups are not publicly accessible
+    - [ ] Restore tested
+    - [ ] No access to back up a panel without auth
+  - [ ] Supply chain
+    - [ ] Dependency versions pinned
+    - [x] Dependencies updated regularly
+    - [ ] No pip install from untrusted sources
 
 ### Refactoring
 
@@ -214,38 +214,38 @@
 - [ ] Add maintainer status dashboard for uptime, backups, restore tests, service health, and production errors.
 - [ ] Set up Grafana + Prometheus + Loki
 - [ ] Set up PostgreSQL performance visibility
-    - [ ] Enable `pg_stat_statements` for aggregate query timing, calls, rows, and cache-hit signals
-    - [ ] Enable safe `auto_explain` logging for slow query plans
-    - [ ] Alert on long-running queries, lock waits, deadlocks, and connection pool saturation
-    - [ ] Add dashboard panels for top queries by total time, mean time, p95-ish latency, and calls
+  - [ ] Enable `pg_stat_statements` for aggregate query timing, calls, rows, and cache-hit signals
+  - [ ] Enable safe `auto_explain` logging for slow query plans
+  - [ ] Alert on long-running queries, lock waits, deadlocks, and connection pool saturation
+  - [ ] Add dashboard panels for top queries by total time, mean time, p95-ish latency, and calls
 - [ ] Detect likely N+1 and query explosions
-    - [ ] Count SQL statements per HTTP request
-    - [ ] Warn when one request exceeds the query-count threshold
-    - [ ] Add tests for query-count budgets on expensive API endpoints
+  - [ ] Count SQL statements per HTTP request
+  - [ ] Warn when one request exceeds the query-count threshold
+  - [ ] Add tests for query-count budgets on expensive API endpoints
 - [ ] Add Prometheus exporters
-    - [ ] PostgreSQL exporter
-    - [ ] nginx exporter
-    - [ ] node/container exporter
-    - [ ] Valkey-compatible Redis exporter
-    - [ ] MinIO exporter or built-in metrics scrape
+  - [ ] PostgreSQL exporter
+  - [ ] nginx exporter
+  - [ ] node/container exporter
+  - [ ] Valkey-compatible Redis exporter
+  - [ ] MinIO exporter or built-in metrics scrape
 - [ ] Add Grafana dashboards
-    - [ ] API latency p50/p95/p99, request rate, and 4xx/5xx rate
-    - [ ] DB query latency, locks, connections, and disk usage
-    - [ ] nginx upstream status and response latency
-    - [ ] container CPU/RAM/restarts
-    - [ ] backup freshness and restore-test status
+  - [ ] API latency p50/p95/p99, request rate, and 4xx/5xx rate
+  - [ ] DB query latency, locks, connections, and disk usage
+  - [ ] nginx upstream status and response latency
+  - [ ] container CPU/RAM/restarts
+  - [ ] backup freshness and restore-test status
 - [ ] Add operational alerts
-    - [ ] p95 latency regression
-    - [ ] 5xx spikes
-    - [ ] event loop lag
-    - [ ] TLS certificate expiry
-    - [ ] backup failure or stale backup
-    - [ ] disk pressure
+  - [ ] p95 latency regression
+  - [ ] 5xx spikes
+  - [ ] event loop lag
+  - [ ] TLS certificate expiry
+  - [ ] backup failure or stale backup
+  - [ ] disk pressure
 - [ ] Set up a container health monitoring service
-    - [ ] Send notifications on a container crash
-    - [ ] Send notifications on high resource usage (CPU, RAM)
+  - [ ] Send notifications on a container crash
+  - [ ] Send notifications on high resource usage (CPU, RAM)
 - [ ] Security audit
-    - [ ] Regular users cannot access Grafana without VPN.
+  - [ ] Regular users cannot access Grafana without VPN.
 
 ### Frontend
 
@@ -341,7 +341,7 @@
   - [x] Edit mode for a specific question (button and form on question detail)
   - [x] Button and form for adding a question to a matrix section
   - [x] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
-- [x] "404" page 
+- [x] "404" page
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [x] Security audit
   - [x] Moderators and admins can edit, add, and delete matrix questions
@@ -399,12 +399,12 @@
 - [ ] Add privacy-safe AI-assisted authoring for spelling, SEO hints, tags, and RU/EN consistency.
 - [ ] TTL (5 min) cache for analytics data
 - [ ] Obsidian-like note editor
-    - [x] Rich text editor
-    - [x] Tags
-    - [ ] Attachments
-    - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
-    - [ ] Spell checking for Russian and English.
-    - [ ] Check and warn when a wiki-link references unpublished material.
+  - [x] Rich text editor
+  - [x] Tags
+  - [ ] Attachments
+  - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
+  - [ ] Spell checking for Russian and English.
+  - [ ] Check and warn when a wiki-link references unpublished material.
 - [x] Security audit
   - [x] Moderators and admins can edit, add, and delete notes
   - [x] Regular users cannot view hidden notes
@@ -454,7 +454,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Technologies
 - [ ] Export Obsidian vault to knowledge database
 
-# Flashcards
+### Flashcards
 
 - [ ] Create flashcards from competency matrix (stateless — no persistence, restart = new set)
 - [ ] Create custom flashcards
@@ -532,7 +532,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Playground for course tests (leetcode- or codewars-like checks)
 - [ ] Create courses consisting of material steps
 - [ ] Security audit
-    - [ ] User cannot edit another user's course progress
+  - [ ] User cannot edit another user's course progress
 
 ### Other tasks
 
@@ -543,7 +543,8 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Move complex logic out of Makefiles into dedicated script folders (`backend/scripts/`, `frontend/scripts/`, `infra/scripts/`); keep Makefiles as thin wrappers that only call Bash scripts or nested Makefiles.
 - [x] Refactor project scripts so `make <command>` fully prepares and runs tests, linters, checkers, and similar commands without manual setup (start required Docker services, prepare data, and run other prerequisites as needed).
 - [x] Cache on API get methods + cache invalidation on changes
-- [ ] Background cache warm
+- [x] Background cache warm
+- [ ] Evaluate/migrate TaskIQ results to a durable backend when durable task history/auditing is needed.
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
 - [ ] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
 
@@ -594,3 +595,6 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Rewrite NewType as regular classes.
 - [x] Unite use-cases into a single class (separated by domain).
 - [ ] Unite all repositories to the "unit of work" pattern.
+- [ ] Fix taskiq not used imports of tasks from subpackages.
+- [ ] Move ResponseCacheKeyBuilder.build to target.
+- [ ] Move ResponseCachePayloadCodec to BaseModel.

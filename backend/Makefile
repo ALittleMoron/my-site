@@ -31,6 +31,14 @@ collectstatic:
 initbuckets:
 	bash scripts/app.sh initbuckets
 
+.PHONY: taskiq-worker
+taskiq-worker:
+	bash scripts/app.sh taskiq-worker
+
+.PHONY: taskiq-scheduler
+taskiq-scheduler:
+	bash scripts/app.sh taskiq-scheduler
+
 .PHONY: revision
 revision:
 	bash scripts/alembic.sh revision "$(message)"
