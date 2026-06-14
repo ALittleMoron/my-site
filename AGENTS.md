@@ -15,7 +15,7 @@ Portfolio/notes site and knowledge database
 - File storage: MinIO (miniopy-async)
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK
-- Frontend: Angular 21 hybrid SSR/CSR + Bootstrap 5, served by a frontend-owned Node.js SSR image
+- Frontend: Angular 22 hybrid SSR/CSR + Bootstrap 5, served by a frontend-owned Node.js SSR image
 - Edge: nginx reverse proxy for TLS, `/api/*`, exact `/sitemap.xml` and `/robots.txt`, frontend, the public MinIO object endpoint, and VPN-only internal web panel routing
 
 ## General rules

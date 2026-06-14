@@ -1,6 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
 import { I18nService } from './i18n.service';
 import { TranslatePipe } from './translate.pipe';
 
@@ -15,10 +14,10 @@ class HostComponent {
 
 describe('TranslatePipe', () => {
   let fixture: ComponentFixture<HostComponent>;
-  let messages: Record<string, string>;
+  let messages: WritableSignal<Record<string, string>>;
 
   beforeEach(async () => {
-    messages = { greeting: 'Hello, {name}' };
+    messages = signal({ greeting: 'Hello, {name}' });
     await TestBed.configureTestingModule({
       imports: [HostComponent],
       providers: [
@@ -27,7 +26,7 @@ describe('TranslatePipe', () => {
           useValue: {
             language: signal('en'),
             translate: (key: string, params?: Record<string, string | number>) =>
-              messages[key].replace(`{name}`, String(params?.['name'])),
+              messages()[key].replace(`{name}`, String(params?.['name'])),
           },
         },
       ],
@@ -43,7 +42,7 @@ describe('TranslatePipe', () => {
 
   it('updates when i18n service output changes', () => {
     fixture.detectChanges();
-    messages = { greeting: 'Привет, {name}' };
+    messages.set({ greeting: 'Привет, {name}' });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent.trim()).toBe('Привет, Dima');

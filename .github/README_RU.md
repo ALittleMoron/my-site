@@ -33,7 +33,7 @@
 ```
 my-site/
 ├── infra/          # nginx reverse proxy, скрипты запуска
-├── frontend/       # Angular 21 hybrid SSR/CSR (собственный Node.js-образ)
+├── frontend/       # Angular 22 hybrid SSR/CSR (собственный Node.js-образ)
 ├── backend/        # Litestar API + доменная логика
 │   ├── src/        # Исходный код приложения
 │   ├── tests/      # Backend-тесты (pytest)

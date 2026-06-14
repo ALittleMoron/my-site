@@ -47,8 +47,8 @@ docker build -t my_site_frontend:latest .
 
 The image uses:
 
-- `node:24.16.0-alpine` to install dependencies and run the Angular production build.
-- `node:24.16.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
+- `node:26.3.0-alpine` to install dependencies and run the Angular production build.
+- `node:26.3.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
 - Explicit runtime environment: `PORT`, `SSR_API_ORIGIN`, `APP_URL_SCHEMA`, `APP_DOMAIN`, and optionally `SSR_PUBLIC_ORIGIN` / `NG_ALLOWED_HOSTS`.
 
 Canonical SEO routes served by the frontend SSR runtime include `/ru/notes/:slug`, `/en/notes/:slug`, `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`, `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug`. The matrix overview routes remain hydrated Angular pages.

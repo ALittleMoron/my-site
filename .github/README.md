@@ -33,7 +33,7 @@ and an integrated content authoring mode.
 ```
 my-site/
 ├── infra/          # nginx reverse proxy, run scripts
-├── frontend/       # Angular 21 hybrid SSR/CSR (served by its own Node.js image)
+├── frontend/       # Angular 22 hybrid SSR/CSR (served by its own Node.js image)
 ├── backend/        # Litestar API + domain logic
 │   ├── src/        # Application source
 │   ├── tests/      # Backend tests (pytest)
