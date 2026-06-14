@@ -5,6 +5,8 @@
 /tmp
 /out-tsc
 /bazel-out
+/.lighthouseci
+/performance/reports/lighthouse
 
 # Node
 /node_modules

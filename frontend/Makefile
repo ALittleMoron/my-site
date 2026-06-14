@@ -46,6 +46,10 @@ build:
 ssr-smoke:
 	bash scripts/npm_task.sh ssr-smoke
 
+.PHONY: lighthouse
+lighthouse:
+	bash scripts/npm_task.sh lighthouse
+
 .PHONY: quality
 quality:
 	bash scripts/npm_task.sh quality

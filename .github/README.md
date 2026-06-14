@@ -9,7 +9,7 @@
 | Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Cache | ![valkey](./badges/valkey.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
-| Testing | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![locust](./badges/locust.svg) |
+| Testing | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![locust](./badges/locust.svg) ![lhci](./badges/lhci.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
 | Quality | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![pip-audit](./badges/pip-audit.svg) ![trivy](./badges/trivy.svg) ![hadolint](./badges/hadolint.svg) ![dockle](./badges/dockle.svg) ![vulture](./badges/vulture.svg) ![eslint](./badges/eslint.svg) ![prettier](./badges/prettier.svg) |
 | Logging | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
@@ -119,5 +119,6 @@ make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
 make -C frontend ssr-smoke      # production SSR build + public article, case-study, and matrix question HTML smoke
 make performance-smoke          # auto local backend + seeded short Locust smoke profile
+make performance-lighthouse     # production Angular SSR build + Lighthouse CI budgets for SSR/CSR routes
 make query-plans-balanced       # auto test DB, storage-wide SQL capture + EXPLAIN ANALYZE gate
 ```

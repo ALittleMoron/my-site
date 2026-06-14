@@ -68,3 +68,6 @@ class TestI18nCatalog:
         assert "portfolio" in english_messages["siteBuild.hero.lead"]
         assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
+        assert "Lighthouse CI" in russian_messages["siteBuild.quality.body"]
+        assert "Lighthouse CI" in english_messages["siteBuild.quality.body"]
+        assert "performance budgets" not in english_messages["siteBuild.next.body"]

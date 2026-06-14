@@ -37,6 +37,15 @@ SSR output is written to `dist/my-site-frontend/server`. To build and run the pu
 make ssr-smoke
 ```
 
+To build the production SSR bundle and run Lighthouse CI performance budgets for the public SSR/CSR
+route sample, run:
+
+```bash
+make lighthouse
+```
+
+Reports are written to `performance/reports/lighthouse/`.
+
 ## Docker image
 
 Build the frontend image from this directory:

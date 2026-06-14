@@ -55,6 +55,8 @@ frontend/.next/
 frontend/out/
 frontend/.vercel
 frontend/.turbo
+frontend/.lighthouseci/
+frontend/performance/reports/lighthouse/
 
 # IDE
 .idea/

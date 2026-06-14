@@ -59,6 +59,11 @@ case "$action" in
         npm run build
         node scripts/ssr_smoke.mjs
         ;;
+    lighthouse)
+        ensure_frontend_deps
+        npm run build
+        npm run lhci -- autorun --config=./lighthouserc.cjs
+        ;;
     quality)
         bash "$script_dir/npm_task.sh" format
         bash "$script_dir/npm_task.sh" lint

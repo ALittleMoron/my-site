@@ -146,6 +146,10 @@ tests-compose:
 performance-smoke:
 	$(MAKE) -C backend performance-smoke
 
+.PHONY: performance-lighthouse
+performance-lighthouse:
+	$(MAKE) -C frontend lighthouse
+
 .PHONY: performance-baseline
 performance-baseline:
 	$(MAKE) -C backend performance-baseline

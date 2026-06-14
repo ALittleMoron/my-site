@@ -324,12 +324,13 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.quality.body": (
             "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
             "typecheck, lint, format-check, security gates, SSR smoke и performance "
-            "smoke-сценариями через Make targets."
+            "smoke-сценариями, а Angular SSR/CSR маршруты дополнительно проверяются "
+            "Lighthouse CI performance-бюджетами через Make targets."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
-            "Ближайшие направления: performance-бюджеты, RSS/Atom, changelog, roadmap "
-            "и более жёсткий production deployment baseline."
+            "Ближайшие направления: RSS/Atom, changelog, roadmap и более жёсткий "
+            "production deployment baseline."
         ),
         "siteBuild.next.notesLink": "Перейти к заметкам",
         "matrix.seo.title": "Матрица компетенций",
@@ -918,12 +919,13 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.quality.body": (
             "The project is covered by unit/integration tests, frontend Jest checks, "
             "typecheck, lint, format-check, security gates, SSR smoke, and performance "
-            "smoke scenarios through Make targets."
+            "smoke scenarios, while Angular SSR/CSR routes are additionally guarded by "
+            "Lighthouse CI performance budgets through Make targets."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (
-            "Near-term work includes performance budgets, RSS/Atom, changelog, roadmap, "
-            "and a stricter production deployment baseline."
+            "Near-term work includes RSS/Atom, changelog, roadmap, and a stricter "
+            "production deployment baseline."
         ),
         "siteBuild.next.notesLink": "Go to notes",
         "matrix.seo.title": "Competency matrix",

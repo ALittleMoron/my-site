@@ -1,273 +1,29 @@
-import http from 'node:http';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-
-const scriptDir = dirname(fileURLToPath(import.meta.url));
-const frontendRoot = resolve(scriptDir, '..');
-const serverEntry = pathToFileURL(
-  resolve(frontendRoot, 'dist/my-site-frontend/server/server.mjs'),
-).href;
-const requests = [];
-
-const noteDto = {
-  id: '00000000-0000-0000-0000-000000000001',
-  title: 'Typed notes',
-  slug: 'typed-notes',
-  folder: 'Engineering',
-  authorUsername: 'admin',
-  publishedAt: '2026-01-02T03:04:05+00:00',
-  publishStatus: 'Published',
-  updatedAt: '2026-01-03T03:04:05+00:00',
-  excerpt: 'Fallback excerpt',
-  metadata: {
-    seoTitleRu: 'SEO Typed notes RU',
-    seoTitleEn: 'SEO Typed notes EN',
-    seoDescriptionRu:
-      'SEO description RU with enough text to be useful for search snippets and social cards.',
-    seoDescriptionEn:
-      'SEO description EN with enough text to be useful for search snippets and social cards.',
-    coverImageUrl: 'https://example.com/cover.jpg',
-    coverImageAltRu: 'Typed notes cover RU',
-    coverImageAltEn: 'Typed notes cover',
-  },
-  tags: [
-    {
-      id: 1,
-      name: 'Angular',
-      slug: 'angular',
-      deletedAt: null,
-      translations: {
-        ru: { name: 'Angular' },
-        en: { name: 'Angular' },
-      },
-    },
-  ],
-  content:
-    '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
-  createdAt: '2026-01-01T03:04:05+00:00',
-  translations: {
-    ru: {
-      title: 'Typed notes',
-      content:
-        '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
-      folder: 'Engineering',
-    },
-    en: {
-      title: 'Typed notes EN',
-      content: '## Rendered SSR article body EN',
-      folder: 'Engineering',
-    },
-  },
-};
-
-const matrixQuestionDto = {
-  id: 1,
-  slug: 'how-to-write-function',
-  question: 'Как написать функцию?',
-  answer:
-    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
-  interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
-  sheetKey: 'python',
-  sheet: 'Python',
-  grade: 'Junior',
-  section: 'Основы',
-  subsection: 'Функции',
-  publishStatus: 'Published',
-  translations: {
-    ru: {
-      question: 'Как написать функцию?',
-      answer:
-        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
-      interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
-      sheet: 'Python',
-      section: 'Основы',
-      subsection: 'Функции',
-    },
-    en: {
-      question: 'How to write a function?',
-      answer: '## Rendered SSR matrix answer\n\nA function should be small and testable.',
-      interviewExpectedAnswer: 'Show a signature, a branch, and a test.',
-      sheet: 'Python',
-      section: 'Basics',
-      subsection: 'Functions',
-    },
-  },
-  resources: [],
-};
+import { startSsrFixture } from './ssr_mock_app.mjs';
 
 let failure = null;
-const backend = http.createServer((req, res) => {
-  const url = new URL(req.url ?? '/', 'http://backend.local');
-  requests.push(`${req.method ?? 'GET'} ${url.pathname}${url.search}`);
-  res.setHeader('Content-Type', 'application/json');
-
-  if (url.pathname === '/api/i18n/languages') {
-    writeJson(res, {
-      defaultLanguage: 'ru',
-      languages: [
-        { code: 'ru', label: 'Russian' },
-        { code: 'en', label: 'English' },
-      ],
-    });
-    return;
-  }
-
-  if (url.pathname === '/api/i18n/bundles/ru') {
-    writeJson(res, {
-      language: 'ru',
-      messages: {
-        'app.siteName': 'My site',
-        'shell.nav.about': 'About',
-        'shell.nav.matrix': 'Matrix',
-        'shell.nav.notes': 'Notes',
-        'shell.nav.toggleNavigation': 'Toggle navigation',
-        'shell.theme.dark': 'Dark',
-        'shell.theme.light': 'Light',
-        'shell.theme.toggle': 'Theme',
-        'shell.language.label': 'Language',
-        'shell.auth.login': 'Login',
-        'shell.footer.sourceCode': 'Source code',
-        'shell.footer.siteBuild': 'How this site is built',
-        'shell.footer.githubProfile': 'GitHub',
-        'shell.footer.telegramProfile': 'Telegram',
-        'shell.footer.linkedinProfile': 'LinkedIn',
-        'siteBuild.seo.title': 'How this site is built',
-        'siteBuild.seo.description': 'A portfolio case study about this site.',
-        'siteBuild.hero.title': 'How this site is built',
-        'siteBuild.hero.lead': 'Portfolio case study about a production-minded personal site.',
-        'siteBuild.hero.sourceCode': 'Source code',
-        'siteBuild.problem.title': 'Problem',
-        'siteBuild.problem.body': 'Portfolio, notes, and competency matrix in one product.',
-        'siteBuild.architecture.title': 'Architecture',
-        'siteBuild.architecture.backendTitle': 'Backend',
-        'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka, and PostgreSQL.',
-        'siteBuild.architecture.frontendTitle': 'Frontend',
-        'siteBuild.architecture.frontendBody': 'Angular hybrid SSR/CSR and backend-driven i18n.',
-        'siteBuild.architecture.infraTitle': 'Infrastructure',
-        'siteBuild.architecture.infraBody': 'nginx, Docker, MinIO, Valkey, and TaskIQ.',
-        'siteBuild.decisions.title': 'Engineering decisions',
-        'siteBuild.decision.cleanArchitecture': 'Clean Architecture',
-        'siteBuild.decision.localizedContent': 'RU/EN localization',
-        'siteBuild.decision.privacyAnalytics': 'Privacy-safe analytics',
-        'siteBuild.quality.title': 'Quality and operations',
-        'siteBuild.quality.body': 'Quality checks, security gates, and SSR smoke.',
-        'siteBuild.next.title': 'Next',
-        'siteBuild.next.body': 'Performance, feeds, roadmap, and deployment hardening.',
-        'notes.views': '{count} views',
-        'matrix.detail.question': 'Question:',
-        'matrix.detail.answer': 'Answer:',
-        'matrix.detail.expectedAnswer': 'Expected interview answer:',
-        'matrix.detail.resources': 'External resources:',
-        'shared.back': 'Back',
-        'shared.edit': 'Edit',
-      },
-    });
-    return;
-  }
-
-  if (url.pathname === '/api/notes/detail/typed-notes') {
-    writeJson(res, noteDto);
-    return;
-  }
-
-  if (url.pathname === '/api/notes/public-stats') {
-    writeJson(res, {
-      stats: [
-        {
-          noteId: noteDto.id,
-          viewCount: 7,
-          reactionCounts: {
-            heart: 1,
-            fire: 0,
-            thinking: 0,
-            neutral: 0,
-            poop: 0,
-          },
-        },
-      ],
-    });
-    return;
-  }
-
-  if (url.pathname === '/api/notes/tags') {
-    writeJson(res, { tags: noteDto.tags });
-    return;
-  }
-
-  if (url.pathname === '/api/notes/tree') {
-    writeJson(res, {
-      folders: [
-        {
-          folder: 'Engineering',
-          notes: [
-            {
-              title: 'Typed notes',
-              slug: 'typed-notes',
-              publishStatus: 'Published',
-              publishedAt: noteDto.publishedAt,
-              updatedAt: noteDto.updatedAt,
-            },
-          ],
-        },
-      ],
-    });
-    return;
-  }
-
-  if (url.pathname === '/api/competency-matrix/items/public/how-to-write-function') {
-    writeJson(res, matrixQuestionDto);
-    return;
-  }
-
-  res.statusCode = 404;
-  writeJson(res, { code: 'not_found', type: 'not_found', message: url.pathname });
-});
-
-const frontend = http.createServer(async (req, res) => {
-  try {
-    const { reqHandler } = await serverHandler;
-    reqHandler(req, res, (error) => {
-      res.statusCode = error ? 500 : 404;
-      res.end(error ? String(error) : 'Not found');
-    });
-  } catch (error) {
-    res.statusCode = 500;
-    res.end(String(error));
-  }
-});
-
-await listen(backend);
-const backendPort = backend.address().port;
-process.env.SSR_API_ORIGIN = `http://127.0.0.1:${backendPort}`;
-process.env.APP_URL_SCHEMA = 'http';
-process.env.APP_DOMAIN = '127.0.0.1';
-process.env.NG_ALLOWED_HOSTS = '127.0.0.1';
-
-const serverHandler = import(serverEntry);
-await listen(frontend);
-const frontendPort = frontend.address().port;
-process.env.SSR_PUBLIC_ORIGIN = `http://127.0.0.1:${frontendPort}`;
+const fixture = await startSsrFixture();
+const { frontendPort, requests } = fixture;
 
 try {
-  await assertSiteBuildCaseStudyHtml(frontendPort);
-  await assertPublishedArticleHtml(frontendPort);
-  await assertMissingArticleNoindex(frontendPort);
-  await assertPublishedMatrixQuestionHtml(frontendPort);
-  await assertMissingMatrixQuestionNoindex(frontendPort);
+  await assertSiteBuildCaseStudyHtml(frontendPort, requests);
+  await assertPublishedArticleHtml(frontendPort, requests);
+  await assertMissingArticleNoindex(frontendPort, requests);
+  await assertPublishedMatrixQuestionHtml(frontendPort, requests);
+  await assertMissingMatrixQuestionNoindex(frontendPort, requests);
   console.log(`SSR smoke passed with ${requests.length} backend requests.`);
   console.log(requests.join('\n'));
 } catch (error) {
   failure = error;
   console.error(error instanceof Error ? error.message : String(error));
 } finally {
-  await Promise.all([closeServer(frontend), closeServer(backend)]);
+  await fixture.close();
 }
 
 if (failure !== null) {
   process.exitCode = 1;
 }
 
-async function assertSiteBuildCaseStudyHtml(frontendPort) {
+async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/how-this-site-is-built`);
   const html = await response.text();
   const expected = [
@@ -288,7 +44,7 @@ async function assertSiteBuildCaseStudyHtml(frontendPort) {
   assertExpected(expected, html, 'site-build case study SSR');
 }
 
-async function assertPublishedArticleHtml(frontendPort) {
+async function assertPublishedArticleHtml(frontendPort, requests) {
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/notes/typed-notes`);
   const html = await response.text();
   const expected = [
@@ -313,7 +69,7 @@ async function assertPublishedArticleHtml(frontendPort) {
   assertExpected(expected, html, 'published article SSR');
 }
 
-async function assertPublishedMatrixQuestionHtml(frontendPort) {
+async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
   const response = await fetch(
     `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/how-to-write-function`,
   );
@@ -336,7 +92,7 @@ async function assertPublishedMatrixQuestionHtml(frontendPort) {
     ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
     [
       'matrix public detail preflight',
-      hasRequest('/api/competency-matrix/items/public/how-to-write-function', 'language=ru'),
+      hasRequest(requests, '/api/competency-matrix/items/public/how-to-write-function', 'language=ru'),
     ],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
@@ -344,7 +100,7 @@ async function assertPublishedMatrixQuestionHtml(frontendPort) {
   assertExpected(expected, html, 'published matrix question SSR');
 }
 
-async function assertMissingArticleNoindex(frontendPort) {
+async function assertMissingArticleNoindex(frontendPort, requests) {
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/notes/missing-note`);
   const html = await response.text();
   const expected = [
@@ -354,14 +110,14 @@ async function assertMissingArticleNoindex(frontendPort) {
       'canonical',
       html.includes(`href="http://127.0.0.1:${frontendPort}/ru/notes/missing-note"`),
     ],
-    ['missing detail preflight', hasRequest('/api/notes/detail/missing-note', 'language=ru')],
+    ['missing detail preflight', hasRequest(requests, '/api/notes/detail/missing-note', 'language=ru')],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'missing article SSR');
 }
 
-async function assertMissingMatrixQuestionNoindex(frontendPort) {
+async function assertMissingMatrixQuestionNoindex(frontendPort, requests) {
   const response = await fetch(
     `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/missing-question`,
   );
@@ -377,7 +133,7 @@ async function assertMissingMatrixQuestionNoindex(frontendPort) {
     ],
     [
       'missing matrix preflight',
-      hasRequest('/api/competency-matrix/items/public/missing-question', 'language=ru'),
+      hasRequest(requests, '/api/competency-matrix/items/public/missing-question', 'language=ru'),
     ],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
@@ -385,7 +141,7 @@ async function assertMissingMatrixQuestionNoindex(frontendPort) {
   assertExpected(expected, html, 'missing matrix question SSR');
 }
 
-function hasRequest(pathname, searchPart) {
+function hasRequest(requests, pathname, searchPart) {
   return requests.some((entry) => entry.includes(pathname) && entry.includes(searchPart));
 }
 
@@ -395,20 +151,4 @@ function assertExpected(expected, html, label) {
     console.error(html.slice(0, 4000));
     throw new Error(`SSR smoke failed for ${label}: ${failures.join(', ')}`);
   }
-}
-
-function writeJson(res, body) {
-  res.end(JSON.stringify(body));
-}
-
-function listen(server) {
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', resolve);
-  });
-}
-
-function closeServer(server) {
-  return new Promise((resolve) => {
-    server.close(resolve);
-  });
 }
