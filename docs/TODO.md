@@ -65,12 +65,7 @@
   - [ ] Run scheduled/manual baseline load tests against a production-like environment
   - [ ] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
   - [ ] Lighthouse audit — fixes errors and improves scores
-- [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 - [x] Add public "how this site is built" portfolio/case-study page.
-- [ ] Add public changelog/updates page.
-- [ ] Add RSS/Atom feeds for published notes and matrix updates.
-- [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
-- [ ] Add public roadmap page for site/product development.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
@@ -82,6 +77,7 @@
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
     - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
+  - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
 ### Security and Infrastructure
 
@@ -536,6 +532,10 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Evaluate/migrate TaskIQ results to a durable backend when durable task history/auditing is needed.
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
 - [ ] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
+- [ ] Add public changelog/updates page.
+- [ ] Add RSS/Atom feeds for published notes and matrix updates.
+- [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
+- [ ] Add public roadmap page for site/product development.
 
 ## Bugs
 
