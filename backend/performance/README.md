@@ -1,8 +1,8 @@
 # Performance Testing
 
 This directory contains backend performance tooling for public site behavior and PostgreSQL storage
-query plans. Frontend lab performance budgets live under `frontend/lighthouse/` and run through
-Lighthouse CI.
+query plans. Frontend Lighthouse quality and performance gates live under `frontend/lighthouse/`
+and run through Lighthouse CI.
 
 ## Layout
 
@@ -37,8 +37,8 @@ Reports are written to `backend/performance/reports/locust/<timestamp>/` by defa
 
 ## Lighthouse CI
 
-Use Lighthouse CI from the repository root for lab performance and resource budgets on the Angular
-hybrid SSR/CSR routes:
+Use Lighthouse CI from the repository root for lab performance, resource budgets, accessibility,
+best-practices, and SEO gates on the Angular hybrid SSR/CSR routes:
 
 ```bash
 make performance-lighthouse
@@ -118,8 +118,8 @@ The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
 
 The Make targets prepare the backend uv environment, run Locust, and write timestamped HTML/CSV
 artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can
-run distributed with master/worker processes. Lighthouse CI covers frontend lab metrics and budgets
-separately from backend load and SQL-plan checks.
+run distributed with master/worker processes. Lighthouse CI covers frontend quality and lab
+performance gates separately from backend load and SQL-plan checks.
 
 References:
 

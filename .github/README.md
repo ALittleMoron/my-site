@@ -119,6 +119,6 @@ make test-backend-integration   # backend integration tests, auto test DB
 make test-frontend              # frontend only (jest)
 make -C frontend ssr-smoke      # production SSR build + public article, case-study, and matrix question HTML smoke
 make performance-smoke          # auto local backend + seeded short Locust smoke profile
-make performance-lighthouse     # production Angular SSR build + Lighthouse CI budgets for SSR/CSR routes
+make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-balanced       # auto test DB, storage-wide SQL capture + EXPLAIN ANALYZE gate
 ```

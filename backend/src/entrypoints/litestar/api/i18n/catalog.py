@@ -325,7 +325,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
             "typecheck, lint, format-check, security gates, SSR smoke и performance "
             "smoke-сценариями, а Angular SSR/CSR маршруты дополнительно проверяются "
-            "Lighthouse CI performance-бюджетами через Make targets."
+            "строгими Lighthouse CI гейтами качества и производительности через Make targets."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
@@ -920,7 +920,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "The project is covered by unit/integration tests, frontend Jest checks, "
             "typecheck, lint, format-check, security gates, SSR smoke, and performance "
             "smoke scenarios, while Angular SSR/CSR routes are additionally guarded by "
-            "Lighthouse CI performance budgets through Make targets."
+            "strict Lighthouse CI quality and performance gates through Make targets."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

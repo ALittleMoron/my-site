@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gzipSync } from 'node:zlib';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const frontendRoot = resolve(scriptDir, '..');
@@ -126,7 +127,20 @@ export async function startSsrFixture(options = {}) {
 
 function createFrontendServer(serverHandler) {
   return http.createServer(async (req, res) => {
+    installGzipForTextResponses(req, res);
+
     try {
+      const url = new URL(req.url ?? '/', 'http://frontend.local');
+      if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/robots.txt') {
+        writeText(res, 'text/plain; charset=utf-8', buildRobotsTxt(readFixtureOrigin(req)));
+        return;
+      }
+
+      if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/sitemap.xml') {
+        writeText(res, 'application/xml; charset=utf-8', buildSitemapXml(readFixtureOrigin(req)));
+        return;
+      }
+
       const { reqHandler } = await serverHandler;
       reqHandler(req, res, (error) => {
         res.statusCode = error ? 500 : 404;
@@ -137,6 +151,174 @@ function createFrontendServer(serverHandler) {
       res.end(String(error));
     }
   });
+}
+
+function installGzipForTextResponses(req, res) {
+  const originalWriteHead = res.writeHead.bind(res);
+  const originalEnd = res.end.bind(res);
+  const chunks = [];
+
+  res.writeHead = (...args) => {
+    applyWriteHeadArgs(res, args);
+    return res;
+  };
+
+  res.write = (chunk, encoding, callback) => {
+    const normalized = normalizeWriteArgs(chunk, encoding, callback);
+    if (normalized.chunk !== undefined) {
+      chunks.push(toBuffer(normalized.chunk, normalized.encoding));
+    }
+    normalized.callback?.();
+    return true;
+  };
+
+  res.end = (chunk, encoding, callback) => {
+    const normalized = normalizeWriteArgs(chunk, encoding, callback);
+    if (normalized.chunk !== undefined) {
+      chunks.push(toBuffer(normalized.chunk, normalized.encoding));
+    }
+
+    const body = Buffer.concat(chunks);
+    if (!shouldGzipResponse(req, res, body)) {
+      res.writeHead = originalWriteHead;
+      return originalEnd(body, normalized.callback);
+    }
+
+    const gzippedBody = gzipSync(body);
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Vary', appendVaryAcceptEncoding(res.getHeader('Vary')));
+    res.setHeader('Content-Length', String(gzippedBody.length));
+    res.writeHead = originalWriteHead;
+    return originalEnd(gzippedBody, normalized.callback);
+  };
+}
+
+function applyWriteHeadArgs(res, args) {
+  const [statusCode, statusMessageOrHeaders, maybeHeaders] = args;
+  if (Number.isInteger(statusCode)) {
+    res.statusCode = statusCode;
+  }
+
+  const headers =
+    typeof statusMessageOrHeaders === 'string' ? maybeHeaders : statusMessageOrHeaders;
+  if (typeof statusMessageOrHeaders === 'string') {
+    res.statusMessage = statusMessageOrHeaders;
+  }
+  if (headers === undefined) return;
+
+  if (Array.isArray(headers)) {
+    for (let index = 0; index < headers.length; index += 2) {
+      res.setHeader(headers[index], headers[index + 1]);
+    }
+    return;
+  }
+
+  for (const [name, value] of Object.entries(headers)) {
+    res.setHeader(name, value);
+  }
+}
+
+function normalizeWriteArgs(chunk, encoding, callback) {
+  if (typeof chunk === 'function') {
+    return { chunk: undefined, encoding: undefined, callback: chunk };
+  }
+  if (typeof encoding === 'function') {
+    return { chunk, encoding: undefined, callback: encoding };
+  }
+  return { chunk, encoding, callback };
+}
+
+function toBuffer(chunk, encoding) {
+  if (Buffer.isBuffer(chunk)) return chunk;
+  if (chunk instanceof Uint8Array) return Buffer.from(chunk);
+  return Buffer.from(String(chunk), encoding);
+}
+
+function shouldGzipResponse(req, res, body) {
+  const acceptEncoding = String(req.headers['accept-encoding'] ?? '');
+  const contentType = String(res.getHeader('Content-Type') ?? '').toLowerCase();
+  return (
+    body.length > 0 &&
+    acceptEncoding.includes('gzip') &&
+    !res.hasHeader('Content-Encoding') &&
+    res.statusCode !== 204 &&
+    res.statusCode !== 304 &&
+    isCompressibleContentType(contentType)
+  );
+}
+
+function isCompressibleContentType(contentType) {
+  return (
+    contentType.startsWith('text/') ||
+    contentType.includes('javascript') ||
+    contentType.includes('json') ||
+    contentType.includes('xml') ||
+    contentType.includes('svg')
+  );
+}
+
+function appendVaryAcceptEncoding(value) {
+  if (value === undefined) return 'Accept-Encoding';
+  const current = Array.isArray(value) ? value.join(', ') : String(value);
+  return current
+    .split(',')
+    .map((part) => part.trim().toLowerCase())
+    .includes('accept-encoding')
+    ? current
+    : `${current}, Accept-Encoding`;
+}
+
+function readFixtureOrigin(req) {
+  const explicitOrigin = process.env.SSR_PUBLIC_ORIGIN?.trim();
+  if (explicitOrigin) return explicitOrigin;
+
+  const host = req.headers.host ?? '127.0.0.1';
+  return `http://${host}`;
+}
+
+function buildRobotsTxt(origin) {
+  return (
+    'User-agent: *\n'
+    + 'Allow: /ru/\n'
+    + 'Allow: /en/\n'
+    + 'Allow: /sitemap.xml\n'
+    + 'Disallow: /api/\n'
+    + 'Disallow: /login\n'
+    + 'Disallow: /about-me\n'
+    + 'Disallow: /how-this-site-is-built\n'
+    + 'Disallow: /notes\n'
+    + 'Disallow: /competency-matrix\n'
+    + 'Disallow: /sitemap\n'
+    + `Sitemap: ${origin}/sitemap.xml\n`
+  );
+}
+
+function buildSitemapXml(origin) {
+  const urls = [
+    '/ru/about-me',
+    '/en/about-me',
+    '/ru/how-this-site-is-built',
+    '/en/how-this-site-is-built',
+    '/ru/notes/typed-notes',
+    '/en/notes/typed-notes',
+    '/ru/competency-matrix/questions/how-to-write-function',
+    '/en/competency-matrix/questions/how-to-write-function',
+  ];
+  const entries = urls
+    .map((path) => `  <url>\n    <loc>${origin}${path}</loc>\n  </url>`)
+    .join('\n');
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + `${entries}\n`
+    + '</urlset>\n'
+  );
+}
+
+function writeText(res, contentType, body) {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', contentType);
+  res.end(body);
 }
 
 function createMockBackend(requests) {
@@ -325,7 +507,7 @@ function buildMessages() {
     'siteBuild.decision.privacyAnalytics': 'Privacy-safe analytics',
     'siteBuild.quality.title': 'Quality and operations',
     'siteBuild.quality.body':
-      'Quality checks, security gates, SSR smoke, and Lighthouse CI performance budgets.',
+      'Quality checks, security gates, SSR smoke, and strict Lighthouse CI quality/performance gates.',
     'siteBuild.next.title': 'Next',
     'siteBuild.next.body': 'Feeds, roadmap, and deployment hardening.',
     'siteBuild.next.notesLink': 'Go to notes',

@@ -5,6 +5,7 @@ const fixture = await startSsrFixture();
 const { frontendPort, requests } = fixture;
 
 try {
+  await assertDiscoveryEndpoints(frontendPort);
   await assertSiteBuildCaseStudyHtml(frontendPort, requests);
   await assertPublishedArticleHtml(frontendPort, requests);
   await assertMissingArticleNoindex(frontendPort, requests);
@@ -21,6 +22,36 @@ try {
 
 if (failure !== null) {
   process.exitCode = 1;
+}
+
+async function assertDiscoveryEndpoints(frontendPort) {
+  const origin = `http://127.0.0.1:${frontendPort}`;
+  const robotsResponse = await fetch(`${origin}/robots.txt`);
+  const robotsText = await robotsResponse.text();
+  const sitemapResponse = await fetch(`${origin}/sitemap.xml`);
+  const sitemapText = await sitemapResponse.text();
+  const expected = [
+    ['robots status 200', robotsResponse.status === 200],
+    [
+      'robots text content type',
+      robotsResponse.headers.get('content-type')?.startsWith('text/plain'),
+    ],
+    ['robots gzip', robotsResponse.headers.get('content-encoding') === 'gzip'],
+    ['robots user agent', robotsText.includes('User-agent: *\n')],
+    ['robots sitemap origin', robotsText.includes(`Sitemap: ${origin}/sitemap.xml\n`)],
+    ['sitemap status 200', sitemapResponse.status === 200],
+    [
+      'sitemap xml content type',
+      sitemapResponse.headers.get('content-type')?.startsWith('application/xml'),
+    ],
+    ['sitemap gzip', sitemapResponse.headers.get('content-encoding') === 'gzip'],
+    [
+      'sitemap urlset',
+      sitemapText.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'),
+    ],
+    ['sitemap canonical route', sitemapText.includes(`${origin}/ru/how-this-site-is-built`)],
+  ];
+  assertExpected(expected, `${robotsText}\n${sitemapText}`, 'LHCI discovery endpoints');
 }
 
 async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {

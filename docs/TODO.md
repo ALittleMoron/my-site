@@ -63,8 +63,8 @@
   - [x] Tune Locust thresholds from real baseline reports
   - [x] Expand Locust scenarios with seeded note/detail/matrix data
   - [ ] Run scheduled/manual baseline load tests against a production-like environment
-  - [x] Add Lighthouse CI with performance budgets for Angular hybrid SSR/CSR routes
-  - [ ] Lighthouse audit — fixes errors and improves scores
+  - [x] Add Lighthouse CI with strict quality/performance gates for Angular hybrid SSR/CSR routes
+  - [x] Lighthouse audit — fix non-performance errors and enforce strict gates
 - [x] Add public "how this site is built" portfolio/case-study page.
 - [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.

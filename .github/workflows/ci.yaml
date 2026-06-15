@@ -13,6 +13,12 @@ jobs:
     name: "Frontend quality"
     uses: ./.github/workflows/_quality_frontend.yaml
 
+  lighthouse:
+    name: "Lighthouse CI"
+    needs:
+      - quality-frontend
+    uses: ./.github/workflows/_lighthouse.yaml
+
   docker-security:
     name: "Docker security"
     uses: ./.github/workflows/_docker.yaml
