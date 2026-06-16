@@ -15,7 +15,10 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
-import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
+import {
+  ErrorMessageComponent,
+  flattenNestedErrorMessages,
+} from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
   AdminMatrixGrade,
@@ -77,7 +80,11 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (file === null) return null;
     return this.i18n.translate('adminMatrixQueue.importSelectedFile', { filename: file.name });
   });
-  readonly importNestedErrors = computed(() => this.importError()?.nested_errors ?? []);
+  readonly importNestedErrorMessages = computed(() => {
+    const error = this.importError();
+    if (error === null) return [];
+    return flattenNestedErrorMessages(error);
+  });
 
   readonly form = this.formBuilder.group({
     slug: ['', [Validators.required, Validators.maxLength(255)]],

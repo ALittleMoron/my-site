@@ -289,7 +289,9 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(
       fixture.nativeElement.querySelector('[data-testid="matrix-queue-import-file-input"]'),
     ).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Question queue import file is invalid.');
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Question queue import file is invalid.',
+    );
     expect(fixture.nativeElement.textContent).toContain('Row 2: question must not be empty.');
   });
 

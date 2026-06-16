@@ -286,13 +286,14 @@
                 data-testid="matrix-queue-import-error"
                 role="alert"
               >
-                <p class="mb-2">{{ error.message }}</p>
-                @if (importNestedErrors().length > 0) {
+                @if (importNestedErrorMessages().length > 0) {
                   <ul class="mb-0 ps-3">
-                    @for (nestedError of importNestedErrors(); track nestedError.message) {
-                      <li>{{ nestedError.message }}</li>
+                    @for (message of importNestedErrorMessages(); track $index) {
+                      <li>{{ message }}</li>
                     }
                   </ul>
+                } @else {
+                  <p class="mb-0">{{ error.message }}</p>
                 }
               </div>
             }
