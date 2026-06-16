@@ -9,10 +9,10 @@ const defaultServerEntry = pathToFileURL(
   resolve(frontendRoot, 'dist/my-site-frontend/server/server.mjs'),
 ).href;
 
-export const noteDto = {
+export const articleDto = {
   id: '00000000-0000-0000-0000-000000000001',
-  title: 'Typed notes',
-  slug: 'typed-notes',
+  title: 'Typed articles',
+  slug: 'typed-articles',
   folder: 'Engineering',
   authorUsername: 'admin',
   publishedAt: '2026-01-02T03:04:05+00:00',
@@ -20,15 +20,15 @@ export const noteDto = {
   updatedAt: '2026-01-03T03:04:05+00:00',
   excerpt: 'Fallback excerpt',
   metadata: {
-    seoTitleRu: 'SEO Typed notes RU',
-    seoTitleEn: 'SEO Typed notes EN',
+    seoTitleRu: 'SEO Typed articles RU',
+    seoTitleEn: 'SEO Typed articles EN',
     seoDescriptionRu:
       'SEO description RU with enough text to be useful for search snippets and social cards.',
     seoDescriptionEn:
       'SEO description EN with enough text to be useful for search snippets and social cards.',
     coverImageUrl: 'https://example.com/cover.jpg',
-    coverImageAltRu: 'Typed notes cover RU',
-    coverImageAltEn: 'Typed notes cover',
+    coverImageAltRu: 'Typed articles cover RU',
+    coverImageAltEn: 'Typed articles cover',
   },
   tags: [
     {
@@ -47,13 +47,13 @@ export const noteDto = {
   createdAt: '2026-01-01T03:04:05+00:00',
   translations: {
     ru: {
-      title: 'Typed notes',
+      title: 'Typed articles',
       content:
         '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
       folder: 'Engineering',
     },
     en: {
-      title: 'Typed notes EN',
+      title: 'Typed articles EN',
       content: '## Rendered SSR article body EN',
       folder: 'Engineering',
     },
@@ -65,7 +65,7 @@ export const matrixQuestionDto = {
   slug: 'how-to-write-function',
   question: 'Как написать функцию?',
   answer:
-    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
+    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].',
   interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
   sheetKey: 'python',
   sheet: 'Python',
@@ -77,7 +77,7 @@ export const matrixQuestionDto = {
     ru: {
       question: 'Как написать функцию?',
       answer:
-        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[notes:typed-notes|typed note]].',
+        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].',
       interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
       sheet: 'Python',
       section: 'Основы',
@@ -286,7 +286,7 @@ function buildRobotsTxt(origin) {
     + 'Disallow: /login\n'
     + 'Disallow: /about-me\n'
     + 'Disallow: /how-this-site-is-built\n'
-    + 'Disallow: /notes\n'
+    + 'Disallow: /articles\n'
     + 'Disallow: /competency-matrix\n'
     + 'Disallow: /sitemap\n'
     + `Sitemap: ${origin}/sitemap.xml\n`
@@ -299,8 +299,8 @@ function buildSitemapXml(origin) {
     '/en/about-me',
     '/ru/how-this-site-is-built',
     '/en/how-this-site-is-built',
-    '/ru/notes/typed-notes',
-    '/en/notes/typed-notes',
+    '/ru/articles/typed-articles',
+    '/en/articles/typed-articles',
     '/ru/competency-matrix/questions/how-to-write-function',
     '/en/competency-matrix/questions/how-to-write-function',
   ];
@@ -346,25 +346,25 @@ function createMockBackend(requests) {
       return;
     }
 
-    if (url.pathname === '/api/notes') {
+    if (url.pathname === '/api/articles') {
       writeJson(res, {
         totalCount: 1,
         totalPages: 1,
-        notes: [noteSummary()],
+        articles: [articleSummary()],
       });
       return;
     }
 
-    if (url.pathname === '/api/notes/detail/typed-notes') {
-      writeJson(res, noteDto);
+    if (url.pathname === '/api/articles/detail/typed-articles') {
+      writeJson(res, articleDto);
       return;
     }
 
-    if (url.pathname === '/api/notes/public-stats') {
+    if (url.pathname === '/api/articles/public-stats') {
       writeJson(res, {
         stats: [
           {
-            noteId: noteDto.id,
+            articleId: articleDto.id,
             viewCount: 7,
             reactionCounts: {
               heart: 1,
@@ -379,23 +379,23 @@ function createMockBackend(requests) {
       return;
     }
 
-    if (url.pathname === '/api/notes/tags') {
-      writeJson(res, { tags: noteDto.tags });
+    if (url.pathname === '/api/articles/tags') {
+      writeJson(res, { tags: articleDto.tags });
       return;
     }
 
-    if (url.pathname === '/api/notes/tree') {
+    if (url.pathname === '/api/articles/tree') {
       writeJson(res, {
         folders: [
           {
             folder: 'Engineering',
-            notes: [
+            articles: [
               {
-                title: 'Typed notes',
-                slug: 'typed-notes',
+                title: 'Typed articles',
+                slug: 'typed-articles',
                 publishStatus: 'Published',
-                publishedAt: noteDto.publishedAt,
-                updatedAt: noteDto.updatedAt,
+                publishedAt: articleDto.publishedAt,
+                updatedAt: articleDto.updatedAt,
               },
             ],
           },
@@ -451,19 +451,19 @@ function createMockBackend(requests) {
   });
 }
 
-function noteSummary() {
+function articleSummary() {
   return {
-    id: noteDto.id,
-    title: noteDto.title,
-    slug: noteDto.slug,
-    folder: noteDto.folder,
-    authorUsername: noteDto.authorUsername,
-    publishedAt: noteDto.publishedAt,
-    publishStatus: noteDto.publishStatus,
-    updatedAt: noteDto.updatedAt,
-    excerpt: noteDto.excerpt,
-    metadata: noteDto.metadata,
-    tags: noteDto.tags,
+    id: articleDto.id,
+    title: articleDto.title,
+    slug: articleDto.slug,
+    folder: articleDto.folder,
+    authorUsername: articleDto.authorUsername,
+    publishedAt: articleDto.publishedAt,
+    publishStatus: articleDto.publishStatus,
+    updatedAt: articleDto.updatedAt,
+    excerpt: articleDto.excerpt,
+    metadata: articleDto.metadata,
+    tags: articleDto.tags,
   };
 }
 
@@ -472,7 +472,7 @@ function buildMessages() {
     'app.siteName': 'My site',
     'shell.nav.about': 'About',
     'shell.nav.matrix': 'Matrix',
-    'shell.nav.notes': 'Notes',
+    'shell.nav.articles': 'Articles',
     'shell.nav.toggleNavigation': 'Toggle navigation',
     'shell.theme.dark': 'Dark',
     'shell.theme.light': 'Light',
@@ -493,7 +493,7 @@ function buildMessages() {
     'siteBuild.hero.matrixLink': 'Open matrix',
     'siteBuild.hero.logoAlt': 'Site logo',
     'siteBuild.problem.title': 'Problem',
-    'siteBuild.problem.body': 'Portfolio, notes, and competency matrix in one product.',
+    'siteBuild.problem.body': 'Portfolio, articles, and competency matrix in one product.',
     'siteBuild.architecture.title': 'Architecture',
     'siteBuild.architecture.backendTitle': 'Backend',
     'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka, and PostgreSQL.',
@@ -510,25 +510,25 @@ function buildMessages() {
       'Quality checks, security gates, SSR smoke, and strict Lighthouse CI quality/performance gates.',
     'siteBuild.next.title': 'Next',
     'siteBuild.next.body': 'Feeds, roadmap, and deployment hardening.',
-    'siteBuild.next.notesLink': 'Go to notes',
-    'notes.title': 'Notes',
-    'notes.views': '{count} views',
-    'notes.filters.search': 'Search',
-    'notes.filters.searchPlaceholder': 'Search notes',
-    'notes.filters.from': 'From',
-    'notes.filters.to': 'To',
-    'notes.filters.apply': 'Apply',
-    'notes.filters.reset': 'Reset',
-    'notes.sidePanel.open': 'Open notes tree',
-    'notes.sidePanel.close': 'Close notes tree',
-    'notes.datePicker.placeholder': 'yyyy-mm-dd',
-    'notes.datePicker.open': 'Open calendar',
-    'notes.datePicker.previousMonth': 'Previous month',
-    'notes.datePicker.nextMonth': 'Next month',
-    'notes.datePicker.openMonthYearPicker': 'Choose month and year',
-    'notes.datePicker.previousYear': 'Previous year',
-    'notes.datePicker.nextYear': 'Next year',
-    'notes.reactions': 'Reactions',
+    'siteBuild.next.articlesLink': 'Go to articles',
+    'articles.title': 'Articles',
+    'articles.views': '{count} views',
+    'articles.filters.search': 'Search',
+    'articles.filters.searchPlaceholder': 'Search articles',
+    'articles.filters.from': 'From',
+    'articles.filters.to': 'To',
+    'articles.filters.apply': 'Apply',
+    'articles.filters.reset': 'Reset',
+    'articles.sidePanel.open': 'Open articles tree',
+    'articles.sidePanel.close': 'Close articles tree',
+    'articles.datePicker.placeholder': 'yyyy-mm-dd',
+    'articles.datePicker.open': 'Open calendar',
+    'articles.datePicker.previousMonth': 'Previous month',
+    'articles.datePicker.nextMonth': 'Next month',
+    'articles.datePicker.openMonthYearPicker': 'Choose month and year',
+    'articles.datePicker.previousYear': 'Previous year',
+    'articles.datePicker.nextYear': 'Next year',
+    'articles.reactions': 'Reactions',
     'matrix.title': 'Competency matrix',
     'matrix.seo.title': 'Competency matrix',
     'matrix.seo.description': 'Competency matrix for Junior/Middle/Senior developers.',
@@ -552,11 +552,11 @@ function buildMessages() {
     'enum.grade.Middle': 'Middle',
     'enum.grade.MiddlePlus': 'Middle+',
     'enum.grade.Senior': 'Senior',
-    'enum.noteReaction.heart': 'Heart',
-    'enum.noteReaction.fire': 'Fire',
-    'enum.noteReaction.thinking': 'Thinking',
-    'enum.noteReaction.neutral': 'Neutral',
-    'enum.noteReaction.poop': 'Poop',
+    'enum.articleReaction.heart': 'Heart',
+    'enum.articleReaction.fire': 'Fire',
+    'enum.articleReaction.thinking': 'Thinking',
+    'enum.articleReaction.neutral': 'Neutral',
+    'enum.articleReaction.poop': 'Poop',
   };
 }
 

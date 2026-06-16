@@ -59,12 +59,12 @@ BALANCED_THRESHOLD_POLICY = QueryThresholdPolicy(
         QueryThresholdGroup.HEAVY: 300.0,
     },
     scenario_max_execution_ms={
-        "notes_published_for_seo_sitemap": 250.0,
+        "articles_published_for_seo_sitemap": 250.0,
         "tags_short_en": 250.0,
         "resources_short_en": 250.0,
     },
     query_max_execution_ms={
-        "notes_list_en_full_text_tag_date__002": 250.0,
-        "notes_list_ru_full_text__002": 250.0,
+        "articles_list_en_full_text_tag_date__002": 250.0,
+        "articles_list_ru_full_text__002": 250.0,
     },
 )

@@ -3,6 +3,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from core.articles.schemas import (
+    Article,
+    ArticleMetadata,
+    ArticleReactionCounts,
+    Articles,
+    Tag,
+    Tags,
+)
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser, User
 from core.auth.types import Token
@@ -28,7 +36,6 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
-from core.notes.schemas import Note, NoteMetadata, NoteReactionCounts, Notes, Tag, Tags
 from core.schemas import Secret
 from core.types import IntId, SearchName
 
@@ -397,12 +404,12 @@ class CoreFactoryHelper:
         )
 
     @classmethod
-    def note(
+    def article(
         cls,
-        note_id: uuid.UUID | None = None,
-        title: str = "Test Note",
-        content: str = "This is a test note content.",
-        slug: str = "test-notes-note",
+        article_id: uuid.UUID | None = None,
+        title: str = "Test Article",
+        content: str = "This is a test article content.",
+        slug: str = "test-articles-article",
         folder: str = "General",
         title_ru: str | None = None,
         title_en: str | None = None,
@@ -417,17 +424,17 @@ class CoreFactoryHelper:
         cover_image_url: str | None = None,
         cover_image_alt_ru: str | None = None,
         cover_image_alt_en: str | None = None,
-        metadata: NoteMetadata | None = None,
+        metadata: ArticleMetadata | None = None,
         author_username: str = "admin",
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
         published_at: str | None = None,
         created_at: str | None = None,
         updated_at: str | None = None,
         tags: list[Tag] | None = None,
-    ) -> Note:
+    ) -> Article:
         now = datetime.now(tz=UTC)
-        return Note(
-            id=note_id or uuid.uuid4(),
+        return Article(
+            id=article_id or uuid.uuid4(),
             slug=slug,
             title_ru=title_ru or title,
             title_en=title_en or title,
@@ -437,7 +444,7 @@ class CoreFactoryHelper:
             folder_en=folder_en or folder,
             author_username=author_username,
             metadata=metadata
-            or NoteMetadata(
+            or ArticleMetadata(
                 seo_title_ru=seo_title_ru,
                 seo_title_en=seo_title_en,
                 seo_description_ru=seo_description_ru,
@@ -466,13 +473,13 @@ class CoreFactoryHelper:
         )
 
     @classmethod
-    def note_list(
+    def article_list(
         cls,
-        notes: list[Note] | None = None,
+        articles: list[Article] | None = None,
         total_count: int = 0,
         total_pages: int = 0,
-    ) -> Notes:
-        return Notes(values=notes or [], total_count=total_count, total_pages=total_pages)
+    ) -> Articles:
+        return Articles(values=articles or [], total_count=total_count, total_pages=total_pages)
 
     @classmethod
     def tag(
@@ -501,15 +508,15 @@ class CoreFactoryHelper:
         return Tags(values=values or [])
 
     @classmethod
-    def note_reaction_counts(
+    def article_reaction_counts(
         cls,
         heart: int = 0,
         fire: int = 0,
         thinking: int = 0,
         neutral: int = 0,
         poop: int = 0,
-    ) -> NoteReactionCounts:
-        return NoteReactionCounts(
+    ) -> ArticleReactionCounts:
+        return ArticleReactionCounts(
             heart=heart,
             fire=fire,
             thinking=thinking,

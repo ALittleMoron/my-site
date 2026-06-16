@@ -7,7 +7,7 @@
 - [x] Competency matrix grid/table view
 - [x] About me section
 - [x] Contact form
-- [x] Notes (previous MVP core-only implementation)
+- [x] Articles (previous MVP core-only implementation)
 - [x] Admin panel via SQLAdmin
 
 - [x] Add Databasus for database backups
@@ -61,11 +61,11 @@
   - [x] Validate selected Locust API responses against backend response schemas
   - [x] Add reusable PostgreSQL query-plan harness for real compiled search queries
   - [x] Tune Locust thresholds from real baseline reports
-  - [x] Expand Locust scenarios with seeded note/detail/matrix data
+  - [x] Expand Locust scenarios with seeded article/detail/matrix data
   - [x] Add Lighthouse CI with strict quality/performance gates for Angular hybrid SSR/CSR routes
   - [x] Lighthouse audit — fix non-performance errors and enforce strict gates
 - [x] Add public "how this site is built" portfolio/case-study page.
-- [x] Add privacy-safe note analytics (public views, engaged views, anonymous reactions).
+- [x] Add privacy-safe article analytics (public views, engaged views, anonymous reactions).
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [ ] Migrate competency matrix from Google Docs to a database.
 - [x] Move tests to backend and create a src subfolder for backend
@@ -73,6 +73,7 @@
   - [ ] Choose hosting
   - [ ] Wire up missing secrets
   - [ ] Run deployment strictly from the GitHub workflow
+  - [ ] After first deployment, remove the unpublished-contract compatibility rule from `AGENTS.md`
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
     - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
@@ -91,7 +92,7 @@
   - [ ] Configure independent image publishing for backend and frontend
   - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [ ] Bot protection for the site
-  - [x] Basic nginx edge rate limits for login, contact, public notes, and admin search endpoints
+  - [x] Basic nginx edge rate limits for login, contact, public articles, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
@@ -330,68 +331,68 @@
 - [x] Security audit
   - [x] Moderators and admins can edit, add, and delete matrix questions
 
-### Notes
+### Articles
 
-- [x] Content localisation for notes
-  - [x] Store note `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, and `folder_en` as required columns
+- [x] Content localisation for articles
+  - [x] Store article `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, and `folder_en` as required columns
   - [x] Store tag `name_ru` and `name_en` as required columns
-  - [x] Keep note `slug` and tag `slug` as single stable English identifiers shared across languages
-  - [x] Require all RU/EN fields on create and update for both draft and published notes
-  - [x] Read note list, detail, tree, tag list, and tag search results in the selected content language
+  - [x] Keep article `slug` and tag `slug` as single stable English identifiers shared across languages
+  - [x] Require all RU/EN fields on create and update for both draft and published articles
+  - [x] Read article list, detail, tree, tag list, and tag search results in the selected content language
   - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
   - [x] Keep `tagSlug` as one language-neutral English filter
-  - [x] Add content authoring UI controls for editing RU and EN note and tag fields in one form
+  - [x] Add content authoring UI controls for editing RU and EN article and tag fields in one form
   - [x] Update the init Alembic migration because the service is not deployed yet
   - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
   - [x] Cover backend and frontend behaviour with focused tests
-- [x] Hide/Publish notes
-- [x] Show notes sorted by publication date
-- [x] Show notes in a side panel with a tree view
-- [x] Show public note view counters and anonymous reactions
-- [x] Admin note statistics by date range, source category, and reactions
+- [x] Hide/Publish articles
+- [x] Show articles sorted by publication date
+- [x] Show articles in a side panel with a tree view
+- [x] Show public article view counters and anonymous reactions
+- [x] Admin article statistics by date range, source category, and reactions
 - [x] Filters by tags
 - [x] Filters by publish date range
-- [x] Search notes by title and content
+- [x] Search articles by title and content
 - [x] Authoring-first public articles release
-  - [x] Use Notes as the article model and keep save/publish independent from SEO warnings
-  - [x] Add nullable RU/EN SEO metadata, cover URL, and cover alt fields to note storage/API
+  - [x] Use articles as the authored content model and keep save/publish independent from SEO warnings
+  - [x] Add nullable RU/EN SEO metadata, cover URL, and cover alt fields to article storage/API
   - [x] Require an explicit `metadata` request object while allowing individual metadata fields to be `null`
-  - [x] Add note form controls for SEO metadata and cover upload through the presign flow
+  - [x] Add article form controls for SEO metadata and cover upload through the presign flow
   - [x] Expand the live admin SEO panel with metadata, cover, alt, and wiki-link checks
   - [x] Add in-form article/social preview for the active language
-  - [x] Render typed `[[notes:<slug>]]` / `[[matrix:<slug>]]` links as internal localized links
+  - [x] Render typed `[[articles:<slug>]]` / `[[matrix:<slug>]]` links as internal localized links
   - [x] Warn when wiki links point to missing targets available in the admin target registry
 - [x] SEO Foundation release
   - [x] Add Angular hybrid rendering for public article routes while keeping interactive/admin routes CSR
   - [x] Add `/ru` and `/en` canonical URL prefixes
   - [x] Generate dynamic `sitemap.xml` and `robots.txt`
-  - [x] Emit Article JSON-LD/Open Graph metadata from stored note metadata
+  - [x] Emit Article JSON-LD/Open Graph metadata from stored article metadata
   - [x] Add HTML smoke tests for public article pages and missing-article `404/noindex`
 - [x] Matrix public SEO release
   - [x] Add explicit matrix question slugs
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
-- [ ] Add admin/moderator content workspace for notes with richer filters, views, queues, and quick actions.
-- [ ] Add content health checks for notes: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
-- [ ] Add note revision history with diff and restore.
-- [ ] Add autosave / local draft recovery for note editing.
-- [ ] Add protected preview links for unpublished notes.
-- [ ] Add scheduled publishing for notes.
-- [ ] Add editorial workflow statuses for notes: idea, draft, review, ready, published, archived.
-- [ ] Add Obsidian-compatible Markdown import/export for notes.
+- [ ] Add admin/moderator content workspace for articles with richer filters, views, queues, and quick actions.
+- [ ] Add content health checks for articles: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
+- [ ] Add article revision history with diff and restore.
+- [ ] Add autosave / local draft recovery for article editing.
+- [ ] Add protected preview links for unpublished articles.
+- [ ] Add scheduled publishing for articles.
+- [ ] Add editorial workflow statuses for articles: idea, draft, review, ready, published, archived.
+- [ ] Add Obsidian-compatible Markdown import/export for articles.
 - [ ] Add privacy-safe AI-assisted authoring for spelling, SEO hints, tags, and RU/EN consistency.
 - [ ] TTL (5 min) cache for analytics data
-- [ ] Obsidian-like note editor
+- [ ] Obsidian-like article editor
   - [x] Rich text editor
   - [x] Tags
   - [ ] Attachments
-  - [x] typed links with notes and matrix questions using `[[notes:<slug>]]` / `[[matrix:<slug>]]`
+  - [x] typed links with articles and matrix questions using `[[articles:<slug>]]` / `[[matrix:<slug>]]`
   - [ ] Spell checking for Russian and English.
   - [ ] Check and warn when a wiki-link references unpublished material.
 - [x] Security audit
-  - [x] Moderators and admins can edit, add, and delete notes
-  - [x] Regular users cannot view hidden notes
+  - [x] Moderators and admins can edit, add, and delete articles
+  - [x] Regular users cannot view hidden articles
 
 ### Knowledge database
 
@@ -462,7 +463,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Password recovery
 - [ ] Password confirmation
 - [ ] Flashcards from competency matrix (stateful — saved per user)
-- [ ] Comments on notes
+- [ ] Comments on articles
 - [ ] 2FA/MFA for users
 - [ ] User profile
   - [ ] Course completion statistics
@@ -503,7 +504,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Add public direction roadmaps such as Python Backend, Frontend, etc.
 - [ ] Dynamic roadmap rendering
 - [ ] Links to matrix questions
-- [ ] Links to notes
+- [ ] Links to articles
 - [ ] Links to resources
 - [ ] Links to courses
 - [ ] Links to another roadmap (step, after which you may go to the next roadmap)
@@ -532,8 +533,8 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
 - [x] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
 - [ ] Add public changelog/updates page.
-- [ ] Add RSS/Atom feeds for published notes and matrix updates.
-- [ ] Add lightweight subscription channel for new notes, matrix items, and courses.
+- [ ] Add RSS/Atom feeds for published articles and matrix updates.
+- [ ] Add lightweight subscription channel for new articles, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.
 
 ## Bugs
@@ -545,25 +546,25 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Make the active `ru/en` language switch green instead of blue, matching the competency matrix active controls.
   - [x] Make the "to question" button on the competency matrix detail page green, consistent with the existing project button style.
   - [x] Localise the date-range filter placeholder: Russian may stay `дд.мм.гггг`, but English should use a clearer US-style `mm.dd.yyyy` format.
-  - [x] Add comfortable left and right padding to note text in the public notes list.
-  - [x] Make the active note reaction state green instead of blue.
-  - [x] On note detail pages, visually separate the back button from tags and make it green.
-  - [x] Make the notes filter search button green.
+  - [x] Add comfortable left and right padding to article text in the public articles list.
+  - [x] Make the active article reaction state green instead of blue.
+  - [x] On article detail pages, visually separate the back button from tags and make it green.
+  - [x] Make the articles filter search button green.
   - [x] Prevent the English `Login` button text from wrapping as `Log` / `in`, so the header does not shift when switching languages.
   - [x] Move the `Folders` side-panel toggle to the left, replace the text button with an icon-only side-panel toggle whose icon reflects open/closed state, and add a simple open/close animation.
-  - [x] Restyle the notes side panel so folders and notes read as a tree: reduce the default note background contrast, use hover background for notes, increase note indentation inside folders, and consider cohesive tree connector glyphs.
+  - [x] Restyle the articles side panel so folders and articles read as a tree: reduce the default article background contrast, use hover background for articles, increase article indentation inside folders, and consider cohesive tree connector glyphs.
   - [x] Fix the sitemap page title overlapping the header.
-  - [x] Show the list of published notes on the sitemap page.
+  - [x] Show the list of published articles on the sitemap page.
   - [x] Fix the about page `Contact me` anchor so scrolling to the contact form does not visibly re-render the page.
 - [x] Production admin UI QA
   - [x] Make the logout control borderless: red text only, separated from the username by a vertical `|` delimiter.
   - [x] Prevent the English `Logout` button text from wrapping as `Log` / `out`.
   - [x] Make the add competency matrix question button green and move it inline after search.
-  - [x] Make `published only` toggles green when enabled in both competency matrix and notes views.
-  - [x] Tone down admin action buttons for matrix questions and notes: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
-  - [x] Make `add notes` and `statistic` buttons green.
+  - [x] Make `published only` toggles green when enabled in both competency matrix and articles views.
+  - [x] Tone down admin action buttons for matrix questions and articles: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
+  - [x] Make `add article` and `statistics` buttons green.
   - [x] Add a simple animation for showing and hiding statistics.
-  - [x] Hide folders and filters when opening a note detail page.
+  - [x] Hide folders and filters when opening an article detail page.
   - [x] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.
   - [x] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.
   - [x] Clarify which created external resource context field is Russian and which is English in the competency matrix question form.
@@ -571,7 +572,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 ## Documentation
 
 - [ ] Add parameter details to the API and include examples and other fields.
-- [ ] Add public architecture, quality, and security notes as portfolio documentation.
+- [ ] Add public architecture, quality, and security articles as portfolio documentation.
 - [ ] Add ADRs for major platform choices.
 
 ## Refactoring

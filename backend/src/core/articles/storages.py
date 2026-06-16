@@ -1,0 +1,157 @@
+from abc import ABC, abstractmethod
+from datetime import date
+from uuid import UUID
+
+from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
+from core.articles.schemas import (
+    Article,
+    ArticleAnalyticsDailyStats,
+    ArticleFilters,
+    ArticlePublicStatsCollection,
+    ArticleReactionCounts,
+    ArticleTreeItemData,
+    Tag,
+    Tags,
+)
+from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
+from core.types import IntId
+
+
+class ArticlesStorage(ABC):
+    @abstractmethod
+    async def get_article_by_slug(
+        self,
+        *,
+        slug: str,
+        include_deleted_tags: bool,
+    ) -> Article:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_articles(self, *, filters: ArticleFilters) -> tuple[list[Article], int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_tree_items(
+        self,
+        *,
+        only_published: bool,
+        language: LanguageEnum,
+    ) -> list[ArticleTreeItemData]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_article(self, *, article: Article) -> Article:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_article(self, *, article: Article) -> Article:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_article(self, *, slug: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_article_publish_status(
+        self,
+        *,
+        slug: str,
+        publish_status: PublishStatusEnum,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_tags_by_ids(
+        self,
+        *,
+        tag_ids: list[IntId],
+        include_deleted: bool,
+    ) -> Tags:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def search_tags(
+        self,
+        *,
+        search_name: str,
+        include_deleted: bool,
+        limit: int,
+        language: LanguageEnum,
+    ) -> Tags:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_tag(self, *, tag: Tag) -> Tag:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_tag(self, *, tag: Tag) -> Tag:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def soft_delete_tag(self, *, tag_id: IntId) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def restore_tag(self, *, tag_id: IntId) -> None:
+        raise NotImplementedError
+
+
+class ArticleAnalyticsStorage(ABC):
+    @abstractmethod
+    async def increment_view(
+        self,
+        *,
+        article_id: UUID,
+        source_category: ArticleViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def increment_engaged_view(
+        self,
+        *,
+        article_id: UUID,
+        source_category: ArticleViewSourceCategory,
+        viewed_on: date | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_public_stats(self, *, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_reaction(
+        self,
+        *,
+        article_id: UUID,
+        article_scoped_voter_hash: str,
+        reaction_kind: ArticleReactionKind | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_daily_stats(
+        self,
+        *,
+        date_from: date,
+        date_to: date,
+        language: LanguageEnum,
+    ) -> list[ArticleAnalyticsDailyStats]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_reaction_counts(
+        self,
+        *,
+        article_ids: list[UUID],
+    ) -> dict[UUID, ArticleReactionCounts]:
+        raise NotImplementedError

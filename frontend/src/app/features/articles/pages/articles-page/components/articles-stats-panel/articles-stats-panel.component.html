@@ -1,0 +1,104 @@
+<section class="border rounded p-3 mb-4" [attr.aria-label]="'articles.stats.aria' | t">
+  <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+    <div>
+      <label class="form-label small text-body-secondary d-block mb-1" for="articlesStatsDateFrom">
+        {{ 'articles.stats.from' | t }}
+      </label>
+      <app-localized-date-picker
+        inputId="articlesStatsDateFrom"
+        [value]="dateFrom()"
+        [dateLocale]="dateLocale()"
+        [placeholder]="datePlaceholder()"
+        [openCalendarLabel]="openCalendarLabel()"
+        [previousMonthLabel]="previousMonthLabel()"
+        [nextMonthLabel]="nextMonthLabel()"
+        [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+        [previousYearLabel]="previousYearLabel()"
+        [nextYearLabel]="nextYearLabel()"
+        (valueChange)="setDateFrom($event)"
+      />
+    </div>
+    <div>
+      <label class="form-label small text-body-secondary d-block mb-1" for="articlesStatsDateTo">
+        {{ 'articles.stats.to' | t }}
+      </label>
+      <app-localized-date-picker
+        inputId="articlesStatsDateTo"
+        [value]="dateTo()"
+        [dateLocale]="dateLocale()"
+        [placeholder]="datePlaceholder()"
+        [openCalendarLabel]="openCalendarLabel()"
+        [previousMonthLabel]="previousMonthLabel()"
+        [nextMonthLabel]="nextMonthLabel()"
+        [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+        [previousYearLabel]="previousYearLabel()"
+        [nextYearLabel]="nextYearLabel()"
+        (valueChange)="setDateTo($event)"
+      />
+    </div>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary"
+      data-testid="articles-stats-refresh"
+      (click)="refresh.emit()"
+    >
+      {{ 'shared.update' | t }}
+    </button>
+    @if (stats()) {
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="exportCsv.emit()">
+        CSV
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+  } @else if (error()) {
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="refresh.emit()"
+    />
+  } @else if (stats()) {
+    <div class="d-flex flex-wrap gap-3 small text-body-secondary mb-3">
+      <span>{{ 'articles.stats.views' | t: { count: stats()!.totals.viewCount } }}</span>
+      <span>{{ 'articles.stats.engaged' | t: { count: stats()!.totals.engagedViewCount } }}</span>
+      <span>{{ 'articles.stats.reactions' | t: { count: stats()!.totals.reactionCount } }}</span>
+    </div>
+
+    @if (stats()!.articles.length === 0) {
+      <app-empty-state [message]="'articles.stats.empty' | t" />
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'articles.stats.article' | t }}</th>
+              <th scope="col" class="text-end">{{ 'articles.stats.viewsColumn' | t }}</th>
+              <th scope="col" class="text-end">{{ 'articles.stats.engagedColumn' | t }}</th>
+              <th scope="col" class="text-end">❤️</th>
+              <th scope="col" class="text-end">🔥</th>
+              <th scope="col" class="text-end">🤔</th>
+              <th scope="col" class="text-end">😐</th>
+              <th scope="col" class="text-end">💩</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (article of stats()!.articles; track article.articleId) {
+              <tr>
+                <td>{{ article.title }}</td>
+                <td class="text-end">{{ article.viewCount }}</td>
+                <td class="text-end">{{ article.engagedViewCount }}</td>
+                <td class="text-end">{{ article.reactionCounts.heart }}</td>
+                <td class="text-end">{{ article.reactionCounts.fire }}</td>
+                <td class="text-end">{{ article.reactionCounts.thinking }}</td>
+                <td class="text-end">{{ article.reactionCounts.neutral }}</td>
+                <td class="text-end">{{ article.reactionCounts.poop }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

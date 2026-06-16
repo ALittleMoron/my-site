@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.articles.schemas import Article, Tag
 from core.auth.schemas import User
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -12,13 +13,12 @@ from core.competency_matrix.schemas import (
 )
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
-from core.notes.schemas import Note, Tag
 from infra.postgresql.models import (
+    ArticleModel,
+    ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
     ContactMeModel,
     ExternalResourceModel,
-    NoteModel,
-    NoteToTagSecondaryModel,
     QueuedQuestionModel,
     TagModel,
     UserModel,
@@ -80,26 +80,26 @@ class StorageHelper:
         await self.session.flush()
         return db_users
 
-    async def create_note(self, note: Note) -> NoteModel:
-        db_note = NoteModel.from_domain_schema(note=note)
-        db_note.tag_links = [
-            NoteToTagSecondaryModel.from_domain_schema(tag=tag) for tag in note.tags
+    async def create_article(self, article: Article) -> ArticleModel:
+        db_article = ArticleModel.from_domain_schema(article=article)
+        db_article.tag_links = [
+            ArticleToTagSecondaryModel.from_domain_schema(tag=tag) for tag in article.tags
         ]
-        self.session.add(db_note)
+        self.session.add(db_article)
         await self.session.flush()
-        return db_note
+        return db_article
 
-    async def create_notes(self, notes: list[Note]) -> list[NoteModel]:
-        db_notes = []
-        for note in notes:
-            db_note = NoteModel.from_domain_schema(note=note)
-            db_note.tag_links = [
-                NoteToTagSecondaryModel.from_domain_schema(tag=tag) for tag in note.tags
+    async def create_articles(self, articles: list[Article]) -> list[ArticleModel]:
+        db_articles = []
+        for article in articles:
+            db_article = ArticleModel.from_domain_schema(article=article)
+            db_article.tag_links = [
+                ArticleToTagSecondaryModel.from_domain_schema(tag=tag) for tag in article.tags
             ]
-            db_notes.append(db_note)
-        self.session.add_all(db_notes)
+            db_articles.append(db_article)
+        self.session.add_all(db_articles)
         await self.session.flush()
-        return db_notes
+        return db_articles
 
     async def create_tag(self, tag: Tag) -> TagModel:
         db_tag = TagModel.from_domain_schema(tag=tag)

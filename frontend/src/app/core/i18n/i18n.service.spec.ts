@@ -77,7 +77,7 @@ describe('I18nService', () => {
   });
 
   it('uses the URL language prefix before the stored language', () => {
-    window.history.pushState({}, '', '/en/notes/typed-notes');
+    window.history.pushState({}, '', '/en/articles/typed-articles');
     localStorage.setItem('chosenLanguage', 'ru');
 
     service.initialize().subscribe();

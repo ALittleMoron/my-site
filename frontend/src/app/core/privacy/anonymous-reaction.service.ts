@@ -1,8 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 
-const CLIENT_TOKEN_KEY = 'noteReactionClientToken';
-const REACTION_SELECTIONS_KEY = 'noteReactionSelections';
+const CLIENT_TOKEN_KEY = 'articleReactionClientToken';
+const REACTION_SELECTIONS_KEY = 'articleReactionSelections';
 
 @Injectable({ providedIn: 'root' })
 export class AnonymousReactionService {

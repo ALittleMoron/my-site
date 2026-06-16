@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
+from core.articles.schemas import Article, ArticleFilters, Articles, ArticleTree, Tags
+from core.articles.use_cases import AbstractArticlesUseCase
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemBySlugGetParams,
@@ -13,8 +15,12 @@ from core.competency_matrix.schemas import (
 )
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import Note, NoteFilters, Notes, NoteTree, Tags
-from core.notes.use_cases import AbstractNotesUseCase
+from entrypoints.litestar.api.articles.schemas import (
+    ArticleDetailResponseSchema,
+    ArticleListResponseSchema,
+    ArticleTreeResponseSchema,
+    TagsResponseSchema,
+)
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
     CompetencyMatrixItemsListResponseSchema,
@@ -25,12 +31,6 @@ from entrypoints.litestar.api.i18n.schemas import (
     I18nBundleResponseSchema,
     LanguageResponseSchema,
     LanguagesResponseSchema,
-)
-from entrypoints.litestar.api.notes.schemas import (
-    NoteDetailResponseSchema,
-    NoteListResponseSchema,
-    NoteTreeResponseSchema,
-    TagsResponseSchema,
 )
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from infra.config.settings import settings
@@ -88,8 +88,8 @@ class I18nCacheWarmTargetCollector:
 
 
 @dataclass(frozen=True, slots=True)
-class NotesCacheWarmTargetCollector:
-    notes_use_case: AbstractNotesUseCase
+class ArticlesCacheWarmTargetCollector:
+    articles_use_case: AbstractArticlesUseCase
     query_builder: CacheWarmQueryBuilder
 
     async def collect(self) -> list[CacheWarmTarget]:
@@ -99,22 +99,22 @@ class NotesCacheWarmTargetCollector:
         return targets
 
     async def _collect_language_targets(self, *, language: LanguageEnum) -> list[CacheWarmTarget]:
-        tags = await self.notes_use_case.list_tags(include_deleted=False, language=language)
-        tree = await self.notes_use_case.list_tree(only_published=True, language=language)
-        notes = await self.notes_use_case.list_notes(
+        tags = await self.articles_use_case.list_tags(include_deleted=False, language=language)
+        tree = await self.articles_use_case.list_tree(only_published=True, language=language)
+        articles = await self.articles_use_case.list_articles(
             filters=self._build_list_filters(language=language),
         )
         return [
             self._tags_target(tags=tags, language=language),
             self._tree_target(tree=tree, language=language),
-            self._list_target(notes=notes, language=language),
-            *await self._detail_targets(notes=notes, language=language),
+            self._list_target(articles=articles, language=language),
+            *await self._detail_targets(articles=articles, language=language),
         ]
 
-    def _build_list_filters(self, *, language: LanguageEnum) -> NoteFilters:
-        return NoteFilters(
+    def _build_list_filters(self, *, language: LanguageEnum) -> ArticleFilters:
+        return ArticleFilters(
             page=1,
-            page_size=settings.cache_warm.notes_page_size,
+            page_size=settings.cache_warm.articles_page_size,
             language=language,
             only_published=True,
             tag_slug=None,
@@ -127,8 +127,8 @@ class NotesCacheWarmTargetCollector:
 
     def _tags_target(self, *, tags: Tags, language: LanguageEnum) -> CacheWarmTarget:
         return CacheWarmTarget(
-            domain=ResponseCacheDomain.NOTES,
-            path="/api/notes/tags",
+            domain=ResponseCacheDomain.ARTICLES,
+            path="/api/articles/tags",
             query=self.query_builder.build(("language", language.value)),
             response=TagsResponseSchema.from_domain_schema(
                 schema=tags,
@@ -136,25 +136,25 @@ class NotesCacheWarmTargetCollector:
             ),
         )
 
-    def _tree_target(self, *, tree: NoteTree, language: LanguageEnum) -> CacheWarmTarget:
+    def _tree_target(self, *, tree: ArticleTree, language: LanguageEnum) -> CacheWarmTarget:
         return CacheWarmTarget(
-            domain=ResponseCacheDomain.NOTES,
-            path="/api/notes/tree",
+            domain=ResponseCacheDomain.ARTICLES,
+            path="/api/articles/tree",
             query=self.query_builder.build(("language", language.value)),
-            response=NoteTreeResponseSchema.from_domain_schema(schema=tree),
+            response=ArticleTreeResponseSchema.from_domain_schema(schema=tree),
         )
 
-    def _list_target(self, *, notes: Notes, language: LanguageEnum) -> CacheWarmTarget:
+    def _list_target(self, *, articles: Articles, language: LanguageEnum) -> CacheWarmTarget:
         return CacheWarmTarget(
-            domain=ResponseCacheDomain.NOTES,
-            path="/api/notes",
+            domain=ResponseCacheDomain.ARTICLES,
+            path="/api/articles",
             query=self.query_builder.build(
                 ("language", language.value),
                 ("page", "1"),
-                ("pageSize", str(settings.cache_warm.notes_page_size)),
+                ("pageSize", str(settings.cache_warm.articles_page_size)),
             ),
-            response=NoteListResponseSchema.from_domain_schema(
-                schema=notes,
+            response=ArticleListResponseSchema.from_domain_schema(
+                schema=articles,
                 language=language,
             ),
         )
@@ -162,33 +162,33 @@ class NotesCacheWarmTargetCollector:
     async def _detail_targets(
         self,
         *,
-        notes: Notes,
+        articles: Articles,
         language: LanguageEnum,
     ) -> list[CacheWarmTarget]:
         return [
             self._detail_target(
-                note=note,
-                detail=await self._load_detail(note=note),
+                article=article,
+                detail=await self._load_detail(article=article),
                 language=language,
             )
-            for note in notes.values
+            for article in articles.values
         ]
 
-    async def _load_detail(self, *, note: Note) -> Note:
-        return await self.notes_use_case.get_note(slug=note.slug, only_published=True)
+    async def _load_detail(self, *, article: Article) -> Article:
+        return await self.articles_use_case.get_article(slug=article.slug, only_published=True)
 
     def _detail_target(
         self,
         *,
-        note: Note,
-        detail: Note,
+        article: Article,
+        detail: Article,
         language: LanguageEnum,
     ) -> CacheWarmTarget:
         return CacheWarmTarget(
-            domain=ResponseCacheDomain.NOTES,
-            path=f"/api/notes/detail/{note.slug}",
+            domain=ResponseCacheDomain.ARTICLES,
+            path=f"/api/articles/detail/{article.slug}",
             query=self.query_builder.build(("language", language.value)),
-            response=NoteDetailResponseSchema.from_domain_schema(
+            response=ArticleDetailResponseSchema.from_domain_schema(
                 schema=detail,
                 language=language,
             ),
@@ -337,7 +337,7 @@ class CompetencyMatrixCacheWarmTargetCollector:
 @dataclass(frozen=True, slots=True)
 class ResponseCacheWarmTargetCollector:
     i18n_collector: I18nCacheWarmTargetCollector
-    notes_collector: NotesCacheWarmTargetCollector
+    articles_collector: ArticlesCacheWarmTargetCollector
     matrix_collector: CompetencyMatrixCacheWarmTargetCollector
 
     async def collect(self, *, domains: Iterable[ResponseCacheDomain]) -> list[CacheWarmTarget]:
@@ -345,8 +345,8 @@ class ResponseCacheWarmTargetCollector:
         targets: list[CacheWarmTarget] = []
         if ResponseCacheDomain.I18N in requested_domains:
             targets.extend(self.i18n_collector.collect())
-        if ResponseCacheDomain.NOTES in requested_domains:
-            targets.extend(await self.notes_collector.collect())
+        if ResponseCacheDomain.ARTICLES in requested_domains:
+            targets.extend(await self.articles_collector.collect())
         if ResponseCacheDomain.COMPETENCY_MATRIX in requested_domains:
             targets.extend(await self.matrix_collector.collect())
         return targets

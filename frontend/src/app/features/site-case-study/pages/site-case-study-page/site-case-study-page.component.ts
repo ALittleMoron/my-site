@@ -48,7 +48,7 @@ export class SiteCaseStudyPageComponent implements OnInit {
   ];
 
   readonly matrixLink = computed(() => `/${this.language()}/competency-matrix`);
-  readonly notesLink = computed(() => `/${this.language()}/notes`);
+  readonly articlesLink = computed(() => `/${this.language()}/articles`);
 
   ngOnInit(): void {
     const language = this.language();

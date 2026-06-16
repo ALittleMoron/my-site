@@ -87,7 +87,7 @@ vulture:
 fix:
 	bash scripts/quality.sh fix
 
-# Usage: make lint-file file=src/core/notes/use_cases.py
+# Usage: make lint-file file=src/core/articles/use_cases.py
 .PHONY: lint-file
 lint-file:
 	bash scripts/quality.sh lint-file "$(file)"

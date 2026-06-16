@@ -2,5 +2,5 @@ from core.enums import StrEnum
 
 
 class WikiLinkTargetTypeEnum(StrEnum):
-    NOTES = "notes"
+    ARTICLES = "articles"
     MATRIX = "matrix"

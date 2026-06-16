@@ -1,0 +1,60 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
+import { ArticleListComponent } from './article-list.component';
+
+describe('ArticleListComponent', () => {
+  let fixture: ComponentFixture<ArticleListComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ArticleListComponent],
+      providers: [provideI18nTesting()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ArticleListComponent);
+    fixture.componentRef.setInput('articles', [
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        title: 'Typed articles',
+        slug: 'typed-articles',
+        folder: 'Engineering',
+        authorUsername: 'admin',
+        publishedAt: '2026-01-02T03:04:05+00:00',
+        publishStatus: 'Published',
+        updatedAt: '2026-01-03T03:04:05+00:00',
+        excerpt: 'Excerpt',
+        viewCount: 42,
+        tags: [
+          {
+            id: 1,
+            name: 'Python',
+            slug: 'python',
+            deletedAt: null,
+            translations: { ru: { name: 'Python' }, en: { name: 'Python' } },
+          },
+        ],
+      },
+    ]);
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('totalPages', 1);
+    fixture.componentRef.setInput('dateLocale', 'ru-RU');
+    fixture.detectChanges();
+  });
+
+  it('renders public view count', () => {
+    expect(fixture.nativeElement.textContent).toContain('42 просмотров');
+  });
+
+  it('emits article and tag selections', () => {
+    const articleSelected = jest.fn();
+    const tagSelected = jest.fn();
+    fixture.componentInstance.articleSelected.subscribe(articleSelected);
+    fixture.componentInstance.tagSelected.subscribe(tagSelected);
+
+    fixture.debugElement.query(By.css('.articles-title-button')).nativeElement.click();
+    fixture.debugElement.query(By.css('.btn-outline-secondary')).nativeElement.click();
+
+    expect(articleSelected).toHaveBeenCalledWith('typed-articles');
+    expect(tagSelected).toHaveBeenCalledWith('python');
+  });
+});

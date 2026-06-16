@@ -18,7 +18,7 @@ export interface PublicMatrixQuestionRoute {
 
 export type PublicSeoRoute = PublicSeoArticleRoute | PublicMatrixQuestionRoute;
 
-const PUBLIC_ARTICLE_PATH_PATTERN = /^\/(ru|en)\/notes\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
+const PUBLIC_ARTICLE_PATH_PATTERN = /^\/(ru|en)\/articles\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 const PUBLIC_MATRIX_QUESTION_PATH_PATTERN =
   /^\/(ru|en)\/competency-matrix\/questions\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/;
 
@@ -57,7 +57,7 @@ export function buildPublicSeoApiUrl(apiOrigin: string, route: PublicSeoRoute): 
 }
 
 export function buildPublicArticleApiUrl(apiOrigin: string, route: PublicArticleRoute): URL {
-  const url = new URL(`/api/notes/detail/${route.slug}`, apiOrigin);
+  const url = new URL(`/api/articles/detail/${route.slug}`, apiOrigin);
   url.searchParams.set('language', route.language);
   return url;
 }
@@ -95,7 +95,7 @@ export function normalizeOrigin(value: string, name: string): string {
 
 function canonicalPath(route: PublicSeoRoute): string {
   if (route.kind === 'article') {
-    return `/${route.language}/notes/${route.slug}`;
+    return `/${route.language}/articles/${route.slug}`;
   }
   return `/${route.language}/competency-matrix/questions/${route.slug}`;
 }

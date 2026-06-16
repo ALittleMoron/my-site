@@ -1,8 +1,8 @@
+from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
 from core.competency_matrix.enums import GradeEnum
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from entrypoints.litestar.api.i18n.catalog import get_i18n_messages
 
 
@@ -23,21 +23,23 @@ class TestI18nCatalog:
                 assert f"enum.grade.{grade.name.title().replace('_', '')}" in messages
             for role in RoleEnum:
                 assert f"enum.role.{role.value}" in messages
-            for reaction in NoteReactionKind:
-                assert f"enum.noteReaction.{reaction.value}" in messages
-            for source in NoteViewSourceCategory:
-                assert f"enum.noteViewSource.{source.value}" in messages
+            for reaction in ArticleReactionKind:
+                assert f"enum.articleReaction.{reaction.value}" in messages
+            for source in ArticleViewSourceCategory:
+                assert f"enum.articleViewSource.{source.value}" in messages
 
     def test_date_picker_catalog_has_month_year_navigation_labels(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
-        assert russian_messages["notes.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
-        assert russian_messages["notes.datePicker.previousYear"] == "Предыдущий год"
-        assert russian_messages["notes.datePicker.nextYear"] == "Следующий год"
-        assert english_messages["notes.datePicker.openMonthYearPicker"] == "Choose month and year"
-        assert english_messages["notes.datePicker.previousYear"] == "Previous year"
-        assert english_messages["notes.datePicker.nextYear"] == "Next year"
+        assert russian_messages["articles.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
+        assert russian_messages["articles.datePicker.previousYear"] == "Предыдущий год"
+        assert russian_messages["articles.datePicker.nextYear"] == "Следующий год"
+        assert (
+            english_messages["articles.datePicker.openMonthYearPicker"] == "Choose month and year"
+        )
+        assert english_messages["articles.datePicker.previousYear"] == "Previous year"
+        assert english_messages["articles.datePicker.nextYear"] == "Next year"
 
     def test_about_catalog_matches_current_resume_experience(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)

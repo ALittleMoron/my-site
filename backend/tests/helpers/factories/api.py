@@ -22,13 +22,13 @@ class ApiFactoryHelper:
         return {"username": username, "password": password or "TEST"}
 
     @classmethod
-    def note_request(
+    def article_request(
         cls,
-        title_ru: str = "Заметка",
-        title_en: str = "Note",
-        content_ru: str = "Содержимое заметки",
-        content_en: str = "Note content",
-        slug: str = "note",
+        title_ru: str = "Статья",
+        title_en: str = "Article",
+        content_ru: str = "Содержимое статьи",
+        content_en: str = "Article content",
+        slug: str = "article",
         folder_ru: str = "Общее",
         folder_en: str = "General",
         publish_status: str = "Draft",
@@ -42,13 +42,13 @@ class ApiFactoryHelper:
             "metadata": metadata
             if metadata is not None
             else {
-                "seoTitleRu": "SEO заметка",
-                "seoTitleEn": "SEO note",
+                "seoTitleRu": "SEO статья",
+                "seoTitleEn": "SEO article",
                 "seoDescriptionRu": "Описание для выдачи",
                 "seoDescriptionEn": "Search result description",
                 "coverImageUrl": "https://example.com/cover.jpg",
-                "coverImageAltRu": "Обложка заметки",
-                "coverImageAltEn": "Note cover",
+                "coverImageAltRu": "Обложка статьи",
+                "coverImageAltEn": "Article cover",
             },
             "translations": {
                 "ru": {"title": title_ru, "content": content_ru, "folder": folder_ru},

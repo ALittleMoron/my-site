@@ -66,7 +66,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Prefer moving meaningful multi-parameter object creation into methods on the object that owns
   that creation logic, or into the owning use case when the object is an aggregate/read model.
   Do not extract creation solely for tiny objects with too few fields to justify the extra method.
-- Aggregating core objects such as note lists, note trees, analytics summaries, and similar
+- Aggregating core objects such as article lists, article trees, analytics summaries, and similar
   use-case-shaped read models must be assembled in core use cases or on the owning core object.
   Storage adapters must return persisted entities or narrow row/data objects needed for assembly;
   they must not collect, group, paginate, or summarize those rows into complex core aggregates.
@@ -133,23 +133,23 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 - The backend i18n catalog is the source of truth for UI interface strings and enum labels.
   Database/content localisation is separate from the UI catalog.
-- Notes, note tags, and competency matrix content localise with required fixed fields in existing tables:
+- Articles, article tags, and competency matrix content localise with required fixed fields in existing tables:
   `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, `folder_en`, `name_ru`,
   `name_en`, plus competency matrix `question_*`, `answer_*`, `interview_expected_answer_*`,
   `sheet_*`, `section_*`, `subsection_*`, resource `name_*`, and attachment `context_*` fields.
   Competency matrix sheets must use a stable language-neutral `sheet_key`/`sheetKey` identifier.
   Do not add generic translation tables, production defaults, or fallback language behavior unless
   an explicit design change asks for them.
-- Core note, tag, and competency matrix domain entities must not store localized projection fields
+- Core article, tag, and competency matrix domain entities must not store localized projection fields
   such as `title`, `content`, `folder`, `name`, or localized matrix text. Keep canonical RU/EN
   fields on the domain object and build localized public values in response schemas or explicit read
   models using `LanguageEnum`.
-- Note article SEO metadata belongs to the note contract, not to a generic translation table.
+- Article SEO metadata belongs to the article contract, not to a generic translation table.
   Keep the explicit nullable fields `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
-  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` on note
-  domain/API/storage models. Note create/update API payloads must require the `metadata` object
+  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` on article
+  domain/API/storage models. Article create/update API payloads must require the `metadata` object
   itself while allowing individual metadata fields to be null, with no production defaults.
-- Read/write APIs that expose localized note, tag, or competency matrix content must use the
+- Read/write APIs that expose localized article, tag, or competency matrix content must use the
   backend language enum and require explicit `LanguageEnum`/`language` selection where localized
   values are returned.
 - Supported UI languages must be modeled with a backend enum. Do not accept arbitrary language
@@ -158,7 +158,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
 - Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
   and cover new languages/keys with catalog parity tests.
-- Non-note and non-matrix content localisation remains future work until explicitly designed.
+- Non-article and non-matrix content localisation remains future work until explicitly designed.
 
 ## Persistence
 

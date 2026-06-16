@@ -9,8 +9,8 @@ depends_on = None
 
 def upgrade() -> None:
     op.create_index(
-        "notes_note_tree_ru_published_idx",
-        "notes__note_model",
+        "articles_article_tree_ru_published_idx",
+        "articles__article_model",
         [
             "folder_ru",
             sa.text("published_at DESC NULLS LAST"),
@@ -22,8 +22,8 @@ def upgrade() -> None:
         postgresql_where=sa.text("publish_status = 'PUBLISHED'"),
     )
     op.create_index(
-        "notes_note_tree_en_published_idx",
-        "notes__note_model",
+        "articles_article_tree_en_published_idx",
+        "articles__article_model",
         [
             "folder_en",
             sa.text("published_at DESC NULLS LAST"),
@@ -65,10 +65,10 @@ def downgrade() -> None:
         unique=False,
     )
     op.drop_index(
-        "notes_note_tree_en_published_idx",
-        table_name="notes__note_model",
+        "articles_article_tree_en_published_idx",
+        table_name="articles__article_model",
     )
     op.drop_index(
-        "notes_note_tree_ru_published_idx",
-        table_name="notes__note_model",
+        "articles_article_tree_ru_published_idx",
+        table_name="articles__article_model",
     )

@@ -41,8 +41,9 @@ function publicRoutes(): Routes {
       loadChildren: () => import('./features/matrix/matrix.routes').then((m) => m.matrixRoutes),
     },
     {
-      path: 'notes',
-      loadChildren: () => import('./features/notes/notes.routes').then((m) => m.notesRoutes),
+      path: 'articles',
+      loadChildren: () =>
+        import('./features/articles/articles.routes').then((m) => m.articlesRoutes),
     },
     {
       path: 'sitemap',

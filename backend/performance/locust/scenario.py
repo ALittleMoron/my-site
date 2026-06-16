@@ -1,6 +1,11 @@
 from secrets import choice
 
 from core.i18n.enums import LanguageEnum
+from entrypoints.litestar.api.articles.schemas import (
+    ArticleDetailResponseSchema,
+    ArticleListResponseSchema,
+    ArticleTreeResponseSchema,
+)
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixItemDetailResponseSchema,
     CompetencyMatrixItemsListResponseSchema,
@@ -9,11 +14,6 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
 from entrypoints.litestar.api.i18n.schemas import (
     I18nBundleResponseSchema,
     LanguagesResponseSchema,
-)
-from entrypoints.litestar.api.notes.schemas import (
-    NoteDetailResponseSchema,
-    NoteListResponseSchema,
-    NoteTreeResponseSchema,
 )
 from performance.locust import constants
 from performance.locust.http import LocustHttpClient, PerformanceApiClient
@@ -35,17 +35,17 @@ class PublicSiteDiscovery:
             return []
         return [sheet.key for sheet in schema.sheets]
 
-    def discover_note_slugs(self) -> list[str]:
+    def discover_article_slugs(self) -> list[str]:
         schema = self.api_client.get_validated(
-            "/api/notes"
-            f"?page=1&pageSize={constants.DISCOVERY_NOTES_PAGE_SIZE}"
+            "/api/articles"
+            f"?page=1&pageSize={constants.DISCOVERY_ARTICLES_PAGE_SIZE}"
             f"&language={self.language.value}",
-            name="GET /api/notes",
-            schema_type=NoteListResponseSchema,
+            name="GET /api/articles",
+            schema_type=ArticleListResponseSchema,
         )
         if schema is None:
             return []
-        return [note.slug for note in schema.notes]
+        return [article.slug for article in schema.articles]
 
     def discover_matrix_item_slugs(self, *, matrix_sheets: list[str]) -> list[str]:
         slugs: list[str] = []
@@ -82,7 +82,7 @@ class PublicSiteScenario:
             language=self.language,
         )
         self.matrix_sheets = self.discovery.discover_matrix_sheets()
-        self.note_slugs = self.discovery.discover_note_slugs()
+        self.article_slugs = self.discovery.discover_article_slugs()
         self.matrix_item_slugs = self.discovery.discover_matrix_item_slugs(
             matrix_sheets=self.matrix_sheets,
         )
@@ -104,30 +104,30 @@ class PublicSiteScenario:
             schema_type=I18nBundleResponseSchema,
         )
 
-    def notes_list(self) -> None:
+    def articles_list(self) -> None:
         self.api_client.get(
-            "/api/notes"
-            f"?page=1&pageSize={constants.NOTES_LIST_PAGE_SIZE}"
+            "/api/articles"
+            f"?page=1&pageSize={constants.ARTICLES_LIST_PAGE_SIZE}"
             f"&language={self.language.value}",
-            name="GET /api/notes",
-            schema_type=NoteListResponseSchema,
+            name="GET /api/articles",
+            schema_type=ArticleListResponseSchema,
         )
 
-    def notes_tree(self) -> None:
+    def articles_tree(self) -> None:
         self.api_client.get(
-            f"/api/notes/tree?language={self.language.value}",
-            name="GET /api/notes/tree",
-            schema_type=NoteTreeResponseSchema,
+            f"/api/articles/tree?language={self.language.value}",
+            name="GET /api/articles/tree",
+            schema_type=ArticleTreeResponseSchema,
         )
 
-    def note_detail(self) -> None:
-        if not self.note_slugs:
-            self.note_slugs = self.discovery.discover_note_slugs()
+    def article_detail(self) -> None:
+        if not self.article_slugs:
+            self.article_slugs = self.discovery.discover_article_slugs()
             return
         self.api_client.get(
-            f"/api/notes/detail/{choice(self.note_slugs)}?language={self.language.value}",
-            name="GET /api/notes/detail/:slug",
-            schema_type=NoteDetailResponseSchema,
+            f"/api/articles/detail/{choice(self.article_slugs)}?language={self.language.value}",
+            name="GET /api/articles/detail/:slug",
+            schema_type=ArticleDetailResponseSchema,
         )
 
     def matrix_sheets_task(self) -> None:

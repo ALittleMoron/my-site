@@ -19,9 +19,9 @@ class QueryThresholdGroup(StrEnum):
 @dataclass(frozen=True, slots=True)
 class DatasetProfile:
     name: str
-    note_count: int
+    article_count: int
     tag_count: int
-    note_tag_link_count: int
+    article_tag_link_count: int
     resource_count: int
     explain_runs: int
 
@@ -104,9 +104,9 @@ class CliArgs:
 
 BALANCED_PROFILE = DatasetProfile(
     name="balanced",
-    note_count=200_000,
+    article_count=200_000,
     tag_count=30_000,
-    note_tag_link_count=500_000,
+    article_tag_link_count=500_000,
     resource_count=200_000,
     explain_runs=3,
 )

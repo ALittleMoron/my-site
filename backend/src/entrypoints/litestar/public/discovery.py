@@ -1,10 +1,10 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from core.articles.schemas import PublishedArticlesForSeo
 from core.competency_matrix.schemas import PublishedCompetencyMatrixItemsForSeo
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import PublishedNotesForSeo
 from infra.config.settings import settings
 
 
@@ -29,7 +29,7 @@ class PublicUrl:
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class PublicDiscoveryUrls:
-    notes: PublishedNotesForSeo
+    articles: PublishedArticlesForSeo
     matrix_items: PublishedCompetencyMatrixItemsForSeo
 
     def build(self) -> list[PublicUrl]:
@@ -43,11 +43,11 @@ class PublicDiscoveryUrls:
         )
         urls.extend(
             PublicUrl(
-                path=f"/{language.value}/notes/{note.slug}",
-                updated_at=note.updated_at.isoformat(),
+                path=f"/{language.value}/articles/{article.slug}",
+                updated_at=article.updated_at.isoformat(),
             )
-            for note in self.notes
-            if note.publish_status == PublishStatusEnum.PUBLISHED
+            for article in self.articles
+            if article.publish_status == PublishStatusEnum.PUBLISHED
             for language in LanguageEnum
         )
         urls.extend(
@@ -113,7 +113,7 @@ class RobotsTxt:
             "Disallow: /login\n"
             "Disallow: /about-me\n"
             "Disallow: /how-this-site-is-built\n"
-            "Disallow: /notes\n"
+            "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"
             f"Sitemap: {settings.get_url('/sitemap.xml')}\n"

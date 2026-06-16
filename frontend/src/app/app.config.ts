@@ -57,11 +57,11 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
   return (
     pathname === '/api/i18n/languages' ||
     pathname.startsWith('/api/i18n/bundles/') ||
-    pathname.startsWith('/api/notes/detail/') ||
+    pathname.startsWith('/api/articles/detail/') ||
     pathname.startsWith('/api/competency-matrix/items/public/') ||
-    pathname === '/api/notes/tags' ||
-    pathname === '/api/notes/tree' ||
-    pathname === '/api/notes'
+    pathname === '/api/articles/tags' ||
+    pathname === '/api/articles/tree' ||
+    pathname === '/api/articles'
   );
 }
 

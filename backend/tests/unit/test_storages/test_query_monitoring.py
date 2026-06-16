@@ -8,8 +8,11 @@ from infra.postgresql.query_monitoring import (
 class TestQueryMonitoring:
     def test_normalize_sql_statement_collapses_whitespace(self) -> None:
         assert (
-            normalize_sql_statement("SELECT  *\nFROM notes__note_model\tWHERE id = %(id)s", 200)
-            == "SELECT * FROM notes__note_model WHERE id = %(id)s"
+            normalize_sql_statement(
+                "SELECT  *\nFROM articles__article_model\tWHERE id = %(id)s",
+                200,
+            )
+            == "SELECT * FROM articles__article_model WHERE id = %(id)s"
         )
 
     def test_normalize_sql_statement_truncates_long_queries(self) -> None:

@@ -32,7 +32,7 @@ export class SiteHeaderComponent {
   readonly homeLink = computed(() => `/${this.currentLanguage()}/about-me`);
   readonly aboutLink = computed(() => `/${this.currentLanguage()}/about-me`);
   readonly matrixLink = computed(() => `/${this.currentLanguage()}/competency-matrix`);
-  readonly notesLink = computed(() => `/${this.currentLanguage()}/notes`);
+  readonly articlesLink = computed(() => `/${this.currentLanguage()}/articles`);
   readonly adminPanelLink = computed(() => '/admin-panel');
   readonly toggleLabel = computed(() =>
     this.i18n.translate(
@@ -114,7 +114,7 @@ function isPublicRouteSegment(segment: string | undefined): boolean {
     segment === 'about-me' ||
     segment === 'competency-matrix' ||
     segment === 'how-this-site-is-built' ||
-    segment === 'notes' ||
+    segment === 'articles' ||
     segment === 'sitemap'
   );
 }

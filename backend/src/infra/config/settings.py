@@ -141,7 +141,7 @@ class _TaskiqSettings(_ProjectBaseSettings):
 class _CacheWarmSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="CACHE_WARM_")
 
-    notes_page_size: PositiveInt
+    articles_page_size: PositiveInt
 
 
 class Settings:

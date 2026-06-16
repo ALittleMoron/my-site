@@ -19,8 +19,8 @@ class TestWikiLinkTargetsAPI(ContainerFixture, ApiFixture):
         self.use_case.list_targets.return_value = WikiLinkTargets(
             values=[
                 WikiLinkTargetGroup(
-                    type=WikiLinkTargetTypeEnum.NOTES,
-                    slugs=["typed-notes"],
+                    type=WikiLinkTargetTypeEnum.ARTICLES,
+                    slugs=["typed-articles"],
                 ),
                 WikiLinkTargetGroup(
                     type=WikiLinkTargetTypeEnum.MATRIX,
@@ -34,7 +34,7 @@ class TestWikiLinkTargetsAPI(ContainerFixture, ApiFixture):
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
             "targets": [
-                {"type": "notes", "slugs": ["typed-notes"]},
+                {"type": "articles", "slugs": ["typed-articles"]},
                 {"type": "matrix", "slugs": ["how-to-write-function"]},
             ],
         }

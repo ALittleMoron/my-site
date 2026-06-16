@@ -15,13 +15,13 @@ from core.types import IntId
 from entrypoints.litestar.initializers import create_litestar_app
 from infra.config.settings import Settings
 from tests.unit.mocks.providers.account import MockUserAccountProvider
+from tests.unit.mocks.providers.articles import MockArticlesProvider
 from tests.unit.mocks.providers.auth import MockAuthProvider
 from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
 from tests.unit.mocks.providers.general import MockGeneralProvider
 from tests.unit.mocks.providers.healthcheck import MockHealthcheckProvider
-from tests.unit.mocks.providers.notes import MockNotesProvider
 from tests.unit.mocks.providers.wiki_links import MockWikiLinksProvider
 
 
@@ -59,7 +59,7 @@ async def container(  # noqa: PLR0913
         MockGeneralProvider(uuid_=global_random_uuid, int_=global_random_int),
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
-        MockNotesProvider(),
+        MockArticlesProvider(),
         MockContactsProvider(),
         MockUserAccountProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),

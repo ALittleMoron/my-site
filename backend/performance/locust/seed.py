@@ -6,18 +6,18 @@ from uuid import UUID
 from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
 from core.enums import PublishStatusEnum
-from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
 from infra.config.loggers import logger
 from infra.postgresql.meta import sessionmaker
 from infra.postgresql.models import (
+    ArticleDailyAnalyticsModel,
+    ArticleModel,
+    ArticleReactionModel,
+    ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
     ExternalResourceModel,
-    NoteDailyAnalyticsModel,
-    NoteModel,
-    NoteReactionModel,
-    NoteToTagSecondaryModel,
     TagModel,
     UserModel,
 )
@@ -30,20 +30,20 @@ from performance.locust.settings import (
 LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})  # noqa: S104
 SEED_AUTHOR_USERNAME = "performance-seed-admin"
 SEED_PASSWORD_HASH = "performance-seed-password-hash"  # noqa: S105
-SEED_NOTE_COUNT = 48
+SEED_ARTICLE_COUNT = 48
 SEED_MATRIX_ITEMS_PER_SHEET = 12
 SEED_BASE_ID = 880000
 SEED_START = datetime(2026, 3, 1, 10, tzinfo=UTC)
-NOTE_SOURCE_CATEGORIES = (
-    NoteViewSourceCategory.DIRECT,
-    NoteViewSourceCategory.SEARCH,
-    NoteViewSourceCategory.INTERNAL,
+ARTICLE_SOURCE_CATEGORIES = (
+    ArticleViewSourceCategory.DIRECT,
+    ArticleViewSourceCategory.SEARCH,
+    ArticleViewSourceCategory.INTERNAL,
 )
 REACTION_KINDS = (
-    NoteReactionKind.HEART,
-    NoteReactionKind.FIRE,
-    NoteReactionKind.THINKING,
-    NoteReactionKind.NEUTRAL,
+    ArticleReactionKind.HEART,
+    ArticleReactionKind.FIRE,
+    ArticleReactionKind.THINKING,
+    ArticleReactionKind.NEUTRAL,
 )
 MATRIX_SHEETS = (
     ("python", "Питон", "Python", "Язык", "Language"),
@@ -98,33 +98,33 @@ async def seed_performance_data(*, session: AsyncSession) -> None:
     await clear_seeded_data(session=session)
     await insert_seed_user(session=session)
     await insert_seed_tags(session=session)
-    await insert_seed_notes(session=session)
-    await insert_seed_note_tags(session=session)
-    await insert_seed_note_analytics(session=session)
-    await insert_seed_note_reactions(session=session)
+    await insert_seed_articles(session=session)
+    await insert_seed_article_tags(session=session)
+    await insert_seed_article_analytics(session=session)
+    await insert_seed_article_reactions(session=session)
     await insert_seed_matrix_resources(session=session)
     await insert_seed_matrix_items(session=session)
     await insert_seed_matrix_resource_links(session=session)
 
 
 async def clear_seeded_data(*, session: AsyncSession) -> None:
-    seeded_note_ids = [note_id(note_index) for note_index in note_range()]
+    seeded_article_ids = [article_id(article_index) for article_index in article_range()]
     await session.execute(
-        delete(NoteReactionModel).where(
-            NoteReactionModel.note_id.in_(seeded_note_ids),
+        delete(ArticleReactionModel).where(
+            ArticleReactionModel.article_id.in_(seeded_article_ids),
         ),
     )
     await session.execute(
-        delete(NoteDailyAnalyticsModel).where(
-            NoteDailyAnalyticsModel.note_id.in_(seeded_note_ids),
+        delete(ArticleDailyAnalyticsModel).where(
+            ArticleDailyAnalyticsModel.article_id.in_(seeded_article_ids),
         ),
     )
     await session.execute(
-        delete(NoteToTagSecondaryModel).where(
-            NoteToTagSecondaryModel.note_id.in_(seeded_note_ids),
+        delete(ArticleToTagSecondaryModel).where(
+            ArticleToTagSecondaryModel.article_id.in_(seeded_article_ids),
         ),
     )
-    await session.execute(delete(NoteModel).where(NoteModel.slug.like("perf-seed-note-%")))
+    await session.execute(delete(ArticleModel).where(ArticleModel.slug.like("perf-seed-article-%")))
     await session.execute(delete(TagModel).where(TagModel.slug.like("perf-seed-%")))
     await session.execute(
         delete(ResourceToItemSecondaryModel).where(
@@ -172,53 +172,53 @@ async def insert_seed_tags(*, session: AsyncSession) -> None:
     )
 
 
-async def insert_seed_notes(*, session: AsyncSession) -> None:
+async def insert_seed_articles(*, session: AsyncSession) -> None:
     await session.execute(
-        insert(NoteModel),
-        [note_row(note_index=note_index) for note_index in note_range()],
+        insert(ArticleModel),
+        [article_row(article_index=article_index) for article_index in article_range()],
     )
 
 
-async def insert_seed_note_tags(*, session: AsyncSession) -> None:
+async def insert_seed_article_tags(*, session: AsyncSession) -> None:
     rows = [
-        {"note_id": note_id(note_index), "tag_id": tag_id(tag_index)}
-        for note_index in note_range()
-        for tag_index in note_tag_indexes(note_index=note_index)
+        {"article_id": article_id(article_index), "tag_id": tag_id(tag_index)}
+        for article_index in article_range()
+        for tag_index in article_tag_indexes(article_index=article_index)
     ]
-    await session.execute(insert(NoteToTagSecondaryModel), rows)
+    await session.execute(insert(ArticleToTagSecondaryModel), rows)
 
 
-async def insert_seed_note_analytics(*, session: AsyncSession) -> None:
+async def insert_seed_article_analytics(*, session: AsyncSession) -> None:
     rows = [
         {
-            "note_id": note_id(note_index),
+            "article_id": article_id(article_index),
             "date": date(2026, 6, 5) - timedelta(days=day_offset),
             "source_category": source_category,
-            "view_count": 10 + note_index * 3 + day_offset,
-            "engaged_view_count": 2 + note_index + day_offset,
+            "view_count": 10 + article_index * 3 + day_offset,
+            "engaged_view_count": 2 + article_index + day_offset,
         }
-        for note_index in note_range()
-        if note_is_published(note_index=note_index)
+        for article_index in article_range()
+        if article_is_published(article_index=article_index)
         for day_offset in range(3)
-        for source_category in NOTE_SOURCE_CATEGORIES
+        for source_category in ARTICLE_SOURCE_CATEGORIES
     ]
-    await session.execute(insert(NoteDailyAnalyticsModel), rows)
+    await session.execute(insert(ArticleDailyAnalyticsModel), rows)
 
 
-async def insert_seed_note_reactions(*, session: AsyncSession) -> None:
+async def insert_seed_article_reactions(*, session: AsyncSession) -> None:
     rows = [
         {
-            "note_id": note_id(note_index),
-            "note_scoped_voter_hash": f"{note_index:02d}{voter_index:02d}".ljust(64, "a"),
-            "reaction_kind": REACTION_KINDS[(note_index + voter_index) % len(REACTION_KINDS)],
-            "created_at": SEED_START + timedelta(hours=note_index + voter_index),
-            "updated_at": SEED_START + timedelta(hours=note_index + voter_index, minutes=15),
+            "article_id": article_id(article_index),
+            "article_scoped_voter_hash": f"{article_index:02d}{voter_index:02d}".ljust(64, "a"),
+            "reaction_kind": REACTION_KINDS[(article_index + voter_index) % len(REACTION_KINDS)],
+            "created_at": SEED_START + timedelta(hours=article_index + voter_index),
+            "updated_at": SEED_START + timedelta(hours=article_index + voter_index, minutes=15),
         }
-        for note_index in note_range()
-        if note_is_published(note_index=note_index)
+        for article_index in article_range()
+        if article_is_published(article_index=article_index)
         for voter_index in range(1, 4)
     ]
-    await session.execute(insert(NoteReactionModel), rows)
+    await session.execute(insert(ArticleReactionModel), rows)
 
 
 async def insert_seed_matrix_resources(*, session: AsyncSession) -> None:
@@ -257,47 +257,49 @@ async def insert_seed_matrix_resource_links(*, session: AsyncSession) -> None:
     await session.execute(insert(ResourceToItemSecondaryModel), rows)
 
 
-def note_row(*, note_index: int) -> dict[str, object]:
+def article_row(*, article_index: int) -> dict[str, object]:
     publish_status = (
         PublishStatusEnum.PUBLISHED
-        if note_is_published(note_index=note_index)
+        if article_is_published(article_index=article_index)
         else PublishStatusEnum.DRAFT
     )
     published_at = (
-        SEED_START + timedelta(hours=note_index)
-        if note_is_published(note_index=note_index)
+        SEED_START + timedelta(hours=article_index)
+        if article_is_published(article_index=article_index)
         else None
     )
-    matrix_slug = matrix_slug_for_index(item_index=((note_index - 1) % matrix_item_count()) + 1)
+    matrix_slug = matrix_slug_for_index(item_index=((article_index - 1) % matrix_item_count()) + 1)
     return {
-        "id": note_id(note_index),
-        "title_ru": f"Performance seed заметка {note_index}",
-        "title_en": f"Performance seed note {note_index}",
+        "id": article_id(article_index),
+        "title_ru": f"Performance seed статья {article_index}",
+        "title_en": f"Performance seed article {article_index}",
         "content_ru": (
-            f"# Performance seed заметка {note_index}\n\n"
-            "Эта заметка нагружает публичный detail, список и дерево заметок. "
+            f"# Performance seed статья {article_index}\n\n"
+            "Эта статья нагружает публичный detail, список и дерево статей. "
             f"Связанный вопрос: [[matrix:{matrix_slug}|вопрос матрицы]]."
         ),
         "content_en": (
-            f"# Performance seed note {note_index}\n\n"
-            "This note exercises public note detail, list, and tree endpoints. "
+            f"# Performance seed article {article_index}\n\n"
+            "This article exercises public article detail, list, and tree endpoints. "
             f"Related question: [[matrix:{matrix_slug}|matrix question]]."
         ),
-        "slug": note_slug(note_index=note_index),
+        "slug": article_slug(article_index=article_index),
         "folder_ru": "Производительность",
         "folder_en": "Performance",
         "author_username": SEED_AUTHOR_USERNAME,
-        "seo_title_ru": f"Performance seed заметка {note_index}",
-        "seo_title_en": f"Performance seed note {note_index}",
-        "seo_description_ru": f"Seeded описание заметки {note_index} для Locust baseline.",
-        "seo_description_en": f"Seeded note {note_index} description for the Locust baseline.",
+        "seo_title_ru": f"Performance seed статья {article_index}",
+        "seo_title_en": f"Performance seed article {article_index}",
+        "seo_description_ru": f"Seeded описание статьи {article_index} для Locust baseline.",
+        "seo_description_en": (
+            f"Seeded article {article_index} description for the Locust baseline."
+        ),
         "cover_image_url": None,
         "cover_image_alt_ru": None,
         "cover_image_alt_en": None,
         "published_at": published_at,
         "publish_status": publish_status,
         "created_at": SEED_START - timedelta(days=1),
-        "updated_at": SEED_START + timedelta(hours=note_index, minutes=30),
+        "updated_at": SEED_START + timedelta(hours=article_index, minutes=30),
     }
 
 
@@ -312,11 +314,11 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
         "question_en": f"{sheet_en}: how do you verify performance scenario {question_number}?",
         "answer_ru": (
             "Нужно назвать реальные данные, warm/cold cache, p95, average и критерий отката. "
-            f"Связанная заметка: [[notes:{note_slug(note_index=question_number)}]]."
+            f"Связанная статья: [[articles:{article_slug(article_index=question_number)}]]."
         ),
         "answer_en": (
             "Name realistic data, warm/cold cache, p95, average, and rollback criteria. "
-            f"Related note: [[notes:{note_slug(note_index=question_number)}]]."
+            f"Related article: [[articles:{article_slug(article_index=question_number)}]]."
         ),
         "interview_expected_answer_ru": "Ожидается конкретный план проверки и сравнения baseline.",
         "interview_expected_answer_en": (
@@ -340,9 +342,9 @@ def grade_for_index(*, item_index: int) -> str:
     return grades[(item_index - 1) % len(grades)]
 
 
-def note_tag_indexes(*, note_index: int) -> tuple[int, int]:
+def article_tag_indexes(*, article_index: int) -> tuple[int, int]:
     primary_index = 1
-    secondary_index = ((note_index - 1) % len(TAG_SPECS)) + 1
+    secondary_index = ((article_index - 1) % len(TAG_SPECS)) + 1
     if secondary_index == primary_index:
         secondary_index = 2
     return primary_index, secondary_index
@@ -352,12 +354,12 @@ def linked_resource_indexes(*, item_index: int) -> tuple[int, int]:
     return ((item_index - 1) % resource_count()) + 1, (item_index % resource_count()) + 1
 
 
-def note_id(note_index: int) -> UUID:
-    return UUID(f"20000000-0000-4000-8000-{note_index:012d}")
+def article_id(article_index: int) -> UUID:
+    return UUID(f"20000000-0000-4000-8000-{article_index:012d}")
 
 
-def note_slug(*, note_index: int) -> str:
-    return f"perf-seed-note-{note_index:03d}"
+def article_slug(*, article_index: int) -> str:
+    return f"perf-seed-article-{article_index:03d}"
 
 
 def matrix_slug_for_index(*, item_index: int) -> str:
@@ -366,12 +368,12 @@ def matrix_slug_for_index(*, item_index: int) -> str:
     return f"perf-seed-matrix-{item_index:03d}-{sheet_key}"
 
 
-def note_is_published(*, note_index: int) -> bool:
-    return note_index % 10 != 0
+def article_is_published(*, article_index: int) -> bool:
+    return article_index % 10 != 0
 
 
-def note_range() -> range:
-    return range(1, SEED_NOTE_COUNT + 1)
+def article_range() -> range:
+    return range(1, SEED_ARTICLE_COUNT + 1)
 
 
 def matrix_item_range() -> range:

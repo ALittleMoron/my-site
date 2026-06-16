@@ -6,10 +6,10 @@ from entrypoints.litestar.response_cache import (
 )
 from entrypoints.taskiq.cache_warm.service import ResponseCacheWarmService
 from entrypoints.taskiq.cache_warm.targets import (
+    ArticlesCacheWarmTargetCollector,
     CacheWarmQueryBuilder,
     CompetencyMatrixCacheWarmTargetCollector,
     I18nCacheWarmTargetCollector,
-    NotesCacheWarmTargetCollector,
     ResponseCacheWarmTargetCollector,
 )
 from entrypoints.taskiq.cache_warm.writer import (
@@ -25,7 +25,7 @@ class ResponseCacheWarmProvider(Provider):
 
     cache_warm_query_builder = provide(CacheWarmQueryBuilder)
     i18n_cache_warm_target_collector = provide(I18nCacheWarmTargetCollector)
-    notes_cache_warm_target_collector = provide(NotesCacheWarmTargetCollector)
+    articles_cache_warm_target_collector = provide(ArticlesCacheWarmTargetCollector)
     competency_matrix_cache_warm_target_collector = provide(
         CompetencyMatrixCacheWarmTargetCollector,
     )
@@ -54,7 +54,7 @@ class ResponseCacheWarmProvider(Provider):
             use_cache=settings.app.use_cache,
             supported_domains=(
                 ResponseCacheDomain.I18N,
-                ResponseCacheDomain.NOTES,
+                ResponseCacheDomain.ARTICLES,
                 ResponseCacheDomain.COMPETENCY_MATRIX,
             ),
         )

@@ -22,7 +22,7 @@ describe('SiteCaseStudyPageComponent', () => {
           'siteBuild.hero.lead': 'Портфолио-кейс о production-подходе.',
           'siteBuild.hero.sourceCode': 'Исходный код',
           'siteBuild.problem.title': 'Задача',
-          'siteBuild.problem.body': 'Сайт объединяет портфолио, заметки и матрицу компетенций.',
+          'siteBuild.problem.body': 'Сайт объединяет портфолио, статьи и матрицу компетенций.',
           'siteBuild.architecture.title': 'Архитектура',
           'siteBuild.architecture.backendTitle': 'Backend',
           'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka и PostgreSQL.',
@@ -66,7 +66,7 @@ describe('SiteCaseStudyPageComponent', () => {
     ) as HTMLAnchorElement | null;
 
     expect(pageText).toContain('Как устроен этот сайт');
-    expect(pageText).toContain('Сайт объединяет портфолио, заметки и матрицу компетенций.');
+    expect(pageText).toContain('Сайт объединяет портфолио, статьи и матрицу компетенций.');
     expect(pageText).toContain('Litestar, SQLAlchemy, Dishka и PostgreSQL.');
     expect(pageText).toContain('Angular hybrid SSR/CSR и backend-driven i18n.');
     expect(pageText).toContain('Privacy-safe аналитика');

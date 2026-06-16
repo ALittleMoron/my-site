@@ -55,17 +55,17 @@ Never violate these boundaries:
   `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
 - Persist only supported language codes returned by the backend. Do not introduce frontend-only
   languages or language fallbacks that bypass the backend enum/catalog.
-- Notes and note tags localise content through the notes API, not through the UI i18n bundle. Pass
+- Articles and article tags localise content through the articles API, not through the UI i18n bundle. Pass
   the current `I18nService.language()` value as the explicit `language` query parameter for
-  localized read requests, edit both RU/EN note and tag `translations` in authoring forms, and send
+  localized read requests, edit both RU/EN article and tag `translations` in authoring forms, and send
   both languages in write payloads.
-- Note article authoring must send an explicit `metadata` object with note create/update payloads.
+- Article authoring must send an explicit `metadata` object with article create/update payloads.
   Individual metadata fields may be null. Keep SEO analysis advisory-only, keep in-form
   article/social previews derived from the active language, and do not block save/publish on SEO
-  warnings. Render typed wiki links from Markdown, currently `[[notes:<slug>]]` and
+  warnings. Render typed wiki links from Markdown, currently `[[articles:<slug>]]` and
   `[[matrix:<slug>]]` with optional labels such as `[[matrix:<slug>|Custom label]]`, as internal
   localized links, and only warn about missing targets when the typed target registry is known.
-- Require all RU/EN note and tag translation fields in frontend forms. Do not add frontend-only
+- Require all RU/EN article and tag translation fields in frontend forms. Do not add frontend-only
   language fallbacks for localized content.
 - Competency matrix content localises through the matrix API, not through the UI i18n bundle. Pass
   the current `I18nService.language()` value as the explicit `language` query parameter for sheets,
@@ -104,13 +104,13 @@ features/<name>/
 
 ## Existing Features
 
-| Feature           | Route                                                                                                                              | Notes                                                                                            |
+| Feature           | Route                                                                                                                              | Description                                                                                      |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell for moderators/admins; no SSR                                          |
 | `about`           | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                  |
 | `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                             |
 | `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains |
-| `notes`           | `/ru/notes/:slug`, `/en/notes/:slug`                                                                                               | SSR public article detail, CSR list/content authoring, folders side-panel, tags                  |
+| `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR list/content authoring, folders side-panel, tags                  |
 | `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public portfolio/case-study page; unprefixed compatibility route remains                     |
 | `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                  |
 | `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                         |
@@ -119,10 +119,10 @@ features/<name>/
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.
-- Public canonical routes are language-prefixed. Keep `/ru/notes/:slug`, `/en/notes/:slug`,
+- Public canonical routes are language-prefixed. Keep `/ru/articles/:slug`, `/en/articles/:slug`,
   `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`,
   `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug` as SSR
-  routes, and render internal note/wiki links with the active language prefix.
+  routes, and render internal article/wiki links with the active language prefix.
 - Protected CSR routes such as `/admin-panel` stay unprefixed and use runtime i18n state.
 - Feature `routes.ts` — owns all sub-routes for that feature (`''`, `':id'`, etc.).
 - Use `loadChildren` (not `loadComponent`) so adding sub-routes never touches `app.routes.ts`.

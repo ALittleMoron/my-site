@@ -75,7 +75,7 @@ describe('MatrixQuestionFormComponent', () => {
       getTargets: jest.fn().mockReturnValue(
         of(
           new Map([
-            ['notes', new Set(['typed-note'])],
+            ['articles', new Set(['typed-article'])],
             ['matrix', new Set(['known-question'])],
           ]),
         ),
@@ -284,7 +284,7 @@ describe('MatrixQuestionFormComponent', () => {
       questionEn: 'Question',
       answerRu: 'Ответ со ссылкой [[matrix:missing-question|вопрос]].',
       answerEn: 'Answer',
-      interviewExpectedAnswerRu: 'Ожидаемый ответ со ссылкой [[notes:typed-note]].',
+      interviewExpectedAnswerRu: 'Ожидаемый ответ со ссылкой [[articles:typed-article]].',
       interviewExpectedAnswerEn: 'Expected',
       sheetKey: 'python',
       sheetRu: 'Python',

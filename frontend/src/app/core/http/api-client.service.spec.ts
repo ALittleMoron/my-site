@@ -37,10 +37,10 @@ describe('ApiClient', () => {
   });
 
   it('should pass repeated query params on GET', () => {
-    service.get<unknown>('/api/test', { noteIds: ['one', 'two'] }).subscribe();
+    service.get<unknown>('/api/test', { articleIds: ['one', 'two'] }).subscribe();
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/test'));
-    expect(req.request.params.getAll('noteIds')).toEqual(['one', 'two']);
+    expect(req.request.params.getAll('articleIds')).toEqual(['one', 'two']);
     req.flush({});
   });
 

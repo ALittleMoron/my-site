@@ -32,7 +32,7 @@ def upgrade() -> None:
     )
     op.create_index("users_username_idx", "auth__user_model", ["username"], unique=False)
     op.create_table(
-        "notes__note_model",
+        "articles__article_model",
         sa.Column("title_ru", sa.String(length=255), nullable=False),
         sa.Column("title_en", sa.String(length=255), nullable=False),
         sa.Column("content_ru", sa.String(), nullable=False),
@@ -94,34 +94,34 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_notes__note_model_slug"),
-        "notes__note_model",
+        op.f("ix_articles__article_model_slug"),
+        "articles__article_model",
         ["slug"],
         unique=True,
     )
     op.create_index(
-        "notes_note_search_vector_gin_idx",
-        "notes__note_model",
+        "articles_article_search_vector_gin_idx",
+        "articles__article_model",
         ["search_vector_ru"],
         unique=False,
         postgresql_using="gin",
     )
     op.create_index(
-        "notes_note_search_vector_en_gin_idx",
-        "notes__note_model",
+        "articles_article_search_vector_en_gin_idx",
+        "articles__article_model",
         ["search_vector_en"],
         unique=False,
         postgresql_using="gin",
     )
     op.create_index(
-        "notes_note_publish_status_published_at_idx",
-        "notes__note_model",
+        "articles_article_publish_status_published_at_idx",
+        "articles__article_model",
         ["publish_status", "published_at"],
         unique=False,
     )
     op.create_index(
-        "notes_note_publish_status_published_updated_idx",
-        "notes__note_model",
+        "articles_article_publish_status_published_updated_idx",
+        "articles__article_model",
         [
             "publish_status",
             sa.text("published_at DESC NULLS LAST"),
@@ -130,7 +130,7 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_table(
-        "notes__tag_model",
+        "articles__tag_model",
         sa.Column("name_ru", sa.String(length=255), nullable=False),
         sa.Column("name_en", sa.String(length=255), nullable=False),
         sa.Column("slug", sa.String(length=255), nullable=False),
@@ -155,26 +155,26 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_notes__tag_model_slug"), "notes__tag_model", ["slug"], unique=True)
+    op.create_index(op.f("ix_articles__tag_model_slug"), "articles__tag_model", ["slug"], unique=True)
     op.create_index(
-        "notes_tag_name_ru_trgm_idx",
-        "notes__tag_model",
+        "articles_tag_name_ru_trgm_idx",
+        "articles__tag_model",
         [sa.func.lower(sa.column("name_ru")).label("name_ru_lower")],
         unique=False,
         postgresql_using="gin",
         postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
     )
     op.create_index(
-        "notes_tag_name_en_trgm_idx",
-        "notes__tag_model",
+        "articles_tag_name_en_trgm_idx",
+        "articles__tag_model",
         [sa.func.lower(sa.column("name_en")).label("name_en_lower")],
         unique=False,
         postgresql_using="gin",
         postgresql_ops={"name_en_lower": "gin_trgm_ops"},
     )
     op.create_index(
-        "notes_tag_slug_trgm_idx",
-        "notes__tag_model",
+        "articles_tag_slug_trgm_idx",
+        "articles__tag_model",
         [sa.func.lower(sa.column("slug")).label("slug_lower")],
         unique=False,
         postgresql_using="gin",
@@ -313,8 +313,8 @@ def upgrade() -> None:
         sa.UniqueConstraint("item_id", "resource_id", name="cm_resource_item_uniq"),
     )
     op.create_table(
-        "notes__note_to_tag_secondary_model",
-        sa.Column("note_id", sa.UUID(), nullable=False),
+        "articles__article_to_tag_secondary_model",
+        sa.Column("article_id", sa.UUID(), nullable=False),
         sa.Column(
             "tag_id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -326,14 +326,14 @@ def upgrade() -> None:
             autoincrement=True,
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["tag_id"], ["notes__tag_model.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["article_id"], ["articles__article_model.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["tag_id"], ["articles__tag_model.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("note_id", "tag_id", name="notes_note_tag_uniq"),
+        sa.UniqueConstraint("article_id", "tag_id", name="articles_article_tag_uniq"),
     )
     op.create_table(
-        "notes__note_daily_analytics_model",
-        sa.Column("note_id", sa.UUID(), nullable=False),
+        "articles__article_daily_analytics_model",
+        sa.Column("article_id", sa.UUID(), nullable=False),
         sa.Column("date", sa.Date(), nullable=False),
         sa.Column(
             "source_category",
@@ -344,7 +344,7 @@ def upgrade() -> None:
                 "SOCIAL",
                 "EXTERNAL",
                 "UNKNOWN",
-                name="note_view_source_category_enum",
+                name="article_view_source_category_enum",
                 native_enum=False,
                 length=20,
             ),
@@ -358,19 +358,19 @@ def upgrade() -> None:
             autoincrement=True,
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["article_id"], ["articles__article_model.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
-            "note_id",
+            "article_id",
             "date",
             "source_category",
-            name="notes_daily_analytics_note_date_source_uniq",
+            name="articles_daily_analytics_article_date_source_uniq",
         ),
     )
     op.create_table(
-        "notes__note_reaction_model",
-        sa.Column("note_id", sa.UUID(), nullable=False),
-        sa.Column("note_scoped_voter_hash", sa.String(length=64), nullable=False),
+        "articles__article_reaction_model",
+        sa.Column("article_id", sa.UUID(), nullable=False),
+        sa.Column("article_scoped_voter_hash", sa.String(length=64), nullable=False),
         sa.Column(
             "reaction_kind",
             sa.Enum(
@@ -379,7 +379,7 @@ def upgrade() -> None:
                 "THINKING",
                 "NEUTRAL",
                 "POOP",
-                name="note_reaction_kind_enum",
+                name="article_reaction_kind_enum",
                 native_enum=False,
                 length=20,
             ),
@@ -403,20 +403,20 @@ def upgrade() -> None:
             server_default=sa.text("TIMEZONE('utc', CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["note_id"], ["notes__note_model.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["article_id"], ["articles__article_model.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
-            "note_id",
-            "note_scoped_voter_hash",
-            name="notes_reaction_note_voter_uniq",
+            "article_id",
+            "article_scoped_voter_hash",
+            name="articles_reaction_article_voter_uniq",
         ),
     )
 
 
 def downgrade() -> None:
-    op.drop_table("notes__note_reaction_model")
-    op.drop_table("notes__note_daily_analytics_model")
-    op.drop_table("notes__note_to_tag_secondary_model")
+    op.drop_table("articles__article_reaction_model")
+    op.drop_table("articles__article_daily_analytics_model")
+    op.drop_table("articles__article_to_tag_secondary_model")
     op.drop_table("competency_matrix__resource_to_item_secondary_model")
     op.drop_table("contacts__contact_me_model")
     op.drop_index(
@@ -441,30 +441,30 @@ def downgrade() -> None:
         table_name="competency_matrix__competency_matrix_item_model",
     )
     op.drop_table("competency_matrix__competency_matrix_item_model")
-    op.drop_index("notes_tag_slug_trgm_idx", table_name="notes__tag_model")
-    op.drop_index("notes_tag_name_en_trgm_idx", table_name="notes__tag_model")
-    op.drop_index("notes_tag_name_ru_trgm_idx", table_name="notes__tag_model")
-    op.drop_index(op.f("ix_notes__tag_model_slug"), table_name="notes__tag_model")
-    op.drop_table("notes__tag_model")
+    op.drop_index("articles_tag_slug_trgm_idx", table_name="articles__tag_model")
+    op.drop_index("articles_tag_name_en_trgm_idx", table_name="articles__tag_model")
+    op.drop_index("articles_tag_name_ru_trgm_idx", table_name="articles__tag_model")
+    op.drop_index(op.f("ix_articles__tag_model_slug"), table_name="articles__tag_model")
+    op.drop_table("articles__tag_model")
     op.drop_index(
-        "notes_note_publish_status_published_updated_idx",
-        table_name="notes__note_model",
+        "articles_article_publish_status_published_updated_idx",
+        table_name="articles__article_model",
     )
     op.drop_index(
-        "notes_note_publish_status_published_at_idx",
-        table_name="notes__note_model",
+        "articles_article_publish_status_published_at_idx",
+        table_name="articles__article_model",
     )
     op.drop_index(
-        "notes_note_search_vector_en_gin_idx",
-        table_name="notes__note_model",
+        "articles_article_search_vector_en_gin_idx",
+        table_name="articles__article_model",
         postgresql_using="gin",
     )
     op.drop_index(
-        "notes_note_search_vector_gin_idx",
-        table_name="notes__note_model",
+        "articles_article_search_vector_gin_idx",
+        table_name="articles__article_model",
         postgresql_using="gin",
     )
-    op.drop_index(op.f("ix_notes__note_model_slug"), table_name="notes__note_model")
-    op.drop_table("notes__note_model")
+    op.drop_index(op.f("ix_articles__article_model_slug"), table_name="articles__article_model")
+    op.drop_table("articles__article_model")
     op.drop_index("users_username_idx", table_name="auth__user_model")
     op.drop_table("auth__user_model")

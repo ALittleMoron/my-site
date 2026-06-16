@@ -31,7 +31,7 @@ make build
 
 The production build is written to `dist/my-site-frontend/browser`.
 
-SSR output is written to `dist/my-site-frontend/server`. To build and run the public SEO HTML smoke check for article, site-build case-study, and matrix question pages, run:
+SSR output is written to `dist/my-site-frontend/server`. To build and run the public SEO HTML smoke check for public article pages, the site-build case study, and matrix question pages, run:
 
 ```bash
 make ssr-smoke
@@ -60,7 +60,7 @@ The image uses:
 - `node:26.3.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
 - Explicit runtime environment: `PORT`, `SSR_API_ORIGIN`, `APP_URL_SCHEMA`, `APP_DOMAIN`, and optionally `SSR_PUBLIC_ORIGIN` / `NG_ALLOWED_HOSTS`.
 
-Canonical SEO routes served by the frontend SSR runtime include `/ru/notes/:slug`, `/en/notes/:slug`, `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`, `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug`. The matrix overview routes remain hydrated Angular pages.
+Canonical SEO routes served by the frontend SSR runtime include `/ru/articles/:slug`, `/en/articles/:slug`, `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`, `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug`. The matrix overview routes remain hydrated Angular pages.
 
 ## Repository split boundary
 

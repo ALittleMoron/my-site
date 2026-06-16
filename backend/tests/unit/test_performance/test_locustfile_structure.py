@@ -16,7 +16,7 @@ class TestLocustfileStructure:
         assert "request_api" not in method_names
         assert "request_validated_api" not in method_names
         assert "discover_matrix_sheets" not in method_names
-        assert "discover_note_slugs" not in method_names
+        assert "discover_article_slugs" not in method_names
 
     def test_public_site_user_task_methods_delegate_to_scenario_attribute(self) -> None:
         locustfile = Path("performance/locust/locustfile.py")
@@ -41,9 +41,9 @@ class TestLocustfileStructure:
             "healthcheck",
             "i18n_languages",
             "i18n_bundle",
-            "notes_list",
-            "notes_tree",
-            "note_detail",
+            "articles_list",
+            "articles_tree",
+            "article_detail",
             "matrix_sheets",
             "matrix_items",
             "matrix_item_detail",

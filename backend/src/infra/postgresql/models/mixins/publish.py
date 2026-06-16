@@ -15,7 +15,7 @@ class PublishMixin(BaseModelMixin):
 
     published_at: Mapped[datetime | None] = mapped_column(
         UTCDateTime(timezone=True),
-        doc="Publication date of the note",
+        doc="Publication date of the article",
     )
     publish_status: Mapped[PublishStatusEnum] = mapped_column(
         Enum(PublishStatusEnum, native_enum=False, length=10, name="publish_status_enum"),

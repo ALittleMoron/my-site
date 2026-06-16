@@ -30,9 +30,9 @@ from performance.query_plans.runner import apply_query_threshold_overrides
 from performance.query_plans.runtime_capture import RuntimeQueryCapture
 from performance.query_plans.scenarios import (
     STORAGE_SCENARIOS,
+    article_id,
     evaluate_storage_method_coverage,
-    note_id,
-    write_note_for_existing_note,
+    write_article_for_existing_article,
 )
 from performance.query_plans.sql import group_queries_by_scenario
 
@@ -59,7 +59,7 @@ def test_query_plan_package_is_split_into_focused_modules() -> None:
 class TestQueryPlanAnalysis:
     def test_analyze_explain_result_accepts_expected_index_scan(self) -> None:
         analysis = analyze_explain_result(
-            name="notes_list_en",
+            name="articles_list_en",
             explain_json=[
                 {
                     "Planning Time": 1.5,
@@ -70,12 +70,12 @@ class TestQueryPlanAnalysis:
                         "Plans": [
                             {
                                 "Node Type": "Bitmap Heap Scan",
-                                "Relation Name": "notes__note_model",
+                                "Relation Name": "articles__article_model",
                                 "Actual Rows": 120,
                                 "Plans": [
                                     {
                                         "Node Type": "Bitmap Index Scan",
-                                        "Index Name": "notes_note_search_vector_en_gin_idx",
+                                        "Index Name": "articles_article_search_vector_en_gin_idx",
                                         "Actual Rows": 120,
                                     },
                                 ],
@@ -87,26 +87,26 @@ class TestQueryPlanAnalysis:
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("notes_note_search_vector_en_gin_idx",),
-                forbidden_seq_scan_relations=("notes__note_model",),
+                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
         )
 
         assert analysis.execution_time_ms == 42.0
-        assert analysis.index_names == ("notes_note_search_vector_en_gin_idx",)
+        assert analysis.index_names == ("articles_article_search_vector_en_gin_idx",)
         assert analysis.findings == ()
 
     def test_analyze_explain_result_flags_missing_index_and_large_seq_scan(self) -> None:
         analysis = analyze_explain_result(
-            name="notes_list_en",
+            name="articles_list_en",
             explain_json=[
                 {
                     "Planning Time": 2.0,
                     "Execution Time": 312.0,
                     "Plan": {
                         "Node Type": "Seq Scan",
-                        "Relation Name": "notes__note_model",
+                        "Relation Name": "articles__article_model",
                         "Actual Rows": 200_000,
                     },
                 },
@@ -114,14 +114,14 @@ class TestQueryPlanAnalysis:
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("notes_note_search_vector_en_gin_idx",),
-                forbidden_seq_scan_relations=("notes__note_model",),
+                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
         )
 
-        assert "notes_note_search_vector_en_gin_idx" in analysis.findings[0]
-        assert "Seq Scan on notes__note_model" in analysis.findings[1]
+        assert "articles_article_search_vector_en_gin_idx" in analysis.findings[0]
+        assert "Seq Scan on articles__article_model" in analysis.findings[1]
         assert "312.00 ms exceeded 150.00 ms" in analysis.findings[2]
 
 
@@ -143,16 +143,16 @@ class TestQueryCapture:
         methods = discover_storage_methods()
         identifiers = {(method.storage_class, method.method_name) for method in methods}
 
-        assert ("NotesDatabaseStorage", "get_note_by_slug") in identifiers
-        assert ("NotesDatabaseStorage", "list_notes") in identifiers
-        assert ("NoteAnalyticsDatabaseStorage", "get_reaction_counts") in identifiers
+        assert ("ArticlesDatabaseStorage", "get_article_by_slug") in identifiers
+        assert ("ArticlesDatabaseStorage", "list_articles") in identifiers
+        assert ("ArticleAnalyticsDatabaseStorage", "get_reaction_counts") in identifiers
         assert ("CompetencyMatrixDatabaseStorage", "search_competency_matrix_resources") in (
             identifiers
         )
         assert ("AuthDatabaseStorage", "update_user_password_hash") in identifiers
         assert ("UserAccountDatabaseStorage", "get_user_by_username") in identifiers
         assert ("ContactMeDatabaseStorage", "create_contact_me_request") in identifiers
-        assert ("NotesDatabaseStorage", "_get_note_model") not in identifiers
+        assert ("ArticlesDatabaseStorage", "_get_article_model") not in identifiers
 
     def test_storage_scenarios_cover_every_discovered_storage_method(self) -> None:
         coverage = evaluate_storage_method_coverage(
@@ -162,28 +162,28 @@ class TestQueryCapture:
 
         assert coverage.missing_methods == ()
         assert coverage.unexpected_methods == ()
-        assert ("NotesDatabaseStorage", "list_notes") in {
+        assert ("ArticlesDatabaseStorage", "list_articles") in {
             (method.storage_class, method.method_name) for method in coverage.covered_methods
         }
 
-    def test_update_note_scenario_avoids_seeded_target_tag_collision(self) -> None:
-        note = write_note_for_existing_note()
+    def test_update_article_scenario_avoids_seeded_target_tag_collision(self) -> None:
+        article = write_article_for_existing_article()
 
-        assert note.id == note_id(99)
-        assert {tag.id for tag in note.tags} == {1, 2}
+        assert article.id == article_id(99)
+        assert {tag.id for tag in article.tags} == {1, 2}
 
     def test_runtime_capture_records_statement_without_touching_cursor(self) -> None:
         capture = RuntimeQueryCapture(clock=FakeClock(1_000_000, 26_000_000))
         connection = FakeConnection()
         capture.start_scenario(
-            storage_class="NotesDatabaseStorage",
-            method_name="list_notes",
-            scenario_name="notes_list_en_full_text_tag_date",
+            storage_class="ArticlesDatabaseStorage",
+            method_name="list_articles",
+            scenario_name="articles_list_en_full_text_tag_date",
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("notes_note_search_vector_en_gin_idx",),
-                forbidden_seq_scan_relations=("notes__note_model",),
+                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
         )
@@ -192,7 +192,7 @@ class TestQueryCapture:
         capture.before_cursor_execute(
             typed_connection,
             object(),
-            "SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
+            "SELECT  *\nFROM articles__article_model WHERE id = %(id)s",
             {"id": 1},
             None,
             False,
@@ -200,7 +200,7 @@ class TestQueryCapture:
         capture.after_cursor_execute(
             typed_connection,
             ExplodingCursor(),
-            "SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
+            "SELECT  *\nFROM articles__article_model WHERE id = %(id)s",
             {"id": 1},
             None,
             False,
@@ -209,21 +209,21 @@ class TestQueryCapture:
 
         assert capture.captured_queries == (
             CapturedQuery(
-                name="notes_list_en_full_text_tag_date__001",
-                storage_class="NotesDatabaseStorage",
-                method_name="list_notes",
-                scenario_name="notes_list_en_full_text_tag_date",
+                name="articles_list_en_full_text_tag_date__001",
+                storage_class="ArticlesDatabaseStorage",
+                method_name="list_articles",
+                scenario_name="articles_list_en_full_text_tag_date",
                 ordinal=1,
-                sql="SELECT  *\nFROM notes__note_model WHERE id = %(id)s",
-                normalized_sql="SELECT * FROM notes__note_model WHERE id = %(id)s",
+                sql="SELECT  *\nFROM articles__article_model WHERE id = %(id)s",
+                normalized_sql="SELECT * FROM articles__article_model WHERE id = %(id)s",
                 params={"id": 1},
                 elapsed_ms=25.0,
                 executemany=False,
                 expectation=PlanExpectation(
                     max_execution_ms=150.0,
                     threshold_source="group:search",
-                    expected_index_names=("notes_note_search_vector_en_gin_idx",),
-                    forbidden_seq_scan_relations=("notes__note_model",),
+                    expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                    forbidden_seq_scan_relations=("articles__article_model",),
                     allow_seq_scan_reason=None,
                 ),
             ),
@@ -232,13 +232,13 @@ class TestQueryCapture:
     def test_compile_captured_query_keeps_sql_and_params_separate(self) -> None:
         query = CapturedQuery(
             name="tags_fuzzy_en__001",
-            storage_class="NotesDatabaseStorage",
+            storage_class="ArticlesDatabaseStorage",
             method_name="search_tags",
             scenario_name="tags_fuzzy_en",
             ordinal=1,
-            sql="SELECT * FROM notes__tag_model WHERE lower(name_en) %% %(tag_search_query)s",
+            sql="SELECT * FROM articles__tag_model WHERE lower(name_en) %% %(tag_search_query)s",
             normalized_sql=(
-                "SELECT * FROM notes__tag_model WHERE lower(name_en) %% %(tag_search_query)s"
+                "SELECT * FROM articles__tag_model WHERE lower(name_en) %% %(tag_search_query)s"
             ),
             params={"tag_search_query": "pythno"},
             elapsed_ms=10.0,
@@ -246,15 +246,15 @@ class TestQueryCapture:
             expectation=PlanExpectation(
                 max_execution_ms=100.0,
                 threshold_source="override:tags_fuzzy_en",
-                expected_index_names=("notes_tag_name_en_trgm_idx",),
-                forbidden_seq_scan_relations=("notes__tag_model",),
+                expected_index_names=("articles_tag_name_en_trgm_idx",),
+                forbidden_seq_scan_relations=("articles__tag_model",),
                 allow_seq_scan_reason=None,
             ),
         )
 
         compiled = compile_captured_query(query=query, dialect=postgresql.dialect())
 
-        assert "FROM notes__tag_model" in compiled.sql
+        assert "FROM articles__tag_model" in compiled.sql
         compiled_params = cast("Mapping[str, object]", compiled.params)
         assert "tag_search_query" in compiled_params
         assert compiled_params["tag_search_query"] == "pythno"
@@ -263,20 +263,20 @@ class TestQueryCapture:
         self,
     ) -> None:
         query = CapturedQuery(
-            name="notes_create__002",
-            storage_class="NotesDatabaseStorage",
-            method_name="create_note",
-            scenario_name="notes_create",
+            name="articles_create__002",
+            storage_class="ArticlesDatabaseStorage",
+            method_name="create_article",
+            scenario_name="articles_create",
             ordinal=2,
             sql=(
-                "INSERT INTO notes__note_to_tag_secondary_model (note_id, tag_id) "
+                "INSERT INTO articles__article_to_tag_secondary_model (article_id, tag_id) "
                 "SELECT p0::UUID, p1::BIGINT FROM "
-                "(VALUES (%(note_id)s::UUID, %(tag_id)s::BIGINT)) "
+                "(VALUES (%(article_id)s::UUID, %(tag_id)s::BIGINT)) "
                 "AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter "
-                "RETURNING notes__note_to_tag_secondary_model.id"
+                "RETURNING articles__article_to_tag_secondary_model.id"
             ),
             normalized_sql="",
-            params={"note_id": note_id(1), "tag_id": 1},
+            params={"article_id": article_id(1), "tag_id": 1},
             elapsed_ms=10.0,
             executemany=False,
             expectation=PlanExpectation(
@@ -295,18 +295,18 @@ class TestQueryCapture:
 
     def test_group_queries_by_scenario_preserves_contiguous_scenario_order(self) -> None:
         first = make_captured_query(
-            name="notes_create__001",
-            scenario_name="notes_create",
+            name="articles_create__001",
+            scenario_name="articles_create",
             ordinal=1,
         )
         second = make_captured_query(
-            name="notes_create__002",
-            scenario_name="notes_create",
+            name="articles_create__002",
+            scenario_name="articles_create",
             ordinal=2,
         )
         third = make_captured_query(
-            name="notes_update__001",
-            scenario_name="notes_update",
+            name="articles_update__001",
+            scenario_name="articles_update",
             ordinal=1,
         )
 
@@ -329,8 +329,8 @@ class TestQueryCapture:
             group=QueryThresholdGroup.SEARCH,
             policy=policy,
             query_name=None,
-            expected_index_names=("notes_tag_name_en_trgm_idx",),
-            forbidden_seq_scan_relations=("notes__tag_model",),
+            expected_index_names=("articles_tag_name_en_trgm_idx",),
+            forbidden_seq_scan_relations=("articles__tag_model",),
             allow_seq_scan_reason=None,
         )
         override_expectation = scenario_plan_expectation(
@@ -361,8 +361,8 @@ class TestQueryCapture:
 
     def test_runner_applies_statement_threshold_overrides_to_captured_queries(self) -> None:
         query = make_captured_query(
-            name="notes_list_en_full_text_tag_date__002",
-            scenario_name="notes_list_en_full_text_tag_date",
+            name="articles_list_en_full_text_tag_date__002",
+            scenario_name="articles_list_en_full_text_tag_date",
             ordinal=2,
         )
 
@@ -373,7 +373,7 @@ class TestQueryCapture:
 
         assert captured_queries[0].expectation.max_execution_ms == 250.0
         assert captured_queries[0].expectation.threshold_source == (
-            "override:notes_list_en_full_text_tag_date__002"
+            "override:articles_list_en_full_text_tag_date__002"
         )
 
     def test_coverage_evaluator_reports_missing_and_unexpected_methods(self) -> None:
@@ -417,21 +417,21 @@ class TestQueryCapture:
 
     def test_report_summary_includes_coverage_and_query_metadata(self) -> None:
         query = CapturedQuery(
-            name="notes_by_slug__001",
-            storage_class="NotesDatabaseStorage",
-            method_name="get_note_by_slug",
-            scenario_name="notes_by_slug",
+            name="articles_by_slug__001",
+            storage_class="ArticlesDatabaseStorage",
+            method_name="get_article_by_slug",
+            scenario_name="articles_by_slug",
             ordinal=1,
-            sql="SELECT * FROM notes__note_model WHERE slug = %(slug)s",
-            normalized_sql="SELECT * FROM notes__note_model WHERE slug = %(slug)s",
-            params={"slug": "note-100"},
+            sql="SELECT * FROM articles__article_model WHERE slug = %(slug)s",
+            normalized_sql="SELECT * FROM articles__article_model WHERE slug = %(slug)s",
+            params={"slug": "article-100"},
             elapsed_ms=2.5,
             executemany=False,
             expectation=PlanExpectation(
                 max_execution_ms=25.0,
                 threshold_source="group:point_read",
-                expected_index_names=("ix_notes__note_model_slug",),
-                forbidden_seq_scan_relations=("notes__note_model",),
+                expected_index_names=("ix_articles__article_model_slug",),
+                forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
         )
@@ -445,7 +445,7 @@ class TestQueryCapture:
                     planning_time_ms=1.0,
                     execution_time_ms=2.0,
                     node_types=("Index Scan",),
-                    index_names=("ix_notes__note_model_slug",),
+                    index_names=("ix_articles__article_model_slug",),
                     seq_scan_relations=(),
                     temp_blocks=0,
                     findings=(),
@@ -460,16 +460,16 @@ class TestQueryCapture:
             coverage=CoverageReport(
                 discovered_methods=(
                     StorageMethod(
-                        storage_class="NotesDatabaseStorage",
-                        method_name="get_note_by_slug",
-                        module_name="infra.postgresql.storages.notes",
+                        storage_class="ArticlesDatabaseStorage",
+                        method_name="get_article_by_slug",
+                        module_name="infra.postgresql.storages.articles",
                     ),
                 ),
                 covered_methods=(
                     StorageMethod(
-                        storage_class="NotesDatabaseStorage",
-                        method_name="get_note_by_slug",
-                        module_name="infra.postgresql.storages.notes",
+                        storage_class="ArticlesDatabaseStorage",
+                        method_name="get_article_by_slug",
+                        module_name="infra.postgresql.storages.articles",
                     ),
                 ),
                 missing_methods=(),
@@ -486,17 +486,17 @@ class TestQueryCapture:
         }
         summary_results = cast("Sequence[Mapping[str, object]]", summary["results"])
         assert summary_results[0] == {
-            "name": "notes_by_slug__001",
-            "storageClass": "NotesDatabaseStorage",
-            "methodName": "get_note_by_slug",
-            "scenarioName": "notes_by_slug",
+            "name": "articles_by_slug__001",
+            "storageClass": "ArticlesDatabaseStorage",
+            "methodName": "get_article_by_slug",
+            "scenarioName": "articles_by_slug",
             "ordinal": 1,
             "executemany": False,
             "runtimeElapsedMs": 2.5,
             "warmExecutionMs": 2.0,
             "thresholdSource": "group:point_read",
             "maxExecutionMs": 25.0,
-            "indexes": ("ix_notes__note_model_slug",),
+            "indexes": ("ix_articles__article_model_slug",),
             "seqScans": (),
             "nodeTypes": ("Index Scan",),
             "findings": (),
@@ -525,8 +525,8 @@ class ExplodingCursor:
 def make_captured_query(*, name: str, scenario_name: str, ordinal: int) -> CapturedQuery:
     return CapturedQuery(
         name=name,
-        storage_class="NotesDatabaseStorage",
-        method_name="create_note",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="create_article",
         scenario_name=scenario_name,
         ordinal=ordinal,
         sql="SELECT 1",

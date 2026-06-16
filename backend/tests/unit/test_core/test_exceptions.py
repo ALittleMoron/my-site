@@ -3,6 +3,7 @@ from collections.abc import Iterable
 import pytest
 from verbose_http_exceptions.exc.base import BaseVerboseHTTPException
 
+from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
@@ -18,7 +19,6 @@ from core.files.exceptions import (
     InvalidFileDataError,
     NamespaceNotAllowedError,
 )
-from core.notes.exceptions import NoteNotFoundError, TagNotFoundError
 
 
 def core_exception_classes() -> Iterable[type[Exception]]:
@@ -36,7 +36,7 @@ def core_exception_classes() -> Iterable[type[Exception]]:
         ContentTypeNotAllowedError,
         NamespaceNotAllowedError,
         FileStorageInternalError,
-        NoteNotFoundError,
+        ArticleNotFoundError,
         TagNotFoundError,
     )
 

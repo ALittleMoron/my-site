@@ -104,16 +104,16 @@ server {
         proxy_pass http://backend/api/competency-matrix/question-suggestions;
     }
 
-    location = /api/notes {
+    location = /api/articles {
         auth_basic off;
         limit_req zone=heavy_read_per_ip burst=30 nodelay;
-        proxy_pass http://backend/api/notes;
+        proxy_pass http://backend/api/articles;
     }
 
-    location = /api/admin/notes/tags/search {
+    location = /api/admin/articles/tags/search {
         auth_basic off;
         limit_req zone=heavy_read_per_ip burst=30 nodelay;
-        proxy_pass http://backend/api/admin/notes/tags/search;
+        proxy_pass http://backend/api/admin/articles/tags/search;
     }
 
     location = /api/admin/competency-matrix/resources/search {

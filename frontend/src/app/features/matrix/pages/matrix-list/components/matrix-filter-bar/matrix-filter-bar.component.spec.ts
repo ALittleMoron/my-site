@@ -110,7 +110,7 @@ describe('MatrixFilterBarComponent', () => {
     expect(emitted.length).toBe(1);
   });
 
-  it('should render suggestion button with note-tag gray styling instead of accent styling', () => {
+  it('should render suggestion button with article-tag gray styling instead of accent styling', () => {
     const button = el.querySelector<HTMLButtonElement>(
       '[data-testid="matrix-filter-suggest-question"]',
     );

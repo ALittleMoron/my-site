@@ -1,7 +1,7 @@
 import { marked } from 'marked';
 import { LanguageCode } from '../i18n/i18n.model';
 
-export const WIKI_LINK_TARGET_TYPES = ['notes', 'matrix'] as const;
+export const WIKI_LINK_TARGET_TYPES = ['articles', 'matrix'] as const;
 
 export type WikiLinkTargetType = (typeof WIKI_LINK_TARGET_TYPES)[number];
 
@@ -19,7 +19,7 @@ export interface WikiLinkTargetGroup {
 
 export type WikiLinkTargetLookup = ReadonlyMap<WikiLinkTargetType, ReadonlySet<string>>;
 
-const WIKI_LINK_PATTERN = /\[\[(notes|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\n]+))?\]\]/g;
+const WIKI_LINK_PATTERN = /\[\[(articles|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\n]+))?\]\]/g;
 
 export function parseWikiLinks(markdown: string): WikiLink[] {
   return Array.from(markdown.matchAll(WIKI_LINK_PATTERN), (match) => ({
@@ -78,8 +78,8 @@ function replaceWikiLinks(markdown: string, language: LanguageCode): string {
 }
 
 function wikiLinkPath(type: WikiLinkTargetType, slug: string, language: LanguageCode): string {
-  if (type === 'notes') {
-    return `/${language}/notes/${slug}`;
+  if (type === 'articles') {
+    return `/${language}/articles/${slug}`;
   }
   return `/${language}/competency-matrix/questions/${slug}`;
 }

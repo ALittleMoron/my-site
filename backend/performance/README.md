@@ -45,7 +45,7 @@ make performance-lighthouse
 ```
 
 The frontend target builds the production Angular SSR bundle, starts a deterministic mock API and
-Node SSR runtime, audits the public case-study, notes list/detail, and matrix list/detail routes,
+Node SSR runtime, audits the public case-study, articles list/detail, and matrix list/detail routes,
 then writes HTML/JSON reports to `frontend/performance/reports/lighthouse/`.
 
 ## Query Plan Checks
@@ -64,9 +64,9 @@ EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON)
 make query-plans-balanced
 ```
 
-The balanced profile seeds 200k notes, 30k tags, 500k note-tag links, 200k competency resources,
-representative users, note analytics, reactions, and matrix sheets. Targeted full-text terms are
-present in 1% of notes so the measured searches are selective while still running against large
+The balanced profile seeds 200k articles, 30k tags, 500k article-tag links, 200k competency resources,
+representative users, article analytics, reactions, and matrix sheets. Targeted full-text terms are
+present in 1% of articles so the measured searches are selective while still running against large
 tables. The harness runs `VACUUM ANALYZE` after seeding and before measuring plans.
 
 The gate fails when a discovered public storage method has no scenario, a scenario captures no SQL,
@@ -107,14 +107,14 @@ The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
   `false` so smoke/baseline runs remain read-heavy and do not spend the daily suggestion quota.
 - `PERFORMANCE_VALIDATE_RESPONSES`: set to `true` to validate selected API responses with backend Pydantic response schemas.
 - `PERFORMANCE_SEED_DATA`: set to `true` only for local test-database runs. It seeds published
-  notes, note detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and
+  articles, article detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and
   resources before Locust starts. The seed runner rejects remote targets, remote databases, and
   database names that do not contain `test`.
 - `PERFORMANCE_USERS`, `PERFORMANCE_SPAWN_RATE`, `PERFORMANCE_RUN_TIME`: smoke profile shape.
 - `PERFORMANCE_BASELINE_USERS`, `PERFORMANCE_BASELINE_SPAWN_RATE`, `PERFORMANCE_BASELINE_RUN_TIME`: baseline profile shape.
 - `LOCUST_MAX_FAILURE_RATIO`, `LOCUST_MAX_AVG_RESPONSE_MS`, `LOCUST_MAX_P95_RESPONSE_MS`: soft-gate thresholds.
 
-## Notes
+## Additional Details
 
 The Make targets prepare the backend uv environment, run Locust, and write timestamped HTML/CSV
 artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can

@@ -15,9 +15,9 @@ import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { SeoService } from '../../../../core/seo/seo.service';
-import { SitemapNote, SitemapNotesService } from '../../services/sitemap-notes.service';
+import { SitemapArticle, SitemapArticlesService } from '../../services/sitemap-articles.service';
 
-interface SitemapNoteLink {
+interface SitemapArticleLink {
   title: string;
   commands: string[];
 }
@@ -32,12 +32,12 @@ interface SitemapNoteLink {
 export class SitemapPageComponent implements OnInit {
   private readonly seoService = inject(SeoService);
   private readonly i18n = inject(I18nService);
-  private readonly sitemapNotesService = inject(SitemapNotesService);
+  private readonly sitemapArticlesService = inject(SitemapArticlesService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly publishedNotes = signal<SitemapNote[]>([]);
-  readonly publishedNotesLoading = signal(false);
-  readonly publishedNotesError = signal(false);
+  readonly publishedArticles = signal<SitemapArticle[]>([]);
+  readonly publishedArticlesLoading = signal(false);
+  readonly publishedArticlesError = signal(false);
   readonly language = computed(() => {
     const language = this.i18n.language();
     if (language === null) {
@@ -45,17 +45,17 @@ export class SitemapPageComponent implements OnInit {
     }
     return language;
   });
-  readonly publishedNoteLinks = computed<SitemapNoteLink[]>(() =>
-    this.publishedNotes().map((note) => ({
-      title: note.title,
-      commands: ['/', this.language(), 'notes', note.slug],
+  readonly publishedArticleLinks = computed<SitemapArticleLink[]>(() =>
+    this.publishedArticles().map((article) => ({
+      title: article.title,
+      commands: ['/', this.language(), 'articles', article.slug],
     })),
   );
 
-  private readonly publishedNotesLanguageEffect = effect(() => {
+  private readonly publishedArticlesLanguageEffect = effect(() => {
     const language = this.i18n.language();
     if (language === null) return;
-    untracked(() => this.loadPublishedNotes(language));
+    untracked(() => this.loadPublishedArticles(language));
   });
 
   ngOnInit(): void {
@@ -66,21 +66,21 @@ export class SitemapPageComponent implements OnInit {
     });
   }
 
-  private loadPublishedNotes(language: LanguageCode): void {
-    this.publishedNotesLoading.set(true);
-    this.publishedNotesError.set(false);
-    this.sitemapNotesService
-      .getPublishedNotes(language)
+  private loadPublishedArticles(language: LanguageCode): void {
+    this.publishedArticlesLoading.set(true);
+    this.publishedArticlesError.set(false);
+    this.sitemapArticlesService
+      .getPublishedArticles(language)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (notes) => {
-          this.publishedNotes.set(notes);
-          this.publishedNotesLoading.set(false);
+        next: (articles) => {
+          this.publishedArticles.set(articles);
+          this.publishedArticlesLoading.set(false);
         },
         error: () => {
-          this.publishedNotes.set([]);
-          this.publishedNotesError.set(true);
-          this.publishedNotesLoading.set(false);
+          this.publishedArticles.set([]);
+          this.publishedArticlesError.set(true);
+          this.publishedArticlesLoading.set(false);
         },
       });
   }

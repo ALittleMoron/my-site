@@ -3,29 +3,31 @@ from datetime import UTC, datetime
 import pytest_asyncio
 from httpx import codes
 
+from core.articles.schemas import PublishedArticleForSeo, PublishedArticlesForSeo
 from core.competency_matrix.schemas import (
     PublishedCompetencyMatrixItemForSeo,
     PublishedCompetencyMatrixItemsForSeo,
 )
 from core.enums import PublishStatusEnum
-from core.notes.schemas import PublishedNoteForSeo, PublishedNotesForSeo
 from tests.unit.fixtures import ApiFixture, ContainerFixture
 
 
 class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.notes_use_case = await self.container.get_notes_use_case()
+        self.articles_use_case = await self.container.get_articles_use_case()
         self.matrix_use_case = await self.container.get_competency_matrix_use_case()
 
-    def test_sitemap_contains_language_prefixed_public_pages_and_published_notes(self) -> None:
-        note = PublishedNoteForSeo(
-            slug="typed-notes",
+    def test_sitemap_contains_language_prefixed_public_pages_and_published_articles(self) -> None:
+        article = PublishedArticleForSeo(
+            slug="typed-articles",
             publish_status=PublishStatusEnum.PUBLISHED,
             updated_at=datetime(2026, 2, 4, 4, 5, 6, tzinfo=UTC),
         )
-        self.notes_use_case.list_published_notes_for_seo.return_value = PublishedNotesForSeo(
-            values=[note],
+        self.articles_use_case.list_published_articles_for_seo.return_value = (
+            PublishedArticlesForSeo(
+                values=[article],
+            )
         )
         self.matrix_use_case.list_published_items_for_seo.return_value = (
             PublishedCompetencyMatrixItemsForSeo(
@@ -47,8 +49,8 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
         assert "<loc>http://localhost:8000/en/about-me</loc>" in sitemap
         assert "<loc>http://localhost:8000/ru/how-this-site-is-built</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/how-this-site-is-built</loc>" in sitemap
-        assert "<loc>http://localhost:8000/ru/notes/typed-notes</loc>" in sitemap
-        assert "<loc>http://localhost:8000/en/notes/typed-notes</loc>" in sitemap
+        assert "<loc>http://localhost:8000/ru/articles/typed-articles</loc>" in sitemap
+        assert "<loc>http://localhost:8000/en/articles/typed-articles</loc>" in sitemap
         assert (
             "<loc>http://localhost:8000/ru/competency-matrix/questions/how-to-write-function</loc>"
             in sitemap
@@ -57,8 +59,8 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             "<loc>http://localhost:8000/en/competency-matrix/questions/how-to-write-function</loc>"
             in sitemap
         )
-        assert 'hreflang="ru" href="http://localhost:8000/ru/notes/typed-notes"' in sitemap
-        assert 'hreflang="en" href="http://localhost:8000/en/notes/typed-notes"' in sitemap
+        assert 'hreflang="ru" href="http://localhost:8000/ru/articles/typed-articles"' in sitemap
+        assert 'hreflang="en" href="http://localhost:8000/en/articles/typed-articles"' in sitemap
         assert (
             'hreflang="ru" '
             'href="http://localhost:8000/ru/competency-matrix/questions/how-to-write-function"'
@@ -70,17 +72,19 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             in sitemap
         )
         assert "<lastmod>2026-02-04T04:05:06+00:00</lastmod>" in sitemap
-        self.notes_use_case.list_published_notes_for_seo.assert_called_once_with()
+        self.articles_use_case.list_published_articles_for_seo.assert_called_once_with()
         self.matrix_use_case.list_published_items_for_seo.assert_called_once_with()
 
-    def test_sitemap_skips_draft_notes_and_matrix_items_returned_defensively(self) -> None:
-        draft = PublishedNoteForSeo(
-            slug="draft-note",
+    def test_sitemap_skips_draft_articles_and_matrix_items_returned_defensively(self) -> None:
+        draft = PublishedArticleForSeo(
+            slug="draft-article",
             publish_status=PublishStatusEnum.DRAFT,
             updated_at=datetime(2026, 2, 4, 4, 5, 6, tzinfo=UTC),
         )
-        self.notes_use_case.list_published_notes_for_seo.return_value = PublishedNotesForSeo(
-            values=[draft],
+        self.articles_use_case.list_published_articles_for_seo.return_value = (
+            PublishedArticlesForSeo(
+                values=[draft],
+            )
         )
         self.matrix_use_case.list_published_items_for_seo.return_value = (
             PublishedCompetencyMatrixItemsForSeo(
@@ -96,7 +100,7 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
         response = self.no_auth_api.get_sitemap_xml()
 
         assert response.status_code == codes.OK, response.content
-        assert "/notes/draft-note" not in response.text
+        assert "/articles/draft-article" not in response.text
         assert "/competency-matrix/questions/draft-question" not in response.text
 
     def test_robots_allows_public_language_routes_and_blocks_duplicate_spa_routes(self) -> None:
@@ -113,7 +117,7 @@ class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
             "Disallow: /login\n"
             "Disallow: /about-me\n"
             "Disallow: /how-this-site-is-built\n"
-            "Disallow: /notes\n"
+            "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"
             "Sitemap: http://localhost:8000/sitemap.xml\n"

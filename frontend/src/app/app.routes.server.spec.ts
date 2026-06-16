@@ -13,8 +13,8 @@ describe('serverRoutes', () => {
   it('server-renders localized public SEO pages', () => {
     expect(serverRoutes).toEqual(
       expect.arrayContaining([
-        { path: 'ru/notes/:slug', renderMode: RenderMode.Server },
-        { path: 'en/notes/:slug', renderMode: RenderMode.Server },
+        { path: 'ru/articles/:slug', renderMode: RenderMode.Server },
+        { path: 'en/articles/:slug', renderMode: RenderMode.Server },
         { path: 'ru/competency-matrix/questions/:slug', renderMode: RenderMode.Server },
         { path: 'en/competency-matrix/questions/:slug', renderMode: RenderMode.Server },
         { path: 'ru/how-this-site-is-built', renderMode: RenderMode.Server },

@@ -2,8 +2,8 @@ import pytest
 from pydantic import ValidationError
 
 from performance.locust.seed import (
-    note_range,
-    note_tag_indexes,
+    article_range,
+    article_tag_indexes,
     validate_seed_config,
 )
 from performance.locust.settings import (
@@ -128,7 +128,7 @@ class TestLocustPerformanceSeed:
         assert settings.host == "localhost"
         assert settings.name == "my_site_database_test"
 
-    def test_note_tag_indexes_are_unique_per_seeded_note(self) -> None:
-        for note_index in note_range():
-            indexes = note_tag_indexes(note_index=note_index)
+    def test_article_tag_indexes_are_unique_per_seeded_article(self) -> None:
+        for article_index in article_range():
+            indexes = article_tag_indexes(article_index=article_index)
             assert len(indexes) == len(set(indexes))

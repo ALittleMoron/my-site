@@ -9,8 +9,8 @@ module.exports = {
       numberOfRuns: 1,
       url: [
         `${LHCI_ORIGIN}/ru/how-this-site-is-built`,
-        `${LHCI_ORIGIN}/ru/notes`,
-        `${LHCI_ORIGIN}/ru/notes/typed-notes`,
+        `${LHCI_ORIGIN}/ru/articles`,
+        `${LHCI_ORIGIN}/ru/articles/typed-articles`,
         `${LHCI_ORIGIN}/ru/competency-matrix`,
         `${LHCI_ORIGIN}/ru/competency-matrix/questions/how-to-write-function`,
       ],

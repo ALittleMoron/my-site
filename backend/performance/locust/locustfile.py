@@ -56,17 +56,17 @@ class PublicSiteUser(HttpUser):
     def i18n_bundle(self) -> None:
         self.scenario.i18n_bundle()
 
-    @task(constants.TASK_WEIGHT_NOTES_LIST)
-    def notes_list(self) -> None:
-        self.scenario.notes_list()
+    @task(constants.TASK_WEIGHT_ARTICLES_LIST)
+    def articles_list(self) -> None:
+        self.scenario.articles_list()
 
-    @task(constants.TASK_WEIGHT_NOTES_TREE)
-    def notes_tree(self) -> None:
-        self.scenario.notes_tree()
+    @task(constants.TASK_WEIGHT_ARTICLES_TREE)
+    def articles_tree(self) -> None:
+        self.scenario.articles_tree()
 
-    @task(constants.TASK_WEIGHT_NOTE_DETAIL)
-    def note_detail(self) -> None:
-        self.scenario.note_detail()
+    @task(constants.TASK_WEIGHT_ARTICLE_DETAIL)
+    def article_detail(self) -> None:
+        self.scenario.article_detail()
 
     @task(constants.TASK_WEIGHT_MATRIX_SHEETS)
     def matrix_sheets(self) -> None:

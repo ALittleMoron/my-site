@@ -24,11 +24,11 @@ describe('WikiLinkTargetsService', () => {
   afterEach(() => httpMock.verify());
 
   it('loads typed wiki-link targets with explicit language', () => {
-    let noteTargets: ReadonlySet<string> | undefined;
+    let articleTargets: ReadonlySet<string> | undefined;
     let matrixTargets: ReadonlySet<string> | undefined;
 
     service.getTargets('ru').subscribe((targets) => {
-      noteTargets = targets.get('notes');
+      articleTargets = targets.get('articles');
       matrixTargets = targets.get('matrix');
     });
 
@@ -37,12 +37,12 @@ describe('WikiLinkTargetsService', () => {
     expect(req.request.params.get('language')).toBe('ru');
     req.flush({
       targets: [
-        { type: 'notes', slugs: ['typed-notes'] },
+        { type: 'articles', slugs: ['typed-articles'] },
         { type: 'matrix', slugs: ['how-to-write-function'] },
       ],
     });
 
-    expect(noteTargets).toEqual(new Set(['typed-notes']));
+    expect(articleTargets).toEqual(new Set(['typed-articles']));
     expect(matrixTargets).toEqual(new Set(['how-to-write-function']));
   });
 });

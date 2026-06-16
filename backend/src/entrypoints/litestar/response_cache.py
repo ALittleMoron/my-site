@@ -17,7 +17,7 @@ from infra.config.settings import settings
 class ResponseCacheDomain(StrEnum):
     HEALTHCHECK = "healthcheck"
     I18N = "i18n"
-    NOTES = "notes"
+    ARTICLES = "articles"
     COMPETENCY_MATRIX = "competency_matrix"
 
     @property

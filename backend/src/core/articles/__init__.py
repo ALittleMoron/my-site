@@ -1,0 +1,1 @@
+"""Articles domain module."""

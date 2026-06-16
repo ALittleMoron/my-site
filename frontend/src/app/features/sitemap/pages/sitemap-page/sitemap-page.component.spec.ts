@@ -3,21 +3,21 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
-import { SitemapNotesService } from '../../services/sitemap-notes.service';
+import { SitemapArticlesService } from '../../services/sitemap-articles.service';
 import { SitemapPageComponent } from './sitemap-page.component';
 
 describe('SitemapPageComponent', () => {
   let fixture: ComponentFixture<SitemapPageComponent>;
-  let sitemapNotesService: { getPublishedNotes: jest.Mock };
+  let sitemapArticlesService: { getPublishedArticles: jest.Mock };
   let seoService: { setTranslatedMeta: jest.Mock };
 
   beforeEach(async () => {
-    sitemapNotesService = {
-      getPublishedNotes: jest.fn().mockReturnValue(
+    sitemapArticlesService = {
+      getPublishedArticles: jest.fn().mockReturnValue(
         of([
           {
-            title: 'Typed notes',
-            slug: 'typed-notes',
+            title: 'Typed articles',
+            slug: 'typed-articles',
           },
         ]),
       ),
@@ -32,24 +32,24 @@ describe('SitemapPageComponent', () => {
         provideRouter([]),
         provideI18nTesting(),
         { provide: SeoService, useValue: seoService },
-        { provide: SitemapNotesService, useValue: sitemapNotesService },
+        { provide: SitemapArticlesService, useValue: sitemapArticlesService },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SitemapPageComponent);
   });
 
-  it('renders localized links to published notes', () => {
+  it('renders localized links to published articles', () => {
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector(
-      '[data-testid="sitemap-note-link"]',
+      '[data-testid="sitemap-article-link"]',
     ) as HTMLAnchorElement;
 
-    expect(sitemapNotesService.getPublishedNotes).toHaveBeenCalledWith('ru');
-    expect(fixture.nativeElement.textContent).toContain('Опубликованные заметки');
-    expect(link.textContent?.trim()).toBe('Typed notes');
-    expect(link.getAttribute('href')).toBe('/ru/notes/typed-notes');
+    expect(sitemapArticlesService.getPublishedArticles).toHaveBeenCalledWith('ru');
+    expect(fixture.nativeElement.textContent).toContain('Опубликованные статьи');
+    expect(link.textContent?.trim()).toBe('Typed articles');
+    expect(link.getAttribute('href')).toBe('/ru/articles/typed-articles');
   });
 
   it('renders a localized link to the site-build case study', () => {

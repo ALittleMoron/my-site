@@ -1,0 +1,1 @@
+"""Articles use case tests."""

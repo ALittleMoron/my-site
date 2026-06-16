@@ -58,9 +58,9 @@ def render_markdown_summary(
         "# Query Plan Report",
         "",
         f"- Profile: `{profile.name}`",
-        f"- Notes: `{profile.note_count}`",
+        f"- Articles: `{profile.article_count}`",
         f"- Tags: `{profile.tag_count}`",
-        f"- Note-tag links: `{profile.note_tag_link_count}`",
+        f"- Article-tag links: `{profile.article_tag_link_count}`",
         f"- Resources: `{profile.resource_count}`",
         f"- EXPLAIN runs per query: `{profile.explain_runs}`",
         f"- Storage methods discovered: `{len(coverage.discovered_methods)}`",
@@ -103,9 +103,9 @@ def serialize_summary(
     return {
         "profile": {
             "name": profile.name,
-            "noteCount": profile.note_count,
+            "articleCount": profile.article_count,
             "tagCount": profile.tag_count,
-            "noteTagLinkCount": profile.note_tag_link_count,
+            "articleTagLinkCount": profile.article_tag_link_count,
             "resourceCount": profile.resource_count,
             "explainRuns": profile.explain_runs,
         },

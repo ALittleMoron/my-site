@@ -10,13 +10,15 @@ describe('wiki links', () => {
 
   it('parses typed slug-only and labelled links', () => {
     expect(
-      parseWikiLinks('Read [[notes:typed-notes]] and [[matrix:angular-forms|Angular forms]].'),
+      parseWikiLinks(
+        'Read [[articles:typed-articles]] and [[matrix:angular-forms|Angular forms]].',
+      ),
     ).toEqual([
       {
-        type: 'notes',
-        slug: 'typed-notes',
-        label: 'typed-notes',
-        raw: '[[notes:typed-notes]]',
+        type: 'articles',
+        slug: 'typed-articles',
+        label: 'typed-articles',
+        raw: '[[articles:typed-articles]]',
       },
       {
         type: 'matrix',
@@ -29,16 +31,16 @@ describe('wiki links', () => {
 
   it('ignores legacy untyped and unknown-prefixed wiki links', () => {
     expect(
-      parseWikiLinks('Read [[typed-notes]], [[unknown:typed-notes]], and [[notes:OK]].'),
+      parseWikiLinks('Read [[typed-articles]], [[unknown:typed-articles]], and [[articles:OK]].'),
     ).toEqual([]);
   });
 
   it('reports missing typed targets once', () => {
     const missing = findMissingWikiLinkTargets({
       markdown:
-        'Read [[notes:typed-notes]], [[matrix:missing-question]], and [[matrix:missing-question|again]].',
+        'Read [[articles:typed-articles]], [[matrix:missing-question]], and [[matrix:missing-question|again]].',
       availableTargets: createWikiLinkTargetLookup([
-        { type: 'notes', slugs: ['typed-notes'] },
+        { type: 'articles', slugs: ['typed-articles'] },
         { type: 'matrix', slugs: ['known-question'] },
       ]),
     });
@@ -48,12 +50,12 @@ describe('wiki links', () => {
 
   it('renders typed wiki links as sanitized localized internal links', () => {
     const html = renderMarkdownWithWikiLinks(
-      'Read [[notes:typed-notes]] and [[matrix:angular-forms|Angular forms]].',
+      'Read [[articles:typed-articles]] and [[matrix:angular-forms|Angular forms]].',
       'ru',
       sanitizeHtml,
     );
 
-    expect(html).toContain('<a href="/ru/notes/typed-notes">typed-notes</a>');
+    expect(html).toContain('<a href="/ru/articles/typed-articles">typed-articles</a>');
     expect(html).toContain(
       '<a href="/ru/competency-matrix/questions/angular-forms">Angular forms</a>',
     );
@@ -61,13 +63,13 @@ describe('wiki links', () => {
 
   it('keeps unsupported wiki links as plain text', () => {
     const html = renderMarkdownWithWikiLinks(
-      'Read [[typed-notes]] and [[unknown:slug]].',
+      'Read [[typed-articles]] and [[unknown:slug]].',
       'en',
       sanitizeHtml,
     );
 
-    expect(html).not.toContain('href="/en/notes/typed-notes"');
-    expect(html).toContain('[[typed-notes]]');
+    expect(html).not.toContain('href="/en/articles/typed-articles"');
+    expect(html).toContain('[[typed-articles]]');
     expect(html).toContain('[[unknown:slug]]');
   });
 });

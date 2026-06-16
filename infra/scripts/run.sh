@@ -72,7 +72,7 @@ require_environment() {
         "COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT"
         "TASKIQ_CACHE_WARM_INTERVAL_SECONDS"
         "TASKIQ_RESULT_EXPIRE_SECONDS"
-        "CACHE_WARM_NOTES_PAGE_SIZE"
+        "CACHE_WARM_ARTICLES_PAGE_SIZE"
         "LE_EMAIL"
         "SSL_CERT"
         "SSL_KEY"
@@ -137,7 +137,7 @@ render_and_reload_nginx() {
         -e "ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT}" \
         -e "ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT}" \
         nginx \
-        sh -c 'envsubst "${APP_DOMAIN} ${SSL_CERT} ${SSL_KEY} ${ACTIVE_BACKEND_SLOT} ${ACTIVE_FRONTEND_SLOT}" < /etc/nginx/templates/site.conf.template > /etc/nginx/conf.d/site.conf && nginx -s reload'
+        sh -c 'envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT" < /etc/nginx/templates/site.conf.template > /etc/nginx/conf.d/site.conf && nginx -s reload'
 }
 
 switch_nginx() {

@@ -63,12 +63,12 @@ describe('SeoService', () => {
 
   it('setMeta() writes language alternates', () => {
     service.setMeta({
-      title: 'Typed notes',
+      title: 'Typed articles',
       description: 'Description.',
-      canonicalPath: '/ru/notes/typed-notes',
+      canonicalPath: '/ru/articles/typed-articles',
       alternates: [
-        { language: 'ru', path: '/ru/notes/typed-notes' },
-        { language: 'en', path: '/en/notes/typed-notes' },
+        { language: 'ru', path: '/ru/articles/typed-articles' },
+        { language: 'en', path: '/en/articles/typed-articles' },
       ],
     });
 
@@ -77,19 +77,19 @@ describe('SeoService', () => {
     );
 
     expect(links.map((link) => [link.hreflang, link.href])).toEqual([
-      ['ru', 'http://localhost:4200/ru/notes/typed-notes'],
-      ['en', 'http://localhost:4200/en/notes/typed-notes'],
+      ['ru', 'http://localhost:4200/ru/articles/typed-articles'],
+      ['en', 'http://localhost:4200/en/articles/typed-articles'],
     ]);
   });
 
   it('setMeta() writes JSON-LD structured data and removes stale data', () => {
     service.setMeta({
-      title: 'Typed notes',
+      title: 'Typed articles',
       description: 'Description.',
       structuredData: {
         '@context': 'https://schema.org',
         '@type': 'BlogPosting',
-        headline: 'Typed notes',
+        headline: 'Typed articles',
       },
     });
 

@@ -185,15 +185,15 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', {
       ...mockDetail,
-      answer: 'Read [[notes:typed-notes|typed note]].',
+      answer: 'Read [[articles:typed-articles|typed article]].',
     });
     fixture.componentRef.setInput('error', null);
     fixture.componentRef.setInput('canManageContent', false);
     fixture.componentRef.setInput('language', 'en');
     fixture.detectChanges();
 
-    const link = el.querySelector<HTMLAnchorElement>('a[href="/en/notes/typed-notes"]');
-    expect(link?.textContent).toBe('typed note');
+    const link = el.querySelector<HTMLAnchorElement>('a[href="/en/articles/typed-articles"]');
+    expect(link?.textContent).toBe('typed article');
   });
 
   it('should render resources', () => {

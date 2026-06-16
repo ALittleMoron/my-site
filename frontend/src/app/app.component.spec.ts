@@ -86,7 +86,7 @@ describe('AppComponent', () => {
                 'i18n.startupError.retry': 'Retry',
                 'shell.nav.about': 'Обо мне',
                 'shell.nav.matrix': 'Матрица компетенций',
-                'shell.nav.notes': 'Заметки',
+                'shell.nav.articles': 'Статьи',
                 'shell.nav.adminPanel': 'Админ-панель',
                 'shell.nav.toggleNavigation': 'Открыть навигацию',
                 'shell.theme.dark': 'Dark',

@@ -52,13 +52,13 @@ class FakeHttpClient:
                     {"key": "backend", "name": "Backend"},
                 ],
             }
-        elif path.startswith("/api/notes/detail/"):
-            payload = note_detail_payload(slug="seeded-note")
-        elif path.startswith("/api/notes"):
+        elif path.startswith("/api/articles/detail/"):
+            payload = article_detail_payload(slug="seeded-article")
+        elif path.startswith("/api/articles"):
             payload = {
                 "totalCount": 1,
                 "totalPages": 1,
-                "notes": [note_summary_payload(slug="seeded-note")],
+                "articles": [article_summary_payload(slug="seeded-article")],
             }
         elif path.startswith("/api/competency-matrix/items/public/"):
             payload = matrix_item_detail_payload(slug="matrix-q-001-python")
@@ -68,10 +68,10 @@ class FakeHttpClient:
         return payload
 
 
-def note_summary_payload(*, slug: str) -> dict[str, object]:
+def article_summary_payload(*, slug: str) -> dict[str, object]:
     return {
         "id": "10000000-0000-4000-8000-000000000001",
-        "title": "Seeded note",
+        "title": "Seeded article",
         "slug": slug,
         "folder": "Performance",
         "authorUsername": "admin",
@@ -92,21 +92,21 @@ def note_summary_payload(*, slug: str) -> dict[str, object]:
     }
 
 
-def note_detail_payload(*, slug: str) -> dict[str, object]:
-    payload = note_summary_payload(slug=slug)
+def article_detail_payload(*, slug: str) -> dict[str, object]:
+    payload = article_summary_payload(slug=slug)
     payload.update(
         {
-            "content": "# Seeded note\n\nA seeded note detail.",
+            "content": "# Seeded article\n\nA seeded article detail.",
             "createdAt": "2026-02-10T09:30:00+00:00",
             "translations": {
                 "ru": {
-                    "title": "Тестовая заметка",
-                    "content": "# Тестовая заметка",
+                    "title": "Тестовая статья",
+                    "content": "# Тестовая статья",
                     "folder": "Производительность",
                 },
                 "en": {
-                    "title": "Seeded note",
-                    "content": "# Seeded note",
+                    "title": "Seeded article",
+                    "content": "# Seeded article",
                     "folder": "Performance",
                 },
             },
@@ -230,14 +230,14 @@ class TestPublicSiteScenario:
             },
         ]
 
-    def test_public_data_discovery_fetches_seeded_note_and_matrix_slugs(self) -> None:
+    def test_public_data_discovery_fetches_seeded_article_and_matrix_slugs(self) -> None:
         client = FakeHttpClient()
         scenario = PublicSiteScenario(
             client=client,
             settings=self.scenario_settings(include_matrix_suggestions=False),
         )
 
-        assert scenario.note_slugs == ["seeded-note"]
+        assert scenario.article_slugs == ["seeded-article"]
         assert scenario.matrix_item_slugs == [
             "matrix-q-001-python",
             "matrix-q-001-backend",
@@ -249,8 +249,8 @@ class TestPublicSiteScenario:
                 "catch_response": True,
             },
             {
-                "path": "/api/notes?page=1&pageSize=100&language=en",
-                "name": "GET /api/notes",
+                "path": "/api/articles?page=1&pageSize=100&language=en",
+                "name": "GET /api/articles",
                 "catch_response": True,
             },
             {
@@ -278,13 +278,13 @@ class TestPublicSiteScenario:
         )
         client.calls.clear()
 
-        scenario.note_detail()
+        scenario.article_detail()
         scenario.matrix_item_detail()
 
         assert client.calls == [
             {
-                "path": "/api/notes/detail/seeded-note?language=en",
-                "name": "GET /api/notes/detail/:slug",
+                "path": "/api/articles/detail/seeded-article?language=en",
+                "name": "GET /api/articles/detail/:slug",
                 "catch_response": True,
             },
             {

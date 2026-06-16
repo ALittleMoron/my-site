@@ -6,6 +6,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
+from core.articles.schemas import Article, ArticleFilters, ArticleMetadata, Tag, Tags
 from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
@@ -19,13 +21,14 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.notes.enums import NoteReactionKind, NoteViewSourceCategory
-from core.notes.schemas import Note, NoteFilters, NoteMetadata, Tag, Tags
 from core.types import IntId
+from infra.postgresql.storages.articles import (
+    ArticleAnalyticsDatabaseStorage,
+    ArticlesDatabaseStorage,
+)
 from infra.postgresql.storages.auth import AuthDatabaseStorage
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
-from infra.postgresql.storages.notes import NoteAnalyticsDatabaseStorage, NotesDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from performance.query_plans.expectations import (
     BALANCED_THRESHOLD_POLICY,
@@ -44,9 +47,9 @@ ScenarioRunner = Callable[[AsyncSession], Awaitable[None]]
 SEED_NOW = datetime(2026, 1, 15, 12, 0, tzinfo=UTC)
 SEED_USERNAME = "benchmark"
 NEW_AUTH_HASH = "query-plan-auth-hash"
-NEW_NOTE_ID = UUID("10000000-0000-4000-8000-000000000001")
+NEW_ARTICLE_ID = UUID("10000000-0000-4000-8000-000000000001")
 NEW_CONTACT_ID = UUID("10000000-0000-4000-8000-000000000002")
-NEW_NOTE_ANALYTICS_VOTER = "query-plan-voter-hash"
+NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
 NEW_TAG_ID = IntId(90_000_001)
 NEW_MATRIX_ITEM_ID = IntId(900_001)
 SHORT_TRIGRAM_ALLOW_REASON = (
@@ -151,16 +154,16 @@ async def run_create_contact_me_request(session: AsyncSession) -> None:
     )
 
 
-async def run_get_note_by_slug(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).get_note_by_slug(
-        slug="note-100",
+async def run_get_article_by_slug(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).get_article_by_slug(
+        slug="article-100",
         include_deleted_tags=False,
     )
 
 
-async def run_list_notes_en_full_text_tag_date(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).list_notes(
-        filters=NoteFilters(
+async def run_list_articles_en_full_text_tag_date(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).list_articles(
+        filters=ArticleFilters(
             page=1,
             page_size=20,
             language=LanguageEnum.EN,
@@ -174,9 +177,9 @@ async def run_list_notes_en_full_text_tag_date(session: AsyncSession) -> None:
     )
 
 
-async def run_list_notes_ru_full_text(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).list_notes(
-        filters=NoteFilters(
+async def run_list_articles_ru_full_text(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).list_articles(
+        filters=ArticleFilters(
             page=1,
             page_size=20,
             language=LanguageEnum.RU,
@@ -190,47 +193,49 @@ async def run_list_notes_ru_full_text(session: AsyncSession) -> None:
     )
 
 
-async def run_list_notes_for_seo(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).list_notes(
-        filters=NoteFilters(only_published=True, include_tags=False, order_for_seo=True),
+async def run_list_articles_for_seo(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).list_articles(
+        filters=ArticleFilters(only_published=True, include_tags=False, order_for_seo=True),
     )
 
 
 async def run_list_tree_items(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).list_tree_items(
+    await ArticlesDatabaseStorage(session=session).list_tree_items(
         only_published=True,
         language=LanguageEnum.EN,
     )
 
 
-async def run_create_note(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).create_note(note=write_note())
+async def run_create_article(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).create_article(article=write_article())
 
 
-async def run_update_note(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).update_note(note=write_note_for_existing_note())
+async def run_update_article(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).update_article(
+        article=write_article_for_existing_article(),
+    )
 
 
-async def run_delete_note(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).delete_note(slug="note-101")
+async def run_delete_article(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).delete_article(slug="article-101")
 
 
-async def run_update_note_publish_status(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).update_note_publish_status(
-        slug="note-102",
+async def run_update_article_publish_status(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).update_article_publish_status(
+        slug="article-102",
         publish_status=PublishStatusEnum.DRAFT,
     )
 
 
 async def run_get_tags_by_ids(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).get_tags_by_ids(
+    await ArticlesDatabaseStorage(session=session).get_tags_by_ids(
         tag_ids=[IntId(1), IntId(2), IntId(3)],
         include_deleted=False,
     )
 
 
 async def run_list_tags(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).list_tags(
+    await ArticlesDatabaseStorage(session=session).list_tags(
         include_deleted=False,
         language=LanguageEnum.EN,
     )
@@ -253,7 +258,7 @@ async def run_search_tags_short(session: AsyncSession) -> None:
 
 
 async def run_search_tags(*, session: AsyncSession, search_name: str) -> None:
-    await NotesDatabaseStorage(session=session).search_tags(
+    await ArticlesDatabaseStorage(session=session).search_tags(
         search_name=search_name,
         include_deleted=False,
         limit=10,
@@ -262,7 +267,7 @@ async def run_search_tags(*, session: AsyncSession, search_name: str) -> None:
 
 
 async def run_create_tag(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).create_tag(
+    await ArticlesDatabaseStorage(session=session).create_tag(
         tag=Tag(
             id=NEW_TAG_ID,
             name_ru="Новый performance тег",
@@ -274,7 +279,7 @@ async def run_create_tag(session: AsyncSession) -> None:
 
 
 async def run_update_tag(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).update_tag(
+    await ArticlesDatabaseStorage(session=session).update_tag(
         tag=Tag(
             id=IntId(1),
             name_ru="Питон обновленный",
@@ -286,51 +291,51 @@ async def run_update_tag(session: AsyncSession) -> None:
 
 
 async def run_soft_delete_tag(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).soft_delete_tag(tag_id=IntId(1))
+    await ArticlesDatabaseStorage(session=session).soft_delete_tag(tag_id=IntId(1))
 
 
 async def run_restore_tag(session: AsyncSession) -> None:
-    await NotesDatabaseStorage(session=session).restore_tag(tag_id=IntId(4))
+    await ArticlesDatabaseStorage(session=session).restore_tag(tag_id=IntId(4))
 
 
 async def run_increment_view(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).increment_view(
-        note_id=note_id(100),
-        source_category=NoteViewSourceCategory.DIRECT,
+    await ArticleAnalyticsDatabaseStorage(session=session).increment_view(
+        article_id=article_id(100),
+        source_category=ArticleViewSourceCategory.DIRECT,
         viewed_on=SEED_NOW.date(),
     )
 
 
 async def run_increment_engaged_view(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).increment_engaged_view(
-        note_id=note_id(100),
-        source_category=NoteViewSourceCategory.SEARCH,
+    await ArticleAnalyticsDatabaseStorage(session=session).increment_engaged_view(
+        article_id=article_id(100),
+        source_category=ArticleViewSourceCategory.SEARCH,
         viewed_on=SEED_NOW.date(),
     )
 
 
 async def run_get_public_stats(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).get_public_stats(
-        note_ids=[note_id(100), note_id(200)],
+    await ArticleAnalyticsDatabaseStorage(session=session).get_public_stats(
+        article_ids=[article_id(100), article_id(200)],
     )
 
 
 async def run_get_reaction_counts(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).get_reaction_counts(
-        note_ids=[note_id(100), note_id(200)],
+    await ArticleAnalyticsDatabaseStorage(session=session).get_reaction_counts(
+        article_ids=[article_id(100), article_id(200)],
     )
 
 
 async def run_set_reaction(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).set_reaction(
-        note_id=note_id(100),
-        note_scoped_voter_hash=NEW_NOTE_ANALYTICS_VOTER,
-        reaction_kind=NoteReactionKind.HEART,
+    await ArticleAnalyticsDatabaseStorage(session=session).set_reaction(
+        article_id=article_id(100),
+        article_scoped_voter_hash=NEW_ARTICLE_ANALYTICS_VOTER,
+        reaction_kind=ArticleReactionKind.HEART,
     )
 
 
 async def run_get_daily_stats(session: AsyncSession) -> None:
-    await NoteAnalyticsDatabaseStorage(session=session).get_daily_stats(
+    await ArticleAnalyticsDatabaseStorage(session=session).get_daily_stats(
         date_from=date(2026, 1, 1),
         date_to=date(2026, 1, 31),
         language=LanguageEnum.EN,
@@ -473,19 +478,19 @@ async def run_search_resources(*, session: AsyncSession, search_name: str) -> No
     )
 
 
-def note_id(value: int) -> UUID:
+def article_id(value: int) -> UUID:
     digest = md5(str(value).encode(), usedforsecurity=False).hexdigest()
     return UUID(
         f"{digest[0:8]}-{digest[8:12]}-{digest[12:16]}-{digest[16:20]}-{digest[20:32]}",
     )
 
 
-def write_note() -> Note:
-    return Note(
-        id=NEW_NOTE_ID,
-        slug="query-plan-new-note",
-        title_ru="Новая заметка query plan",
-        title_en="New query plan note",
+def write_article() -> Article:
+    return Article(
+        id=NEW_ARTICLE_ID,
+        slug="query-plan-new-article",
+        title_ru="Новая статья query plan",
+        title_en="New query plan article",
         content_ru="Контент для smoke проверки запросов",
         content_en="Content for query smoke checks",
         folder_ru="Производительность",
@@ -493,19 +498,19 @@ def write_note() -> Note:
         author_username=SEED_USERNAME,
         published_at=SEED_NOW,
         publish_status=PublishStatusEnum.PUBLISHED,
-        metadata=empty_note_metadata(),
+        metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
         tags=Tags(values=[seed_tag(IntId(1)), seed_tag(IntId(2))]),
     )
 
 
-def write_note_for_existing_note() -> Note:
-    return Note(
-        id=note_id(99),
-        slug="note-99-updated",
-        title_ru="Обновленная заметка query plan",
-        title_en="Updated query plan note",
+def write_article_for_existing_article() -> Article:
+    return Article(
+        id=article_id(99),
+        slug="article-99-updated",
+        title_ru="Обновленная статья query plan",
+        title_en="Updated query plan article",
         content_ru="Обновленный контент для smoke проверки",
         content_en="Updated content for query smoke checks",
         folder_ru="Производительность",
@@ -513,15 +518,15 @@ def write_note_for_existing_note() -> Note:
         author_username=SEED_USERNAME,
         published_at=SEED_NOW,
         publish_status=PublishStatusEnum.PUBLISHED,
-        metadata=empty_note_metadata(),
+        metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
         tags=Tags(values=[seed_tag(IntId(1)), seed_tag(IntId(2))]),
     )
 
 
-def empty_note_metadata() -> NoteMetadata:
-    return NoteMetadata(
+def empty_article_metadata() -> ArticleMetadata:
+    return ArticleMetadata(
         seo_title_ru=None,
         seo_title_en=None,
         seo_description_ru=None,
@@ -632,111 +637,111 @@ STORAGE_SCENARIOS = (
         run=run_create_contact_me_request,
     ),
     scenario(
-        name="notes_detail_by_slug",
-        storage_class="NotesDatabaseStorage",
-        method_name="get_note_by_slug",
+        name="articles_detail_by_slug",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="get_article_by_slug",
         group=QueryThresholdGroup.POINT_READ,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_get_note_by_slug,
+        run=run_get_article_by_slug,
     ),
     scenario(
-        name="notes_list_en_full_text_tag_date",
-        storage_class="NotesDatabaseStorage",
-        method_name="list_notes",
+        name="articles_list_en_full_text_tag_date",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="list_articles",
         group=QueryThresholdGroup.SEARCH,
         expected_index_names=(),
         forbidden_seq_scan_relations=(
-            "notes__note_model",
-            "notes__note_to_tag_secondary_model",
+            "articles__article_model",
+            "articles__article_to_tag_secondary_model",
         ),
         allow_seq_scan_reason=None,
-        run=run_list_notes_en_full_text_tag_date,
+        run=run_list_articles_en_full_text_tag_date,
     ),
     scenario(
-        name="notes_list_ru_full_text",
-        storage_class="NotesDatabaseStorage",
-        method_name="list_notes",
+        name="articles_list_ru_full_text",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="list_articles",
         group=QueryThresholdGroup.SEARCH,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_list_notes_ru_full_text,
+        run=run_list_articles_ru_full_text,
     ),
     scenario(
-        name="notes_published_for_seo_sitemap",
-        storage_class="NotesDatabaseStorage",
-        method_name="list_notes",
+        name="articles_published_for_seo_sitemap",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="list_articles",
         group=QueryThresholdGroup.LIST_READ,
-        expected_index_names=("notes_note_publish_status_published_updated_idx",),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        expected_index_names=("articles_article_publish_status_published_updated_idx",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_list_notes_for_seo,
+        run=run_list_articles_for_seo,
     ),
     scenario(
-        name="notes_tree_published",
-        storage_class="NotesDatabaseStorage",
+        name="articles_tree_published",
+        storage_class="ArticlesDatabaseStorage",
         method_name="list_tree_items",
         group=QueryThresholdGroup.HEAVY,
-        expected_index_names=("notes_note_tree_en_published_idx",),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        expected_index_names=("articles_article_tree_en_published_idx",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
         run=run_list_tree_items,
     ),
     scenario(
-        name="notes_create",
-        storage_class="NotesDatabaseStorage",
-        method_name="create_note",
+        name="articles_create",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="create_article",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_create_note,
+        run=run_create_article,
     ),
     scenario(
-        name="notes_update",
-        storage_class="NotesDatabaseStorage",
-        method_name="update_note",
+        name="articles_update",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="update_article",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_update_note,
+        run=run_update_article,
     ),
     scenario(
-        name="notes_delete",
-        storage_class="NotesDatabaseStorage",
-        method_name="delete_note",
+        name="articles_delete",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="delete_article",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_delete_note,
+        run=run_delete_article,
     ),
     scenario(
-        name="notes_update_publish_status",
-        storage_class="NotesDatabaseStorage",
-        method_name="update_note_publish_status",
+        name="articles_update_publish_status",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="update_article_publish_status",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_model",),
+        forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
-        run=run_update_note_publish_status,
+        run=run_update_article_publish_status,
     ),
     scenario(
         name="tags_get_by_ids",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="get_tags_by_ids",
         group=QueryThresholdGroup.POINT_READ,
-        expected_index_names=("notes__tag_model_pkey",),
-        forbidden_seq_scan_relations=("notes__tag_model",),
+        expected_index_names=("articles__tag_model_pkey",),
+        forbidden_seq_scan_relations=("articles__tag_model",),
         allow_seq_scan_reason=None,
         run=run_get_tags_by_ids,
     ),
     scenario(
         name="tags_list",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="list_tags",
         group=QueryThresholdGroup.LIST_READ,
         expected_index_names=(),
@@ -747,7 +752,7 @@ STORAGE_SCENARIOS = (
     *(
         scenario(
             name=name,
-            storage_class="NotesDatabaseStorage",
+            storage_class="ArticlesDatabaseStorage",
             method_name="search_tags",
             group=QueryThresholdGroup.SEARCH,
             expected_index_names=indexes,
@@ -760,33 +765,33 @@ STORAGE_SCENARIOS = (
                 "tags_exact_en",
                 run_search_tags_exact,
                 (
-                    "notes_tag_name_en_trgm_idx",
-                    "notes_tag_name_ru_trgm_idx",
-                    "notes_tag_slug_trgm_idx",
+                    "articles_tag_name_en_trgm_idx",
+                    "articles_tag_name_ru_trgm_idx",
+                    "articles_tag_slug_trgm_idx",
                 ),
-                ("notes__tag_model",),
+                ("articles__tag_model",),
                 None,
             ),
             (
                 "tags_substring_en",
                 run_search_tags_substring,
                 (
-                    "notes_tag_name_en_trgm_idx",
-                    "notes_tag_name_ru_trgm_idx",
-                    "notes_tag_slug_trgm_idx",
+                    "articles_tag_name_en_trgm_idx",
+                    "articles_tag_name_ru_trgm_idx",
+                    "articles_tag_slug_trgm_idx",
                 ),
-                ("notes__tag_model",),
+                ("articles__tag_model",),
                 None,
             ),
             (
                 "tags_fuzzy_en",
                 run_search_tags_fuzzy,
                 (
-                    "notes_tag_name_en_trgm_idx",
-                    "notes_tag_name_ru_trgm_idx",
-                    "notes_tag_slug_trgm_idx",
+                    "articles_tag_name_en_trgm_idx",
+                    "articles_tag_name_ru_trgm_idx",
+                    "articles_tag_slug_trgm_idx",
                 ),
-                ("notes__tag_model",),
+                ("articles__tag_model",),
                 None,
             ),
             (
@@ -800,7 +805,7 @@ STORAGE_SCENARIOS = (
     ),
     scenario(
         name="tags_create",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="create_tag",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
@@ -810,37 +815,37 @@ STORAGE_SCENARIOS = (
     ),
     scenario(
         name="tags_update",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="update_tag",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("notes__tag_model_pkey",),
-        forbidden_seq_scan_relations=("notes__tag_model",),
+        expected_index_names=("articles__tag_model_pkey",),
+        forbidden_seq_scan_relations=("articles__tag_model",),
         allow_seq_scan_reason=None,
         run=run_update_tag,
     ),
     scenario(
         name="tags_soft_delete",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="soft_delete_tag",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("notes__tag_model_pkey",),
-        forbidden_seq_scan_relations=("notes__tag_model",),
+        expected_index_names=("articles__tag_model_pkey",),
+        forbidden_seq_scan_relations=("articles__tag_model",),
         allow_seq_scan_reason=None,
         run=run_soft_delete_tag,
     ),
     scenario(
         name="tags_restore",
-        storage_class="NotesDatabaseStorage",
+        storage_class="ArticlesDatabaseStorage",
         method_name="restore_tag",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("notes__tag_model_pkey",),
-        forbidden_seq_scan_relations=("notes__tag_model",),
+        expected_index_names=("articles__tag_model_pkey",),
+        forbidden_seq_scan_relations=("articles__tag_model",),
         allow_seq_scan_reason=None,
         run=run_restore_tag,
     ),
     scenario(
-        name="note_analytics_increment_view",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_increment_view",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="increment_view",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
@@ -849,8 +854,8 @@ STORAGE_SCENARIOS = (
         run=run_increment_view,
     ),
     scenario(
-        name="note_analytics_increment_engaged_view",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_increment_engaged_view",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="increment_engaged_view",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
@@ -859,8 +864,8 @@ STORAGE_SCENARIOS = (
         run=run_increment_engaged_view,
     ),
     scenario(
-        name="note_analytics_public_stats",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_public_stats",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="get_public_stats",
         group=QueryThresholdGroup.AGGREGATE,
         expected_index_names=(),
@@ -869,8 +874,8 @@ STORAGE_SCENARIOS = (
         run=run_get_public_stats,
     ),
     scenario(
-        name="note_analytics_reaction_counts",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_reaction_counts",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="get_reaction_counts",
         group=QueryThresholdGroup.AGGREGATE,
         expected_index_names=(),
@@ -879,18 +884,18 @@ STORAGE_SCENARIOS = (
         run=run_get_reaction_counts,
     ),
     scenario(
-        name="note_analytics_set_reaction",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_set_reaction",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="set_reaction",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("notes__note_reaction_model",),
+        forbidden_seq_scan_relations=("articles__article_reaction_model",),
         allow_seq_scan_reason=None,
         run=run_set_reaction,
     ),
     scenario(
-        name="note_analytics_daily_stats",
-        storage_class="NoteAnalyticsDatabaseStorage",
+        name="article_analytics_daily_stats",
+        storage_class="ArticleAnalyticsDatabaseStorage",
         method_name="get_daily_stats",
         group=QueryThresholdGroup.AGGREGATE,
         expected_index_names=(),

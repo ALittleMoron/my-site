@@ -69,26 +69,26 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
     ],
     ['hreflang ru', html.includes('hreflang="ru"')],
     ['hreflang en', html.includes('hreflang="en"')],
-    ['no API request beyond i18n', requests.every((entry) => !entry.includes('/api/notes/'))],
+    ['no API request beyond i18n', requests.every((entry) => !entry.includes('/api/articles/'))],
     ['no noindex on case study', !html.includes('name="robots" content="noindex')],
   ];
   assertExpected(expected, html, 'site-build case study SSR');
 }
 
 async function assertPublishedArticleHtml(frontendPort, requests) {
-  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/notes/typed-notes`);
+  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/articles/typed-articles`);
   const html = await response.text();
   const expected = [
     ['status 200', response.status === 200],
-    ['article title', html.includes('SEO Typed notes RU - My site')],
+    ['article title', html.includes('SEO Typed articles RU - My site')],
     ['article body', html.includes('Rendered SSR article body')],
-    ['canonical', html.includes(`href="http://127.0.0.1:${frontendPort}/ru/notes/typed-notes"`)],
+    ['canonical', html.includes(`href="http://127.0.0.1:${frontendPort}/ru/articles/typed-articles"`)],
     ['hreflang ru', html.includes('hreflang="ru"')],
     ['hreflang en', html.includes('hreflang="en"')],
     ['og type article', html.includes('property="og:type" content="article"')],
     ['og image', html.includes('property="og:image" content="https://example.com/cover.jpg"')],
     ['json-ld', html.includes('"@type":"BlogPosting"')],
-    ['json-ld headline', html.includes('"headline":"SEO Typed notes RU"')],
+    ['json-ld headline', html.includes('"headline":"SEO Typed articles RU"')],
     [
       'wiki link to matrix localized',
       html.includes('href="/ru/competency-matrix/questions/how-to-write-function"'),
@@ -119,7 +119,7 @@ async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
     ['hreflang en', html.includes('hreflang="en"')],
     ['json-ld faq', html.includes('"@type":"FAQPage"')],
     ['json-ld question', html.includes('"name":"Как написать функцию?"')],
-    ['wiki link to note localized', html.includes('href="/ru/notes/typed-notes"')],
+    ['wiki link to article localized', html.includes('href="/ru/articles/typed-articles"')],
     ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
     [
       'matrix public detail preflight',
@@ -132,16 +132,16 @@ async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
 }
 
 async function assertMissingArticleNoindex(frontendPort, requests) {
-  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/notes/missing-note`);
+  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/articles/missing-article`);
   const html = await response.text();
   const expected = [
     ['status 404', response.status === 404],
     ['noindex', html.includes('<meta name="robots" content="noindex, follow">')],
     [
       'canonical',
-      html.includes(`href="http://127.0.0.1:${frontendPort}/ru/notes/missing-note"`),
+      html.includes(`href="http://127.0.0.1:${frontendPort}/ru/articles/missing-article"`),
     ],
-    ['missing detail preflight', hasRequest(requests, '/api/notes/detail/missing-note', 'language=ru')],
+    ['missing detail preflight', hasRequest(requests, '/api/articles/detail/missing-article', 'language=ru')],
     ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
   ];

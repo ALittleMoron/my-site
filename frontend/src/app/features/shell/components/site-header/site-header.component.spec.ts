@@ -72,7 +72,7 @@ describe('SiteHeaderComponent', () => {
         const messages: Record<string, string> = {
           'shell.nav.about': 'Обо мне',
           'shell.nav.matrix': 'Матрица компетенций',
-          'shell.nav.notes': 'Заметки',
+          'shell.nav.articles': 'Статьи',
           'shell.nav.adminPanel': 'Админ-панель',
           'shell.nav.toggleNavigation': 'Открыть навигацию',
           'shell.theme.dark': 'Dark',
@@ -117,8 +117,8 @@ describe('SiteHeaderComponent', () => {
     expect(fixture.componentInstance.matrixLink()).toBe('/ru/competency-matrix');
   });
 
-  it('renders nav link to the localized notes page', () => {
-    expect(fixture.componentInstance.notesLink()).toBe('/ru/notes');
+  it('renders nav link to the localized articles page', () => {
+    expect(fixture.componentInstance.articlesLink()).toBe('/ru/articles');
   });
 
   it('hides admin-panel navigation from guests and regular users', () => {
@@ -217,7 +217,7 @@ describe('SiteHeaderComponent', () => {
   });
 
   it('switches language and rewrites the current localized URL', () => {
-    jest.spyOn(router, 'url', 'get').mockReturnValue('/ru/notes/typed-notes?tag=angular');
+    jest.spyOn(router, 'url', 'get').mockReturnValue('/ru/articles/typed-articles?tag=angular');
     const navigateByUrlSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const englishButton = Array.from(el.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === 'EN',
@@ -226,7 +226,7 @@ describe('SiteHeaderComponent', () => {
     englishButton.click();
 
     expect(mockI18nService.switchLanguage).toHaveBeenCalledWith('en');
-    expect(navigateByUrlSpy).toHaveBeenCalledWith('/en/notes/typed-notes?tag=angular');
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/en/articles/typed-articles?tag=angular');
   });
 
   it('rewrites the site-build case-study URL between localized public routes', () => {

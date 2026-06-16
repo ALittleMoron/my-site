@@ -2,14 +2,14 @@
 
 ## Concept
 
-Personal portfolio site with notes and an interactive competency matrix.
+Personal portfolio site with articles and an interactive competency matrix.
 Demonstrates technical skills through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
 
 ## Audience
 
 - Potential employers and recruiters
 - Colleagues and like-minded people in IT
-- The author himself (as a knowledge base and notes)
+- The author himself (as a knowledge base and article archive)
 
 ## Non-goals (will not build)
 
@@ -17,7 +17,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 - Complex role/permission system. Keep only guests, regular users, moderators for content
   authoring, and administrators for future closed functionality.
 - Complex third-party integrations (CRM, ERP, etc.).
-- Complex notification systems (email, SMS, etc.). A subscription to new notes, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
+- Complex notification systems (email, SMS, etc.). A subscription to new articles, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
 - Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.
 - Gamification. No points, levels, or achievements. Focus is on learning and skill development, not game mechanics. Progress tracking at most.
 - Social features. No comments, follows, or feeds. Focus is on content and learning, not social interaction.
@@ -27,14 +27,14 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 ## Risks
 
 - Content may grow uncontrollably. The site could become overloaded with content, making navigation and search harder.
-- Keeping content up to date. Notes and the competency matrix require regular updates, which can be time-consuming.
+- Keeping content up to date. Articles and the competency matrix require regular updates, which can be time-consuming.
 
 ## Core features
 
 1. **Competency matrix** — localized interactive Q&A with topic filtering, detailed answers, and linked resources
-2. **Notes** — localized content, folders, tags, search/filtering, and publish visibility
+2. **Articles** — localized content, folders, tags, search/filtering, and publish visibility
 3. **Integrated content authoring mode** — content management through the main frontend, no separate back-office UI
-4. **Privacy-safe note analytics** — public counters and anonymous reactions
+4. **Privacy-safe article analytics** — public counters and anonymous reactions
 
 ## Highlights
 
@@ -45,4 +45,4 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 ## Goal
 
-Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and notes for self-development.
+Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and article archive for self-development.

@@ -9,16 +9,16 @@ from litestar.stores.base import Store
 
 from entrypoints.litestar import initializers as litestar_initializers
 from entrypoints.litestar import response_cache as response_cache_module
+from entrypoints.litestar.api.articles.endpoints import (
+    AdminArticlesApiController,
+    PublicArticlesApiController,
+)
 from entrypoints.litestar.api.competency_matrix.endpoints import (
     AdminCompetencyMatrixApiController,
     PublicCompetencyMatrixApiController,
 )
 from entrypoints.litestar.api.healthcheck.endpoints import HealthcheckController
 from entrypoints.litestar.api.i18n.endpoints import I18nApiController
-from entrypoints.litestar.api.notes.endpoints import (
-    AdminNotesApiController,
-    PublicNotesApiController,
-)
 from entrypoints.litestar.cli.commands.cache import invalidate_cache_command
 from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.response_cache import (
@@ -73,7 +73,7 @@ class FakeQueryParams:
 
 
 class FakeUrl:
-    path = "/api/notes"
+    path = "/api/articles"
 
 
 class FakeRequest:
@@ -99,36 +99,36 @@ class FakeApp:
 
 class TestResponseCacheDomainStore:
     async def test_routes_values_to_domain_store(self) -> None:
-        notes_store = FakeStore()
+        articles_store = FakeStore()
         matrix_store = FakeStore()
         store = ResponseCacheDomainStore(
             stores={
-                ResponseCacheDomain.NOTES: cast("Store", notes_store),
+                ResponseCacheDomain.ARTICLES: cast("Store", articles_store),
                 ResponseCacheDomain.COMPETENCY_MATRIX: cast("Store", matrix_store),
             },
         )
 
-        await store.set("notes:GET/api/noteslanguage=rupage=1", b"notes")
+        await store.set("articles:GET/api/articleslanguage=rupage=1", b"articles")
         await store.set("competency_matrix:GET/api/competency-matrix/sheetslanguage=ru", b"matrix")
 
-        assert await notes_store.get("GET/api/noteslanguage=rupage=1") == b"notes"
+        assert await articles_store.get("GET/api/articleslanguage=rupage=1") == b"articles"
         assert await matrix_store.get("GET/api/competency-matrix/sheetslanguage=ru") == b"matrix"
-        assert await store.get("notes:GET/api/noteslanguage=rupage=1") == b"notes"
+        assert await store.get("articles:GET/api/articleslanguage=rupage=1") == b"articles"
 
     async def test_deletes_only_requested_domain(self) -> None:
-        notes_store = FakeStore(values={"GET/api/notes": b"notes"})
+        articles_store = FakeStore(values={"GET/api/articles": b"articles"})
         matrix_store = FakeStore(values={"GET/api/competency-matrix/sheets": b"matrix"})
         store = ResponseCacheDomainStore(
             stores={
-                ResponseCacheDomain.NOTES: cast("Store", notes_store),
+                ResponseCacheDomain.ARTICLES: cast("Store", articles_store),
                 ResponseCacheDomain.COMPETENCY_MATRIX: cast("Store", matrix_store),
             },
         )
 
-        await store.delete_domain(ResponseCacheDomain.NOTES)
+        await store.delete_domain(ResponseCacheDomain.ARTICLES)
 
-        assert notes_store.delete_all_count == 1
-        assert notes_store.values == {}
+        assert articles_store.delete_all_count == 1
+        assert articles_store.values == {}
         assert matrix_store.delete_all_count == 0
         assert matrix_store.values == {"GET/api/competency-matrix/sheets": b"matrix"}
 
@@ -138,11 +138,11 @@ class TestInvalidateAllResponseCacheDomains:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        notes_store = FakeStore(values={"GET/api/notes": b"notes"})
+        articles_store = FakeStore(values={"GET/api/articles": b"articles"})
         matrix_store = FakeStore(values={"GET/api/competency-matrix/sheets": b"matrix"})
         domain_store = ResponseCacheDomainStore(
             stores={
-                ResponseCacheDomain.NOTES: cast("Store", notes_store),
+                ResponseCacheDomain.ARTICLES: cast("Store", articles_store),
                 ResponseCacheDomain.COMPETENCY_MATRIX: cast("Store", matrix_store),
             },
         )
@@ -152,13 +152,13 @@ class TestInvalidateAllResponseCacheDomains:
         await invalidate_cache_command(app=cast("Any", app))
 
         assert app.stores.requested_names == [constants.response_cache.store_name]
-        assert notes_store.delete_all_count == 1
+        assert articles_store.delete_all_count == 1
         assert matrix_store.delete_all_count == 1
-        assert notes_store.values == {}
+        assert articles_store.values == {}
         assert matrix_store.values == {}
 
     async def test_noops_when_cache_is_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        store = FakeStore(values={"GET/api/notes": b"notes"})
+        store = FakeStore(values={"GET/api/articles": b"articles"})
         app = FakeApp(store=cast("Store", store))
         monkeypatch.setattr(settings.app, "use_cache", False)
 
@@ -166,7 +166,7 @@ class TestInvalidateAllResponseCacheDomains:
 
         assert app.stores.requested_names == []
         assert store.delete_all_count == 0
-        assert store.values == {"GET/api/notes": b"notes"}
+        assert store.values == {"GET/api/articles": b"articles"}
 
     async def test_rejects_non_domain_routed_store(self, monkeypatch: pytest.MonkeyPatch) -> None:
         app = FakeApp(store=cast("Store", FakeStore()))
@@ -215,10 +215,10 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
 
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=cast("Any", object()),
-            domain=ResponseCacheDomain.NOTES,
+            domain=ResponseCacheDomain.ARTICLES,
         )
 
-        assert events == ["invalidate:notes", "enqueue:notes"]
+        assert events == ["invalidate:articles", "enqueue:articles"]
 
     async def test_enqueue_does_not_filter_domains_after_invalidation(
         self,
@@ -287,7 +287,7 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
         with pytest.raises(ImproperlyConfiguredException):
             await invalidate_and_enqueue_response_cache_warm_domain(
                 request=cast("Any", object()),
-                domain=ResponseCacheDomain.NOTES,
+                domain=ResponseCacheDomain.ARTICLES,
             )
 
         assert events == ["invalidate"]
@@ -295,43 +295,43 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
 
 class TestResponseCacheKeyBuilder:
     def test_builds_domain_prefixed_sorted_litestar_key(self) -> None:
-        cache_key_builder = ResponseCacheDomain.NOTES.cache_key_builder
+        cache_key_builder = ResponseCacheDomain.ARTICLES.cache_key_builder
 
         cache_key = cache_key_builder(cast("Any", FakeRequest()))
 
-        assert cache_key == "notes:GET/api/noteslanguage=ru&page=1"
+        assert cache_key == "articles:GET/api/articleslanguage=ru&page=1"
 
     def test_uses_configured_domain_separator(self) -> None:
-        cache_key = ResponseCacheDomain.NOTES.cache_key_builder(cast("Any", FakeRequest()))
+        cache_key = ResponseCacheDomain.ARTICLES.cache_key_builder(cast("Any", FakeRequest()))
 
         assert constants.response_cache.domain_key_separator in cache_key
 
 
 class TestResponseCacheRouteConfiguration:
-    def test_safe_notes_get_handlers_use_notes_cache(self) -> None:
-        for handler_name in ("list_notes", "list_notes_tree", "get_note", "list_tags"):
-            handler = getattr(PublicNotesApiController, handler_name)
+    def test_safe_articles_get_handlers_use_articles_cache(self) -> None:
+        for handler_name in ("list_articles", "list_articles_tree", "get_article", "list_tags"):
+            handler = getattr(PublicArticlesApiController, handler_name)
 
             assert handler.cache == settings.app.get_cache_duration(
                 constants.response_cache.default_ttl_seconds,
             )
             assert handler.cache_key_builder is not None
-            assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("notes:")
+            assert handler.cache_key_builder(cast("Any", FakeRequest())).startswith("articles:")
 
-    def test_dynamic_notes_get_handlers_are_not_cached(self) -> None:
+    def test_dynamic_articles_get_handlers_are_not_cached(self) -> None:
         for handler_name in ("get_public_stats",):
-            assert getattr(PublicNotesApiController, handler_name).cache is False
+            assert getattr(PublicArticlesApiController, handler_name).cache is False
 
-    def test_admin_notes_get_handlers_are_not_cached(self) -> None:
+    def test_admin_articles_get_handlers_are_not_cached(self) -> None:
         for handler_name in (
-            "list_notes",
-            "list_notes_tree",
-            "get_note",
+            "list_articles",
+            "list_articles_tree",
+            "get_article",
             "get_stats",
             "list_tags",
             "search_tags",
         ):
-            assert getattr(AdminNotesApiController, handler_name).cache is False
+            assert getattr(AdminArticlesApiController, handler_name).cache is False
 
     def test_competency_matrix_get_handlers_use_matrix_cache(self) -> None:
         for handler_name in (

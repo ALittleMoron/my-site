@@ -258,7 +258,7 @@ class APIHelper:
     def post_set_published_status_to_item(self, pk: int) -> Response:
         return self.client.post(f"/api/admin/competency-matrix/items/detail/{pk}/set-published")
 
-    def get_notes(
+    def get_articles(
         self,
         page: int | None = 1,
         page_size: int | None = 10,
@@ -283,9 +283,9 @@ class APIHelper:
             params["publishedTo"] = published_to
         if search_query is not None:
             params["searchQuery"] = search_query
-        return self.client.get("/api/notes", params=params)
+        return self.client.get("/api/articles", params=params)
 
-    def get_admin_notes(
+    def get_admin_articles(
         self,
         page: int | None = 1,
         page_size: int | None = 10,
@@ -313,9 +313,9 @@ class APIHelper:
             params["publishedTo"] = published_to
         if search_query is not None:
             params["searchQuery"] = search_query
-        return self.client.get("/api/admin/notes", params=params)
+        return self.client.get("/api/admin/articles", params=params)
 
-    def get_note(
+    def get_article(
         self,
         slug: str,
         language: str | None = "ru",
@@ -323,9 +323,9 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.get(f"/api/notes/detail/{slug}", params=params)
+        return self.client.get(f"/api/articles/detail/{slug}", params=params)
 
-    def get_admin_note(
+    def get_admin_article(
         self,
         slug: str,
         only_published: bool | None = True,
@@ -336,33 +336,33 @@ class APIHelper:
             params["language"] = language
         if only_published is not None:
             params["onlyPublished"] = only_published
-        return self.client.get(f"/api/admin/notes/detail/{slug}", params=params)
+        return self.client.get(f"/api/admin/articles/detail/{slug}", params=params)
 
-    def get_note_public_stats(self, note_ids: list[str] | None) -> Response:
+    def get_article_public_stats(self, article_ids: list[str] | None) -> Response:
         params: dict[str, list[str]] = {}
-        if note_ids is not None:
-            params["noteIds"] = note_ids
-        return self.client.get("/api/notes/public-stats", params=params)
+        if article_ids is not None:
+            params["articleIds"] = article_ids
+        return self.client.get("/api/articles/public-stats", params=params)
 
-    def post_note_view(self, slug: str, language: str | None = "ru") -> Response:
+    def post_article_view(self, slug: str, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
         return self.client.post(
-            f"/api/notes/detail/{slug}/analytics/view",
+            f"/api/articles/detail/{slug}/analytics/view",
             params=params,
         )
 
-    def post_note_engaged_view(self, slug: str, language: str | None = "ru") -> Response:
+    def post_article_engaged_view(self, slug: str, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
         return self.client.post(
-            f"/api/notes/detail/{slug}/analytics/engaged-view",
+            f"/api/articles/detail/{slug}/analytics/engaged-view",
             params=params,
         )
 
-    def post_note_reaction(
+    def post_article_reaction(
         self,
         slug: str,
         data: dict[str, Any],
@@ -371,9 +371,9 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post(f"/api/notes/detail/{slug}/reaction", params=params, json=data)
+        return self.client.post(f"/api/articles/detail/{slug}/reaction", params=params, json=data)
 
-    def get_note_stats(
+    def get_article_stats(
         self,
         date_from: str | None,
         date_to: str | None,
@@ -386,27 +386,27 @@ class APIHelper:
             params["dateFrom"] = date_from
         if date_to is not None:
             params["dateTo"] = date_to
-        return self.client.get("/api/admin/notes/stats", params=params)
+        return self.client.get("/api/admin/articles/stats", params=params)
 
-    def get_notes_tree(self, language: str | None = "ru") -> Response:
+    def get_articles_tree(self, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.get("/api/notes/tree", params=params)
+        return self.client.get("/api/articles/tree", params=params)
 
-    def get_admin_notes_tree(self, language: str | None = "ru") -> Response:
+    def get_admin_articles_tree(self, language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.get("/api/admin/notes/tree", params=params)
+        return self.client.get("/api/admin/articles/tree", params=params)
 
-    def post_create_note(self, data: dict[str, Any], language: str | None = "ru") -> Response:
+    def post_create_article(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post("/api/admin/notes", params=params, json=data)
+        return self.client.post("/api/admin/articles", params=params, json=data)
 
-    def put_update_note(
+    def put_update_article(
         self,
         slug: str,
         data: dict[str, Any],
@@ -415,16 +415,16 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.put(f"/api/admin/notes/detail/{slug}", params=params, json=data)
+        return self.client.put(f"/api/admin/articles/detail/{slug}", params=params, json=data)
 
-    def delete_note(self, slug: str) -> Response:
-        return self.client.delete(f"/api/admin/notes/detail/{slug}")
+    def delete_article(self, slug: str) -> Response:
+        return self.client.delete(f"/api/admin/articles/detail/{slug}")
 
-    def post_set_draft_status_to_note(self, slug: str) -> Response:
-        return self.client.post(f"/api/admin/notes/detail/{slug}/set-draft")
+    def post_set_draft_status_to_article(self, slug: str) -> Response:
+        return self.client.post(f"/api/admin/articles/detail/{slug}/set-draft")
 
-    def post_set_published_status_to_note(self, slug: str) -> Response:
-        return self.client.post(f"/api/admin/notes/detail/{slug}/set-published")
+    def post_set_published_status_to_article(self, slug: str) -> Response:
+        return self.client.post(f"/api/admin/articles/detail/{slug}/set-published")
 
     def get_tags(
         self,
@@ -433,7 +433,7 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.get("/api/notes/tags", params=params)
+        return self.client.get("/api/articles/tags", params=params)
 
     def get_admin_tags(
         self,
@@ -445,7 +445,7 @@ class APIHelper:
             params["language"] = language
         if include_deleted is not None:
             params["includeDeleted"] = include_deleted
-        return self.client.get("/api/admin/notes/tags", params=params)
+        return self.client.get("/api/admin/articles/tags", params=params)
 
     def get_search_tags(
         self,
@@ -461,13 +461,13 @@ class APIHelper:
             params["includeDeleted"] = include_deleted
         if limit is not None:
             params["limit"] = limit
-        return self.client.get("/api/admin/notes/tags/search", params=params)
+        return self.client.get("/api/admin/articles/tags/search", params=params)
 
     def post_create_tag(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.post("/api/admin/notes/tags", params=params, json=data)
+        return self.client.post("/api/admin/articles/tags", params=params, json=data)
 
     def put_update_tag(
         self,
@@ -478,13 +478,13 @@ class APIHelper:
         params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        return self.client.put(f"/api/admin/notes/tags/{tag_id}", params=params, json=data)
+        return self.client.put(f"/api/admin/articles/tags/{tag_id}", params=params, json=data)
 
     def delete_tag(self, tag_id: int) -> Response:
-        return self.client.delete(f"/api/admin/notes/tags/{tag_id}")
+        return self.client.delete(f"/api/admin/articles/tags/{tag_id}")
 
     def post_restore_tag(self, tag_id: int) -> Response:
-        return self.client.post(f"/api/admin/notes/tags/{tag_id}/restore")
+        return self.client.post(f"/api/admin/articles/tags/{tag_id}/restore")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/contacts", json=data)

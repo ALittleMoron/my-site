@@ -3,19 +3,19 @@ from datetime import date
 import pytest_asyncio
 from httpx import codes
 
+from core.articles.schemas import ArticleFilters
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import NoteFilters
+from entrypoints.litestar.api.articles.endpoints import (
+    AdminArticlesApiController,
+    PublicArticlesApiController,
+)
 from entrypoints.litestar.api.competency_matrix.endpoints import (
     AdminCompetencyMatrixApiController,
     PublicCompetencyMatrixApiController,
 )
 from entrypoints.litestar.api.files.endpoints import FilesApiController
-from entrypoints.litestar.api.notes.endpoints import (
-    AdminNotesApiController,
-    PublicNotesApiController,
-)
 from entrypoints.litestar.api.wiki_links.endpoints import WikiLinksApiController
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -24,17 +24,17 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()
-        self.notes_use_case = await self.container.get_notes_use_case()
+        self.articles_use_case = await self.container.get_articles_use_case()
 
-    def test_public_notes_list_keeps_public_visibility_even_with_legacy_query_flag(self) -> None:
-        self.notes_use_case.list_notes.return_value = self.factory.core.note_list(
-            notes=[],
+    def test_public_articles_list_keeps_public_visibility_even_with_legacy_query_flag(self) -> None:
+        self.articles_use_case.list_articles.return_value = self.factory.core.article_list(
+            articles=[],
             total_count=0,
             total_pages=0,
         )
 
         response = self.no_auth_api.client.get(
-            "/api/notes",
+            "/api/articles",
             params={
                 "page": 1,
                 "pageSize": 10,
@@ -44,8 +44,8 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         )
 
         assert response.status_code == codes.OK, response.content
-        self.notes_use_case.list_notes.assert_called_once_with(
-            filters=NoteFilters(
+        self.articles_use_case.list_articles.assert_called_once_with(
+            filters=ArticleFilters(
                 page=1,
                 page_size=10,
                 language=LanguageEnum.RU,
@@ -58,19 +58,19 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
 
-    def test_admin_notes_list_uses_admin_prefix_for_draft_visibility(self) -> None:
+    def test_admin_articles_list_uses_admin_prefix_for_draft_visibility(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="moderator",
             role=RoleEnum.MODERATOR,
         )
-        self.notes_use_case.list_notes.return_value = self.factory.core.note_list(
-            notes=[],
+        self.articles_use_case.list_articles.return_value = self.factory.core.article_list(
+            articles=[],
             total_count=0,
             total_pages=0,
         )
 
         response = self.api.client.get(
-            "/api/admin/notes",
+            "/api/admin/articles",
             params={
                 "page": 2,
                 "pageSize": 5,
@@ -78,13 +78,13 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
                 "onlyPublished": "false",
                 "publishedFrom": "2026-01-01",
                 "publishedTo": "2026-01-31",
-                "searchQuery": "  typed notes  ",
+                "searchQuery": "  typed articles  ",
             },
         )
 
         assert response.status_code == codes.OK, response.content
-        self.notes_use_case.list_notes.assert_called_once_with(
-            filters=NoteFilters(
+        self.articles_use_case.list_articles.assert_called_once_with(
+            filters=ArticleFilters(
                 page=2,
                 page_size=5,
                 language=LanguageEnum.EN,
@@ -92,22 +92,22 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
                 tag_slug=None,
                 published_from=date(2026, 1, 1),
                 published_to=date(2026, 1, 31),
-                search_query="typed notes",
+                search_query="typed articles",
                 include_tags=True,
             ),
         )
 
     def test_swagger_tags_are_scope_explicit_for_split_controllers(self) -> None:
-        assert PublicNotesApiController.tags == ["public notes"]
-        assert AdminNotesApiController.tags == ["admin notes"]
+        assert PublicArticlesApiController.tags == ["public articles"]
+        assert AdminArticlesApiController.tags == ["admin articles"]
         assert PublicCompetencyMatrixApiController.tags == ["public competency matrix"]
         assert AdminCompetencyMatrixApiController.tags == ["admin competency matrix"]
         assert FilesApiController.tags == ["admin files"]
         assert WikiLinksApiController.tags == ["admin wiki links"]
 
     def test_operation_names_are_scope_explicit_for_split_controllers(self) -> None:
-        assert PublicNotesApiController.list_notes.name == "public-notes-list-api-handler"
-        assert AdminNotesApiController.list_notes.name == "admin-notes-list-api-handler"
+        assert PublicArticlesApiController.list_articles.name == "public-articles-list-api-handler"
+        assert AdminArticlesApiController.list_articles.name == "admin-articles-list-api-handler"
         assert (
             PublicCompetencyMatrixApiController.suggest_competency_matrix_question.name
             == "public-competency-matrix-question-suggestion-create-api-handler"

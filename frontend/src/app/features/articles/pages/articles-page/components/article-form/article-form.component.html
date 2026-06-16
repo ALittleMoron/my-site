@@ -1,0 +1,319 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="row g-3">
+    <div class="col-12">
+      <label class="form-label" for="articleSlug">{{ 'articles.form.slug' | t }}</label>
+      <input
+        id="articleSlug"
+        type="text"
+        class="form-control"
+        formControlName="slug"
+        (input)="onSlugInput()"
+      />
+    </div>
+    <div class="col-md-8">
+      <label class="form-label" for="articleCoverImageUrl">{{
+        'articles.form.coverImageUrl' | t
+      }}</label>
+      <input
+        id="articleCoverImageUrl"
+        type="url"
+        class="form-control"
+        formControlName="coverImageUrl"
+      />
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="articleCoverImageFile">{{
+        'articles.form.coverImageFile' | t
+      }}</label>
+      <input
+        id="articleCoverImageFile"
+        type="file"
+        class="form-control"
+        accept="image/*"
+        (change)="uploadCoverImage($event)"
+      />
+    </div>
+  </div>
+
+  <ul class="nav nav-tabs mt-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'ru'"
+        (click)="setActiveLanguageTab('ru')"
+      >
+        {{ 'articles.form.languageRu' | t }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button
+        type="button"
+        class="nav-link"
+        [class.active]="activeLanguageTab() === 'en'"
+        (click)="setActiveLanguageTab('en')"
+      >
+        {{ 'articles.form.languageEn' | t }}
+      </button>
+    </li>
+  </ul>
+
+  <div class="border border-top-0 rounded-bottom p-3 mb-3">
+    <div [class.d-none]="activeLanguageTab() !== 'ru'">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="articleTitleRu">{{ 'articles.form.titleRu' | t }}</label>
+          <input id="articleTitleRu" type="text" class="form-control" formControlName="titleRu" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="articleFolderRu">{{ 'articles.form.folderRu' | t }}</label>
+          <input id="articleFolderRu" type="text" class="form-control" formControlName="folderRu" />
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="articleSeoTitleRu">{{
+            'articles.form.seoTitleRu' | t
+          }}</label>
+          <input
+            id="articleSeoTitleRu"
+            type="text"
+            class="form-control"
+            formControlName="seoTitleRu"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="articleCoverImageAltRu">
+            {{ 'articles.form.coverImageAltRu' | t }}
+          </label>
+          <input
+            id="articleCoverImageAltRu"
+            type="text"
+            class="form-control"
+            formControlName="coverImageAltRu"
+          />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="articleSeoDescriptionRu">
+            {{ 'articles.form.seoDescriptionRu' | t }}
+          </label>
+          <textarea
+            id="articleSeoDescriptionRu"
+            class="form-control"
+            rows="3"
+            formControlName="seoDescriptionRu"
+          ></textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'articles.form.contentRu' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.contentRu.value"
+            (valueChange)="setContentRu($event)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div [class.d-none]="activeLanguageTab() !== 'en'">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="articleTitleEn">{{ 'articles.form.titleEn' | t }}</label>
+          <input
+            id="articleTitleEn"
+            type="text"
+            class="form-control"
+            formControlName="titleEn"
+            (input)="onTitleEnInput()"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="articleFolderEn">{{ 'articles.form.folderEn' | t }}</label>
+          <input id="articleFolderEn" type="text" class="form-control" formControlName="folderEn" />
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="articleSeoTitleEn">{{
+            'articles.form.seoTitleEn' | t
+          }}</label>
+          <input
+            id="articleSeoTitleEn"
+            type="text"
+            class="form-control"
+            formControlName="seoTitleEn"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="articleCoverImageAltEn">
+            {{ 'articles.form.coverImageAltEn' | t }}
+          </label>
+          <input
+            id="articleCoverImageAltEn"
+            type="text"
+            class="form-control"
+            formControlName="coverImageAltEn"
+          />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="articleSeoDescriptionEn">
+            {{ 'articles.form.seoDescriptionEn' | t }}
+          </label>
+          <textarea
+            id="articleSeoDescriptionEn"
+            class="form-control"
+            rows="3"
+            formControlName="seoDescriptionEn"
+          ></textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-label">{{ 'articles.form.contentEn' | t }}</div>
+          <app-markdown-editor
+            [value]="form.controls.contentEn.value"
+            (valueChange)="setContentEn($event)"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-check form-switch my-3">
+    <input
+      id="articlePublishStatus"
+      class="form-check-input"
+      type="checkbox"
+      [checked]="form.controls.publishStatus.value === 'Draft'"
+      (change)="setPublishStatusFromEvent($event)"
+    />
+    <label class="form-check-label" for="articlePublishStatus">{{ 'shared.draft' | t }}</label>
+  </div>
+
+  <app-article-seo-panel [analysis]="seoAnalysis()" />
+
+  <app-article-authoring-preview
+    [title]="activePreview().title"
+    [content]="activePreview().content"
+    [tags]="activePreview().tags"
+    [coverImageUrl]="activePreview().coverImageUrl"
+    [coverImageAlt]="activePreview().coverImageAlt"
+    [seoTitle]="activePreview().seoTitle"
+    [seoDescription]="activePreview().seoDescription"
+    [language]="activePreview().language"
+  />
+
+  <div class="border rounded-3 p-3">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+      <h3 class="h6 mb-0">{{ 'articles.form.tags' | t }}</h3>
+      @if (tagError()) {
+        <span class="text-danger small">{{ tagError() }}</span>
+      }
+    </div>
+
+    <div class="row g-2 align-items-end mb-3" [formGroup]="newTagForm">
+      <div class="col-md-3">
+        <label class="form-label small" for="newTagNameRu">{{
+          'articles.form.tagNameRu' | t
+        }}</label>
+        <input id="newTagNameRu" class="form-control form-control-sm" formControlName="nameRu" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small" for="newTagNameEn">{{
+          'articles.form.tagNameEn' | t
+        }}</label>
+        <input
+          id="newTagNameEn"
+          class="form-control form-control-sm"
+          formControlName="nameEn"
+          (input)="onNewTagNameEnInput()"
+        />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small" for="newTagSlug">{{ 'articles.form.slug' | t }}</label>
+        <input
+          id="newTagSlug"
+          class="form-control form-control-sm"
+          formControlName="slug"
+          (input)="onNewTagSlugInput()"
+        />
+      </div>
+      <div class="col-md-2 d-grid">
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="createTag()">
+          {{ 'shared.add' | t }}
+        </button>
+      </div>
+    </div>
+
+    <div class="vstack gap-2">
+      @for (tag of tags(); track tag.id) {
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [id]="'articleTag-' + tag.id"
+              [checked]="isTagSelected(tag.id)"
+              [disabled]="isTagDeleted(tag)"
+              (change)="toggleTag(tag.id, $event)"
+            />
+          </div>
+          <div class="col-md-3">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftNameRu"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftNameRu(tag.id, $event)"
+              [attr.aria-label]="'articles.form.tagNameRuAria' | t"
+            />
+          </div>
+          <div class="col-md-3">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftNameEn"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftNameEn(tag.id, $event)"
+              [attr.aria-label]="'articles.form.tagNameEnAria' | t"
+            />
+          </div>
+          <div class="col-md-3">
+            <input
+              class="form-control form-control-sm"
+              [value]="tag.draftSlug"
+              [disabled]="isTagDeleted(tag)"
+              (input)="updateTagDraftSlug(tag.id, $event)"
+              [attr.aria-label]="'articles.form.tagSlugAria' | t"
+            />
+          </div>
+          <div class="col-auto">
+            @if (isTagDeleted(tag)) {
+              <span class="badge text-bg-secondary">{{ 'shared.removed' | t }}</span>
+            }
+          </div>
+          <div class="col d-flex justify-content-end gap-2">
+            @if (isTagDeleted(tag)) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success"
+                (click)="restoreTag(tag.id)"
+              >
+                {{ 'shared.restore' | t }}
+              </button>
+            } @else {
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="updateTag(tag)">
+                {{ 'shared.save' | t }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                (click)="deleteTag(tag.id)"
+              >
+                {{ 'shared.delete' | t }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
+      {{ 'shared.cancel' | t }}
+    </button>
+    <button type="submit" class="btn btn-primary">{{ 'shared.save' | t }}</button>
+  </div>
+</form>

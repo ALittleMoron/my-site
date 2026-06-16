@@ -68,9 +68,9 @@
         <li class="nav-item mx-3">
           <a
             class="nav-link link-colored"
-            [routerLink]="notesLink()"
+            [routerLink]="articlesLink()"
             routerLinkActive="link-active"
-            [attr.aria-label]="'shell.nav.notes' | t"
+            [attr.aria-label]="'shell.nav.articles' | t"
             (click)="closeNav()"
           >
             <svg
@@ -88,7 +88,7 @@
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
             </svg>
-            <span>{{ 'shell.nav.notes' | t }}</span>
+            <span>{{ 'shell.nav.articles' | t }}</span>
           </a>
         </li>
         @if (canManageContent()) {

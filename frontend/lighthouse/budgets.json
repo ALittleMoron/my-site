@@ -31,7 +31,7 @@
     ]
   },
   {
-    "path": "/ru/notes",
+    "path": "/ru/articles",
     "resourceSizes": [
       {
         "resourceType": "total",
@@ -62,7 +62,7 @@
     ]
   },
   {
-    "path": "/ru/notes/typed-notes",
+    "path": "/ru/articles/typed-articles",
     "resourceSizes": [
       {
         "resourceType": "total",

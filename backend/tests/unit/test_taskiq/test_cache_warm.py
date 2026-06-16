@@ -6,6 +6,8 @@ import msgspec
 import pytest
 from litestar.stores.base import Store
 
+from core.articles.schemas import ArticleFilters, ArticleTree
+from core.articles.use_cases import AbstractArticlesUseCase
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemFilters,
@@ -13,17 +15,15 @@ from core.competency_matrix.schemas import (
 )
 from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
-from core.notes.schemas import NoteFilters, NoteTree
-from core.notes.use_cases import AbstractNotesUseCase
-from entrypoints.litestar.api.notes.schemas import NoteDetailResponseSchema
+from entrypoints.litestar.api.articles.schemas import ArticleDetailResponseSchema
 from entrypoints.litestar.response_cache import ResponseCacheDomain, ResponseCacheDomainStore
 from entrypoints.taskiq.cache_warm.service import CacheWarmSummary, ResponseCacheWarmService
 from entrypoints.taskiq.cache_warm.targets import (
+    ArticlesCacheWarmTargetCollector,
     CacheWarmQueryBuilder,
     CacheWarmTarget,
     CompetencyMatrixCacheWarmTargetCollector,
     I18nCacheWarmTargetCollector,
-    NotesCacheWarmTargetCollector,
     ResponseCacheWarmTargetCollector,
 )
 from entrypoints.taskiq.cache_warm.writer import (
@@ -67,36 +67,36 @@ class FakeStore:
         return 60 if key in self.values else None
 
 
-class FakeNotesUseCase:
+class FakeArticlesUseCase:
     def __init__(self, factory: FactoryHelper) -> None:
         self.factory = factory
-        self.list_notes_filters: list[NoteFilters] = []
+        self.list_articles_filters: list[ArticleFilters] = []
         self.list_tree_languages: list[LanguageEnum] = []
         self.list_tags_languages: list[LanguageEnum] = []
         self.detail_slugs: list[str] = []
-        self.notes = [
-            factory.core.note(slug="first-note"),
-            factory.core.note(slug="second-note"),
+        self.articles = [
+            factory.core.article(slug="first-article"),
+            factory.core.article(slug="second-article"),
         ]
 
-    async def list_notes(self, *, filters: NoteFilters):
-        self.list_notes_filters.append(filters)
-        return self.factory.core.note_list(notes=self.notes, total_count=2, total_pages=1)
+    async def list_articles(self, *, filters: ArticleFilters):
+        self.list_articles_filters.append(filters)
+        return self.factory.core.article_list(articles=self.articles, total_count=2, total_pages=1)
 
     async def list_tree(self, *, only_published: bool, language: LanguageEnum):
         assert only_published is True
         self.list_tree_languages.append(language)
-        return NoteTree(folders=[])
+        return ArticleTree(folders=[])
 
     async def list_tags(self, *, include_deleted: bool, language: LanguageEnum):
         assert include_deleted is False
         self.list_tags_languages.append(language)
         return self.factory.core.tags(values=[self.factory.core.tag(tag_id=1)])
 
-    async def get_note(self, *, slug: str, only_published: bool):
+    async def get_article(self, *, slug: str, only_published: bool):
         assert only_published is True
         self.detail_slugs.append(slug)
-        return self.factory.core.note(slug=slug)
+        return self.factory.core.article(slug=slug)
 
 
 class FakeCompetencyMatrixUseCase:
@@ -143,14 +143,14 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(settings.cache_warm, "notes_page_size", 10)
-        notes_use_case = FakeNotesUseCase(factory=self.factory)
+        monkeypatch.setattr(settings.cache_warm, "articles_page_size", 10)
+        articles_use_case = FakeArticlesUseCase(factory=self.factory)
         matrix_use_case = FakeCompetencyMatrixUseCase(factory=self.factory)
         query_builder = CacheWarmQueryBuilder()
         collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
-            notes_collector=NotesCacheWarmTargetCollector(
-                notes_use_case=cast("AbstractNotesUseCase", notes_use_case),
+            articles_collector=ArticlesCacheWarmTargetCollector(
+                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
@@ -162,7 +162,7 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         targets = await collector.collect(
             domains=(
                 ResponseCacheDomain.I18N,
-                ResponseCacheDomain.NOTES,
+                ResponseCacheDomain.ARTICLES,
                 ResponseCacheDomain.COMPETENCY_MATRIX,
             ),
         )
@@ -175,8 +175,8 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
                 (),
             ) in target_paths
             assert (
-                ResponseCacheDomain.NOTES,
-                "/api/notes",
+                ResponseCacheDomain.ARTICLES,
+                "/api/articles",
                 (
                     ("language", language.value),
                     ("page", "1"),
@@ -184,13 +184,13 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
                 ),
             ) in target_paths
             assert (
-                ResponseCacheDomain.NOTES,
-                "/api/notes/tags",
+                ResponseCacheDomain.ARTICLES,
+                "/api/articles/tags",
                 (("language", language.value),),
             ) in target_paths
             assert (
-                ResponseCacheDomain.NOTES,
-                "/api/notes/tree",
+                ResponseCacheDomain.ARTICLES,
+                "/api/articles/tree",
                 (("language", language.value),),
             ) in target_paths
             assert (
@@ -212,15 +212,15 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
             "/api/i18n/languages",
             (),
         ) in target_paths
-        assert notes_use_case.list_notes_filters == [
-            NoteFilters(
+        assert articles_use_case.list_articles_filters == [
+            ArticleFilters(
                 page=1,
                 page_size=10,
                 language=LanguageEnum.RU,
                 only_published=True,
                 include_tags=True,
             ),
-            NoteFilters(
+            ArticleFilters(
                 page=1,
                 page_size=10,
                 language=LanguageEnum.EN,
@@ -233,14 +233,14 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(settings.cache_warm, "notes_page_size", 10)
-        notes_use_case = FakeNotesUseCase(factory=self.factory)
+        monkeypatch.setattr(settings.cache_warm, "articles_page_size", 10)
+        articles_use_case = FakeArticlesUseCase(factory=self.factory)
         matrix_use_case = FakeCompetencyMatrixUseCase(factory=self.factory)
         query_builder = CacheWarmQueryBuilder()
         collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
-            notes_collector=NotesCacheWarmTargetCollector(
-                notes_use_case=cast("AbstractNotesUseCase", notes_use_case),
+            articles_collector=ArticlesCacheWarmTargetCollector(
+                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
@@ -250,27 +250,27 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         )
 
         targets = await collector.collect(
-            domains=(ResponseCacheDomain.NOTES,),
+            domains=(ResponseCacheDomain.ARTICLES,),
         )
 
-        assert {target.domain for target in targets} == {ResponseCacheDomain.NOTES}
-        assert notes_use_case.list_notes_filters
+        assert {target.domain for target in targets} == {ResponseCacheDomain.ARTICLES}
+        assert articles_use_case.list_articles_filters
         assert matrix_use_case.list_items_filters == []
 
 
 class TestCacheWarmWriter(FactoryFixture):
     async def test_writes_litestar_compatible_payload_to_domain_store(self) -> None:
-        notes_store = FakeStore()
+        articles_store = FakeStore()
         store = ResponseCacheDomainStore(
-            stores={ResponseCacheDomain.NOTES: cast("Store", notes_store)},
+            stores={ResponseCacheDomain.ARTICLES: cast("Store", articles_store)},
         )
-        response = NoteDetailResponseSchema.from_domain_schema(
-            schema=self.factory.core.note(slug="first-note"),
+        response = ArticleDetailResponseSchema.from_domain_schema(
+            schema=self.factory.core.article(slug="first-article"),
             language=LanguageEnum.EN,
         )
         target = CacheWarmTarget(
-            domain=ResponseCacheDomain.NOTES,
-            path="/api/notes/detail/first-note",
+            domain=ResponseCacheDomain.ARTICLES,
+            path="/api/articles/detail/first-article",
             query=(("language", "en"),),
             response=response,
         )
@@ -284,11 +284,11 @@ class TestCacheWarmWriter(FactoryFixture):
         ).write_target(target)
 
         assert key_builder.build(target=target) == (
-            "notes:GET/api/notes/detail/first-notelanguage=en"
+            "articles:GET/api/articles/detail/first-articlelanguage=en"
         )
-        assert notes_store.set_calls[0][0] == "GET/api/notes/detail/first-notelanguage=en"
-        assert notes_store.set_calls[0][2] == constants.response_cache.default_ttl_seconds
-        payload = notes_store.set_calls[0][1]
+        assert articles_store.set_calls[0][0] == "GET/api/articles/detail/first-articlelanguage=en"
+        assert articles_store.set_calls[0][2] == constants.response_cache.default_ttl_seconds
+        payload = articles_store.set_calls[0][1]
         assert isinstance(payload, bytes)
         messages = msgspec.msgpack.decode(payload)
         assert messages == [
@@ -308,14 +308,14 @@ class TestCacheWarmWriter(FactoryFixture):
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setattr(settings.app, "use_cache", False)
-        notes_use_case = FakeNotesUseCase(factory=self.factory)
+        articles_use_case = FakeArticlesUseCase(factory=self.factory)
         matrix_use_case = FakeCompetencyMatrixUseCase(factory=self.factory)
         store = ResponseCacheDomainStore(stores={})
         query_builder = CacheWarmQueryBuilder()
         target_collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
-            notes_collector=NotesCacheWarmTargetCollector(
-                notes_use_case=cast("AbstractNotesUseCase", notes_use_case),
+            articles_collector=ArticlesCacheWarmTargetCollector(
+                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
@@ -334,16 +334,16 @@ class TestCacheWarmWriter(FactoryFixture):
             use_cache=False,
             supported_domains=(
                 ResponseCacheDomain.I18N,
-                ResponseCacheDomain.NOTES,
+                ResponseCacheDomain.ARTICLES,
                 ResponseCacheDomain.COMPETENCY_MATRIX,
             ),
         )
 
         summary = await service.warm_domains(
-            domains=(ResponseCacheDomain.NOTES,),
+            domains=(ResponseCacheDomain.ARTICLES,),
         )
 
         assert summary == CacheWarmSummary(attempted=0, written=0, skipped=1)
         assert summary.as_dict() == {"attempted": 0, "written": 0, "skipped": 1}
-        assert notes_use_case.list_notes_filters == []
+        assert articles_use_case.list_articles_filters == []
         assert matrix_use_case.list_items_filters == []
