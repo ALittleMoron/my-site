@@ -12,6 +12,16 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Мой сайт" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      (() => {
+        try {
+          const theme = window.localStorage.getItem('chosenTheme');
+          if (theme === 'dark' || theme === 'light') {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+          }
+        } catch {}
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>

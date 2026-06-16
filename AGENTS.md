@@ -25,6 +25,11 @@ Portfolio/notes site and knowledge database
 - For non-trivial tasks, create and follow a Superpowers implementation plan before changing code or configuration. Trivial docs-only edits and direct answers do not require a plan.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.
 - Implement behavior changes and bug fixes with TDD by default: add or update the failing test first, then make it pass. If a test is not practical for the change, state why before implementing.
+- Treat UX regressions as real bugs. When changing user-facing flows, check not only correctness but
+  also whether the interaction feels stable, predictable, accessible, and respectful of the user's
+  context. Bad UX includes theme flashing during navigation or page load, controls that are hard to
+  reach or understand, misleading button hierarchy, unclear loading/error states, layout shifts, and
+  interfaces that force the user to guess what to do next.
 - When adding new functionality that implies access restrictions, ask which user roles should have
   access unless the role policy is already specified. Do not ask this for public/unrestricted
   functionality or when existing instructions already define the role access.
