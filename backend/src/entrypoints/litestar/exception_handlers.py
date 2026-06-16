@@ -8,6 +8,7 @@ from verbose_http_exceptions import (
     NotFoundHTTPException,
     TooManyRequestsHTTPException,
     UnauthorizedHTTPException,
+    status,
 )
 from verbose_http_exceptions.exc.base import BaseVerboseHTTPException, VerboseHTTPExceptionDict
 from verbose_http_exceptions.ext.litestar import (
@@ -24,6 +25,7 @@ from core.competency_matrix.exceptions import (
 )
 from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileStorageInternalError, InvalidFileDataError
+from infra.healthcheck import ReadinessCheckError
 
 DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = {
     EntryNotFoundError: NotFoundHTTPException,
@@ -83,8 +85,16 @@ def domain_to_verbose_response_handler(
     )
 
 
+def readiness_check_error_handler(
+    _request: Request[Any, Any, Any],
+    _exc: Exception,
+) -> Response[str]:
+    return Response(content="", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
 def get_litestar_exception_handlers() -> LitestarExceptionHandlersMap:
     return {
         **ALL_EXCEPTION_HANDLERS_MAP,
         DomainError: domain_to_verbose_response_handler,
+        ReadinessCheckError: readiness_check_error_handler,
     }

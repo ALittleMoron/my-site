@@ -90,10 +90,17 @@ owner/group-права так, чтобы доступ на чтение был 
 make run
 ```
 
+`make run` заранее проверяет обязательные значения `.env`. Затем он поднимает
+PostgreSQL, Valkey, MinIO, Databasus, backend, frontend и nginx через Docker
+health checks, выполняет одноразовую backend-инициализацию и переключает публичный
+трафик между blue/green backend/frontend слотами через graceful nginx reload.
+
 ## ⚙️ Важные ссылки
 
 - Frontend: `http://localhost`
 - API: `http://localhost/api`
+- API liveness: `http://localhost/api/healthcheck`
+- API readiness: `http://localhost/api/healthcheck/ready`
 - Документация API: `http://localhost/api/docs`
 - OpenAPI спецификация: `http://localhost/api/docs/openapi.json`
 

@@ -24,6 +24,7 @@ from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileStorageInternalError, InvalidFileDataError
 from entrypoints.litestar import exception_handlers
 from entrypoints.litestar.exception_handlers import get_litestar_exception_handlers
+from infra.healthcheck import ReadinessCheckError
 
 
 @get("/entry-not-found", sync_to_thread=False)
@@ -62,6 +63,11 @@ def raise_question_import() -> None:
 def raise_python_error() -> None:
     msg = "plain python error"
     raise ValueError(msg)
+
+
+@get("/readiness", sync_to_thread=False)
+def raise_readiness_check_error() -> None:
+    raise ReadinessCheckError
 
 
 def test_not_found_domain_error_returns_verbose_404() -> None:
@@ -115,6 +121,13 @@ def test_python_error_still_uses_verbose_catch_all_handler() -> None:
     assert response.json()["message"] == "plain python error"
 
 
+def test_readiness_check_error_returns_empty_503() -> None:
+    response = get_response("/readiness")
+
+    assert response.status_code == codes.SERVICE_UNAVAILABLE
+    assert response.content == b""
+
+
 def test_domain_errors_are_registered_with_single_data_driven_handler() -> None:
     handlers = get_litestar_exception_handlers()
 
@@ -154,4 +167,5 @@ def exception_route_handlers() -> Sequence[ControllerRouterHandler]:
         raise_question_quota,
         raise_question_import,
         raise_python_error,
+        raise_readiness_check_error,
     )

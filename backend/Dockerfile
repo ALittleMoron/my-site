@@ -34,4 +34,4 @@ COPY . ./
 USER $CUSTOM_USER:$CUSTOM_USER
 
 EXPOSE 8080
-CMD ["sh", "./start_application.sh"]
+CMD ["bash", "./start_application.sh", "run"]

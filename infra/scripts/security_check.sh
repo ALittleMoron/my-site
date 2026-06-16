@@ -68,6 +68,36 @@ run_private_panel_configuration_check() {
     require_file_contains "$nginx_template" "listen 18082;" "private Databasus listener"
 }
 
+run_healthcheck_configuration_check() {
+    local compose_file="${repo_dir}/docker-compose.yml"
+    local deploy_workflow="${repo_dir}/.github/workflows/_infrastructure.yaml"
+    local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
+    local run_script="${repo_dir}/infra/scripts/run.sh"
+    local frontend_server="${repo_dir}/frontend/src/server-app.ts"
+
+    require_file_contains "$compose_file" "backend-blue:" "blue backend service"
+    require_file_contains "$compose_file" "backend-green:" "green backend service"
+    require_file_contains "$compose_file" "frontend-blue:" "blue frontend service"
+    require_file_contains "$compose_file" "frontend-green:" "green frontend service"
+    require_file_contains "$compose_file" "backend-init:" "one-shot backend init service"
+    require_file_contains "$compose_file" "/api/healthcheck/ready" "backend readiness healthcheck"
+    require_file_contains "$compose_file" "/healthz" "frontend healthcheck"
+    require_file_contains "$compose_file" "/nginx-healthz" "nginx healthcheck"
+
+    require_file_contains "$nginx_template" "resolver 127.0.0.11" "Docker DNS resolver"
+    require_file_contains "$nginx_template" "server \${ACTIVE_BACKEND_SLOT}:8080 resolve;" "active backend slot"
+    require_file_contains "$nginx_template" "server \${ACTIVE_FRONTEND_SLOT}:4000 resolve;" "active frontend slot"
+    require_file_contains "$nginx_template" "location = /nginx-healthz" "nginx health endpoint"
+
+    require_file_contains "$run_script" "ACTIVE_DEPLOY_SLOT" "active deploy slot tracking"
+    require_file_contains "$run_script" "nginx -s reload" "graceful nginx reload"
+    require_file_contains "$run_script" "docker compose up --wait" "health-gated compose startup"
+    require_file_contains "$run_script" "backend-init" "backend init deploy step"
+
+    require_file_contains "$frontend_server" "app.get('/healthz'" "frontend health endpoint"
+    require_file_contains "$deploy_workflow" "frontend/" "frontend deploy sync"
+}
+
 run_nginx_syntax_check() {
     local cert_dir
 
@@ -97,16 +127,23 @@ run_nginx_syntax_check() {
 
     docker run --rm \
         --add-host backend:127.0.0.1 \
+        --add-host backend-blue:127.0.0.1 \
+        --add-host backend-green:127.0.0.1 \
         --add-host frontend:127.0.0.1 \
+        --add-host frontend-blue:127.0.0.1 \
+        --add-host frontend-green:127.0.0.1 \
         --add-host minio:127.0.0.1 \
         --add-host databasus:127.0.0.1 \
         -e APP_DOMAIN=example.test \
         -e SSL_CERT=/certs/test.crt \
         -e SSL_KEY=/certs/test.key \
+        -e ACTIVE_BACKEND_SLOT=backend-blue \
+        -e ACTIVE_FRONTEND_SLOT=frontend-blue \
         -v "${cert_dir}:/certs:ro" \
         "$nginx_check_image_tag" \
         nginx -t
 }
 
 run_private_panel_configuration_check
+run_healthcheck_configuration_check
 run_nginx_syntax_check

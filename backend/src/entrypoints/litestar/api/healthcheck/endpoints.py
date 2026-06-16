@@ -1,9 +1,11 @@
+from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Response, get
 from verbose_http_exceptions import status
 
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from infra.config.settings import settings
+from infra.healthcheck import ReadinessChecker
 
 
 class HealthcheckController(Controller):
@@ -17,6 +19,15 @@ class HealthcheckController(Controller):
         cache_key_builder=ResponseCacheDomain.HEALTHCHECK.cache_key_builder,
     )
     async def health(self) -> Response:
+        return Response(content="", status_code=status.HTTP_200_OK)
+
+    @get(
+        "/ready",
+        summary="Проверка готовности",
+        description="Проверка готовности приложения и обязательных зависимостей.",
+    )
+    async def ready(self, checker: FromDishka[ReadinessChecker]) -> Response:
+        await checker.check()
         return Response(content="", status_code=status.HTTP_200_OK)
 
 

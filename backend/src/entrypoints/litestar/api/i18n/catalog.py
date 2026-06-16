@@ -305,7 +305,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
             "nginx, Docker, MinIO, Valkey и TaskIQ разделяют edge routing, файлы, кэш, "
-            "фоновые задачи и runtime frontend/backend контейнеров."
+            "фоновые задачи и runtime frontend/backend контейнеров, а публичный трафик "
+            "переключается между blue/green слотами после health checks."
         ),
         "siteBuild.decisions.title": "Инженерные решения",
         "siteBuild.decision.cleanArchitecture": (
@@ -325,7 +326,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
             "typecheck, lint, format-check, security gates, SSR smoke и performance "
             "smoke-сценариями, а Angular SSR/CSR маршруты дополнительно проверяются "
-            "строгими Lighthouse CI гейтами качества и производительности через Make targets."
+            "строгими Lighthouse CI гейтами качества и производительности через Make targets. "
+            "Локальный и production запуск fail-fast проверяют конфигурацию, readiness "
+            "backend зависимостей и nginx routing перед переключением трафика."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
@@ -900,7 +903,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
             "nginx, Docker, MinIO, Valkey, and TaskIQ separate edge routing, files, cache, "
-            "background jobs, and frontend/backend container runtimes."
+            "background jobs, and frontend/backend container runtimes, while public traffic "
+            "switches between blue/green slots only after health checks pass."
         ),
         "siteBuild.decisions.title": "Engineering decisions",
         "siteBuild.decision.cleanArchitecture": (
@@ -920,7 +924,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "The project is covered by unit/integration tests, frontend Jest checks, "
             "typecheck, lint, format-check, security gates, SSR smoke, and performance "
             "smoke scenarios, while Angular SSR/CSR routes are additionally guarded by "
-            "strict Lighthouse CI quality and performance gates through Make targets."
+            "strict Lighthouse CI quality and performance gates through Make targets. Local "
+            "and production startup fail fast on missing configuration, backend dependency "
+            "readiness, and nginx routing before public traffic is switched."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

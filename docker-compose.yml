@@ -1,12 +1,59 @@
+x-backend-build: &backend-build
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
+  env_file:
+    - .env
+  networks:
+    - app-network
+
+x-backend-healthcheck: &backend-healthcheck
+  test:
+    [
+      "CMD-SHELL",
+      "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/healthcheck/ready', timeout=3).close()\"",
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 24
+
+x-frontend-build: &frontend-build
+  build:
+    context: ./frontend
+    dockerfile: Dockerfile
+  image: my_site_frontend:${IMAGE_TAG:-latest}
+  environment:
+    - PORT=4000
+    - APP_URL_SCHEMA=${APP_URL_SCHEMA}
+    - APP_DOMAIN=${APP_DOMAIN}
+    - SSR_PUBLIC_ORIGIN=${APP_URL_SCHEMA}://${APP_DOMAIN}
+    - NG_ALLOWED_HOSTS=${APP_DOMAIN}
+  restart: unless-stopped
+  networks:
+    - app-network
+
+x-frontend-healthcheck: &frontend-healthcheck
+  test:
+    [
+      "CMD-SHELL",
+      "node -e \"fetch('http://127.0.0.1:4000/healthz').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+    ]
+  interval: 5s
+  timeout: 5s
+  retries: 24
+
+x-process-healthcheck: &process-healthcheck
+  test: ["CMD-SHELL", "python -c \"import os, signal; os.kill(1, 0)\""]
+  interval: 10s
+  timeout: 5s
+  retries: 6
+
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
-    container_name: my_site_backend
-    env_file:
-      - .env
+  backend-blue:
+    <<: *backend-build
+    container_name: my_site_backend_blue
+    command: bash start_application.sh run
     depends_on:
       postgres:
         condition: service_healthy
@@ -15,16 +62,36 @@ services:
       valkey:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - app-network
+    healthcheck: *backend-healthcheck
+
+  backend-green:
+    <<: *backend-build
+    container_name: my_site_backend_green
+    command: bash start_application.sh run
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck: *backend-healthcheck
+
+  backend-init:
+    <<: *backend-build
+    command: bash start_application.sh init
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: "no"
 
   taskiq-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
-    env_file:
-      - .env
+    <<: *backend-build
     command: bash scripts/app.sh taskiq-worker
     depends_on:
       postgres:
@@ -32,42 +99,42 @@ services:
       valkey:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - app-network
+    healthcheck: *process-healthcheck
 
   # Keep exactly one scheduler process running; scale workers instead.
   taskiq-scheduler:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
+    <<: *backend-build
     container_name: my_site_taskiq_scheduler
-    env_file:
-      - .env
     command: bash scripts/app.sh taskiq-scheduler
     depends_on:
       valkey:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - app-network
+    healthcheck: *process-healthcheck
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: my_site_frontend:latest
-    container_name: my_site_frontend
+  frontend-blue:
+    <<: *frontend-build
+    container_name: my_site_frontend_blue
     environment:
       - PORT=4000
       - APP_URL_SCHEMA=${APP_URL_SCHEMA}
       - APP_DOMAIN=${APP_DOMAIN}
-      - SSR_API_ORIGIN=http://backend:8080
+      - SSR_API_ORIGIN=http://backend-blue:8080
       - SSR_PUBLIC_ORIGIN=${APP_URL_SCHEMA}://${APP_DOMAIN}
       - NG_ALLOWED_HOSTS=${APP_DOMAIN}
-    restart: unless-stopped
-    networks:
-      - app-network
+    healthcheck: *frontend-healthcheck
+
+  frontend-green:
+    <<: *frontend-build
+    container_name: my_site_frontend_green
+    environment:
+      - PORT=4000
+      - APP_URL_SCHEMA=${APP_URL_SCHEMA}
+      - APP_DOMAIN=${APP_DOMAIN}
+      - SSR_API_ORIGIN=http://backend-green:8080
+      - SSR_PUBLIC_ORIGIN=${APP_URL_SCHEMA}://${APP_DOMAIN}
+      - NG_ALLOWED_HOSTS=${APP_DOMAIN}
+    healthcheck: *frontend-healthcheck
 
   valkey:
     image: valkey/valkey:9.0.1
@@ -120,7 +187,7 @@ services:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
-    image: my_site_nginx:latest
+    image: my_site_nginx:${IMAGE_TAG:-latest}
     container_name: my_site_nginx
     volumes:
       - ./infra/nginx/certs:/certs
@@ -128,16 +195,29 @@ services:
       - APP_DOMAIN=${APP_DOMAIN}
       - SSL_CERT=${SSL_CERT}
       - SSL_KEY=${SSL_KEY}
+      - ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT:-backend-blue}
+      - ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT:-frontend-blue}
     ports:
       - "80:8080"
       - "443:8443"
       - "${VPN_BIND_ADDRESS}:18081:18081"
       - "${VPN_BIND_ADDRESS}:18082:18082"
     depends_on:
-      - backend
-      - frontend
+      minio:
+        condition: service_healthy
+      databasus:
+        condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "nginx -t && wget -q -O /dev/null http://127.0.0.1:8080/nginx-healthz",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 12
 
   certbot:
     image: certbot/certbot:v5.2.2
@@ -172,6 +252,11 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4005/"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
 
 networks:
   app-network:

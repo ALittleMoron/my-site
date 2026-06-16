@@ -95,7 +95,7 @@
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
-- [ ] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
+- [x] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [ ] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
@@ -145,8 +145,8 @@
     - [ ] No sensitive data in `docker inspect`
     - [ ] Logs aren’t written to files inside containers
     - [ ] Log rotation in place
-    - [ ] All services have health checks
-    - [ ] Nginx does not forward traffic to an unhealthy backend
+    - [x] All services have health checks
+    - [x] Nginx does not forward traffic to an unhealthy backend
     - [ ] Adequate restart policy
     - [ ] Image versions pinned
     - [ ] No `latest` tags
@@ -530,7 +530,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Background cache warm
 - [ ] Evaluate/migrate TaskIQ results to a durable backend when durable task history/auditing is needed.
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
-- [ ] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
+- [x] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
 - [ ] Add public changelog/updates page.
 - [ ] Add RSS/Atom feeds for published notes and matrix updates.
 - [ ] Add lightweight subscription channel for new notes, matrix items, and courses.

@@ -18,6 +18,7 @@ from core.files.use_cases import AbstractFilesUseCase
 from core.notes.use_cases import AbstractNoteAnalyticsUseCase, AbstractNotesUseCase
 from core.types import IntId
 from core.wiki_links.use_cases import AbstractWikiLinksUseCase
+from infra.healthcheck import ReadinessChecker
 
 
 @dataclass(kw_only=True)
@@ -90,3 +91,7 @@ class IocContainerHelper:
     async def get_files_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractFilesUseCase)
         return cast("Mock", use_case)
+
+    async def get_readiness_checker(self) -> Mock:
+        checker = await self.container.get(ReadinessChecker)
+        return cast("Mock", checker)

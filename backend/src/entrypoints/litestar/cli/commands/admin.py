@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,12 +15,16 @@ async def create_admin_command(username: str, password: str) -> None:
         session = await request_container.get(AsyncSession)
         hashed_password = hasher.hash_password(password)
         try:
-            admin = UserModel(
-                username=username,
-                password_hash=hashed_password,
-                role=RoleEnum.ADMIN,
+            stmt = (
+                insert(UserModel)
+                .values(
+                    username=username,
+                    password_hash=hashed_password,
+                    role=RoleEnum.ADMIN,
+                )
+                .on_conflict_do_nothing(index_elements=["username"])
             )
-            await session.merge(admin)
+            await session.execute(stmt)
             await session.commit()
         except SQLAlchemyError:
             msg = "Ошибка базы данных"

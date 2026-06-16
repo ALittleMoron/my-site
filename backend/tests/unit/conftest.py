@@ -20,6 +20,7 @@ from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixPro
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
 from tests.unit.mocks.providers.general import MockGeneralProvider
+from tests.unit.mocks.providers.healthcheck import MockHealthcheckProvider
 from tests.unit.mocks.providers.notes import MockNotesProvider
 from tests.unit.mocks.providers.wiki_links import MockWikiLinksProvider
 
@@ -63,6 +64,7 @@ async def container(  # noqa: PLR0913
         MockUserAccountProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),
         MockWikiLinksProvider(),
+        MockHealthcheckProvider(),
     )
     yield container
     await container.close()

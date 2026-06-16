@@ -33,6 +33,9 @@ jobs:
           echo "APP_CONTACT_REQUESTS_ENABLED=${{ secrets.APP_CONTACT_REQUESTS_ENABLED }}" >> .env
           echo "COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT=${{ secrets.COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT }}" >> .env
           echo "VPN_BIND_ADDRESS=${{ secrets.VPN_BIND_ADDRESS }}" >> .env
+          echo "LE_EMAIL=${{ secrets.LE_EMAIL }}" >> .env
+          echo "SSL_CERT=${{ secrets.SSL_CERT }}" >> .env
+          echo "SSL_KEY=${{ secrets.SSL_KEY }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_DRIVER=${{ secrets.DB_DRIVER }}" >> .env
@@ -43,6 +46,9 @@ jobs:
           echo "DB_POOL_SIZE=${{ secrets.DB_POOL_SIZE }}" >> .env
           echo "DB_MAX_OVERFLOW=${{ secrets.DB_MAX_OVERFLOW }}" >> .env
           echo "DB_EXPIRE_ON_COMMIT=${{ secrets.DB_EXPIRE_ON_COMMIT }}" >> .env
+          echo "DB_LOG_QUERY_METRICS=${{ secrets.DB_LOG_QUERY_METRICS }}" >> .env
+          echo "DB_SLOW_QUERY_LOG_THRESHOLD_MS=${{ secrets.DB_SLOW_QUERY_LOG_THRESHOLD_MS }}" >> .env
+          echo "DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH=${{ secrets.DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH }}" >> .env
           echo "PBW_ENCRYPTION_KEY=${{ secrets.PBW_ENCRYPTION_KEY }}" >> .env
           echo "AUTH_TOKEN_EXPIRE_SECONDS=${{ secrets.AUTH_TOKEN_EXPIRE_SECONDS }}" >> .env
           echo "AUTH_TOKEN_HEADER_NAME=${{ secrets.AUTH_TOKEN_HEADER_NAME }}" >> .env
@@ -60,6 +66,9 @@ jobs:
           echo "VALKEY_HOST=${{ secrets.VALKEY_HOST }}" >> .env
           echo "VALKEY_PORT=${{ secrets.VALKEY_PORT }}" >> .env
           echo "I18N_DEFAULT_LANGUAGE=${{ secrets.I18N_DEFAULT_LANGUAGE }}" >> .env
+          echo "TASKIQ_CACHE_WARM_INTERVAL_SECONDS=${{ secrets.TASKIQ_CACHE_WARM_INTERVAL_SECONDS }}" >> .env
+          echo "TASKIQ_RESULT_EXPIRE_SECONDS=${{ secrets.TASKIQ_RESULT_EXPIRE_SECONDS }}" >> .env
+          echo "CACHE_WARM_NOTES_PAGE_SIZE=${{ secrets.CACHE_WARM_NOTES_PAGE_SIZE }}" >> .env
 
       - name: Sync infrastructure files to server
         uses: burnett01/rsync-deployments@8.0.5
@@ -68,6 +77,7 @@ jobs:
           path: |
             docker-compose.yml
             backend/
+            frontend/
             infra/
             .env
           remote_path: ${{ secrets.REMOTE_PATH }}

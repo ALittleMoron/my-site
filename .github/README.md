@@ -89,10 +89,17 @@ is enough; for production, prefer owner/group permissions that grant read access
 make run
 ```
 
+`make run` validates the required `.env` values before Compose starts services. It brings
+PostgreSQL, Valkey, MinIO, Databasus, backend, frontend, and nginx up through Docker
+health checks, runs one-shot backend initialization, and switches public traffic between
+blue/green backend/frontend slots with a graceful nginx reload.
+
 ## ⚙️ Endpoints
 
 - Frontend: `http://localhost`
 - API: `http://localhost/api`
+- API liveness: `http://localhost/api/healthcheck`
+- API readiness: `http://localhost/api/healthcheck/ready`
 - API docs: `http://localhost/api/docs`
 - OpenAPI spec: `http://localhost/api/docs/openapi.json`
 

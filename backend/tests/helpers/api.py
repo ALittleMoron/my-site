@@ -12,6 +12,9 @@ class APIHelper:
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
+    def get_health_ready(self) -> Response:
+        return self.client.get("/api/healthcheck/ready")
+
     def get_i18n_languages(self) -> Response:
         return self.client.get("/api/i18n/languages")
 
