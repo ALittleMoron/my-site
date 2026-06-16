@@ -21,9 +21,13 @@
     <div class="col-lg-4 text-lg-end">
       <img
         class="site-case-study__logo"
-        src="/logo-512x512.png"
+        src="/logo-192x192.webp"
+        srcset="/logo-192x192.webp 1x, /logo-512x512.webp 2x"
         width="168"
         height="168"
+        fetchpriority="high"
+        loading="eager"
+        decoding="async"
         [attr.alt]="'siteBuild.hero.logoAlt' | t"
       />
     </div>

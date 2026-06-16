@@ -68,8 +68,16 @@
               }
             ],
             "styles": [
-              "node_modules/@toast-ui/editor/dist/toastui-editor.css",
-              "node_modules/@toast-ui/editor/dist/theme/toastui-editor-dark.css",
+              {
+                "input": "node_modules/@toast-ui/editor/dist/toastui-editor.css",
+                "inject": false,
+                "bundleName": "toastui-editor"
+              },
+              {
+                "input": "node_modules/@toast-ui/editor/dist/theme/toastui-editor-dark.css",
+                "inject": false,
+                "bundleName": "toastui-editor-dark"
+              },
               "src/styles/main.scss"
             ],
             "scripts": []

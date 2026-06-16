@@ -56,13 +56,12 @@
 ### MVP Improvements
 
 - [x] (SEO) Add schemaMarkup link
-- [ ] Check site performance
+- [x] Check site performance
   - [x] Add Locust smoke/baseline scaffolding and CI report artifacts
   - [x] Validate selected Locust API responses against backend response schemas
   - [x] Add reusable PostgreSQL query-plan harness for real compiled search queries
   - [x] Tune Locust thresholds from real baseline reports
   - [x] Expand Locust scenarios with seeded note/detail/matrix data
-  - [ ] Run scheduled/manual baseline load tests against a production-like environment
   - [x] Add Lighthouse CI with strict quality/performance gates for Angular hybrid SSR/CSR routes
   - [x] Lighthouse audit — fix non-performance errors and enforce strict gates
 - [x] Add public "how this site is built" portfolio/case-study page.

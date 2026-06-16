@@ -73,4 +73,19 @@ describe('SiteCaseStudyPageComponent', () => {
     expect(sourceLink).not.toBeNull();
     expect(sourceLink?.getAttribute('rel')).toBe('noopener noreferrer');
   });
+
+  it('serves the hero logo with responsive and LCP-friendly image hints', () => {
+    const logo = fixture.nativeElement.querySelector(
+      'img.site-case-study__logo',
+    ) as HTMLImageElement | null;
+
+    expect(logo).not.toBeNull();
+    expect(logo?.getAttribute('src')).toBe('/logo-192x192.webp');
+    expect(logo?.getAttribute('srcset')).toBe('/logo-192x192.webp 1x, /logo-512x512.webp 2x');
+    expect(logo?.getAttribute('width')).toBe('168');
+    expect(logo?.getAttribute('height')).toBe('168');
+    expect(logo?.getAttribute('fetchpriority')).toBe('high');
+    expect(logo?.getAttribute('loading')).toBe('eager');
+    expect(logo?.getAttribute('decoding')).toBe('async');
+  });
 });

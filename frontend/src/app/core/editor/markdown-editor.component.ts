@@ -1,3 +1,4 @@
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -5,6 +6,7 @@ import {
   DestroyRef,
   ElementRef,
   OnDestroy,
+  PLATFORM_ID,
   ViewChild,
   effect,
   inject,
@@ -17,6 +19,8 @@ import { I18nService } from '../i18n/i18n.service';
 import { ThemeService } from '../layout/theme.service';
 import { EditorImageUploadService } from './editor-image-upload.service';
 
+const EDITOR_STYLESHEET_HREFS = ['/toastui-editor.css', '/toastui-editor-dark.css'] as const;
+
 @Component({
   selector: 'app-markdown-editor',
   standalone: true,
@@ -28,6 +32,8 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly themeService = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
   private editor: Editor | null = null;
   private syncingInput = false;
 
@@ -47,6 +53,11 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   async ngAfterViewInit(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.ensureEditorStylesheets();
     const { default: Editor } = await import('@toast-ui/editor');
     const language = await this.resolveEditorLanguage(Editor);
     this.editor = new Editor({
@@ -86,6 +97,22 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.editor?.destroy();
+  }
+
+  private ensureEditorStylesheets(): void {
+    for (const href of EDITOR_STYLESHEET_HREFS) {
+      if (this.hasStylesheet(href)) continue;
+
+      const link = this.document.createElement('link');
+      link.setAttribute('rel', 'stylesheet');
+      link.setAttribute('href', href);
+      this.document.head.appendChild(link);
+    }
+  }
+
+  private hasStylesheet(href: string): boolean {
+    const links = Array.from(this.document.head.querySelectorAll('link[rel="stylesheet"]'));
+    return links.some((link) => link.getAttribute('href') === href);
   }
 
   private async resolveEditorLanguage(editorConstructor: typeof Editor): Promise<string> {

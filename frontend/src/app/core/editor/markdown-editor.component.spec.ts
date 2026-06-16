@@ -57,6 +57,7 @@ describe('MarkdownEditorComponent', () => {
   let themeService: { theme: ReturnType<typeof signal<'light' | 'dark'>> };
 
   beforeEach(async () => {
+    removeEditorStylesheetLinks();
     MockEditor.instances = [];
     MockEditor.setLanguage.mockClear();
     uploadService = {
@@ -79,12 +80,28 @@ describe('MarkdownEditorComponent', () => {
     fixture.componentRef.setInput('value', 'Initial **markdown**');
   });
 
+  afterEach(() => {
+    removeEditorStylesheetLinks();
+  });
+
   it('lazy-loads ToastUI editor with the current value', async () => {
     fixture.detectChanges();
     await waitForEditor(fixture);
 
     expect(MockEditor.setLanguage).toHaveBeenCalledWith('ru-RU', { Markdown: 'Markdown' });
     expect(MockEditor.instances[0].options.initialValue).toBe('Initial **markdown**');
+  });
+
+  it('loads Toast UI stylesheets before creating the editor', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    const styleLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"]')).map(
+      (link) => link.getAttribute('href'),
+    );
+
+    expect(styleLinks).toContain('/toastui-editor.css');
+    expect(styleLinks).toContain('/toastui-editor-dark.css');
   });
 
   it('uses Toast UI dark theme when the app theme is dark', async () => {
@@ -135,4 +152,10 @@ async function waitForEditor(fixture: ComponentFixture<MarkdownEditorComponent>)
       setTimeout(resolve, 0);
     });
   }
+}
+
+function removeEditorStylesheetLinks(): void {
+  document
+    .querySelectorAll('link[href="/toastui-editor.css"], link[href="/toastui-editor-dark.css"]')
+    .forEach((link) => link.remove());
 }
