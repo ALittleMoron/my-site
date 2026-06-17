@@ -8,6 +8,18 @@ run:
 stop:
 	bash infra/scripts/stop.sh
 
+.PHONY: certbot-issue
+certbot-issue:
+	bash infra/scripts/tls.sh issue
+
+.PHONY: certbot-renew
+certbot-renew:
+	bash infra/scripts/tls.sh renew
+
+.PHONY: certbot-sync
+certbot-sync:
+	bash infra/scripts/tls.sh sync
+
 # Backend
 
 .PHONY: install-backend

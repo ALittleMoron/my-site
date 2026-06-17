@@ -74,14 +74,18 @@ mkcert -install
 mkcert \
   <your-domain> \
   s3.<your-domain>
-mv <your-domain>.pem ./infra/nginx/certs/
-mv <your-domain>-key.pem ./infra/nginx/certs/
+mkdir -p ./infra/nginx/certs
+mv <your-domain>.pem ./infra/nginx/certs/fullchain.pem
+mv <your-domain>-key.pem ./infra/nginx/certs/privkey.pem
 ```
 
 Контейнер nginx запускается с UID/GID `101:101`, поэтому смонтированные сертификат и
 приватный ключ должны быть читаемы этим пользователем. Для локальных файлов `mkcert`
 достаточно `chmod 644 ./infra/nginx/certs/<file>`; для production лучше настроить
 owner/group-права так, чтобы доступ на чтение был только у nginx.
+Production выпуск и renewal Let's Encrypt сертификатов идут через compose-backed
+targets `make certbot-issue`, `make certbot-renew` и `make certbot-sync`. Подробнее:
+[Production Deploy](../docs/production-deploy.md).
 
 4. Обновить переменные в `.env`.
 

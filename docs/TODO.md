@@ -66,8 +66,6 @@
   - [x] Lighthouse audit — fix non-performance errors and enforce strict gates
 - [x] Add public "how this site is built" portfolio/case-study page.
 - [x] Add privacy-safe article analytics (public views, engaged views, anonymous reactions).
-- [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
-- [ ] Migrate competency matrix from Google Docs to a database.
 - [x] Move tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
   - [ ] Choose hosting
@@ -77,6 +75,7 @@
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
     - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
+  - [ ] Migrate competency matrix from Google Docs to a database.
   - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
 ### Security and Infrastructure
@@ -235,6 +234,7 @@
 
 ### Frontend
 
+- [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [x] Cookie consent
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme

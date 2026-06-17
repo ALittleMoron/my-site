@@ -2,7 +2,7 @@ x-backend-build: &backend-build
   build:
     context: ./backend
     dockerfile: Dockerfile
-  image: ${DOCKER_REGISTRY}/${DOCKER_USERNAME}/my_site_application:${IMAGE_TAG:-latest}
+  image: my_site_application:${IMAGE_TAG:-latest}
   env_file:
     - .env
   networks:
@@ -191,6 +191,7 @@ services:
     container_name: my_site_nginx
     volumes:
       - ./infra/nginx/certs:/certs
+      - certbot-www:/var/www/certbot:ro
     environment:
       - APP_DOMAIN=${APP_DOMAIN}
       - SSL_CERT=${SSL_CERT}
@@ -227,6 +228,8 @@ services:
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot-www:/var/www/certbot
+    ports:
+      - "80:80"
     command: >
       certonly
       --webroot
@@ -234,10 +237,32 @@ services:
       --email ${LE_EMAIL}
       --agree-tos
       --no-eff-email
+      --keep-until-expiring
       -d ${APP_DOMAIN}
       -d s3.${APP_DOMAIN}
     networks:
       - app-network
+
+  cert-sync:
+    image: alpine:3.22.2
+    container_name: my_site_cert_sync
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+      - ./infra/nginx/certs:/certs
+    command: >
+      sh -ec '
+        live_dir="/etc/letsencrypt/live/$${APP_DOMAIN}";
+        if [ -f "$${live_dir}/fullchain.pem" ] && [ -f "$${live_dir}/privkey.pem" ]; then
+          cp "$${live_dir}/fullchain.pem" /certs/fullchain.pem;
+          cp "$${live_dir}/privkey.pem" /certs/privkey.pem;
+          chown 101:101 /certs/fullchain.pem /certs/privkey.pem;
+          chmod 640 /certs/fullchain.pem /certs/privkey.pem;
+        else
+          echo "No certbot certificate found for $${APP_DOMAIN}; keeping existing /certs files.";
+        fi
+      '
 
   databasus:
     container_name: my_site_databasus

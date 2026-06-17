@@ -1,7 +1,13 @@
 name: Deploy to Remote Server
 
 on:
-  workflow_call:
+  workflow_dispatch:
+    inputs:
+      issue_certificates:
+        description: "Issue Let's Encrypt certificates before restarting the stack"
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -13,16 +19,60 @@ jobs:
     uses: ./.github/workflows/_docker.yaml
     with:
       push-images: false
-    secrets: inherit
 
-  infrastructure:
-    name: "Push infrastructure to remote server"
+  deploy:
+    name: "Sync runtime files and restart"
     needs: docker
-    uses: ./.github/workflows/_infrastructure.yaml
-    secrets: inherit
+    runs-on: ubuntu-latest
+    environment: production
 
-  restart:
-    name: "Restart application on remote server"
-    needs: infrastructure
-    uses: ./.github/workflows/_restart.yaml
-    secrets: inherit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Render runtime .env
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          GITHUB_ENV_VARS_JSON: ${{ toJson(vars) }}
+          GITHUB_SECRETS_JSON: ${{ toJson(secrets) }}
+        run: >
+          python3 infra/scripts/render_deploy_env.py
+          --manifest infra/deploy/runtime-env.manifest.json
+          --output .env
+
+      - name: Sync runtime files to server
+        uses: burnett01/rsync-deployments@8.0.5
+        with:
+          switches: -avzr --delete --exclude '.git' --exclude 'node_modules' --exclude '.venv' --exclude 'infra/nginx/certs/*.pem'
+          path: |
+            Makefile
+            docker-compose.yml
+            backend/
+            frontend/
+            infra/
+            .env
+          remote_path: ${{ vars.REMOTE_PATH }}
+          remote_host: ${{ vars.REMOTE_HOST }}
+          remote_user: ${{ vars.REMOTE_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Issue certificates
+        if: ${{ inputs.issue_certificates }}
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ vars.REMOTE_HOST }}
+          username: ${{ vars.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ vars.REMOTE_PATH }}
+            make certbot-issue
+
+      - name: Restart stack
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ vars.REMOTE_HOST }}
+          username: ${{ vars.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ vars.REMOTE_PATH }}
+            make run

@@ -45,6 +45,7 @@ export class SiteCaseStudyPageComponent implements OnInit {
     'siteBuild.decision.cleanArchitecture',
     'siteBuild.decision.localizedContent',
     'siteBuild.decision.privacyAnalytics',
+    'siteBuild.decision.deployManifest',
   ];
 
   readonly matrixLink = computed(() => `/${this.language()}/competency-matrix`);

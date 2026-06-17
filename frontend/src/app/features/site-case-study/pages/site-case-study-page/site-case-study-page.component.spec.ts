@@ -34,6 +34,7 @@ describe('SiteCaseStudyPageComponent', () => {
           'siteBuild.decision.cleanArchitecture': 'Clean Architecture',
           'siteBuild.decision.localizedContent': 'RU/EN локализация',
           'siteBuild.decision.privacyAnalytics': 'Privacy-safe аналитика',
+          'siteBuild.decision.deployManifest': 'Manifest-driven deploy env',
           'siteBuild.quality.title': 'Качество и эксплуатация',
           'siteBuild.quality.body': 'Проверки качества, security gates и SSR smoke.',
           'siteBuild.next.title': 'Что дальше',
@@ -70,6 +71,7 @@ describe('SiteCaseStudyPageComponent', () => {
     expect(pageText).toContain('Litestar, SQLAlchemy, Dishka и PostgreSQL.');
     expect(pageText).toContain('Angular hybrid SSR/CSR и backend-driven i18n.');
     expect(pageText).toContain('Privacy-safe аналитика');
+    expect(pageText).toContain('Manifest-driven deploy env');
     expect(sourceLink).not.toBeNull();
     expect(sourceLink?.getAttribute('rel')).toBe('noopener noreferrer');
   });

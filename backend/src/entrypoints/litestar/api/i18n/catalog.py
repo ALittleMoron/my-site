@@ -324,6 +324,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Privacy-safe аналитика считает просмотры и реакции без cookies, raw IP, "
             "user-agent или сторонних идентификаторов."
         ),
+        "siteBuild.decision.deployManifest": (
+            "Первый production deploy остаётся server-build: GitHub Actions рендерит "
+            "runtime .env из manifest, синхронизирует код, а Docker Compose управляет "
+            "health checks, TLS-сертификатами и blue/green переключением."
+        ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
             "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
@@ -929,6 +934,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe analytics count views and reactions without cookies, raw IPs, "
             "user-agent strings, or third-party identifiers."
+        ),
+        "siteBuild.decision.deployManifest": (
+            "The first production deploy stays server-built: GitHub Actions renders the "
+            "runtime .env from a manifest, syncs source code, and Docker Compose owns "
+            "health checks, TLS certificates, and blue/green switching."
         ),
         "siteBuild.quality.title": "Quality and operations",
         "siteBuild.quality.body": (

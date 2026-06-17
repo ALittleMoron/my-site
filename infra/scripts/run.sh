@@ -76,8 +76,6 @@ require_environment() {
         "LE_EMAIL"
         "SSL_CERT"
         "SSL_KEY"
-        "DOCKER_REGISTRY"
-        "DOCKER_USERNAME"
         "IMAGE_TAG"
     )
 
@@ -129,6 +127,10 @@ compose_up_wait() {
 run_backend_init() {
     docker compose build backend-init
     docker compose run --rm backend-init
+}
+
+sync_certificates() {
+    docker compose run --rm cert-sync
 }
 
 render_and_reload_nginx() {
@@ -224,6 +226,7 @@ export ACTIVE_FRONTEND_SLOT="frontend-${target_slot}"
 compose_up_wait postgres valkey minio databasus
 run_backend_init
 compose_up_wait "$ACTIVE_BACKEND_SLOT" "$ACTIVE_FRONTEND_SLOT" taskiq-worker taskiq-scheduler
+sync_certificates
 switch_nginx
 smoke_edge
 save_active_slot "$target_slot"

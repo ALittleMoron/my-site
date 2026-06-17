@@ -74,13 +74,17 @@ mkcert -install
 mkcert \
   <your-domain> \
   s3.<your-domain>
-mv <your-domain>.pem ./infra/nginx/certs/
-mv <your-domain>-key.pem ./infra/nginx/certs/
+mkdir -p ./infra/nginx/certs
+mv <your-domain>.pem ./infra/nginx/certs/fullchain.pem
+mv <your-domain>-key.pem ./infra/nginx/certs/privkey.pem
 ```
 
 The nginx container runs as UID/GID `101:101`, so mounted certificate and private key files
 must be readable by that user. For local `mkcert` files, `chmod 644 ./infra/nginx/certs/<file>`
 is enough; for production, prefer owner/group permissions that grant read access only to nginx.
+Production Let's Encrypt issuance and renewal are handled through the compose-backed
+`make certbot-issue`, `make certbot-renew`, and `make certbot-sync` targets. See
+[Production Deploy](../docs/production-deploy.md).
 
 4. Update `.env` with your values.
 
