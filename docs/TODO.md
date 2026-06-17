@@ -68,8 +68,8 @@
 - [x] Add privacy-safe article analytics (public views, engaged views, anonymous reactions).
 - [x] Move tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
-  - [ ] Choose hosting
-  - [ ] Wire up missing secrets
+  - [x] Choose hosting
+  - [ ] Wire up missing secrets and vars
   - [ ] Run deployment strictly from the GitHub workflow
   - [ ] After first deployment, remove the unpublished-contract compatibility rule from `AGENTS.md`
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
