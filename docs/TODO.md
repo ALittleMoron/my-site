@@ -287,7 +287,7 @@
     - [x] Preserve section -> subsection -> grade grouping
     - [x] Grid/table layout
     - [x] Search that hides empty sections and subsections
-    - [x] Moderator/admin published/all toggle using admin `onlyPublished`
+    - [x] Public matrix always uses public endpoints; admin `onlyPublished` filters live in the admin matrix workspace
     - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
     - [x] Markdown rendering for answers and resource context
     - [x] Code highlighting for Markdown code blocks
@@ -309,7 +309,7 @@
     - [x] Logout button
     - [x] navbar profile info
     - [x] Current user loading from `/api/account/base`
-    - [x] Moderator/admin controls based on account role, with backend guards still enforced
+    - [x] Moderator/admin panel access based on account role, with backend guards still enforced
   - [x] Deployment and legacy cleanup
     - [x] Build Angular in CI/CD
     - [x] Build Angular as an independent frontend Docker image
@@ -323,13 +323,13 @@
 - [x] Replace static sitemap page with content-driven localized sitemap links.
 - [x] Add and edit competency matrix questions
   - [x] Search through existing external resources
-  - [x] Edit mode for a specific question (button and form on question detail)
-  - [x] Button and form for adding a question to a matrix section
+  - [x] Edit mode for a specific question in the admin matrix workspace
+  - [x] Button and form for adding a question to a matrix section in the admin matrix workspace
   - [x] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
 - [x] "404" page
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [x] Security audit
-  - [x] Moderators and admins can edit, add, and delete matrix questions
+  - [x] Moderators and admins can edit, add, and delete matrix questions in the admin panel
 
 ### Articles
 
@@ -341,7 +341,7 @@
   - [x] Read article list, detail, tree, tag list, and tag search results in the selected content language
   - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
   - [x] Keep `tagSlug` as one language-neutral English filter
-  - [x] Add content authoring UI controls for editing RU and EN article and tag fields in one form
+  - [x] Add admin-panel content authoring UI controls for editing RU and EN article and tag fields in one form
   - [x] Update the init Alembic migration because the service is not deployed yet
   - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
   - [x] Cover backend and frontend behaviour with focused tests
@@ -353,7 +353,7 @@
 - [x] Filters by tags
 - [x] Filters by publish date range
 - [x] Search articles by title and content
-- [x] Authoring-first public articles release
+- [x] Article authoring and public articles release
   - [x] Use articles as the authored content model and keep save/publish independent from SEO warnings
   - [x] Add nullable RU/EN SEO metadata, cover URL, and cover alt fields to article storage/API
   - [x] Require an explicit `metadata` request object while allowing individual metadata fields to be `null`
@@ -373,7 +373,8 @@
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
-- [ ] Add admin/moderator content workspace for articles with richer filters, views, queues, and quick actions.
+- [x] Add admin/moderator content workspace for articles with admin filters, create/edit modal, tag management, and publish/delete quick actions.
+- [ ] Add article editorial queues and richer workspace views.
 - [ ] Add content health checks for articles: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
 - [ ] Add article revision history with diff and restore.
 - [ ] Add autosave / local draft recovery for article editing.
@@ -391,7 +392,7 @@
   - [ ] Spell checking for Russian and English.
   - [ ] Check and warn when a wiki-link references unpublished material.
 - [x] Security audit
-  - [x] Moderators and admins can edit, add, and delete articles
+  - [x] Moderators and admins can edit, add, and delete articles in the admin panel
   - [x] Regular users cannot view hidden articles
 
 ### Knowledge database
@@ -560,9 +561,9 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Make the logout control borderless: red text only, separated from the username by a vertical `|` delimiter.
   - [x] Prevent the English `Logout` button text from wrapping as `Log` / `out`.
   - [x] Make the add competency matrix question button green and move it inline after search.
-  - [x] Make `published only` toggles green when enabled in both competency matrix and articles views.
+  - [x] Make `published only` toggles green when enabled in admin matrix and article workspaces.
   - [x] Tone down admin action buttons for matrix questions and articles: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
-  - [x] Make `add article` and `statistics` buttons green.
+  - [x] Make the admin `add article` button and public article `statistics` button green.
   - [x] Add a simple animation for showing and hiding statistics.
   - [x] Hide folders and filters when opening an article detail page.
   - [x] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.

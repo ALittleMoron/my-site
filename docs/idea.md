@@ -33,7 +33,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 1. **Competency matrix** — localized interactive Q&A with topic filtering, detailed answers, and linked resources
 2. **Articles** — localized content, folders, tags, search/filtering, and publish visibility
-3. **Integrated content authoring mode** — content management through the main frontend, no separate back-office UI
+3. **Protected admin content workspace** — content management lives in `/admin-panel`, while public article and matrix pages stay read-only
 4. **Privacy-safe article analytics** — public counters and anonymous reactions
 
 ## Highlights

@@ -11,7 +11,14 @@ export const adminPanelRoutes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'matrix-questions',
+        redirectTo: 'articles',
+      },
+      {
+        path: 'articles',
+        loadComponent: () =>
+          import('./pages/articles-page/articles-page.component').then(
+            (m) => m.AdminArticlesPageComponent,
+          ),
       },
       {
         path: 'matrix-questions',

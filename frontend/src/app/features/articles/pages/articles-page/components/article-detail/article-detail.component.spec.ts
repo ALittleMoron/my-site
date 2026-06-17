@@ -72,26 +72,7 @@ describe('ArticleDetailComponent', () => {
     expect(text).toContain('5');
   });
 
-  it('shows SEO analysis for admins on published and draft articles', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.detectChanges();
-
-    let text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('SEO-анализ');
-    expect(text).toContain('/articles/typed-articles');
-
-    fixture.componentRef.setInput('article', {
-      ...fixture.componentInstance.article()!,
-      publishStatus: 'Draft',
-      publishedAt: null,
-    });
-    fixture.detectChanges();
-
-    text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('SEO-анализ');
-  });
-
-  it('hides SEO analysis from users without content access readers', () => {
+  it('does not render authoring SEO analysis on the public article detail', () => {
     const text = fixture.nativeElement.textContent as string;
 
     expect(text).not.toContain('SEO-анализ');
@@ -115,8 +96,7 @@ describe('ArticleDetailComponent', () => {
     expect(link.textContent).toBe('matrix question');
   });
 
-  it('renders admin action buttons with green edit and outline-only destructive/publish actions', () => {
-    fixture.componentRef.setInput('canManageContent', true);
+  it('does not render admin actions or draft badges on public article details', () => {
     fixture.componentRef.setInput('article', {
       ...fixture.componentInstance.article()!,
       publishStatus: 'Draft',
@@ -124,29 +104,12 @@ describe('ArticleDetailComponent', () => {
     });
     fixture.detectChanges();
 
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ) as HTMLButtonElement[];
-    const editButton = buttons.find((button) => button.textContent?.trim() === 'Редактировать');
-    const publishButton = buttons.find((button) => button.textContent?.trim() === 'Опубликовать');
-    const deleteButton = buttons.find((button) => button.textContent?.trim() === 'Удалить');
+    const text = fixture.nativeElement.textContent as string;
 
-    expect(editButton?.classList).toContain('btn-success');
-    expect(publishButton?.classList).toContain('btn-outline-success');
-    expect(publishButton?.classList).not.toContain('btn-success');
-    expect(deleteButton?.classList).toContain('btn-outline-danger');
-    expect(deleteButton?.classList).not.toContain('btn-danger');
-  });
-
-  it('renders unpublish as an outline-only warning action', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.detectChanges();
-
-    const unpublishButton = (
-      Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[]
-    ).find((button) => button.textContent?.includes('Снять с публикации'));
-
-    expect(unpublishButton?.classList).toContain('btn-outline-warning');
-    expect(unpublishButton?.classList).not.toContain('btn-warning');
+    expect(text).not.toContain('Редактировать');
+    expect(text).not.toContain('Опубликовать');
+    expect(text).not.toContain('Снять с публикации');
+    expect(text).not.toContain('Удалить');
+    expect(text).not.toContain('Черновик');
   });
 });

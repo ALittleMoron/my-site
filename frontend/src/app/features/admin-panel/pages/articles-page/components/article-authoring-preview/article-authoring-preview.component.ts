@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
-import { ArticleTag } from '../../../../models/articles.model';
+import { ArticleTag } from '../../../../models/article-workspace.model';
 
 @Component({
-  selector: 'app-article-authoring-preview',
+  selector: 'app-admin-article-authoring-preview',
   standalone: true,
   imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,

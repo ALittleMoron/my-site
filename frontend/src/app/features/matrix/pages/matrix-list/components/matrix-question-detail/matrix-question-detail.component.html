@@ -43,27 +43,5 @@
         }
       </ul>
     }
-
-    @if (canManageContent()) {
-      <hr />
-      <div class="d-flex gap-2 mt-2">
-        <button type="button" class="btn btn-sm btn-success" (click)="edit.emit()">
-          {{ 'shared.edit' | t }}
-        </button>
-        @if (isDraft()) {
-          <button type="button" class="btn btn-sm btn-outline-success" (click)="publish.emit()">
-            {{ 'shared.publish' | t }}
-          </button>
-        }
-        @if (isPublished()) {
-          <button type="button" class="btn btn-sm btn-outline-warning" (click)="unpublish.emit()">
-            {{ 'shared.unpublish' | t }}
-          </button>
-        }
-        <button type="button" class="btn btn-sm btn-outline-danger" (click)="delete.emit()">
-          {{ 'shared.delete' | t }}
-        </button>
-      </div>
-    }
   </div>
 }

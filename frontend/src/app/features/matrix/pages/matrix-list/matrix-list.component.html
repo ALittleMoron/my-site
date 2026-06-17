@@ -12,11 +12,7 @@
 
   <app-matrix-filter-bar
     [search]="search()"
-    [onlyPublished]="onlyPublished()"
-    [canManageContent]="canManageContent()"
     (searchChange)="setSearch($event)"
-    (onlyPublishedChange)="setOnlyPublished($event)"
-    (addQuestion)="openCreate()"
     (suggestQuestion)="openQuestionSuggestion()"
   />
 
@@ -62,13 +58,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">
-            @if (detailMode() === 'create') {
-              {{ 'matrix.modal.create' | t }}
-            } @else if (detailMode() === 'edit') {
-              {{ 'matrix.modal.edit' | t }}
-            } @else {
-              {{ 'matrix.modal.detail' | t }}
-            }
+            {{ 'matrix.modal.detail' | t }}
           </h5>
           <button
             type="button"
@@ -78,28 +68,13 @@
           ></button>
         </div>
         <div class="modal-body">
-          @if (detailMode() === 'view') {
-            @if (language()) {
-              <app-matrix-question-detail
-                [question]="selectedQuestion()"
-                [loading]="detailLoading()"
-                [error]="detailError()"
-                [canManageContent]="canManageContent()"
-                [language]="language()!"
-                [questionPageLink]="selectedQuestionPageLink()"
-                (edit)="openEdit()"
-                (publish)="onPublish(selectedQuestion()!.id)"
-                (unpublish)="onUnpublish(selectedQuestion()!.id)"
-                (delete)="onDelete(selectedQuestion()!.id)"
-              />
-            }
-          } @else {
-            <app-matrix-question-form
-              [question]="detailMode() === 'edit' ? selectedQuestion() : null"
-              [searchResults]="resourceSearchResults()"
-              (resourceSearch)="searchResources($event)"
-              (questionSave)="saveQuestion($event)"
-              (formCancel)="detailMode() === 'edit' ? detailMode.set('view') : closeDetail()"
+          @if (language()) {
+            <app-matrix-question-detail
+              [question]="selectedQuestion()"
+              [loading]="detailLoading()"
+              [error]="detailError()"
+              [language]="language()!"
+              [questionPageLink]="selectedQuestionPageLink()"
             />
           }
         </div>

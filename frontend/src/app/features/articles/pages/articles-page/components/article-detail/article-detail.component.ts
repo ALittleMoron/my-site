@@ -5,12 +5,7 @@ import { ApiError } from '../../../../../../core/models/api-error.model';
 import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
-import {
-  ARTICLE_SEO_ANALYSIS_RULES,
-  analyzeArticleSeo,
-} from '../../../../models/article-seo-analysis';
 import { ArticleDetail, ArticleReactionKind } from '../../../../models/articles.model';
-import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
 
 interface ReactionOption {
   kind: ArticleReactionKind;
@@ -29,12 +24,7 @@ const REACTION_OPTIONS: ReactionOption[] = [
 @Component({
   selector: 'app-article-detail',
   standalone: true,
-  imports: [
-    LoadingSpinnerComponent,
-    ErrorMessageComponent,
-    TranslatePipe,
-    ArticleSeoPanelComponent,
-  ],
+  imports: [LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-detail.component.html',
 })
@@ -46,15 +36,10 @@ export class ArticleDetailComponent {
   readonly error = input<ApiError | null>(null);
   readonly dateLocale = input.required<string>();
   readonly language = input.required<LanguageCode>();
-  readonly canManageContent = input(false);
   readonly selectedReaction = input<ArticleReactionKind | null>(null);
   readonly reactionLoading = input(false);
 
   readonly back = output<void>();
-  readonly edit = output<void>();
-  readonly publish = output<void>();
-  readonly unpublish = output<void>();
-  readonly delete = output<void>();
   readonly tagSelected = output<string>();
   readonly reactionSelected = output<ArticleReactionKind>();
 
@@ -66,35 +51,7 @@ export class ArticleDetailComponent {
     return this.wikiLinkRenderer.render(article.content, this.language());
   });
 
-  readonly isDraft = computed(() => this.article()?.publishStatus === 'Draft');
   readonly isPublished = computed(() => this.article()?.publishStatus === 'Published');
-  readonly seoAnalysis = computed(() => {
-    const article = this.article();
-    if (!article) return null;
-    return analyzeArticleSeo({
-      input: {
-        slug: article.slug,
-        title: article.title,
-        content: article.content,
-        seoTitle:
-          this.language() === 'ru' ? article.metadata.seoTitleRu : article.metadata.seoTitleEn,
-        seoDescription:
-          this.language() === 'ru'
-            ? article.metadata.seoDescriptionRu
-            : article.metadata.seoDescriptionEn,
-        coverImageUrl: article.metadata.coverImageUrl,
-        coverImageAlt:
-          this.language() === 'ru'
-            ? article.metadata.coverImageAltRu
-            : article.metadata.coverImageAltEn,
-        missingWikiLinkTargets: [],
-        folder: article.folder,
-        tags: article.tags,
-        language: this.language(),
-      },
-      rules: ARTICLE_SEO_ANALYSIS_RULES,
-    });
-  });
 
   articleDate(): string {
     const article = this.article();

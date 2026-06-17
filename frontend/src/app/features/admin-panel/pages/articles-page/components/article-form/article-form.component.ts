@@ -30,8 +30,8 @@ import {
   ArticleMetadata,
   ArticlePayload,
   ArticleTag,
-} from '../../../../models/articles.model';
-import { ArticlesService } from '../../../../services/articles.service';
+} from '../../../../models/article-workspace.model';
+import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { slugify } from '../../../../../../shared/utils/slugify';
 import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/article-authoring-preview.component';
 import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
@@ -88,7 +88,7 @@ interface TagDraft extends ArticleTag {
 }
 
 @Component({
-  selector: 'app-article-form',
+  selector: 'app-admin-article-form',
   standalone: true,
   imports: [
     ReactiveFormsModule,
@@ -101,7 +101,7 @@ interface TagDraft extends ArticleTag {
   templateUrl: './article-form.component.html',
 })
 export class ArticleFormComponent implements OnInit {
-  private readonly articlesService = inject(ArticlesService);
+  private readonly articlesService = inject(ArticleWorkspaceService);
   private readonly mediaUpload = inject(MediaUploadService);
   private readonly wikiLinkTargetsService = inject(WikiLinkTargetsService);
   private readonly i18n = inject(I18nService);
@@ -313,7 +313,7 @@ export class ArticleFormComponent implements OnInit {
     this.tagError.set(null);
     const value = this.newTagForm.getRawValue();
     this.articlesService
-      .createAdminTag(
+      .createTag(
         {
           slug: value.slug,
           translations: {
@@ -338,7 +338,7 @@ export class ArticleFormComponent implements OnInit {
   updateTag(tag: TagDraft): void {
     this.tagError.set(null);
     this.articlesService
-      .updateAdminTag(
+      .updateTag(
         tag.id,
         {
           slug: tag.draftSlug,
@@ -366,7 +366,7 @@ export class ArticleFormComponent implements OnInit {
   deleteTag(tagId: number): void {
     this.tagError.set(null);
     this.articlesService
-      .deleteAdminTag(tagId)
+      .deleteTag(tagId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -385,7 +385,7 @@ export class ArticleFormComponent implements OnInit {
   restoreTag(tagId: number): void {
     this.tagError.set(null);
     this.articlesService
-      .restoreAdminTag(tagId)
+      .restoreTag(tagId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -427,7 +427,7 @@ export class ArticleFormComponent implements OnInit {
 
   private loadTags(): void {
     this.articlesService
-      .getAdminTags(true, this.currentLanguage())
+      .getTags(true, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags.map(toDraft).sort(compareTags)),

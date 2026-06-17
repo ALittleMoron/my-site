@@ -14,7 +14,6 @@ export class ArticleListComponent {
   readonly page = input.required<number>();
   readonly totalPages = input.required<number>();
   readonly dateLocale = input.required<string>();
-  readonly canManageContent = input(false);
 
   readonly articleSelected = output<string>();
   readonly tagSelected = output<string>();

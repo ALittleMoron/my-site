@@ -79,8 +79,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.sidePanel.close": "Скрыть разделы",
         "adminPanel.sections": "Разделы",
         "adminPanel.emptySections": "Разделы админки появятся позже.",
+        "adminPanel.section.articles": "Статьи",
         "adminPanel.section.matrixQuestions": "Вопросы матрицы",
         "adminPanel.section.matrixQuestionQueue": "Очередь вопросов матрицы",
+        "adminArticlesWorkspace.loadError": "Не удалось загрузить статьи.",
+        "adminArticlesWorkspace.confirmDelete": "Удалить статью?",
         "adminMatrixWorkspace.title": "Вопросы матрицы",
         "adminMatrixWorkspace.tabs": "Вкладки вопросов матрицы",
         "adminMatrixWorkspace.listTab": "Список",
@@ -299,8 +302,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.frontendTitle": "Frontend",
         "siteBuild.architecture.frontendBody": (
-            "Angular hybrid SSR/CSR и backend-driven i18n дают SEO для публичных страниц "
-            "и интерактивный интерфейс для матрицы, статей и authoring-сценариев."
+            "Angular hybrid SSR/CSR и backend-driven i18n дают SEO для публичных страниц, "
+            "а read-only матрица и статьи отделены от protected admin workspaces для authoring."
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
@@ -688,8 +691,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.sidePanel.close": "Hide sections",
         "adminPanel.sections": "Sections",
         "adminPanel.emptySections": "Admin sections will appear later.",
+        "adminPanel.section.articles": "Articles",
         "adminPanel.section.matrixQuestions": "Matrix questions",
         "adminPanel.section.matrixQuestionQueue": "Matrix question queue",
+        "adminArticlesWorkspace.loadError": "Failed to load articles.",
+        "adminArticlesWorkspace.confirmDelete": "Delete article?",
         "adminMatrixWorkspace.title": "Matrix questions",
         "adminMatrixWorkspace.tabs": "Matrix question tabs",
         "adminMatrixWorkspace.listTab": "List",
@@ -901,8 +907,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.frontendTitle": "Frontend",
         "siteBuild.architecture.frontendBody": (
-            "Angular hybrid SSR/CSR and backend-driven i18n provide SEO for public pages "
-            "and an interactive interface for the matrix, articles, and authoring workflows."
+            "Angular hybrid SSR/CSR and backend-driven i18n provide SEO for public pages, "
+            "while read-only matrix and article surfaces stay separate from protected admin "
+            "authoring workspaces."
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (

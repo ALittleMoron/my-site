@@ -4,7 +4,7 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ArticleSeoAnalysis, ArticleSeoStatus } from '../../../../models/article-seo-analysis';
 
 @Component({
-  selector: 'app-article-seo-panel',
+  selector: 'app-admin-article-seo-panel',
   standalone: true,
   imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,

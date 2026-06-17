@@ -10,12 +10,8 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 })
 export class MatrixFilterBarComponent {
   readonly search = input.required<string>();
-  readonly onlyPublished = input.required<boolean>();
-  readonly canManageContent = input(false);
 
   readonly searchChange = output<string>();
-  readonly onlyPublishedChange = output<boolean>();
-  readonly addQuestion = output<void>();
   readonly suggestQuestion = output<void>();
 
   onSearchInput(event: Event): void {
@@ -25,9 +21,5 @@ export class MatrixFilterBarComponent {
 
   clearSearch(): void {
     this.searchChange.emit('');
-  }
-
-  toggleOnlyPublished(): void {
-    this.onlyPublishedChange.emit(!this.onlyPublished());
   }
 }

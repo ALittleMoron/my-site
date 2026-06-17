@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
 import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
@@ -21,14 +21,8 @@ export class MatrixQuestionDetailComponent {
   readonly question = input<MatrixQuestionDetail | null>(null);
   readonly loading = input<boolean>(false);
   readonly error = input<ApiError | null>(null);
-  readonly canManageContent = input.required<boolean>();
   readonly language = input.required<LanguageCode>();
   readonly questionPageLink = input<string | null>(null);
-
-  readonly publish = output<void>();
-  readonly unpublish = output<void>();
-  readonly delete = output<void>();
-  readonly edit = output<void>();
 
   readonly answerHtml = computed<string>(() => {
     const q = this.question();
@@ -42,7 +36,6 @@ export class MatrixQuestionDetailComponent {
     return this.wikiLinkRenderer.render(q.interviewExpectedAnswer, this.language());
   });
 
-  readonly isDraft = computed<boolean>(() => this.question()?.publishStatus === 'Draft');
   readonly isPublished = computed<boolean>(() => this.question()?.publishStatus === 'Published');
   readonly canOpenQuestionPage = computed<boolean>(
     () => this.questionPageLink() !== null && this.isPublished(),

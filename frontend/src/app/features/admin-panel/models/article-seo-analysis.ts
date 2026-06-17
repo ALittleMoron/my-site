@@ -1,6 +1,6 @@
 import { LanguageCode } from '../../../core/i18n/i18n.model';
 import { replaceWikiLinksWithPlainText } from '../../../core/wiki-links/wiki-links';
-import { ArticleTag } from './articles.model';
+import { ArticleTag } from './article-workspace.model';
 
 export type ArticleSeoStatus = 'good' | 'warning' | 'missing';
 

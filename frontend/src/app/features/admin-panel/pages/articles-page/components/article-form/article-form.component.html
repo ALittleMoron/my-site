@@ -183,9 +183,9 @@
     <label class="form-check-label" for="articlePublishStatus">{{ 'shared.draft' | t }}</label>
   </div>
 
-  <app-article-seo-panel [analysis]="seoAnalysis()" />
+  <app-admin-article-seo-panel [analysis]="seoAnalysis()" />
 
-  <app-article-authoring-preview
+  <app-admin-article-authoring-preview
     [title]="activePreview().title"
     [content]="activePreview().content"
     [tags]="activePreview().tags"

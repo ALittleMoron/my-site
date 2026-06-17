@@ -6,17 +6,17 @@ import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-
 import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
 import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
-import { ArticlesService } from '../../../../services/articles.service';
+import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { ArticleFormComponent } from './article-form.component';
 
 describe('ArticleFormComponent', () => {
   let fixture: ComponentFixture<ArticleFormComponent>;
   let articlesService: {
-    getAdminTags: jest.Mock;
-    createAdminTag: jest.Mock;
-    updateAdminTag: jest.Mock;
-    deleteAdminTag: jest.Mock;
-    restoreAdminTag: jest.Mock;
+    getTags: jest.Mock;
+    createTag: jest.Mock;
+    updateTag: jest.Mock;
+    deleteTag: jest.Mock;
+    restoreTag: jest.Mock;
   };
   let mediaUpload: { uploadMediaFile: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
@@ -36,7 +36,7 @@ describe('ArticleFormComponent', () => {
       ),
     };
     articlesService = {
-      getAdminTags: jest.fn().mockReturnValue(
+      getTags: jest.fn().mockReturnValue(
         of([
           tag({ id: 1, name: 'Python', slug: 'python', deletedAt: null }),
           tag({
@@ -47,20 +47,20 @@ describe('ArticleFormComponent', () => {
           }),
         ]),
       ),
-      createAdminTag: jest
+      createTag: jest
         .fn()
         .mockReturnValue(of(tag({ id: 3, name: 'Backend', slug: 'backend', deletedAt: null }))),
-      updateAdminTag: jest
+      updateTag: jest
         .fn()
         .mockReturnValue(of(tag({ id: 1, name: 'Py', slug: 'py', deletedAt: null }))),
-      deleteAdminTag: jest.fn().mockReturnValue(of(undefined)),
-      restoreAdminTag: jest.fn().mockReturnValue(of(undefined)),
+      deleteTag: jest.fn().mockReturnValue(of(undefined)),
+      restoreTag: jest.fn().mockReturnValue(of(undefined)),
     };
 
     await TestBed.configureTestingModule({
       imports: [ArticleFormComponent],
       providers: [
-        { provide: ArticlesService, useValue: articlesService },
+        { provide: ArticleWorkspaceService, useValue: articlesService },
         { provide: MediaUploadService, useValue: mediaUpload },
         { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
         provideI18nTesting(),

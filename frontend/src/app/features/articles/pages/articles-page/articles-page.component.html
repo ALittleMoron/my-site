@@ -64,10 +64,7 @@
       </div>
     </div>
     <div class="d-flex gap-2 flex-wrap justify-content-end" data-testid="articles-header-controls">
-      @if (canManageContent()) {
-        <button type="button" class="btn btn-success" (click)="openCreate()">
-          {{ 'articles.add' | t }}
-        </button>
+      @if (canViewStats()) {
         <button type="button" class="btn btn-outline-success" (click)="toggleStats()">
           {{ 'articles.stats.button' | t }}
         </button>
@@ -75,7 +72,7 @@
     </div>
   </div>
 
-  @if (canManageContent() && statsVisible()) {
+  @if (canViewStats() && statsVisible()) {
     <section
       class="articles-stats-panel-shell"
       data-testid="articles-stats-panel-shell"
@@ -230,23 +227,6 @@
               </button>
             }
           </div>
-
-          @if (canManageContent()) {
-            <div class="form-check form-switch mb-0">
-              <input
-                id="articlesOnlyPublishedToggle"
-                class="form-check-input"
-                [class.text-bg-success]="onlyPublished()"
-                type="checkbox"
-                role="switch"
-                [checked]="onlyPublished()"
-                (change)="setOnlyPublished(!onlyPublished())"
-              />
-              <label class="form-check-label" for="articlesOnlyPublishedToggle">
-                {{ 'articles.filters.onlyPublished' | t }}
-              </label>
-            </div>
-          }
         </div>
       }
 
@@ -257,14 +237,9 @@
           [error]="detailError()"
           [dateLocale]="dateLocale()"
           [language]="language()"
-          [canManageContent]="canManageContent()"
           [selectedReaction]="selectedReaction()"
           [reactionLoading]="reactionLoading()"
           (back)="backToList()"
-          (edit)="openEdit()"
-          (publish)="publishArticle()"
-          (unpublish)="unpublishArticle()"
-          (delete)="deleteArticle()"
           (tagSelected)="selectTag($event)"
           (reactionSelected)="selectReaction($event)"
         />
@@ -284,7 +259,6 @@
           [page]="page()"
           [totalPages]="articles()!.totalPages"
           [dateLocale]="dateLocale()"
-          [canManageContent]="canManageContent()"
           (articleSelected)="openArticle($event)"
           (tagSelected)="selectTag($event)"
           (pageChange)="changePage($event)"
@@ -293,48 +267,3 @@
     </section>
   </div>
 </main>
-
-@if (formVisible()) {
-  <div
-    class="modal d-block modal-backdrop-overlay"
-    role="dialog"
-    aria-modal="true"
-    [attr.aria-label]="'articles.formAria' | t"
-    (click)="closeForm()"
-    (keyup.escape)="closeForm()"
-    tabindex="0"
-  >
-    <div
-      class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
-      role="document"
-      tabindex="-1"
-      (click)="$event.stopPropagation()"
-      (keydown)="$event.stopPropagation()"
-    >
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="h5 modal-title">
-            {{ (formArticle() ? 'articles.modal.edit' : 'articles.modal.create') | t }}
-          </h2>
-          <button
-            type="button"
-            class="btn-close"
-            [attr.aria-label]="'shared.close' | t"
-            (click)="closeForm()"
-          ></button>
-        </div>
-        <div class="modal-body">
-          @if (formError()) {
-            <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
-          }
-          <app-article-form
-            [article]="formArticle()"
-            (articleSave)="saveArticle($event)"
-            (formCancel)="closeForm()"
-            (tagsChanged)="loadTags()"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
-}

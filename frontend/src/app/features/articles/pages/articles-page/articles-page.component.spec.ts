@@ -192,14 +192,14 @@ describe('ArticlesPageComponent', () => {
     );
   });
 
-  it('does not track public view for content manager detail reads', () => {
+  it('loads public article detail for content managers on public routes', () => {
     canManageContent = true;
 
     fixture.detectChanges();
 
-    expect(articlesService.getAdminArticle).toHaveBeenCalledWith('typed-articles', false, 'ru');
-    expect(articlesService.getPublicArticle).not.toHaveBeenCalled();
-    expect(articlesService.trackPublicView).not.toHaveBeenCalled();
+    expect(articlesService.getPublicArticle).toHaveBeenCalledWith('typed-articles', 'ru');
+    expect(articlesService.getAdminArticle).not.toHaveBeenCalled();
+    expect(articlesService.trackPublicView).toHaveBeenCalledWith('typed-articles', 'ru');
   });
 
   it('does not track public view for draft detail reads', () => {
@@ -301,24 +301,27 @@ describe('ArticlesPageComponent', () => {
     });
   });
 
-  it('uses admin list API with visibility filter for content managers', () => {
+  it('uses public list API for content managers on public routes', () => {
     canManageContent = true;
     paramMap.next(convertToParamMap({}));
     queryParamMap.next(convertToParamMap({ tag: 'python' }));
 
     fixture.detectChanges();
 
-    expect(articlesService.getAdminArticles).toHaveBeenCalledWith({
+    expect(articlesService.getPublicArticles).toHaveBeenCalledWith({
       page: 1,
       pageSize: 10,
       language: 'ru',
-      onlyPublished: true,
       tagSlug: 'python',
       publishedFrom: null,
       publishedTo: null,
       searchQuery: null,
     });
-    expect(articlesService.getPublicArticles).not.toHaveBeenCalled();
+    expect(articlesService.getAdminArticles).not.toHaveBeenCalled();
+    expect(articlesService.getPublicTags).toHaveBeenCalledWith('ru');
+    expect(articlesService.getAdminTags).not.toHaveBeenCalled();
+    expect(articlesService.getPublicTree).toHaveBeenCalledWith('ru');
+    expect(articlesService.getAdminTree).not.toHaveBeenCalled();
   });
 
   it('renders the side panel toggle to the left of the title as an icon-only control with localized state labels', () => {
@@ -416,6 +419,18 @@ describe('ArticlesPageComponent', () => {
     expect(shell.classList).toContain('articles-stats-panel-shell');
   });
 
+  it('keeps article authoring controls out of public article routes for content managers', () => {
+    canManageContent = true;
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).not.toContain('Добавить статью');
+    expect(fixture.nativeElement.querySelector('app-article-form')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#articlesOnlyPublishedToggle')).toBeNull();
+  });
+
   it('reloads localized content when language changes', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
@@ -439,14 +454,12 @@ describe('ArticlesPageComponent', () => {
     });
   });
 
-  it('makes the published only switch green when enabled for content managers', () => {
+  it('does not render the published-only switch for content managers on public routes', () => {
     canManageContent = true;
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('#articlesOnlyPublishedToggle')?.classList,
-    ).toContain('text-bg-success');
+    expect(fixture.nativeElement.querySelector('#articlesOnlyPublishedToggle')).toBeNull();
   });
 
   it('applies list filters through query params without fetching on input changes', () => {

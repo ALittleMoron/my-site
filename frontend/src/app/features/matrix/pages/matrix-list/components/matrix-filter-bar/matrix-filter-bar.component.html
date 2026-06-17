@@ -35,16 +35,6 @@
           </button>
         }
       </div>
-      @if (canManageContent()) {
-        <button
-          type="button"
-          class="btn btn-success flex-shrink-0"
-          data-testid="matrix-filter-add-question"
-          (click)="addQuestion.emit()"
-        >
-          {{ 'matrix.addQuestion' | t }}
-        </button>
-      }
       <button
         type="button"
         class="btn btn-outline-secondary flex-shrink-0"
@@ -54,24 +44,5 @@
         {{ 'matrix.suggestQuestion' | t }}
       </button>
     </div>
-
-    @if (canManageContent()) {
-      <div class="col-auto d-flex justify-content-end align-items-center gap-3 mt-2 mt-md-0">
-        <div class="form-check form-switch mb-0">
-          <input
-            class="form-check-input"
-            [class.text-bg-success]="onlyPublished()"
-            type="checkbox"
-            role="switch"
-            id="onlyPublishedToggle"
-            [checked]="onlyPublished()"
-            (change)="toggleOnlyPublished()"
-          />
-          <label class="form-check-label" for="onlyPublishedToggle">
-            {{ 'matrix.filter.onlyPublished' | t }}
-          </label>
-        </div>
-      </div>
-    }
   </div>
 </div>

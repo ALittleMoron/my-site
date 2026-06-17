@@ -20,8 +20,6 @@ describe('MatrixFilterBarComponent', () => {
 
     fixture = TestBed.createComponent(MatrixFilterBarComponent);
     fixture.componentRef.setInput('search', '');
-    fixture.componentRef.setInput('onlyPublished', true);
-    fixture.componentRef.setInput('canManageContent', false);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
   });
@@ -63,42 +61,12 @@ describe('MatrixFilterBarComponent', () => {
     expect(emitted).toEqual(['']);
   });
 
-  it('should hide published/all switch for users without content access users', () => {
+  it('does not render the admin published/all switch', () => {
     expect(el.querySelector('#onlyPublishedToggle')).toBeNull();
   });
 
-  it('should show published/all switch for content managers', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.detectChanges();
-    expect(el.querySelector('#onlyPublishedToggle')).not.toBeNull();
-  });
-
-  it('should show a green add question button immediately after search for content managers', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.detectChanges();
-
-    const searchArea = el.querySelector('[data-testid="matrix-filter-search"]');
-    const addButton = el.querySelector<HTMLButtonElement>(
-      '[data-testid="matrix-filter-add-question"]',
-    );
-
-    expect(addButton).toBeTruthy();
-    expect(addButton?.classList).toContain('btn-success');
-    expect(addButton?.classList).not.toContain('mt-2');
-    expect(addButton?.textContent?.trim()).toBe('Добавить вопрос');
-    expect(searchArea?.parentElement?.classList).toContain('flex-md-row');
-    expect(searchArea?.nextElementSibling).toBe(addButton);
-  });
-
-  it('should emit addQuestion when the add question button is clicked', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.detectChanges();
-    const emitted: void[] = [];
-    fixture.componentInstance.addQuestion.subscribe(() => emitted.push(undefined));
-
-    el.querySelector<HTMLButtonElement>('[data-testid="matrix-filter-add-question"]')!.click();
-
-    expect(emitted.length).toBe(1);
+  it('does not render the admin add-question button', () => {
+    expect(el.querySelector('[data-testid="matrix-filter-add-question"]')).toBeNull();
   });
 
   it('should emit suggestQuestion when the suggestion button is clicked', () => {
@@ -120,14 +88,6 @@ describe('MatrixFilterBarComponent', () => {
     expect(button?.classList).not.toContain('btn-success');
     expect(button?.classList).not.toContain('btn-primary');
     expect(button?.classList).not.toContain('btn-outline-primary');
-  });
-
-  it('should make the published only switch green when enabled', () => {
-    fixture.componentRef.setInput('canManageContent', true);
-    fixture.componentRef.setInput('onlyPublished', true);
-    fixture.detectChanges();
-
-    expect(el.querySelector('#onlyPublishedToggle')?.classList).toContain('text-bg-success');
   });
 
   it('should not render matrix layout switcher controls', () => {

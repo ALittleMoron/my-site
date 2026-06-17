@@ -1,16 +1,14 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
 import { provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { MatrixListComponent } from './matrix-list.component';
 import { MatrixService } from '../../services/matrix.service';
-import { AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import {
   MatrixQuestionDetail,
   MatrixQuestionList,
-  MatrixResource,
   MatrixSheet,
 } from '../../models/matrix-question.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
@@ -19,26 +17,6 @@ const mockSheets: MatrixSheet[] = [
   { key: 'javascript', name: 'JavaScript' },
   { key: 'python', name: 'Python' },
 ];
-
-const pythonResource: MatrixResource = {
-  id: 1,
-  name: 'Python',
-  url: 'https://docs.python.org',
-  translations: {
-    ru: { name: 'Python' },
-    en: { name: 'Python' },
-  },
-};
-
-const pydanticResource: MatrixResource = {
-  id: 2,
-  name: 'Pydantic',
-  url: 'https://docs.pydantic.dev',
-  translations: {
-    ru: { name: 'Pydantic' },
-    en: { name: 'Pydantic' },
-  },
-};
 
 const mockQuestionList: MatrixQuestionList = {
   sheetKey: 'javascript',
@@ -170,10 +148,6 @@ describe('MatrixListComponent', () => {
     deleteAdminQuestion: jest.Mock;
     suggestQuestion: jest.Mock;
   };
-  let authService: {
-    canManageContent: ReturnType<typeof import('@angular/core').computed<boolean>>;
-  };
-  let canManageContentSignal: ReturnType<typeof import('@angular/core').signal<boolean>>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
@@ -193,12 +167,6 @@ describe('MatrixListComponent', () => {
       suggestQuestion: jest.fn().mockReturnValue(of(undefined)),
     };
 
-    const { signal, computed } = await import('@angular/core');
-
-    canManageContentSignal = signal(false);
-    authService = {
-      canManageContent: computed(() => canManageContentSignal()),
-    };
     notificationService = {
       success: jest.fn(),
       error: jest.fn(),
@@ -208,7 +176,6 @@ describe('MatrixListComponent', () => {
       imports: [MatrixListComponent],
       providers: [
         { provide: MatrixService, useValue: matrixService },
-        { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
         provideRouter([]),
@@ -263,13 +230,11 @@ describe('MatrixListComponent', () => {
     expect(component.selectedSheet()).toEqual(mockSheets[0]);
   });
 
-  it('should load admin sheets for content managers', () => {
-    canManageContentSignal.set(true);
-
+  it('does not call admin sheet endpoints on public routes', () => {
     fixture.detectChanges();
 
-    expect(matrixService.getAdminSheets).toHaveBeenCalledWith('ru');
-    expect(matrixService.getPublicSheets).not.toHaveBeenCalled();
+    expect(matrixService.getPublicSheets).toHaveBeenCalledWith('ru');
+    expect(matrixService.getAdminSheets).not.toHaveBeenCalled();
   });
 
   it('should restore sheet from localStorage on init', () => {
@@ -309,7 +274,6 @@ describe('MatrixListComponent', () => {
       imports: [MatrixListComponent],
       providers: [
         { provide: MatrixService, useValue: matrixService },
-        { provide: AuthService, useValue: authService },
         { provide: NotificationService, useValue: notificationService },
         {
           provide: DOCUMENT,
@@ -355,27 +319,23 @@ describe('MatrixListComponent', () => {
     expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).toBeNull();
   });
 
-  it('should show published/all filter for content managers', () => {
-    canManageContentSignal.set(true);
+  it('does not show published/all filter on public routes', () => {
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).toBeNull();
   });
 
-  it('opens the create question form from the filter bar add question button', () => {
-    canManageContentSignal.set(true);
+  it('does not render the admin add-question form on public routes', () => {
     fixture.detectChanges();
 
     const addButton = fixture.nativeElement.querySelector(
       '[data-testid="matrix-filter-add-question"]',
-    ) as HTMLButtonElement;
-    addButton.click();
-    fixture.detectChanges();
+    );
 
-    expect(fixture.nativeElement.querySelector('app-matrix-question-form')).toBeTruthy();
+    expect(addButton).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-matrix-question-form')).toBeNull();
   });
 
   it('does not render the old page-level add question button above filters', () => {
-    canManageContentSignal.set(true);
     fixture.detectChanges();
 
     const pageHeaderAddButton = fixture.nativeElement.querySelector(
@@ -463,14 +423,13 @@ describe('MatrixListComponent', () => {
     expect(fixture.nativeElement.querySelector('app-matrix-question-detail')).toBeTruthy();
   });
 
-  it('should load admin question detail for content managers', () => {
-    canManageContentSignal.set(true);
+  it('does not call admin question detail endpoints on public routes', () => {
     fixture.detectChanges();
 
     component.openDetail(1);
 
-    expect(matrixService.getAdminQuestion).toHaveBeenCalledWith(1, true, 'ru');
-    expect(matrixService.getPublicQuestion).not.toHaveBeenCalled();
+    expect(matrixService.getPublicQuestion).toHaveBeenCalledWith(1, 'ru');
+    expect(matrixService.getAdminQuestion).not.toHaveBeenCalled();
   });
 
   it('should render link from detail modal to public question page', () => {
@@ -516,53 +475,6 @@ describe('MatrixListComponent', () => {
     expect(modal.querySelector('app-loading-spinner')).toBeFalsy();
   });
 
-  it('uses latest resource search response when requests resolve out of order', fakeAsync(() => {
-    const first = new Subject<MatrixResource[]>();
-    const second = new Subject<MatrixResource[]>();
-    matrixService.searchAdminResources
-      .mockReturnValueOnce(first.asObservable())
-      .mockReturnValueOnce(second.asObservable());
-
-    fixture.detectChanges();
-    component.searchResources('py');
-    tick(250);
-    component.searchResources('pyd');
-    tick(250);
-
-    second.next([pydanticResource]);
-    second.complete();
-    first.next([pythonResource]);
-    first.complete();
-
-    expect(component.resourceSearchResults()).toEqual([pydanticResource]);
-  }));
-
-  it('searches resources with trimmed query', fakeAsync(() => {
-    fixture.detectChanges();
-
-    component.searchResources('  pydantic  ');
-    tick(250);
-
-    expect(matrixService.searchAdminResources).toHaveBeenCalledWith('pydantic', 10, 'ru');
-  }));
-
-  it('clears resource search results when latest search fails', fakeAsync(() => {
-    matrixService.searchAdminResources
-      .mockReturnValueOnce(of([pythonResource]))
-      .mockReturnValueOnce(throwError(() => mockError));
-
-    fixture.detectChanges();
-    component.searchResources('python');
-    tick(250);
-    expect(component.resourceSearchResults()).toEqual([pythonResource]);
-
-    component.searchResources('pydantic');
-    tick(250);
-
-    expect(component.resourceSearchResults()).toEqual([]);
-    expect(component.error()).toBeNull();
-  }));
-
   it('should hide modal and clear question when closeDetail is called', () => {
     fixture.detectChanges();
     component.openDetail(1);
@@ -571,64 +483,6 @@ describe('MatrixListComponent', () => {
     component.closeDetail();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeFalsy();
-  });
-
-  it('should call publishQuestion and reload questions on onPublish', () => {
-    canManageContentSignal.set(true);
-    fixture.detectChanges();
-    component.selectedSheetKey.set('javascript');
-    component.onPublish(1);
-    expect(matrixService.publishAdminQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
-    expect(notificationService.success).toHaveBeenCalledWith('Вопрос опубликован.');
-  });
-
-  it('should call unpublishQuestion and reload questions on onUnpublish', () => {
-    canManageContentSignal.set(true);
-    fixture.detectChanges();
-    component.selectedSheetKey.set('javascript');
-    component.onUnpublish(1);
-    expect(matrixService.unpublishAdminQuestion).toHaveBeenCalledWith(1);
-    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
-    expect(notificationService.success).toHaveBeenCalledWith('Вопрос снят с публикации.');
-  });
-
-  it('should call deleteQuestion, close detail, and reload questions on onDelete', () => {
-    canManageContentSignal.set(true);
-    fixture.detectChanges();
-    component.openDetail(1);
-    fixture.detectChanges();
-    component.selectedSheetKey.set('javascript');
-    component.onDelete(1);
-    fixture.detectChanges();
-    expect(matrixService.deleteAdminQuestion).toHaveBeenCalledWith(1);
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeFalsy();
-    expect(matrixService.getAdminQuestions).toHaveBeenLastCalledWith('javascript', true, 'ru');
-    expect(notificationService.success).toHaveBeenCalledWith('Вопрос удалён.');
-  });
-
-  it('should set error when publishQuestion fails', () => {
-    fixture.detectChanges();
-    matrixService.publishAdminQuestion.mockReturnValue(throwError(() => mockError));
-    component.onPublish(1);
-    expect(component.error()).toEqual(mockError);
-    expect(notificationService.error).toHaveBeenCalledWith('Не удалось опубликовать вопрос.');
-  });
-
-  it('should set error when unpublishQuestion fails', () => {
-    fixture.detectChanges();
-    matrixService.unpublishAdminQuestion.mockReturnValue(throwError(() => mockError));
-    component.onUnpublish(1);
-    expect(component.error()).toEqual(mockError);
-    expect(notificationService.error).toHaveBeenCalledWith('Не удалось снять вопрос с публикации.');
-  });
-
-  it('should set error when deleteQuestion fails', () => {
-    fixture.detectChanges();
-    matrixService.deleteAdminQuestion.mockReturnValue(throwError(() => mockError));
-    component.onDelete(1);
-    expect(component.error()).toEqual(mockError);
-    expect(notificationService.error).toHaveBeenCalledWith('Не удалось удалить вопрос.');
   });
 
   it('shows quota notification when anonymous suggestion is rate limited', () => {

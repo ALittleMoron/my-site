@@ -86,29 +86,6 @@ describe('ArticlesService', () => {
     expect(firstSeoTitle).toBe('SEO Typed articles');
   });
 
-  it('loads admin articles with explicit visibility', () => {
-    service
-      .getAdminArticles({
-        page: 1,
-        pageSize: 10,
-        language: 'en',
-        onlyPublished: false,
-        tagSlug: null,
-        publishedFrom: null,
-        publishedTo: null,
-        searchQuery: null,
-      })
-      .subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles'));
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('page')).toBe('1');
-    expect(req.request.params.get('pageSize')).toBe('10');
-    expect(req.request.params.get('language')).toBe('en');
-    expect(req.request.params.get('onlyPublished')).toBe('false');
-    req.flush({ totalCount: 0, totalPages: 0, articles: [] });
-  });
-
   it('loads public detail without visibility query params', () => {
     let content: string | undefined;
     let fireCount: number | undefined;
@@ -154,19 +131,6 @@ describe('ArticlesService', () => {
     expect(content).toBe('# Markdown');
     expect(fireCount).toBe(2);
     expect(seoDescription).toBe('SEO описание');
-  });
-
-  it('loads admin detail with explicit visibility', () => {
-    service.getAdminArticle('typed-articles', false, 'en').subscribe();
-
-    const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/detail/typed-articles'),
-    );
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('language')).toBe('en');
-    expect(req.request.params.get('onlyPublished')).toBe('false');
-    req.flush(articleDetailDto());
-    flushPublicStats(httpMock, [{ articleId: ARTICLE_ID, viewCount: 0 }]);
   });
 
   it('tracks engagement and reactions', () => {
@@ -279,92 +243,6 @@ describe('ArticlesService', () => {
     expect(firstFolder).toBe('Engineering');
   });
 
-  it('loads admin tree from the admin surface', () => {
-    service.getAdminTree('en').subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tree'));
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('language')).toBe('en');
-    req.flush({ folders: [] });
-  });
-
-  it('creates and updates articles with editable slug and tags', () => {
-    service
-      .createAdminArticle(
-        {
-          slug: 'new-article',
-          publishStatus: 'Draft',
-          tagIds: [1],
-          metadata: metadataDto(),
-          translations: {
-            ru: { title: 'Новая статья', content: 'Содержимое', folder: 'Входящие' },
-            en: { title: 'New article', content: 'Content', folder: 'Inbox' },
-          },
-        },
-        'ru',
-      )
-      .subscribe();
-
-    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles'));
-    expect(createReq.request.method).toBe('POST');
-    expect(createReq.request.params.get('language')).toBe('ru');
-    expect(createReq.request.body.slug).toBe('new-article');
-    expect(createReq.request.body.tagIds).toEqual([1]);
-    expect(createReq.request.body.metadata.seoTitleEn).toBe('SEO Typed articles');
-    expect(createReq.request.body.translations.en.title).toBe('New article');
-    createReq.flush(articleDetailDto());
-    flushPublicStats(httpMock, [{ articleId: ARTICLE_ID, viewCount: 0 }]);
-
-    service
-      .updateAdminArticle(
-        'old-article',
-        {
-          slug: 'new-article',
-          publishStatus: 'Published',
-          tagIds: [1, 2],
-          metadata: {
-            ...metadataDto(),
-            seoTitleEn: null,
-            coverImageUrl: null,
-          },
-          translations: {
-            ru: { title: 'Новая статья', content: 'Содержимое', folder: 'Входящие' },
-            en: { title: 'New article', content: 'Content', folder: 'Inbox' },
-          },
-        },
-        'en',
-      )
-      .subscribe();
-
-    const updateReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/detail/old-article'),
-    );
-    expect(updateReq.request.method).toBe('PUT');
-    expect(updateReq.request.params.get('language')).toBe('en');
-    expect(updateReq.request.body.publishStatus).toBe('Published');
-    expect(updateReq.request.body.tagIds).toEqual([1, 2]);
-    expect(updateReq.request.body.metadata.seoTitleEn).toBeNull();
-    expect(updateReq.request.body.metadata.coverImageUrl).toBeNull();
-    updateReq.flush(articleDetailDto());
-    flushPublicStats(httpMock, [{ articleId: ARTICLE_ID, viewCount: 0 }]);
-  });
-
-  it('calls article publish endpoints', () => {
-    service.publishAdminArticle('draft-article').subscribe();
-    const publishReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/detail/draft-article/set-published'),
-    );
-    expect(publishReq.request.method).toBe('POST');
-    publishReq.flush(null);
-
-    service.unpublishAdminArticle('published-article').subscribe();
-    const unpublishReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/detail/published-article/set-draft'),
-    );
-    expect(unpublishReq.request.method).toBe('POST');
-    unpublishReq.flush(null);
-  });
-
   it('loads public tags without deleted-content controls', () => {
     service.getPublicTags('en').subscribe();
 
@@ -373,94 +251,7 @@ describe('ArticlesService', () => {
     expect(listReq.request.params.get('language')).toBe('en');
     listReq.flush({ tags: [] });
   });
-
-  it('manages tags through admin endpoints', () => {
-    service.getAdminTags(true, 'en').subscribe();
-    const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags'));
-    expect(listReq.request.params.get('includeDeleted')).toBe('true');
-    expect(listReq.request.params.get('language')).toBe('en');
-    listReq.flush({ tags: [] });
-
-    service
-      .createAdminTag(
-        {
-          slug: 'backend',
-          translations: { ru: { name: 'Бэкенд' }, en: { name: 'Backend' } },
-        },
-        'ru',
-      )
-      .subscribe();
-    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags'));
-    expect(createReq.request.method).toBe('POST');
-    expect(createReq.request.params.get('language')).toBe('ru');
-    expect(createReq.request.body).toEqual({
-      slug: 'backend',
-      translations: { ru: { name: 'Бэкенд' }, en: { name: 'Backend' } },
-    });
-    createReq.flush({
-      id: 1,
-      name: 'Backend',
-      slug: 'backend',
-      deletedAt: null,
-      translations: { ru: { name: 'Бэкенд' }, en: { name: 'Backend' } },
-    });
-
-    service
-      .updateAdminTag(
-        1,
-        {
-          slug: 'architecture',
-          translations: { ru: { name: 'Архитектура' }, en: { name: 'Architecture' } },
-        },
-        'en',
-      )
-      .subscribe();
-    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags/1'));
-    expect(updateReq.request.method).toBe('PUT');
-    expect(updateReq.request.params.get('language')).toBe('en');
-    updateReq.flush({
-      id: 1,
-      name: 'Architecture',
-      slug: 'architecture',
-      deletedAt: null,
-      translations: { ru: { name: 'Архитектура' }, en: { name: 'Architecture' } },
-    });
-
-    service.deleteAdminTag(1).subscribe();
-    const deleteReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags/1'));
-    expect(deleteReq.request.method).toBe('DELETE');
-    deleteReq.flush(null);
-
-    service.restoreAdminTag(1).subscribe();
-    const restoreReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/tags/1/restore'),
-    );
-    expect(restoreReq.request.method).toBe('POST');
-    restoreReq.flush(null);
-  });
 });
-
-function articleDetailDto(): unknown {
-  return {
-    id: ARTICLE_ID,
-    title: 'New article',
-    content: 'Content',
-    slug: 'new-article',
-    folder: 'Inbox',
-    authorUsername: 'admin',
-    publishedAt: null,
-    publishStatus: 'Draft',
-    createdAt: '2026-01-01T03:04:05+00:00',
-    updatedAt: '2026-01-03T03:04:05+00:00',
-    excerpt: 'Content',
-    metadata: metadataDto(),
-    tags: [],
-    translations: {
-      ru: { title: 'Новая статья', content: 'Содержимое', folder: 'Входящие' },
-      en: { title: 'New article', content: 'Content', folder: 'Inbox' },
-    },
-  };
-}
 
 function metadataDto(): {
   seoTitleRu: string | null;

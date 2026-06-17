@@ -45,6 +45,27 @@ describe('ArticleListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('42 просмотров');
   });
 
+  it('does not render draft badges on the public article list', () => {
+    fixture.componentRef.setInput('articles', [
+      {
+        id: '00000000-0000-0000-0000-000000000002',
+        title: 'Draft article',
+        slug: 'draft-article',
+        folder: 'Engineering',
+        authorUsername: 'admin',
+        publishedAt: null,
+        publishStatus: 'Draft',
+        updatedAt: '2026-01-03T03:04:05+00:00',
+        excerpt: 'Draft excerpt',
+        viewCount: 0,
+        tags: [],
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Черновик');
+  });
+
   it('emits article and tag selections', () => {
     const articleSelected = jest.fn();
     const tagSelected = jest.fn();

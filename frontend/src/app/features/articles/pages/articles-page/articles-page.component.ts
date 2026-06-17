@@ -28,7 +28,6 @@ import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/l
 import {
   ArticleDetail,
   ArticleList,
-  ArticlePayload,
   ArticleReactionKind,
   ArticleStats,
   ArticleTag,
@@ -36,7 +35,6 @@ import {
 } from '../../models/articles.model';
 import { ArticlesService } from '../../services/articles.service';
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
-import { ArticleFormComponent } from './components/article-form/article-form.component';
 import { LocalizedDatePickerComponent } from './components/localized-date-picker/localized-date-picker.component';
 import { ArticleListComponent } from './components/article-list/article-list.component';
 import { ArticlesStatsPanelComponent } from './components/articles-stats-panel/articles-stats-panel.component';
@@ -61,7 +59,6 @@ interface EngagedViewState {
     LoadingSpinnerComponent,
     TranslatePipe,
     ArticleDetailComponent,
-    ArticleFormComponent,
     LocalizedDatePickerComponent,
     ArticleListComponent,
     ArticlesStatsPanelComponent,
@@ -89,9 +86,8 @@ export class ArticlesPageComponent implements OnInit {
   private readonly trackedEngagedViewSlugs = new Set<string>();
   private languageReloadInitialized = false;
 
-  readonly canManageContent = this.authService.canManageContent;
+  readonly canViewStats = this.authService.canManageContent;
   readonly sidePanelOpen = signal(this.readSidePanelPreference());
-  readonly onlyPublished = signal(true);
   readonly currentSlug = signal<string | null>(null);
   readonly activeTagSlug = signal<string | null>(null);
   readonly searchQuery = signal('');
@@ -111,9 +107,6 @@ export class ArticlesPageComponent implements OnInit {
   readonly detailLoading = signal(false);
   readonly detailError = signal<ApiError | null>(null);
 
-  readonly formVisible = signal(false);
-  readonly formArticle = signal<ArticleDetail | null>(null);
-  readonly formError = signal<ApiError | null>(null);
   readonly statsVisible = signal(false);
   readonly stats = signal<ArticleStats | null>(null);
   readonly statsLoading = signal(false);
@@ -232,16 +225,6 @@ export class ArticlesPageComponent implements OnInit {
     this.storage()?.setItem(SIDE_PANEL_STORAGE_KEY, 'false');
   }
 
-  setOnlyPublished(value: boolean): void {
-    this.onlyPublished.set(value);
-    const slug = this.currentSlug();
-    if (slug) {
-      this.loadDetail(slug);
-    } else {
-      this.loadArticles();
-    }
-  }
-
   openArticle(slug: string): void {
     this.router.navigate(this.localizedArticleCommands(slug), {
       queryParams: this.buildListQueryParams({ page: this.page() }),
@@ -299,102 +282,6 @@ export class ArticlesPageComponent implements OnInit {
     this.setPublishedFrom('');
     this.setPublishedTo('');
     this.router.navigate(this.localizedListCommands(), { queryParams: { page: 1 } });
-  }
-
-  openCreate(): void {
-    this.formArticle.set(null);
-    this.formError.set(null);
-    this.formVisible.set(true);
-  }
-
-  openEdit(): void {
-    this.formArticle.set(this.selectedArticle());
-    this.formError.set(null);
-    this.formVisible.set(true);
-  }
-
-  closeForm(): void {
-    this.formVisible.set(false);
-    this.formArticle.set(null);
-    this.formError.set(null);
-  }
-
-  saveArticle(payload: ArticlePayload): void {
-    const editing = this.formArticle();
-    const language = this.currentLanguage();
-    const request = editing
-      ? this.articlesService.updateAdminArticle(editing.slug, payload, language)
-      : this.articlesService.createAdminArticle(payload, language);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (article) => {
-        this.notifications.success(this.i18n.translate('articles.notify.saved'));
-        this.closeForm();
-        this.loadTags();
-        this.loadTree();
-        this.router.navigate(this.localizedArticleCommands(article.slug));
-      },
-      error: (err: ApiError) => {
-        this.formError.set(err);
-        this.notifications.error(this.i18n.translate('articles.notify.saveError'));
-      },
-    });
-  }
-
-  publishArticle(): void {
-    const article = this.selectedArticle();
-    if (!article) return;
-    this.articlesService
-      .publishAdminArticle(article.slug)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.notifications.success(this.i18n.translate('articles.notify.published'));
-          this.loadTree();
-          this.loadDetail(article.slug);
-        },
-        error: (err: ApiError) => {
-          this.detailError.set(err);
-          this.notifications.error(this.i18n.translate('articles.notify.publishError'));
-        },
-      });
-  }
-
-  unpublishArticle(): void {
-    const article = this.selectedArticle();
-    if (!article) return;
-    this.articlesService
-      .unpublishAdminArticle(article.slug)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.notifications.success(this.i18n.translate('articles.notify.unpublished'));
-          this.loadTree();
-          this.loadDetail(article.slug);
-        },
-        error: (err: ApiError) => {
-          this.detailError.set(err);
-          this.notifications.error(this.i18n.translate('articles.notify.unpublishError'));
-        },
-      });
-  }
-
-  deleteArticle(): void {
-    const article = this.selectedArticle();
-    if (!article) return;
-    this.articlesService
-      .deleteAdminArticle(article.slug)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.notifications.success(this.i18n.translate('articles.notify.deleted'));
-          this.loadTree();
-          this.router.navigate(this.localizedListCommands());
-        },
-        error: (err: ApiError) => {
-          this.detailError.set(err);
-          this.notifications.error(this.i18n.translate('articles.notify.deleteError'));
-        },
-      });
   }
 
   selectReaction(kind: ArticleReactionKind): void {
@@ -501,67 +388,67 @@ export class ArticlesPageComponent implements OnInit {
       publishedTo: this.publishedTo() || null,
       searchQuery: this.normalizedSearchQuery(),
     };
-    const request = this.canManageContent()
-      ? this.articlesService.getAdminArticles({ ...params, onlyPublished: this.onlyPublished() })
-      : this.articlesService.getPublicArticles(params);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (articles) => {
-        this.articles.set(articles);
-        this.listLoading.set(false);
-      },
-      error: (err: ApiError) => {
-        this.listError.set(err);
-        this.listLoading.set(false);
-      },
-    });
+    this.articlesService
+      .getPublicArticles(params)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (articles) => {
+          this.articles.set(articles);
+          this.listLoading.set(false);
+        },
+        error: (err: ApiError) => {
+          this.listError.set(err);
+          this.listLoading.set(false);
+        },
+      });
   }
 
   loadDetail(slug: string): void {
     this.clearEngagedViewTimer();
     this.detailLoading.set(true);
     this.detailError.set(null);
-    const request = this.canManageContent()
-      ? this.articlesService.getAdminArticle(slug, false, this.currentLanguage())
-      : this.articlesService.getPublicArticle(slug, this.currentLanguage());
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (article) => {
-        this.selectedArticle.set(article);
-        this.setArticleDetailSeo(article);
-        this.selectedReaction.set(this.readSelectedReaction(article.slug));
-        this.trackPublicView(article);
-        this.scheduleEngagedView(article);
-        this.detailLoading.set(false);
-      },
-      error: (err: ApiError) => {
-        this.detailError.set(err);
-        this.detailLoading.set(false);
-      },
-    });
+    this.articlesService
+      .getPublicArticle(slug, this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (article) => {
+          this.selectedArticle.set(article);
+          this.setArticleDetailSeo(article);
+          this.selectedReaction.set(this.readSelectedReaction(article.slug));
+          this.trackPublicView(article);
+          this.scheduleEngagedView(article);
+          this.detailLoading.set(false);
+        },
+        error: (err: ApiError) => {
+          this.detailError.set(err);
+          this.detailLoading.set(false);
+        },
+      });
   }
 
   loadTags(): void {
-    const request = this.canManageContent()
-      ? this.articlesService.getAdminTags(false, this.currentLanguage())
-      : this.articlesService.getPublicTags(this.currentLanguage());
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (tags) => this.tags.set(tags),
-      error: () => this.tags.set([]),
-    });
+    this.articlesService
+      .getPublicTags(this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tags) => this.tags.set(tags),
+        error: () => this.tags.set([]),
+      });
   }
 
   loadTree(): void {
-    const request = this.canManageContent()
-      ? this.articlesService.getAdminTree(this.currentLanguage())
-      : this.articlesService.getPublicTree(this.currentLanguage());
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (tree) => this.tree.set(tree),
-      error: () => this.tree.set({ folders: [] }),
-    });
+    this.articlesService
+      .getPublicTree(this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tree) => this.tree.set(tree),
+        error: () => this.tree.set({ folders: [] }),
+      });
   }
 
   private scheduleEngagedView(article: ArticleDetail): void {
     if (!this.isBrowser) return;
-    if (this.canManageContent() || article.publishStatus !== 'Published') return;
+    if (article.publishStatus !== 'Published') return;
     if (this.trackedEngagedViewSlugs.has(article.slug)) return;
     this.engagedViewState = {
       slug: article.slug,
@@ -600,7 +487,7 @@ export class ArticlesPageComponent implements OnInit {
 
   private trackPublicView(article: ArticleDetail): void {
     if (!this.isBrowser) return;
-    if (this.canManageContent() || article.publishStatus !== 'Published') return;
+    if (article.publishStatus !== 'Published') return;
     this.articlesService
       .trackPublicView(article.slug, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
