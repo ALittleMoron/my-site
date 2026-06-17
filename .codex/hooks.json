@@ -2,11 +2,12 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|MultiEdit|apply_patch",
         "hooks": [
           {
             "type": "command",
-            "command": "'/Users/d.lunev/code/repositories/my-site/.codex/hooks/lint-on-edit.sh'"
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/format-on-edit.sh\"",
+            "timeout": 30
           }
         ]
       }

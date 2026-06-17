@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { EmptyStateComponent } from '../../../../../../shared/ui/empty-state/empty-state.component';
@@ -39,6 +39,11 @@ export class ArticlesStatsPanelComponent {
   readonly dateToChange = output<string>();
   readonly refresh = output<void>();
   readonly exportCsv = output<void>();
+  readonly refreshAttempted = signal(false);
+  readonly dateFromInvalid = computed(
+    () => this.refreshAttempted() && this.dateFrom().trim() === '',
+  );
+  readonly dateToInvalid = computed(() => this.refreshAttempted() && this.dateTo().trim() === '');
 
   setDateFrom(value: string): void {
     this.dateFromChange.emit(value);
@@ -46,5 +51,11 @@ export class ArticlesStatsPanelComponent {
 
   setDateTo(value: string): void {
     this.dateToChange.emit(value);
+  }
+
+  requestRefresh(): void {
+    this.refreshAttempted.set(true);
+    if (this.dateFromInvalid() || this.dateToInvalid()) return;
+    this.refresh.emit();
   }
 }

@@ -66,6 +66,9 @@ case "$action" in
     vulture)
         run_vulture
         ;;
+    format)
+        run_fix
+        ;;
     fix)
         run_fix
         ;;

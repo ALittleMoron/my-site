@@ -68,6 +68,26 @@ describe('ArticlesStatsPanelComponent', () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it('marks empty required dates invalid and does not refresh statistics', () => {
+    fixture.componentRef.setInput('dateFrom', '');
+    const refresh = jest.fn();
+    fixture.componentInstance.refresh.subscribe(refresh);
+    fixture.detectChanges();
+
+    fixture.debugElement
+      .query(By.css('[data-testid="articles-stats-refresh"]'))
+      .nativeElement.click();
+    fixture.detectChanges();
+
+    const dateFromInput = fixture.debugElement.query(By.css('#articlesStatsDateFrom'))
+      .nativeElement as HTMLInputElement;
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(dateFromInput.required).toBe(true);
+    expect(dateFromInput.getAttribute('aria-invalid')).toBe('true');
+    expect(dateFromInput.classList).toContain('is-invalid');
+  });
+
   it('renders localized date pickers with calendar buttons', () => {
     fixture.detectChanges();
 

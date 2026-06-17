@@ -41,6 +41,8 @@ export class LocalizedDatePickerComponent {
   readonly value = input.required<string>();
   readonly dateLocale = input.required<string>();
   readonly placeholder = input.required<string>();
+  readonly required = input.required<boolean>();
+  readonly invalid = input.required<boolean>();
   readonly openCalendarLabel = input.required<string>();
   readonly previousMonthLabel = input.required<string>();
   readonly nextMonthLabel = input.required<string>();

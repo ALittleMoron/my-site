@@ -3,12 +3,15 @@
     <div>
       <label class="form-label small text-body-secondary d-block mb-1" for="articlesStatsDateFrom">
         {{ 'articles.stats.from' | t }}
+        <span class="text-danger" aria-hidden="true">*</span>
       </label>
       <app-localized-date-picker
         inputId="articlesStatsDateFrom"
         [value]="dateFrom()"
         [dateLocale]="dateLocale()"
         [placeholder]="datePlaceholder()"
+        [required]="true"
+        [invalid]="dateFromInvalid()"
         [openCalendarLabel]="openCalendarLabel()"
         [previousMonthLabel]="previousMonthLabel()"
         [nextMonthLabel]="nextMonthLabel()"
@@ -21,12 +24,15 @@
     <div>
       <label class="form-label small text-body-secondary d-block mb-1" for="articlesStatsDateTo">
         {{ 'articles.stats.to' | t }}
+        <span class="text-danger" aria-hidden="true">*</span>
       </label>
       <app-localized-date-picker
         inputId="articlesStatsDateTo"
         [value]="dateTo()"
         [dateLocale]="dateLocale()"
         [placeholder]="datePlaceholder()"
+        [required]="true"
+        [invalid]="dateToInvalid()"
         [openCalendarLabel]="openCalendarLabel()"
         [previousMonthLabel]="previousMonthLabel()"
         [nextMonthLabel]="nextMonthLabel()"
@@ -40,7 +46,7 @@
       type="button"
       class="btn btn-sm btn-outline-secondary"
       data-testid="articles-stats-refresh"
-      (click)="refresh.emit()"
+      (click)="requestRefresh()"
     >
       {{ 'shared.update' | t }}
     </button>
@@ -57,7 +63,7 @@
     <app-error-message
       [error]="error()!"
       [retryLabel]="'shared.retry' | t"
-      (retry)="refresh.emit()"
+      (retry)="requestRefresh()"
     />
   } @else if (stats()) {
     <div class="d-flex flex-wrap gap-3 small text-body-secondary mb-3">
