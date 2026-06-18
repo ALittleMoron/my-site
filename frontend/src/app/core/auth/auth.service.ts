@@ -1,5 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, tap, switchMap, map } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiClient } from '../http/api-client.service';
 import { AuthTokenService } from './auth-token.service';
@@ -26,6 +36,7 @@ export class AuthService {
   private readonly apiClient = inject(ApiClient);
   private readonly tokenService = inject(AuthTokenService);
   private readonly session = inject(AuthSessionService);
+  private currentUserLoad$: Observable<void> | null = null;
 
   readonly currentUser = this.session.currentUser;
   readonly isAdmin = this.session.isAdmin;
@@ -34,7 +45,9 @@ export class AuthService {
 
   constructor() {
     if (this.tokenService.token()) {
-      this.loadCurrentUser().pipe(takeUntilDestroyed()).subscribe();
+      this.ensureCurrentUserLoaded()
+        .pipe(takeUntilDestroyed())
+        .subscribe({ error: () => undefined });
     }
   }
 
@@ -59,6 +72,26 @@ export class AuthService {
   clearLocalSession(): void {
     this.tokenService.clearToken();
     this.session.clear();
+  }
+
+  ensureCurrentUserLoaded(): Observable<void> {
+    if (this.currentUser() !== null || !this.tokenService.token()) {
+      return of(void 0);
+    }
+    if (this.currentUserLoad$ !== null) {
+      return this.currentUserLoad$;
+    }
+    this.currentUserLoad$ = this.loadCurrentUser().pipe(
+      catchError((error: unknown) => {
+        this.clearLocalSession();
+        return throwError(() => error);
+      }),
+      finalize(() => {
+        this.currentUserLoad$ = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    return this.currentUserLoad$;
   }
 
   loadCurrentUser(): Observable<void> {

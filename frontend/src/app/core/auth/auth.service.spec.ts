@@ -113,6 +113,74 @@ describe('AuthService', () => {
     });
   });
 
+  describe('ensureCurrentUserLoaded', () => {
+    it('does not request current account when there is no stored token', () => {
+      setup();
+      let completed = false;
+
+      service.ensureCurrentUserLoaded().subscribe(() => {
+        completed = true;
+      });
+
+      httpMock.expectNone((r) => r.url.includes('/api/account/base'));
+      expect(completed).toBe(true);
+      expect(service.currentUser()).toBeNull();
+    });
+
+    it('restores current user when a token is already stored', () => {
+      const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
+      setup(true);
+      let completed = false;
+
+      service.ensureCurrentUserLoaded().subscribe(() => {
+        completed = true;
+      });
+      const req = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
+      expect(req.request.method).toBe('GET');
+      req.flush(mockAccount);
+
+      expect(completed).toBe(true);
+      expect(service.currentUser()).toEqual(mockAccount);
+      expect(service.canManageContent()).toBe(true);
+    });
+
+    it('shares the in-flight account restore request', () => {
+      const mockAccount: AccountInfo = { username: 'admin', role: 'admin' };
+      setup(true);
+      let completions = 0;
+
+      service.ensureCurrentUserLoaded().subscribe(() => {
+        completions += 1;
+      });
+      service.ensureCurrentUserLoaded().subscribe(() => {
+        completions += 1;
+      });
+      const requests = httpMock.match((r) => r.url.includes('/api/account/base'));
+      expect(requests).toHaveLength(1);
+      requests[0].flush(mockAccount);
+
+      expect(completions).toBe(2);
+      expect(service.currentUser()).toEqual(mockAccount);
+    });
+
+    it('clears the local session when account restore fails', () => {
+      setup(true);
+      let failed = false;
+
+      service.ensureCurrentUserLoaded().subscribe({
+        error: () => {
+          failed = true;
+        },
+      });
+      const req = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
+      req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      expect(failed).toBe(true);
+      expect(tokenService.token()).toBeNull();
+      expect(service.currentUser()).toBeNull();
+    });
+  });
+
   describe('constructor with existing token', () => {
     it('calls loadCurrentUser when token exists', () => {
       setup(true);
