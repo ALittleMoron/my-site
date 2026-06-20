@@ -186,7 +186,8 @@ async def run_create_resume(session: AsyncSession) -> None:
     await ResumesDatabaseStorage(session=session).create_resume(
         params=ResumeCreateParams(
             title=NEW_RESUME_TITLE,
-            content=write_resume_content(summary_ru="Новое резюме для query-plan smoke."),
+            language=LanguageEnum.EN,
+            content=write_resume_content(summary="New resume for query-plan smoke."),
             author_username=SEED_USERNAME,
         ),
     )
@@ -197,7 +198,8 @@ async def run_update_resume(session: AsyncSession) -> None:
         resume=Resume(
             id=IntId(100),
             title="Query plan updated resume",
-            content=write_resume_content(summary_ru="Обновленное резюме для query-plan smoke."),
+            language=LanguageEnum.EN,
+            content=write_resume_content(summary="Updated resume for query-plan smoke."),
             author_username=SEED_USERNAME,
             created_at=SEED_NOW,
             updated_at=SEED_NOW,
@@ -605,14 +607,12 @@ def seed_tag(tag_id: IntId) -> Tag:
     return Tag(id=tag_id, name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
 
 
-def write_resume_content(*, summary_ru: str) -> ResumeContent:
+def write_resume_content(*, summary: str) -> ResumeContent:
     return ResumeContent(
         profile=ResumeProfile(
             full_name="Query Plan Candidate",
-            role_ru="Инженер",
-            role_en="Engineer",
-            location_ru="",
-            location_en="",
+            role="Engineer",
+            location="",
             email="",
             phone="",
             website_url="",
@@ -621,8 +621,7 @@ def write_resume_content(*, summary_ru: str) -> ResumeContent:
             telegram="",
         ),
         summary=ResumeSummary(
-            text_ru=summary_ru,
-            text_en="Resume content for query-plan smoke.",
+            text=summary,
         ),
         skills=[],
         experience=[],

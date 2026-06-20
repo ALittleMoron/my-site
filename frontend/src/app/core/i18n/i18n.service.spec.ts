@@ -148,6 +148,33 @@ describe('I18nService', () => {
     expect(localStorage.getItem('chosenLanguage')).toBe('ru');
   });
 
+  it('loads a non-current bundle for explicit translations without switching UI language', () => {
+    service.initialize().subscribe();
+    httpMock
+      .expectOne((req) => req.url.endsWith('/api/i18n/languages'))
+      .flush({
+        defaultLanguage: 'ru',
+        languages: [
+          { code: 'ru', label: 'Русский' },
+          { code: 'en', label: 'English' },
+        ],
+      });
+    httpMock
+      .expectOne((req) => req.url.endsWith('/api/i18n/bundles/ru'))
+      .flush({ language: 'ru', messages: { title: 'Заголовок' } });
+
+    service.ensureLanguageBundle('en').subscribe();
+    httpMock
+      .expectOne((req) => req.url.endsWith('/api/i18n/bundles/en'))
+      .flush({ language: 'en', messages: { title: 'Title' } });
+
+    expect(service.translateForLanguage('en', 'title')).toBe('Title');
+    expect(service.translate('title')).toBe('Заголовок');
+    expect(service.language()).toBe('ru');
+    expect(localStorage.getItem('chosenLanguage')).toBe('ru');
+    expect(document.documentElement.lang).toBe('ru');
+  });
+
   it('records startup error when languages cannot be loaded', () => {
     service.initialize().subscribe();
 

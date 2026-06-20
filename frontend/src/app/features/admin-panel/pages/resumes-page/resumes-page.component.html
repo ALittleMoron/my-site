@@ -44,6 +44,9 @@
                 <a class="fw-semibold" [routerLink]="['/admin-panel/workspace/resumes', resume.id]">
                   {{ resume.title }}
                 </a>
+                <span class="badge text-bg-secondary ms-2">
+                  {{ languageLabelKey(resume.language) | t }}
+                </span>
                 <span class="d-block small text-body-secondary">
                   {{ resume.content.profile.fullName.trim() || ('shared.notSet' | t) }}
                 </span>
@@ -138,6 +141,24 @@
                   formControlName="title"
                 />
               </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="resume-create-language">
+                  {{ 'adminResumeWorkspace.field.language' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <select
+                  id="resume-create-language"
+                  class="form-select"
+                  [class.is-invalid]="createFieldInvalid('language')"
+                  data-testid="resume-create-language"
+                  formControlName="language"
+                >
+                  <option value="">{{ 'shared.notSet' | t }}</option>
+                  @for (language of languageOptions; track language.value) {
+                    <option [value]="language.value">{{ language.labelKey | t }}</option>
+                  }
+                </select>
+              </div>
               <div class="col-12">
                 <label class="form-label" for="resume-create-full-name">
                   {{ 'adminResumeWorkspace.field.fullName' | t }}
@@ -151,58 +172,31 @@
                   formControlName="fullName"
                 />
               </div>
-              <div class="col-md-6">
-                <label class="form-label" for="resume-create-role-ru">
-                  {{ 'adminResumeWorkspace.field.roleRu' | t }}
+              <div class="col-12">
+                <label class="form-label" for="resume-create-role">
+                  {{ 'adminResumeWorkspace.field.role' | t }}
                   <span class="required-marker" aria-hidden="true">*</span>
                 </label>
                 <input
-                  id="resume-create-role-ru"
+                  id="resume-create-role"
                   class="form-control"
-                  [class.is-invalid]="createFieldInvalid('roleRu')"
-                  data-testid="resume-create-role-ru"
-                  formControlName="roleRu"
+                  [class.is-invalid]="createFieldInvalid('role')"
+                  data-testid="resume-create-role"
+                  formControlName="role"
                 />
               </div>
-              <div class="col-md-6">
-                <label class="form-label" for="resume-create-role-en">
-                  {{ 'adminResumeWorkspace.field.roleEn' | t }}
-                  <span class="required-marker" aria-hidden="true">*</span>
-                </label>
-                <input
-                  id="resume-create-role-en"
-                  class="form-control"
-                  [class.is-invalid]="createFieldInvalid('roleEn')"
-                  data-testid="resume-create-role-en"
-                  formControlName="roleEn"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="resume-create-summary-ru">
-                  {{ 'adminResumeWorkspace.field.summaryRu' | t }}
+              <div class="col-12">
+                <label class="form-label" for="resume-create-summary">
+                  {{ 'adminResumeWorkspace.field.summary' | t }}
                   <span class="required-marker" aria-hidden="true">*</span>
                 </label>
                 <textarea
-                  id="resume-create-summary-ru"
+                  id="resume-create-summary"
                   class="form-control"
-                  [class.is-invalid]="createFieldInvalid('summaryRu')"
+                  [class.is-invalid]="createFieldInvalid('summary')"
                   rows="4"
-                  data-testid="resume-create-summary-ru"
-                  formControlName="summaryRu"
-                ></textarea>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="resume-create-summary-en">
-                  {{ 'adminResumeWorkspace.field.summaryEn' | t }}
-                  <span class="required-marker" aria-hidden="true">*</span>
-                </label>
-                <textarea
-                  id="resume-create-summary-en"
-                  class="form-control"
-                  [class.is-invalid]="createFieldInvalid('summaryEn')"
-                  rows="4"
-                  data-testid="resume-create-summary-en"
-                  formControlName="summaryEn"
+                  data-testid="resume-create-summary"
+                  formControlName="summary"
                 ></textarea>
               </div>
             </div>

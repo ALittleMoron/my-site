@@ -49,6 +49,7 @@ describe('AdminResumesPageComponent', () => {
   it('loads the resume list', () => {
     expect(service.listResumes).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
     expect(fixture.nativeElement.textContent).toContain('Backend resume');
+    expect(fixture.nativeElement.textContent).toContain('EN');
     expect(fixture.nativeElement.textContent).toContain('2026-01-02');
     expect(fixture.nativeElement.textContent).toContain('2026-01-01');
   });
@@ -80,11 +81,10 @@ describe('AdminResumesPageComponent', () => {
     fixture.detectChanges();
 
     setInputValue('resume-create-title', 'Target resume');
+    setInputValue('resume-create-language', 'en');
     setInputValue('resume-create-full-name', 'Dmitriy');
-    setInputValue('resume-create-role-ru', 'Backend инженер');
-    setInputValue('resume-create-role-en', 'Backend engineer');
-    setInputValue('resume-create-summary-ru', 'Сводка');
-    setInputValue('resume-create-summary-en', 'Summary');
+    setInputValue('resume-create-role', 'Backend engineer');
+    setInputValue('resume-create-summary', 'Summary');
 
     const form = fixture.nativeElement.querySelector(
       '[data-testid="resume-create-form"]',
@@ -94,16 +94,15 @@ describe('AdminResumesPageComponent', () => {
 
     expect(service.createResume).toHaveBeenCalledWith({
       title: 'Target resume',
+      language: 'en',
       content: expect.objectContaining({
         profile: expect.objectContaining({
           fullName: 'Dmitriy',
-          roleRu: 'Backend инженер',
-          roleEn: 'Backend engineer',
+          role: 'Backend engineer',
           phone: '',
         }),
         summary: {
-          textRu: 'Сводка',
-          textEn: 'Summary',
+          text: 'Summary',
         },
         skills: [],
         experience: [],
@@ -139,17 +138,38 @@ describe('AdminResumesPageComponent', () => {
     expect(title.classList).not.toContain('is-invalid');
   });
 
+  it('requires choosing a resume language before creation', () => {
+    fixture.componentInstance.openCreateDialog();
+    fixture.detectChanges();
+
+    setInputValue('resume-create-title', 'Target resume');
+    setInputValue('resume-create-full-name', 'Dmitriy');
+    setInputValue('resume-create-role', 'Backend engineer');
+    setInputValue('resume-create-summary', 'Summary');
+
+    const language = fixture.nativeElement.querySelector(
+      '[data-testid="resume-create-language"]',
+    ) as HTMLSelectElement;
+    const form = fixture.nativeElement.querySelector(
+      '[data-testid="resume-create-form"]',
+    ) as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(language.classList).toContain('is-invalid');
+    expect(service.createResume).not.toHaveBeenCalled();
+  });
+
   it('shows an API error notification on create failure', () => {
     service.createResume.mockReturnValue(throwError(() => apiError()));
     fixture.componentInstance.openCreateDialog();
     fixture.detectChanges();
 
     setInputValue('resume-create-title', 'Target resume');
+    setInputValue('resume-create-language', 'en');
     setInputValue('resume-create-full-name', 'Dmitriy');
-    setInputValue('resume-create-role-ru', 'Backend инженер');
-    setInputValue('resume-create-role-en', 'Backend engineer');
-    setInputValue('resume-create-summary-ru', 'Сводка');
-    setInputValue('resume-create-summary-en', 'Summary');
+    setInputValue('resume-create-role', 'Backend engineer');
+    setInputValue('resume-create-summary', 'Summary');
 
     fixture.componentInstance.createResume();
     fixture.detectChanges();
@@ -160,9 +180,11 @@ describe('AdminResumesPageComponent', () => {
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
       | HTMLInputElement
-      | HTMLTextAreaElement;
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('change'));
   }
 });
 
@@ -178,15 +200,14 @@ function resume(): Resume {
   return {
     id: 7,
     title: 'Backend resume',
+    language: 'en',
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-02T03:04:05+00:00',
     content: {
       profile: {
         fullName: 'Candidate Name',
-        roleRu: 'Инженер',
-        roleEn: 'Engineer',
-        locationRu: '',
-        locationEn: '',
+        role: 'Engineer',
+        location: '',
         email: '',
         phone: '',
         websiteUrl: '',
@@ -195,8 +216,7 @@ function resume(): Resume {
         telegram: '',
       },
       summary: {
-        textRu: 'Короткое описание опыта.',
-        textEn: 'Short experience summary.',
+        text: 'Short experience summary.',
       },
       skills: [],
       experience: [],

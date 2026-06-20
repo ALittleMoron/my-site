@@ -3,6 +3,7 @@ from httpx import codes
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
+from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
@@ -42,8 +43,10 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["totalPages"] == 1
         assert response.json()["resumes"][0]["id"] == 1
         assert response.json()["resumes"][0]["title"] == "Backend resume"
+        assert response.json()["resumes"][0]["language"] == "ru"
         assert response.json()["resumes"][0]["content"]["profile"]["fullName"] == "Candidate Name"
         assert response.json()["resumes"][0]["content"]["profile"]["phone"] == ""
+        assert response_has_no_resume_localized_field_names(value=response.json()["resumes"][0])
         assert_resume_response_nulls_are_dates_only(value=response.json()["resumes"][0]["content"])
         self.use_case.list_resumes.assert_called_once_with(
             filters=ResumeFilters(
@@ -57,30 +60,21 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_create_resume_maps_payload_to_params(self) -> None:
         experience = [
             ResumeExperienceItem(
-                company_ru="Компания",
-                company_en="Company",
-                position_ru="Инженер",
-                position_en="Engineer",
-                location_ru="",
-                location_en="",
+                company="Company",
+                position="Engineer",
+                location="",
                 start_date=None,
                 end_date=None,
                 current_status=ResumeCurrentStatusEnum.CURRENT,
-                summary_ru="Строил платформу.",
-                summary_en="Built a platform.",
-                highlights_ru=["Сократил latency"],
-                highlights_en=["Reduced latency"],
+                summary="Built a platform.",
+                highlights=["Reduced latency"],
                 technologies=["Python"],
                 projects=[
                     ResumeProjectItem(
-                        name_ru="Портфолио",
-                        name_en="Portfolio",
-                        role_ru="Автор",
-                        role_en="Creator",
-                        description_ru="Сайт и база знаний",
-                        description_en="Site and knowledge base",
-                        highlights_ru=["Гибридный SSR/CSR"],
-                        highlights_en=["Hybrid SSR/CSR"],
+                        name="Portfolio",
+                        role="Creator",
+                        description="Site and knowledge base",
+                        highlights=["Hybrid SSR/CSR"],
                         technologies=["Litestar", "Angular"],
                         url="https://example.com",
                     ),
@@ -89,30 +83,21 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         ]
         api_experience = [
             {
-                "companyRu": "Компания",
-                "companyEn": "Company",
-                "positionRu": "Инженер",
-                "positionEn": "Engineer",
-                "locationRu": "",
-                "locationEn": "",
+                "company": "Company",
+                "position": "Engineer",
+                "location": "",
                 "startDate": None,
                 "endDate": None,
                 "currentStatus": "current",
-                "summaryRu": "Строил платформу.",
-                "summaryEn": "Built a platform.",
-                "highlightsRu": ["Сократил latency"],
-                "highlightsEn": ["Reduced latency"],
+                "summary": "Built a platform.",
+                "highlights": ["Reduced latency"],
                 "technologies": ["Python"],
                 "projects": [
                     {
-                        "nameRu": "Портфолио",
-                        "nameEn": "Portfolio",
-                        "roleRu": "Автор",
-                        "roleEn": "Creator",
-                        "descriptionRu": "Сайт и база знаний",
-                        "descriptionEn": "Site and knowledge base",
-                        "highlightsRu": ["Гибридный SSR/CSR"],
-                        "highlightsEn": ["Hybrid SSR/CSR"],
+                        "name": "Portfolio",
+                        "role": "Creator",
+                        "description": "Site and knowledge base",
+                        "highlights": ["Hybrid SSR/CSR"],
                         "technologies": ["Litestar", "Angular"],
                         "url": "https://example.com",
                     },
@@ -121,15 +106,14 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         ]
         content = self.factory.core.resume_content(
             full_name="Dmitriy",
-            role_ru="Backend инженер",
-            role_en="Backend engineer",
-            summary_ru="Сводка",
-            summary_en="Summary",
+            role="Backend engineer",
+            summary="Summary",
             experience=experience,
         )
         self.use_case.create_resume.return_value = self.factory.core.resume(
             resume_id=2,
             title="Target resume",
+            language=LanguageEnum.EN,
             content=content,
             created_at="2026-01-01T03:04:05",
             updated_at="2026-01-01T03:04:05",
@@ -138,12 +122,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.api.post_create_resume(
             data=self.factory.api.resume_request(
                 title="Target resume",
+                language="en",
                 content=self.factory.api.resume_content(
                     full_name="Dmitriy",
-                    role_ru="Backend инженер",
-                    role_en="Backend engineer",
-                    summary_ru="Сводка",
-                    summary_en="Summary",
+                    role="Backend engineer",
+                    summary="Summary",
                     experience=api_experience,
                 ),
             ),
@@ -151,23 +134,27 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.CREATED, response.content
         assert response.json()["id"] == 2
+        assert response.json()["language"] == "en"
         assert response.json()["content"]["profile"]["phone"] == ""
         assert response.json()["content"]["experience"][0]["currentStatus"] == "current"
-        assert response.json()["content"]["experience"][0]["projects"][0]["nameEn"] == "Portfolio"
+        assert response.json()["content"]["experience"][0]["projects"][0]["name"] == "Portfolio"
+        assert response_has_no_resume_localized_field_names(value=response.json())
         assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
         self.use_case.create_resume.assert_called_once_with(
             params=ResumeCreateParams(
                 title="Target resume",
+                language=LanguageEnum.EN,
                 content=content,
                 author_username="test",
             ),
         )
 
     def test_update_resume_maps_payload_to_params(self) -> None:
-        content = self.factory.core.resume_content(summary_ru="Обновлено")
+        content = self.factory.core.resume_content(summary="Updated")
         self.use_case.update_resume.return_value = self.factory.core.resume(
             resume_id=3,
             title="Updated resume",
+            language=LanguageEnum.EN,
             content=content,
             updated_at="2026-01-03T03:04:05",
         )
@@ -176,17 +163,40 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             resume_id=3,
             data=self.factory.api.resume_request(
                 title="Updated resume",
-                content=self.factory.api.resume_content(summary_ru="Обновлено"),
+                language="en",
+                content=self.factory.api.resume_content(summary="Updated"),
             ),
         )
 
         assert response.status_code == codes.OK, response.content
         assert response.json()["title"] == "Updated resume"
+        assert response.json()["language"] == "en"
         self.use_case.update_resume.assert_called_once_with(
             resume_id=IntId(3),
-            params=ResumeUpdateParams(title="Updated resume", content=content),
+            params=ResumeUpdateParams(
+                title="Updated resume",
+                language=LanguageEnum.EN,
+                content=content,
+            ),
             author_username="test",
         )
+
+    def test_create_resume_rejects_missing_language(self) -> None:
+        data = self.factory.api.resume_request()
+        data.pop("language")
+
+        response = self.api.post_create_resume(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_unknown_language(self) -> None:
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(language="de"),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_resume.assert_not_called()
 
     def test_get_resume(self) -> None:
         self.use_case.get_resume.return_value = self.factory.core.resume(
@@ -199,6 +209,8 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.OK, response.content
         assert response.json()["id"] == 3
+        assert response.json()["language"] == "ru"
+        assert response_has_no_resume_localized_field_names(value=response.json())
         assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
         self.use_case.get_resume.assert_called_once_with(
             resume_id=IntId(3),
@@ -257,6 +269,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
 
 RESUME_RESPONSE_ALLOWED_NULL_KEYS = frozenset({"startDate", "endDate", "issuedOn", "expiresOn"})
+RESUME_LOCALIZED_FIELD_SUFFIXES = ("Ru", "En")
 
 
 def assert_resume_response_nulls_are_dates_only(*, value: object, key: str | None = None) -> None:
@@ -270,3 +283,14 @@ def assert_resume_response_nulls_are_dates_only(*, value: object, key: str | Non
     if isinstance(value, list):
         for item in value:
             assert_resume_response_nulls_are_dates_only(value=item, key=key)
+
+
+def response_has_no_resume_localized_field_names(*, value: object) -> bool:
+    if isinstance(value, dict):
+        for key, child_value in value.items():
+            assert not key.endswith(RESUME_LOCALIZED_FIELD_SUFFIXES), key
+            response_has_no_resume_localized_field_names(value=child_value)
+    if isinstance(value, list):
+        for item in value:
+            response_has_no_resume_localized_field_names(value=item)
+    return True

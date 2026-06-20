@@ -15,6 +15,7 @@ def upgrade() -> None:
     op.create_table(
         RESUME_TABLE,
         sa.Column("title", sa.String(length=255), nullable=False),
+        sa.Column("language", sa.String(length=2), nullable=False),
         sa.Column("content", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "id",

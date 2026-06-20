@@ -22,11 +22,26 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { Resume, ResumePayload, Resumes } from '../../models/resume-workspace.model';
+import {
+  Resume,
+  ResumeLanguage,
+  ResumePayload,
+  Resumes,
+} from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 
 const PAGE_SIZE = 20;
-type RequiredCreateField = 'title' | 'fullName' | 'roleRu' | 'roleEn' | 'summaryRu' | 'summaryEn';
+type RequiredCreateField = 'title' | 'language' | 'fullName' | 'role' | 'summary';
+
+interface ResumeLanguageOption {
+  value: ResumeLanguage;
+  labelKey: string;
+}
+
+const RESUME_LANGUAGE_OPTIONS: readonly ResumeLanguageOption[] = [
+  { value: 'ru', labelKey: 'adminResumeWorkspace.languageRu' },
+  { value: 'en', labelKey: 'adminResumeWorkspace.languageEn' },
+];
 
 @Component({
   selector: 'app-admin-resumes-page',
@@ -59,14 +74,14 @@ export class AdminResumesPageComponent implements OnInit {
   readonly createSubmitting = signal(false);
   readonly createFormSubmitted = signal(false);
   readonly createError = signal<ApiError | null>(null);
+  readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
 
   readonly createForm = this.formBuilder.group({
     title: ['', [trimRequired, Validators.maxLength(255)]],
+    language: ['', trimRequired],
     fullName: ['', [trimRequired, Validators.maxLength(255)]],
-    roleRu: ['', [trimRequired, Validators.maxLength(255)]],
-    roleEn: ['', [trimRequired, Validators.maxLength(255)]],
-    summaryRu: ['', trimRequired],
-    summaryEn: ['', trimRequired],
+    role: ['', [trimRequired, Validators.maxLength(255)]],
+    summary: ['', trimRequired],
   });
 
   ngOnInit(): void {
@@ -107,11 +122,10 @@ export class AdminResumesPageComponent implements OnInit {
   openCreateDialog(): void {
     this.createForm.reset({
       title: '',
+      language: '',
       fullName: '',
-      roleRu: '',
-      roleEn: '',
-      summaryRu: '',
-      summaryEn: '',
+      role: '',
+      summary: '',
     });
     this.createError.set(null);
     this.createSubmitting.set(false);
@@ -155,11 +169,17 @@ export class AdminResumesPageComponent implements OnInit {
   completedSections(resume: Resume): number {
     return [
       resume.title.trim(),
-      resume.content.profile.fullName.trim() || resume.content.profile.roleRu.trim(),
-      resume.content.summary.textRu.trim() || resume.content.summary.textEn.trim(),
+      resume.content.profile.fullName.trim() || resume.content.profile.role.trim(),
+      resume.content.summary.text.trim(),
       resume.content.skills.length > 0,
       resume.content.experience.length > 0,
     ].filter(Boolean).length;
+  }
+
+  languageLabelKey(language: ResumeLanguage): string {
+    return language === 'ru'
+      ? 'adminResumeWorkspace.languageRu'
+      : 'adminResumeWorkspace.languageEn';
   }
 
   formatDate(value: string): string {
@@ -175,13 +195,12 @@ export class AdminResumesPageComponent implements OnInit {
     const value = this.createForm.getRawValue();
     return {
       title: value.title.trim(),
+      language: toResumeLanguage(value.language),
       content: {
         profile: {
           fullName: value.fullName.trim(),
-          roleRu: value.roleRu.trim(),
-          roleEn: value.roleEn.trim(),
-          locationRu: '',
-          locationEn: '',
+          role: value.role.trim(),
+          location: '',
           email: '',
           phone: '',
           websiteUrl: '',
@@ -190,8 +209,7 @@ export class AdminResumesPageComponent implements OnInit {
           telegram: '',
         },
         summary: {
-          textRu: value.summaryRu.trim(),
-          textEn: value.summaryEn.trim(),
+          text: value.summary.trim(),
         },
         skills: [],
         experience: [],
@@ -206,4 +224,9 @@ export class AdminResumesPageComponent implements OnInit {
 
 function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
   return control.value.trim() === '' ? { required: true } : null;
+}
+
+function toResumeLanguage(value: string): ResumeLanguage {
+  if (value === 'ru' || value === 'en') return value;
+  throw new Error(`Unsupported resume language: ${value}`);
 }

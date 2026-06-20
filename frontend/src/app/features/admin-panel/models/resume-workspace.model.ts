@@ -1,11 +1,12 @@
+import { LanguageCode } from '../../../core/i18n/i18n.model';
+
 export type ResumeCurrentStatus = 'notSet' | 'current' | 'notCurrent';
+export type ResumeLanguage = LanguageCode;
 
 export interface ResumeProfileDto {
   fullName: string;
-  roleRu: string;
-  roleEn: string;
-  locationRu: string;
-  locationEn: string;
+  role: string;
+  location: string;
   email: string;
   phone: string;
   websiteUrl: string;
@@ -15,90 +16,67 @@ export interface ResumeProfileDto {
 }
 
 export interface ResumeSummaryDto {
-  textRu: string;
-  textEn: string;
+  text: string;
 }
 
 export interface ResumeSkillGroupDto {
-  categoryRu: string;
-  categoryEn: string;
+  category: string;
   items: string[];
 }
 
 export interface ResumeExperienceItemDto {
-  companyRu: string;
-  companyEn: string;
-  positionRu: string;
-  positionEn: string;
-  locationRu: string;
-  locationEn: string;
+  company: string;
+  position: string;
+  location: string;
   startDate: string | null;
   endDate: string | null;
   currentStatus: ResumeCurrentStatus;
-  summaryRu: string;
-  summaryEn: string;
-  highlightsRu: string[];
-  highlightsEn: string[];
+  summary: string;
+  highlights: string[];
   technologies: string[];
   projects: ResumeProjectItemDto[];
 }
 
 export interface ResumeProjectItemDto {
-  nameRu: string;
-  nameEn: string;
-  roleRu: string;
-  roleEn: string;
-  descriptionRu: string;
-  descriptionEn: string;
-  highlightsRu: string[];
-  highlightsEn: string[];
+  name: string;
+  role: string;
+  description: string;
+  highlights: string[];
   technologies: string[];
   url: string;
 }
 
 export interface ResumeEducationItemDto {
-  institutionRu: string;
-  institutionEn: string;
-  degreeRu: string;
-  degreeEn: string;
-  fieldRu: string;
-  fieldEn: string;
-  locationRu: string;
-  locationEn: string;
+  institution: string;
+  degree: string;
+  field: string;
+  location: string;
   startDate: string | null;
   endDate: string | null;
-  descriptionRu: string;
-  descriptionEn: string;
+  description: string;
 }
 
 export interface ResumeLanguageItemDto {
-  nameRu: string;
-  nameEn: string;
-  proficiencyRu: string;
-  proficiencyEn: string;
+  name: string;
+  proficiency: string;
 }
 
 export interface ResumeCertificationItemDto {
-  nameRu: string;
-  nameEn: string;
-  issuerRu: string;
-  issuerEn: string;
+  name: string;
+  issuer: string;
   issuedOn: string | null;
   expiresOn: string | null;
   credentialUrl: string;
 }
 
 export interface ResumeAdditionalSectionItemDto {
-  titleRu: string;
-  titleEn: string;
-  descriptionRu: string;
-  descriptionEn: string;
+  title: string;
+  description: string;
   url: string;
 }
 
 export interface ResumeAdditionalSectionDto {
-  titleRu: string;
-  titleEn: string;
+  title: string;
   items: ResumeAdditionalSectionItemDto[];
 }
 
@@ -116,6 +94,7 @@ export interface ResumeContentDto {
 export interface ResumeDto {
   id: number;
   title: string;
+  language: ResumeLanguage;
   content: ResumeContentDto;
   createdAt: string;
   updatedAt: string;
@@ -129,15 +108,14 @@ export interface ResumesDto {
 
 export interface ResumePayloadDto {
   title: string;
+  language: ResumeLanguage;
   content: ResumeContentDto;
 }
 
 export interface ResumeProfile {
   fullName: string;
-  roleRu: string;
-  roleEn: string;
-  locationRu: string;
-  locationEn: string;
+  role: string;
+  location: string;
   email: string;
   phone: string;
   websiteUrl: string;
@@ -147,90 +125,67 @@ export interface ResumeProfile {
 }
 
 export interface ResumeSummary {
-  textRu: string;
-  textEn: string;
+  text: string;
 }
 
 export interface ResumeSkillGroup {
-  categoryRu: string;
-  categoryEn: string;
+  category: string;
   items: string[];
 }
 
 export interface ResumeExperienceItem {
-  companyRu: string;
-  companyEn: string;
-  positionRu: string;
-  positionEn: string;
-  locationRu: string;
-  locationEn: string;
+  company: string;
+  position: string;
+  location: string;
   startDate: string | null;
   endDate: string | null;
   currentStatus: ResumeCurrentStatus;
-  summaryRu: string;
-  summaryEn: string;
-  highlightsRu: string[];
-  highlightsEn: string[];
+  summary: string;
+  highlights: string[];
   technologies: string[];
   projects: ResumeProjectItem[];
 }
 
 export interface ResumeProjectItem {
-  nameRu: string;
-  nameEn: string;
-  roleRu: string;
-  roleEn: string;
-  descriptionRu: string;
-  descriptionEn: string;
-  highlightsRu: string[];
-  highlightsEn: string[];
+  name: string;
+  role: string;
+  description: string;
+  highlights: string[];
   technologies: string[];
   url: string;
 }
 
 export interface ResumeEducationItem {
-  institutionRu: string;
-  institutionEn: string;
-  degreeRu: string;
-  degreeEn: string;
-  fieldRu: string;
-  fieldEn: string;
-  locationRu: string;
-  locationEn: string;
+  institution: string;
+  degree: string;
+  field: string;
+  location: string;
   startDate: string | null;
   endDate: string | null;
-  descriptionRu: string;
-  descriptionEn: string;
+  description: string;
 }
 
 export interface ResumeLanguageItem {
-  nameRu: string;
-  nameEn: string;
-  proficiencyRu: string;
-  proficiencyEn: string;
+  name: string;
+  proficiency: string;
 }
 
 export interface ResumeCertificationItem {
-  nameRu: string;
-  nameEn: string;
-  issuerRu: string;
-  issuerEn: string;
+  name: string;
+  issuer: string;
   issuedOn: string | null;
   expiresOn: string | null;
   credentialUrl: string;
 }
 
 export interface ResumeAdditionalSectionItem {
-  titleRu: string;
-  titleEn: string;
-  descriptionRu: string;
-  descriptionEn: string;
+  title: string;
+  description: string;
   url: string;
 }
 
 export interface ResumeAdditionalSection {
-  titleRu: string;
-  titleEn: string;
+  title: string;
   items: ResumeAdditionalSectionItem[];
 }
 
@@ -248,6 +203,7 @@ export interface ResumeContent {
 export interface Resume {
   id: number;
   title: string;
+  language: ResumeLanguage;
   content: ResumeContent;
   createdAt: string;
   updatedAt: string;
@@ -261,6 +217,7 @@ export interface Resumes {
 
 export interface ResumePayload {
   title: string;
+  language: ResumeLanguage;
   content: ResumeContent;
 }
 
@@ -273,6 +230,7 @@ export function mapResumeDto(dto: ResumeDto): Resume {
   return {
     id: dto.id,
     title: dto.title,
+    language: dto.language,
     content: mapResumeContentDto(dto.content),
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
@@ -290,6 +248,7 @@ export function mapResumesDto(dto: ResumesDto): Resumes {
 export function toResumePayloadDto(payload: ResumePayload): ResumePayloadDto {
   return {
     title: payload.title,
+    language: payload.language,
     content: mapResumeContentToDto(payload.content),
   };
 }
@@ -299,24 +258,18 @@ export function mapResumeContentDto(dto: ResumeContentDto): ResumeContent {
     profile: { ...dto.profile },
     summary: { ...dto.summary },
     skills: dto.skills.map((skill) => ({
-      categoryRu: skill.categoryRu,
-      categoryEn: skill.categoryEn,
+      category: skill.category,
       items: [...skill.items],
     })),
     experience: dto.experience.map((item) => ({
-      companyRu: item.companyRu,
-      companyEn: item.companyEn,
-      positionRu: item.positionRu,
-      positionEn: item.positionEn,
-      locationRu: item.locationRu,
-      locationEn: item.locationEn,
+      company: item.company,
+      position: item.position,
+      location: item.location,
       startDate: item.startDate,
       endDate: item.endDate,
       currentStatus: item.currentStatus,
-      summaryRu: item.summaryRu,
-      summaryEn: item.summaryEn,
-      highlightsRu: [...item.highlightsRu],
-      highlightsEn: [...item.highlightsEn],
+      summary: item.summary,
+      highlights: [...item.highlights],
       technologies: [...item.technologies],
       projects: item.projects.map(mapResumeProjectItemDto),
     })),
@@ -324,8 +277,7 @@ export function mapResumeContentDto(dto: ResumeContentDto): ResumeContent {
     languages: dto.languages.map((item) => ({ ...item })),
     certifications: dto.certifications.map((item) => ({ ...item })),
     additionalSections: dto.additionalSections.map((section) => ({
-      titleRu: section.titleRu,
-      titleEn: section.titleEn,
+      title: section.title,
       items: section.items.map((item) => ({ ...item })),
     })),
   };
@@ -336,24 +288,18 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
     profile: { ...content.profile },
     summary: { ...content.summary },
     skills: content.skills.map((skill) => ({
-      categoryRu: skill.categoryRu,
-      categoryEn: skill.categoryEn,
+      category: skill.category,
       items: [...skill.items],
     })),
     experience: content.experience.map((item) => ({
-      companyRu: item.companyRu,
-      companyEn: item.companyEn,
-      positionRu: item.positionRu,
-      positionEn: item.positionEn,
-      locationRu: item.locationRu,
-      locationEn: item.locationEn,
+      company: item.company,
+      position: item.position,
+      location: item.location,
       startDate: item.startDate,
       endDate: item.endDate,
       currentStatus: item.currentStatus,
-      summaryRu: item.summaryRu,
-      summaryEn: item.summaryEn,
-      highlightsRu: [...item.highlightsRu],
-      highlightsEn: [...item.highlightsEn],
+      summary: item.summary,
+      highlights: [...item.highlights],
       technologies: [...item.technologies],
       projects: item.projects.map(mapResumeProjectItemToDto),
     })),
@@ -361,8 +307,7 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
     languages: content.languages.map((item) => ({ ...item })),
     certifications: content.certifications.map((item) => ({ ...item })),
     additionalSections: content.additionalSections.map((section) => ({
-      titleRu: section.titleRu,
-      titleEn: section.titleEn,
+      title: section.title,
       items: section.items.map((item) => ({ ...item })),
     })),
   };
@@ -370,14 +315,10 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
 
 function mapResumeProjectItemDto(item: ResumeProjectItemDto): ResumeProjectItem {
   return {
-    nameRu: item.nameRu,
-    nameEn: item.nameEn,
-    roleRu: item.roleRu,
-    roleEn: item.roleEn,
-    descriptionRu: item.descriptionRu,
-    descriptionEn: item.descriptionEn,
-    highlightsRu: [...item.highlightsRu],
-    highlightsEn: [...item.highlightsEn],
+    name: item.name,
+    role: item.role,
+    description: item.description,
+    highlights: [...item.highlights],
     technologies: [...item.technologies],
     url: item.url,
   };
@@ -385,14 +326,10 @@ function mapResumeProjectItemDto(item: ResumeProjectItemDto): ResumeProjectItem 
 
 function mapResumeProjectItemToDto(item: ResumeProjectItem): ResumeProjectItemDto {
   return {
-    nameRu: item.nameRu,
-    nameEn: item.nameEn,
-    roleRu: item.roleRu,
-    roleEn: item.roleEn,
-    descriptionRu: item.descriptionRu,
-    descriptionEn: item.descriptionEn,
-    highlightsRu: [...item.highlightsRu],
-    highlightsEn: [...item.highlightsEn],
+    name: item.name,
+    role: item.role,
+    description: item.description,
+    highlights: [...item.highlights],
     technologies: [...item.technologies],
     url: item.url,
   };

@@ -73,6 +73,10 @@ Never violate these boundaries:
   values for sheet selection and persistence.
 - Require all RU/EN competency matrix translation fields and resource contexts in frontend forms.
   Do not add frontend-only language fallbacks for localized content.
+- Resume workspace content is single-language per resume. Forms must send required `language` plus
+  one content shape, must not add resume-specific RU/EN controls, and must not validate whether the
+  authored text matches the selected language. Editor chrome follows the current UI bundle; resume
+  preview labels should render from the saved/selected resume language using backend i18n bundles.
 - Do not localise other database/content text in this layer until the backend supports that content
   explicitly.
 

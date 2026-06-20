@@ -106,13 +106,16 @@ Portfolio and articles site with a knowledge database
   explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix sheets use
   a stable language-neutral `sheet_key`/`sheetKey`; localized sheet names, sections, subsections,
   questions, answers, expected answers, resource names, and attachment contexts are projections.
+  Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
+  resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
+  whether the authored text actually matches the selected language.
   Core article/tag/matrix domain entities keep canonical translation fields only; localized `title`,
   `content`, `folder`, `name`, and matrix text values are response/read-model projections, not
   stored domain-only fields. Do not add generic translation tables, production defaults, or language
   fallbacks unless an explicit design change asks for them. Supported UI languages must be
   represented by an enum, and the initial/default UI language must come from the required
-  `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation remains future work until
-  explicitly designed.
+  `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation beyond articles, article
+  tags, competency matrix content, and resumes remains future work until explicitly designed.
 - Articles are the authored content model. SEO metadata for articles is explicit and
   nullable: API write payloads must include a
   `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,

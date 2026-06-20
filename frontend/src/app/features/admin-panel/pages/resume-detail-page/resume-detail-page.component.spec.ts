@@ -64,19 +64,21 @@ describe('AdminResumeDetailPageComponent', () => {
   it('loads detail into the edit form', () => {
     expect(service.getResume).toHaveBeenCalledWith(7);
     expect(inputValue('resume-title')).toBe('Backend resume');
+    expect(inputValue('resume-language')).toBe('ru');
     expect(inputValue('resume-profile-full-name')).toBe('Candidate Name');
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
-    expect(inputValue('resume-summary-ru')).toBe('Сильный backend опыт.');
+    expect(inputValue('resume-summary')).toBe('Сильный backend опыт.');
     expect(fixture.nativeElement.textContent).toContain('Профиль');
     expect(fixture.nativeElement.textContent).toContain('Навыки');
   });
 
   it('edits and saves an explicit update payload', () => {
     setInputValue('resume-title', 'Target backend resume');
+    setInputValue('resume-language', 'en');
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
-    setInputValue('resume-summary-ru', 'Обновленная сводка');
+    setInputValue('resume-summary', 'Updated summary');
 
     fixture.componentInstance.saveResume();
 
@@ -84,10 +86,10 @@ describe('AdminResumeDetailPageComponent', () => {
       7,
       expect.objectContaining({
         title: 'Target backend resume',
+        language: 'en',
         content: expect.objectContaining({
           summary: {
-            textRu: 'Обновленная сводка',
-            textEn: 'Strong backend experience.',
+            text: 'Updated summary',
           },
           education: [],
           languages: [],
@@ -102,7 +104,7 @@ describe('AdminResumeDetailPageComponent', () => {
   it('renders preview from unsaved form state', () => {
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
-    setInputValue('resume-summary-ru', 'Несохраненная сводка');
+    setInputValue('resume-summary', 'Несохраненная сводка');
 
     fixture.componentInstance.showPreview();
     fixture.detectChanges();
@@ -111,14 +113,16 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Несохраненная сводка');
   });
 
-  it('switches preview language', () => {
+  it('keeps preview language tied to the resume language, not UI language', () => {
     fixture.componentInstance.showPreview();
     i18n.switchLanguage('en').subscribe();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Backend engineer');
-    expect(fixture.nativeElement.textContent).toContain('Strong backend experience.');
-    expect(fixture.nativeElement.textContent).not.toContain('Backend инженер');
+    expect(fixture.nativeElement.textContent).toContain('Backend инженер');
+    expect(fixture.nativeElement.textContent).toContain('Сильный backend опыт.');
+    expect(fixture.nativeElement.textContent).toContain('Саммари');
+    expect(fixture.nativeElement.textContent).not.toContain('Strong backend experience.');
+    expect(fixture.nativeElement.textContent).not.toContain('Summary');
   });
 
   it('does not render a separate preview language switcher', () => {
@@ -178,8 +182,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.setActiveTab('skills');
     fixture.componentInstance.addSkillGroup();
     fixture.detectChanges();
-    setInputValue('resume-skill-1-category-ru', 'Платформа');
-    setInputValue('resume-skill-1-category-en', 'Platform');
+    setInputValue('resume-skill-1-category', 'Платформа');
     setInputValue('resume-skill-1-items', 'Kubernetes\nPostgreSQL');
 
     fixture.componentInstance.removeSkillGroup(0);
@@ -191,8 +194,7 @@ describe('AdminResumeDetailPageComponent', () => {
         content: expect.objectContaining({
           skills: [
             {
-              categoryRu: 'Платформа',
-              categoryEn: 'Platform',
+              category: 'Платформа',
               items: ['Kubernetes', 'PostgreSQL'],
             },
           ],
@@ -205,9 +207,9 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
 
-    expect(elementValueById('resume-experience-0-project-0-name-ru')).toBe('Портфолио');
+    expect(elementValueById('resume-experience-0-project-0-name')).toBe('Портфолио');
 
-    setElementValueById('resume-experience-0-project-0-name-ru', 'Платформа');
+    setElementValueById('resume-experience-0-project-0-name', 'Платформа');
     setElementValueById('resume-experience-0-project-0-technologies', 'Litestar\nAngular');
 
     fixture.componentInstance.saveResume();
@@ -220,8 +222,7 @@ describe('AdminResumeDetailPageComponent', () => {
             expect.objectContaining({
               projects: [
                 expect.objectContaining({
-                  nameRu: 'Платформа',
-                  nameEn: 'Portfolio',
+                  name: 'Платформа',
                   technologies: ['Litestar', 'Angular'],
                 }),
               ],
@@ -271,7 +272,7 @@ describe('AdminResumeDetailPageComponent', () => {
   it('saves blank resume text as empty strings, dates as null, and current status as enum', () => {
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
-    setInputValue('resume-summary-ru', '   ');
+    setInputValue('resume-summary', '   ');
 
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
@@ -285,7 +286,7 @@ describe('AdminResumeDetailPageComponent', () => {
       expect.objectContaining({
         content: expect.objectContaining({
           summary: expect.objectContaining({
-            textRu: '',
+            text: '',
           }),
           experience: [
             expect.objectContaining({
@@ -309,16 +310,19 @@ describe('AdminResumeDetailPageComponent', () => {
   function inputValue(testId: string): string {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
       | HTMLInputElement
-      | HTMLTextAreaElement;
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
     return input.value;
   }
 
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
       | HTMLInputElement
-      | HTMLTextAreaElement;
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
     fixture.detectChanges();
   }
 
@@ -345,15 +349,14 @@ function resume(overrides: Partial<Resume> = {}): Resume {
   return {
     id: 7,
     title: 'Backend resume',
+    language: 'ru',
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-02T03:04:05+00:00',
     content: {
       profile: {
         fullName: 'Candidate Name',
-        roleRu: 'Backend инженер',
-        roleEn: 'Backend engineer',
-        locationRu: 'Москва',
-        locationEn: 'Moscow',
+        role: 'Backend инженер',
+        location: 'Москва',
         email: 'candidate@example.com',
         phone: '',
         websiteUrl: '',
@@ -362,42 +365,31 @@ function resume(overrides: Partial<Resume> = {}): Resume {
         telegram: '',
       },
       summary: {
-        textRu: 'Сильный backend опыт.',
-        textEn: 'Strong backend experience.',
+        text: 'Сильный backend опыт.',
       },
       skills: [
         {
-          categoryRu: 'Backend',
-          categoryEn: 'Backend',
+          category: 'Backend',
           items: ['Python', 'SQLAlchemy'],
         },
       ],
       experience: [
         {
-          companyRu: 'Компания',
-          companyEn: 'Company',
-          positionRu: 'Инженер',
-          positionEn: 'Engineer',
-          locationRu: 'Москва',
-          locationEn: 'Moscow',
+          company: 'Компания',
+          position: 'Инженер',
+          location: 'Москва',
           startDate: '2024-01-01',
           endDate: null,
           currentStatus: 'current',
-          summaryRu: 'Разрабатывал API.',
-          summaryEn: 'Built APIs.',
-          highlightsRu: ['Ускорил сервис'],
-          highlightsEn: ['Improved service speed'],
+          summary: 'Разрабатывал API.',
+          highlights: ['Ускорил сервис'],
           technologies: ['Python'],
           projects: [
             {
-              nameRu: 'Портфолио',
-              nameEn: 'Portfolio',
-              roleRu: 'Автор',
-              roleEn: 'Creator',
-              descriptionRu: 'Сайт и база знаний',
-              descriptionEn: 'Site and knowledge base',
-              highlightsRu: ['Гибридный SSR/CSR'],
-              highlightsEn: ['Hybrid SSR/CSR'],
+              name: 'Портфолио',
+              role: 'Автор',
+              description: 'Сайт и база знаний',
+              highlights: ['Гибридный SSR/CSR'],
               technologies: ['Litestar'],
               url: 'https://example.com',
             },

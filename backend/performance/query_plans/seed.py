@@ -55,10 +55,8 @@ RESUME_SEED_COUNT = 50_000
 RESUME_SEED_CONTENT: dict[str, object] = {
     "profile": {
         "full_name": "Query Plan Candidate",
-        "role_ru": "Инженер",
-        "role_en": "Engineer",
-        "location_ru": "",
-        "location_en": "",
+        "role": "Engineer",
+        "location": "",
         "email": "",
         "phone": "",
         "website_url": "",
@@ -67,8 +65,7 @@ RESUME_SEED_CONTENT: dict[str, object] = {
         "telegram": "",
     },
     "summary": {
-        "text_ru": "Резюме для query-plan smoke.",
-        "text_en": "Resume for query-plan smoke.",
+        "text": "Resume for query-plan smoke.",
     },
     "skills": [],
     "experience": [],
@@ -329,10 +326,11 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(ResumeModel.__table__).from_select(
-            ["id", "title", "author_username", "content", "created_at", "updated_at"],
+            ["id", "title", "language", "author_username", "content", "created_at", "updated_at"],
             select(
                 value,
                 func.concat(literal("Query plan resume "), value),
+                literal("en"),
                 literal(SEED_USERNAME),
                 literal(RESUME_SEED_CONTENT, type_=postgresql.JSONB),
                 literal(SEED_NOW),

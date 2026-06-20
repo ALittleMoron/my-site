@@ -60,19 +60,15 @@ class ApiFactoryHelper:
     def resume_content(
         cls,
         full_name: str = "Candidate Name",
-        role_ru: str = "Инженер",
-        role_en: str = "Engineer",
-        summary_ru: str = "Короткое описание опыта.",
-        summary_en: str = "Short experience summary.",
+        role: str = "Инженер",
+        summary: str = "Короткое описание опыта.",
         experience: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return {
             "profile": {
                 "fullName": full_name,
-                "roleRu": role_ru,
-                "roleEn": role_en,
-                "locationRu": "",
-                "locationEn": "",
+                "role": role,
+                "location": "",
                 "email": "",
                 "phone": "",
                 "websiteUrl": "",
@@ -81,13 +77,11 @@ class ApiFactoryHelper:
                 "telegram": "",
             },
             "summary": {
-                "textRu": summary_ru,
-                "textEn": summary_en,
+                "text": summary,
             },
             "skills": [
                 {
-                    "categoryRu": "Backend",
-                    "categoryEn": "Backend",
+                    "category": "Backend",
                     "items": ["Python", "PostgreSQL"],
                 },
             ],
@@ -102,10 +96,12 @@ class ApiFactoryHelper:
     def resume_request(
         cls,
         title: str = "Backend resume",
+        language: str = "ru",
         content: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "title": title,
+            "language": language,
             "content": content if content is not None else cls.resume_content(),
         }
 

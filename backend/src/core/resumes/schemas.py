@@ -3,6 +3,7 @@ from datetime import date, datetime
 from math import ceil
 from typing import Self
 
+from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
 from core.schemas import ValuedDataclass
 from core.types import IntId
@@ -11,10 +12,8 @@ from core.types import IntId
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeProfile:
     full_name: str
-    role_ru: str
-    role_en: str
-    location_ru: str
-    location_en: str
+    role: str
+    location: str
     email: str
     phone: str
     website_url: str
@@ -25,80 +24,60 @@ class ResumeProfile:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeSummary:
-    text_ru: str
-    text_en: str
+    text: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeSkillGroup:
-    category_ru: str
-    category_en: str
+    category: str
     items: list[str]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeProjectItem:
-    name_ru: str
-    name_en: str
-    role_ru: str
-    role_en: str
-    description_ru: str
-    description_en: str
-    highlights_ru: list[str]
-    highlights_en: list[str]
+    name: str
+    role: str
+    description: str
+    highlights: list[str]
     technologies: list[str]
     url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeExperienceItem:
-    company_ru: str
-    company_en: str
-    position_ru: str
-    position_en: str
-    location_ru: str
-    location_en: str
+    company: str
+    position: str
+    location: str
     start_date: date | None
     end_date: date | None
     current_status: ResumeCurrentStatusEnum
-    summary_ru: str
-    summary_en: str
-    highlights_ru: list[str]
-    highlights_en: list[str]
+    summary: str
+    highlights: list[str]
     technologies: list[str]
     projects: list[ResumeProjectItem]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeEducationItem:
-    institution_ru: str
-    institution_en: str
-    degree_ru: str
-    degree_en: str
-    field_ru: str
-    field_en: str
-    location_ru: str
-    location_en: str
+    institution: str
+    degree: str
+    field: str
+    location: str
     start_date: date | None
     end_date: date | None
-    description_ru: str
-    description_en: str
+    description: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeLanguageItem:
-    name_ru: str
-    name_en: str
-    proficiency_ru: str
-    proficiency_en: str
+    name: str
+    proficiency: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeCertificationItem:
-    name_ru: str
-    name_en: str
-    issuer_ru: str
-    issuer_en: str
+    name: str
+    issuer: str
     issued_on: date | None
     expires_on: date | None
     credential_url: str
@@ -106,17 +85,14 @@ class ResumeCertificationItem:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeAdditionalSectionItem:
-    title_ru: str
-    title_en: str
-    description_ru: str
-    description_en: str
+    title: str
+    description: str
     url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeAdditionalSection:
-    title_ru: str
-    title_en: str
+    title: str
     items: list[ResumeAdditionalSectionItem]
 
 
@@ -136,6 +112,7 @@ class ResumeContent:
 class Resume:
     id: IntId
     title: str
+    language: LanguageEnum
     content: ResumeContent
     author_username: str
     created_at: datetime
@@ -179,6 +156,7 @@ class ResumeFilters:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeCreateParams:
     title: str
+    language: LanguageEnum
     content: ResumeContent
     author_username: str
 
@@ -186,12 +164,14 @@ class ResumeCreateParams:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeUpdateParams:
     title: str
+    language: LanguageEnum
     content: ResumeContent
 
     def to_resume(self, *, existing_resume: Resume, now: datetime) -> Resume:
         return Resume(
             id=existing_resume.id,
             title=self.title,
+            language=self.language,
             content=self.content,
             author_username=existing_resume.author_username,
             created_at=existing_resume.created_at,

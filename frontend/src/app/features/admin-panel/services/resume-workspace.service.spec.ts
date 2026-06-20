@@ -26,9 +26,11 @@ describe('ResumeWorkspaceService', () => {
 
   it('loads admin resumes with explicit pagination', () => {
     let firstTitle = '';
+    let firstLanguage = '';
 
     service.listResumes({ page: 2, pageSize: 20 }).subscribe((list) => {
       firstTitle = list.resumes[0].title;
+      firstLanguage = list.resumes[0].language;
     });
 
     const listReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes'));
@@ -42,13 +44,14 @@ describe('ResumeWorkspaceService', () => {
     });
 
     expect(firstTitle).toBe('Backend resume');
+    expect(firstLanguage).toBe('en');
   });
 
   it('loads resume detail through the admin endpoint', () => {
     let fullName = '';
 
     service.getResume(7).subscribe((resume) => {
-      fullName = resume.content.profile.fullName ?? '';
+      fullName = resume.content.profile.fullName;
     });
 
     const detailReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
@@ -108,6 +111,7 @@ describe('ResumeWorkspaceService', () => {
 function resumePayload(): ResumePayload {
   return {
     title: 'Backend resume',
+    language: 'en',
     content: resumeContent(),
   };
 }
@@ -115,6 +119,7 @@ function resumePayload(): ResumePayload {
 function resumeDto(): {
   id: number;
   title: string;
+  language: 'en';
   content: ReturnType<typeof resumeContent>;
   createdAt: string;
   updatedAt: string;
@@ -122,6 +127,7 @@ function resumeDto(): {
   return {
     id: 7,
     title: 'Backend resume',
+    language: 'en',
     content: resumeContent(),
     createdAt: '2026-01-01T03:04:05+00:00',
     updatedAt: '2026-01-02T03:04:05+00:00',
@@ -132,10 +138,8 @@ function resumeContent(): ResumePayload['content'] {
   return {
     profile: {
       fullName: 'Candidate Name',
-      roleRu: 'Инженер',
-      roleEn: 'Engineer',
-      locationRu: '',
-      locationEn: '',
+      role: 'Engineer',
+      location: '',
       email: '',
       phone: '',
       websiteUrl: '',
@@ -144,42 +148,31 @@ function resumeContent(): ResumePayload['content'] {
       telegram: '',
     },
     summary: {
-      textRu: 'Короткое описание опыта.',
-      textEn: 'Short experience summary.',
+      text: 'Short experience summary.',
     },
     skills: [
       {
-        categoryRu: 'Backend',
-        categoryEn: 'Backend',
+        category: 'Backend',
         items: ['Python', 'PostgreSQL'],
       },
     ],
     experience: [
       {
-        companyRu: 'Компания',
-        companyEn: 'Company',
-        positionRu: 'Инженер',
-        positionEn: 'Engineer',
-        locationRu: '',
-        locationEn: '',
+        company: 'Company',
+        position: 'Engineer',
+        location: '',
         startDate: '2020-01-01',
         endDate: null,
         currentStatus: 'current',
-        summaryRu: 'Строил платформу.',
-        summaryEn: 'Built a platform.',
-        highlightsRu: ['Сократил latency'],
-        highlightsEn: ['Reduced latency'],
+        summary: 'Built a platform.',
+        highlights: ['Reduced latency'],
         technologies: ['Python'],
         projects: [
           {
-            nameRu: 'Портфолио',
-            nameEn: 'Portfolio',
-            roleRu: 'Автор',
-            roleEn: 'Creator',
-            descriptionRu: 'Сайт и база знаний',
-            descriptionEn: 'Site and knowledge base',
-            highlightsRu: ['Гибридный SSR/CSR'],
-            highlightsEn: ['Hybrid SSR/CSR'],
+            name: 'Portfolio',
+            role: 'Creator',
+            description: 'Site and knowledge base',
+            highlights: ['Hybrid SSR/CSR'],
             technologies: ['Litestar'],
             url: 'https://example.com',
           },

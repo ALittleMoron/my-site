@@ -36,6 +36,7 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
+from core.i18n.enums import LanguageEnum
 from core.resumes.schemas import (
     Resume,
     ResumeContent,
@@ -520,20 +521,16 @@ class CoreFactoryHelper:
     def resume_content(
         cls,
         full_name: str = "Candidate Name",
-        role_ru: str = "Инженер",
-        role_en: str = "Engineer",
-        summary_ru: str = "Короткое описание опыта.",
-        summary_en: str = "Short experience summary.",
+        role: str = "Инженер",
+        summary: str = "Короткое описание опыта.",
         skills: list[ResumeSkillGroup] | None = None,
         experience: list[ResumeExperienceItem] | None = None,
     ) -> ResumeContent:
         return ResumeContent(
             profile=ResumeProfile(
                 full_name=full_name,
-                role_ru=role_ru,
-                role_en=role_en,
-                location_ru="",
-                location_en="",
+                role=role,
+                location="",
                 email="",
                 phone="",
                 website_url="",
@@ -541,13 +538,12 @@ class CoreFactoryHelper:
                 github_url="",
                 telegram="",
             ),
-            summary=ResumeSummary(text_ru=summary_ru, text_en=summary_en),
+            summary=ResumeSummary(text=summary),
             skills=skills
             if skills is not None
             else [
                 ResumeSkillGroup(
-                    category_ru="Backend",
-                    category_en="Backend",
+                    category="Backend",
                     items=["Python", "PostgreSQL"],
                 ),
             ],
@@ -563,6 +559,7 @@ class CoreFactoryHelper:
         cls,
         resume_id: IntId | int = 1,
         title: str = "Backend resume",
+        language: LanguageEnum = LanguageEnum.RU,
         content: ResumeContent | None = None,
         author_username: str = "test",
         created_at: str | None = None,
@@ -572,6 +569,7 @@ class CoreFactoryHelper:
         return Resume(
             id=cls.int_id(resume_id) if isinstance(resume_id, int) else resume_id,
             title=title,
+            language=language,
             content=content or cls.resume_content(),
             author_username=author_username,
             created_at=(

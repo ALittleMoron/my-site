@@ -401,10 +401,11 @@ Workspace is admin-only utils, that live only in admin panel.
 
 - [x] Resume
   - [x] Store private structured ATS-oriented resume documents outside the knowledge database.
+  - [x] Store each resume as a single-language document with required saved RU/EN language.
   - [x] Add admin-only backend CRUD API under `/api/admin/resumes`.
   - [x] Scope resume CRUD to the authenticated author so users only list and mutate their own resumes.
   - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
-  - [x] Add list, create, detail edit, RU/EN preview, and delete UI.
+  - [x] Add list, create with language selection, detail edit, language badge, selected-language preview, and delete UI.
   - [x] Keep resumes private: no public pages, sitemap entries, SEO, themes, or export in v1.
   - [ ] Resume customization
     - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)

@@ -139,6 +139,9 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   `name_en`, plus competency matrix `question_*`, `answer_*`, `interview_expected_answer_*`,
   `sheet_*`, `section_*`, `subsection_*`, resource `name_*`, and attachment `context_*` fields.
   Competency matrix sheets must use a stable language-neutral `sheet_key`/`sheetKey` identifier.
+  Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
+  resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
+  whether the authored text actually matches the selected language.
   Do not add generic translation tables, production defaults, or fallback language behavior unless
   an explicit design change asks for them.
 - Core article, tag, and competency matrix domain entities must not store localized projection fields
@@ -159,7 +162,8 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
 - Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
   and cover new languages/keys with catalog parity tests.
-- Non-article and non-matrix content localisation remains future work until explicitly designed.
+- Content localisation beyond articles, article tags, competency matrix content, and resumes remains
+  future work until explicitly designed.
 
 ## Persistence
 

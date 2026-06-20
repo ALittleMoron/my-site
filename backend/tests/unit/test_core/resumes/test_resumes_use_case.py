@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
@@ -29,14 +30,12 @@ from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
 
 
-def build_content(*, summary_ru: str, skill_items: list[str]) -> ResumeContent:
+def build_content(*, summary: str, skill_items: list[str]) -> ResumeContent:
     return ResumeContent(
         profile=ResumeProfile(
             full_name="Dmitriy Ivanov",
-            role_ru="Бэкенд-инженер",
-            role_en="Backend engineer",
-            location_ru="Москва",
-            location_en="Moscow",
+            role="Backend engineer",
+            location="Moscow",
             email="dmitriy@example.com",
             phone="",
             website_url="https://example.com",
@@ -45,42 +44,31 @@ def build_content(*, summary_ru: str, skill_items: list[str]) -> ResumeContent:
             telegram="@dmitriy",
         ),
         summary=ResumeSummary(
-            text_ru=summary_ru,
-            text_en="Builds reliable backend systems.",
+            text=summary,
         ),
         skills=[
             ResumeSkillGroup(
-                category_ru="Языки",
-                category_en="Languages",
+                category="Languages",
                 items=skill_items,
             ),
         ],
         experience=[
             ResumeExperienceItem(
-                company_ru="Компания",
-                company_en="Company",
-                position_ru="Инженер",
-                position_en="Engineer",
-                location_ru="",
-                location_en="",
+                company="Company",
+                position="Engineer",
+                location="",
                 start_date=date(2023, 1, 1),
                 end_date=None,
                 current_status=ResumeCurrentStatusEnum.CURRENT,
-                summary_ru="",
-                summary_en="",
-                highlights_ru=["Запустил сервис"],
-                highlights_en=["Launched service"],
+                summary="",
+                highlights=["Launched service"],
                 technologies=["Python", "PostgreSQL"],
                 projects=[
                     ResumeProjectItem(
-                        name_ru="Портфолио",
-                        name_en="Portfolio",
-                        role_ru="",
-                        role_en="",
-                        description_ru="Сайт и база знаний",
-                        description_en="Site and knowledge base",
-                        highlights_ru=[],
-                        highlights_en=[],
+                        name="Portfolio",
+                        role="",
+                        description="Site and knowledge base",
+                        highlights=[],
                         technologies=["Litestar", "Angular"],
                         url="https://example.com",
                     ),
@@ -89,34 +77,25 @@ def build_content(*, summary_ru: str, skill_items: list[str]) -> ResumeContent:
         ],
         education=[
             ResumeEducationItem(
-                institution_ru="Университет",
-                institution_en="University",
-                degree_ru="",
-                degree_en="",
-                field_ru="Информатика",
-                field_en="Computer science",
-                location_ru="",
-                location_en="",
+                institution="University",
+                degree="",
+                field="Computer science",
+                location="",
                 start_date=None,
                 end_date=None,
-                description_ru="",
-                description_en="",
+                description="",
             ),
         ],
         languages=[
             ResumeLanguageItem(
-                name_ru="Английский",
-                name_en="English",
-                proficiency_ru="C1",
-                proficiency_en="C1",
+                name="English",
+                proficiency="C1",
             ),
         ],
         certifications=[
             ResumeCertificationItem(
-                name_ru="Сертификат",
-                name_en="Certificate",
-                issuer_ru="Провайдер",
-                issuer_en="Provider",
+                name="Certificate",
+                issuer="Provider",
                 issued_on=None,
                 expires_on=None,
                 credential_url="",
@@ -124,14 +103,11 @@ def build_content(*, summary_ru: str, skill_items: list[str]) -> ResumeContent:
         ],
         additional_sections=[
             ResumeAdditionalSection(
-                title_ru="Публикации",
-                title_en="Publications",
+                title="Publications",
                 items=[
                     ResumeAdditionalSectionItem(
-                        title_ru="Статья",
-                        title_en="Article",
-                        description_ru="",
-                        description_en="",
+                        title="Article",
+                        description="",
                         url="",
                     ),
                 ],
@@ -145,10 +121,12 @@ def build_resume(
     resume_id: IntId,
     content: ResumeContent,
     author_username: str = "test",
+    language: LanguageEnum = LanguageEnum.EN,
 ) -> Resume:
     return Resume(
         id=resume_id,
         title="Backend engineer",
+        language=language,
         content=content,
         author_username=author_username,
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
@@ -177,7 +155,7 @@ class TestResumesUseCase:
         )
         resume = build_resume(
             resume_id=IntId(1),
-            content=build_content(summary_ru="Создает надежные системы.", skill_items=["Python"]),
+            content=build_content(summary="Builds reliable systems.", skill_items=["Python"]),
         )
         self.storage.list_resumes.return_value = ([resume], 21)
 
@@ -204,7 +182,7 @@ class TestResumesUseCase:
     async def test_get_resume_delegates_to_storage(self) -> None:
         expected = build_resume(
             resume_id=IntId(1),
-            content=build_content(summary_ru="Создает надежные системы.", skill_items=["Python"]),
+            content=build_content(summary="Builds reliable systems.", skill_items=["Python"]),
         )
         self.storage.get_resume.return_value = expected
 
@@ -223,9 +201,10 @@ class TestResumesUseCase:
             await self.use_case.get_resume(resume_id=IntId(404), author_username="test")
 
     async def test_create_resume_persists_explicit_content(self) -> None:
-        content = build_content(summary_ru="Создает надежные системы.", skill_items=["Python"])
+        content = build_content(summary="Builds reliable systems.", skill_items=["Python"])
         params = ResumeCreateParams(
             title="Backend engineer",
+            language=LanguageEnum.EN,
             content=content,
             author_username="test",
         )
@@ -239,7 +218,7 @@ class TestResumesUseCase:
 
     async def test_update_resume_replaces_whole_content(self) -> None:
         existing_content = build_content(
-            summary_ru="Старое описание.",
+            summary="Old summary.",
             skill_items=["Python", "SQL"],
         )
         existing_resume = build_resume(
@@ -250,10 +229,8 @@ class TestResumesUseCase:
         replacement_content = ResumeContent(
             profile=ResumeProfile(
                 full_name="",
-                role_ru="",
-                role_en="",
-                location_ru="",
-                location_en="",
+                role="",
+                location="",
                 email="",
                 phone="",
                 website_url="",
@@ -262,8 +239,7 @@ class TestResumesUseCase:
                 telegram="",
             ),
             summary=ResumeSummary(
-                text_ru="Новое описание.",
-                text_en="Updated summary.",
+                text="Updated summary.",
             ),
             skills=[],
             experience=[],
@@ -274,6 +250,7 @@ class TestResumesUseCase:
         )
         params = ResumeUpdateParams(
             title="Platform engineer",
+            language=LanguageEnum.RU,
             content=replacement_content,
         )
         expected = build_resume(
@@ -302,6 +279,7 @@ class TestResumesUseCase:
         assert updated_resume.created_at == existing_resume.created_at
         assert updated_resume.updated_at > existing_resume.updated_at
         assert updated_resume.title == "Platform engineer"
+        assert updated_resume.language == LanguageEnum.RU
         assert updated_resume.content == replacement_content
         assert updated_resume.content.experience == []
 

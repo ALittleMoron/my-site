@@ -56,13 +56,28 @@ export class I18nService {
     return this.loadLanguage(language, true);
   }
 
+  ensureLanguageBundle(language: LanguageCode): Observable<void> {
+    if (!this.isAvailableLanguage(language)) {
+      return throwError(() => new Error(`Unsupported language: ${language}`));
+    }
+    if (this.bundleCache.has(language)) {
+      return of(void 0);
+    }
+    return this.fetchLanguageBundle(language);
+  }
+
   translate(key: string, params?: I18nParams): string {
     const template = this.messages()?.[key] ?? STARTUP_ERROR_MESSAGES[key] ?? key;
-    if (!params) return template;
-    return Object.entries(params).reduce(
-      (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
-      template,
-    );
+    return interpolate(template, params);
+  }
+
+  translateForLanguage(language: LanguageCode, key: string, params?: I18nParams): string {
+    const template =
+      this.bundleCache.get(language)?.[key] ??
+      (language === this.language() ? this.messages()?.[key] : undefined) ??
+      STARTUP_ERROR_MESSAGES[key] ??
+      key;
+    return interpolate(template, params);
   }
 
   enumGradeKey(grade: string): string {
@@ -72,6 +87,17 @@ export class I18nService {
 
   dateLocale(): string {
     return this.language() === 'en' ? 'en-US' : 'ru-RU';
+  }
+
+  private fetchLanguageBundle(language: LanguageCode): Observable<void> {
+    return this.api()
+      .get<I18nBundleDto>(`/api/i18n/bundles/${language}`)
+      .pipe(
+        tap((bundle) => {
+          this.bundleCache.set(bundle.language, bundle.messages);
+        }),
+        map(() => void 0),
+      );
   }
 
   private resolveInitialLanguage(response: I18nLanguagesDto): LanguageCode {
@@ -96,15 +122,15 @@ export class I18nService {
       this.applyBundle(language, cached, persist);
       return of(void 0);
     }
-    return this.api()
-      .get<I18nBundleDto>(`/api/i18n/bundles/${language}`)
-      .pipe(
-        tap((bundle) => {
-          this.bundleCache.set(bundle.language, bundle.messages);
-          this.applyBundle(bundle.language, bundle.messages, persist);
-        }),
-        map(() => void 0),
-      );
+    return this.fetchLanguageBundle(language).pipe(
+      tap(() => {
+        const messages = this.bundleCache.get(language);
+        if (!messages) {
+          throw new Error(`Missing language bundle: ${language}`);
+        }
+        this.applyBundle(language, messages, persist);
+      }),
+    );
   }
 
   private applyBundle(
@@ -142,4 +168,12 @@ export class I18nService {
   private api(): ApiClient {
     return this.injector.get(ApiClient);
   }
+}
+
+function interpolate(template: string, params?: I18nParams): string {
+  if (!params) return template;
+  return Object.entries(params).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+    template,
+  );
 }
