@@ -2,15 +2,18 @@ from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from typing import Any, cast
 
+import pytest
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 
+from core.resumes.schemas import ResumeFilters
 from performance.query_plans import (
     PlanExpectation,
     analyze_explain_result,
     compile_captured_query,
     generate_series_subquery,
 )
+from performance.query_plans import scenarios as query_plan_scenarios
 from performance.query_plans.discovery import discover_storage_methods
 from performance.query_plans.expectations import (
     QueryThresholdPolicy,
@@ -152,6 +155,7 @@ class TestQueryCapture:
         assert ("AuthDatabaseStorage", "update_user_password_hash") in identifiers
         assert ("UserAccountDatabaseStorage", "get_user_by_username") in identifiers
         assert ("ContactMeDatabaseStorage", "create_contact_me_request") in identifiers
+        assert ("ResumesDatabaseStorage", "list_resumes") in identifiers
         assert ("ArticlesDatabaseStorage", "_get_article_model") not in identifiers
 
     def test_storage_scenarios_cover_every_discovered_storage_method(self) -> None:
@@ -165,12 +169,45 @@ class TestQueryCapture:
         assert ("ArticlesDatabaseStorage", "list_articles") in {
             (method.storage_class, method.method_name) for method in coverage.covered_methods
         }
+        assert ("ResumesDatabaseStorage", "list_resumes") in {
+            (method.storage_class, method.method_name) for method in coverage.covered_methods
+        }
 
     def test_update_article_scenario_avoids_seeded_target_tag_collision(self) -> None:
         article = write_article_for_existing_article()
 
         assert article.id == article_id(99)
         assert {tag.id for tag in article.tags} == {1, 2}
+
+    async def test_resume_list_scenario_passes_explicit_search_query(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        captured_filters: ResumeFilters | None = None
+
+        class FakeResumesDatabaseStorage:
+            def __init__(self, *, session: object) -> None:
+                self.session = session
+
+            async def list_resumes(self, *, filters: ResumeFilters) -> tuple[list[Any], int]:
+                nonlocal captured_filters
+                captured_filters = filters
+                return [], 0
+
+        monkeypatch.setattr(
+            query_plan_scenarios,
+            "ResumesDatabaseStorage",
+            FakeResumesDatabaseStorage,
+        )
+
+        await query_plan_scenarios.run_list_resumes(cast("Any", object()))
+
+        assert captured_filters == ResumeFilters(
+            page=1,
+            page_size=20,
+            search_query=None,
+            author_username="benchmark",
+        )
 
     def test_runtime_capture_records_statement_without_touching_cursor(self) -> None:
         capture = RuntimeQueryCapture(clock=FakeClock(1_000_000, 26_000_000))

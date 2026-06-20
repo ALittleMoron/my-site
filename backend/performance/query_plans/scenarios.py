@@ -21,6 +21,14 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
+from core.resumes.schemas import (
+    Resume,
+    ResumeContent,
+    ResumeCreateParams,
+    ResumeFilters,
+    ResumeProfile,
+    ResumeSummary,
+)
 from core.types import IntId
 from infra.postgresql.storages.articles import (
     ArticleAnalyticsDatabaseStorage,
@@ -29,6 +37,7 @@ from infra.postgresql.storages.articles import (
 from infra.postgresql.storages.auth import AuthDatabaseStorage
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
+from infra.postgresql.storages.resumes import ResumesDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from performance.query_plans.expectations import (
     BALANCED_THRESHOLD_POLICY,
@@ -52,6 +61,7 @@ NEW_CONTACT_ID = UUID("10000000-0000-4000-8000-000000000002")
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
 NEW_TAG_ID = IntId(90_000_001)
 NEW_MATRIX_ITEM_ID = IntId(900_001)
+NEW_RESUME_TITLE = "Query plan new resume"
 SHORT_TRIGRAM_ALLOW_REASON = (
     "short search string has too few extractable trigrams for an index-selective search"
 )
@@ -151,6 +161,54 @@ async def run_create_contact_me_request(session: AsyncSession) -> None:
             telegram=None,
             message="Please include contact writes in query plan smoke.",
         ),
+    )
+
+
+async def run_list_resumes(session: AsyncSession) -> None:
+    await ResumesDatabaseStorage(session=session).list_resumes(
+        filters=ResumeFilters(
+            page=1,
+            page_size=20,
+            search_query=None,
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_get_resume(session: AsyncSession) -> None:
+    await ResumesDatabaseStorage(session=session).get_resume(
+        resume_id=IntId(100),
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_resume(session: AsyncSession) -> None:
+    await ResumesDatabaseStorage(session=session).create_resume(
+        params=ResumeCreateParams(
+            title=NEW_RESUME_TITLE,
+            content=write_resume_content(summary_ru="Новое резюме для query-plan smoke."),
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_update_resume(session: AsyncSession) -> None:
+    await ResumesDatabaseStorage(session=session).update_resume(
+        resume=Resume(
+            id=IntId(100),
+            title="Query plan updated resume",
+            content=write_resume_content(summary_ru="Обновленное резюме для query-plan smoke."),
+            author_username=SEED_USERNAME,
+            created_at=SEED_NOW,
+            updated_at=SEED_NOW,
+        ),
+    )
+
+
+async def run_delete_resume(session: AsyncSession) -> None:
+    await ResumesDatabaseStorage(session=session).delete_resume(
+        resume_id=IntId(101),
+        author_username=SEED_USERNAME,
     )
 
 
@@ -547,6 +605,35 @@ def seed_tag(tag_id: IntId) -> Tag:
     return Tag(id=tag_id, name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
 
 
+def write_resume_content(*, summary_ru: str) -> ResumeContent:
+    return ResumeContent(
+        profile=ResumeProfile(
+            full_name="Query Plan Candidate",
+            role_ru="Инженер",
+            role_en="Engineer",
+            location_ru=None,
+            location_en=None,
+            email=None,
+            phone=None,
+            website_url=None,
+            linkedin_url=None,
+            github_url=None,
+            telegram=None,
+        ),
+        summary=ResumeSummary(
+            text_ru=summary_ru,
+            text_en="Resume content for query-plan smoke.",
+        ),
+        skills=[],
+        experience=[],
+        projects=[],
+        education=[],
+        languages=[],
+        certifications=[],
+        additional_sections=[],
+    )
+
+
 def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
     return CompetencyMatrixItem(
         id=item_id,
@@ -635,6 +722,56 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason=None,
         run=run_create_contact_me_request,
+    ),
+    scenario(
+        name="resumes_list_workspace",
+        storage_class="ResumesDatabaseStorage",
+        method_name="list_resumes",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=("resumes_resume_author_updated_id_idx",),
+        forbidden_seq_scan_relations=("resumes__resume_model",),
+        allow_seq_scan_reason="list_resumes includes an exact private workspace count query",
+        run=run_list_resumes,
+    ),
+    scenario(
+        name="resumes_detail_by_id",
+        storage_class="ResumesDatabaseStorage",
+        method_name="get_resume",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("resumes__resume_model_pkey",),
+        forbidden_seq_scan_relations=("resumes__resume_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_resume,
+    ),
+    scenario(
+        name="resumes_create",
+        storage_class="ResumesDatabaseStorage",
+        method_name="create_resume",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_resume,
+    ),
+    scenario(
+        name="resumes_update",
+        storage_class="ResumesDatabaseStorage",
+        method_name="update_resume",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("resumes__resume_model_pkey",),
+        forbidden_seq_scan_relations=("resumes__resume_model",),
+        allow_seq_scan_reason=None,
+        run=run_update_resume,
+    ),
+    scenario(
+        name="resumes_delete",
+        storage_class="ResumesDatabaseStorage",
+        method_name="delete_resume",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("resumes__resume_model_pkey",),
+        forbidden_seq_scan_relations=("resumes__resume_model",),
+        allow_seq_scan_reason=None,
+        run=run_delete_resume,
     ),
     scenario(
         name="articles_detail_by_slug",

@@ -78,6 +78,7 @@ describe('FoldableTreeComponent', () => {
       '+--Опечатки от пользователей4',
     ]);
     expect(items[1].classList).toContain('active');
+    expect(items[1].classList).toContain('foldable-tree-item-success');
     expect(items[1].getAttribute('aria-selected')).toBe('true');
   });
 

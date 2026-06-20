@@ -1,0 +1,227 @@
+<div class="admin-resumes-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h2 class="h4 mb-0">{{ 'adminResumeWorkspace.title' | t }}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn btn-success btn-sm"
+        data-testid="resume-create-open"
+        (click)="openCreateDialog()"
+      >
+        {{ 'adminResumeWorkspace.create' | t }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="loadResumes()">
+        {{ 'shared.update' | t }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+  } @else if (error()) {
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="loadResumes()"
+    />
+  } @else if ((resumes()?.resumes?.length ?? 0) === 0) {
+    <app-empty-state [message]="'adminResumeWorkspace.empty' | t" />
+  } @else if (resumes()) {
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>{{ 'adminResumeWorkspace.field.title' | t }}</th>
+            <th>{{ 'adminResumeWorkspace.updatedAt' | t }}</th>
+            <th>{{ 'adminResumeWorkspace.createdAt' | t }}</th>
+            <th>{{ 'adminResumeWorkspace.completeness' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (resume of resumes()!.resumes; track resume.id) {
+            <tr>
+              <td>
+                <a class="fw-semibold" [routerLink]="['/admin-panel/workspace/resumes', resume.id]">
+                  {{ resume.title }}
+                </a>
+                <span class="d-block small text-body-secondary">
+                  {{ resume.content.profile.fullName ?? ('shared.notSet' | t) }}
+                </span>
+              </td>
+              <td>{{ formatDate(resume.updatedAt) }}</td>
+              <td>{{ formatDate(resume.createdAt) }}</td>
+              <td>{{ completedSections(resume) }}/5</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center gap-3">
+      <span class="small text-body-secondary">
+        {{ 'adminResumeWorkspace.page' | t }} {{ page() }} / {{ resumes()!.totalPages }}
+      </span>
+      <div class="btn-group btn-group-sm">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="page() <= 1"
+          (click)="previousPage()"
+        >
+          {{ 'shared.back' | t }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="page() >= resumes()!.totalPages"
+          (click)="nextPage()"
+        >
+          {{ 'shared.next' | t }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (createDialogOpen()) {
+    <div
+      class="modal d-block bg-dark bg-opacity-50"
+      role="dialog"
+      aria-modal="true"
+      data-testid="resume-create-dialog"
+      [attr.aria-label]="'adminResumeWorkspace.createTitle' | t"
+      (click)="closeCreateDialog()"
+      (keyup.escape)="closeCreateDialog()"
+      tabindex="0"
+    >
+      <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+        role="document"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <form
+          class="modal-content"
+          data-testid="resume-create-form"
+          [formGroup]="createForm"
+          (ngSubmit)="createResume()"
+        >
+          <div class="modal-header">
+            <h2 class="h5 modal-title">{{ 'adminResumeWorkspace.createTitle' | t }}</h2>
+            <button
+              type="button"
+              class="btn-close"
+              [disabled]="createSubmitting()"
+              [attr.aria-label]="'shared.close' | t"
+              (click)="closeCreateDialog()"
+            ></button>
+          </div>
+          <div class="modal-body">
+            @if (createError()) {
+              <app-error-message
+                [error]="createError()!"
+                [retryLabel]="'shared.retry' | t"
+                (retry)="createResume()"
+              />
+            }
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="resume-create-title">
+                  {{ 'adminResumeWorkspace.field.title' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="resume-create-title"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('title')"
+                  data-testid="resume-create-title"
+                  formControlName="title"
+                />
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="resume-create-full-name">
+                  {{ 'adminResumeWorkspace.field.fullName' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="resume-create-full-name"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('fullName')"
+                  data-testid="resume-create-full-name"
+                  formControlName="fullName"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="resume-create-role-ru">
+                  {{ 'adminResumeWorkspace.field.roleRu' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="resume-create-role-ru"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('roleRu')"
+                  data-testid="resume-create-role-ru"
+                  formControlName="roleRu"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="resume-create-role-en">
+                  {{ 'adminResumeWorkspace.field.roleEn' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="resume-create-role-en"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('roleEn')"
+                  data-testid="resume-create-role-en"
+                  formControlName="roleEn"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="resume-create-summary-ru">
+                  {{ 'adminResumeWorkspace.field.summaryRu' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <textarea
+                  id="resume-create-summary-ru"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('summaryRu')"
+                  rows="4"
+                  data-testid="resume-create-summary-ru"
+                  formControlName="summaryRu"
+                ></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="resume-create-summary-en">
+                  {{ 'adminResumeWorkspace.field.summaryEn' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <textarea
+                  id="resume-create-summary-en"
+                  class="form-control"
+                  [class.is-invalid]="createFieldInvalid('summaryEn')"
+                  rows="4"
+                  data-testid="resume-create-summary-en"
+                  formControlName="summaryEn"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [disabled]="createSubmitting()"
+              (click)="closeCreateDialog()"
+            >
+              {{ 'shared.cancel' | t }}
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="createSubmitting()">
+              {{ 'adminResumeWorkspace.createSubmit' | t }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

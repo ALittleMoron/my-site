@@ -9,3 +9,4 @@ from .competency_matrix import CompetencyMatrixItemModel as CompetencyMatrixItem
 from .competency_matrix import ExternalResourceModel as ExternalResourceModel
 from .competency_matrix import QueuedQuestionModel as QueuedQuestionModel
 from .contacts import ContactMeModel as ContactMeModel
+from .resumes import ResumeModel as ResumeModel

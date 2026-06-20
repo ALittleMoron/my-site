@@ -24,6 +24,7 @@ import { AnonymousReactionService } from '../../../../core/privacy/anonymous-rea
 import { SeoAlternate, SeoService } from '../../../../core/seo/seo.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
+import { LocalizedDatePickerComponent } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
   ArticleDetail,
@@ -35,7 +36,6 @@ import {
 } from '../../models/articles.model';
 import { ArticlesService } from '../../services/articles.service';
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
-import { LocalizedDatePickerComponent } from './components/localized-date-picker/localized-date-picker.component';
 import { ArticleListComponent } from './components/article-list/article-list.component';
 import { ArticlesStatsPanelComponent } from './components/articles-stats-panel/articles-stats-panel.component';
 import { ArticlesSidePanelComponent } from './components/articles-side-panel/articles-side-panel.component';
@@ -141,31 +141,31 @@ export class ArticlesPageComponent implements OnInit {
   readonly dateLocale = computed(() => this.i18n.dateLocale());
   readonly datePlaceholder = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.placeholder');
+    return this.i18n.translate('shared.datePicker.placeholder');
   });
   readonly openCalendarLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.open');
+    return this.i18n.translate('shared.datePicker.open');
   });
   readonly previousMonthLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.previousMonth');
+    return this.i18n.translate('shared.datePicker.previousMonth');
   });
   readonly nextMonthLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.nextMonth');
+    return this.i18n.translate('shared.datePicker.nextMonth');
   });
   readonly openMonthYearPickerLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.openMonthYearPicker');
+    return this.i18n.translate('shared.datePicker.openMonthYearPicker');
   });
   readonly previousYearLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.previousYear');
+    return this.i18n.translate('shared.datePicker.previousYear');
   });
   readonly nextYearLabel = computed(() => {
     this.language();
-    return this.i18n.translate('articles.datePicker.nextYear');
+    return this.i18n.translate('shared.datePicker.nextYear');
   });
   readonly language = computed(() => {
     const language = this.i18n.language();

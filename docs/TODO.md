@@ -395,20 +395,29 @@
   - [x] Moderators and admins can edit, add, and delete articles in the admin panel
   - [x] Regular users cannot view hidden articles
 
+### Workspace
+
+Workspace is admin-only utils, that live only in admin panel.
+
+- [x] Resume
+  - [x] Store private structured ATS-oriented resume documents outside the knowledge database.
+  - [x] Add admin-only backend CRUD API under `/api/admin/resumes`.
+  - [x] Scope resume CRUD to the authenticated author so users only list and mutate their own resumes.
+  - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
+  - [x] Add list, create, detail edit, RU/EN preview, and delete UI.
+  - [x] Keep resumes private: no public pages, sitemap entries, SEO, themes, or export in v1.
+  - [ ] Resume customization
+    - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
+    - [ ] Blocks visibility
+    - [ ] Themes
+  - [ ] Resume export
+    - [ ] To PDF
+    - [ ] To Docx
+
 ### Knowledge database
 
 Each knowledge item has its own subfolder in "knowledge database" folder on side-panel in admin panel.
 
-- [ ] Resume
-  - [ ] Generate resume from companies, people with who you work with, projects, technologies, etc.
-  - [ ] Generate project/case-study materials from knowledge database items.
-  - [ ] Customization
-    - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
-    - [ ] Blocks visibility
-    - [ ] Themes
-  - [ ] Export
-    - [ ] To PDF
-    - [ ] To Docx
 - [ ] Dashboard
   - [ ] Main page
     - [ ] Important info (in-dashboard CRUD – only text oneline items)

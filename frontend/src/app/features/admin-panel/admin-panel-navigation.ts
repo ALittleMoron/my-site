@@ -2,6 +2,19 @@ import { AdminPanelNavigationSection } from './models/admin-panel-navigation.mod
 
 export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSection[] = [
   {
+    key: 'workspace',
+    labelKey: 'adminPanel.section.workspace',
+    pages: [
+      {
+        key: 'resumes',
+        labelKey: 'adminPanel.section.resumes',
+        route: '/admin-panel/workspace/resumes',
+        badgeTextKey: null,
+        adminOnly: true,
+      },
+    ],
+  },
+  {
     key: 'articles',
     labelKey: 'adminPanel.section.articles',
     pages: [
@@ -10,6 +23,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         labelKey: 'shell.nav.articles',
         route: '/admin-panel/articles',
         badgeTextKey: null,
+        adminOnly: false,
       },
     ],
   },
@@ -22,12 +36,14 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         labelKey: 'adminPanel.section.matrixQuestions',
         route: '/admin-panel/matrix-questions',
         badgeTextKey: null,
+        adminOnly: false,
       },
       {
         key: 'matrix-question-queue',
         labelKey: 'adminPanel.section.matrixQuestionQueue',
         route: '/admin-panel/matrix-question-queue',
         badgeTextKey: null,
+        adminOnly: false,
       },
     ],
   },

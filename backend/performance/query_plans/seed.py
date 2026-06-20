@@ -32,6 +32,7 @@ from infra.postgresql.models import (
     ContactMeModel,
     ExternalResourceModel,
     QueuedQuestionModel,
+    ResumeModel,
     TagModel,
     UserModel,
 )
@@ -50,13 +51,41 @@ MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 USER_SEED_COUNT = 10_000
 ARTICLE_REACTION_SEED_COUNT = 50_000
 QUEUED_QUESTION_SEED_COUNT = 50_000
+RESUME_SEED_COUNT = 50_000
+RESUME_SEED_CONTENT: dict[str, object] = {
+    "profile": {
+        "full_name": "Query Plan Candidate",
+        "role_ru": "Инженер",
+        "role_en": "Engineer",
+        "location_ru": None,
+        "location_en": None,
+        "email": None,
+        "phone": None,
+        "website_url": None,
+        "linkedin_url": None,
+        "github_url": None,
+        "telegram": None,
+    },
+    "summary": {
+        "text_ru": "Резюме для query-plan smoke.",
+        "text_en": "Resume for query-plan smoke.",
+    },
+    "skills": [],
+    "experience": [],
+    "projects": [],
+    "education": [],
+    "languages": [],
+    "certifications": [],
+    "additional_sections": [],
+}
 
 
 async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
     stdout.write(
         "Seeding query-plan dataset: "
         f"{profile.article_count} articles, {profile.tag_count} tags, "
-        f"{profile.article_tag_link_count} article-tag links, {profile.resource_count} resources\n",
+        f"{profile.article_tag_link_count} article-tag links, {profile.resource_count} resources, "
+        f"{RESUME_SEED_COUNT} resumes\n",
     )
     await connection.execute(text("SET LOCAL synchronous_commit = off"))
     await clear_seeded_tables(connection=connection)
@@ -66,6 +95,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await insert_article_tag_links(connection=connection, profile=profile)
     await insert_article_analytics(connection=connection)
     await insert_article_reactions(connection=connection, profile=profile)
+    await insert_resumes(connection=connection)
     await insert_resources(connection=connection, profile=profile)
     await insert_competency_matrix_items(connection=connection, profile=profile)
     await insert_competency_matrix_resource_links(connection=connection)
@@ -83,6 +113,7 @@ async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
         ArticleToTagSecondaryModel,
         ArticleModel,
         TagModel,
+        ResumeModel,
         ContactMeModel,
         UserModel,
     ):
@@ -294,6 +325,33 @@ async def insert_article_reactions(*, connection: AsyncConnection, profile: Data
     )
 
 
+async def insert_resumes(*, connection: AsyncConnection) -> None:
+    series = generate_series_subquery(end=RESUME_SEED_COUNT, name="resume_series")
+    value = sql_cast(series.c.value, Integer)
+    await connection.execute(
+        insert(ResumeModel.__table__).from_select(
+            ["id", "title", "author_username", "content", "created_at", "updated_at"],
+            select(
+                value,
+                func.concat(literal("Query plan resume "), value),
+                literal(SEED_USERNAME),
+                literal(RESUME_SEED_CONTENT, type_=postgresql.JSONB),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+        ),
+    )
+    await connection.execute(
+        select(
+            func.setval(
+                func.pg_get_serial_sequence(ResumeModel.__tablename__, "id"),
+                RESUME_SEED_COUNT,
+                true(),
+            ),
+        ),
+    )
+
+
 async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
     series = generate_series_subquery(end=profile.resource_count, name="resource_series")
     value = sql_cast(series.c.value, Integer)
@@ -491,6 +549,7 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "articles__article_to_tag_secondary_model",
         "articles__article_daily_analytics_model",
         "articles__article_reaction_model",
+        "resumes__resume_model",
         "competency_matrix__external_resource_model",
         "competency_matrix__competency_matrix_item_model",
         "competency_matrix__resource_to_item_secondary_model",

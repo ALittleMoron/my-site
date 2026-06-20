@@ -3,6 +3,7 @@ export interface AdminPanelNavigationPage {
   labelKey: string;
   route: string;
   badgeTextKey: string | null;
+  adminOnly: boolean;
 }
 
 export interface AdminPanelNavigationSection {

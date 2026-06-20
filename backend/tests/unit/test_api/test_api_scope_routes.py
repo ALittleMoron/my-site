@@ -16,6 +16,7 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
     PublicCompetencyMatrixApiController,
 )
 from entrypoints.litestar.api.files.endpoints import FilesApiController
+from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
 from entrypoints.litestar.api.wiki_links.endpoints import WikiLinksApiController
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -103,6 +104,7 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         assert PublicCompetencyMatrixApiController.tags == ["public competency matrix"]
         assert AdminCompetencyMatrixApiController.tags == ["admin competency matrix"]
         assert FilesApiController.tags == ["admin files"]
+        assert AdminResumesApiController.tags == ["admin resumes"]
         assert WikiLinksApiController.tags == ["admin wiki links"]
 
     def test_operation_names_are_scope_explicit_for_split_controllers(self) -> None:
@@ -143,10 +145,25 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         assert (
             FilesApiController.presign_put_media_file.name == "admin-files-presign-put-api-handler"
         )
+        assert AdminResumesApiController.list_resumes.name == "admin-resumes-list-api-handler"
+        assert AdminResumesApiController.create_resume.name == "admin-resumes-create-api-handler"
+        assert AdminResumesApiController.get_resume.name == "admin-resumes-detail-api-handler"
+        assert AdminResumesApiController.update_resume.name == "admin-resumes-update-api-handler"
+        assert AdminResumesApiController.delete_resume.name == "admin-resumes-delete-api-handler"
         assert (
             WikiLinksApiController.list_wiki_link_targets.name
             == "admin-wiki-links-targets-list-api-handler"
         )
+
+    def test_resumes_admin_urls_are_not_left_as_public_aliases(self) -> None:
+        response = self.no_auth_api.client.get(
+            "/api/resumes",
+            params={"page": 1, "pageSize": 20},
+        )
+        assert response.status_code == codes.NOT_FOUND
+
+        response = self.no_auth_api.client.get("/api/resumes/1")
+        assert response.status_code == codes.NOT_FOUND
 
     def test_old_matrix_admin_urls_are_not_left_as_public_aliases(self) -> None:
         response = self.no_auth_api.client.get(

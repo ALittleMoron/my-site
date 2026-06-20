@@ -1,0 +1,71 @@
+.admin-resume-detail-page {
+  min-height: 12rem;
+}
+
+.resume-editor-panel {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.resume-repeatable,
+.resume-nested-repeatable {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.resume-nested-repeatable {
+  background: var(--bs-tertiary-bg);
+}
+
+.resume-preview {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: clamp(1rem, 2vw, 2rem);
+}
+
+.resume-preview-header {
+  border-bottom: 1px solid var(--bs-border-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.resume-preview-header h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  margin-bottom: 0.35rem;
+}
+
+.resume-preview h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.resume-preview h4 {
+  font-size: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.resume-preview section + section {
+  margin-top: 1.5rem;
+}
+
+.resume-preview-contacts,
+.resume-preview-tech {
+  color: var(--bs-secondary-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.resume-preview-skill-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.resume-missing {
+  color: var(--bs-warning-text-emphasis);
+  margin-bottom: 0;
+}

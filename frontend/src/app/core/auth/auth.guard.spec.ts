@@ -10,14 +10,18 @@ import {
 } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom, isObservable, of } from 'rxjs';
-import { authGuard } from './auth.guard';
+import { adminGuard, authGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { ApiClient } from '../http/api-client.service';
 
 describe('authGuard', () => {
-  function mockAuthService(canManageContent: boolean): Partial<AuthService> {
+  function mockAuthService(
+    canManageContent: boolean,
+    isAdmin = canManageContent,
+  ): Partial<AuthService> {
     return {
       canManageContent: () => canManageContent,
+      isAdmin: () => isAdmin,
       ensureCurrentUserLoaded: () => of(void 0),
       clearLocalSession: jest.fn(),
     };
@@ -78,5 +82,42 @@ describe('authGuard', () => {
 
     await expect(result).resolves.toBe(true);
     httpMock.verify();
+  });
+});
+
+describe('adminGuard', () => {
+  function mockAuthService(isAdmin: boolean): Partial<AuthService> {
+    return {
+      isAdmin: () => isAdmin,
+      ensureCurrentUserLoaded: () => of(void 0),
+      clearLocalSession: jest.fn(),
+    };
+  }
+
+  function runGuard(isAdmin: boolean): MaybeAsync<GuardResult> {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: AuthService, useValue: mockAuthService(isAdmin) }],
+    });
+    return TestBed.runInInjectionContext(() =>
+      adminGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+    );
+  }
+
+  async function resolveGuardResult(result: MaybeAsync<GuardResult>): Promise<GuardResult> {
+    if (isObservable(result)) {
+      return firstValueFrom(result);
+    }
+    return Promise.resolve(result);
+  }
+
+  it('returns true when user is an admin', async () => {
+    await expect(resolveGuardResult(runGuard(true))).resolves.toBe(true);
+  });
+
+  it('redirects non-admin content managers away from admin-only workspaces', async () => {
+    const result = await resolveGuardResult(runGuard(false));
+
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/admin-panel/articles');
   });
 });

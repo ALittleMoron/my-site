@@ -57,6 +57,59 @@ class ApiFactoryHelper:
         }
 
     @classmethod
+    def resume_content(
+        cls,
+        full_name: str | None = "Candidate Name",
+        role_ru: str | None = "Инженер",
+        role_en: str | None = "Engineer",
+        summary_ru: str | None = "Короткое описание опыта.",
+        summary_en: str | None = "Short experience summary.",
+    ) -> dict[str, Any]:
+        return {
+            "profile": {
+                "fullName": full_name,
+                "roleRu": role_ru,
+                "roleEn": role_en,
+                "locationRu": None,
+                "locationEn": None,
+                "email": None,
+                "phone": None,
+                "websiteUrl": None,
+                "linkedinUrl": None,
+                "githubUrl": None,
+                "telegram": None,
+            },
+            "summary": {
+                "textRu": summary_ru,
+                "textEn": summary_en,
+            },
+            "skills": [
+                {
+                    "categoryRu": "Backend",
+                    "categoryEn": "Backend",
+                    "items": ["Python", "PostgreSQL"],
+                },
+            ],
+            "experience": [],
+            "projects": [],
+            "education": [],
+            "languages": [],
+            "certifications": [],
+            "additionalSections": [],
+        }
+
+    @classmethod
+    def resume_request(
+        cls,
+        title: str = "Backend resume",
+        content: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "title": title,
+            "content": content if content is not None else cls.resume_content(),
+        }
+
+    @classmethod
     def tag_request(
         cls,
         name_ru: str = "Питон",

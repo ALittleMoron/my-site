@@ -68,7 +68,7 @@
         [sections]="sections()"
         [emptyMessage]="'adminPanel.emptySections' | t"
         [selectedItemKey]="selectedPageKey()"
-        [defaultExpandedSectionKeys]="defaultExpandedSectionKeys"
+        [defaultExpandedSectionKeys]="defaultExpandedSectionKeys()"
         sectionTestId="admin-panel-tree-section"
         itemTestId="admin-panel-tree-item"
         (itemSelected)="selectPage($event)"

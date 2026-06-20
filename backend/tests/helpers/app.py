@@ -16,6 +16,7 @@ from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
 from core.contacts.use_cases import AbstractContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import AbstractFilesUseCase
+from core.resumes.use_cases import AbstractResumesUseCase
 from core.types import IntId
 from core.wiki_links.use_cases import AbstractWikiLinksUseCase
 from infra.healthcheck import ReadinessChecker
@@ -90,6 +91,10 @@ class IocContainerHelper:
 
     async def get_files_use_case(self) -> Mock:
         use_case = await self.container.get(AbstractFilesUseCase)
+        return cast("Mock", use_case)
+
+    async def get_resumes_use_case(self) -> Mock:
+        use_case = await self.container.get(AbstractResumesUseCase)
         return cast("Mock", use_case)
 
     async def get_readiness_checker(self) -> Mock:

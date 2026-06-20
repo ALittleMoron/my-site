@@ -70,6 +70,37 @@
   z-index: 1;
 }
 
+.btn-primary {
+  --bs-btn-color: var(--main-bg-color);
+  --bs-btn-bg: var(--main-component-color);
+  --bs-btn-border-color: var(--hovered-main-component-color);
+  --bs-btn-hover-color: var(--main-bg-color);
+  --bs-btn-hover-bg: var(--hovered-main-component-color);
+  --bs-btn-hover-border-color: var(--hovered-main-component-color);
+  --bs-btn-focus-shadow-rgb: var(--main-component-color-rgb);
+  --bs-btn-active-color: var(--main-bg-color);
+  --bs-btn-active-bg: var(--hovered-main-component-color);
+  --bs-btn-active-border-color: var(--hovered-main-component-color);
+  --bs-btn-disabled-color: var(--main-bg-color);
+  --bs-btn-disabled-bg: var(--main-component-color);
+  --bs-btn-disabled-border-color: var(--main-component-color);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--main-component-color);
+  --bs-btn-border-color: var(--main-component-color);
+  --bs-btn-hover-color: var(--main-bg-color);
+  --bs-btn-hover-bg: var(--main-component-color);
+  --bs-btn-hover-border-color: var(--hovered-main-component-color);
+  --bs-btn-focus-shadow-rgb: var(--main-component-color-rgb);
+  --bs-btn-active-color: var(--main-bg-color);
+  --bs-btn-active-bg: var(--hovered-main-component-color);
+  --bs-btn-active-border-color: var(--hovered-main-component-color);
+  --bs-btn-disabled-color: var(--main-component-color);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--main-component-color);
+}
+
 .alerts-section {
   margin-top: 5rem;
   margin-right: 1rem;

@@ -36,6 +36,14 @@ from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 from core.files.types import Namespace
+from core.resumes.schemas import (
+    Resume,
+    ResumeContent,
+    ResumeProfile,
+    Resumes,
+    ResumeSkillGroup,
+    ResumeSummary,
+)
 from core.schemas import Secret
 from core.types import IntId, SearchName
 
@@ -506,6 +514,85 @@ class CoreFactoryHelper:
     @classmethod
     def tags(cls, values: list[Tag] | None = None) -> Tags:
         return Tags(values=values or [])
+
+    @classmethod
+    def resume_content(
+        cls,
+        full_name: str | None = "Candidate Name",
+        role_ru: str | None = "Инженер",
+        role_en: str | None = "Engineer",
+        summary_ru: str | None = "Короткое описание опыта.",
+        summary_en: str | None = "Short experience summary.",
+        skills: list[ResumeSkillGroup] | None = None,
+    ) -> ResumeContent:
+        return ResumeContent(
+            profile=ResumeProfile(
+                full_name=full_name,
+                role_ru=role_ru,
+                role_en=role_en,
+                location_ru=None,
+                location_en=None,
+                email=None,
+                phone=None,
+                website_url=None,
+                linkedin_url=None,
+                github_url=None,
+                telegram=None,
+            ),
+            summary=ResumeSummary(text_ru=summary_ru, text_en=summary_en),
+            skills=skills
+            if skills is not None
+            else [
+                ResumeSkillGroup(
+                    category_ru="Backend",
+                    category_en="Backend",
+                    items=["Python", "PostgreSQL"],
+                ),
+            ],
+            experience=[],
+            projects=[],
+            education=[],
+            languages=[],
+            certifications=[],
+            additional_sections=[],
+        )
+
+    @classmethod
+    def resume(
+        cls,
+        resume_id: IntId | int = 1,
+        title: str = "Backend resume",
+        content: ResumeContent | None = None,
+        author_username: str = "test",
+        created_at: str | None = None,
+        updated_at: str | None = None,
+    ) -> Resume:
+        now = datetime.now(tz=UTC)
+        return Resume(
+            id=cls.int_id(resume_id) if isinstance(resume_id, int) else resume_id,
+            title=title,
+            content=content or cls.resume_content(),
+            author_username=author_username,
+            created_at=(
+                datetime.fromisoformat(created_at).replace(tzinfo=UTC)
+                if created_at is not None
+                else now
+            ),
+            updated_at=(
+                datetime.fromisoformat(updated_at).replace(tzinfo=UTC)
+                if updated_at is not None
+                else now
+            ),
+        )
+
+    @classmethod
+    def resumes(
+        cls,
+        values: list[Resume] | None = None,
+        total_count: int = 0,
+        total_pages: int = 0,
+    ) -> Resumes:
+        return Resumes(values=values or [], total_count=total_count, total_pages=total_pages)
 
     @classmethod
     def article_reaction_counts(

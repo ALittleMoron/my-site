@@ -32,14 +32,12 @@ class TestI18nCatalog:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
-        assert russian_messages["articles.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
-        assert russian_messages["articles.datePicker.previousYear"] == "Предыдущий год"
-        assert russian_messages["articles.datePicker.nextYear"] == "Следующий год"
-        assert (
-            english_messages["articles.datePicker.openMonthYearPicker"] == "Choose month and year"
-        )
-        assert english_messages["articles.datePicker.previousYear"] == "Previous year"
-        assert english_messages["articles.datePicker.nextYear"] == "Next year"
+        assert russian_messages["shared.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
+        assert russian_messages["shared.datePicker.previousYear"] == "Предыдущий год"
+        assert russian_messages["shared.datePicker.nextYear"] == "Следующий год"
+        assert english_messages["shared.datePicker.openMonthYearPicker"] == "Choose month and year"
+        assert english_messages["shared.datePicker.previousYear"] == "Previous year"
+        assert english_messages["shared.datePicker.nextYear"] == "Next year"
 
     def test_about_catalog_matches_current_resume_experience(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)

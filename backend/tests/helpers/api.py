@@ -406,6 +406,26 @@ class APIHelper:
             params["language"] = language
         return self.client.post("/api/admin/articles", params=params, json=data)
 
+    def get_admin_resumes(self, page: int | None = 1, page_size: int | None = 20) -> Response:
+        params: dict[str, int] = {
+            key: value
+            for key, value in (("page", page), ("pageSize", page_size))
+            if value is not None
+        }
+        return self.client.get("/api/admin/resumes", params=params)
+
+    def post_create_resume(self, data: dict[str, Any]) -> Response:
+        return self.client.post("/api/admin/resumes", json=data)
+
+    def get_admin_resume(self, resume_id: int) -> Response:
+        return self.client.get(f"/api/admin/resumes/{resume_id}")
+
+    def put_update_resume(self, resume_id: int, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/admin/resumes/{resume_id}", json=data)
+
+    def delete_resume(self, resume_id: int) -> Response:
+        return self.client.delete(f"/api/admin/resumes/{resume_id}")
+
     def put_update_article(
         self,
         slug: str,

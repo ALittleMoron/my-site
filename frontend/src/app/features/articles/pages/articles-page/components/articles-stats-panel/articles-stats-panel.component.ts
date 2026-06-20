@@ -3,9 +3,9 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { EmptyStateComponent } from '../../../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
+import { LocalizedDatePickerComponent } from '../../../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ArticleStats } from '../../../../models/articles.model';
-import { LocalizedDatePickerComponent } from '../localized-date-picker/localized-date-picker.component';
 
 @Component({
   selector: 'app-articles-stats-panel',

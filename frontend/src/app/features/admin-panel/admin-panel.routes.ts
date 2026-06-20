@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from '../../core/auth/auth.guard';
 
 export const adminPanelRoutes: Routes = [
   {
@@ -32,6 +33,22 @@ export const adminPanelRoutes: Routes = [
         loadComponent: () =>
           import('./pages/matrix-question-queue-page/matrix-question-queue-page.component').then(
             (m) => m.MatrixQuestionQueuePageComponent,
+          ),
+      },
+      {
+        path: 'workspace/resumes',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/resumes-page/resumes-page.component').then(
+            (m) => m.AdminResumesPageComponent,
+          ),
+      },
+      {
+        path: 'workspace/resumes/:id',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/resume-detail-page/resume-detail-page.component').then(
+            (m) => m.AdminResumeDetailPageComponent,
           ),
       },
     ],

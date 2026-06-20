@@ -1,0 +1,1563 @@
+<section class="admin-resume-detail-page">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div>
+      <button
+        type="button"
+        class="btn btn-link btn-sm px-0 mb-2 d-inline-flex align-items-center gap-1"
+        (click)="goBack()"
+      >
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m12 19-7-7 7-7"></path>
+          <path d="M19 12H5"></path>
+        </svg>
+        {{ 'shared.back' | t }}
+      </button>
+      <h1 class="h3 mb-0">{{ 'adminResumeWorkspace.detailTitle' | t }}</h1>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <div class="btn-group btn-group-sm" role="group">
+        <button
+          type="button"
+          class="btn"
+          [class.btn-secondary]="mode() === 'edit'"
+          [class.btn-outline-secondary]="mode() !== 'edit'"
+          (click)="showEdit()"
+        >
+          {{ 'adminResumeWorkspace.edit' | t }}
+        </button>
+        <button
+          type="button"
+          class="btn"
+          [class.btn-secondary]="mode() === 'preview'"
+          [class.btn-outline-secondary]="mode() !== 'preview'"
+          (click)="showPreview()"
+        >
+          {{ 'adminResumeWorkspace.preview' | t }}
+        </button>
+      </div>
+      <button
+        type="button"
+        class="btn btn-success btn-sm"
+        [disabled]="saving() || deleting() || loading()"
+        (click)="saveResume()"
+      >
+        {{ 'adminResumeWorkspace.save' | t }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm"
+        [disabled]="saving() || deleting() || loading()"
+        (click)="deleteResume()"
+      >
+        {{ 'adminResumeWorkspace.delete' | t }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner [ariaLabel]="'adminResumeWorkspace.loading' | t" />
+  } @else if (error()) {
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="loadResume()"
+    />
+  } @else {
+    @if (formError()) {
+      <app-error-message
+        [error]="formError()!"
+        [retryLabel]="'shared.retry' | t"
+        (retry)="saveResume()"
+      />
+    }
+
+    @if (mode() === 'edit') {
+      <form class="resume-editor" [formGroup]="resumeForm" (ngSubmit)="saveResume()">
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-lg-7">
+            <label class="form-label" for="resume-title">
+              {{ 'adminResumeWorkspace.field.title' | t }}
+            </label>
+            <input
+              id="resume-title"
+              class="form-control"
+              data-testid="resume-title"
+              formControlName="title"
+            />
+          </div>
+        </div>
+
+        <ul class="nav nav-tabs flex-nowrap overflow-auto mb-3">
+          @for (tab of tabs; track tab.key) {
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link"
+                [class.active]="activeTab() === tab.key"
+                (click)="setActiveTab(tab.key)"
+              >
+                {{ tab.labelKey | t }}
+              </button>
+            </li>
+          }
+        </ul>
+
+        <div class="resume-editor-panel">
+          @switch (activeTab()) {
+            @case ('profile') {
+              <div class="row g-3" formGroupName="profile">
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-full-name">
+                    {{ 'adminResumeWorkspace.field.fullName' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-full-name"
+                    class="form-control"
+                    data-testid="resume-profile-full-name"
+                    formControlName="fullName"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-email">
+                    {{ 'adminResumeWorkspace.field.email' | t }}
+                  </label>
+                  <input id="resume-profile-email" class="form-control" formControlName="email" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-role-ru">
+                    {{ 'adminResumeWorkspace.field.roleRu' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-role-ru"
+                    class="form-control"
+                    formControlName="roleRu"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-role-en">
+                    {{ 'adminResumeWorkspace.field.roleEn' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-role-en"
+                    class="form-control"
+                    formControlName="roleEn"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-location-ru">
+                    {{ 'adminResumeWorkspace.field.locationRu' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-location-ru"
+                    class="form-control"
+                    formControlName="locationRu"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-location-en">
+                    {{ 'adminResumeWorkspace.field.locationEn' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-location-en"
+                    class="form-control"
+                    formControlName="locationEn"
+                  />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="resume-profile-phone">
+                    {{ 'adminResumeWorkspace.field.phone' | t }}
+                  </label>
+                  <input id="resume-profile-phone" class="form-control" formControlName="phone" />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="resume-profile-website">
+                    {{ 'adminResumeWorkspace.field.websiteUrl' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-website"
+                    class="form-control"
+                    formControlName="websiteUrl"
+                  />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label" for="resume-profile-telegram">
+                    {{ 'adminResumeWorkspace.field.telegram' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-telegram"
+                    class="form-control"
+                    formControlName="telegram"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-linkedin">
+                    {{ 'adminResumeWorkspace.field.linkedinUrl' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-linkedin"
+                    class="form-control"
+                    formControlName="linkedinUrl"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" for="resume-profile-github">
+                    {{ 'adminResumeWorkspace.field.githubUrl' | t }}
+                  </label>
+                  <input
+                    id="resume-profile-github"
+                    class="form-control"
+                    formControlName="githubUrl"
+                  />
+                </div>
+              </div>
+            }
+
+            @case ('summary') {
+              <div class="row g-3" formGroupName="summary">
+                <div class="col-12 col-lg-6">
+                  <label class="form-label" for="resume-summary-ru">
+                    {{ 'adminResumeWorkspace.field.summaryRu' | t }}
+                  </label>
+                  <textarea
+                    id="resume-summary-ru"
+                    class="form-control"
+                    rows="8"
+                    data-testid="resume-summary-ru"
+                    formControlName="textRu"
+                  ></textarea>
+                </div>
+                <div class="col-12 col-lg-6">
+                  <label class="form-label" for="resume-summary-en">
+                    {{ 'adminResumeWorkspace.field.summaryEn' | t }}
+                  </label>
+                  <textarea
+                    id="resume-summary-en"
+                    class="form-control"
+                    rows="8"
+                    formControlName="textEn"
+                  ></textarea>
+                </div>
+              </div>
+            }
+
+            @case ('skills') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addSkillGroup()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="skills">
+                @for (skillGroup of skills.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeSkillGroup(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-12 col-md-6">
+                        <label class="form-label" [for]="'resume-skill-' + index + '-category-ru'">
+                          {{ 'adminResumeWorkspace.field.categoryRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-skill-' + index + '-category-ru'"
+                          [attr.data-testid]="'resume-skill-' + index + '-category-ru'"
+                          formControlName="categoryRu"
+                        />
+                      </div>
+                      <div class="col-12 col-md-6">
+                        <label class="form-label" [for]="'resume-skill-' + index + '-category-en'">
+                          {{ 'adminResumeWorkspace.field.categoryEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-skill-' + index + '-category-en'"
+                          [attr.data-testid]="'resume-skill-' + index + '-category-en'"
+                          formControlName="categoryEn"
+                        />
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label" [for]="'resume-skill-' + index + '-items'">
+                          {{ 'adminResumeWorkspace.field.items' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          rows="4"
+                          [id]="'resume-skill-' + index + '-items'"
+                          [attr.data-testid]="'resume-skill-' + index + '-items'"
+                          formControlName="itemsText"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('experience') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addExperienceItem()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="experience">
+                @for (experienceItem of experience.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeExperienceItem(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-company-ru'"
+                          >{{ 'adminResumeWorkspace.field.companyRu' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-company-ru'"
+                          formControlName="companyRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-company-en'"
+                          >{{ 'adminResumeWorkspace.field.companyEn' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-company-en'"
+                          formControlName="companyEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-position-ru'"
+                          >{{ 'adminResumeWorkspace.field.positionRu' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-position-ru'"
+                          formControlName="positionRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-position-en'"
+                          >{{ 'adminResumeWorkspace.field.positionEn' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-position-en'"
+                          formControlName="positionEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-location-ru'"
+                          >{{ 'adminResumeWorkspace.field.locationRu' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-location-ru'"
+                          formControlName="locationRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-location-en'"
+                          >{{ 'adminResumeWorkspace.field.locationEn' | t }}</label
+                        >
+                        <input
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-location-en'"
+                          formControlName="locationEn"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-start-date'"
+                          >{{ 'adminResumeWorkspace.field.startDate' | t }}</label
+                        >
+                        <app-localized-date-picker
+                          [inputId]="'resume-experience-' + index + '-start-date'"
+                          [value]="experienceItem.controls.startDate.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            experienceItem.controls.startDate.invalid &&
+                            experienceItem.controls.startDate.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(experienceItem.controls.startDate, $event)"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-end-date'"
+                          >{{ 'adminResumeWorkspace.field.endDate' | t }}</label
+                        >
+                        <app-localized-date-picker
+                          [inputId]="'resume-experience-' + index + '-end-date'"
+                          [value]="experienceItem.controls.endDate.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            experienceItem.controls.endDate.invalid &&
+                            experienceItem.controls.endDate.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(experienceItem.controls.endDate, $event)"
+                        />
+                      </div>
+                      <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            [id]="'resume-experience-current-' + index"
+                            formControlName="isCurrent"
+                          />
+                          <label
+                            class="form-check-label"
+                            [for]="'resume-experience-current-' + index"
+                          >
+                            {{ 'adminResumeWorkspace.field.isCurrent' | t }}
+                          </label>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-summary-ru'"
+                          >{{ 'adminResumeWorkspace.field.summaryRu' | t }}</label
+                        >
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-summary-ru'"
+                          rows="4"
+                          formControlName="summaryRu"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-summary-en'"
+                          >{{ 'adminResumeWorkspace.field.summaryEn' | t }}</label
+                        >
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-summary-en'"
+                          rows="4"
+                          formControlName="summaryEn"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-highlights-ru'"
+                          >{{ 'adminResumeWorkspace.field.highlightsRu' | t }}</label
+                        >
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-highlights-ru'"
+                          rows="4"
+                          formControlName="highlightsRuText"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-highlights-en'"
+                          >{{ 'adminResumeWorkspace.field.highlightsEn' | t }}</label
+                        >
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-highlights-en'"
+                          rows="4"
+                          formControlName="highlightsEnText"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-experience-' + index + '-technologies'"
+                          >{{ 'adminResumeWorkspace.field.technologies' | t }}</label
+                        >
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-experience-' + index + '-technologies'"
+                          rows="4"
+                          formControlName="technologiesText"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('projects') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addProjectItem()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="projects">
+                @for (project of projects.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeProjectItem(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-project-' + index + '-name-ru'">
+                          {{ 'adminResumeWorkspace.field.projectNameRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-name-ru'"
+                          formControlName="nameRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-project-' + index + '-name-en'">
+                          {{ 'adminResumeWorkspace.field.projectNameEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-name-en'"
+                          formControlName="nameEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-project-' + index + '-role-ru'">
+                          {{ 'adminResumeWorkspace.field.roleRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-role-ru'"
+                          formControlName="roleRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-project-' + index + '-role-en'">
+                          {{ 'adminResumeWorkspace.field.roleEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-role-en'"
+                          formControlName="roleEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-project-' + index + '-description-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.descriptionRu' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-description-ru'"
+                          rows="4"
+                          formControlName="descriptionRu"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-project-' + index + '-description-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.descriptionEn' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-description-en'"
+                          rows="4"
+                          formControlName="descriptionEn"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-project-' + index + '-highlights-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.highlightsRu' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-highlights-ru'"
+                          rows="4"
+                          formControlName="highlightsRuText"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-project-' + index + '-highlights-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.highlightsEn' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-highlights-en'"
+                          rows="4"
+                          formControlName="highlightsEnText"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-project-' + index + '-technologies'"
+                        >
+                          {{ 'adminResumeWorkspace.field.technologies' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-technologies'"
+                          rows="4"
+                          formControlName="technologiesText"
+                        ></textarea>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label" [for]="'resume-project-' + index + '-url'">
+                          {{ 'adminResumeWorkspace.field.url' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-project-' + index + '-url'"
+                          formControlName="url"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('education') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addEducationItem()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="education">
+                @for (educationItem of education.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeEducationItem(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-institution-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.institutionRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-institution-ru'"
+                          formControlName="institutionRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-institution-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.institutionEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-institution-en'"
+                          formControlName="institutionEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-degree-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.degreeRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-degree-ru'"
+                          formControlName="degreeRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-degree-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.degreeEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-degree-en'"
+                          formControlName="degreeEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-education-' + index + '-field-ru'">
+                          {{ 'adminResumeWorkspace.field.fieldRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-field-ru'"
+                          formControlName="fieldRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-education-' + index + '-field-en'">
+                          {{ 'adminResumeWorkspace.field.fieldEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-field-en'"
+                          formControlName="fieldEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-location-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.locationRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-location-ru'"
+                          formControlName="locationRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-location-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.locationEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-location-en'"
+                          formControlName="locationEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-start-date'"
+                        >
+                          {{ 'adminResumeWorkspace.field.startDate' | t }}
+                        </label>
+                        <app-localized-date-picker
+                          [inputId]="'resume-education-' + index + '-start-date'"
+                          [value]="educationItem.controls.startDate.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            educationItem.controls.startDate.invalid &&
+                            educationItem.controls.startDate.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(educationItem.controls.startDate, $event)"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-education-' + index + '-end-date'">
+                          {{ 'adminResumeWorkspace.field.endDate' | t }}
+                        </label>
+                        <app-localized-date-picker
+                          [inputId]="'resume-education-' + index + '-end-date'"
+                          [value]="educationItem.controls.endDate.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            educationItem.controls.endDate.invalid &&
+                            educationItem.controls.endDate.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(educationItem.controls.endDate, $event)"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-description-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.descriptionRu' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-description-ru'"
+                          rows="4"
+                          formControlName="descriptionRu"
+                        ></textarea>
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-education-' + index + '-description-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.descriptionEn' | t }}
+                        </label>
+                        <textarea
+                          class="form-control"
+                          [id]="'resume-education-' + index + '-description-en'"
+                          rows="4"
+                          formControlName="descriptionEn"
+                        ></textarea>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('languages') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addLanguageItem()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="languages">
+                @for (language of languages.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeLanguageItem(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-language-' + index + '-name-ru'">
+                          {{ 'adminResumeWorkspace.field.languageNameRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-language-' + index + '-name-ru'"
+                          formControlName="nameRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label" [for]="'resume-language-' + index + '-name-en'">
+                          {{ 'adminResumeWorkspace.field.languageNameEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-language-' + index + '-name-en'"
+                          formControlName="nameEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-language-' + index + '-proficiency-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.proficiencyRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-language-' + index + '-proficiency-ru'"
+                          formControlName="proficiencyRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-language-' + index + '-proficiency-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.proficiencyEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-language-' + index + '-proficiency-en'"
+                          formControlName="proficiencyEn"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('certifications') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addCertificationItem()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="certifications">
+                @for (certification of certifications.controls; track $index; let index = $index) {
+                  <div class="resume-repeatable" [formGroupName]="index">
+                    <div class="d-flex justify-content-end mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeCertificationItem(index)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-name-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.certificationNameRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-certification-' + index + '-name-ru'"
+                          formControlName="nameRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-name-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.certificationNameEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-certification-' + index + '-name-en'"
+                          formControlName="nameEn"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-issuer-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.issuerRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-certification-' + index + '-issuer-ru'"
+                          formControlName="issuerRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-issuer-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.issuerEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-certification-' + index + '-issuer-en'"
+                          formControlName="issuerEn"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-issued-on'"
+                        >
+                          {{ 'adminResumeWorkspace.field.issuedOn' | t }}
+                        </label>
+                        <app-localized-date-picker
+                          [inputId]="'resume-certification-' + index + '-issued-on'"
+                          [value]="certification.controls.issuedOn.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            certification.controls.issuedOn.invalid &&
+                            certification.controls.issuedOn.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(certification.controls.issuedOn, $event)"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-expires-on'"
+                        >
+                          {{ 'adminResumeWorkspace.field.expiresOn' | t }}
+                        </label>
+                        <app-localized-date-picker
+                          [inputId]="'resume-certification-' + index + '-expires-on'"
+                          [value]="certification.controls.expiresOn.value ?? ''"
+                          [dateLocale]="dateLocale()"
+                          [placeholder]="datePlaceholder()"
+                          [required]="false"
+                          [invalid]="
+                            certification.controls.expiresOn.invalid &&
+                            certification.controls.expiresOn.touched
+                          "
+                          [openCalendarLabel]="openCalendarLabel()"
+                          [previousMonthLabel]="previousMonthLabel()"
+                          [nextMonthLabel]="nextMonthLabel()"
+                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
+                          [previousYearLabel]="previousYearLabel()"
+                          [nextYearLabel]="nextYearLabel()"
+                          (valueChange)="updateDate(certification.controls.expiresOn, $event)"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label
+                          class="form-label"
+                          [for]="'resume-certification-' + index + '-credential-url'"
+                        >
+                          {{ 'adminResumeWorkspace.field.credentialUrl' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-certification-' + index + '-credential-url'"
+                          formControlName="credentialUrl"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @case ('additional') {
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm"
+                  (click)="addAdditionalSection()"
+                >
+                  {{ 'shared.add' | t }}
+                </button>
+              </div>
+              <div class="vstack gap-3" formArrayName="additionalSections">
+                @for (
+                  section of additionalSections.controls;
+                  track $index;
+                  let sectionIndex = $index
+                ) {
+                  <div class="resume-repeatable" [formGroupName]="sectionIndex">
+                    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                      <button
+                        type="button"
+                        class="btn btn-outline-success btn-sm"
+                        (click)="addAdditionalItem(sectionIndex)"
+                      >
+                        {{ 'shared.add' | t }}
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm"
+                        (click)="removeAdditionalSection(sectionIndex)"
+                      >
+                        {{ 'shared.delete' | t }}
+                      </button>
+                    </div>
+                    <div class="row g-3 mb-3">
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-additional-section-' + sectionIndex + '-title-ru'"
+                        >
+                          {{ 'adminResumeWorkspace.field.sectionTitleRu' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-additional-section-' + sectionIndex + '-title-ru'"
+                          formControlName="titleRu"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label
+                          class="form-label"
+                          [for]="'resume-additional-section-' + sectionIndex + '-title-en'"
+                        >
+                          {{ 'adminResumeWorkspace.field.sectionTitleEn' | t }}
+                        </label>
+                        <input
+                          class="form-control"
+                          [id]="'resume-additional-section-' + sectionIndex + '-title-en'"
+                          formControlName="titleEn"
+                        />
+                      </div>
+                    </div>
+                    <div class="vstack gap-3" formArrayName="items">
+                      @for (
+                        additionalItem of additionalItems(sectionIndex).controls;
+                        track $index;
+                        let itemIndex = $index
+                      ) {
+                        <div class="resume-nested-repeatable" [formGroupName]="itemIndex">
+                          <div class="d-flex justify-content-end mb-3">
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              (click)="removeAdditionalItem(sectionIndex, itemIndex)"
+                            >
+                              {{ 'shared.delete' | t }}
+                            </button>
+                          </div>
+                          <div class="row g-3">
+                            <div class="col-md-6">
+                              <label
+                                class="form-label"
+                                [for]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-title-ru'
+                                "
+                              >
+                                {{ 'adminResumeWorkspace.field.sectionTitleRu' | t }}
+                              </label>
+                              <input
+                                class="form-control"
+                                [id]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-title-ru'
+                                "
+                                formControlName="titleRu"
+                              />
+                            </div>
+                            <div class="col-md-6">
+                              <label
+                                class="form-label"
+                                [for]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-title-en'
+                                "
+                              >
+                                {{ 'adminResumeWorkspace.field.sectionTitleEn' | t }}
+                              </label>
+                              <input
+                                class="form-control"
+                                [id]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-title-en'
+                                "
+                                formControlName="titleEn"
+                              />
+                            </div>
+                            <div class="col-md-6">
+                              <label
+                                class="form-label"
+                                [for]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-description-ru'
+                                "
+                              >
+                                {{ 'adminResumeWorkspace.field.descriptionRu' | t }}
+                              </label>
+                              <textarea
+                                class="form-control"
+                                [id]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-description-ru'
+                                "
+                                rows="4"
+                                formControlName="descriptionRu"
+                              ></textarea>
+                            </div>
+                            <div class="col-md-6">
+                              <label
+                                class="form-label"
+                                [for]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-description-en'
+                                "
+                              >
+                                {{ 'adminResumeWorkspace.field.descriptionEn' | t }}
+                              </label>
+                              <textarea
+                                class="form-control"
+                                [id]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-description-en'
+                                "
+                                rows="4"
+                                formControlName="descriptionEn"
+                              ></textarea>
+                            </div>
+                            <div class="col-12">
+                              <label
+                                class="form-label"
+                                [for]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-url'
+                                "
+                              >
+                                {{ 'adminResumeWorkspace.field.url' | t }}
+                              </label>
+                              <input
+                                class="form-control"
+                                [id]="
+                                  'resume-additional-section-' +
+                                  sectionIndex +
+                                  '-item-' +
+                                  itemIndex +
+                                  '-url'
+                                "
+                                formControlName="url"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </form>
+    } @else {
+      <article class="resume-preview" data-testid="resume-preview">
+        <header class="resume-preview-header">
+          @if (previewPayload().content.profile.fullName) {
+            <h2>{{ previewPayload().content.profile.fullName }}</h2>
+          } @else {
+            <p class="resume-missing">{{ 'adminResumeWorkspace.missing.profile' | t }}</p>
+          }
+          @if (
+            localized(
+              previewPayload().content.profile.roleRu,
+              previewPayload().content.profile.roleEn
+            )
+          ) {
+            <p>
+              {{
+                localized(
+                  previewPayload().content.profile.roleRu,
+                  previewPayload().content.profile.roleEn
+                )
+              }}
+            </p>
+          }
+          @if (
+            localized(
+              previewPayload().content.profile.locationRu,
+              previewPayload().content.profile.locationEn
+            )
+          ) {
+            <p>
+              {{
+                localized(
+                  previewPayload().content.profile.locationRu,
+                  previewPayload().content.profile.locationEn
+                )
+              }}
+            </p>
+          }
+          <div class="resume-preview-contacts">
+            @if (previewPayload().content.profile.email) {
+              <span>{{ previewPayload().content.profile.email }}</span>
+            }
+            @if (previewPayload().content.profile.phone) {
+              <span>{{ previewPayload().content.profile.phone }}</span>
+            }
+            @if (previewPayload().content.profile.websiteUrl) {
+              <span>{{ previewPayload().content.profile.websiteUrl }}</span>
+            }
+            @if (previewPayload().content.profile.linkedinUrl) {
+              <span>{{ previewPayload().content.profile.linkedinUrl }}</span>
+            }
+            @if (previewPayload().content.profile.githubUrl) {
+              <span>{{ previewPayload().content.profile.githubUrl }}</span>
+            }
+            @if (previewPayload().content.profile.telegram) {
+              <span>{{ previewPayload().content.profile.telegram }}</span>
+            }
+          </div>
+        </header>
+
+        <section>
+          <h3>{{ 'adminResumeWorkspace.tabs.summary' | t }}</h3>
+          @if (hasSummary(previewPayload().content)) {
+            <p>
+              {{
+                localized(
+                  previewPayload().content.summary.textRu,
+                  previewPayload().content.summary.textEn
+                )
+              }}
+            </p>
+          } @else {
+            <p class="resume-missing">{{ 'adminResumeWorkspace.missing.summary' | t }}</p>
+          }
+        </section>
+
+        <section>
+          <h3>{{ 'adminResumeWorkspace.tabs.skills' | t }}</h3>
+          @if (previewPayload().content.skills.length > 0) {
+            <div class="resume-preview-skill-grid">
+              @for (skill of previewPayload().content.skills; track $index) {
+                <div>
+                  @if (localized(skill.categoryRu, skill.categoryEn)) {
+                    <h4>{{ localized(skill.categoryRu, skill.categoryEn) }}</h4>
+                  }
+                  <ul>
+                    @for (item of skill.items; track item) {
+                      <li>{{ item }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="resume-missing">{{ 'adminResumeWorkspace.missing.skills' | t }}</p>
+          }
+        </section>
+
+        <section>
+          <h3>{{ 'adminResumeWorkspace.tabs.experience' | t }}</h3>
+          @if (previewPayload().content.experience.length > 0) {
+            <div class="vstack gap-3">
+              @for (item of previewPayload().content.experience; track $index) {
+                <div>
+                  <h4>
+                    {{ localized(item.positionRu, item.positionEn) }}
+                    @if (localized(item.companyRu, item.companyEn)) {
+                      <span>· {{ localized(item.companyRu, item.companyEn) }}</span>
+                    }
+                  </h4>
+                  @if (dateRange(item.startDate, item.endDate, item.isCurrent)) {
+                    <p class="text-body-secondary">
+                      {{ dateRange(item.startDate, item.endDate, item.isCurrent) }}
+                    </p>
+                  }
+                  @if (localized(item.summaryRu, item.summaryEn)) {
+                    <p>{{ localized(item.summaryRu, item.summaryEn) }}</p>
+                  }
+                  @if (
+                    (previewLanguage() === 'ru' ? item.highlightsRu : item.highlightsEn).length > 0
+                  ) {
+                    <ul>
+                      @for (
+                        highlight of previewLanguage() === 'ru'
+                          ? item.highlightsRu
+                          : item.highlightsEn;
+                        track highlight
+                      ) {
+                        <li>{{ highlight }}</li>
+                      }
+                    </ul>
+                  }
+                  @if (item.technologies.length > 0) {
+                    <p class="resume-preview-tech">{{ item.technologies.join(', ') }}</p>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="resume-missing">{{ 'adminResumeWorkspace.missing.experience' | t }}</p>
+          }
+        </section>
+
+        @if (previewPayload().content.projects.length > 0) {
+          <section>
+            <h3>{{ 'adminResumeWorkspace.tabs.projects' | t }}</h3>
+            @for (project of previewPayload().content.projects; track $index) {
+              <div>
+                <h4>{{ localized(project.nameRu, project.nameEn) }}</h4>
+                @if (localized(project.descriptionRu, project.descriptionEn)) {
+                  <p>{{ localized(project.descriptionRu, project.descriptionEn) }}</p>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (previewPayload().content.education.length > 0) {
+          <section>
+            <h3>{{ 'adminResumeWorkspace.tabs.education' | t }}</h3>
+            @for (educationItem of previewPayload().content.education; track $index) {
+              <div>
+                <h4>{{ localized(educationItem.institutionRu, educationItem.institutionEn) }}</h4>
+                <p>{{ localized(educationItem.degreeRu, educationItem.degreeEn) }}</p>
+              </div>
+            }
+          </section>
+        }
+
+        @if (previewPayload().content.languages.length > 0) {
+          <section>
+            <h3>{{ 'adminResumeWorkspace.tabs.languages' | t }}</h3>
+            <ul>
+              @for (language of previewPayload().content.languages; track $index) {
+                <li>
+                  {{ localized(language.nameRu, language.nameEn) }}
+                  @if (localized(language.proficiencyRu, language.proficiencyEn)) {
+                    <span>· {{ localized(language.proficiencyRu, language.proficiencyEn) }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (previewPayload().content.certifications.length > 0) {
+          <section>
+            <h3>{{ 'adminResumeWorkspace.tabs.certifications' | t }}</h3>
+            <ul>
+              @for (certification of previewPayload().content.certifications; track $index) {
+                <li>
+                  {{ localized(certification.nameRu, certification.nameEn) }}
+                  @if (localized(certification.issuerRu, certification.issuerEn)) {
+                    <span>· {{ localized(certification.issuerRu, certification.issuerEn) }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @for (section of previewPayload().content.additionalSections; track $index) {
+          @if (localized(section.titleRu, section.titleEn) || section.items.length > 0) {
+            <section>
+              <h3>{{ localized(section.titleRu, section.titleEn) }}</h3>
+              @for (item of section.items; track $index) {
+                <div>
+                  @if (localized(item.titleRu, item.titleEn)) {
+                    <h4>{{ localized(item.titleRu, item.titleEn) }}</h4>
+                  }
+                  @if (localized(item.descriptionRu, item.descriptionEn)) {
+                    <p>{{ localized(item.descriptionRu, item.descriptionEn) }}</p>
+                  }
+                  @if (item.url) {
+                    <p class="text-body-secondary">{{ item.url }}</p>
+                  }
+                </div>
+              }
+            </section>
+          }
+        }
+      </article>
+    }
+  }
+</section>

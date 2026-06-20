@@ -19,6 +19,7 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
 )
 from entrypoints.litestar.api.healthcheck.endpoints import HealthcheckController
 from entrypoints.litestar.api.i18n.endpoints import I18nApiController
+from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
 from entrypoints.litestar.cli.commands.cache import invalidate_cache_command
 from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.response_cache import (
@@ -359,6 +360,10 @@ class TestResponseCacheRouteConfiguration:
             "get_competency_matrix_item",
         ):
             assert getattr(AdminCompetencyMatrixApiController, handler_name).cache is False
+
+    def test_admin_resume_get_handlers_are_not_cached(self) -> None:
+        for handler_name in ("list_resumes", "get_resume"):
+            assert getattr(AdminResumesApiController, handler_name).cache is False
 
     def test_i18n_get_handlers_use_i18n_cache(self) -> None:
         for handler_name in ("list_languages", "get_bundle"):

@@ -1,0 +1,176 @@
+import pytest_asyncio
+from httpx import codes
+
+from core.auth.enums import RoleEnum
+from core.auth.schemas import JwtUser
+from core.resumes.exceptions import ResumeNotFoundError
+from core.resumes.schemas import ResumeCreateParams, ResumeFilters, ResumeUpdateParams
+from core.types import IntId
+from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+
+
+class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup(self) -> None:
+        self.authentication_use_case = await self.container.get_auth_use_case()
+        self.use_case = await self.container.get_resumes_use_case()
+
+    def test_list_resumes(self) -> None:
+        resume = self.factory.core.resume(
+            resume_id=1,
+            title="Backend resume",
+            created_at="2026-01-01T03:04:05",
+            updated_at="2026-01-02T03:04:05",
+        )
+        self.use_case.list_resumes.return_value = self.factory.core.resumes(
+            values=[resume],
+            total_count=1,
+            total_pages=1,
+        )
+
+        response = self.api.get_admin_resumes(page=2, page_size=10)
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json()["totalCount"] == 1
+        assert response.json()["totalPages"] == 1
+        assert response.json()["resumes"][0]["id"] == 1
+        assert response.json()["resumes"][0]["title"] == "Backend resume"
+        assert response.json()["resumes"][0]["content"]["profile"]["fullName"] == "Candidate Name"
+        self.use_case.list_resumes.assert_called_once_with(
+            filters=ResumeFilters(
+                page=2,
+                page_size=10,
+                search_query=None,
+                author_username="test",
+            ),
+        )
+
+    def test_create_resume_maps_payload_to_params(self) -> None:
+        content = self.factory.core.resume_content(
+            full_name="Dmitriy",
+            role_ru="Backend инженер",
+            role_en="Backend engineer",
+            summary_ru="Сводка",
+            summary_en="Summary",
+        )
+        self.use_case.create_resume.return_value = self.factory.core.resume(
+            resume_id=2,
+            title="Target resume",
+            content=content,
+            created_at="2026-01-01T03:04:05",
+            updated_at="2026-01-01T03:04:05",
+        )
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(
+                title="Target resume",
+                content=self.factory.api.resume_content(
+                    full_name="Dmitriy",
+                    role_ru="Backend инженер",
+                    role_en="Backend engineer",
+                    summary_ru="Сводка",
+                    summary_en="Summary",
+                ),
+            ),
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        assert response.json()["id"] == 2
+        self.use_case.create_resume.assert_called_once_with(
+            params=ResumeCreateParams(
+                title="Target resume",
+                content=content,
+                author_username="test",
+            ),
+        )
+
+    def test_update_resume_maps_payload_to_params(self) -> None:
+        content = self.factory.core.resume_content(summary_ru="Обновлено")
+        self.use_case.update_resume.return_value = self.factory.core.resume(
+            resume_id=3,
+            title="Updated resume",
+            content=content,
+            updated_at="2026-01-03T03:04:05",
+        )
+
+        response = self.api.put_update_resume(
+            resume_id=3,
+            data=self.factory.api.resume_request(
+                title="Updated resume",
+                content=self.factory.api.resume_content(summary_ru="Обновлено"),
+            ),
+        )
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json()["title"] == "Updated resume"
+        self.use_case.update_resume.assert_called_once_with(
+            resume_id=IntId(3),
+            params=ResumeUpdateParams(title="Updated resume", content=content),
+            author_username="test",
+        )
+
+    def test_get_resume(self) -> None:
+        self.use_case.get_resume.return_value = self.factory.core.resume(
+            resume_id=3,
+            title="Backend resume",
+            updated_at="2026-01-03T03:04:05",
+        )
+
+        response = self.api.get_admin_resume(resume_id=3)
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json()["id"] == 3
+        self.use_case.get_resume.assert_called_once_with(
+            resume_id=IntId(3),
+            author_username="test",
+        )
+
+    def test_get_resume_not_found(self) -> None:
+        self.use_case.get_resume.side_effect = ResumeNotFoundError()
+
+        response = self.api.get_admin_resume(resume_id=404)
+
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json()["message"] == ResumeNotFoundError.message
+        self.use_case.get_resume.assert_called_once_with(
+            resume_id=IntId(404),
+            author_username="test",
+        )
+
+    def test_delete_resume_not_found(self) -> None:
+        self.use_case.delete_resume.side_effect = ResumeNotFoundError()
+
+        response = self.api.delete_resume(resume_id=404)
+
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json()["message"] == ResumeNotFoundError.message
+        self.use_case.delete_resume.assert_called_once_with(
+            resume_id=IntId(404),
+            author_username="test",
+        )
+
+    def test_delete_resume(self) -> None:
+        response = self.api.delete_resume(resume_id=3)
+
+        assert response.status_code == codes.NO_CONTENT
+        self.use_case.delete_resume.assert_called_once_with(
+            resume_id=IntId(3),
+            author_username="test",
+        )
+
+    def test_requires_authentication(self) -> None:
+        response = self.no_auth_api.get_admin_resumes()
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.list_resumes.assert_not_called()
+
+    def test_requires_admin_role(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="moderator",
+            role=RoleEnum.MODERATOR,
+        )
+
+        response = self.api.get_admin_resumes()
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.list_resumes.assert_not_called()

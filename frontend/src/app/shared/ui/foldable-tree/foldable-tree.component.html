@@ -37,6 +37,7 @@
                 [attr.data-testid]="itemTestId()"
                 role="treeitem"
                 [class.active]="selectedItemKey() === item.key"
+                [class.foldable-tree-item-success]="selectedItemKey() === item.key"
                 [attr.aria-selected]="selectedItemKey() === item.key"
                 [attr.title]="conditionalTitleFor('item', item.key)"
                 (mouseenter)="showConditionalTitle('item', item.key, item.label, itemLabel)"

@@ -133,6 +133,11 @@
 
   --bs-success-bg-subtle: var(--accent-soft-color);
   --bs-success-border-subtle: rgba(var(--accent-color-rgb), 0.35);
+  --bs-success-text-emphasis: var(--accent-hover-color);
+
+  --bs-primary-bg-subtle: var(--accent-soft-color);
+  --bs-primary-border-subtle: rgba(var(--accent-color-rgb), 0.35);
+  --bs-primary-text-emphasis: var(--accent-hover-color);
 
   --bs-info-bg-subtle: rgba(var(--info-color-rgb), 0.12);
   --bs-info-border-subtle: rgba(var(--info-color-rgb), 0.35);
@@ -274,6 +279,11 @@
 
   --bs-success-bg-subtle: rgba(var(--accent-color-rgb), 0.14);
   --bs-success-border-subtle: rgba(var(--accent-color-rgb), 0.35);
+  --bs-success-text-emphasis: rgb(74, 222, 128);
+
+  --bs-primary-bg-subtle: rgba(var(--accent-color-rgb), 0.14);
+  --bs-primary-border-subtle: rgba(var(--accent-color-rgb), 0.35);
+  --bs-primary-text-emphasis: rgb(74, 222, 128);
 
   --bs-info-bg-subtle: rgba(var(--info-color-rgb), 0.12);
   --bs-info-border-subtle: rgba(var(--info-color-rgb), 0.35);
