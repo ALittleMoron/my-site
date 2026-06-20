@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any, Self
 
-from sqlalchemy import Index, String, text
+from sqlalchemy import Enum, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
@@ -30,8 +30,8 @@ from infra.postgresql.models.base import BaseModel
 
 class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
     title: Mapped[str] = mapped_column(String(length=255), doc="Private workspace resume title")
-    language: Mapped[str] = mapped_column(
-        String(length=2),
+    language: Mapped[LanguageEnum] = mapped_column(
+        Enum(LanguageEnum, native_enum=False, length=2, name="language_enum"),
         doc="User-selected resume language",
     )
     author_username: Mapped[str] = mapped_column(
@@ -53,7 +53,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
     def from_create_params(cls, *, params: ResumeCreateParams) -> Self:
         return cls(
             title=params.title,
-            language=params.language.value,
+            language=params.language,
             author_username=params.author_username,
             content=cls._content_to_json(content=params.content),
         )
@@ -63,7 +63,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
         return cls(
             id=resume.id,
             title=resume.title,
-            language=resume.language.value,
+            language=resume.language,
             author_username=resume.author_username,
             content=cls._content_to_json(content=resume.content),
             created_at=resume.created_at,
@@ -72,7 +72,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
 
     def update_from_domain_schema(self, *, resume: Resume) -> None:
         self.title = resume.title
-        self.language = resume.language.value
+        self.language = resume.language
         self.author_username = resume.author_username
         self.content = self._content_to_json(content=resume.content)
         self.updated_at = resume.updated_at
@@ -81,7 +81,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
         return Resume(
             id=IntId(self.id),
             title=self.title,
-            language=LanguageEnum(self.language),
+            language=self.language,
             content=self._content_from_json(data=self.content),
             author_username=self.author_username,
             created_at=self.created_at,

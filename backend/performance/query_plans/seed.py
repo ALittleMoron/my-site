@@ -23,6 +23,7 @@ from sqlalchemy.sql.selectable import Subquery
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
+from core.i18n.enums import LanguageEnum
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
     ArticleModel,
@@ -330,7 +331,7 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
             select(
                 value,
                 func.concat(literal("Query plan resume "), value),
-                literal("en"),
+                literal(LanguageEnum.EN.name),
                 literal(SEED_USERNAME),
                 literal(RESUME_SEED_CONTENT, type_=postgresql.JSONB),
                 literal(SEED_NOW),

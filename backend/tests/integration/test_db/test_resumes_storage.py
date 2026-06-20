@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import String, cast, select
 
 from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
@@ -55,7 +56,7 @@ class TestResumesDatabaseStorage(StorageFixture):
         assert loaded.created_at.tzinfo == UTC
         assert loaded.updated_at.tzinfo == UTC
         assert created_row is not None
-        assert created_row.language == LanguageEnum.EN
+        assert created_row.language is LanguageEnum.EN
         assert created_row.content["experience"][0]["current_status"] == "current"
         assert created_row.content["experience"][0]["company"] == "Company"
         assert "is_current" not in created_row.content["experience"][0]
