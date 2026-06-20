@@ -39,6 +39,7 @@ from core.files.types import Namespace
 from core.resumes.schemas import (
     Resume,
     ResumeContent,
+    ResumeExperienceItem,
     ResumeProfile,
     Resumes,
     ResumeSkillGroup,
@@ -524,6 +525,7 @@ class CoreFactoryHelper:
         summary_ru: str | None = "Короткое описание опыта.",
         summary_en: str | None = "Short experience summary.",
         skills: list[ResumeSkillGroup] | None = None,
+        experience: list[ResumeExperienceItem] | None = None,
     ) -> ResumeContent:
         return ResumeContent(
             profile=ResumeProfile(
@@ -549,8 +551,7 @@ class CoreFactoryHelper:
                     items=["Python", "PostgreSQL"],
                 ),
             ],
-            experience=[],
-            projects=[],
+            experience=experience if experience is not None else [],
             education=[],
             languages=[],
             certifications=[],

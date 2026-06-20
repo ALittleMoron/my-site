@@ -195,7 +195,6 @@ export class AdminResumesPageComponent implements OnInit {
         },
         skills: [],
         experience: [],
-        projects: [],
         education: [],
         languages: [],
         certifications: [],

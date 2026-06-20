@@ -64,6 +64,7 @@ class ApiFactoryHelper:
         role_en: str | None = "Engineer",
         summary_ru: str | None = "Короткое описание опыта.",
         summary_en: str | None = "Short experience summary.",
+        experience: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return {
             "profile": {
@@ -90,8 +91,7 @@ class ApiFactoryHelper:
                     "items": ["Python", "PostgreSQL"],
                 },
             ],
-            "experience": [],
-            "projects": [],
+            "experience": experience if experience is not None else [],
             "education": [],
             "languages": [],
             "certifications": [],

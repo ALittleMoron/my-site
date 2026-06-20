@@ -97,7 +97,6 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
             "experience": [
                 cls._experience_to_json(experience=experience) for experience in content.experience
             ],
-            "projects": [cls._project_to_json(project=project) for project in content.projects],
             "education": [
                 cls._education_to_json(education=education) for education in content.education
             ],
@@ -153,6 +152,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
             "highlights_ru": list(experience.highlights_ru),
             "highlights_en": list(experience.highlights_en),
             "technologies": list(experience.technologies),
+            "projects": [cls._project_to_json(project=project) for project in experience.projects],
         }
 
     @staticmethod
@@ -239,7 +239,6 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
             experience=[
                 cls._experience_from_json(data=experience) for experience in data["experience"]
             ],
-            projects=[cls._project_from_json(data=project) for project in data["projects"]],
             education=[cls._education_from_json(data=education) for education in data["education"]],
             languages=[
                 ResumeLanguageItem(
@@ -293,6 +292,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
             highlights_ru=list(data["highlights_ru"]),
             highlights_en=list(data["highlights_en"]),
             technologies=list(data["technologies"]),
+            projects=[cls._project_from_json(data=project) for project in data["projects"]],
         )
 
     @staticmethod

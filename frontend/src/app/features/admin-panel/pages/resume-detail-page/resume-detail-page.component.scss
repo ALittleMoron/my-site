@@ -47,6 +47,11 @@
   margin-bottom: 0.35rem;
 }
 
+.resume-preview h5 {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
 .resume-preview section + section {
   margin-top: 1.5rem;
 }
@@ -63,6 +68,14 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.resume-preview-projects {
+  margin-top: 0.75rem;
+}
+
+.resume-preview-project + .resume-preview-project {
+  margin-top: 0.75rem;
 }
 
 .resume-missing {

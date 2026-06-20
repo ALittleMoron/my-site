@@ -47,7 +47,6 @@ type ResumeEditorTab =
   | 'summary'
   | 'skills'
   | 'experience'
-  | 'projects'
   | 'education'
   | 'languages'
   | 'certifications'
@@ -103,6 +102,7 @@ interface ResumeExperienceItemForm {
   highlightsRuText: TextControl;
   highlightsEnText: TextControl;
   technologiesText: TextControl;
+  projects: FormArray<FormGroup<ResumeProjectItemForm>>;
 }
 
 interface ResumeProjectItemForm {
@@ -170,7 +170,6 @@ interface ResumeEditorForm {
   summary: FormGroup<ResumeSummaryForm>;
   skills: FormArray<FormGroup<ResumeSkillGroupForm>>;
   experience: FormArray<FormGroup<ResumeExperienceItemForm>>;
-  projects: FormArray<FormGroup<ResumeProjectItemForm>>;
   education: FormArray<FormGroup<ResumeEducationItemForm>>;
   languages: FormArray<FormGroup<ResumeLanguageItemForm>>;
   certifications: FormArray<FormGroup<ResumeCertificationItemForm>>;
@@ -182,7 +181,6 @@ const RESUME_EDITOR_TABS: readonly ResumeEditorTabDefinition[] = [
   { key: 'summary', labelKey: 'adminResumeWorkspace.tabs.summary' },
   { key: 'skills', labelKey: 'adminResumeWorkspace.tabs.skills' },
   { key: 'experience', labelKey: 'adminResumeWorkspace.tabs.experience' },
-  { key: 'projects', labelKey: 'adminResumeWorkspace.tabs.projects' },
   { key: 'education', labelKey: 'adminResumeWorkspace.tabs.education' },
   { key: 'languages', labelKey: 'adminResumeWorkspace.tabs.languages' },
   { key: 'certifications', labelKey: 'adminResumeWorkspace.tabs.certifications' },
@@ -261,7 +259,6 @@ export class AdminResumeDetailPageComponent implements OnInit {
     summary: this.createSummaryForm(createEmptyResumeSummary()),
     skills: new FormArray<FormGroup<ResumeSkillGroupForm>>([]),
     experience: new FormArray<FormGroup<ResumeExperienceItemForm>>([]),
-    projects: new FormArray<FormGroup<ResumeProjectItemForm>>([]),
     education: new FormArray<FormGroup<ResumeEducationItemForm>>([]),
     languages: new FormArray<FormGroup<ResumeLanguageItemForm>>([]),
     certifications: new FormArray<FormGroup<ResumeCertificationItemForm>>([]),
@@ -279,10 +276,6 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   get experience(): FormArray<FormGroup<ResumeExperienceItemForm>> {
     return this.resumeForm.controls.experience;
-  }
-
-  get projects(): FormArray<FormGroup<ResumeProjectItemForm>> {
-    return this.resumeForm.controls.projects;
   }
 
   get education(): FormArray<FormGroup<ResumeEducationItemForm>> {
@@ -408,12 +401,14 @@ export class AdminResumeDetailPageComponent implements OnInit {
     this.experience.removeAt(index);
   }
 
-  addProjectItem(): void {
-    this.projects.push(this.createProjectItemForm(createEmptyResumeProjectItem()));
+  addExperienceProject(experienceIndex: number): void {
+    this.experienceProjects(experienceIndex).push(
+      this.createProjectItemForm(createEmptyResumeProjectItem()),
+    );
   }
 
-  removeProjectItem(index: number): void {
-    this.projects.removeAt(index);
+  removeExperienceProject(experienceIndex: number, projectIndex: number): void {
+    this.experienceProjects(experienceIndex).removeAt(projectIndex);
   }
 
   addEducationItem(): void {
@@ -466,6 +461,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return this.additionalSections.at(sectionIndex).controls.items;
   }
 
+  experienceProjects(experienceIndex: number): FormArray<FormGroup<ResumeProjectItemForm>> {
+    return this.experience.at(experienceIndex).controls.projects;
+  }
+
   localized(ru: string | null, en: string | null): string | null {
     if (this.previewLanguage() === 'ru') return cleanNullableString(ru);
     return cleanNullableString(en);
@@ -498,7 +497,6 @@ export class AdminResumeDetailPageComponent implements OnInit {
         summary: this.buildSummary(),
         skills: this.skills.controls.map((control) => this.buildSkillGroup(control)),
         experience: this.experience.controls.map((control) => this.buildExperienceItem(control)),
-        projects: this.projects.controls.map((control) => this.buildProjectItem(control)),
         education: this.education.controls.map((control) => this.buildEducationItem(control)),
         languages: this.languages.controls.map((control) => this.buildLanguageItem(control)),
         certifications: this.certifications.controls.map((control) =>
@@ -526,10 +524,6 @@ export class AdminResumeDetailPageComponent implements OnInit {
     this.replaceFormArray(
       this.experience,
       resume.content.experience.map((item) => this.createExperienceItemForm(item)),
-    );
-    this.replaceFormArray(
-      this.projects,
-      resume.content.projects.map((item) => this.createProjectItemForm(item)),
     );
     this.replaceFormArray(
       this.education,
@@ -611,6 +605,9 @@ export class AdminResumeDetailPageComponent implements OnInit {
       highlightsRuText: this.text(linesToText(item.highlightsRu), null),
       highlightsEnText: this.text(linesToText(item.highlightsEn), null),
       technologiesText: this.text(linesToText(item.technologies), null),
+      projects: new FormArray<FormGroup<ResumeProjectItemForm>>(
+        item.projects.map((project) => this.createProjectItemForm(project)),
+      ),
     });
   }
 
@@ -766,6 +763,9 @@ export class AdminResumeDetailPageComponent implements OnInit {
       highlightsRu: textToLines(value.highlightsRuText),
       highlightsEn: textToLines(value.highlightsEnText),
       technologies: textToLines(value.technologiesText),
+      projects: control.controls.projects.controls.map((projectControl) =>
+        this.buildProjectItem(projectControl),
+      ),
     };
   }
 
@@ -934,6 +934,7 @@ function createEmptyResumeExperienceItem(): ResumeExperienceItem {
     highlightsRu: [],
     highlightsEn: [],
     technologies: [],
+    projects: [],
   };
 }
 

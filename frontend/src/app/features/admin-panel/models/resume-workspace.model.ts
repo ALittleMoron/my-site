@@ -38,6 +38,7 @@ export interface ResumeExperienceItemDto {
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
+  projects: ResumeProjectItemDto[];
 }
 
 export interface ResumeProjectItemDto {
@@ -104,7 +105,6 @@ export interface ResumeContentDto {
   summary: ResumeSummaryDto;
   skills: ResumeSkillGroupDto[];
   experience: ResumeExperienceItemDto[];
-  projects: ResumeProjectItemDto[];
   education: ResumeEducationItemDto[];
   languages: ResumeLanguageItemDto[];
   certifications: ResumeCertificationItemDto[];
@@ -170,6 +170,7 @@ export interface ResumeExperienceItem {
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
+  projects: ResumeProjectItem[];
 }
 
 export interface ResumeProjectItem {
@@ -236,7 +237,6 @@ export interface ResumeContent {
   summary: ResumeSummary;
   skills: ResumeSkillGroup[];
   experience: ResumeExperienceItem[];
-  projects: ResumeProjectItem[];
   education: ResumeEducationItem[];
   languages: ResumeLanguageItem[];
   certifications: ResumeCertificationItem[];
@@ -316,18 +316,7 @@ export function mapResumeContentDto(dto: ResumeContentDto): ResumeContent {
       highlightsRu: [...item.highlightsRu],
       highlightsEn: [...item.highlightsEn],
       technologies: [...item.technologies],
-    })),
-    projects: dto.projects.map((item) => ({
-      nameRu: item.nameRu,
-      nameEn: item.nameEn,
-      roleRu: item.roleRu,
-      roleEn: item.roleEn,
-      descriptionRu: item.descriptionRu,
-      descriptionEn: item.descriptionEn,
-      highlightsRu: [...item.highlightsRu],
-      highlightsEn: [...item.highlightsEn],
-      technologies: [...item.technologies],
-      url: item.url,
+      projects: item.projects.map(mapResumeProjectItemDto),
     })),
     education: dto.education.map((item) => ({ ...item })),
     languages: dto.languages.map((item) => ({ ...item })),
@@ -364,18 +353,7 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
       highlightsRu: [...item.highlightsRu],
       highlightsEn: [...item.highlightsEn],
       technologies: [...item.technologies],
-    })),
-    projects: content.projects.map((item) => ({
-      nameRu: item.nameRu,
-      nameEn: item.nameEn,
-      roleRu: item.roleRu,
-      roleEn: item.roleEn,
-      descriptionRu: item.descriptionRu,
-      descriptionEn: item.descriptionEn,
-      highlightsRu: [...item.highlightsRu],
-      highlightsEn: [...item.highlightsEn],
-      technologies: [...item.technologies],
-      url: item.url,
+      projects: item.projects.map(mapResumeProjectItemToDto),
     })),
     education: content.education.map((item) => ({ ...item })),
     languages: content.languages.map((item) => ({ ...item })),
@@ -385,5 +363,35 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
       titleEn: section.titleEn,
       items: section.items.map((item) => ({ ...item })),
     })),
+  };
+}
+
+function mapResumeProjectItemDto(item: ResumeProjectItemDto): ResumeProjectItem {
+  return {
+    nameRu: item.nameRu,
+    nameEn: item.nameEn,
+    roleRu: item.roleRu,
+    roleEn: item.roleEn,
+    descriptionRu: item.descriptionRu,
+    descriptionEn: item.descriptionEn,
+    highlightsRu: [...item.highlightsRu],
+    highlightsEn: [...item.highlightsEn],
+    technologies: [...item.technologies],
+    url: item.url,
+  };
+}
+
+function mapResumeProjectItemToDto(item: ResumeProjectItem): ResumeProjectItemDto {
+  return {
+    nameRu: item.nameRu,
+    nameEn: item.nameEn,
+    roleRu: item.roleRu,
+    roleEn: item.roleEn,
+    descriptionRu: item.descriptionRu,
+    descriptionEn: item.descriptionEn,
+    highlightsRu: [...item.highlightsRu],
+    highlightsEn: [...item.highlightsEn],
+    technologies: [...item.technologies],
+    url: item.url,
   };
 }

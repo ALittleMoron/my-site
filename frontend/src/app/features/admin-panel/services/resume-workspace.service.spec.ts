@@ -85,18 +85,23 @@ describe('ResumeWorkspaceService', () => {
 
   it('maps nested resume content without sharing mutable DTO arrays', () => {
     let payloadItems: readonly string[] = [];
+    let payloadProjectTechnologies: readonly string[] = [];
     const dto = resumeDto();
 
     service.getResume(7).subscribe((resume) => {
       payloadItems = resume.content.skills[0].items;
+      payloadProjectTechnologies = resume.content.experience[0].projects[0].technologies;
       resume.content.skills[0].items.push('TypeScript');
+      resume.content.experience[0].projects[0].technologies.push('Angular');
     });
 
     const detailReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
     detailReq.flush(dto);
 
     expect(payloadItems).toEqual(['Python', 'PostgreSQL', 'TypeScript']);
+    expect(payloadProjectTechnologies).toEqual(['Litestar', 'Angular']);
     expect(dto.content.skills[0].items).toEqual(['Python', 'PostgreSQL']);
+    expect(dto.content.experience[0].projects[0].technologies).toEqual(['Litestar']);
   });
 });
 
@@ -165,9 +170,22 @@ function resumeContent(): ResumePayload['content'] {
         highlightsRu: ['Сократил latency'],
         highlightsEn: ['Reduced latency'],
         technologies: ['Python'],
+        projects: [
+          {
+            nameRu: 'Портфолио',
+            nameEn: 'Portfolio',
+            roleRu: 'Автор',
+            roleEn: 'Creator',
+            descriptionRu: 'Сайт и база знаний',
+            descriptionEn: 'Site and knowledge base',
+            highlightsRu: ['Гибридный SSR/CSR'],
+            highlightsEn: ['Hybrid SSR/CSR'],
+            technologies: ['Litestar'],
+            url: 'https://example.com',
+          },
+        ],
       },
     ],
-    projects: [],
     education: [],
     languages: [],
     certifications: [],

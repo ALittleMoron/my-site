@@ -199,7 +199,6 @@ function resume(): Resume {
       },
       skills: [],
       experience: [],
-      projects: [],
       education: [],
       languages: [],
       certifications: [],

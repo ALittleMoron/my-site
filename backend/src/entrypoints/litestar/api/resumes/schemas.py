@@ -101,60 +101,6 @@ class ResumeSkillGroupSchema(CamelCaseSchema):
         )
 
 
-class ResumeExperienceItemSchema(CamelCaseSchema):
-    company_ru: Annotated[str | None, Field(title="Company RU", max_length=255)]
-    company_en: Annotated[str | None, Field(title="Company EN", max_length=255)]
-    position_ru: Annotated[str | None, Field(title="Position RU", max_length=255)]
-    position_en: Annotated[str | None, Field(title="Position EN", max_length=255)]
-    location_ru: Annotated[str | None, Field(title="Location RU", max_length=255)]
-    location_en: Annotated[str | None, Field(title="Location EN", max_length=255)]
-    start_date: Annotated[date | None, Field(title="Start date")]
-    end_date: Annotated[date | None, Field(title="End date")]
-    is_current: Annotated[bool | None, Field(title="Current role")]
-    summary_ru: Annotated[str | None, Field(title="Experience summary RU")]
-    summary_en: Annotated[str | None, Field(title="Experience summary EN")]
-    highlights_ru: Annotated[list[str], Field(title="Highlights RU")]
-    highlights_en: Annotated[list[str], Field(title="Highlights EN")]
-    technologies: Annotated[list[str], Field(title="Technologies")]
-
-    def to_domain_schema(self) -> ResumeExperienceItem:
-        return ResumeExperienceItem(
-            company_ru=self.company_ru,
-            company_en=self.company_en,
-            position_ru=self.position_ru,
-            position_en=self.position_en,
-            location_ru=self.location_ru,
-            location_en=self.location_en,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            is_current=self.is_current,
-            summary_ru=self.summary_ru,
-            summary_en=self.summary_en,
-            highlights_ru=list(self.highlights_ru),
-            highlights_en=list(self.highlights_en),
-            technologies=list(self.technologies),
-        )
-
-    @classmethod
-    def from_domain_schema(cls, *, schema: ResumeExperienceItem) -> Self:
-        return cls(
-            company_ru=schema.company_ru,
-            company_en=schema.company_en,
-            position_ru=schema.position_ru,
-            position_en=schema.position_en,
-            location_ru=schema.location_ru,
-            location_en=schema.location_en,
-            start_date=schema.start_date,
-            end_date=schema.end_date,
-            is_current=schema.is_current,
-            summary_ru=schema.summary_ru,
-            summary_en=schema.summary_en,
-            highlights_ru=list(schema.highlights_ru),
-            highlights_en=list(schema.highlights_en),
-            technologies=list(schema.technologies),
-        )
-
-
 class ResumeProjectItemSchema(CamelCaseSchema):
     name_ru: Annotated[str | None, Field(title="Project name RU", max_length=255)]
     name_en: Annotated[str | None, Field(title="Project name EN", max_length=255)]
@@ -194,6 +140,66 @@ class ResumeProjectItemSchema(CamelCaseSchema):
             highlights_en=list(schema.highlights_en),
             technologies=list(schema.technologies),
             url=schema.url,
+        )
+
+
+class ResumeExperienceItemSchema(CamelCaseSchema):
+    company_ru: Annotated[str | None, Field(title="Company RU", max_length=255)]
+    company_en: Annotated[str | None, Field(title="Company EN", max_length=255)]
+    position_ru: Annotated[str | None, Field(title="Position RU", max_length=255)]
+    position_en: Annotated[str | None, Field(title="Position EN", max_length=255)]
+    location_ru: Annotated[str | None, Field(title="Location RU", max_length=255)]
+    location_en: Annotated[str | None, Field(title="Location EN", max_length=255)]
+    start_date: Annotated[date | None, Field(title="Start date")]
+    end_date: Annotated[date | None, Field(title="End date")]
+    is_current: Annotated[bool | None, Field(title="Current role")]
+    summary_ru: Annotated[str | None, Field(title="Experience summary RU")]
+    summary_en: Annotated[str | None, Field(title="Experience summary EN")]
+    highlights_ru: Annotated[list[str], Field(title="Highlights RU")]
+    highlights_en: Annotated[list[str], Field(title="Highlights EN")]
+    technologies: Annotated[list[str], Field(title="Technologies")]
+    projects: Annotated[list[ResumeProjectItemSchema], Field(title="Experience projects")]
+
+    def to_domain_schema(self) -> ResumeExperienceItem:
+        return ResumeExperienceItem(
+            company_ru=self.company_ru,
+            company_en=self.company_en,
+            position_ru=self.position_ru,
+            position_en=self.position_en,
+            location_ru=self.location_ru,
+            location_en=self.location_en,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            is_current=self.is_current,
+            summary_ru=self.summary_ru,
+            summary_en=self.summary_en,
+            highlights_ru=list(self.highlights_ru),
+            highlights_en=list(self.highlights_en),
+            technologies=list(self.technologies),
+            projects=[project.to_domain_schema() for project in self.projects],
+        )
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: ResumeExperienceItem) -> Self:
+        return cls(
+            company_ru=schema.company_ru,
+            company_en=schema.company_en,
+            position_ru=schema.position_ru,
+            position_en=schema.position_en,
+            location_ru=schema.location_ru,
+            location_en=schema.location_en,
+            start_date=schema.start_date,
+            end_date=schema.end_date,
+            is_current=schema.is_current,
+            summary_ru=schema.summary_ru,
+            summary_en=schema.summary_en,
+            highlights_ru=list(schema.highlights_ru),
+            highlights_en=list(schema.highlights_en),
+            technologies=list(schema.technologies),
+            projects=[
+                ResumeProjectItemSchema.from_domain_schema(schema=project)
+                for project in schema.projects
+            ],
         )
 
 
@@ -358,7 +364,6 @@ class ResumeContentSchema(CamelCaseSchema):
     summary: Annotated[ResumeSummarySchema, Field(title="Summary")]
     skills: Annotated[list[ResumeSkillGroupSchema], Field(title="Skills")]
     experience: Annotated[list[ResumeExperienceItemSchema], Field(title="Experience")]
-    projects: Annotated[list[ResumeProjectItemSchema], Field(title="Projects")]
     education: Annotated[list[ResumeEducationItemSchema], Field(title="Education")]
     languages: Annotated[list[ResumeLanguageItemSchema], Field(title="Languages")]
     certifications: Annotated[list[ResumeCertificationItemSchema], Field(title="Certifications")]
@@ -373,7 +378,6 @@ class ResumeContentSchema(CamelCaseSchema):
             summary=self.summary.to_domain_schema(),
             skills=[skill.to_domain_schema() for skill in self.skills],
             experience=[experience.to_domain_schema() for experience in self.experience],
-            projects=[project.to_domain_schema() for project in self.projects],
             education=[education.to_domain_schema() for education in self.education],
             languages=[language.to_domain_schema() for language in self.languages],
             certifications=[
@@ -395,10 +399,6 @@ class ResumeContentSchema(CamelCaseSchema):
             experience=[
                 ResumeExperienceItemSchema.from_domain_schema(schema=experience)
                 for experience in schema.experience
-            ],
-            projects=[
-                ResumeProjectItemSchema.from_domain_schema(schema=project)
-                for project in schema.projects
             ],
             education=[
                 ResumeEducationItemSchema.from_domain_schema(schema=education)

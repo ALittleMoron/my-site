@@ -89,7 +89,6 @@ describe('AdminResumeDetailPageComponent', () => {
             textRu: 'Обновленная сводка',
             textEn: 'Strong backend experience.',
           },
-          projects: [],
           education: [],
           languages: [],
           certifications: [],
@@ -202,6 +201,45 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
+  it('updates payload when an experience project is edited', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+
+    expect(elementValueById('resume-experience-0-project-0-name-ru')).toBe('Портфолио');
+
+    setElementValueById('resume-experience-0-project-0-name-ru', 'Платформа');
+    setElementValueById('resume-experience-0-project-0-technologies', 'Litestar\nAngular');
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({
+        content: expect.objectContaining({
+          experience: [
+            expect.objectContaining({
+              projects: [
+                expect.objectContaining({
+                  nameRu: 'Платформа',
+                  nameEn: 'Portfolio',
+                  technologies: ['Litestar', 'Angular'],
+                }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    );
+  });
+
+  it('renders experience projects in the preview', () => {
+    fixture.componentInstance.showPreview();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Портфолио');
+    expect(fixture.nativeElement.textContent).toContain('Сайт и база знаний');
+  });
+
   it('uses localized date pickers and saves resume dates as ISO values', () => {
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
@@ -262,6 +300,13 @@ describe('AdminResumeDetailPageComponent', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
   }
+
+  function elementValueById(elementId: string): string {
+    const input = fixture.nativeElement.querySelector(`#${elementId}`) as
+      | HTMLInputElement
+      | HTMLTextAreaElement;
+    return input.value;
+  }
 });
 
 function resume(overrides: Partial<Resume> = {}): Resume {
@@ -311,9 +356,22 @@ function resume(overrides: Partial<Resume> = {}): Resume {
           highlightsRu: ['Ускорил сервис'],
           highlightsEn: ['Improved service speed'],
           technologies: ['Python'],
+          projects: [
+            {
+              nameRu: 'Портфолио',
+              nameEn: 'Portfolio',
+              roleRu: 'Автор',
+              roleEn: 'Creator',
+              descriptionRu: 'Сайт и база знаний',
+              descriptionEn: 'Site and knowledge base',
+              highlightsRu: ['Гибридный SSR/CSR'],
+              highlightsEn: ['Hybrid SSR/CSR'],
+              technologies: ['Litestar'],
+              url: 'https://example.com',
+            },
+          ],
         },
       ],
-      projects: [],
       education: [],
       languages: [],
       certifications: [],

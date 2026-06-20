@@ -72,7 +72,6 @@ RESUME_SEED_CONTENT: dict[str, object] = {
     },
     "skills": [],
     "experience": [],
-    "projects": [],
     "education": [],
     "languages": [],
     "certifications": [],

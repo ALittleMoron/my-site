@@ -4,7 +4,13 @@ from httpx import codes
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.resumes.exceptions import ResumeNotFoundError
-from core.resumes.schemas import ResumeCreateParams, ResumeFilters, ResumeUpdateParams
+from core.resumes.schemas import (
+    ResumeCreateParams,
+    ResumeExperienceItem,
+    ResumeFilters,
+    ResumeProjectItem,
+    ResumeUpdateParams,
+)
 from core.types import IntId
 from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
 
@@ -46,12 +52,77 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         )
 
     def test_create_resume_maps_payload_to_params(self) -> None:
+        experience = [
+            ResumeExperienceItem(
+                company_ru="Компания",
+                company_en="Company",
+                position_ru="Инженер",
+                position_en="Engineer",
+                location_ru=None,
+                location_en=None,
+                start_date=None,
+                end_date=None,
+                is_current=True,
+                summary_ru="Строил платформу.",
+                summary_en="Built a platform.",
+                highlights_ru=["Сократил latency"],
+                highlights_en=["Reduced latency"],
+                technologies=["Python"],
+                projects=[
+                    ResumeProjectItem(
+                        name_ru="Портфолио",
+                        name_en="Portfolio",
+                        role_ru="Автор",
+                        role_en="Creator",
+                        description_ru="Сайт и база знаний",
+                        description_en="Site and knowledge base",
+                        highlights_ru=["Гибридный SSR/CSR"],
+                        highlights_en=["Hybrid SSR/CSR"],
+                        technologies=["Litestar", "Angular"],
+                        url="https://example.com",
+                    ),
+                ],
+            ),
+        ]
+        api_experience = [
+            {
+                "companyRu": "Компания",
+                "companyEn": "Company",
+                "positionRu": "Инженер",
+                "positionEn": "Engineer",
+                "locationRu": None,
+                "locationEn": None,
+                "startDate": None,
+                "endDate": None,
+                "isCurrent": True,
+                "summaryRu": "Строил платформу.",
+                "summaryEn": "Built a platform.",
+                "highlightsRu": ["Сократил latency"],
+                "highlightsEn": ["Reduced latency"],
+                "technologies": ["Python"],
+                "projects": [
+                    {
+                        "nameRu": "Портфолио",
+                        "nameEn": "Portfolio",
+                        "roleRu": "Автор",
+                        "roleEn": "Creator",
+                        "descriptionRu": "Сайт и база знаний",
+                        "descriptionEn": "Site and knowledge base",
+                        "highlightsRu": ["Гибридный SSR/CSR"],
+                        "highlightsEn": ["Hybrid SSR/CSR"],
+                        "technologies": ["Litestar", "Angular"],
+                        "url": "https://example.com",
+                    },
+                ],
+            },
+        ]
         content = self.factory.core.resume_content(
             full_name="Dmitriy",
             role_ru="Backend инженер",
             role_en="Backend engineer",
             summary_ru="Сводка",
             summary_en="Summary",
+            experience=experience,
         )
         self.use_case.create_resume.return_value = self.factory.core.resume(
             resume_id=2,
@@ -70,12 +141,14 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                     role_en="Backend engineer",
                     summary_ru="Сводка",
                     summary_en="Summary",
+                    experience=api_experience,
                 ),
             ),
         )
 
         assert response.status_code == codes.CREATED, response.content
         assert response.json()["id"] == 2
+        assert response.json()["content"]["experience"][0]["projects"][0]["nameEn"] == "Portfolio"
         self.use_case.create_resume.assert_called_once_with(
             params=ResumeCreateParams(
                 title="Target resume",

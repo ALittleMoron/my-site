@@ -36,6 +36,20 @@ class ResumeSkillGroup:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ResumeProjectItem:
+    name_ru: str | None
+    name_en: str | None
+    role_ru: str | None
+    role_en: str | None
+    description_ru: str | None
+    description_en: str | None
+    highlights_ru: list[str]
+    highlights_en: list[str]
+    technologies: list[str]
+    url: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeExperienceItem:
     company_ru: str | None
     company_en: str | None
@@ -51,20 +65,7 @@ class ResumeExperienceItem:
     highlights_ru: list[str]
     highlights_en: list[str]
     technologies: list[str]
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ResumeProjectItem:
-    name_ru: str | None
-    name_en: str | None
-    role_ru: str | None
-    role_en: str | None
-    description_ru: str | None
-    description_en: str | None
-    highlights_ru: list[str]
-    highlights_en: list[str]
-    technologies: list[str]
-    url: str | None
+    projects: list[ResumeProjectItem]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -124,7 +125,6 @@ class ResumeContent:
     summary: ResumeSummary
     skills: list[ResumeSkillGroup]
     experience: list[ResumeExperienceItem]
-    projects: list[ResumeProjectItem]
     education: list[ResumeEducationItem]
     languages: list[ResumeLanguageItem]
     certifications: list[ResumeCertificationItem]

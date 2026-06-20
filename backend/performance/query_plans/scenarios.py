@@ -626,7 +626,6 @@ def write_resume_content(*, summary_ru: str) -> ResumeContent:
         ),
         skills=[],
         experience=[],
-        projects=[],
         education=[],
         languages=[],
         certifications=[],
