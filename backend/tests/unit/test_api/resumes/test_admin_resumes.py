@@ -3,6 +3,7 @@ from httpx import codes
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
+from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
     ResumeCreateParams,
@@ -42,6 +43,8 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["resumes"][0]["id"] == 1
         assert response.json()["resumes"][0]["title"] == "Backend resume"
         assert response.json()["resumes"][0]["content"]["profile"]["fullName"] == "Candidate Name"
+        assert response.json()["resumes"][0]["content"]["profile"]["phone"] == ""
+        assert_resume_response_nulls_are_dates_only(value=response.json()["resumes"][0]["content"])
         self.use_case.list_resumes.assert_called_once_with(
             filters=ResumeFilters(
                 page=2,
@@ -58,11 +61,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 company_en="Company",
                 position_ru="Инженер",
                 position_en="Engineer",
-                location_ru=None,
-                location_en=None,
+                location_ru="",
+                location_en="",
                 start_date=None,
                 end_date=None,
-                is_current=True,
+                current_status=ResumeCurrentStatusEnum.CURRENT,
                 summary_ru="Строил платформу.",
                 summary_en="Built a platform.",
                 highlights_ru=["Сократил latency"],
@@ -90,11 +93,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
                 "companyEn": "Company",
                 "positionRu": "Инженер",
                 "positionEn": "Engineer",
-                "locationRu": None,
-                "locationEn": None,
+                "locationRu": "",
+                "locationEn": "",
                 "startDate": None,
                 "endDate": None,
-                "isCurrent": True,
+                "currentStatus": "current",
                 "summaryRu": "Строил платформу.",
                 "summaryEn": "Built a platform.",
                 "highlightsRu": ["Сократил latency"],
@@ -148,7 +151,10 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.CREATED, response.content
         assert response.json()["id"] == 2
+        assert response.json()["content"]["profile"]["phone"] == ""
+        assert response.json()["content"]["experience"][0]["currentStatus"] == "current"
         assert response.json()["content"]["experience"][0]["projects"][0]["nameEn"] == "Portfolio"
+        assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
         self.use_case.create_resume.assert_called_once_with(
             params=ResumeCreateParams(
                 title="Target resume",
@@ -193,6 +199,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.OK, response.content
         assert response.json()["id"] == 3
+        assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
         self.use_case.get_resume.assert_called_once_with(
             resume_id=IntId(3),
             author_username="test",
@@ -247,3 +254,19 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.UNAUTHORIZED
         self.use_case.list_resumes.assert_not_called()
+
+
+RESUME_RESPONSE_ALLOWED_NULL_KEYS = frozenset({"startDate", "endDate", "issuedOn", "expiresOn"})
+
+
+def assert_resume_response_nulls_are_dates_only(*, value: object, key: str | None = None) -> None:
+    if value is None:
+        assert key in RESUME_RESPONSE_ALLOWED_NULL_KEYS
+        return
+    if isinstance(value, dict):
+        for child_key, child_value in value.items():
+            assert_resume_response_nulls_are_dates_only(value=child_value, key=child_key)
+        return
+    if isinstance(value, list):
+        for item in value:
+            assert_resume_response_nulls_are_dates_only(value=item, key=key)

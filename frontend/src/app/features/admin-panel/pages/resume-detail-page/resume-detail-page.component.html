@@ -459,21 +459,19 @@
                           (valueChange)="updateDate(experienceItem.controls.endDate, $event)"
                         />
                       </div>
-                      <div class="col-md-4 d-flex align-items-end">
-                        <div class="form-check mb-2">
-                          <input
-                            class="form-check-input"
-                            type="checkbox"
-                            [id]="'resume-experience-current-' + index"
-                            formControlName="isCurrent"
-                          />
-                          <label
-                            class="form-check-label"
-                            [for]="'resume-experience-current-' + index"
-                          >
-                            {{ 'adminResumeWorkspace.field.isCurrent' | t }}
-                          </label>
-                        </div>
+                      <div class="col-md-4">
+                        <label class="form-label" [for]="'resume-experience-current-' + index">{{
+                          'adminResumeWorkspace.field.currentStatus' | t
+                        }}</label>
+                        <select
+                          class="form-select"
+                          [id]="'resume-experience-current-' + index"
+                          formControlName="currentStatus"
+                        >
+                          @for (option of currentStatusOptions; track option.value) {
+                            <option [value]="option.value">{{ option.labelKey | t }}</option>
+                          }
+                        </select>
                       </div>
                       <div class="col-md-6">
                         <label
@@ -1587,9 +1585,9 @@
                       <span>· {{ localized(item.companyRu, item.companyEn) }}</span>
                     }
                   </h4>
-                  @if (dateRange(item.startDate, item.endDate, item.isCurrent)) {
+                  @if (dateRange(item.startDate, item.endDate, item.currentStatus)) {
                     <p class="text-body-secondary">
-                      {{ dateRange(item.startDate, item.endDate, item.isCurrent) }}
+                      {{ dateRange(item.startDate, item.endDate, item.currentStatus) }}
                     </p>
                   }
                   @if (localized(item.summaryRu, item.summaryEn)) {

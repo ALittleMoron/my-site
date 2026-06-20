@@ -3,6 +3,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
+from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.schemas import (
     Resume,
     ResumeAdditionalSection,
@@ -24,17 +25,17 @@ from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class ResumeProfileSchema(CamelCaseSchema):
-    full_name: Annotated[str | None, Field(title="Full name", max_length=255)]
-    role_ru: Annotated[str | None, Field(title="Role RU", max_length=255)]
-    role_en: Annotated[str | None, Field(title="Role EN", max_length=255)]
-    location_ru: Annotated[str | None, Field(title="Location RU", max_length=255)]
-    location_en: Annotated[str | None, Field(title="Location EN", max_length=255)]
-    email: Annotated[str | None, Field(title="Email", max_length=255)]
-    phone: Annotated[str | None, Field(title="Phone", max_length=64)]
-    website_url: Annotated[str | None, Field(title="Website URL", max_length=2048)]
-    linkedin_url: Annotated[str | None, Field(title="LinkedIn URL", max_length=2048)]
-    github_url: Annotated[str | None, Field(title="GitHub URL", max_length=2048)]
-    telegram: Annotated[str | None, Field(title="Telegram", max_length=255)]
+    full_name: Annotated[str, Field(title="Full name", max_length=255)]
+    role_ru: Annotated[str, Field(title="Role RU", max_length=255)]
+    role_en: Annotated[str, Field(title="Role EN", max_length=255)]
+    location_ru: Annotated[str, Field(title="Location RU", max_length=255)]
+    location_en: Annotated[str, Field(title="Location EN", max_length=255)]
+    email: Annotated[str, Field(title="Email", max_length=255)]
+    phone: Annotated[str, Field(title="Phone", max_length=64)]
+    website_url: Annotated[str, Field(title="Website URL", max_length=2048)]
+    linkedin_url: Annotated[str, Field(title="LinkedIn URL", max_length=2048)]
+    github_url: Annotated[str, Field(title="GitHub URL", max_length=2048)]
+    telegram: Annotated[str, Field(title="Telegram", max_length=255)]
 
     def to_domain_schema(self) -> ResumeProfile:
         return ResumeProfile(
@@ -69,8 +70,8 @@ class ResumeProfileSchema(CamelCaseSchema):
 
 
 class ResumeSummarySchema(CamelCaseSchema):
-    text_ru: Annotated[str | None, Field(title="Summary RU")]
-    text_en: Annotated[str | None, Field(title="Summary EN")]
+    text_ru: Annotated[str, Field(title="Summary RU")]
+    text_en: Annotated[str, Field(title="Summary EN")]
 
     def to_domain_schema(self) -> ResumeSummary:
         return ResumeSummary(text_ru=self.text_ru, text_en=self.text_en)
@@ -81,8 +82,8 @@ class ResumeSummarySchema(CamelCaseSchema):
 
 
 class ResumeSkillGroupSchema(CamelCaseSchema):
-    category_ru: Annotated[str | None, Field(title="Skill category RU", max_length=255)]
-    category_en: Annotated[str | None, Field(title="Skill category EN", max_length=255)]
+    category_ru: Annotated[str, Field(title="Skill category RU", max_length=255)]
+    category_en: Annotated[str, Field(title="Skill category EN", max_length=255)]
     items: Annotated[list[str], Field(title="Skill items")]
 
     def to_domain_schema(self) -> ResumeSkillGroup:
@@ -102,16 +103,16 @@ class ResumeSkillGroupSchema(CamelCaseSchema):
 
 
 class ResumeProjectItemSchema(CamelCaseSchema):
-    name_ru: Annotated[str | None, Field(title="Project name RU", max_length=255)]
-    name_en: Annotated[str | None, Field(title="Project name EN", max_length=255)]
-    role_ru: Annotated[str | None, Field(title="Project role RU", max_length=255)]
-    role_en: Annotated[str | None, Field(title="Project role EN", max_length=255)]
-    description_ru: Annotated[str | None, Field(title="Project description RU")]
-    description_en: Annotated[str | None, Field(title="Project description EN")]
+    name_ru: Annotated[str, Field(title="Project name RU", max_length=255)]
+    name_en: Annotated[str, Field(title="Project name EN", max_length=255)]
+    role_ru: Annotated[str, Field(title="Project role RU", max_length=255)]
+    role_en: Annotated[str, Field(title="Project role EN", max_length=255)]
+    description_ru: Annotated[str, Field(title="Project description RU")]
+    description_en: Annotated[str, Field(title="Project description EN")]
     highlights_ru: Annotated[list[str], Field(title="Highlights RU")]
     highlights_en: Annotated[list[str], Field(title="Highlights EN")]
     technologies: Annotated[list[str], Field(title="Technologies")]
-    url: Annotated[str | None, Field(title="Project URL", max_length=2048)]
+    url: Annotated[str, Field(title="Project URL", max_length=2048)]
 
     def to_domain_schema(self) -> ResumeProjectItem:
         return ResumeProjectItem(
@@ -144,17 +145,17 @@ class ResumeProjectItemSchema(CamelCaseSchema):
 
 
 class ResumeExperienceItemSchema(CamelCaseSchema):
-    company_ru: Annotated[str | None, Field(title="Company RU", max_length=255)]
-    company_en: Annotated[str | None, Field(title="Company EN", max_length=255)]
-    position_ru: Annotated[str | None, Field(title="Position RU", max_length=255)]
-    position_en: Annotated[str | None, Field(title="Position EN", max_length=255)]
-    location_ru: Annotated[str | None, Field(title="Location RU", max_length=255)]
-    location_en: Annotated[str | None, Field(title="Location EN", max_length=255)]
+    company_ru: Annotated[str, Field(title="Company RU", max_length=255)]
+    company_en: Annotated[str, Field(title="Company EN", max_length=255)]
+    position_ru: Annotated[str, Field(title="Position RU", max_length=255)]
+    position_en: Annotated[str, Field(title="Position EN", max_length=255)]
+    location_ru: Annotated[str, Field(title="Location RU", max_length=255)]
+    location_en: Annotated[str, Field(title="Location EN", max_length=255)]
     start_date: Annotated[date | None, Field(title="Start date")]
     end_date: Annotated[date | None, Field(title="End date")]
-    is_current: Annotated[bool | None, Field(title="Current role")]
-    summary_ru: Annotated[str | None, Field(title="Experience summary RU")]
-    summary_en: Annotated[str | None, Field(title="Experience summary EN")]
+    current_status: Annotated[ResumeCurrentStatusEnum, Field(title="Current status")]
+    summary_ru: Annotated[str, Field(title="Experience summary RU")]
+    summary_en: Annotated[str, Field(title="Experience summary EN")]
     highlights_ru: Annotated[list[str], Field(title="Highlights RU")]
     highlights_en: Annotated[list[str], Field(title="Highlights EN")]
     technologies: Annotated[list[str], Field(title="Technologies")]
@@ -170,7 +171,7 @@ class ResumeExperienceItemSchema(CamelCaseSchema):
             location_en=self.location_en,
             start_date=self.start_date,
             end_date=self.end_date,
-            is_current=self.is_current,
+            current_status=self.current_status,
             summary_ru=self.summary_ru,
             summary_en=self.summary_en,
             highlights_ru=list(self.highlights_ru),
@@ -190,7 +191,7 @@ class ResumeExperienceItemSchema(CamelCaseSchema):
             location_en=schema.location_en,
             start_date=schema.start_date,
             end_date=schema.end_date,
-            is_current=schema.is_current,
+            current_status=schema.current_status,
             summary_ru=schema.summary_ru,
             summary_en=schema.summary_en,
             highlights_ru=list(schema.highlights_ru),
@@ -204,18 +205,18 @@ class ResumeExperienceItemSchema(CamelCaseSchema):
 
 
 class ResumeEducationItemSchema(CamelCaseSchema):
-    institution_ru: Annotated[str | None, Field(title="Institution RU", max_length=255)]
-    institution_en: Annotated[str | None, Field(title="Institution EN", max_length=255)]
-    degree_ru: Annotated[str | None, Field(title="Degree RU", max_length=255)]
-    degree_en: Annotated[str | None, Field(title="Degree EN", max_length=255)]
-    field_ru: Annotated[str | None, Field(title="Field RU", max_length=255)]
-    field_en: Annotated[str | None, Field(title="Field EN", max_length=255)]
-    location_ru: Annotated[str | None, Field(title="Location RU", max_length=255)]
-    location_en: Annotated[str | None, Field(title="Location EN", max_length=255)]
+    institution_ru: Annotated[str, Field(title="Institution RU", max_length=255)]
+    institution_en: Annotated[str, Field(title="Institution EN", max_length=255)]
+    degree_ru: Annotated[str, Field(title="Degree RU", max_length=255)]
+    degree_en: Annotated[str, Field(title="Degree EN", max_length=255)]
+    field_ru: Annotated[str, Field(title="Field RU", max_length=255)]
+    field_en: Annotated[str, Field(title="Field EN", max_length=255)]
+    location_ru: Annotated[str, Field(title="Location RU", max_length=255)]
+    location_en: Annotated[str, Field(title="Location EN", max_length=255)]
     start_date: Annotated[date | None, Field(title="Start date")]
     end_date: Annotated[date | None, Field(title="End date")]
-    description_ru: Annotated[str | None, Field(title="Description RU")]
-    description_en: Annotated[str | None, Field(title="Description EN")]
+    description_ru: Annotated[str, Field(title="Description RU")]
+    description_en: Annotated[str, Field(title="Description EN")]
 
     def to_domain_schema(self) -> ResumeEducationItem:
         return ResumeEducationItem(
@@ -252,10 +253,10 @@ class ResumeEducationItemSchema(CamelCaseSchema):
 
 
 class ResumeLanguageItemSchema(CamelCaseSchema):
-    name_ru: Annotated[str | None, Field(title="Language RU", max_length=255)]
-    name_en: Annotated[str | None, Field(title="Language EN", max_length=255)]
-    proficiency_ru: Annotated[str | None, Field(title="Proficiency RU", max_length=255)]
-    proficiency_en: Annotated[str | None, Field(title="Proficiency EN", max_length=255)]
+    name_ru: Annotated[str, Field(title="Language RU", max_length=255)]
+    name_en: Annotated[str, Field(title="Language EN", max_length=255)]
+    proficiency_ru: Annotated[str, Field(title="Proficiency RU", max_length=255)]
+    proficiency_en: Annotated[str, Field(title="Proficiency EN", max_length=255)]
 
     def to_domain_schema(self) -> ResumeLanguageItem:
         return ResumeLanguageItem(
@@ -276,13 +277,13 @@ class ResumeLanguageItemSchema(CamelCaseSchema):
 
 
 class ResumeCertificationItemSchema(CamelCaseSchema):
-    name_ru: Annotated[str | None, Field(title="Certification RU", max_length=255)]
-    name_en: Annotated[str | None, Field(title="Certification EN", max_length=255)]
-    issuer_ru: Annotated[str | None, Field(title="Issuer RU", max_length=255)]
-    issuer_en: Annotated[str | None, Field(title="Issuer EN", max_length=255)]
+    name_ru: Annotated[str, Field(title="Certification RU", max_length=255)]
+    name_en: Annotated[str, Field(title="Certification EN", max_length=255)]
+    issuer_ru: Annotated[str, Field(title="Issuer RU", max_length=255)]
+    issuer_en: Annotated[str, Field(title="Issuer EN", max_length=255)]
     issued_on: Annotated[date | None, Field(title="Issued on")]
     expires_on: Annotated[date | None, Field(title="Expires on")]
-    credential_url: Annotated[str | None, Field(title="Credential URL", max_length=2048)]
+    credential_url: Annotated[str, Field(title="Credential URL", max_length=2048)]
 
     def to_domain_schema(self) -> ResumeCertificationItem:
         return ResumeCertificationItem(
@@ -309,11 +310,11 @@ class ResumeCertificationItemSchema(CamelCaseSchema):
 
 
 class ResumeAdditionalSectionItemSchema(CamelCaseSchema):
-    title_ru: Annotated[str | None, Field(title="Title RU", max_length=255)]
-    title_en: Annotated[str | None, Field(title="Title EN", max_length=255)]
-    description_ru: Annotated[str | None, Field(title="Description RU")]
-    description_en: Annotated[str | None, Field(title="Description EN")]
-    url: Annotated[str | None, Field(title="URL", max_length=2048)]
+    title_ru: Annotated[str, Field(title="Title RU", max_length=255)]
+    title_en: Annotated[str, Field(title="Title EN", max_length=255)]
+    description_ru: Annotated[str, Field(title="Description RU")]
+    description_en: Annotated[str, Field(title="Description EN")]
+    url: Annotated[str, Field(title="URL", max_length=2048)]
 
     def to_domain_schema(self) -> ResumeAdditionalSectionItem:
         return ResumeAdditionalSectionItem(
@@ -336,8 +337,8 @@ class ResumeAdditionalSectionItemSchema(CamelCaseSchema):
 
 
 class ResumeAdditionalSectionSchema(CamelCaseSchema):
-    title_ru: Annotated[str | None, Field(title="Section title RU", max_length=255)]
-    title_en: Annotated[str | None, Field(title="Section title EN", max_length=255)]
+    title_ru: Annotated[str, Field(title="Section title RU", max_length=255)]
+    title_en: Annotated[str, Field(title="Section title EN", max_length=255)]
     items: Annotated[list[ResumeAdditionalSectionItemSchema], Field(title="Section items")]
 
     def to_domain_schema(self) -> ResumeAdditionalSection:

@@ -268,6 +268,36 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
+  it('saves blank resume text as empty strings, dates as null, and current status as enum', () => {
+    fixture.componentInstance.setActiveTab('summary');
+    fixture.detectChanges();
+    setInputValue('resume-summary-ru', '   ');
+
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+    setElementValueById('resume-experience-0-start-date', '');
+    setElementValueById('resume-experience-current-0', 'notSet');
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({
+        content: expect.objectContaining({
+          summary: expect.objectContaining({
+            textRu: '',
+          }),
+          experience: [
+            expect.objectContaining({
+              startDate: null,
+              currentStatus: 'notSet',
+            }),
+          ],
+        }),
+      }),
+    );
+  });
+
   it('shows an API error notification on save failure', () => {
     service.updateResume.mockReturnValue(throwError(() => apiError()));
 
@@ -295,9 +325,11 @@ describe('AdminResumeDetailPageComponent', () => {
   function setElementValueById(elementId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`#${elementId}`) as
       | HTMLInputElement
-      | HTMLTextAreaElement;
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
     fixture.detectChanges();
   }
 
@@ -323,11 +355,11 @@ function resume(overrides: Partial<Resume> = {}): Resume {
         locationRu: 'Москва',
         locationEn: 'Moscow',
         email: 'candidate@example.com',
-        phone: null,
-        websiteUrl: null,
-        linkedinUrl: null,
-        githubUrl: null,
-        telegram: null,
+        phone: '',
+        websiteUrl: '',
+        linkedinUrl: '',
+        githubUrl: '',
+        telegram: '',
       },
       summary: {
         textRu: 'Сильный backend опыт.',
@@ -350,7 +382,7 @@ function resume(overrides: Partial<Resume> = {}): Resume {
           locationEn: 'Moscow',
           startDate: '2024-01-01',
           endDate: null,
-          isCurrent: true,
+          currentStatus: 'current',
           summaryRu: 'Разрабатывал API.',
           summaryEn: 'Built APIs.',
           highlightsRu: ['Ускорил сервис'],

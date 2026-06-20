@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 
+from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.schemas import (
     Resume,
     ResumeAdditionalSection,
@@ -120,7 +121,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
         }
 
     @staticmethod
-    def _profile_to_json(*, profile: ResumeProfile) -> dict[str, str | None]:
+    def _profile_to_json(*, profile: ResumeProfile) -> dict[str, str]:
         return {
             "full_name": profile.full_name,
             "role_ru": profile.role_ru,
@@ -146,7 +147,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
             "location_en": experience.location_en,
             "start_date": cls._date_to_json(value=experience.start_date),
             "end_date": cls._date_to_json(value=experience.end_date),
-            "is_current": experience.is_current,
+            "current_status": cls._current_status_to_json(value=experience.current_status),
             "summary_ru": experience.summary_ru,
             "summary_en": experience.summary_en,
             "highlights_ru": list(experience.highlights_ru),
@@ -225,136 +226,175 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
         return ResumeContent(
             profile=cls._profile_from_json(data=data["profile"]),
             summary=ResumeSummary(
-                text_ru=data["summary"]["text_ru"],
-                text_en=data["summary"]["text_en"],
+                text_ru=cls._string_from_json(value=data["summary"]["text_ru"]),
+                text_en=cls._string_from_json(value=data["summary"]["text_en"]),
             ),
             skills=[
                 ResumeSkillGroup(
-                    category_ru=skill["category_ru"],
-                    category_en=skill["category_en"],
-                    items=list(skill["items"]),
+                    category_ru=cls._string_from_json(value=skill["category_ru"]),
+                    category_en=cls._string_from_json(value=skill["category_en"]),
+                    items=cls._string_list_from_json(value=skill["items"]),
                 )
-                for skill in data["skills"]
+                for skill in cls._list_from_json(value=data["skills"])
             ],
             experience=[
-                cls._experience_from_json(data=experience) for experience in data["experience"]
+                cls._experience_from_json(data=experience)
+                for experience in cls._list_from_json(value=data["experience"])
             ],
-            education=[cls._education_from_json(data=education) for education in data["education"]],
+            education=[
+                cls._education_from_json(data=education)
+                for education in cls._list_from_json(value=data["education"])
+            ],
             languages=[
                 ResumeLanguageItem(
-                    name_ru=language["name_ru"],
-                    name_en=language["name_en"],
-                    proficiency_ru=language["proficiency_ru"],
-                    proficiency_en=language["proficiency_en"],
+                    name_ru=cls._string_from_json(value=language["name_ru"]),
+                    name_en=cls._string_from_json(value=language["name_en"]),
+                    proficiency_ru=cls._string_from_json(value=language["proficiency_ru"]),
+                    proficiency_en=cls._string_from_json(value=language["proficiency_en"]),
                 )
-                for language in data["languages"]
+                for language in cls._list_from_json(value=data["languages"])
             ],
             certifications=[
                 cls._certification_from_json(data=certification)
-                for certification in data["certifications"]
+                for certification in cls._list_from_json(value=data["certifications"])
             ],
             additional_sections=[
                 cls._additional_section_from_json(data=section)
-                for section in data["additional_sections"]
+                for section in cls._list_from_json(value=data["additional_sections"])
             ],
         )
 
-    @staticmethod
-    def _profile_from_json(*, data: dict[str, Any]) -> ResumeProfile:
+    @classmethod
+    def _profile_from_json(cls, *, data: dict[str, Any]) -> ResumeProfile:
         return ResumeProfile(
-            full_name=data["full_name"],
-            role_ru=data["role_ru"],
-            role_en=data["role_en"],
-            location_ru=data["location_ru"],
-            location_en=data["location_en"],
-            email=data["email"],
-            phone=data["phone"],
-            website_url=data["website_url"],
-            linkedin_url=data["linkedin_url"],
-            github_url=data["github_url"],
-            telegram=data["telegram"],
+            full_name=cls._string_from_json(value=data["full_name"]),
+            role_ru=cls._string_from_json(value=data["role_ru"]),
+            role_en=cls._string_from_json(value=data["role_en"]),
+            location_ru=cls._string_from_json(value=data["location_ru"]),
+            location_en=cls._string_from_json(value=data["location_en"]),
+            email=cls._string_from_json(value=data["email"]),
+            phone=cls._string_from_json(value=data["phone"]),
+            website_url=cls._string_from_json(value=data["website_url"]),
+            linkedin_url=cls._string_from_json(value=data["linkedin_url"]),
+            github_url=cls._string_from_json(value=data["github_url"]),
+            telegram=cls._string_from_json(value=data["telegram"]),
         )
 
     @classmethod
     def _experience_from_json(cls, *, data: dict[str, Any]) -> ResumeExperienceItem:
         return ResumeExperienceItem(
-            company_ru=data["company_ru"],
-            company_en=data["company_en"],
-            position_ru=data["position_ru"],
-            position_en=data["position_en"],
-            location_ru=data["location_ru"],
-            location_en=data["location_en"],
+            company_ru=cls._string_from_json(value=data["company_ru"]),
+            company_en=cls._string_from_json(value=data["company_en"]),
+            position_ru=cls._string_from_json(value=data["position_ru"]),
+            position_en=cls._string_from_json(value=data["position_en"]),
+            location_ru=cls._string_from_json(value=data["location_ru"]),
+            location_en=cls._string_from_json(value=data["location_en"]),
             start_date=cls._date_from_json(value=data["start_date"]),
             end_date=cls._date_from_json(value=data["end_date"]),
-            is_current=data["is_current"],
-            summary_ru=data["summary_ru"],
-            summary_en=data["summary_en"],
-            highlights_ru=list(data["highlights_ru"]),
-            highlights_en=list(data["highlights_en"]),
-            technologies=list(data["technologies"]),
-            projects=[cls._project_from_json(data=project) for project in data["projects"]],
+            current_status=cls._current_status_from_json(data=data),
+            summary_ru=cls._string_from_json(value=data["summary_ru"]),
+            summary_en=cls._string_from_json(value=data["summary_en"]),
+            highlights_ru=cls._string_list_from_json(value=data["highlights_ru"]),
+            highlights_en=cls._string_list_from_json(value=data["highlights_en"]),
+            technologies=cls._string_list_from_json(value=data["technologies"]),
+            projects=[
+                cls._project_from_json(data=project)
+                for project in cls._list_from_json(value=data["projects"])
+            ],
         )
 
-    @staticmethod
-    def _project_from_json(*, data: dict[str, Any]) -> ResumeProjectItem:
+    @classmethod
+    def _project_from_json(cls, *, data: dict[str, Any]) -> ResumeProjectItem:
         return ResumeProjectItem(
-            name_ru=data["name_ru"],
-            name_en=data["name_en"],
-            role_ru=data["role_ru"],
-            role_en=data["role_en"],
-            description_ru=data["description_ru"],
-            description_en=data["description_en"],
-            highlights_ru=list(data["highlights_ru"]),
-            highlights_en=list(data["highlights_en"]),
-            technologies=list(data["technologies"]),
-            url=data["url"],
+            name_ru=cls._string_from_json(value=data["name_ru"]),
+            name_en=cls._string_from_json(value=data["name_en"]),
+            role_ru=cls._string_from_json(value=data["role_ru"]),
+            role_en=cls._string_from_json(value=data["role_en"]),
+            description_ru=cls._string_from_json(value=data["description_ru"]),
+            description_en=cls._string_from_json(value=data["description_en"]),
+            highlights_ru=cls._string_list_from_json(value=data["highlights_ru"]),
+            highlights_en=cls._string_list_from_json(value=data["highlights_en"]),
+            technologies=cls._string_list_from_json(value=data["technologies"]),
+            url=cls._string_from_json(value=data["url"]),
         )
 
     @classmethod
     def _education_from_json(cls, *, data: dict[str, Any]) -> ResumeEducationItem:
         return ResumeEducationItem(
-            institution_ru=data["institution_ru"],
-            institution_en=data["institution_en"],
-            degree_ru=data["degree_ru"],
-            degree_en=data["degree_en"],
-            field_ru=data["field_ru"],
-            field_en=data["field_en"],
-            location_ru=data["location_ru"],
-            location_en=data["location_en"],
+            institution_ru=cls._string_from_json(value=data["institution_ru"]),
+            institution_en=cls._string_from_json(value=data["institution_en"]),
+            degree_ru=cls._string_from_json(value=data["degree_ru"]),
+            degree_en=cls._string_from_json(value=data["degree_en"]),
+            field_ru=cls._string_from_json(value=data["field_ru"]),
+            field_en=cls._string_from_json(value=data["field_en"]),
+            location_ru=cls._string_from_json(value=data["location_ru"]),
+            location_en=cls._string_from_json(value=data["location_en"]),
             start_date=cls._date_from_json(value=data["start_date"]),
             end_date=cls._date_from_json(value=data["end_date"]),
-            description_ru=data["description_ru"],
-            description_en=data["description_en"],
+            description_ru=cls._string_from_json(value=data["description_ru"]),
+            description_en=cls._string_from_json(value=data["description_en"]),
         )
 
     @classmethod
     def _certification_from_json(cls, *, data: dict[str, Any]) -> ResumeCertificationItem:
         return ResumeCertificationItem(
-            name_ru=data["name_ru"],
-            name_en=data["name_en"],
-            issuer_ru=data["issuer_ru"],
-            issuer_en=data["issuer_en"],
+            name_ru=cls._string_from_json(value=data["name_ru"]),
+            name_en=cls._string_from_json(value=data["name_en"]),
+            issuer_ru=cls._string_from_json(value=data["issuer_ru"]),
+            issuer_en=cls._string_from_json(value=data["issuer_en"]),
             issued_on=cls._date_from_json(value=data["issued_on"]),
             expires_on=cls._date_from_json(value=data["expires_on"]),
-            credential_url=data["credential_url"],
+            credential_url=cls._string_from_json(value=data["credential_url"]),
+        )
+
+    @classmethod
+    def _additional_section_from_json(cls, *, data: dict[str, Any]) -> ResumeAdditionalSection:
+        return ResumeAdditionalSection(
+            title_ru=cls._string_from_json(value=data["title_ru"]),
+            title_en=cls._string_from_json(value=data["title_en"]),
+            items=[
+                ResumeAdditionalSectionItem(
+                    title_ru=cls._string_from_json(value=item["title_ru"]),
+                    title_en=cls._string_from_json(value=item["title_en"]),
+                    description_ru=cls._string_from_json(value=item["description_ru"]),
+                    description_en=cls._string_from_json(value=item["description_en"]),
+                    url=cls._string_from_json(value=item["url"]),
+                )
+                for item in cls._list_from_json(value=data["items"])
+            ],
         )
 
     @staticmethod
-    def _additional_section_from_json(*, data: dict[str, Any]) -> ResumeAdditionalSection:
-        return ResumeAdditionalSection(
-            title_ru=data["title_ru"],
-            title_en=data["title_en"],
-            items=[
-                ResumeAdditionalSectionItem(
-                    title_ru=item["title_ru"],
-                    title_en=item["title_en"],
-                    description_ru=item["description_ru"],
-                    description_en=item["description_en"],
-                    url=item["url"],
-                )
-                for item in data["items"]
-            ],
-        )
+    def _string_from_json(*, value: object) -> str:
+        return value if isinstance(value, str) else ""
+
+    @staticmethod
+    def _list_from_json(*, value: object) -> list[Any]:
+        return value if isinstance(value, list) else []
+
+    @classmethod
+    def _string_list_from_json(cls, *, value: object) -> list[str]:
+        return [cls._string_from_json(value=item) for item in cls._list_from_json(value=value)]
+
+    @staticmethod
+    def _current_status_to_json(*, value: ResumeCurrentStatusEnum) -> str:
+        return value.value
+
+    @staticmethod
+    def _current_status_from_json(*, data: dict[str, Any]) -> ResumeCurrentStatusEnum:
+        if "current_status" in data:
+            value = data["current_status"]
+            if isinstance(value, str):
+                try:
+                    return ResumeCurrentStatusEnum(value)
+                except ValueError:
+                    return ResumeCurrentStatusEnum.NOT_SET
+            return ResumeCurrentStatusEnum.NOT_SET
+        if data.get("is_current") is True:
+            return ResumeCurrentStatusEnum.CURRENT
+        if data.get("is_current") is False:
+            return ResumeCurrentStatusEnum.NOT_CURRENT
+        return ResumeCurrentStatusEnum.NOT_SET
 
     @staticmethod
     def _date_to_json(*, value: date | None) -> str | None:

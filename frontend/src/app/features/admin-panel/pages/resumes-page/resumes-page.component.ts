@@ -155,8 +155,8 @@ export class AdminResumesPageComponent implements OnInit {
   completedSections(resume: Resume): number {
     return [
       resume.title.trim(),
-      resume.content.profile.fullName?.trim() || resume.content.profile.roleRu?.trim(),
-      resume.content.summary.textRu?.trim() || resume.content.summary.textEn?.trim(),
+      resume.content.profile.fullName.trim() || resume.content.profile.roleRu.trim(),
+      resume.content.summary.textRu.trim() || resume.content.summary.textEn.trim(),
       resume.content.skills.length > 0,
       resume.content.experience.length > 0,
     ].filter(Boolean).length;
@@ -180,14 +180,14 @@ export class AdminResumesPageComponent implements OnInit {
           fullName: value.fullName.trim(),
           roleRu: value.roleRu.trim(),
           roleEn: value.roleEn.trim(),
-          locationRu: null,
-          locationEn: null,
-          email: null,
-          phone: null,
-          websiteUrl: null,
-          linkedinUrl: null,
-          githubUrl: null,
-          telegram: null,
+          locationRu: '',
+          locationEn: '',
+          email: '',
+          phone: '',
+          websiteUrl: '',
+          linkedinUrl: '',
+          githubUrl: '',
+          telegram: '',
         },
         summary: {
           textRu: value.summaryRu.trim(),

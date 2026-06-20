@@ -3,6 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 import pytest_asyncio
 
+from core.resumes.enums import ResumeCurrentStatusEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
     Resume,
@@ -42,6 +43,7 @@ class TestResumesDatabaseStorage(StorageFixture):
             ),
         )
         loaded = await self.storage.get_resume(resume_id=created.id, author_username="admin")
+        created_row = await self.db_session.get(ResumeModel, created.id)
 
         assert loaded.id == created.id
         assert loaded.title == "Backend engineer"
@@ -49,6 +51,9 @@ class TestResumesDatabaseStorage(StorageFixture):
         assert loaded.content == content
         assert loaded.created_at.tzinfo == UTC
         assert loaded.updated_at.tzinfo == UTC
+        assert created_row is not None
+        assert created_row.content["experience"][0]["current_status"] == "current"
+        assert "is_current" not in created_row.content["experience"][0]
 
     async def test_list_resumes_orders_by_updated_at_then_id_and_paginates(self) -> None:
         await self.create_resume_row(
@@ -115,6 +120,32 @@ class TestResumesDatabaseStorage(StorageFixture):
         assert updated.created_at == created.created_at
         assert updated.updated_at == updated_at
 
+    async def test_get_resume_normalizes_legacy_nullable_content_jsonb(self) -> None:
+        legacy_model = ResumeModel(
+            id=IntId(50),
+            title="Legacy resume",
+            author_username="admin",
+            content=legacy_content_json(),
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2026, 1, 2, tzinfo=UTC),
+        )
+        self.db_session.add(legacy_model)
+        await self.db_session.flush()
+
+        loaded = await self.storage.get_resume(resume_id=IntId(50), author_username="admin")
+
+        assert loaded.content.profile.full_name == ""
+        assert loaded.content.profile.phone == ""
+        assert loaded.content.summary.text_ru == ""
+        assert loaded.content.skills[0].category_ru == ""
+        assert loaded.content.skills[0].items == []
+        assert loaded.content.experience[0].location_ru == ""
+        assert loaded.content.experience[0].current_status == ResumeCurrentStatusEnum.NOT_SET
+        assert loaded.content.experience[0].end_date is None
+        assert loaded.content.experience[0].highlights_ru == []
+        assert loaded.content.experience[0].projects[0].url == ""
+        assert loaded.content.experience[0].projects[0].technologies == []
+
     async def test_delete_resume_removes_row(self) -> None:
         created = await self.storage.create_resume(
             params=ResumeCreateParams(
@@ -139,7 +170,7 @@ class TestResumesDatabaseStorage(StorageFixture):
         other_author_resume = Resume(
             id=IntId(10),
             title="Attempted update",
-            content=empty_content(summary_ru=None, summary_en=None),
+            content=empty_content(summary_ru="", summary_en=""),
             author_username="admin",
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             updated_at=datetime(2026, 1, 2, tzinfo=UTC),
@@ -156,7 +187,7 @@ class TestResumesDatabaseStorage(StorageFixture):
         missing_resume = Resume(
             id=IntId(404),
             title="Missing",
-            content=empty_content(summary_ru=None, summary_en=None),
+            content=empty_content(summary_ru="", summary_en=""),
             author_username="admin",
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             updated_at=datetime(2026, 1, 2, tzinfo=UTC),
@@ -227,7 +258,7 @@ def full_content(*, summary_ru: str) -> ResumeContent:
                 location_en="Moscow",
                 start_date=date(2023, 1, 1),
                 end_date=None,
-                is_current=True,
+                current_status=ResumeCurrentStatusEnum.CURRENT,
                 summary_ru="Разрабатывал платформенные сервисы.",
                 summary_en="Built platform services.",
                 highlights_ru=["Сократил время отклика"],
@@ -302,20 +333,85 @@ def full_content(*, summary_ru: str) -> ResumeContent:
     )
 
 
-def empty_content(*, summary_ru: str | None, summary_en: str | None) -> ResumeContent:
+def legacy_content_json() -> dict[str, object]:
+    return {
+        "profile": {
+            "full_name": None,
+            "role_ru": None,
+            "role_en": None,
+            "location_ru": None,
+            "location_en": None,
+            "email": None,
+            "phone": None,
+            "website_url": None,
+            "linkedin_url": None,
+            "github_url": None,
+            "telegram": None,
+        },
+        "summary": {
+            "text_ru": None,
+            "text_en": None,
+        },
+        "skills": [
+            {
+                "category_ru": None,
+                "category_en": None,
+                "items": None,
+            },
+        ],
+        "experience": [
+            {
+                "company_ru": None,
+                "company_en": None,
+                "position_ru": None,
+                "position_en": None,
+                "location_ru": None,
+                "location_en": None,
+                "start_date": None,
+                "end_date": None,
+                "is_current": None,
+                "summary_ru": None,
+                "summary_en": None,
+                "highlights_ru": None,
+                "highlights_en": [],
+                "technologies": [],
+                "projects": [
+                    {
+                        "name_ru": None,
+                        "name_en": None,
+                        "role_ru": None,
+                        "role_en": None,
+                        "description_ru": None,
+                        "description_en": None,
+                        "highlights_ru": [],
+                        "highlights_en": [],
+                        "technologies": None,
+                        "url": None,
+                    },
+                ],
+            },
+        ],
+        "education": [],
+        "languages": [],
+        "certifications": [],
+        "additional_sections": [],
+    }
+
+
+def empty_content(*, summary_ru: str, summary_en: str) -> ResumeContent:
     return ResumeContent(
         profile=ResumeProfile(
-            full_name=None,
-            role_ru=None,
-            role_en=None,
-            location_ru=None,
-            location_en=None,
-            email=None,
-            phone=None,
-            website_url=None,
-            linkedin_url=None,
-            github_url=None,
-            telegram=None,
+            full_name="",
+            role_ru="",
+            role_en="",
+            location_ru="",
+            location_en="",
+            email="",
+            phone="",
+            website_url="",
+            linkedin_url="",
+            github_url="",
+            telegram="",
         ),
         summary=ResumeSummary(text_ru=summary_ru, text_en=summary_en),
         skills=[],

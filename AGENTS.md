@@ -43,6 +43,12 @@ Portfolio and articles site with a knowledge database
   or behavior that may diverge later; duplicate the transport handler instead and keep shared
   schemas/use cases below the HTTP boundary.
 - Do not add default values in real production code. API parameters, schemas, dataclasses, settings, helpers, services, and infrastructure-facing code should require callers or environment configuration to pass values explicitly. Filter dataclasses may define defaults for omitted filters, pagination, relationship-loading switches, and list-mode switches when the default means "do not apply this filter" or preserves the normal list behavior; tests, test helpers, and factories may keep defaults when they make test setup clearer.
+- Avoid `None`/`null` in production schemas, DTOs, and persisted structured content when a truthful
+  non-null representation exists. Prefer empty strings for intentionally blank text, empty
+  collections for blank lists, and explicit enum values such as `notSet` for unset finite states.
+  Keep `None`/`null` only where absence is semantically necessary or no valid non-null
+  representation exists, such as unknown dates, optional filters, external contract fields that are
+  explicitly nullable, or framework/browser APIs that naturally return null.
 - Before finishing implementation work, do a self-review/code-review pass focused on bugs, regressions, missing tests, and instruction compliance.
 - Before claiming completion, run the relevant checks through existing `make` targets: tests, linters, type checks, format checks, migrations, or local-run checks as applicable. For broad or cross-cutting changes, run the full practical check suite. If any relevant check is skipped, explain why in the final response.
 - After each code or configuration change, explicitly check whether infrastructure, documentation, CI/CD, and relevant `AGENTS.md` instructions must be updated; keep them consistent with the change.

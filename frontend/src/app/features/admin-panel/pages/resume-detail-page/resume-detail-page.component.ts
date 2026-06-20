@@ -31,6 +31,7 @@ import {
   ResumeAdditionalSectionItem,
   ResumeCertificationItem,
   ResumeContent,
+  ResumeCurrentStatus,
   ResumeEducationItem,
   ResumeExperienceItem,
   ResumeLanguageItem,
@@ -55,50 +56,55 @@ type ResumeEditorMode = 'edit' | 'preview';
 type ResumePreviewLanguage = 'ru' | 'en';
 type TextControl = FormControl<string>;
 type NullableTextControl = FormControl<string | null>;
-type NullableBooleanControl = FormControl<boolean | null>;
+type CurrentStatusControl = FormControl<ResumeCurrentStatus>;
 
 interface ResumeEditorTabDefinition {
   key: ResumeEditorTab;
   labelKey: string;
 }
 
+interface ResumeCurrentStatusOption {
+  value: ResumeCurrentStatus;
+  labelKey: string;
+}
+
 interface ResumeProfileForm {
-  fullName: NullableTextControl;
-  roleRu: NullableTextControl;
-  roleEn: NullableTextControl;
-  locationRu: NullableTextControl;
-  locationEn: NullableTextControl;
-  email: NullableTextControl;
-  phone: NullableTextControl;
-  websiteUrl: NullableTextControl;
-  linkedinUrl: NullableTextControl;
-  githubUrl: NullableTextControl;
-  telegram: NullableTextControl;
+  fullName: TextControl;
+  roleRu: TextControl;
+  roleEn: TextControl;
+  locationRu: TextControl;
+  locationEn: TextControl;
+  email: TextControl;
+  phone: TextControl;
+  websiteUrl: TextControl;
+  linkedinUrl: TextControl;
+  githubUrl: TextControl;
+  telegram: TextControl;
 }
 
 interface ResumeSummaryForm {
-  textRu: NullableTextControl;
-  textEn: NullableTextControl;
+  textRu: TextControl;
+  textEn: TextControl;
 }
 
 interface ResumeSkillGroupForm {
-  categoryRu: NullableTextControl;
-  categoryEn: NullableTextControl;
+  categoryRu: TextControl;
+  categoryEn: TextControl;
   itemsText: TextControl;
 }
 
 interface ResumeExperienceItemForm {
-  companyRu: NullableTextControl;
-  companyEn: NullableTextControl;
-  positionRu: NullableTextControl;
-  positionEn: NullableTextControl;
-  locationRu: NullableTextControl;
-  locationEn: NullableTextControl;
+  companyRu: TextControl;
+  companyEn: TextControl;
+  positionRu: TextControl;
+  positionEn: TextControl;
+  locationRu: TextControl;
+  locationEn: TextControl;
   startDate: NullableTextControl;
   endDate: NullableTextControl;
-  isCurrent: NullableBooleanControl;
-  summaryRu: NullableTextControl;
-  summaryEn: NullableTextControl;
+  currentStatus: CurrentStatusControl;
+  summaryRu: TextControl;
+  summaryEn: TextControl;
   highlightsRuText: TextControl;
   highlightsEnText: TextControl;
   technologiesText: TextControl;
@@ -106,61 +112,61 @@ interface ResumeExperienceItemForm {
 }
 
 interface ResumeProjectItemForm {
-  nameRu: NullableTextControl;
-  nameEn: NullableTextControl;
-  roleRu: NullableTextControl;
-  roleEn: NullableTextControl;
-  descriptionRu: NullableTextControl;
-  descriptionEn: NullableTextControl;
+  nameRu: TextControl;
+  nameEn: TextControl;
+  roleRu: TextControl;
+  roleEn: TextControl;
+  descriptionRu: TextControl;
+  descriptionEn: TextControl;
   highlightsRuText: TextControl;
   highlightsEnText: TextControl;
   technologiesText: TextControl;
-  url: NullableTextControl;
+  url: TextControl;
 }
 
 interface ResumeEducationItemForm {
-  institutionRu: NullableTextControl;
-  institutionEn: NullableTextControl;
-  degreeRu: NullableTextControl;
-  degreeEn: NullableTextControl;
-  fieldRu: NullableTextControl;
-  fieldEn: NullableTextControl;
-  locationRu: NullableTextControl;
-  locationEn: NullableTextControl;
+  institutionRu: TextControl;
+  institutionEn: TextControl;
+  degreeRu: TextControl;
+  degreeEn: TextControl;
+  fieldRu: TextControl;
+  fieldEn: TextControl;
+  locationRu: TextControl;
+  locationEn: TextControl;
   startDate: NullableTextControl;
   endDate: NullableTextControl;
-  descriptionRu: NullableTextControl;
-  descriptionEn: NullableTextControl;
+  descriptionRu: TextControl;
+  descriptionEn: TextControl;
 }
 
 interface ResumeLanguageItemForm {
-  nameRu: NullableTextControl;
-  nameEn: NullableTextControl;
-  proficiencyRu: NullableTextControl;
-  proficiencyEn: NullableTextControl;
+  nameRu: TextControl;
+  nameEn: TextControl;
+  proficiencyRu: TextControl;
+  proficiencyEn: TextControl;
 }
 
 interface ResumeCertificationItemForm {
-  nameRu: NullableTextControl;
-  nameEn: NullableTextControl;
-  issuerRu: NullableTextControl;
-  issuerEn: NullableTextControl;
+  nameRu: TextControl;
+  nameEn: TextControl;
+  issuerRu: TextControl;
+  issuerEn: TextControl;
   issuedOn: NullableTextControl;
   expiresOn: NullableTextControl;
-  credentialUrl: NullableTextControl;
+  credentialUrl: TextControl;
 }
 
 interface ResumeAdditionalSectionItemForm {
-  titleRu: NullableTextControl;
-  titleEn: NullableTextControl;
-  descriptionRu: NullableTextControl;
-  descriptionEn: NullableTextControl;
-  url: NullableTextControl;
+  titleRu: TextControl;
+  titleEn: TextControl;
+  descriptionRu: TextControl;
+  descriptionEn: TextControl;
+  url: TextControl;
 }
 
 interface ResumeAdditionalSectionForm {
-  titleRu: NullableTextControl;
-  titleEn: NullableTextControl;
+  titleRu: TextControl;
+  titleEn: TextControl;
   items: FormArray<FormGroup<ResumeAdditionalSectionItemForm>>;
 }
 
@@ -185,6 +191,12 @@ const RESUME_EDITOR_TABS: readonly ResumeEditorTabDefinition[] = [
   { key: 'languages', labelKey: 'adminResumeWorkspace.tabs.languages' },
   { key: 'certifications', labelKey: 'adminResumeWorkspace.tabs.certifications' },
   { key: 'additional', labelKey: 'adminResumeWorkspace.tabs.additional' },
+];
+
+const RESUME_CURRENT_STATUS_OPTIONS: readonly ResumeCurrentStatusOption[] = [
+  { value: 'notSet', labelKey: 'adminResumeWorkspace.currentStatus.notSet' },
+  { value: 'current', labelKey: 'adminResumeWorkspace.currentStatus.current' },
+  { value: 'notCurrent', labelKey: 'adminResumeWorkspace.currentStatus.notCurrent' },
 ];
 
 @Component({
@@ -212,6 +224,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private readonly resumeId = this.resolveResumeId();
 
   readonly tabs = RESUME_EDITOR_TABS;
+  readonly currentStatusOptions = RESUME_CURRENT_STATUS_OPTIONS;
   readonly activeTab = signal<ResumeEditorTab>('profile');
   readonly mode = signal<ResumeEditorMode>('edit');
   readonly previewLanguage = computed<ResumePreviewLanguage>(() => this.currentLanguage());
@@ -465,16 +478,21 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return this.experience.at(experienceIndex).controls.projects;
   }
 
-  localized(ru: string | null, en: string | null): string | null {
-    if (this.previewLanguage() === 'ru') return cleanNullableString(ru);
-    return cleanNullableString(en);
+  localized(ru: string, en: string): string | null {
+    if (this.previewLanguage() === 'ru') return cleanPreviewText(ru);
+    return cleanPreviewText(en);
   }
 
-  dateRange(startDate: string | null, endDate: string | null, isCurrent: boolean | null): string {
-    const start = cleanNullableString(startDate);
-    const end = isCurrent
-      ? this.i18n.translate('adminResumeWorkspace.field.isCurrent')
-      : cleanNullableString(endDate);
+  dateRange(
+    startDate: string | null,
+    endDate: string | null,
+    currentStatus: ResumeCurrentStatus,
+  ): string {
+    const start = cleanNullableDateString(startDate);
+    const end =
+      currentStatus === 'current'
+        ? this.i18n.translate('adminResumeWorkspace.currentStatus.current')
+        : cleanNullableDateString(endDate);
     return [start, end].filter(Boolean).join(' - ');
   }
 
@@ -558,31 +576,31 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createProfileForm(profile: ResumeProfile): FormGroup<ResumeProfileForm> {
     return new FormGroup<ResumeProfileForm>({
-      fullName: this.nullableText(profile.fullName, 255),
-      roleRu: this.nullableText(profile.roleRu, 255),
-      roleEn: this.nullableText(profile.roleEn, 255),
-      locationRu: this.nullableText(profile.locationRu, 255),
-      locationEn: this.nullableText(profile.locationEn, 255),
-      email: this.nullableText(profile.email, 255),
-      phone: this.nullableText(profile.phone, 255),
-      websiteUrl: this.nullableText(profile.websiteUrl, 512),
-      linkedinUrl: this.nullableText(profile.linkedinUrl, 512),
-      githubUrl: this.nullableText(profile.githubUrl, 512),
-      telegram: this.nullableText(profile.telegram, 255),
+      fullName: this.text(profile.fullName, 255),
+      roleRu: this.text(profile.roleRu, 255),
+      roleEn: this.text(profile.roleEn, 255),
+      locationRu: this.text(profile.locationRu, 255),
+      locationEn: this.text(profile.locationEn, 255),
+      email: this.text(profile.email, 255),
+      phone: this.text(profile.phone, 255),
+      websiteUrl: this.text(profile.websiteUrl, 512),
+      linkedinUrl: this.text(profile.linkedinUrl, 512),
+      githubUrl: this.text(profile.githubUrl, 512),
+      telegram: this.text(profile.telegram, 255),
     });
   }
 
   private createSummaryForm(summary: ResumeSummary): FormGroup<ResumeSummaryForm> {
     return new FormGroup<ResumeSummaryForm>({
-      textRu: this.nullableText(summary.textRu, null),
-      textEn: this.nullableText(summary.textEn, null),
+      textRu: this.text(summary.textRu, null),
+      textEn: this.text(summary.textEn, null),
     });
   }
 
   private createSkillGroupForm(skill: ResumeSkillGroup): FormGroup<ResumeSkillGroupForm> {
     return new FormGroup<ResumeSkillGroupForm>({
-      categoryRu: this.nullableText(skill.categoryRu, 255),
-      categoryEn: this.nullableText(skill.categoryEn, 255),
+      categoryRu: this.text(skill.categoryRu, 255),
+      categoryEn: this.text(skill.categoryEn, 255),
       itemsText: this.text(linesToText(skill.items), null),
     });
   }
@@ -591,17 +609,17 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeExperienceItem,
   ): FormGroup<ResumeExperienceItemForm> {
     return new FormGroup<ResumeExperienceItemForm>({
-      companyRu: this.nullableText(item.companyRu, 255),
-      companyEn: this.nullableText(item.companyEn, 255),
-      positionRu: this.nullableText(item.positionRu, 255),
-      positionEn: this.nullableText(item.positionEn, 255),
-      locationRu: this.nullableText(item.locationRu, 255),
-      locationEn: this.nullableText(item.locationEn, 255),
+      companyRu: this.text(item.companyRu, 255),
+      companyEn: this.text(item.companyEn, 255),
+      positionRu: this.text(item.positionRu, 255),
+      positionEn: this.text(item.positionEn, 255),
+      locationRu: this.text(item.locationRu, 255),
+      locationEn: this.text(item.locationEn, 255),
       startDate: this.nullableText(item.startDate, 32),
       endDate: this.nullableText(item.endDate, 32),
-      isCurrent: this.nullableBoolean(item.isCurrent),
-      summaryRu: this.nullableText(item.summaryRu, null),
-      summaryEn: this.nullableText(item.summaryEn, null),
+      currentStatus: this.currentStatus(item.currentStatus),
+      summaryRu: this.text(item.summaryRu, null),
+      summaryEn: this.text(item.summaryEn, null),
       highlightsRuText: this.text(linesToText(item.highlightsRu), null),
       highlightsEnText: this.text(linesToText(item.highlightsEn), null),
       technologiesText: this.text(linesToText(item.technologies), null),
@@ -613,42 +631,42 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createProjectItemForm(item: ResumeProjectItem): FormGroup<ResumeProjectItemForm> {
     return new FormGroup<ResumeProjectItemForm>({
-      nameRu: this.nullableText(item.nameRu, 255),
-      nameEn: this.nullableText(item.nameEn, 255),
-      roleRu: this.nullableText(item.roleRu, 255),
-      roleEn: this.nullableText(item.roleEn, 255),
-      descriptionRu: this.nullableText(item.descriptionRu, null),
-      descriptionEn: this.nullableText(item.descriptionEn, null),
+      nameRu: this.text(item.nameRu, 255),
+      nameEn: this.text(item.nameEn, 255),
+      roleRu: this.text(item.roleRu, 255),
+      roleEn: this.text(item.roleEn, 255),
+      descriptionRu: this.text(item.descriptionRu, null),
+      descriptionEn: this.text(item.descriptionEn, null),
       highlightsRuText: this.text(linesToText(item.highlightsRu), null),
       highlightsEnText: this.text(linesToText(item.highlightsEn), null),
       technologiesText: this.text(linesToText(item.technologies), null),
-      url: this.nullableText(item.url, 512),
+      url: this.text(item.url, 512),
     });
   }
 
   private createEducationItemForm(item: ResumeEducationItem): FormGroup<ResumeEducationItemForm> {
     return new FormGroup<ResumeEducationItemForm>({
-      institutionRu: this.nullableText(item.institutionRu, 255),
-      institutionEn: this.nullableText(item.institutionEn, 255),
-      degreeRu: this.nullableText(item.degreeRu, 255),
-      degreeEn: this.nullableText(item.degreeEn, 255),
-      fieldRu: this.nullableText(item.fieldRu, 255),
-      fieldEn: this.nullableText(item.fieldEn, 255),
-      locationRu: this.nullableText(item.locationRu, 255),
-      locationEn: this.nullableText(item.locationEn, 255),
+      institutionRu: this.text(item.institutionRu, 255),
+      institutionEn: this.text(item.institutionEn, 255),
+      degreeRu: this.text(item.degreeRu, 255),
+      degreeEn: this.text(item.degreeEn, 255),
+      fieldRu: this.text(item.fieldRu, 255),
+      fieldEn: this.text(item.fieldEn, 255),
+      locationRu: this.text(item.locationRu, 255),
+      locationEn: this.text(item.locationEn, 255),
       startDate: this.nullableText(item.startDate, 32),
       endDate: this.nullableText(item.endDate, 32),
-      descriptionRu: this.nullableText(item.descriptionRu, null),
-      descriptionEn: this.nullableText(item.descriptionEn, null),
+      descriptionRu: this.text(item.descriptionRu, null),
+      descriptionEn: this.text(item.descriptionEn, null),
     });
   }
 
   private createLanguageItemForm(item: ResumeLanguageItem): FormGroup<ResumeLanguageItemForm> {
     return new FormGroup<ResumeLanguageItemForm>({
-      nameRu: this.nullableText(item.nameRu, 255),
-      nameEn: this.nullableText(item.nameEn, 255),
-      proficiencyRu: this.nullableText(item.proficiencyRu, 255),
-      proficiencyEn: this.nullableText(item.proficiencyEn, 255),
+      nameRu: this.text(item.nameRu, 255),
+      nameEn: this.text(item.nameEn, 255),
+      proficiencyRu: this.text(item.proficiencyRu, 255),
+      proficiencyEn: this.text(item.proficiencyEn, 255),
     });
   }
 
@@ -656,13 +674,13 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeCertificationItem,
   ): FormGroup<ResumeCertificationItemForm> {
     return new FormGroup<ResumeCertificationItemForm>({
-      nameRu: this.nullableText(item.nameRu, 255),
-      nameEn: this.nullableText(item.nameEn, 255),
-      issuerRu: this.nullableText(item.issuerRu, 255),
-      issuerEn: this.nullableText(item.issuerEn, 255),
+      nameRu: this.text(item.nameRu, 255),
+      nameEn: this.text(item.nameEn, 255),
+      issuerRu: this.text(item.issuerRu, 255),
+      issuerEn: this.text(item.issuerEn, 255),
       issuedOn: this.nullableText(item.issuedOn, 32),
       expiresOn: this.nullableText(item.expiresOn, 32),
-      credentialUrl: this.nullableText(item.credentialUrl, 512),
+      credentialUrl: this.text(item.credentialUrl, 512),
     });
   }
 
@@ -670,8 +688,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
     section: ResumeAdditionalSection,
   ): FormGroup<ResumeAdditionalSectionForm> {
     return new FormGroup<ResumeAdditionalSectionForm>({
-      titleRu: this.nullableText(section.titleRu, 255),
-      titleEn: this.nullableText(section.titleEn, 255),
+      titleRu: this.text(section.titleRu, 255),
+      titleEn: this.text(section.titleEn, 255),
       items: new FormArray<FormGroup<ResumeAdditionalSectionItemForm>>(
         section.items.map((item) => this.createAdditionalSectionItemForm(item)),
       ),
@@ -682,11 +700,11 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeAdditionalSectionItem,
   ): FormGroup<ResumeAdditionalSectionItemForm> {
     return new FormGroup<ResumeAdditionalSectionItemForm>({
-      titleRu: this.nullableText(item.titleRu, 255),
-      titleEn: this.nullableText(item.titleEn, 255),
-      descriptionRu: this.nullableText(item.descriptionRu, null),
-      descriptionEn: this.nullableText(item.descriptionEn, null),
-      url: this.nullableText(item.url, 512),
+      titleRu: this.text(item.titleRu, 255),
+      titleEn: this.text(item.titleEn, 255),
+      descriptionRu: this.text(item.descriptionRu, null),
+      descriptionEn: this.text(item.descriptionEn, null),
+      url: this.text(item.url, 512),
     });
   }
 
@@ -700,8 +718,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return new FormControl<string | null>(value, { validators: Validators.maxLength(maxLength) });
   }
 
-  private nullableBoolean(value: boolean | null): NullableBooleanControl {
-    return new FormControl<boolean | null>(value);
+  private currentStatus(value: ResumeCurrentStatus): CurrentStatusControl {
+    return this.formBuilder.control(value);
   }
 
   private currentLanguage(): ResumePreviewLanguage {
@@ -715,33 +733,33 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private buildProfile(): ResumeProfile {
     const value = this.resumeForm.controls.profile.getRawValue();
     return {
-      fullName: cleanNullableString(value.fullName),
-      roleRu: cleanNullableString(value.roleRu),
-      roleEn: cleanNullableString(value.roleEn),
-      locationRu: cleanNullableString(value.locationRu),
-      locationEn: cleanNullableString(value.locationEn),
-      email: cleanNullableString(value.email),
-      phone: cleanNullableString(value.phone),
-      websiteUrl: cleanNullableString(value.websiteUrl),
-      linkedinUrl: cleanNullableString(value.linkedinUrl),
-      githubUrl: cleanNullableString(value.githubUrl),
-      telegram: cleanNullableString(value.telegram),
+      fullName: cleanText(value.fullName),
+      roleRu: cleanText(value.roleRu),
+      roleEn: cleanText(value.roleEn),
+      locationRu: cleanText(value.locationRu),
+      locationEn: cleanText(value.locationEn),
+      email: cleanText(value.email),
+      phone: cleanText(value.phone),
+      websiteUrl: cleanText(value.websiteUrl),
+      linkedinUrl: cleanText(value.linkedinUrl),
+      githubUrl: cleanText(value.githubUrl),
+      telegram: cleanText(value.telegram),
     };
   }
 
   private buildSummary(): ResumeSummary {
     const value = this.resumeForm.controls.summary.getRawValue();
     return {
-      textRu: cleanNullableString(value.textRu),
-      textEn: cleanNullableString(value.textEn),
+      textRu: cleanText(value.textRu),
+      textEn: cleanText(value.textEn),
     };
   }
 
   private buildSkillGroup(control: FormGroup<ResumeSkillGroupForm>): ResumeSkillGroup {
     const value = control.getRawValue();
     return {
-      categoryRu: cleanNullableString(value.categoryRu),
-      categoryEn: cleanNullableString(value.categoryEn),
+      categoryRu: cleanText(value.categoryRu),
+      categoryEn: cleanText(value.categoryEn),
       items: textToLines(value.itemsText),
     };
   }
@@ -749,17 +767,17 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private buildExperienceItem(control: FormGroup<ResumeExperienceItemForm>): ResumeExperienceItem {
     const value = control.getRawValue();
     return {
-      companyRu: cleanNullableString(value.companyRu),
-      companyEn: cleanNullableString(value.companyEn),
-      positionRu: cleanNullableString(value.positionRu),
-      positionEn: cleanNullableString(value.positionEn),
-      locationRu: cleanNullableString(value.locationRu),
-      locationEn: cleanNullableString(value.locationEn),
-      startDate: cleanNullableString(value.startDate),
-      endDate: cleanNullableString(value.endDate),
-      isCurrent: value.isCurrent,
-      summaryRu: cleanNullableString(value.summaryRu),
-      summaryEn: cleanNullableString(value.summaryEn),
+      companyRu: cleanText(value.companyRu),
+      companyEn: cleanText(value.companyEn),
+      positionRu: cleanText(value.positionRu),
+      positionEn: cleanText(value.positionEn),
+      locationRu: cleanText(value.locationRu),
+      locationEn: cleanText(value.locationEn),
+      startDate: cleanNullableDateString(value.startDate),
+      endDate: cleanNullableDateString(value.endDate),
+      currentStatus: value.currentStatus,
+      summaryRu: cleanText(value.summaryRu),
+      summaryEn: cleanText(value.summaryEn),
       highlightsRu: textToLines(value.highlightsRuText),
       highlightsEn: textToLines(value.highlightsEnText),
       technologies: textToLines(value.technologiesText),
@@ -772,44 +790,44 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private buildProjectItem(control: FormGroup<ResumeProjectItemForm>): ResumeProjectItem {
     const value = control.getRawValue();
     return {
-      nameRu: cleanNullableString(value.nameRu),
-      nameEn: cleanNullableString(value.nameEn),
-      roleRu: cleanNullableString(value.roleRu),
-      roleEn: cleanNullableString(value.roleEn),
-      descriptionRu: cleanNullableString(value.descriptionRu),
-      descriptionEn: cleanNullableString(value.descriptionEn),
+      nameRu: cleanText(value.nameRu),
+      nameEn: cleanText(value.nameEn),
+      roleRu: cleanText(value.roleRu),
+      roleEn: cleanText(value.roleEn),
+      descriptionRu: cleanText(value.descriptionRu),
+      descriptionEn: cleanText(value.descriptionEn),
       highlightsRu: textToLines(value.highlightsRuText),
       highlightsEn: textToLines(value.highlightsEnText),
       technologies: textToLines(value.technologiesText),
-      url: cleanNullableString(value.url),
+      url: cleanText(value.url),
     };
   }
 
   private buildEducationItem(control: FormGroup<ResumeEducationItemForm>): ResumeEducationItem {
     const value = control.getRawValue();
     return {
-      institutionRu: cleanNullableString(value.institutionRu),
-      institutionEn: cleanNullableString(value.institutionEn),
-      degreeRu: cleanNullableString(value.degreeRu),
-      degreeEn: cleanNullableString(value.degreeEn),
-      fieldRu: cleanNullableString(value.fieldRu),
-      fieldEn: cleanNullableString(value.fieldEn),
-      locationRu: cleanNullableString(value.locationRu),
-      locationEn: cleanNullableString(value.locationEn),
-      startDate: cleanNullableString(value.startDate),
-      endDate: cleanNullableString(value.endDate),
-      descriptionRu: cleanNullableString(value.descriptionRu),
-      descriptionEn: cleanNullableString(value.descriptionEn),
+      institutionRu: cleanText(value.institutionRu),
+      institutionEn: cleanText(value.institutionEn),
+      degreeRu: cleanText(value.degreeRu),
+      degreeEn: cleanText(value.degreeEn),
+      fieldRu: cleanText(value.fieldRu),
+      fieldEn: cleanText(value.fieldEn),
+      locationRu: cleanText(value.locationRu),
+      locationEn: cleanText(value.locationEn),
+      startDate: cleanNullableDateString(value.startDate),
+      endDate: cleanNullableDateString(value.endDate),
+      descriptionRu: cleanText(value.descriptionRu),
+      descriptionEn: cleanText(value.descriptionEn),
     };
   }
 
   private buildLanguageItem(control: FormGroup<ResumeLanguageItemForm>): ResumeLanguageItem {
     const value = control.getRawValue();
     return {
-      nameRu: cleanNullableString(value.nameRu),
-      nameEn: cleanNullableString(value.nameEn),
-      proficiencyRu: cleanNullableString(value.proficiencyRu),
-      proficiencyEn: cleanNullableString(value.proficiencyEn),
+      nameRu: cleanText(value.nameRu),
+      nameEn: cleanText(value.nameEn),
+      proficiencyRu: cleanText(value.proficiencyRu),
+      proficiencyEn: cleanText(value.proficiencyEn),
     };
   }
 
@@ -818,13 +836,13 @@ export class AdminResumeDetailPageComponent implements OnInit {
   ): ResumeCertificationItem {
     const value = control.getRawValue();
     return {
-      nameRu: cleanNullableString(value.nameRu),
-      nameEn: cleanNullableString(value.nameEn),
-      issuerRu: cleanNullableString(value.issuerRu),
-      issuerEn: cleanNullableString(value.issuerEn),
-      issuedOn: cleanNullableString(value.issuedOn),
-      expiresOn: cleanNullableString(value.expiresOn),
-      credentialUrl: cleanNullableString(value.credentialUrl),
+      nameRu: cleanText(value.nameRu),
+      nameEn: cleanText(value.nameEn),
+      issuerRu: cleanText(value.issuerRu),
+      issuerEn: cleanText(value.issuerEn),
+      issuedOn: cleanNullableDateString(value.issuedOn),
+      expiresOn: cleanNullableDateString(value.expiresOn),
+      credentialUrl: cleanText(value.credentialUrl),
     };
   }
 
@@ -833,8 +851,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
   ): ResumeAdditionalSection {
     const value = control.getRawValue();
     return {
-      titleRu: cleanNullableString(value.titleRu),
-      titleEn: cleanNullableString(value.titleEn),
+      titleRu: cleanText(value.titleRu),
+      titleEn: cleanText(value.titleEn),
       items: control.controls.items.controls.map((itemControl) =>
         this.buildAdditionalSectionItem(itemControl),
       ),
@@ -846,11 +864,11 @@ export class AdminResumeDetailPageComponent implements OnInit {
   ): ResumeAdditionalSectionItem {
     const value = control.getRawValue();
     return {
-      titleRu: cleanNullableString(value.titleRu),
-      titleEn: cleanNullableString(value.titleEn),
-      descriptionRu: cleanNullableString(value.descriptionRu),
-      descriptionEn: cleanNullableString(value.descriptionEn),
-      url: cleanNullableString(value.url),
+      titleRu: cleanText(value.titleRu),
+      titleEn: cleanText(value.titleEn),
+      descriptionRu: cleanText(value.descriptionRu),
+      descriptionEn: cleanText(value.descriptionEn),
+      url: cleanText(value.url),
     };
   }
 
@@ -861,7 +879,16 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 }
 
-function cleanNullableString(value: string | null): string | null {
+function cleanText(value: string): string {
+  return value.trim();
+}
+
+function cleanPreviewText(value: string): string | null {
+  const trimmed = cleanText(value);
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function cleanNullableDateString(value: string | null): string | null {
   const trimmed = value?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
 }
@@ -889,48 +916,48 @@ function createInvalidResumeIdError(): ApiError {
 
 function createEmptyResumeProfile(): ResumeProfile {
   return {
-    fullName: null,
-    roleRu: null,
-    roleEn: null,
-    locationRu: null,
-    locationEn: null,
-    email: null,
-    phone: null,
-    websiteUrl: null,
-    linkedinUrl: null,
-    githubUrl: null,
-    telegram: null,
+    fullName: '',
+    roleRu: '',
+    roleEn: '',
+    locationRu: '',
+    locationEn: '',
+    email: '',
+    phone: '',
+    websiteUrl: '',
+    linkedinUrl: '',
+    githubUrl: '',
+    telegram: '',
   };
 }
 
 function createEmptyResumeSummary(): ResumeSummary {
   return {
-    textRu: null,
-    textEn: null,
+    textRu: '',
+    textEn: '',
   };
 }
 
 function createEmptyResumeSkillGroup(): ResumeSkillGroup {
   return {
-    categoryRu: null,
-    categoryEn: null,
+    categoryRu: '',
+    categoryEn: '',
     items: [],
   };
 }
 
 function createEmptyResumeExperienceItem(): ResumeExperienceItem {
   return {
-    companyRu: null,
-    companyEn: null,
-    positionRu: null,
-    positionEn: null,
-    locationRu: null,
-    locationEn: null,
+    companyRu: '',
+    companyEn: '',
+    positionRu: '',
+    positionEn: '',
+    locationRu: '',
+    locationEn: '',
     startDate: null,
     endDate: null,
-    isCurrent: null,
-    summaryRu: null,
-    summaryEn: null,
+    currentStatus: 'notSet',
+    summaryRu: '',
+    summaryEn: '',
     highlightsRu: [],
     highlightsEn: [],
     technologies: [],
@@ -940,71 +967,71 @@ function createEmptyResumeExperienceItem(): ResumeExperienceItem {
 
 function createEmptyResumeProjectItem(): ResumeProjectItem {
   return {
-    nameRu: null,
-    nameEn: null,
-    roleRu: null,
-    roleEn: null,
-    descriptionRu: null,
-    descriptionEn: null,
+    nameRu: '',
+    nameEn: '',
+    roleRu: '',
+    roleEn: '',
+    descriptionRu: '',
+    descriptionEn: '',
     highlightsRu: [],
     highlightsEn: [],
     technologies: [],
-    url: null,
+    url: '',
   };
 }
 
 function createEmptyResumeEducationItem(): ResumeEducationItem {
   return {
-    institutionRu: null,
-    institutionEn: null,
-    degreeRu: null,
-    degreeEn: null,
-    fieldRu: null,
-    fieldEn: null,
-    locationRu: null,
-    locationEn: null,
+    institutionRu: '',
+    institutionEn: '',
+    degreeRu: '',
+    degreeEn: '',
+    fieldRu: '',
+    fieldEn: '',
+    locationRu: '',
+    locationEn: '',
     startDate: null,
     endDate: null,
-    descriptionRu: null,
-    descriptionEn: null,
+    descriptionRu: '',
+    descriptionEn: '',
   };
 }
 
 function createEmptyResumeLanguageItem(): ResumeLanguageItem {
   return {
-    nameRu: null,
-    nameEn: null,
-    proficiencyRu: null,
-    proficiencyEn: null,
+    nameRu: '',
+    nameEn: '',
+    proficiencyRu: '',
+    proficiencyEn: '',
   };
 }
 
 function createEmptyResumeCertificationItem(): ResumeCertificationItem {
   return {
-    nameRu: null,
-    nameEn: null,
-    issuerRu: null,
-    issuerEn: null,
+    nameRu: '',
+    nameEn: '',
+    issuerRu: '',
+    issuerEn: '',
     issuedOn: null,
     expiresOn: null,
-    credentialUrl: null,
+    credentialUrl: '',
   };
 }
 
 function createEmptyResumeAdditionalSection(): ResumeAdditionalSection {
   return {
-    titleRu: null,
-    titleEn: null,
+    titleRu: '',
+    titleEn: '',
     items: [],
   };
 }
 
 function createEmptyResumeAdditionalSectionItem(): ResumeAdditionalSectionItem {
   return {
-    titleRu: null,
-    titleEn: null,
-    descriptionRu: null,
-    descriptionEn: null,
-    url: null,
+    titleRu: '',
+    titleEn: '',
+    descriptionRu: '',
+    descriptionEn: '',
+    url: '',
   };
 }

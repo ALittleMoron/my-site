@@ -3,65 +3,66 @@ from datetime import date, datetime
 from math import ceil
 from typing import Self
 
+from core.resumes.enums import ResumeCurrentStatusEnum
 from core.schemas import ValuedDataclass
 from core.types import IntId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeProfile:
-    full_name: str | None
-    role_ru: str | None
-    role_en: str | None
-    location_ru: str | None
-    location_en: str | None
-    email: str | None
-    phone: str | None
-    website_url: str | None
-    linkedin_url: str | None
-    github_url: str | None
-    telegram: str | None
+    full_name: str
+    role_ru: str
+    role_en: str
+    location_ru: str
+    location_en: str
+    email: str
+    phone: str
+    website_url: str
+    linkedin_url: str
+    github_url: str
+    telegram: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeSummary:
-    text_ru: str | None
-    text_en: str | None
+    text_ru: str
+    text_en: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeSkillGroup:
-    category_ru: str | None
-    category_en: str | None
+    category_ru: str
+    category_en: str
     items: list[str]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeProjectItem:
-    name_ru: str | None
-    name_en: str | None
-    role_ru: str | None
-    role_en: str | None
-    description_ru: str | None
-    description_en: str | None
+    name_ru: str
+    name_en: str
+    role_ru: str
+    role_en: str
+    description_ru: str
+    description_en: str
     highlights_ru: list[str]
     highlights_en: list[str]
     technologies: list[str]
-    url: str | None
+    url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeExperienceItem:
-    company_ru: str | None
-    company_en: str | None
-    position_ru: str | None
-    position_en: str | None
-    location_ru: str | None
-    location_en: str | None
+    company_ru: str
+    company_en: str
+    position_ru: str
+    position_en: str
+    location_ru: str
+    location_en: str
     start_date: date | None
     end_date: date | None
-    is_current: bool | None
-    summary_ru: str | None
-    summary_en: str | None
+    current_status: ResumeCurrentStatusEnum
+    summary_ru: str
+    summary_en: str
     highlights_ru: list[str]
     highlights_en: list[str]
     technologies: list[str]
@@ -70,52 +71,52 @@ class ResumeExperienceItem:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeEducationItem:
-    institution_ru: str | None
-    institution_en: str | None
-    degree_ru: str | None
-    degree_en: str | None
-    field_ru: str | None
-    field_en: str | None
-    location_ru: str | None
-    location_en: str | None
+    institution_ru: str
+    institution_en: str
+    degree_ru: str
+    degree_en: str
+    field_ru: str
+    field_en: str
+    location_ru: str
+    location_en: str
     start_date: date | None
     end_date: date | None
-    description_ru: str | None
-    description_en: str | None
+    description_ru: str
+    description_en: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeLanguageItem:
-    name_ru: str | None
-    name_en: str | None
-    proficiency_ru: str | None
-    proficiency_en: str | None
+    name_ru: str
+    name_en: str
+    proficiency_ru: str
+    proficiency_en: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeCertificationItem:
-    name_ru: str | None
-    name_en: str | None
-    issuer_ru: str | None
-    issuer_en: str | None
+    name_ru: str
+    name_en: str
+    issuer_ru: str
+    issuer_en: str
     issued_on: date | None
     expires_on: date | None
-    credential_url: str | None
+    credential_url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeAdditionalSectionItem:
-    title_ru: str | None
-    title_en: str | None
-    description_ru: str | None
-    description_en: str | None
-    url: str | None
+    title_ru: str
+    title_en: str
+    description_ru: str
+    description_en: str
+    url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ResumeAdditionalSection:
-    title_ru: str | None
-    title_en: str | None
+    title_ru: str
+    title_en: str
     items: list[ResumeAdditionalSectionItem]
 
 

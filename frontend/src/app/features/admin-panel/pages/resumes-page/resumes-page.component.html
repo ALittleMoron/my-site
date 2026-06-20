@@ -45,7 +45,7 @@
                   {{ resume.title }}
                 </a>
                 <span class="d-block small text-body-secondary">
-                  {{ resume.content.profile.fullName ?? ('shared.notSet' | t) }}
+                  {{ resume.content.profile.fullName.trim() || ('shared.notSet' | t) }}
                 </span>
               </td>
               <td>{{ formatDate(resume.updatedAt) }}</td>

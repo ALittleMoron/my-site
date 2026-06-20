@@ -1,40 +1,42 @@
+export type ResumeCurrentStatus = 'notSet' | 'current' | 'notCurrent';
+
 export interface ResumeProfileDto {
-  fullName: string | null;
-  roleRu: string | null;
-  roleEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
-  email: string | null;
-  phone: string | null;
-  websiteUrl: string | null;
-  linkedinUrl: string | null;
-  githubUrl: string | null;
-  telegram: string | null;
+  fullName: string;
+  roleRu: string;
+  roleEn: string;
+  locationRu: string;
+  locationEn: string;
+  email: string;
+  phone: string;
+  websiteUrl: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  telegram: string;
 }
 
 export interface ResumeSummaryDto {
-  textRu: string | null;
-  textEn: string | null;
+  textRu: string;
+  textEn: string;
 }
 
 export interface ResumeSkillGroupDto {
-  categoryRu: string | null;
-  categoryEn: string | null;
+  categoryRu: string;
+  categoryEn: string;
   items: string[];
 }
 
 export interface ResumeExperienceItemDto {
-  companyRu: string | null;
-  companyEn: string | null;
-  positionRu: string | null;
-  positionEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
+  companyRu: string;
+  companyEn: string;
+  positionRu: string;
+  positionEn: string;
+  locationRu: string;
+  locationEn: string;
   startDate: string | null;
   endDate: string | null;
-  isCurrent: boolean | null;
-  summaryRu: string | null;
-  summaryEn: string | null;
+  currentStatus: ResumeCurrentStatus;
+  summaryRu: string;
+  summaryEn: string;
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
@@ -42,61 +44,61 @@ export interface ResumeExperienceItemDto {
 }
 
 export interface ResumeProjectItemDto {
-  nameRu: string | null;
-  nameEn: string | null;
-  roleRu: string | null;
-  roleEn: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  roleRu: string;
+  roleEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
-  url: string | null;
+  url: string;
 }
 
 export interface ResumeEducationItemDto {
-  institutionRu: string | null;
-  institutionEn: string | null;
-  degreeRu: string | null;
-  degreeEn: string | null;
-  fieldRu: string | null;
-  fieldEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
+  institutionRu: string;
+  institutionEn: string;
+  degreeRu: string;
+  degreeEn: string;
+  fieldRu: string;
+  fieldEn: string;
+  locationRu: string;
+  locationEn: string;
   startDate: string | null;
   endDate: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
+  descriptionRu: string;
+  descriptionEn: string;
 }
 
 export interface ResumeLanguageItemDto {
-  nameRu: string | null;
-  nameEn: string | null;
-  proficiencyRu: string | null;
-  proficiencyEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  proficiencyRu: string;
+  proficiencyEn: string;
 }
 
 export interface ResumeCertificationItemDto {
-  nameRu: string | null;
-  nameEn: string | null;
-  issuerRu: string | null;
-  issuerEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  issuerRu: string;
+  issuerEn: string;
   issuedOn: string | null;
   expiresOn: string | null;
-  credentialUrl: string | null;
+  credentialUrl: string;
 }
 
 export interface ResumeAdditionalSectionItemDto {
-  titleRu: string | null;
-  titleEn: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
-  url: string | null;
+  titleRu: string;
+  titleEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
+  url: string;
 }
 
 export interface ResumeAdditionalSectionDto {
-  titleRu: string | null;
-  titleEn: string | null;
+  titleRu: string;
+  titleEn: string;
   items: ResumeAdditionalSectionItemDto[];
 }
 
@@ -131,42 +133,42 @@ export interface ResumePayloadDto {
 }
 
 export interface ResumeProfile {
-  fullName: string | null;
-  roleRu: string | null;
-  roleEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
-  email: string | null;
-  phone: string | null;
-  websiteUrl: string | null;
-  linkedinUrl: string | null;
-  githubUrl: string | null;
-  telegram: string | null;
+  fullName: string;
+  roleRu: string;
+  roleEn: string;
+  locationRu: string;
+  locationEn: string;
+  email: string;
+  phone: string;
+  websiteUrl: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  telegram: string;
 }
 
 export interface ResumeSummary {
-  textRu: string | null;
-  textEn: string | null;
+  textRu: string;
+  textEn: string;
 }
 
 export interface ResumeSkillGroup {
-  categoryRu: string | null;
-  categoryEn: string | null;
+  categoryRu: string;
+  categoryEn: string;
   items: string[];
 }
 
 export interface ResumeExperienceItem {
-  companyRu: string | null;
-  companyEn: string | null;
-  positionRu: string | null;
-  positionEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
+  companyRu: string;
+  companyEn: string;
+  positionRu: string;
+  positionEn: string;
+  locationRu: string;
+  locationEn: string;
   startDate: string | null;
   endDate: string | null;
-  isCurrent: boolean | null;
-  summaryRu: string | null;
-  summaryEn: string | null;
+  currentStatus: ResumeCurrentStatus;
+  summaryRu: string;
+  summaryEn: string;
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
@@ -174,61 +176,61 @@ export interface ResumeExperienceItem {
 }
 
 export interface ResumeProjectItem {
-  nameRu: string | null;
-  nameEn: string | null;
-  roleRu: string | null;
-  roleEn: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  roleRu: string;
+  roleEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
   highlightsRu: string[];
   highlightsEn: string[];
   technologies: string[];
-  url: string | null;
+  url: string;
 }
 
 export interface ResumeEducationItem {
-  institutionRu: string | null;
-  institutionEn: string | null;
-  degreeRu: string | null;
-  degreeEn: string | null;
-  fieldRu: string | null;
-  fieldEn: string | null;
-  locationRu: string | null;
-  locationEn: string | null;
+  institutionRu: string;
+  institutionEn: string;
+  degreeRu: string;
+  degreeEn: string;
+  fieldRu: string;
+  fieldEn: string;
+  locationRu: string;
+  locationEn: string;
   startDate: string | null;
   endDate: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
+  descriptionRu: string;
+  descriptionEn: string;
 }
 
 export interface ResumeLanguageItem {
-  nameRu: string | null;
-  nameEn: string | null;
-  proficiencyRu: string | null;
-  proficiencyEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  proficiencyRu: string;
+  proficiencyEn: string;
 }
 
 export interface ResumeCertificationItem {
-  nameRu: string | null;
-  nameEn: string | null;
-  issuerRu: string | null;
-  issuerEn: string | null;
+  nameRu: string;
+  nameEn: string;
+  issuerRu: string;
+  issuerEn: string;
   issuedOn: string | null;
   expiresOn: string | null;
-  credentialUrl: string | null;
+  credentialUrl: string;
 }
 
 export interface ResumeAdditionalSectionItem {
-  titleRu: string | null;
-  titleEn: string | null;
-  descriptionRu: string | null;
-  descriptionEn: string | null;
-  url: string | null;
+  titleRu: string;
+  titleEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
+  url: string;
 }
 
 export interface ResumeAdditionalSection {
-  titleRu: string | null;
-  titleEn: string | null;
+  titleRu: string;
+  titleEn: string;
   items: ResumeAdditionalSectionItem[];
 }
 
@@ -310,7 +312,7 @@ export function mapResumeContentDto(dto: ResumeContentDto): ResumeContent {
       locationEn: item.locationEn,
       startDate: item.startDate,
       endDate: item.endDate,
-      isCurrent: item.isCurrent,
+      currentStatus: item.currentStatus,
       summaryRu: item.summaryRu,
       summaryEn: item.summaryEn,
       highlightsRu: [...item.highlightsRu],
@@ -347,7 +349,7 @@ function mapResumeContentToDto(content: ResumeContent): ResumeContentDto {
       locationEn: item.locationEn,
       startDate: item.startDate,
       endDate: item.endDate,
-      isCurrent: item.isCurrent,
+      currentStatus: item.currentStatus,
       summaryRu: item.summaryRu,
       summaryEn: item.summaryEn,
       highlightsRu: [...item.highlightsRu],
