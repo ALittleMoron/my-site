@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from core.articles.storages import ArticlesStorage
@@ -9,14 +8,8 @@ from core.wiki_links.enums import WikiLinkTargetTypeEnum
 from core.wiki_links.schemas import WikiLinkTargetGroup, WikiLinkTargets
 
 
-class AbstractWikiLinksUseCase(ABC):
-    @abstractmethod
-    async def list_targets(self, *, language: LanguageEnum) -> WikiLinkTargets:
-        raise NotImplementedError
-
-
 @dataclass(kw_only=True, slots=True, frozen=True)
-class WikiLinksUseCase(AbstractWikiLinksUseCase):
+class WikiLinksUseCase:
     articles_storage: ArticlesStorage
     matrix_storage: CompetencyMatrixStorage
 

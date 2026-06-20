@@ -23,7 +23,7 @@ from core.competency_matrix.schemas import (
     QuestionQueueImportFile,
     QuestionSuggestionLimitParams,
 )
-from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.dependencies import (
@@ -75,7 +75,7 @@ class PublicCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_sheet(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.list_sheets()
@@ -95,7 +95,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_items(
         self,
         sheet_key: Annotated[str, QueryParameter(name="sheetKey")],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemsListResponseSchema:
         filters = CompetencyMatrixItemFilters(sheet_key=sheet_key, only_published=True)
@@ -117,7 +117,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def get_competency_matrix_item(
         self,
         pk: FromPath[int],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item(
@@ -147,7 +147,7 @@ class PublicCompetencyMatrixApiController(Controller):
     )
     async def get_public_competency_matrix_item(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         params: CompetencyMatrixItemBySlugGetParams,
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
@@ -172,7 +172,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def suggest_competency_matrix_question(
         self,
         data: Annotated[QuestionSuggestionRequestSchema, Body()],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         limit: QuestionSuggestionLimitParams,
     ) -> None:
         await use_case.suggest_question(params=data.to_schema(limit=limit))
@@ -191,7 +191,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_sheet(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.list_sheets()
@@ -214,7 +214,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def search_competency_matrix_resources(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         params: CompetencyMatrixResourceSearchParams,
     ) -> CompetencyMatrixResourcesResponseSchema:
         items = await use_case.find_resources(params=params)
@@ -231,7 +231,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def list_queued_competency_matrix_questions(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionsResponseSchema:
         questions = await use_case.list_queued_questions()
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
@@ -245,7 +245,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def create_queued_competency_matrix_question(
         self,
         data: Annotated[QuestionSuggestionRequestSchema, Body()],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionResponseSchema:
         question = await use_case.suggest_question(params=data.to_schema(limit=None))
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)
@@ -260,7 +260,7 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         data: MultipartBody[QueuedQuestionsImportRequestSchema],
         parser: FromDishka[QuestionQueueImportParser],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionsResponseSchema:
         params = parser.parse(
             file=QuestionQueueImportFile(
@@ -280,7 +280,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def delete_queued_competency_matrix_question(
         self,
         pk: FromPath[int],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.delete_queued_question(question_id=IntId(pk))
 
@@ -297,7 +297,7 @@ class AdminCompetencyMatrixApiController(Controller):
         resource_id_generator: FromDishka[ResourceIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item_from_queue(
@@ -330,7 +330,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_workspace_items(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         filters: CompetencyMatrixWorkspaceFilters,
     ) -> CompetencyMatrixWorkspaceResponseSchema:
         workspace = await use_case.list_workspace_items(filters=filters)
@@ -344,7 +344,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_workspace_filter_options(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixFilterOptionsResponseSchema:
         options = await use_case.list_workspace_filter_options(language=language)
@@ -359,7 +359,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_items(
         self,
         sheet_key: Annotated[str, QueryParameter(name="sheetKey")],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemsListResponseSchema:
@@ -386,7 +386,7 @@ class AdminCompetencyMatrixApiController(Controller):
         resource_id_generator: FromDishka[ResourceIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
@@ -418,7 +418,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def get_competency_matrix_item(
         self,
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         params: CompetencyMatrixItemGetParams,
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
@@ -440,7 +440,7 @@ class AdminCompetencyMatrixApiController(Controller):
         resource_id_generator: FromDishka[ResourceIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.update_item(
@@ -468,7 +468,7 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         pk: FromPath[int],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.delete_item(item_id=IntId(pk))
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -491,7 +491,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def set_draft_status_to_competency_matrix_item(
         self,
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         params: CompetencyMatrixItemPublishStatusSwitchParams,
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
@@ -515,7 +515,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def set_published_status_to_competency_matrix_item(
         self,
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractCompetencyMatrixUseCase],
+        use_case: FromDishka[CompetencyMatrixUseCase],
         params: CompetencyMatrixItemPublishStatusSwitchParams,
     ) -> None:
         await use_case.switch_item_publish_status(params=params)

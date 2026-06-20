@@ -1,4 +1,3 @@
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
 from core.files.file_name_generators import FileNameGenerator
@@ -6,14 +5,8 @@ from core.files.file_storages import FileStorage
 from core.files.schemas import PresignPutObject, PresignPutObjectParams
 
 
-class AbstractFilesUseCase(metaclass=ABCMeta):
-    @abstractmethod
-    async def presign_put_object(self, params: PresignPutObjectParams) -> PresignPutObject:
-        raise NotImplementedError
-
-
 @dataclass(kw_only=True, slots=True, frozen=True)
-class FilesUseCase(AbstractFilesUseCase):
+class FilesUseCase:
     file_storage: FileStorage
     file_name_generator: FileNameGenerator
     allowed_upload_media_types: set[str] | list[str] | tuple[str, ...]

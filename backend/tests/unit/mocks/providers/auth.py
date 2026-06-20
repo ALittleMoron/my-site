@@ -7,7 +7,7 @@ from core.auth.schemas import JwtUser
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
-from core.auth.use_cases import AbstractAuthUseCase
+from core.auth.use_cases import AuthUseCase
 from infra.config.settings import Settings
 
 test_public_key_pem = """\
@@ -63,8 +63,8 @@ class MockAuthProvider(Provider):
         return Mock(spec=AuthStorage)
 
     @provide(scope=Scope.APP)
-    async def provide_auth_use_case(self) -> AbstractAuthUseCase:
-        mock = Mock(spec=AbstractAuthUseCase)
+    async def provide_auth_use_case(self) -> AuthUseCase:
+        mock = Mock(spec=AuthUseCase)
         mock.login.return_value = Token(b"TOKEN")
         mock.authenticate.return_value = self.user
         return mock

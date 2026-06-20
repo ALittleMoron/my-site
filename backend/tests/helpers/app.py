@@ -6,19 +6,19 @@ from unittest.mock import Mock
 from dishka import AsyncContainer
 
 from core.account.storages import UserAccountStorage
-from core.articles.use_cases import AbstractArticleAnalyticsUseCase, AbstractArticlesUseCase
+from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage
 from core.auth.token_handlers import TokenHandler
-from core.auth.use_cases import AbstractAuthUseCase
+from core.auth.use_cases import AuthUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
-from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
-from core.contacts.use_cases import AbstractContactsUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
+from core.contacts.use_cases import ContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
-from core.files.use_cases import AbstractFilesUseCase
-from core.resumes.use_cases import AbstractResumesUseCase
+from core.files.use_cases import FilesUseCase
+from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
-from core.wiki_links.use_cases import AbstractWikiLinksUseCase
+from core.wiki_links.use_cases import WikiLinksUseCase
 from infra.healthcheck import ReadinessChecker
 
 
@@ -41,25 +41,25 @@ class IocContainerHelper:
 
     # CONTACTS
     async def get_contacts_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractContactsUseCase)
+        use_case = await self.container.get(ContactsUseCase)
         return cast("Mock", use_case)
 
     # COMPETENCY MATRIX
     async def get_competency_matrix_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractCompetencyMatrixUseCase)
+        use_case = await self.container.get(CompetencyMatrixUseCase)
         return cast("Mock", use_case)
 
     # ARTICLES
     async def get_articles_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractArticlesUseCase)
+        use_case = await self.container.get(ArticlesUseCase)
         return cast("Mock", use_case)
 
     async def get_article_analytics_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractArticleAnalyticsUseCase)
+        use_case = await self.container.get(ArticleAnalyticsUseCase)
         return cast("Mock", use_case)
 
     async def get_wiki_links_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractWikiLinksUseCase)
+        use_case = await self.container.get(WikiLinksUseCase)
         return cast("Mock", use_case)
 
     # AUTH
@@ -76,7 +76,7 @@ class IocContainerHelper:
         return cast("Mock", storage)
 
     async def get_auth_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractAuthUseCase)
+        use_case = await self.container.get(AuthUseCase)
         return cast("Mock", use_case)
 
     # USER
@@ -90,11 +90,11 @@ class IocContainerHelper:
         return cast("Mock", generator)
 
     async def get_files_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractFilesUseCase)
+        use_case = await self.container.get(FilesUseCase)
         return cast("Mock", use_case)
 
     async def get_resumes_use_case(self) -> Mock:
-        use_case = await self.container.get(AbstractResumesUseCase)
+        use_case = await self.container.get(ResumesUseCase)
         return cast("Mock", use_case)
 
     async def get_readiness_checker(self) -> Mock:

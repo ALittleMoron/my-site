@@ -5,7 +5,7 @@ from miniopy_async.api import Minio
 
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.file_storages import FileStorage
-from core.files.use_cases import AbstractFilesUseCase, FilesUseCase
+from core.files.use_cases import FilesUseCase
 from infra.config.constants import constants
 from infra.config.settings import settings
 from infra.minio.file_storages import MinioFileStorage
@@ -37,7 +37,7 @@ class FilesProvider(Provider):
         self,
         file_storage: FileStorage,
         file_name_generator: FileNameGenerator,
-    ) -> AbstractFilesUseCase:
+    ) -> FilesUseCase:
         return FilesUseCase(
             file_storage=file_storage,
             file_name_generator=file_name_generator,

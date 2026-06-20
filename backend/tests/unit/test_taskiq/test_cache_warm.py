@@ -7,13 +7,13 @@ import pytest
 from litestar.stores.base import Store
 
 from core.articles.schemas import ArticleFilters, ArticleTree
-from core.articles.use_cases import AbstractArticlesUseCase
+from core.articles.use_cases import ArticlesUseCase
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemGetParams,
 )
-from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.articles.schemas import ArticleDetailResponseSchema
 from entrypoints.litestar.response_cache import ResponseCacheDomain, ResponseCacheDomainStore
@@ -150,11 +150,11 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
             articles_collector=ArticlesCacheWarmTargetCollector(
-                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
+                articles_use_case=cast("ArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
-                matrix_use_case=cast("AbstractCompetencyMatrixUseCase", matrix_use_case),
+                matrix_use_case=cast("CompetencyMatrixUseCase", matrix_use_case),
                 query_builder=query_builder,
             ),
         )
@@ -240,11 +240,11 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
             articles_collector=ArticlesCacheWarmTargetCollector(
-                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
+                articles_use_case=cast("ArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
-                matrix_use_case=cast("AbstractCompetencyMatrixUseCase", matrix_use_case),
+                matrix_use_case=cast("CompetencyMatrixUseCase", matrix_use_case),
                 query_builder=query_builder,
             ),
         )
@@ -315,11 +315,11 @@ class TestCacheWarmWriter(FactoryFixture):
         target_collector = ResponseCacheWarmTargetCollector(
             i18n_collector=I18nCacheWarmTargetCollector(),
             articles_collector=ArticlesCacheWarmTargetCollector(
-                articles_use_case=cast("AbstractArticlesUseCase", articles_use_case),
+                articles_use_case=cast("ArticlesUseCase", articles_use_case),
                 query_builder=query_builder,
             ),
             matrix_collector=CompetencyMatrixCacheWarmTargetCollector(
-                matrix_use_case=cast("AbstractCompetencyMatrixUseCase", matrix_use_case),
+                matrix_use_case=cast("CompetencyMatrixUseCase", matrix_use_case),
                 query_builder=query_builder,
             ),
         )

@@ -7,10 +7,7 @@ from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.readers import QuestionQueueImportExcelReader
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage, QuestionSuggestionQuotaStorage
-from core.competency_matrix.use_cases import (
-    AbstractCompetencyMatrixUseCase,
-    CompetencyMatrixUseCase,
-)
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from infra.config.constants import constants
 from infra.config.settings import settings
 from infra.openpyxl.readers import OpenpyxlQuestionQueueImportExcelReader
@@ -79,7 +76,7 @@ class CompetencyMatrixProvider(Provider):
         self,
         storage: CompetencyMatrixStorage,
         question_suggestion_limiter: QuestionSuggestionLimiter,
-    ) -> AbstractCompetencyMatrixUseCase:
+    ) -> CompetencyMatrixUseCase:
         return CompetencyMatrixUseCase(
             storage=storage,
             question_suggestion_limiter=question_suggestion_limiter,

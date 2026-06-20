@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -13,36 +12,8 @@ from core.resumes.storages import ResumesStorage
 from core.types import IntId
 
 
-class AbstractResumesUseCase(ABC):
-    @abstractmethod
-    async def list_resumes(self, *, filters: ResumeFilters) -> Resumes:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_resume(self, *, resume_id: IntId, author_username: str) -> Resume:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def create_resume(self, *, params: ResumeCreateParams) -> Resume:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_resume(
-        self,
-        *,
-        resume_id: IntId,
-        params: ResumeUpdateParams,
-        author_username: str,
-    ) -> Resume:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def delete_resume(self, *, resume_id: IntId, author_username: str) -> None:
-        raise NotImplementedError
-
-
 @dataclass(kw_only=True, slots=True, frozen=True)
-class ResumesUseCase(AbstractResumesUseCase):
+class ResumesUseCase:
     storage: ResumesStorage
 
     async def list_resumes(self, *, filters: ResumeFilters) -> Resumes:

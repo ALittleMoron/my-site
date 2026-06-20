@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from core.account.storages import UserAccountStorage
@@ -12,22 +11,8 @@ from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
 
 
-class AbstractAuthUseCase(ABC):
-    @abstractmethod
-    async def login(self, username: str, password: str, required_role: RoleEnum) -> Token:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def authenticate(self, token: Token, required_role: RoleEnum) -> User:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def logout(self, token: Token) -> None:
-        raise NotImplementedError
-
-
 @dataclass(kw_only=True, slots=True, frozen=True)
-class AuthUseCase(AbstractAuthUseCase):
+class AuthUseCase:
     hasher: PasswordHasher
     token_handler: TokenHandler
     auth_storage: AuthStorage

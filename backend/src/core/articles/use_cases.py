@@ -1,5 +1,4 @@
 import hmac
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from hashlib import sha256
@@ -31,141 +30,8 @@ from core.schemas import Secret
 from core.types import IntId
 
 
-class AbstractArticlesUseCase(ABC):
-    @abstractmethod
-    async def get_article(self, *, slug: str, only_published: bool) -> Article:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_articles(self, *, filters: ArticleFilters) -> Articles:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_published_articles_for_seo(self) -> PublishedArticlesForSeo:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_tree(self, *, only_published: bool, language: LanguageEnum) -> ArticleTree:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def create_article(self, *, params: ArticleCreateParams) -> Article:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_article(
-        self,
-        *,
-        slug: str,
-        params: ArticleUpdateParams,
-    ) -> Article:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def delete_article(self, *, slug: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def switch_article_publish_status(
-        self,
-        *,
-        slug: str,
-        publish_status: PublishStatusEnum,
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def search_tags(
-        self,
-        *,
-        search_name: str,
-        include_deleted: bool,
-        limit: int,
-        language: LanguageEnum,
-    ) -> Tags:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def create_tag(self, *, params: TagCreateParams) -> Tag:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_tag(
-        self,
-        *,
-        tag_id: IntId,
-        params: TagUpdateParams,
-    ) -> Tag:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def soft_delete_tag(self, *, tag_id: IntId) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def restore_tag(self, *, tag_id: IntId) -> None:
-        raise NotImplementedError
-
-
-class AbstractArticleAnalyticsUseCase(ABC):
-    @abstractmethod
-    async def track_public_view(
-        self,
-        *,
-        article: Article,
-        referrer: str | None,
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def track_view(
-        self,
-        *,
-        article: Article,
-        source_category: ArticleViewSourceCategory,
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def track_engaged_view(
-        self,
-        *,
-        slug: str,
-        source_category: ArticleViewSourceCategory,
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_public_stats(self, *, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def set_reaction(
-        self,
-        *,
-        slug: str,
-        client_token: str,
-        reaction_kind: ArticleReactionKind | None,
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_stats(
-        self,
-        *,
-        date_from: date,
-        date_to: date,
-        language: LanguageEnum,
-    ) -> ArticleAnalyticsStats:
-        raise NotImplementedError
-
-
 @dataclass(kw_only=True, slots=True, frozen=True)
-class ArticlesUseCase(AbstractArticlesUseCase):
+class ArticlesUseCase:
     storage: ArticlesStorage
 
     async def get_article(self, *, slug: str, only_published: bool) -> Article:
@@ -280,7 +146,7 @@ class ArticlesUseCase(AbstractArticlesUseCase):
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
-class ArticleAnalyticsUseCase(AbstractArticleAnalyticsUseCase):
+class ArticleAnalyticsUseCase:
     articles_storage: ArticlesStorage
     analytics_storage: ArticleAnalyticsStorage
     reaction_secret: Secret[str]

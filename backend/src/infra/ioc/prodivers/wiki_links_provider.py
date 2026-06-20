@@ -2,7 +2,7 @@ from dishka import Provider, Scope, provide
 
 from core.articles.storages import ArticlesStorage
 from core.competency_matrix.storages import CompetencyMatrixStorage
-from core.wiki_links.use_cases import AbstractWikiLinksUseCase, WikiLinksUseCase
+from core.wiki_links.use_cases import WikiLinksUseCase
 
 
 class WikiLinksProvider(Provider):
@@ -11,7 +11,7 @@ class WikiLinksProvider(Provider):
         self,
         articles_storage: ArticlesStorage,
         matrix_storage: CompetencyMatrixStorage,
-    ) -> AbstractWikiLinksUseCase:
+    ) -> WikiLinksUseCase:
         return WikiLinksUseCase(
             articles_storage=articles_storage,
             matrix_storage=matrix_storage,

@@ -10,7 +10,7 @@ from litestar.params import Body, FromPath, QueryParameter
 
 from core.articles.enums import ArticleViewSourceCategory
 from core.articles.schemas import ArticleFilters
-from core.articles.use_cases import AbstractArticleAnalyticsUseCase, AbstractArticlesUseCase
+from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.enums import PublishStatusEnum
@@ -56,7 +56,7 @@ class PublicArticlesApiController(Controller):
     )
     async def list_articles(
         self,
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
         filters: ArticleFilters,
     ) -> ArticleListResponseSchema:
         articles = await use_case.list_articles(filters=filters)
@@ -76,7 +76,7 @@ class PublicArticlesApiController(Controller):
     async def list_articles_tree(
         self,
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleTreeResponseSchema:
         tree = await use_case.list_tree(only_published=True, language=language)
         return ArticleTreeResponseSchema.from_domain_schema(schema=tree)
@@ -92,7 +92,7 @@ class PublicArticlesApiController(Controller):
     async def get_article(
         self,
         slug: FromPath[str],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.get_article(slug=slug, only_published=True)
@@ -110,7 +110,7 @@ class PublicArticlesApiController(Controller):
     async def get_public_stats(
         self,
         article_ids: Annotated[list[uuid.UUID], QueryParameter(name="articleIds", min_items=1)],
-        analytics_use_case: FromDishka[AbstractArticleAnalyticsUseCase],
+        analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
     ) -> ArticlePublicStatsCollectionResponseSchema:
         stats = await analytics_use_case.get_public_stats(article_ids=article_ids)
         return ArticlePublicStatsCollectionResponseSchema.from_domain_schema(schema=stats)
@@ -125,8 +125,8 @@ class PublicArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
-        analytics_use_case: FromDishka[AbstractArticleAnalyticsUseCase],
+        use_case: FromDishka[ArticlesUseCase],
+        analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
         _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
         if request.user.can_manage_content:
@@ -147,7 +147,7 @@ class PublicArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
-        analytics_use_case: FromDishka[AbstractArticleAnalyticsUseCase],
+        analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
         _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
         if request.user.can_manage_content:
@@ -167,7 +167,7 @@ class PublicArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         data: Annotated[ArticleReactionRequestSchema, Body()],
-        analytics_use_case: FromDishka[AbstractArticleAnalyticsUseCase],
+        analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
         _language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> None:
         await analytics_use_case.set_reaction(
@@ -187,7 +187,7 @@ class PublicArticlesApiController(Controller):
     async def list_tags(
         self,
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.list_tags(include_deleted=False, language=language)
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
@@ -207,7 +207,7 @@ class AdminArticlesApiController(Controller):
     )
     async def list_articles(
         self,
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
         filters: ArticleFilters,
     ) -> ArticleListResponseSchema:
         articles = await use_case.list_articles(filters=filters)
@@ -228,7 +228,7 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[ArticleRequestSchema, Body()],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.create_article(
             params=data.to_create_schema(
@@ -254,7 +254,7 @@ class AdminArticlesApiController(Controller):
     async def list_articles_tree(
         self,
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleTreeResponseSchema:
         tree = await use_case.list_tree(only_published=False, language=language)
         return ArticleTreeResponseSchema.from_domain_schema(schema=tree)
@@ -268,7 +268,7 @@ class AdminArticlesApiController(Controller):
     async def get_article(
         self,
         slug: FromPath[str],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
         only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> ArticleDetailResponseSchema:
@@ -286,7 +286,7 @@ class AdminArticlesApiController(Controller):
     )
     async def get_stats(
         self,
-        analytics_use_case: FromDishka[AbstractArticleAnalyticsUseCase],
+        analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
         date_from: Annotated[date, QueryParameter(name="dateFrom")],
         date_to: Annotated[date, QueryParameter(name="dateTo")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
@@ -310,7 +310,7 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         data: Annotated[ArticleRequestSchema, Body()],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.update_article(
             slug=slug,
@@ -335,7 +335,7 @@ class AdminArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.delete_article(slug=slug)
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -353,7 +353,7 @@ class AdminArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.switch_article_publish_status(
             slug=slug,
@@ -374,7 +374,7 @@ class AdminArticlesApiController(Controller):
         self,
         slug: FromPath[str],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.switch_article_publish_status(
             slug=slug,
@@ -395,7 +395,7 @@ class AdminArticlesApiController(Controller):
         self,
         include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.list_tags(include_deleted=include_deleted, language=language)
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
@@ -412,7 +412,7 @@ class AdminArticlesApiController(Controller):
         include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
         limit: Annotated[int, QueryParameter(name="limit", ge=1, le=50)],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.search_tags(
             search_name=search_name,
@@ -434,7 +434,7 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.create_tag(
             params=data.to_create_schema(tag_id=tag_id),
@@ -457,7 +457,7 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.update_tag(
             tag_id=IntId(tag_id),
@@ -479,7 +479,7 @@ class AdminArticlesApiController(Controller):
         self,
         tag_id: FromPath[int],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.soft_delete_tag(tag_id=IntId(tag_id))
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -497,7 +497,7 @@ class AdminArticlesApiController(Controller):
         self,
         tag_id: FromPath[int],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractArticlesUseCase],
+        use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.restore_tag(tag_id=IntId(tag_id))
         await invalidate_and_enqueue_response_cache_warm_domain(

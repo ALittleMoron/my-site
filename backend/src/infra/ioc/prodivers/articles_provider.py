@@ -4,8 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.articles.event_dispatchers import ArticleAnalyticsErrorReporter
 from core.articles.storages import ArticleAnalyticsStorage, ArticlesStorage
 from core.articles.use_cases import (
-    AbstractArticleAnalyticsUseCase,
-    AbstractArticlesUseCase,
     ArticleAnalyticsUseCase,
     ArticlesUseCase,
 )
@@ -40,7 +38,7 @@ class ArticlesProvider(Provider):
     async def provide_articles_use_case(
         self,
         storage: ArticlesStorage,
-    ) -> AbstractArticlesUseCase:
+    ) -> ArticlesUseCase:
         return ArticlesUseCase(storage=storage)
 
     @provide(scope=Scope.REQUEST)
@@ -49,7 +47,7 @@ class ArticlesProvider(Provider):
         storage: ArticlesStorage,
         analytics_storage: ArticleAnalyticsStorage,
         error_reporter: ArticleAnalyticsErrorReporter,
-    ) -> AbstractArticleAnalyticsUseCase:
+    ) -> ArticleAnalyticsUseCase:
         return ArticleAnalyticsUseCase(
             articles_storage=storage,
             analytics_storage=analytics_storage,

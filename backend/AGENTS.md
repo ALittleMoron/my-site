@@ -76,7 +76,8 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 ## HTTP and Schemas
 
 - API controllers must contain only HTTP validation, auth/permission checks, use case calls, and request/response mapping.
-- Controllers must receive dependencies through `FromDishka[...]`, preferably typed as abstract use case interfaces.
+- Controllers must receive dependencies through `FromDishka[...]`, typed as the concrete use case
+  class registered in Dishka.
 - Endpoint/controller modules must not define `@staticmethod`, `@classmethod`, or private helper
   methods for request-derived values or parameter assembly when a Litestar `Provide` dependency can
   own that logic. Put those dependencies in a neighboring `dependencies.py` module.

@@ -6,7 +6,7 @@ from dishka import Provider, Scope, provide
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.readers import QuestionQueueImportExcelReader
-from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from infra.config.constants import constants
 from infra.openpyxl.readers import OpenpyxlQuestionQueueImportExcelReader
 
@@ -44,5 +44,5 @@ class MockCompetencyMatrixProvider(Provider):
         )
 
     @provide(scope=Scope.APP)
-    async def provide_competency_matrix_use_case(self) -> AbstractCompetencyMatrixUseCase:
-        return Mock(spec=AbstractCompetencyMatrixUseCase)
+    async def provide_competency_matrix_use_case(self) -> CompetencyMatrixUseCase:
+        return Mock(spec=CompetencyMatrixUseCase)

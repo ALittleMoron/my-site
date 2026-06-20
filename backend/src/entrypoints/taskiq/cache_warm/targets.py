@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from core.articles.schemas import Article, ArticleFilters, Articles, ArticleTree, Tags
-from core.articles.use_cases import AbstractArticlesUseCase
+from core.articles.use_cases import ArticlesUseCase
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemBySlugGetParams,
@@ -13,7 +13,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     Sheets,
 )
-from core.competency_matrix.use_cases import AbstractCompetencyMatrixUseCase
+from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.articles.schemas import (
     ArticleDetailResponseSchema,
@@ -89,7 +89,7 @@ class I18nCacheWarmTargetCollector:
 
 @dataclass(frozen=True, slots=True)
 class ArticlesCacheWarmTargetCollector:
-    articles_use_case: AbstractArticlesUseCase
+    articles_use_case: ArticlesUseCase
     query_builder: CacheWarmQueryBuilder
 
     async def collect(self) -> list[CacheWarmTarget]:
@@ -197,7 +197,7 @@ class ArticlesCacheWarmTargetCollector:
 
 @dataclass(frozen=True, slots=True)
 class CompetencyMatrixCacheWarmTargetCollector:
-    matrix_use_case: AbstractCompetencyMatrixUseCase
+    matrix_use_case: CompetencyMatrixUseCase
     query_builder: CacheWarmQueryBuilder
 
     async def collect(self) -> list[CacheWarmTarget]:

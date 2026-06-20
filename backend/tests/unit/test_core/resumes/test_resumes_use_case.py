@@ -4,7 +4,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.resumes import use_cases as resumes_use_cases
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
     Resume,
@@ -161,12 +160,6 @@ class TestResumesUseCase:
     def setup(self) -> None:
         self.storage = Mock(spec=ResumesStorage)
         self.use_case = ResumesUseCase(storage=self.storage)
-
-    def test_resumes_use_case_implements_abstract_contract(self) -> None:
-        abstract_use_case = getattr(resumes_use_cases, "AbstractResumesUseCase", None)
-
-        assert abstract_use_case is not None
-        assert issubclass(ResumesUseCase, abstract_use_case)
 
     def test_resume_filters_require_explicit_values(self) -> None:
         missing_filter_values: dict[str, Any] = {}

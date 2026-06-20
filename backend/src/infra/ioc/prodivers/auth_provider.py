@@ -9,7 +9,7 @@ from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
-from core.auth.use_cases import AbstractAuthUseCase, AuthUseCase
+from core.auth.use_cases import AuthUseCase
 from infra.auth.event_dispatchers import StructlogAuthEventReporter
 from infra.auth.password_hashers import Argon2PasswordHasher
 from infra.auth.token_handlers import PasetoTokenHandler
@@ -65,7 +65,7 @@ class AuthProvider(Provider):
         auth_storage: AuthStorage,
         token_revocation_storage: TokenRevocationStorage,
         user_storage: UserAccountStorage,
-    ) -> AbstractAuthUseCase:
+    ) -> AuthUseCase:
         return AuthUseCase(
             hasher=hasher,
             token_handler=token_handler,

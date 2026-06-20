@@ -7,7 +7,7 @@ from litestar.params import Body
 
 from core.auth.enums import RoleEnum
 from core.auth.types import Token
-from core.auth.use_cases import AbstractAuthUseCase
+from core.auth.use_cases import AuthUseCase
 from entrypoints.litestar.api.auth.schemas import AccessTokenResponseSchema, LoginRequestSchema
 
 
@@ -28,7 +28,7 @@ class AuthApiController(Controller):
     async def login(
         self,
         data: Annotated[LoginRequestSchema, Body()],
-        use_case: FromDishka[AbstractAuthUseCase],
+        use_case: FromDishka[AuthUseCase],
     ) -> AccessTokenResponseSchema:
         token = await use_case.login(
             username=data.username,
@@ -46,7 +46,7 @@ class AuthApiController(Controller):
     async def logout(
         self,
         token: FromDishka[Token],
-        use_case: FromDishka[AbstractAuthUseCase],
+        use_case: FromDishka[AuthUseCase],
     ) -> None:
         await use_case.logout(token=token)
 

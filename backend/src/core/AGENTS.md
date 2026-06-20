@@ -37,7 +37,7 @@ Common files per domain in `backend/core/<domain>/`. Not all files are required.
 
 ```text
 schemas.py              # domain models (dataclasses or class with init dunder method)
-use_cases.py            # Business logic - use cases or controllers with not ABC. Only implementations.
+use_cases.py            # Business logic - concrete use cases only, no ABC/Protocol/base inheritance.
 storages.py             # Storage ABC - repository pattern (SQLAlchemy, Mongo, etc.)
 file_storages.py        # File storages ABC - for manipluating files (MinIO, local files, etc.)
 exceptions.py           # Domain exceptions
@@ -52,6 +52,8 @@ event_dispatchers.py    # Domain event dispatchers - kafka or rest event publish
 ## Domain Rules
 
 - New core code must be domain dataclasses, value objects, use cases, services, interfaces, exceptions, or generators.
+- Use cases must be concrete standalone classes. Do not add abstract use-case interfaces,
+  `Protocol` contracts, base use-case classes, or inheritance between use cases.
 - Use cases must not depend on or call other use cases. When the logic belongs to only one
   use case, keep it in that use case and inject storage abstractions directly. Put shared
   cross-use-case business logic in the relevant domain `services.py` as a concrete service.

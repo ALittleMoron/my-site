@@ -12,7 +12,7 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.auth.use_cases import AbstractAuthUseCase
+from core.auth.use_cases import AuthUseCase
 
 
 class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
@@ -56,7 +56,7 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
             return anon_result
         clear_token = Token(token.split(self.token_prefix)[-1].strip().encode())
         async with self.container() as request_container:
-            use_case = await request_container.get(AbstractAuthUseCase)
+            use_case = await request_container.get(AuthUseCase)
             try:
                 user = await use_case.authenticate(
                     token=clear_token,

@@ -10,7 +10,7 @@ from litestar.params import Body, FromPath
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.resumes.schemas import ResumeFilters
-from core.resumes.use_cases import AbstractResumesUseCase
+from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
 from entrypoints.litestar.api.resumes.dependencies import provide_resume_filters
 from entrypoints.litestar.api.resumes.schemas import (
@@ -35,7 +35,7 @@ class AdminResumesApiController(Controller):
     )
     async def list_resumes(
         self,
-        use_case: FromDishka[AbstractResumesUseCase],
+        use_case: FromDishka[ResumesUseCase],
         filters: ResumeFilters,
     ) -> ResumesResponseSchema:
         resumes = await use_case.list_resumes(filters=filters)
@@ -51,7 +51,7 @@ class AdminResumesApiController(Controller):
         self,
         data: Annotated[ResumeRequestSchema, Body()],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractResumesUseCase],
+        use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
         resume = await use_case.create_resume(
             params=data.to_create_schema(author_username=request.user.username),
@@ -68,7 +68,7 @@ class AdminResumesApiController(Controller):
         self,
         resume_id: FromPath[int],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractResumesUseCase],
+        use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
         resume = await use_case.get_resume(
             resume_id=IntId(resume_id),
@@ -87,7 +87,7 @@ class AdminResumesApiController(Controller):
         resume_id: FromPath[int],
         data: Annotated[ResumeRequestSchema, Body()],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractResumesUseCase],
+        use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
         resume = await use_case.update_resume(
             resume_id=IntId(resume_id),
@@ -106,7 +106,7 @@ class AdminResumesApiController(Controller):
         self,
         resume_id: FromPath[int],
         request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[AbstractResumesUseCase],
+        use_case: FromDishka[ResumesUseCase],
     ) -> None:
         await use_case.delete_resume(
             resume_id=IntId(resume_id),

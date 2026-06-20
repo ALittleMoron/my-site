@@ -5,7 +5,7 @@ from litestar import Controller, get
 from litestar.params import QueryParameter
 
 from core.files.schemas import PresignPutObjectParams
-from core.files.use_cases import AbstractFilesUseCase
+from core.files.use_cases import FilesUseCase
 from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
 from entrypoints.litestar.guards import content_manager_guard
 
@@ -23,7 +23,7 @@ class FilesApiController(Controller):
     async def presign_put_media_file(
         self,
         content_type: Annotated[str, QueryParameter(name="contentType")],
-        use_case: FromDishka[AbstractFilesUseCase],
+        use_case: FromDishka[FilesUseCase],
     ) -> FilePresignPutResponseSchema:
         params = PresignPutObjectParams(
             content_type=content_type,

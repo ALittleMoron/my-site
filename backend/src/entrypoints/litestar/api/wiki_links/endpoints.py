@@ -6,7 +6,7 @@ from litestar import Controller, get, status_codes
 from litestar.params import QueryParameter
 
 from core.i18n.enums import LanguageEnum
-from core.wiki_links.use_cases import AbstractWikiLinksUseCase
+from core.wiki_links.use_cases import WikiLinksUseCase
 from entrypoints.litestar.api.wiki_links.schemas import WikiLinkTargetsResponseSchema
 from entrypoints.litestar.guards import content_manager_guard
 
@@ -24,7 +24,7 @@ class WikiLinksApiController(Controller):
     )
     async def list_wiki_link_targets(
         self,
-        use_case: FromDishka[AbstractWikiLinksUseCase],
+        use_case: FromDishka[WikiLinksUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> WikiLinkTargetsResponseSchema:
         targets = await use_case.list_targets(language=language)
