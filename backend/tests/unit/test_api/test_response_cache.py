@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any, cast
+from unittest.mock import Mock, patch
 
 import click
 import pytest
@@ -392,3 +393,24 @@ class TestResponseCacheCli:
         assert "invalidatecache" in cli.commands
         assert "createsuperuser" in cli.commands
         assert "initbuckets" in cli.commands
+
+    def test_initbuckets_delegates_to_storage_command(self) -> None:
+        cli = click.Group()
+        command_coro = object()
+        init_buckets_command = Mock(return_value=command_coro)
+
+        with (
+            patch(
+                "entrypoints.litestar.cli.plugins.init_buckets_command",
+                new=init_buckets_command,
+                create=True,
+            ),
+            patch("entrypoints.litestar.cli.plugins.run_sync") as run_sync,
+        ):
+            CLIPlugin().on_cli_init(cli)
+            callback = cli.commands["initbuckets"].callback
+            assert callback is not None
+            callback(app=object())
+
+        init_buckets_command.assert_called_once_with()
+        run_sync.assert_called_once_with(command_coro)

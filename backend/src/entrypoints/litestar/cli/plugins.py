@@ -2,11 +2,10 @@ import click
 from litestar import Litestar
 from litestar.plugins import CLIPluginProtocol
 
-from core.files.file_storages import FileStorage
 from entrypoints.litestar.cli.commands.admin import create_admin_command
 from entrypoints.litestar.cli.commands.cache import invalidate_cache_command
+from entrypoints.litestar.cli.commands.storage import init_buckets_command
 from entrypoints.litestar.cli.utils import run_sync
-from infra.ioc.container import container
 
 
 class CLIPlugin(CLIPluginProtocol):
@@ -21,8 +20,7 @@ class CLIPlugin(CLIPluginProtocol):
 
         @cli.command()
         def initbuckets(app: Litestar) -> None:  # noqa: ARG001
-            file_storage = run_sync(container.get(FileStorage))
-            run_sync(file_storage.init_storage())
+            run_sync(init_buckets_command())
 
         @cli.command()
         def invalidatecache(app: Litestar) -> None:
