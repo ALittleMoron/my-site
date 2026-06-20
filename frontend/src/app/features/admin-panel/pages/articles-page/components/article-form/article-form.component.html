@@ -1,11 +1,18 @@
 <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="row g-3">
     <div class="col-12">
-      <label class="form-label" for="articleSlug">{{ 'articles.form.slug' | t }}</label>
+      <label class="form-label" for="articleSlug">
+        {{ 'articles.form.slug' | t }}
+        <span class="required-marker" aria-hidden="true">*</span>
+      </label>
       <input
         id="articleSlug"
         type="text"
         class="form-control"
+        [class.is-invalid]="articleFieldInvalid('slug')"
+        [attr.aria-invalid]="articleFieldInvalid('slug') ? 'true' : null"
+        required
+        aria-required="true"
         formControlName="slug"
         (input)="onSlugInput()"
       />
@@ -62,12 +69,36 @@
     <div [class.d-none]="activeLanguageTab() !== 'ru'">
       <div class="row g-3">
         <div class="col-md-8">
-          <label class="form-label" for="articleTitleRu">{{ 'articles.form.titleRu' | t }}</label>
-          <input id="articleTitleRu" type="text" class="form-control" formControlName="titleRu" />
+          <label class="form-label" for="articleTitleRu">
+            {{ 'articles.form.titleRu' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="articleTitleRu"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="articleFieldInvalid('titleRu')"
+            [attr.aria-invalid]="articleFieldInvalid('titleRu') ? 'true' : null"
+            required
+            aria-required="true"
+            formControlName="titleRu"
+          />
         </div>
         <div class="col-md-4">
-          <label class="form-label" for="articleFolderRu">{{ 'articles.form.folderRu' | t }}</label>
-          <input id="articleFolderRu" type="text" class="form-control" formControlName="folderRu" />
+          <label class="form-label" for="articleFolderRu">
+            {{ 'articles.form.folderRu' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="articleFolderRu"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="articleFieldInvalid('folderRu')"
+            [attr.aria-invalid]="articleFieldInvalid('folderRu') ? 'true' : null"
+            required
+            aria-required="true"
+            formControlName="folderRu"
+          />
         </div>
         <div class="col-md-8">
           <label class="form-label" for="articleSeoTitleRu">{{
@@ -103,11 +134,24 @@
           ></textarea>
         </div>
         <div class="col-12">
-          <div class="form-label">{{ 'articles.form.contentRu' | t }}</div>
-          <app-markdown-editor
-            [value]="form.controls.contentRu.value"
-            (valueChange)="setContentRu($event)"
-          />
+          <div id="articleContentRuLabel" class="form-label">
+            {{ 'articles.form.contentRu' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </div>
+          <div
+            class="article-markdown-editor"
+            data-testid="article-content-ru-editor"
+            role="group"
+            aria-labelledby="articleContentRuLabel"
+            aria-required="true"
+            [attr.aria-invalid]="articleFieldInvalid('contentRu') ? 'true' : null"
+            [class.article-markdown-editor-invalid]="articleFieldInvalid('contentRu')"
+          >
+            <app-markdown-editor
+              [value]="form.controls.contentRu.value"
+              (valueChange)="setContentRu($event)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -115,18 +159,37 @@
     <div [class.d-none]="activeLanguageTab() !== 'en'">
       <div class="row g-3">
         <div class="col-md-8">
-          <label class="form-label" for="articleTitleEn">{{ 'articles.form.titleEn' | t }}</label>
+          <label class="form-label" for="articleTitleEn">
+            {{ 'articles.form.titleEn' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </label>
           <input
             id="articleTitleEn"
             type="text"
             class="form-control"
+            [class.is-invalid]="articleFieldInvalid('titleEn')"
+            [attr.aria-invalid]="articleFieldInvalid('titleEn') ? 'true' : null"
+            required
+            aria-required="true"
             formControlName="titleEn"
             (input)="onTitleEnInput()"
           />
         </div>
         <div class="col-md-4">
-          <label class="form-label" for="articleFolderEn">{{ 'articles.form.folderEn' | t }}</label>
-          <input id="articleFolderEn" type="text" class="form-control" formControlName="folderEn" />
+          <label class="form-label" for="articleFolderEn">
+            {{ 'articles.form.folderEn' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="articleFolderEn"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="articleFieldInvalid('folderEn')"
+            [attr.aria-invalid]="articleFieldInvalid('folderEn') ? 'true' : null"
+            required
+            aria-required="true"
+            formControlName="folderEn"
+          />
         </div>
         <div class="col-md-8">
           <label class="form-label" for="articleSeoTitleEn">{{
@@ -162,11 +225,24 @@
           ></textarea>
         </div>
         <div class="col-12">
-          <div class="form-label">{{ 'articles.form.contentEn' | t }}</div>
-          <app-markdown-editor
-            [value]="form.controls.contentEn.value"
-            (valueChange)="setContentEn($event)"
-          />
+          <div id="articleContentEnLabel" class="form-label">
+            {{ 'articles.form.contentEn' | t }}
+            <span class="required-marker" aria-hidden="true">*</span>
+          </div>
+          <div
+            class="article-markdown-editor"
+            data-testid="article-content-en-editor"
+            role="group"
+            aria-labelledby="articleContentEnLabel"
+            aria-required="true"
+            [attr.aria-invalid]="articleFieldInvalid('contentEn') ? 'true' : null"
+            [class.article-markdown-editor-invalid]="articleFieldInvalid('contentEn')"
+          >
+            <app-markdown-editor
+              [value]="form.controls.contentEn.value"
+              (valueChange)="setContentEn($event)"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -206,33 +282,59 @@
 
     <div class="row g-2 align-items-end mb-3" [formGroup]="newTagForm">
       <div class="col-md-3">
-        <label class="form-label small" for="newTagNameRu">{{
-          'articles.form.tagNameRu' | t
-        }}</label>
-        <input id="newTagNameRu" class="form-control form-control-sm" formControlName="nameRu" />
+        <label class="form-label small" for="newTagNameRu">
+          {{ 'articles.form.tagNameRu' | t }}
+          <span class="required-marker" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="newTagNameRu"
+          class="form-control form-control-sm"
+          [class.is-invalid]="newTagFieldInvalid('nameRu')"
+          [attr.aria-invalid]="newTagFieldInvalid('nameRu') ? 'true' : null"
+          required
+          aria-required="true"
+          formControlName="nameRu"
+        />
       </div>
       <div class="col-md-3">
-        <label class="form-label small" for="newTagNameEn">{{
-          'articles.form.tagNameEn' | t
-        }}</label>
+        <label class="form-label small" for="newTagNameEn">
+          {{ 'articles.form.tagNameEn' | t }}
+          <span class="required-marker" aria-hidden="true">*</span>
+        </label>
         <input
           id="newTagNameEn"
           class="form-control form-control-sm"
+          [class.is-invalid]="newTagFieldInvalid('nameEn')"
+          [attr.aria-invalid]="newTagFieldInvalid('nameEn') ? 'true' : null"
+          required
+          aria-required="true"
           formControlName="nameEn"
           (input)="onNewTagNameEnInput()"
         />
       </div>
       <div class="col-md-4">
-        <label class="form-label small" for="newTagSlug">{{ 'articles.form.slug' | t }}</label>
+        <label class="form-label small" for="newTagSlug">
+          {{ 'articles.form.slug' | t }}
+          <span class="required-marker" aria-hidden="true">*</span>
+        </label>
         <input
           id="newTagSlug"
           class="form-control form-control-sm"
+          [class.is-invalid]="newTagFieldInvalid('slug')"
+          [attr.aria-invalid]="newTagFieldInvalid('slug') ? 'true' : null"
+          required
+          aria-required="true"
           formControlName="slug"
           (input)="onNewTagSlugInput()"
         />
       </div>
       <div class="col-md-2 d-grid">
-        <button type="button" class="btn btn-sm btn-outline-primary" (click)="createTag()">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          data-testid="article-new-tag-add"
+          (click)="createTag()"
+        >
           {{ 'shared.add' | t }}
         </button>
       </div>

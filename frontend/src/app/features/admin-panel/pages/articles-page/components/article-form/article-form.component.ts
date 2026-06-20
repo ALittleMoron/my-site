@@ -10,7 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+} from '@angular/forms';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -87,6 +93,16 @@ interface TagDraft extends ArticleTag {
   draftSlug: string;
 }
 
+type RequiredArticleField =
+  | 'titleRu'
+  | 'titleEn'
+  | 'contentRu'
+  | 'contentEn'
+  | 'slug'
+  | 'folderRu'
+  | 'folderEn';
+type RequiredTagField = 'nameRu' | 'nameEn' | 'slug';
+
 @Component({
   selector: 'app-admin-article-form',
   standalone: true,
@@ -99,6 +115,7 @@ interface TagDraft extends ArticleTag {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-form.component.html',
+  styleUrl: './article-form.component.scss',
 })
 export class ArticleFormComponent implements OnInit {
   private readonly articlesService = inject(ArticleWorkspaceService);
@@ -119,15 +136,17 @@ export class ArticleFormComponent implements OnInit {
   readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
   readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
+  readonly formSubmitted = signal(false);
+  readonly newTagFormSubmitted = signal(false);
 
   readonly form = new FormGroup<ArticleFormControls>({
-    titleRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    titleEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    contentRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    contentEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    folderRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    folderEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    titleRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    titleEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    contentRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    contentEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    slug: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    folderRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    folderEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
     seoTitleRu: new FormControl('', { nonNullable: true }),
     seoTitleEn: new FormControl('', { nonNullable: true }),
     seoDescriptionRu: new FormControl('', { nonNullable: true }),
@@ -139,9 +158,9 @@ export class ArticleFormComponent implements OnInit {
   });
 
   readonly newTagForm = new FormGroup<TagFormControls>({
-    nameRu: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    nameEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    slug: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    nameRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    nameEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    slug: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
   });
   readonly formSnapshot = signal(this.form.getRawValue());
 
@@ -230,11 +249,11 @@ export class ArticleFormComponent implements OnInit {
   }
 
   setContentRu(value: string): void {
-    this.form.controls.contentRu.setValue(value);
+    this.updateMarkdownContent(this.form.controls.contentRu, value);
   }
 
   setContentEn(value: string): void {
-    this.form.controls.contentEn.setValue(value);
+    this.updateMarkdownContent(this.form.controls.contentEn, value);
   }
 
   setPublishStatusFromEvent(event: Event): void {
@@ -306,6 +325,7 @@ export class ArticleFormComponent implements OnInit {
   }
 
   createTag(): void {
+    this.newTagFormSubmitted.set(true);
     if (this.newTagForm.invalid) {
       this.newTagForm.markAllAsTouched();
       return;
@@ -329,6 +349,7 @@ export class ArticleFormComponent implements OnInit {
           this.tags.update((tags) => [...tags, toDraft(tag)].sort(compareTags));
           this.newTagForm.reset({ nameRu: '', nameEn: '', slug: '' });
           this.newTagSlugEdited = false;
+          this.newTagFormSubmitted.set(false);
           this.tagsChanged.emit();
         },
         error: () => this.tagError.set(this.i18n.translate('articles.tags.createError')),
@@ -397,6 +418,7 @@ export class ArticleFormComponent implements OnInit {
   }
 
   submit(): void {
+    this.formSubmitted.set(true);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -423,6 +445,16 @@ export class ArticleFormComponent implements OnInit {
         },
       },
     });
+  }
+
+  articleFieldInvalid(field: RequiredArticleField): boolean {
+    const control = this.form.controls[field];
+    return control.invalid && (this.formSubmitted() || control.touched);
+  }
+
+  newTagFieldInvalid(field: RequiredTagField): boolean {
+    const control = this.newTagForm.controls[field];
+    return control.invalid && (this.newTagFormSubmitted() || control.touched);
   }
 
   private loadTags(): void {
@@ -456,6 +488,16 @@ export class ArticleFormComponent implements OnInit {
     }
     return language;
   }
+
+  private updateMarkdownContent(control: FormControl<string>, value: string): void {
+    control.setValue(value);
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+}
+
+function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
+  return control.value.trim() === '' ? { required: true } : null;
 }
 
 function toMetadata(value: ArticleMetadataFormValue): ArticleMetadata {

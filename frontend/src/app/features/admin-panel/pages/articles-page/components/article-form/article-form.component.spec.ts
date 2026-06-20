@@ -177,6 +177,79 @@ describe('ArticleFormComponent', () => {
     });
   });
 
+  it('marks required article fields and blocks empty submit', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+
+    const form = fixture.debugElement.query(By.css('form')).nativeElement as HTMLFormElement;
+    const slug = fixture.debugElement.query(By.css('#articleSlug'))
+      .nativeElement as HTMLInputElement;
+    const titleRu = fixture.debugElement.query(By.css('#articleTitleRu'))
+      .nativeElement as HTMLInputElement;
+    const contentRuEditor = fixture.nativeElement.querySelector(
+      '[data-testid="article-content-ru-editor"]',
+    ) as HTMLElement | null;
+
+    expect(fixture.nativeElement.textContent).toContain('Slug *');
+    expect(fixture.nativeElement.textContent).toContain('Заголовок RU *');
+    expect(fixture.nativeElement.textContent).toContain('Папка RU *');
+    expect(fixture.nativeElement.textContent).toContain('Содержимое RU *');
+    expect(contentRuEditor).not.toBeNull();
+
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(slug.classList).toContain('is-invalid');
+    expect(titleRu.classList).toContain('is-invalid');
+    expect(contentRuEditor?.classList).toContain('article-markdown-editor-invalid');
+
+    slug.value = 'typed-article';
+    slug.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(slug.classList).not.toContain('is-invalid');
+  });
+
+  it('keeps whitespace-only required article fields invalid', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    const slug = fixture.debugElement.query(By.css('#articleSlug'))
+      .nativeElement as HTMLInputElement;
+
+    slug.value = '   ';
+    slug.dispatchEvent(new Event('input'));
+    fixture.debugElement.query(By.css('form')).nativeElement.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(slug.classList).toContain('is-invalid');
+  });
+
+  it('marks required new-tag fields and blocks empty tag creation', () => {
+    const nameRu = fixture.debugElement.query(By.css('#newTagNameRu'))
+      .nativeElement as HTMLInputElement;
+    const addButton = fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]'));
+
+    expect(fixture.nativeElement.textContent).toContain('Название RU *');
+    expect(fixture.nativeElement.textContent).toContain('Название EN *');
+    expect(fixture.nativeElement.textContent).toContain('Slug *');
+    expect(addButton).not.toBeNull();
+    if (addButton === null) return;
+
+    (addButton.nativeElement as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(articlesService.createTag).not.toHaveBeenCalled();
+    expect(nameRu.classList).toContain('is-invalid');
+
+    nameRu.value = 'Backend';
+    nameRu.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(nameRu.classList).not.toContain('is-invalid');
+  });
+
   it('uploads cover image and writes access URL into the metadata field', () => {
     const fileInput = fixture.debugElement.query(By.css('#articleCoverImageFile'))
       .nativeElement as HTMLInputElement;
