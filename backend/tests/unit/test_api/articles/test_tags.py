@@ -86,7 +86,7 @@ class TestTagsAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.json()["message"] == UnauthorizedError.message
         self.use_case.list_tags.assert_not_called()
 
-    def test_public_tags_ignore_legacy_include_deleted_query(self) -> None:
+    def test_public_tags_force_active_tags_only(self) -> None:
         self.use_case.list_tags.return_value = self.factory.core.tags(values=[])
 
         response = self.no_auth_api.client.get(

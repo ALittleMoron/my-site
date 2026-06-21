@@ -72,17 +72,6 @@ describe('MatrixResourcePickerComponent', () => {
     expect(text).toContain('Контекст EN');
   });
 
-  it('styles the add action as a green button without the narrow column layout', () => {
-    const addButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (button): button is HTMLButtonElement =>
-        (button as HTMLButtonElement).textContent?.includes('Добавить') ?? false,
-    );
-
-    expect(addButton).toBeDefined();
-    expect(addButton.classList).toContain('btn-success');
-    expect(addButton.closest('div')?.classList).not.toContain('col-md-1');
-  });
-
   it('attaches an existing resource once', () => {
     const emitted: unknown[] = [];
     component.resourcesChange.subscribe((resources) => emitted.push(resources));

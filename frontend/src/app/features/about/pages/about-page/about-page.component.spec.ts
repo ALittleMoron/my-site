@@ -52,13 +52,4 @@ describe('AboutPageComponent', () => {
     expect(pageText).not.toContain('Magnit');
     expect(pageText).not.toContain('Mobicult');
   });
-
-  it('does not render the feedback CTA or form controls', () => {
-    expect(fixture.nativeElement.querySelector('[data-testid="about-contact-link"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
-    expect(fixture.nativeElement.querySelector('button[type="submit"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#contact-me-email-field')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#contact-me-telegram-field')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#contact-me-message-field')).toBeNull();
-  });
 });

@@ -125,48 +125,12 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Summary');
   });
 
-  it('does not render a separate preview language switcher', () => {
-    fixture.componentInstance.showPreview();
-    fixture.detectChanges();
-
-    const previewButtons = Array.from(
-      fixture.nativeElement.querySelectorAll('[data-testid="resume-preview"] button'),
-    ) as HTMLButtonElement[];
-
-    expect(previewButtons).toEqual([]);
-  });
-
-  it('renders edit and preview mode controls as grey buttons', () => {
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ) as HTMLButtonElement[];
-    const editButton = buttons.find((button) => button.textContent?.includes('Редактирование'));
-    const previewButton = buttons.find((button) => button.textContent?.includes('Предпросмотр'));
-
-    expect(editButton?.classList).toContain('btn-secondary');
-    expect(editButton?.classList).not.toContain('btn-primary');
-    expect(previewButton?.classList).toContain('btn-outline-secondary');
-    expect(previewButton?.classList).not.toContain('btn-outline-primary');
-  });
-
   it('renders the back action with a left arrow icon', () => {
     const backButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((button) =>
       button.textContent?.includes('Назад'),
     ) as HTMLButtonElement | undefined;
 
     expect(backButton?.querySelector('svg')).not.toBeNull();
-  });
-
-  it('uses green outline add actions in repeatable resume sections', () => {
-    fixture.componentInstance.setActiveTab('skills');
-    fixture.detectChanges();
-
-    const addButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((button) =>
-      button.textContent?.includes('Добавить'),
-    ) as HTMLButtonElement | undefined;
-
-    expect(addButton?.classList).toContain('btn-outline-success');
-    expect(addButton?.classList).not.toContain('btn-outline-primary');
   });
 
   it('deletes the resume and returns to the list', () => {

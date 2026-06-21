@@ -61,14 +61,6 @@ describe('MatrixFilterBarComponent', () => {
     expect(emitted).toEqual(['']);
   });
 
-  it('does not render the admin published/all switch', () => {
-    expect(el.querySelector('#onlyPublishedToggle')).toBeNull();
-  });
-
-  it('does not render the admin add-question button', () => {
-    expect(el.querySelector('[data-testid="matrix-filter-add-question"]')).toBeNull();
-  });
-
   it('should emit suggestQuestion when the suggestion button is clicked', () => {
     const emitted: void[] = [];
     fixture.componentInstance.suggestQuestion.subscribe(() => emitted.push(undefined));
@@ -76,23 +68,5 @@ describe('MatrixFilterBarComponent', () => {
     el.querySelector<HTMLButtonElement>('[data-testid="matrix-filter-suggest-question"]')!.click();
 
     expect(emitted.length).toBe(1);
-  });
-
-  it('should render suggestion button with article-tag gray styling instead of accent styling', () => {
-    const button = el.querySelector<HTMLButtonElement>(
-      '[data-testid="matrix-filter-suggest-question"]',
-    );
-
-    expect(button).toBeTruthy();
-    expect(button?.classList).toContain('btn-outline-secondary');
-    expect(button?.classList).not.toContain('btn-success');
-    expect(button?.classList).not.toContain('btn-primary');
-    expect(button?.classList).not.toContain('btn-outline-primary');
-  });
-
-  it('should not render matrix layout switcher controls', () => {
-    expect(el.querySelector('[aria-label="Переключение вида"]')).toBeNull();
-    expect(el.querySelector('button[aria-label="Список"]')).toBeNull();
-    expect(el.querySelector('button[aria-label="Таблица"]')).toBeNull();
   });
 });

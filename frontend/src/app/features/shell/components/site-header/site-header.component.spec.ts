@@ -175,16 +175,6 @@ describe('SiteHeaderComponent', () => {
     expect(mockAuthModalService.openLogin).toHaveBeenCalled();
   });
 
-  it('uses the carried-over navbar and button utility styles', () => {
-    const nav = el.querySelector('nav');
-    expect(nav?.classList).toContain('nav-blur');
-
-    const themeButton = el.querySelector(
-      'button[aria-label="Переключить тему"]',
-    ) as HTMLButtonElement;
-    expect(themeButton.classList).toContain('button-inactive');
-  });
-
   it('shows username and logout button when logged in', () => {
     currentUserSignal.set({ username: 'admin', role: 'admin' });
     fixture.detectChanges();

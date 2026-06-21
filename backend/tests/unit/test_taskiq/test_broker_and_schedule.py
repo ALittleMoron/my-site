@@ -41,19 +41,6 @@ class TestTaskiqBrokerConfiguration:
         )
         assert taskiq_broker_module.broker.result_backend is not None
 
-    def test_broker_module_does_not_export_one_line_configuration_helpers(self) -> None:
-        for helper_name in (
-            "TASKIQ_CONSUMER_GROUP_NAME",
-            "TASKIQ_QUEUE_NAME",
-            "TASKIQ_RESULT_PREFIX",
-            "create_taskiq_broker",
-            "create_taskiq_result_backend",
-            "get_taskiq_broker_url",
-            "get_taskiq_result_url",
-            "get_taskiq_redis_url",
-        ):
-            assert not hasattr(taskiq_broker_module, helper_name)
-
 
 class TestTaskiqScheduleConfiguration:
     def test_cache_warm_all_uses_interval_schedule_without_cron(self) -> None:

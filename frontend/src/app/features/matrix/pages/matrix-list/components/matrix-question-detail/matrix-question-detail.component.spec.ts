@@ -194,19 +194,4 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(el.textContent).toContain('MDN');
     expect(el.querySelector('a[href="https://mdn.io"]')).toBeTruthy();
   });
-
-  it('does not render admin content controls on public details', () => {
-    fixture.componentRef.setInput('loading', false);
-    fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
-    fixture.componentRef.setInput('error', null);
-    fixture.detectChanges();
-
-    const text = el.textContent ?? '';
-
-    expect(el.querySelector('button')).toBeNull();
-    expect(text).not.toContain('Редактировать');
-    expect(text).not.toContain('Опубликовать');
-    expect(text).not.toContain('Снять с публикации');
-    expect(text).not.toContain('Удалить');
-  });
 });

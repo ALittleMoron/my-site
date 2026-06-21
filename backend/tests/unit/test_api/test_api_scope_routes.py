@@ -27,7 +27,7 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         self.authentication_use_case = await self.container.get_auth_use_case()
         self.articles_use_case = await self.container.get_articles_use_case()
 
-    def test_public_articles_list_keeps_public_visibility_even_with_legacy_query_flag(self) -> None:
+    def test_public_articles_list_forces_public_visibility(self) -> None:
         self.articles_use_case.list_articles.return_value = self.factory.core.article_list(
             articles=[],
             total_count=0,
@@ -155,7 +155,7 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
             == "admin-wiki-links-targets-list-api-handler"
         )
 
-    def test_resumes_admin_urls_are_not_left_as_public_aliases(self) -> None:
+    def test_resumes_admin_urls_are_not_exposed_under_public_api(self) -> None:
         response = self.no_auth_api.client.get(
             "/api/resumes",
             params={"page": 1, "pageSize": 20},
@@ -165,7 +165,7 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         response = self.no_auth_api.client.get("/api/resumes/1")
         assert response.status_code == codes.NOT_FOUND
 
-    def test_old_matrix_admin_urls_are_not_left_as_public_aliases(self) -> None:
+    def test_matrix_admin_urls_are_not_exposed_under_public_api(self) -> None:
         response = self.no_auth_api.client.get(
             "/api/competency-matrix/resources/search",
             params={"searchName": "python", "limit": 10, "language": "ru"},

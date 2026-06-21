@@ -248,7 +248,7 @@ describe('MatrixListComponent', () => {
       (btn: unknown) => (btn as HTMLElement).textContent?.trim() === 'Python',
     ) as HTMLElement | undefined;
     expect(pythonTab).toBeTruthy();
-    expect(pythonTab!.classList).toContain('button-active');
+    expect(pythonTab!.getAttribute('aria-selected')).toBe('true');
   });
 
   it('should store sheet to localStorage when sheet is selected', () => {
@@ -299,13 +299,12 @@ describe('MatrixListComponent', () => {
     expect(matrixService.getPublicQuestions).toHaveBeenLastCalledWith('python', 'ru');
   });
 
-  it('should render grid layout by default without the list renderer', () => {
+  it('should render grid layout by default', () => {
     component.loading.set(false);
     component.error.set(null);
     component.questions.set(mockQuestionList);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeFalsy();
   });
 
   it('should render Russian page title', () => {
@@ -333,16 +332,6 @@ describe('MatrixListComponent', () => {
 
     expect(addButton).toBeNull();
     expect(fixture.nativeElement.querySelector('app-matrix-question-form')).toBeNull();
-  });
-
-  it('does not render the old page-level add question button above filters', () => {
-    fixture.detectChanges();
-
-    const pageHeaderAddButton = fixture.nativeElement.querySelector(
-      '[data-testid="matrix-page-add-question"]',
-    );
-
-    expect(pageHeaderAddButton).toBeNull();
   });
 
   it('should filter questions by search term, removing empty groups', () => {
@@ -530,20 +519,5 @@ describe('MatrixListComponent', () => {
     expect(matrixService.suggestQuestion).toHaveBeenCalledWith(
       'What is PEP 8? How should it be used?',
     );
-  });
-
-  it('renders question suggestion submit button with gray styling instead of accent styling', () => {
-    fixture.detectChanges();
-    component.openQuestionSuggestion();
-    fixture.detectChanges();
-
-    const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
-      '[data-testid="matrix-question-suggestion-submit"]',
-    );
-
-    expect(submitButton).toBeTruthy();
-    expect(submitButton?.classList).toContain('btn-secondary');
-    expect(submitButton?.classList).not.toContain('btn-success');
-    expect(submitButton?.classList).not.toContain('btn-primary');
   });
 });

@@ -2,7 +2,6 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import String, cast, select
 
 from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum

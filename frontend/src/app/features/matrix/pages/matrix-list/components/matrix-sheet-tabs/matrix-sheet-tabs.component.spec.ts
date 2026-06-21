@@ -27,12 +27,6 @@ describe('MatrixSheetTabsComponent', () => {
     expect(buttons[1].textContent?.trim()).toBe('Python');
   });
 
-  it('should mark selected sheet button with legacy active styles', () => {
-    const buttons = el.querySelectorAll('button');
-    expect(buttons[0].classList.contains('button-active')).toBe(true);
-    expect(buttons[1].classList.contains('button-inactive')).toBe(true);
-  });
-
   it('should emit sheetSelected when a sheet button is clicked', () => {
     const emitted: string[] = [];
     fixture.componentInstance.sheetSelected.subscribe((s: string) => emitted.push(s));

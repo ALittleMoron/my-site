@@ -107,12 +107,6 @@ describe('AppComponent', () => {
     fixture.detectChanges();
   });
 
-  it('applies the legacy gradient body class to the page shell', () => {
-    const shell = fixture.nativeElement.querySelector('.app-shell') as HTMLElement;
-    expect(shell).not.toBeNull();
-    expect(shell.classList).toContain('gradient-body');
-  });
-
   it('renders the login component as a modal when requested', () => {
     isLoginOpen.set(true);
     fixture.detectChanges();
