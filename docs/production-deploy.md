@@ -84,7 +84,9 @@ certificate sync path. Keep deploy-only values such as `REMOTE_HOST`, `REMOTE_US
 Use `MINIO_HOST=minio` and `MINIO_PORT=9000` for the backend-internal S3 endpoint in the Compose
 network. Use `MINIO_PUBLIC_URL=https://s3.<APP_DOMAIN>` for browser-facing object access and
 presigned upload URLs. `MINIO_REGION` must be explicit for SigV4 signing; `us-east-1` is suitable
-for the bundled MinIO service unless deployment policy chooses another region string.
+for the bundled MinIO service unless deployment policy chooses another region string. The Compose
+MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` from `APP_URL_SCHEMA` and `APP_DOMAIN` because
+the bundled MinIO release does not accept bucket-level CORS setup through `PutBucketCors`.
 
 ## TLS
 

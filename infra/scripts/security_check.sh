@@ -164,6 +164,7 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" "/api/healthcheck/ready" "backend readiness healthcheck"
     require_file_contains "$compose_file" "/healthz" "frontend healthcheck"
     require_file_contains "$compose_file" "/nginx-healthz" "nginx healthcheck"
+    require_file_contains "$compose_file" "MINIO_API_CORS_ALLOW_ORIGIN: \${APP_URL_SCHEMA}://\${APP_DOMAIN}" "MinIO browser upload CORS origin"
 
     require_file_contains "$nginx_template" "resolver 127.0.0.11" "Docker DNS resolver"
     require_file_contains "$nginx_template" "server \${ACTIVE_BACKEND_SLOT}:8080 resolve;" "active backend slot"

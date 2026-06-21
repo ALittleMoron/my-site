@@ -77,19 +77,27 @@ class S3FileStorage(FileStorage):
             Bucket=namespace,
             Policy=json.dumps(self.create_bucket_policy(bucket_name=namespace)),
         )
-        await self.clients.internal.put_bucket_cors(
-            Bucket=namespace,
-            CORSConfiguration=self.create_bucket_cors(
-                allowed_origin=settings.public_app_origin,
-                max_age_seconds=settings.minio.presign_put_expires_seconds,
-            ),
-        )
-        logger.info("Bucket policy and CORS set", bucket_name=namespace)
+        try:
+            await self.clients.internal.put_bucket_cors(
+                Bucket=namespace,
+                CORSConfiguration=self.create_bucket_cors(
+                    allowed_origin=settings.public_app_origin,
+                    max_age_seconds=settings.minio.presign_put_expires_seconds,
+                ),
+            )
+        except ClientError as exc:
+            if not self._is_operation_not_implemented(exc):
+                raise
+            logger.warning(
+                "S3 bucket CORS setup is not supported by the storage service",
+                bucket_name=namespace,
+            )
+        logger.info("Bucket policy set and bucket CORS setup attempted", bucket_name=namespace)
 
     async def upload_file(
         self,
         file_data: BytesIO,
-        object_name: str,
+        objecАt_name: str,
         namespace: str,
         content_type: str | None,
     ) -> FileUploadResult:
@@ -180,3 +188,9 @@ class S3FileStorage(FileStorage):
                 exc.response["ResponseMetadata"]["HTTPStatusCode"] == HTTPStatus.NOT_FOUND
             )
         return error_matches or status_matches
+
+    @staticmethod
+    def _is_operation_not_implemented(exc: ClientError) -> bool:
+        with suppress(KeyError):
+            return str(exc.response["Error"]["Code"]) == "NotImplemented"
+        return False

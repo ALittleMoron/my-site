@@ -10,7 +10,7 @@ from core.files.schemas import FileUploadResult, PresignPutObject
 from infra.s3.file_storages import S3ClientBundle, S3FileStorage
 
 
-def create_client_error(code: str) -> ClientError:
+def create_client_error(code: str, operation_name: str = "HeadBucket") -> ClientError:
     return ClientError(
         error_response={
             "Error": {
@@ -18,7 +18,7 @@ def create_client_error(code: str) -> ClientError:
                 "Message": "S3 operation failed",
             },
         },
-        operation_name="HeadBucket",
+        operation_name=operation_name,
     )
 
 
@@ -95,6 +95,19 @@ class TestS3FileStorage:
                 ],
             },
         )
+
+    async def test_ensure_bucket_exists_tolerates_unsupported_bucket_cors(self) -> None:
+        bucket_name = "media"
+        self.internal_client.head_bucket.return_value = {}
+        self.internal_client.put_bucket_cors.side_effect = create_client_error(
+            code="NotImplemented",
+            operation_name="PutBucketCors",
+        )
+
+        await self.storage.ensure_namespace_exists(bucket_name)
+
+        self.internal_client.put_bucket_policy.assert_awaited_once()
+        self.internal_client.put_bucket_cors.assert_awaited_once()
 
     @patch("infra.s3.file_storages.settings")
     async def test_upload_file_success(self, mock_settings: Mock) -> None:
