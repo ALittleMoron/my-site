@@ -12,7 +12,7 @@ Portfolio and articles site with a knowledge database
 - DI: Dishka
 - Cache: Valkey
 - Background tasks: TaskIQ + taskiq-redis over Valkey
-- File storage: MinIO (miniopy-async)
+- File storage: MinIO through an aiobotocore S3-compatible adapter
 - Auth: PASETO (pyseto) + Argon2 password hashing
 - Logging: structlog + ECS logging + Sentry SDK
 - Frontend: Angular 22 hybrid SSR/CSR + Bootstrap 5, served by a frontend-owned Node.js SSR image

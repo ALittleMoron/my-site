@@ -26,7 +26,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 | Interface | `backend/src/entrypoints/litestar/` | HTTP handlers, API endpoints, auth middleware |
 | DI | `backend/src/infra/ioc/` | Dishka providers. Wiring only, no logic |
 | Config | `backend/src/infra/config/` | Pydantic settings, logging setup |
-| File storage | `backend/src/infra/minio/` | files adapter |
+| File storage | `backend/src/infra/s3/` | S3-compatible files adapter for MinIO |
 
 ## Operation Boundaries
 

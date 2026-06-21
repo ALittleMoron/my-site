@@ -54,7 +54,9 @@ Runtime variables:
 - `LE_EMAIL`
 - `MINIO_HOST`
 - `MINIO_PORT`
+- `MINIO_REGION`
 - `MINIO_PRESIGN_PUT_EXPIRES_SECONDS`
+- `MINIO_PUBLIC_URL`
 - `MINIO_SECURE`
 - `SENTRY_USE`
 - `SSL_CERT`
@@ -78,6 +80,11 @@ Runtime secrets:
 Use `SSL_CERT=/certs/fullchain.pem` and `SSL_KEY=/certs/privkey.pem` for the compose-managed
 certificate sync path. Keep deploy-only values such as `REMOTE_HOST`, `REMOTE_USER`,
 `REMOTE_PATH`, `SSH_PRIVATE_KEY`, and registry passwords out of runtime `.env`.
+
+Use `MINIO_HOST=minio` and `MINIO_PORT=9000` for the backend-internal S3 endpoint in the Compose
+network. Use `MINIO_PUBLIC_URL=https://s3.<APP_DOMAIN>` for browser-facing object access and
+presigned upload URLs. `MINIO_REGION` must be explicit for SigV4 signing; `us-east-1` is suitable
+for the bundled MinIO service unless deployment policy chooses another region string.
 
 ## TLS
 

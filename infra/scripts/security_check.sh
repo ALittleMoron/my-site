@@ -100,11 +100,13 @@ run_deploy_env_configuration_check() {
     rendered_env="$(mktemp)"
     (
         export IMAGE_TAG="security-check-sha"
-        export GITHUB_ENV_VARS_JSON='{"ADMIN_INIT_LOGIN":"admin","APP_CONTACT_REQUESTS_ENABLED":"false","APP_DEBUG":"false","APP_DOMAIN":"example.test","APP_URL_SCHEMA":"https","APP_USE_CACHE":"true","AUTH_PUBLIC_KEY":"-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----","AUTH_TOKEN_EXPIRE_SECONDS":"172800","AUTH_TOKEN_HEADER_NAME":"Authorization","AUTH_TOKEN_PREFIX":"Bearer","CACHE_WARM_ARTICLES_PAGE_SIZE":"10","COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT":"10","DB_DRIVER":"postgresql+psycopg","DB_EXPIRE_ON_COMMIT":"false","DB_HOST":"postgres","DB_LOG_QUERY_METRICS":"false","DB_MAX_OVERFLOW":"20","DB_NAME":"my_site_database","DB_POOL_PRE_PING":"true","DB_POOL_SIZE":"10","DB_PORT":"5432","DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH":"1000","DB_SLOW_QUERY_LOG_THRESHOLD_MS":"250","DB_USER":"postgres","I18N_DEFAULT_LANGUAGE":"ru","LE_EMAIL":"ops@example.test","MINIO_HOST":"minio","MINIO_PORT":"9000","MINIO_PRESIGN_PUT_EXPIRES_SECONDS":"300","MINIO_SECURE":"false","SENTRY_USE":"false","SSL_CERT":"/certs/fullchain.pem","SSL_KEY":"/certs/privkey.pem","TASKIQ_CACHE_WARM_INTERVAL_SECONDS":"3600","TASKIQ_RESULT_EXPIRE_SECONDS":"3600","VALKEY_HOST":"valkey","VALKEY_PORT":"6379","VPN_BIND_ADDRESS":"10.77.0.1"}'
+        export GITHUB_ENV_VARS_JSON='{"ADMIN_INIT_LOGIN":"admin","APP_CONTACT_REQUESTS_ENABLED":"false","APP_DEBUG":"false","APP_DOMAIN":"example.test","APP_URL_SCHEMA":"https","APP_USE_CACHE":"true","AUTH_PUBLIC_KEY":"-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----","AUTH_TOKEN_EXPIRE_SECONDS":"172800","AUTH_TOKEN_HEADER_NAME":"Authorization","AUTH_TOKEN_PREFIX":"Bearer","CACHE_WARM_ARTICLES_PAGE_SIZE":"10","COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT":"10","DB_DRIVER":"postgresql+psycopg","DB_EXPIRE_ON_COMMIT":"false","DB_HOST":"postgres","DB_LOG_QUERY_METRICS":"false","DB_MAX_OVERFLOW":"20","DB_NAME":"my_site_database","DB_POOL_PRE_PING":"true","DB_POOL_SIZE":"10","DB_PORT":"5432","DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH":"1000","DB_SLOW_QUERY_LOG_THRESHOLD_MS":"250","DB_USER":"postgres","I18N_DEFAULT_LANGUAGE":"ru","LE_EMAIL":"ops@example.test","MINIO_HOST":"minio","MINIO_PORT":"9000","MINIO_REGION":"us-east-1","MINIO_PRESIGN_PUT_EXPIRES_SECONDS":"300","MINIO_PUBLIC_URL":"https://s3.example.test","MINIO_SECURE":"false","SENTRY_USE":"false","SSL_CERT":"/certs/fullchain.pem","SSL_KEY":"/certs/privkey.pem","TASKIQ_CACHE_WARM_INTERVAL_SECONDS":"3600","TASKIQ_RESULT_EXPIRE_SECONDS":"3600","VALKEY_HOST":"valkey","VALKEY_PORT":"6379","VPN_BIND_ADDRESS":"10.77.0.1"}'
         export GITHUB_SECRETS_JSON='{"ADMIN_INIT_PASSWORD":"admin-password","APP_SECRET_KEY":"app-secret","AUTH_PRIVATE_KEY":"-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----","DB_PASSWORD":"postgres-password","MINIO_ACCESS_KEY":"minio-access","MINIO_SECRET_KEY":"minio-secret","SENTRY_DSN":""}'
         python3 "$renderer" --manifest "$manifest_file" --output "$rendered_env"
     )
     require_file_contains "$rendered_env" 'CACHE_WARM_ARTICLES_PAGE_SIZE="10"' "rendered cache warm articles page size"
+    require_file_contains "$rendered_env" 'MINIO_REGION="us-east-1"' "rendered MinIO region"
+    require_file_contains "$rendered_env" 'MINIO_PUBLIC_URL="https://s3.example.test"' "rendered public MinIO URL"
     require_file_contains "$rendered_env" 'AUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----"' "rendered escaped multiline private key"
     require_file_not_contains "$rendered_env" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm rendered env entry"
     require_file_not_contains "$rendered_env" "REMOTE_HOST" "deploy remote host rendered env entry"
@@ -166,6 +168,7 @@ run_healthcheck_configuration_check() {
     require_file_contains "$nginx_template" "resolver 127.0.0.11" "Docker DNS resolver"
     require_file_contains "$nginx_template" "server \${ACTIVE_BACKEND_SLOT}:8080 resolve;" "active backend slot"
     require_file_contains "$nginx_template" "server \${ACTIVE_FRONTEND_SLOT}:4000 resolve;" "active frontend slot"
+    require_file_contains "$nginx_template" "connect-src 'self' \${MINIO_PUBLIC_URL}" "public MinIO upload CSP"
     require_file_contains "$nginx_template" "location = /nginx-healthz" "nginx health endpoint"
 
     require_file_contains "$run_script" "ACTIVE_DEPLOY_SLOT" "active deploy slot tracking"
@@ -241,6 +244,7 @@ run_nginx_syntax_check() {
         -e SSL_KEY=/certs/test.key \
         -e ACTIVE_BACKEND_SLOT=backend-blue \
         -e ACTIVE_FRONTEND_SLOT=frontend-blue \
+        -e MINIO_PUBLIC_URL=https://s3.example.test \
         -v "${cert_dir}:/certs:ro" \
         "$nginx_check_image_tag" \
         nginx -t

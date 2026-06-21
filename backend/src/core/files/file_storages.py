@@ -24,5 +24,10 @@ class FileStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def presign_put_object(self, object_name: str, namespace: str) -> PresignPutObject:
+    async def presign_put_object(
+        self,
+        object_name: str,
+        namespace: str,
+        content_type: str,
+    ) -> PresignPutObject:
         raise NotImplementedError

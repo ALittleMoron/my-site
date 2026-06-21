@@ -2,11 +2,11 @@ import time
 from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide
-from miniopy_async.api import Minio
 
 from core.files.file_name_generators import FileNameGenerator
 from core.files.file_storages import FileStorage
 from core.files.use_cases import FilesUseCase
+from infra.s3.file_storages import S3ClientBundle
 
 
 class MockFilesProvider(Provider):
@@ -26,8 +26,11 @@ class MockFilesProvider(Provider):
         return Mock(spec=FileNameGenerator, side_effect=mock_call)
 
     @provide(scope=Scope.APP)
-    async def provide_minio_client(self) -> Minio:
-        return Mock(spec=Minio)
+    async def provide_s3_clients(self) -> S3ClientBundle:
+        return S3ClientBundle(
+            internal=Mock(name="internal_s3_client"),
+            public=Mock(name="public_s3_client"),
+        )
 
     @provide(scope=Scope.APP)
     async def provide_file_storage(self) -> FileStorage:

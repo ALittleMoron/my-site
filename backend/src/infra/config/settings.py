@@ -88,14 +88,21 @@ class _MinioSettings(_ProjectBaseSettings):
 
     host: str
     port: int
+    region: str
     secret_key: SecretStrExtended
     access_key: str
     secure: bool
+    public_url: str
     presign_put_expires_seconds: int
 
     @property
     def endpoint(self) -> str:
         return f"{self.host}:{self.port}"
+
+    @property
+    def internal_endpoint_url(self) -> str:
+        schema = "https" if self.secure else "http"
+        return f"{schema}://{self.endpoint}"
 
 
 class _SentrySettings(_ProjectBaseSettings):
@@ -175,13 +182,12 @@ class Settings:
         postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
         return f"{self.app.url_schema}://{self.app.domain}{postfix}"
 
+    @property
+    def public_app_origin(self) -> str:
+        return f"{self.app.url_schema}://{self.app.domain}"
+
     def get_minio_object_url(self, object_path: str, bucket: Namespace) -> str:
-        base_url = (
-            f"{self.app.url_schema}://{self.minio.endpoint}"
-            if self.app.debug and self.app.is_local_domain
-            else f"{self.app.url_schema}://s3.{self.app.domain}"
-        )
-        return f"{base_url}/{bucket}/{object_path.removeprefix('/')}"
+        return f"{self.minio.public_url.rstrip('/')}/{bucket}/{object_path.removeprefix('/')}"
 
     def get_url(self, path: str) -> str:
         return f"{self.base_url}/{path.removeprefix('/')}"

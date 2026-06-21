@@ -41,6 +41,9 @@ class TestFilesUseCase(FactoryFixture, ContainerFixture):
             upload_url="upload_url",
             access_url="access_url",
         )
+        self.file_storage.presign_put_object.assert_called_once()
+        call_args = self.file_storage.presign_put_object.call_args
+        assert call_args.kwargs["content_type"] == "image/png"
 
     async def test_file_extension_in_file_name(self) -> None:
         self.file_storage.presign_put_object.return_value = self.factory.core.presign_put_object(

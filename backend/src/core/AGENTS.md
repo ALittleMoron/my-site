@@ -8,10 +8,10 @@ Never violate these boundaries:
 
 - `backend/src/core/**` may import only the Python standard library and other objects from
   `backend/src/core/**` (`core.*`). All external imports are forbidden.
-- `backend/src/core/**` must not import `sqlalchemy`, `litestar`, `dishka`, `miniopy`,
+- `backend/src/core/**` must not import `sqlalchemy`, `litestar`, `dishka`, `aiobotocore`,
   `pyseto`, `structlog`, `sentry_sdk`, `verbose_http_exceptions`, or any other third-party
   framework/infrastructure packages.
-- `backend/src/core/**` must not import from `infra/postgresql/`, `entrypoints/`, `infra/ioc/`, `infra/minio`, or any outer layers.
+- `backend/src/core/**` must not import from `infra/postgresql/`, `entrypoints/`, `infra/ioc/`, `infra/s3`, or any outer layers.
 - Do not add new imports from `infra.config` or logging into core; pass configurable values through parameters or injected abstractions.
 - Keep reusable parser rules, supported formats, limits, headers, and other code-owned constants in
   `backend/src/infra/config/constants.py`. Core code must receive those values through schemas,
@@ -39,7 +39,7 @@ Common files per domain in `backend/core/<domain>/`. Not all files are required.
 schemas.py              # domain models (dataclasses or class with init dunder method)
 use_cases.py            # Business logic - concrete use cases only, no ABC/Protocol/base inheritance.
 storages.py             # Storage ABC - repository pattern (SQLAlchemy, Mongo, etc.)
-file_storages.py        # File storages ABC - for manipluating files (MinIO, local files, etc.)
+file_storages.py        # File storages ABC - for manipluating files (S3-compatible, local files, etc.)
 exceptions.py           # Domain exceptions
 parsers.py              # Domain parsers
 readers.py              # Reader interfaces

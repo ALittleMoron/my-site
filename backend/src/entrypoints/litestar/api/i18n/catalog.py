@@ -385,9 +385,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
-            "nginx, Docker, MinIO, Valkey и TaskIQ разделяют edge routing, файлы, кэш, "
-            "фоновые задачи и runtime frontend/backend контейнеров, а публичный трафик "
-            "переключается между blue/green слотами после health checks."
+            "nginx, Docker, MinIO с S3-compatible media storage, Valkey и TaskIQ разделяют "
+            "edge routing, файлы, кэш, фоновые задачи и runtime frontend/backend контейнеров, "
+            "а публичный трафик переключается между blue/green слотами после health checks."
         ),
         "siteBuild.decisions.title": "Инженерные решения",
         "siteBuild.decision.cleanArchitecture": (
@@ -1074,9 +1074,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
-            "nginx, Docker, MinIO, Valkey, and TaskIQ separate edge routing, files, cache, "
-            "background jobs, and frontend/backend container runtimes, while public traffic "
-            "switches between blue/green slots only after health checks pass."
+            "nginx, Docker, MinIO with S3-compatible media storage, Valkey, and TaskIQ "
+            "separate edge routing, files, cache, background jobs, and frontend/backend "
+            "container runtimes, while public traffic switches between blue/green slots only "
+            "after health checks pass."
         ),
         "siteBuild.decisions.title": "Engineering decisions",
         "siteBuild.decision.cleanArchitecture": (

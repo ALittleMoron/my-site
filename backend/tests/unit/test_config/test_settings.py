@@ -11,14 +11,27 @@ class TestSettings:
     def setup(self, test_settings: Settings) -> Generator[None]:
         self.settings = test_settings
         orig = self.settings.app.domain
+        orig_debug = self.settings.app.debug
+        orig_public_url = self.settings.minio.public_url
         self.settings.app.domain = "alittlemoron.ru"
         self.settings.app.url_schema = "https"
+        self.settings.app.debug = False
+        self.settings.minio.public_url = "https://s3.alittlemoron.ru"
         yield
         self.settings.app.domain = orig
+        self.settings.app.debug = orig_debug
         self.settings.app.url_schema = "http"
+        self.settings.minio.public_url = orig_public_url
 
     def test_base_url(self) -> None:
         assert self.settings.base_url == "https://alittlemoron.ru"
+
+    def test_public_app_origin(self) -> None:
+        self.settings.app.debug = True
+        assert self.settings.public_app_origin == "https://alittlemoron.ru"
+
+    def test_minio_region(self) -> None:
+        assert self.settings.minio.region == "us-east-1"
 
     def test_get_minio_object_url(self) -> None:
         assert (

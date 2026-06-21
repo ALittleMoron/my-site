@@ -198,6 +198,7 @@ services:
       - SSL_KEY=${SSL_KEY}
       - ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT:-backend-blue}
       - ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT:-frontend-blue}
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}
     ports:
       - "80:8080"
       - "443:8443"

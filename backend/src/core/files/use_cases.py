@@ -20,4 +20,5 @@ class FilesUseCase:
         return await self.file_storage.presign_put_object(
             object_name=file_name,
             namespace=params.namespace,
+            content_type=params.content_type,
         )

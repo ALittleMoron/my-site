@@ -1,13 +1,13 @@
 from collections.abc import AsyncIterable
 
 from dishka import Provider, Scope, provide
-from miniopy_async.api import Minio
 from sqlalchemy.ext.asyncio import AsyncSession
 from valkey.asyncio import Valkey
 
 from infra.config.constants import constants
 from infra.config.settings import settings
 from infra.healthcheck import ReadinessChecker
+from infra.s3.file_storages import S3ClientBundle
 
 
 class HealthcheckProvider(Provider):
@@ -25,11 +25,11 @@ class HealthcheckProvider(Provider):
     async def provide_readiness_checker(
         self,
         session: AsyncSession,
-        minio_client: Minio,
+        s3_clients: S3ClientBundle,
         readiness_valkey: Valkey,
     ) -> ReadinessChecker:
         return ReadinessChecker(
             session=session,
             valkey=readiness_valkey,
-            minio_client=minio_client,
+            s3_clients=s3_clients,
         )

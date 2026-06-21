@@ -60,9 +60,11 @@ require_environment() {
         "AUTH_PRIVATE_KEY"
         "MINIO_HOST"
         "MINIO_PORT"
+        "MINIO_REGION"
         "MINIO_SECRET_KEY"
         "MINIO_ACCESS_KEY"
         "MINIO_SECURE"
+        "MINIO_PUBLIC_URL"
         "MINIO_PRESIGN_PUT_EXPIRES_SECONDS"
         "SENTRY_USE"
         "SENTRY_DSN"
@@ -138,8 +140,9 @@ render_and_reload_nginx() {
         -T \
         -e "ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT}" \
         -e "ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT}" \
+        -e "MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}" \
         nginx \
-        sh -c 'envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT" < /etc/nginx/templates/site.conf.template > /etc/nginx/conf.d/site.conf && nginx -s reload'
+        sh -c 'envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /etc/nginx/templates/site.conf.template > /etc/nginx/conf.d/site.conf && nginx -s reload'
 }
 
 switch_nginx() {
