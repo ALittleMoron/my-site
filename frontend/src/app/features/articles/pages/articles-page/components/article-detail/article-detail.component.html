@@ -39,13 +39,14 @@
             <button
               type="button"
               class="btn btn-sm"
+              [attr.data-testid]="'reaction-' + reaction.kind"
               [class.btn-success]="selectedReaction() === reaction.kind"
               [class.btn-outline-secondary]="selectedReaction() !== reaction.kind"
               [disabled]="reactionLoading()"
               [attr.aria-pressed]="selectedReaction() === reaction.kind"
-              [attr.aria-label]="reaction.labelKey | t"
               (click)="reactionSelected.emit(reaction.kind)"
             >
+              <span class="visually-hidden">{{ reaction.labelKey | t }}</span>
               <span aria-hidden="true">{{ reaction.emoji }}</span>
               <span class="ms-1">{{ reactionCount(reaction.kind) }}</span>
             </button>

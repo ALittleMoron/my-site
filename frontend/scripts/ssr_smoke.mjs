@@ -6,6 +6,8 @@ const { frontendPort, requests } = fixture;
 
 try {
   await assertDiscoveryEndpoints(frontendPort);
+  await assertBrowserApiProxy(frontendPort);
+  await assertBrowserAnalyticsProxy(frontendPort);
   await assertSiteBuildCaseStudyHtml(frontendPort, requests);
   await assertPublishedArticleHtml(frontendPort, requests);
   await assertMissingArticleNoindex(frontendPort, requests);
@@ -54,9 +56,36 @@ async function assertDiscoveryEndpoints(frontendPort) {
   assertExpected(expected, `${robotsText}\n${sitemapText}`, 'LHCI discovery endpoints');
 }
 
+async function assertBrowserApiProxy(frontendPort) {
+  const response = await fetch(`http://127.0.0.1:${frontendPort}/api/i18n/languages`);
+  const contentType = response.headers.get('content-type') ?? '';
+  const body = await response.text();
+  const expected = [
+    ['status 200', response.status === 200],
+    ['json content type', contentType.startsWith('application/json')],
+    ['language payload', body.includes('"defaultLanguage":"ru"')],
+  ];
+  assertExpected(expected, body, 'browser API proxy');
+}
+
+async function assertBrowserAnalyticsProxy(frontendPort) {
+  const response = await fetch(
+    `http://127.0.0.1:${frontendPort}/api/articles/detail/typed-articles/analytics/view?language=ru`,
+    { method: 'POST' },
+  );
+  const body = await response.text();
+  const expected = [
+    ['status 204', response.status === 204],
+    ['empty body', body.length === 0],
+  ];
+  assertExpected(expected, body, 'browser analytics proxy');
+}
+
 async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
+  const requestStart = requests.length;
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/how-this-site-is-built`);
   const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
     ['title', html.includes('How this site is built - My site')],
@@ -69,15 +98,17 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
     ],
     ['hreflang ru', html.includes('hreflang="ru"')],
     ['hreflang en', html.includes('hreflang="en"')],
-    ['no API request beyond i18n', requests.every((entry) => !entry.includes('/api/articles/'))],
+    ['no API request beyond i18n', pageRequests.every((entry) => !entry.includes('/api/articles/'))],
     ['no noindex on case study', !html.includes('name="robots" content="noindex')],
   ];
   assertExpected(expected, html, 'site-build case study SSR');
 }
 
 async function assertPublishedArticleHtml(frontendPort, requests) {
+  const requestStart = requests.length;
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/articles/typed-articles`);
   const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
     ['article title', html.includes('SEO Typed articles RU - My site')],
@@ -94,17 +125,19 @@ async function assertPublishedArticleHtml(frontendPort, requests) {
       html.includes('href="/ru/competency-matrix/questions/how-to-write-function"'),
     ],
     ['no noindex on published article', !html.includes('name="robots" content="noindex')],
-    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
-    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+    ['no analytics request', pageRequests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', pageRequests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'published article SSR');
 }
 
 async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
+  const requestStart = requests.length;
   const response = await fetch(
     `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/how-to-write-function`,
   );
   const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
     ['matrix question title', html.includes('Как написать функцию? - My site')],
@@ -123,17 +156,23 @@ async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
     ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
     [
       'matrix public detail preflight',
-      hasRequest(requests, '/api/competency-matrix/items/public/how-to-write-function', 'language=ru'),
+      hasRequest(
+        pageRequests,
+        '/api/competency-matrix/items/public/how-to-write-function',
+        'language=ru',
+      ),
     ],
-    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
-    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+    ['no analytics request', pageRequests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', pageRequests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'published matrix question SSR');
 }
 
 async function assertMissingArticleNoindex(frontendPort, requests) {
+  const requestStart = requests.length;
   const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/articles/missing-article`);
   const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 404', response.status === 404],
     ['noindex', html.includes('<meta name="robots" content="noindex, follow">')],
@@ -141,18 +180,23 @@ async function assertMissingArticleNoindex(frontendPort, requests) {
       'canonical',
       html.includes(`href="http://127.0.0.1:${frontendPort}/ru/articles/missing-article"`),
     ],
-    ['missing detail preflight', hasRequest(requests, '/api/articles/detail/missing-article', 'language=ru')],
-    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
-    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+    [
+      'missing detail preflight',
+      hasRequest(pageRequests, '/api/articles/detail/missing-article', 'language=ru'),
+    ],
+    ['no analytics request', pageRequests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', pageRequests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'missing article SSR');
 }
 
 async function assertMissingMatrixQuestionNoindex(frontendPort, requests) {
+  const requestStart = requests.length;
   const response = await fetch(
     `http://127.0.0.1:${frontendPort}/ru/competency-matrix/questions/missing-question`,
   );
   const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 404', response.status === 404],
     ['noindex', html.includes('<meta name="robots" content="noindex, follow">')],
@@ -164,10 +208,10 @@ async function assertMissingMatrixQuestionNoindex(frontendPort, requests) {
     ],
     [
       'missing matrix preflight',
-      hasRequest(requests, '/api/competency-matrix/items/public/missing-question', 'language=ru'),
+      hasRequest(pageRequests, '/api/competency-matrix/items/public/missing-question', 'language=ru'),
     ],
-    ['no analytics request', requests.every((entry) => !entry.includes('/analytics/'))],
-    ['no reaction request', requests.every((entry) => !entry.includes('/reaction'))],
+    ['no analytics request', pageRequests.every((entry) => !entry.includes('/analytics/'))],
+    ['no reaction request', pageRequests.every((entry) => !entry.includes('/reaction'))],
   ];
   assertExpected(expected, html, 'missing matrix question SSR');
 }

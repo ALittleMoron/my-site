@@ -16,6 +16,8 @@ RUN apk add --no-cache --upgrade libcrypto3=3.5.7-r0 libssl3=3.5.7-r0
 
 COPY package*.json ./
 RUN npm ci --omit=dev \
+ && npm cache clean --force \
+ && rm -rf /root/.npm /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
  && chown -R node:node /app
 
 COPY --from=builder --chown=node:node /app/dist/my-site-frontend ./dist/my-site-frontend

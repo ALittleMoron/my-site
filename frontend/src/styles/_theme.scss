@@ -53,6 +53,24 @@
   --accent-hover-color: var(--hovered-main-component-color);
   --accent-hover-color-rgb: var(--hovered-main-component-color-rgb);
 
+  --button-primary-color: rgb(255, 255, 255);
+  --button-primary-bg: rgb(18, 131, 58);
+  --button-primary-bg-rgb: 18, 131, 58;
+  --button-primary-hover-bg: rgb(15, 107, 48);
+  --button-primary-hover-bg-rgb: 15, 107, 48;
+
+  --link-readable-color: rgb(15, 107, 48);
+  --link-readable-color-rgb: 15, 107, 48;
+  --link-readable-hover-color: rgb(11, 82, 36);
+  --link-readable-hover-color-rgb: 11, 82, 36;
+
+  --outline-secondary-color: rgb(73, 80, 87);
+  --outline-secondary-color-rgb: 73, 80, 87;
+  --outline-secondary-border-color: rgb(73, 80, 87);
+  --outline-secondary-hover-color: rgb(255, 255, 255);
+  --outline-secondary-hover-bg: rgb(73, 80, 87);
+  --outline-secondary-hover-bg-rgb: 73, 80, 87;
+
   --accent-soft-color: rgb(223, 247, 233);
   --accent-soft-color-rgb: 223, 247, 233;
 
@@ -205,6 +223,24 @@
 
   --accent-hover-color: var(--hovered-main-component-color);
   --accent-hover-color-rgb: var(--hovered-main-component-color-rgb);
+
+  --button-primary-color: rgb(255, 255, 255);
+  --button-primary-bg: rgb(18, 131, 58);
+  --button-primary-bg-rgb: 18, 131, 58;
+  --button-primary-hover-bg: rgb(15, 107, 48);
+  --button-primary-hover-bg-rgb: 15, 107, 48;
+
+  --link-readable-color: rgb(105, 227, 147);
+  --link-readable-color-rgb: 105, 227, 147;
+  --link-readable-hover-color: rgb(167, 243, 208);
+  --link-readable-hover-color-rgb: 167, 243, 208;
+
+  --outline-secondary-color: rgb(209, 213, 219);
+  --outline-secondary-color-rgb: 209, 213, 219;
+  --outline-secondary-border-color: rgb(156, 163, 175);
+  --outline-secondary-hover-color: rgb(17, 24, 39);
+  --outline-secondary-hover-bg: rgb(229, 231, 235);
+  --outline-secondary-hover-bg-rgb: 229, 231, 235;
 
   --accent-soft-color: rgba(var(--accent-color-rgb), 0.16);
   --accent-soft-color-rgb: var(--accent-color-rgb);

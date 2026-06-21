@@ -146,15 +146,16 @@ describe('SiteHeaderComponent', () => {
   });
 
   it('theme toggle button calls themeService.toggleTheme()', () => {
-    const button = el.querySelector('button[aria-label="Переключить тему"]') as HTMLButtonElement;
+    const button = findButtonByText(el, 'Dark');
     expect(button).not.toBeNull();
     button.click();
     expect(mockThemeService.toggleTheme).toHaveBeenCalled();
   });
 
   it('toggle button text reflects current theme label', () => {
-    const button = el.querySelector('button[aria-label="Переключить тему"]') as HTMLButtonElement;
+    const button = findButtonByText(el, 'Dark');
     expect(button).not.toBeNull();
+    expect(button.getAttribute('aria-label')).toBeNull();
     expect(button.textContent?.trim()).toBe('Dark');
 
     themeSignal.set('dark');
@@ -228,3 +229,13 @@ describe('SiteHeaderComponent', () => {
     );
   });
 });
+
+function findButtonByText(root: ParentNode, text: string): HTMLButtonElement {
+  const button = Array.from(root.querySelectorAll<HTMLButtonElement>('button')).find(
+    (item) => item.textContent?.trim() === text,
+  );
+  if (button === undefined) {
+    throw new Error(`Missing ${text} button.`);
+  }
+  return button;
+}

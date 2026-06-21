@@ -36,6 +36,8 @@ describe('LocalizedDatePickerComponent', () => {
     expect(input.type).toBe('text');
     expect(input.value).toBe('05/02/2026');
     expect(input.placeholder).toBe('дд/мм/гггг');
+    expect(input.getAttribute('aria-controls')).toBeNull();
+    expect(input.getAttribute('aria-expanded')).toBeNull();
     expect(calendarButton.getAttribute('aria-label')).toBe('Открыть календарь');
   });
 

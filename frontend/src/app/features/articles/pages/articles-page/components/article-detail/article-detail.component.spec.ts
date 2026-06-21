@@ -82,10 +82,19 @@ describe('ArticleDetailComponent', () => {
     const reactionSelected = jest.fn();
     fixture.componentInstance.reactionSelected.subscribe(reactionSelected);
 
-    const heartButton = fixture.debugElement.query(By.css('[aria-label="Понравилось"]'));
+    const heartButton = fixture.debugElement.query(By.css('[data-testid="reaction-heart"]'));
     heartButton.nativeElement.click();
 
     expect(reactionSelected).toHaveBeenCalledWith('heart');
+  });
+
+  it('keeps visible reaction button text inside the accessible name', () => {
+    const heartButton = fixture.debugElement.query(By.css('[data-testid="reaction-heart"]'))
+      .nativeElement as HTMLButtonElement;
+
+    expect(heartButton.getAttribute('aria-label')).toBeNull();
+    expect(heartButton.querySelector('.visually-hidden')?.textContent?.trim()).toBe('Понравилось');
+    expect(heartButton.textContent).toContain('1');
   });
 
   it('renders typed wiki links to matrix questions', () => {

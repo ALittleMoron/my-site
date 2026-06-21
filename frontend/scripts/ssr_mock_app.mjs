@@ -98,7 +98,8 @@ export const matrixQuestionDto = {
 export async function startSsrFixture(options = {}) {
   const frontendPortOption = options.frontendPort ?? 0;
   const requests = [];
-  const backend = createMockBackend(requests);
+  const backendHandler = createMockBackendHandler(requests);
+  const backend = http.createServer(backendHandler);
 
   await listen(backend, options.backendPort ?? 0);
   const backendPort = backend.address().port;
@@ -108,7 +109,7 @@ export async function startSsrFixture(options = {}) {
   process.env.NG_ALLOWED_HOSTS = '127.0.0.1';
 
   const serverHandler = import(options.serverEntry ?? defaultServerEntry);
-  const frontend = createFrontendServer(serverHandler);
+  const frontend = createFrontendServer(serverHandler, backendHandler);
   await listen(frontend, frontendPortOption);
   const frontendPort = frontend.address().port;
   process.env.SSR_PUBLIC_ORIGIN = `http://127.0.0.1:${frontendPort}`;
@@ -125,7 +126,7 @@ export async function startSsrFixture(options = {}) {
   };
 }
 
-function createFrontendServer(serverHandler) {
+function createFrontendServer(serverHandler, backendHandler) {
   return http.createServer(async (req, res) => {
     installGzipForTextResponses(req, res);
 
@@ -138,6 +139,11 @@ function createFrontendServer(serverHandler) {
 
       if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/sitemap.xml') {
         writeText(res, 'application/xml; charset=utf-8', buildSitemapXml(readFixtureOrigin(req)));
+        return;
+      }
+
+      if (url.pathname.startsWith('/api/')) {
+        backendHandler(req, res);
         return;
       }
 
@@ -321,8 +327,8 @@ function writeText(res, contentType, body) {
   res.end(body);
 }
 
-function createMockBackend(requests) {
-  return http.createServer((req, res) => {
+function createMockBackendHandler(requests) {
+  return (req, res) => {
     const url = new URL(req.url ?? '/', 'http://backend.local');
     requests.push(`${req.method ?? 'GET'} ${url.pathname}${url.search}`);
     res.setHeader('Content-Type', 'application/json');
@@ -357,6 +363,21 @@ function createMockBackend(requests) {
 
     if (url.pathname === '/api/articles/detail/typed-articles') {
       writeJson(res, articleDto);
+      return;
+    }
+
+    if (url.pathname === '/api/articles/detail/typed-articles/analytics/view') {
+      writeNoContent(res);
+      return;
+    }
+
+    if (url.pathname === '/api/articles/detail/typed-articles/analytics/engaged-view') {
+      writeNoContent(res);
+      return;
+    }
+
+    if (url.pathname === '/api/articles/detail/typed-articles/reaction') {
+      writeNoContent(res);
       return;
     }
 
@@ -448,7 +469,7 @@ function createMockBackend(requests) {
 
     res.statusCode = 404;
     writeJson(res, { code: 'not_found', type: 'not_found', message: url.pathname });
-  });
+  };
 }
 
 function articleSummary() {
@@ -562,6 +583,12 @@ function buildMessages() {
 
 function writeJson(res, body) {
   res.end(JSON.stringify(body));
+}
+
+function writeNoContent(res) {
+  res.statusCode = 204;
+  res.removeHeader('Content-Type');
+  res.end();
 }
 
 function listen(server, port) {
