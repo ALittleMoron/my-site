@@ -6,10 +6,10 @@ from core.auth.schemas import JwtUser
 from core.i18n.enums import LanguageEnum
 from core.wiki_links.enums import WikiLinkTargetTypeEnum
 from core.wiki_links.schemas import WikiLinkTargetGroup, WikiLinkTargets
-from tests.unit.fixtures import ApiFixture, ContainerFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestWikiLinkTargetsAPI(ContainerFixture, ApiFixture):
+class TestWikiLinkTargetsAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()

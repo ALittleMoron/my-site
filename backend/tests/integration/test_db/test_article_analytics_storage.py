@@ -6,10 +6,10 @@ import pytest_asyncio
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.i18n.enums import LanguageEnum
 from infra.postgresql.storages.articles import ArticleAnalyticsDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestArticleAnalyticsDatabaseStorage(StorageFixture, FactoryFixture):
+class TestArticleAnalyticsDatabaseStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.storage = ArticleAnalyticsDatabaseStorage(session=self.db_session)

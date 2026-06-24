@@ -2,10 +2,10 @@ from httpx import codes
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestGetBaseCurrentUserAccountAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestGetBaseCurrentUserAccountAPI(ApiTestCase):
     async def test_get_base_current_user_account(self) -> None:
         response = self.api.get_get_base_current_user_account()
         assert response.status_code == codes.OK

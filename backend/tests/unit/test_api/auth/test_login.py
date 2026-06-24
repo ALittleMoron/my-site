@@ -2,10 +2,10 @@
 import pytest_asyncio
 
 from core.auth.enums import RoleEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestLoginAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestLoginAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.uuid = await self.container.get_random_uuid()

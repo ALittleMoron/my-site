@@ -16,10 +16,10 @@ from core.resumes.schemas import (
     ResumeUpdateParams,
 )
 from core.types import IntId
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestAdminResumesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()
@@ -40,16 +40,16 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_admin_resumes(page=2, page_size=10)
 
-        assert response.status_code == codes.OK, response.content
-        assert response.json()["totalCount"] == 1
-        assert response.json()["totalPages"] == 1
-        assert response.json()["resumes"][0]["id"] == 1
-        assert response.json()["resumes"][0]["title"] == "Backend resume"
-        assert response.json()["resumes"][0]["language"] == "ru"
-        assert response.json()["resumes"][0]["content"]["profile"]["fullName"] == "Candidate Name"
-        assert response.json()["resumes"][0]["content"]["profile"]["phone"] == ""
-        assert response_has_no_resume_localized_field_names(value=response.json()["resumes"][0])
-        assert_resume_response_nulls_are_dates_only(value=response.json()["resumes"][0]["content"])
+        body = self.asserts.json(response=response, expected_status=codes.OK)
+        listed_resume = body["resumes"][0]
+        assert body["totalCount"] == 1
+        assert body["totalPages"] == 1
+        assert listed_resume["id"] == 1
+        assert listed_resume["title"] == "Backend resume"
+        assert listed_resume["language"] == "ru"
+        assert listed_resume["content"]["profile"]["fullName"] == "Candidate Name"
+        assert listed_resume["content"]["profile"]["phone"] == ""
+        self.asserts.resume_response_contract(value=listed_resume)
         self.use_case.list_resumes.assert_called_once_with(
             filters=ResumeFilters(
                 page=2,
@@ -134,14 +134,13 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
 
-        assert response.status_code == codes.CREATED, response.content
-        assert response.json()["id"] == 2
-        assert response.json()["language"] == "en"
-        assert response.json()["content"]["profile"]["phone"] == ""
-        assert response.json()["content"]["experience"][0]["currentStatus"] == "current"
-        assert response.json()["content"]["experience"][0]["projects"][0]["name"] == "Portfolio"
-        assert response_has_no_resume_localized_field_names(value=response.json())
-        assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
+        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        assert body["id"] == 2
+        assert body["language"] == "en"
+        assert body["content"]["profile"]["phone"] == ""
+        assert body["content"]["experience"][0]["currentStatus"] == "current"
+        assert body["content"]["experience"][0]["projects"][0]["name"] == "Portfolio"
+        self.asserts.resume_response_contract(value=body)
         self.use_case.create_resume.assert_called_once_with(
             params=ResumeCreateParams(
                 title="Target resume",
@@ -170,9 +169,9 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             ),
         )
 
-        assert response.status_code == codes.OK, response.content
-        assert response.json()["title"] == "Updated resume"
-        assert response.json()["language"] == "en"
+        body = self.asserts.json(response=response, expected_status=codes.OK)
+        assert body["title"] == "Updated resume"
+        assert body["language"] == "en"
         self.use_case.update_resume.assert_called_once_with(
             resume_id=IntId(3),
             params=ResumeUpdateParams(
@@ -189,7 +188,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.post_create_resume(data=data)
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.create_resume.assert_not_called()
 
     def test_create_resume_rejects_unknown_language(self) -> None:
@@ -197,7 +196,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             data=self.factory.api.resume_request(language="de"),
         )
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.create_resume.assert_not_called()
 
     def test_get_resume(self) -> None:
@@ -209,11 +208,10 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_admin_resume(resume_id=3)
 
-        assert response.status_code == codes.OK, response.content
-        assert response.json()["id"] == 3
-        assert response.json()["language"] == "ru"
-        assert response_has_no_resume_localized_field_names(value=response.json())
-        assert_resume_response_nulls_are_dates_only(value=response.json()["content"])
+        body = self.asserts.json(response=response, expected_status=codes.OK)
+        assert body["id"] == 3
+        assert body["language"] == "ru"
+        self.asserts.resume_response_contract(value=body)
         self.use_case.get_resume.assert_called_once_with(
             resume_id=IntId(3),
             author_username="test",
@@ -224,8 +222,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_admin_resume(resume_id=404)
 
-        assert response.status_code == codes.NOT_FOUND
-        assert response.json()["message"] == ResumeNotFoundError.message
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.NOT_FOUND,
+            expected_message=ResumeNotFoundError.message,
+        )
         self.use_case.get_resume.assert_called_once_with(
             resume_id=IntId(404),
             author_username="test",
@@ -258,7 +259,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.OK, response.content
+        self.asserts.status(response=response, expected_status=codes.OK)
         assert response.content == b"%PDF-1.4"
         assert response.headers["content-type"] == "application/pdf"
         assert response.headers["content-disposition"] == 'attachment; filename="resume-3.pdf"'
@@ -290,7 +291,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.OK, response.content
+        self.asserts.status(response=response, expected_status=codes.OK)
         assert response.content == b"docx-bytes"
         assert (
             response.headers["content-type"]
@@ -308,7 +309,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.export_resume.assert_not_called()
 
     def test_export_resume_not_found(self) -> None:
@@ -322,8 +323,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.NOT_FOUND
-        assert response.json()["message"] == ResumeNotFoundError.message
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.NOT_FOUND,
+            expected_message=ResumeNotFoundError.message,
+        )
         self.use_case.export_resume.assert_called_once()
 
     def test_delete_resume_not_found(self) -> None:
@@ -331,8 +335,11 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.delete_resume(resume_id=404)
 
-        assert response.status_code == codes.NOT_FOUND
-        assert response.json()["message"] == ResumeNotFoundError.message
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.NOT_FOUND,
+            expected_message=ResumeNotFoundError.message,
+        )
         self.use_case.delete_resume.assert_called_once_with(
             resume_id=IntId(404),
             author_username="test",
@@ -341,7 +348,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_delete_resume(self) -> None:
         response = self.api.delete_resume(resume_id=3)
 
-        assert response.status_code == codes.NO_CONTENT
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.delete_resume.assert_called_once_with(
             resume_id=IntId(3),
             author_username="test",
@@ -350,7 +357,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
     def test_requires_authentication(self) -> None:
         response = self.no_auth_api.get_admin_resumes()
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_resumes.assert_not_called()
 
         response = self.no_auth_api.post_export_resume(
@@ -361,7 +368,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.export_resume.assert_not_called()
 
     def test_requires_admin_role(self) -> None:
@@ -372,7 +379,7 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_admin_resumes()
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_resumes.assert_not_called()
 
         response = self.api.post_export_resume(
@@ -383,33 +390,5 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             },
         )
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.export_resume.assert_not_called()
-
-
-RESUME_RESPONSE_ALLOWED_NULL_KEYS = frozenset({"startDate", "endDate", "issuedOn", "expiresOn"})
-RESUME_LOCALIZED_FIELD_SUFFIXES = ("Ru", "En")
-
-
-def assert_resume_response_nulls_are_dates_only(*, value: object, key: str | None = None) -> None:
-    if value is None:
-        assert key in RESUME_RESPONSE_ALLOWED_NULL_KEYS
-        return
-    if isinstance(value, dict):
-        for child_key, child_value in value.items():
-            assert_resume_response_nulls_are_dates_only(value=child_value, key=child_key)
-        return
-    if isinstance(value, list):
-        for item in value:
-            assert_resume_response_nulls_are_dates_only(value=item, key=key)
-
-
-def response_has_no_resume_localized_field_names(*, value: object) -> bool:
-    if isinstance(value, dict):
-        for key, child_value in value.items():
-            assert not key.endswith(RESUME_LOCALIZED_FIELD_SUFFIXES), key
-            response_has_no_resume_localized_field_names(value=child_value)
-    if isinstance(value, list):
-        for item in value:
-            response_has_no_resume_localized_field_names(value=item)
-    return True

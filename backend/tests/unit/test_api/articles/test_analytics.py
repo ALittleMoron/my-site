@@ -17,10 +17,10 @@ from core.articles.schemas import (
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.i18n.enums import LanguageEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestArticleAnalyticsAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestArticleAnalyticsAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()

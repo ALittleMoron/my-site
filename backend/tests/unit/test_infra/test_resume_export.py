@@ -6,7 +6,7 @@ from core.resumes.enums import ResumeExportFormatEnum
 from core.resumes.schemas import ResumeExportParams
 from infra.config.constants import constants
 from infra.resume_export.document_exporter import ResumeDocumentExporterImpl
-from tests.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
 class TestResumeExportConstants:
@@ -16,7 +16,7 @@ class TestResumeExportConstants:
         assert constants.resume_export.font_license_path.is_file()
 
 
-class TestResumeDocumentExporter(FactoryFixture):
+class TestResumeDocumentExporter(TestCase):
     def test_pdf_export_generates_pdf_bytes(self) -> None:
         exporter = ResumeDocumentExporterImpl(
             font_regular_path=constants.resume_export.font_regular_path,

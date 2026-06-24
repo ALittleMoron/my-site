@@ -3,10 +3,10 @@ from httpx import codes
 
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.types import IntId
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestDeleteItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestDeleteItemAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

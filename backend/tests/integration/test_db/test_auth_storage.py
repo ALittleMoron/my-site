@@ -7,10 +7,10 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UserNotFoundError
 from infra.postgresql.storages.auth import AuthDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestAuthStorage(FactoryFixture, StorageFixture):
+class TestAuthStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.user_storage = UserAccountDatabaseStorage(session=session)

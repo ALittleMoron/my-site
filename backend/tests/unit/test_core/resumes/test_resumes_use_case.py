@@ -1,143 +1,27 @@
-from datetime import UTC, date, datetime
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
 
 from core.i18n.enums import LanguageEnum
-from core.resumes.enums import ResumeCurrentStatusEnum, ResumeExportFormatEnum
+from core.resumes.enums import ResumeExportFormatEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.exporters import ResumeDocumentExporter
 from core.resumes.schemas import (
-    Resume,
-    ResumeAdditionalSection,
-    ResumeAdditionalSectionItem,
-    ResumeCertificationItem,
-    ResumeContent,
     ResumeCreateParams,
-    ResumeEducationItem,
-    ResumeExperienceItem,
     ResumeExport,
     ResumeExportParams,
     ResumeFilters,
-    ResumeLanguageItem,
-    ResumeProfile,
-    ResumeProjectItem,
     Resumes,
-    ResumeSkillGroup,
-    ResumeSummary,
     ResumeUpdateParams,
 )
 from core.resumes.storages import ResumesStorage
 from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
+from tests.test_cases import TestCase
 
 
-def build_content(*, summary: str, skill_items: list[str]) -> ResumeContent:
-    return ResumeContent(
-        profile=ResumeProfile(
-            full_name="Dmitriy Ivanov",
-            role="Backend engineer",
-            location="Moscow",
-            email="dmitriy@example.com",
-            phone="",
-            website_url="https://example.com",
-            linkedin_url="",
-            github_url="https://github.com/dmitriy",
-            telegram="@dmitriy",
-        ),
-        summary=ResumeSummary(
-            text=summary,
-        ),
-        skills=[
-            ResumeSkillGroup(
-                category="Languages",
-                items=skill_items,
-            ),
-        ],
-        experience=[
-            ResumeExperienceItem(
-                company="Company",
-                position="Engineer",
-                location="",
-                start_date=date(2023, 1, 1),
-                end_date=None,
-                current_status=ResumeCurrentStatusEnum.CURRENT,
-                summary="",
-                highlights=["Launched service"],
-                technologies=["Python", "PostgreSQL"],
-                projects=[
-                    ResumeProjectItem(
-                        name="Portfolio",
-                        role="",
-                        description="Site and knowledge base",
-                        highlights=[],
-                        technologies=["Litestar", "Angular"],
-                        url="https://example.com",
-                    ),
-                ],
-            ),
-        ],
-        education=[
-            ResumeEducationItem(
-                institution="University",
-                degree="",
-                field="Computer science",
-                location="",
-                start_date=None,
-                end_date=None,
-                description="",
-            ),
-        ],
-        languages=[
-            ResumeLanguageItem(
-                name="English",
-                proficiency="C1",
-            ),
-        ],
-        certifications=[
-            ResumeCertificationItem(
-                name="Certificate",
-                issuer="Provider",
-                issued_on=None,
-                expires_on=None,
-                credential_url="",
-            ),
-        ],
-        additional_sections=[
-            ResumeAdditionalSection(
-                title="Publications",
-                items=[
-                    ResumeAdditionalSectionItem(
-                        title="Article",
-                        description="",
-                        url="",
-                    ),
-                ],
-            ),
-        ],
-    )
-
-
-def build_resume(
-    *,
-    resume_id: IntId,
-    content: ResumeContent,
-    author_username: str = "test",
-    language: LanguageEnum = LanguageEnum.EN,
-) -> Resume:
-    return Resume(
-        id=resume_id,
-        title="Backend engineer",
-        language=language,
-        content=content,
-        author_username=author_username,
-        created_at=datetime(2026, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2026, 1, 2, tzinfo=UTC),
-    )
-
-
-class TestResumesUseCase:
+class TestResumesUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=ResumesStorage)
@@ -157,9 +41,12 @@ class TestResumesUseCase:
             search_query="backend",
             author_username="test",
         )
-        resume = build_resume(
+        resume = self.factory.core.resume(
             resume_id=IntId(1),
-            content=build_content(summary="Builds reliable systems.", skill_items=["Python"]),
+            content=self.factory.core.resume_full_content(
+                summary="Builds reliable systems.",
+                skill_items=["Python"],
+            ),
         )
         self.storage.list_resumes.return_value = ([resume], 21)
 
@@ -184,9 +71,12 @@ class TestResumesUseCase:
         self.storage.list_resumes.assert_not_called()
 
     async def test_get_resume_delegates_to_storage(self) -> None:
-        expected = build_resume(
+        expected = self.factory.core.resume(
             resume_id=IntId(1),
-            content=build_content(summary="Builds reliable systems.", skill_items=["Python"]),
+            content=self.factory.core.resume_full_content(
+                summary="Builds reliable systems.",
+                skill_items=["Python"],
+            ),
         )
         self.storage.get_resume.return_value = expected
 
@@ -205,14 +95,17 @@ class TestResumesUseCase:
             await self.use_case.get_resume(resume_id=IntId(404), author_username="test")
 
     async def test_create_resume_persists_explicit_content(self) -> None:
-        content = build_content(summary="Builds reliable systems.", skill_items=["Python"])
+        content = self.factory.core.resume_full_content(
+            summary="Builds reliable systems.",
+            skill_items=["Python"],
+        )
         params = ResumeCreateParams(
             title="Backend engineer",
             language=LanguageEnum.EN,
             content=content,
             author_username="test",
         )
-        expected = build_resume(resume_id=IntId(1), content=content)
+        expected = self.factory.core.resume(resume_id=IntId(1), content=content)
         self.storage.create_resume.return_value = expected
 
         result = await self.use_case.create_resume(params=params)
@@ -221,43 +114,24 @@ class TestResumesUseCase:
         self.storage.create_resume.assert_called_once_with(params=params)
 
     async def test_update_resume_replaces_whole_content(self) -> None:
-        existing_content = build_content(
+        existing_content = self.factory.core.resume_full_content(
             summary="Old summary.",
             skill_items=["Python", "SQL"],
         )
-        existing_resume = build_resume(
+        existing_resume = self.factory.core.resume(
             resume_id=IntId(1),
             content=existing_content,
             author_username="original-author",
+            created_at="2026-01-01T00:00:00",
+            updated_at="2026-01-02T00:00:00",
         )
-        replacement_content = ResumeContent(
-            profile=ResumeProfile(
-                full_name="",
-                role="",
-                location="",
-                email="",
-                phone="",
-                website_url="",
-                linkedin_url="",
-                github_url="",
-                telegram="",
-            ),
-            summary=ResumeSummary(
-                text="Updated summary.",
-            ),
-            skills=[],
-            experience=[],
-            education=[],
-            languages=[],
-            certifications=[],
-            additional_sections=[],
-        )
+        replacement_content = self.factory.core.resume_empty_content(summary="Updated summary.")
         params = ResumeUpdateParams(
             title="Platform engineer",
             language=LanguageEnum.RU,
             content=replacement_content,
         )
-        expected = build_resume(
+        expected = self.factory.core.resume(
             resume_id=IntId(1),
             content=replacement_content,
             author_username="original-author",
@@ -296,11 +170,17 @@ class TestResumesUseCase:
         )
 
     async def test_export_resume_checks_owner_and_exports_current_payload(self) -> None:
-        existing_resume = build_resume(
+        existing_resume = self.factory.core.resume(
             resume_id=IntId(1),
-            content=build_content(summary="Saved summary", skill_items=["Python"]),
+            content=self.factory.core.resume_full_content(
+                summary="Saved summary",
+                skill_items=["Python"],
+            ),
         )
-        export_content = build_content(summary="Unsaved summary", skill_items=["Litestar"])
+        export_content = self.factory.core.resume_full_content(
+            summary="Unsaved summary",
+            skill_items=["Litestar"],
+        )
         params = ResumeExportParams(
             format=ResumeExportFormatEnum.PDF,
             title="Unsaved resume",
@@ -329,7 +209,10 @@ class TestResumesUseCase:
             format=ResumeExportFormatEnum.DOCX,
             title="Resume",
             language=LanguageEnum.RU,
-            content=build_content(summary="Summary", skill_items=["Python"]),
+            content=self.factory.core.resume_full_content(
+                summary="Summary",
+                skill_items=["Python"],
+            ),
         )
         self.storage.get_resume.side_effect = ResumeNotFoundError
 

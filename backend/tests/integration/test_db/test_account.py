@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UserNotFoundError
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestUserAccountStorage(FactoryFixture, StorageFixture):
+class TestUserAccountStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = UserAccountDatabaseStorage(session=session)

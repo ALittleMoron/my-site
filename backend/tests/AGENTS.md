@@ -19,7 +19,7 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 - No real DB, no real external services.
 - Mock storages via `Mock(spec=SomeStorageABC)`.
 - Test every branch: happy path, validation errors, domain exceptions.
-- Inherit `FactoryFixture` for `self.factory.core.*` / `self.factory.api.*`.
+- Inherit `TestCase` for `self.factory.core.*` / `self.factory.api.*`.
 
 ## Integration Tests
 
@@ -27,7 +27,7 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 - Happy path only.
 - Real PostgreSQL test DB (`my_site_database_test`) — auto-migrated via conftest.
 - Real Dishka providers (not mocks).
-- Inherit `StorageFixture` for DB assertion helpers; session auto-rollbacks after each test.
+- Inherit `StorageTestCase` for DB assertion helpers; session auto-rollbacks after each test.
 
 ## Commands
 
@@ -49,19 +49,35 @@ make test-env-down       # stop isolated test PostgreSQL and remove its data
 
 ## Patterns
 
-- Shared fixtures: `backend/tests/fixtures.py` — `FactoryFixture`, `StorageFixture`
-- Unit-only fixtures: `backend/tests/unit/fixtures.py` — `ContainerFixture`, `ApiFixture` (re-exports `FactoryFixture`)
+- Shared test cases: `backend/tests/test_cases.py` — `TestCase`, `ContainerTestCase`,
+  `ApiTestCase`, `StorageTestCase`
 - Mock providers for unit tests: `backend/tests/unit/mocks/providers/`
 - Test data factories in `backend/tests/helpers/factories/`: `CoreFactoryHelper` (domain objects), `ApiFactoryHelper` (request payloads) — plain Python, no Mimesis
-- Access via `self.factory.core.*` / `self.factory.api.*` — inherit from `FactoryFixture`
+- Access common helpers via `self.factory.*`, `self.asserts.*`, and `self.collections.*` —
+  inherit from `TestCase` or a more specific test case class.
 - Defaults are allowed in tests, test helpers, and factories when they reduce noise and make the required fields for a scenario easier to see.
 - Unit test mocking: `Mock(spec=SomeStorageABC)` from `unittest.mock`
-- API tests: inherit `ApiFixture` -> `self.api.*` / `self.no_auth_api.*`
-- Integration DB tests: inherit `StorageFixture` -> `self.storage_helper.*`, session auto-rollbacks
+- Unit tests that need only factories/assertions/collections: inherit `TestCase`.
+- Unit tests that need the Dishka test container but not HTTP helpers: inherit `ContainerTestCase`.
+- API tests: inherit `ApiTestCase` -> `self.api.*` / `self.no_auth_api.*`, DI container helpers,
+  factories, assertions, and collection helpers.
+- Integration DB tests: inherit `StorageTestCase` -> `self.storage_helper.*`, session
+  auto-rollbacks, factories, assertions, and collection helpers.
 - Add API helper methods in `backend/tests/helpers/api.py` instead of duplicating endpoint URL strings across tests.
+- Put shared HTTP assertion methods in `AssertsHelper` under
+  `backend/tests/helpers/assertions.py`; call them as `self.asserts.status(...)`,
+  `self.asserts.json(...)`, `self.asserts.error_message(...)`, or
+  `self.asserts.resume_response_contract(...)`. Keep scenario-specific payload assertions visible
+  in the test body.
+- Put small collection projection methods in `CollectionsHelper` under
+  `backend/tests/helpers/collections.py`; call them as `self.collections.slugs(items)`,
+  `self.collections.ids(items)`, or `self.collections.names_en(items)` when that is clearer than a
+  repeated comprehension.
 - Create domain test objects through `self.factory.core.*`; direct dataclass construction is only for cases not covered by factories yet.
+- Add reusable domain builders to `CoreFactoryHelper` when the same multi-object setup appears in
+  API, core, and integration tests; keep scenario-only data local to the test.
 - Unit API tests verify HTTP contract and use case calls. Unit core tests verify branch logic. Storage behavior belongs in integration tests.
-- Cover DB/storage changes with integration tests through `StorageFixture`.
+- Cover DB/storage changes with integration tests through `StorageTestCase`.
 - Do not add tests that only mirror ORM metadata/index declarations or trivial one-to-one model
   converters. They do not validate behavior; cover storage behavior through integration tests
   instead.

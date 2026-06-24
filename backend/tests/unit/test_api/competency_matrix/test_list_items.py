@@ -6,10 +6,10 @@ from core.auth.schemas import JwtUser
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.enums import PublishStatusEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestItemsAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestItemsAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()

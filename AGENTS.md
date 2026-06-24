@@ -50,6 +50,7 @@ Portfolio and articles site with a knowledge database
   representation exists, such as unknown dates, optional filters, external contract fields that are
   explicitly nullable, or framework/browser APIs that naturally return null.
 - Before finishing implementation work, do a self-review/code-review pass focused on bugs, regressions, missing tests, and instruction compliance.
+- Treat warnings as failures: any warning from project code, tests, tooling, builds, or local runs is a real problem and must be fixed when it first appears. The only exception is a warning that originates inside a third-party library dependency and still cannot be fixed after updating the relevant library to its latest available version.
 - Before claiming completion, run the relevant checks through existing `make` targets: tests, linters, type checks, format checks, migrations, or local-run checks as applicable. For broad or cross-cutting changes, run the full practical check suite. If any relevant check is skipped, explain why in the final response.
 - After each code or configuration change, explicitly check whether infrastructure, documentation, CI/CD, and relevant `AGENTS.md` instructions must be updated; keep them consistent with the change.
   - At minimum, search related terms in `docs/`, `.github/`, root README-style files, and nested `AGENTS.md` files before finishing.

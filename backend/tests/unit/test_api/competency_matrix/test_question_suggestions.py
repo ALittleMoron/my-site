@@ -19,7 +19,6 @@ from core.competency_matrix.exceptions import (
 )
 from core.competency_matrix.schemas import (
     QuestionSuggestionCreateParams,
-    QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateItemParams,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestions,
@@ -30,10 +29,10 @@ from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_question_suggestion_limit_params,
 )
 from entrypoints.litestar.api.competency_matrix.endpoints import PublicCompetencyMatrixApiController
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
+class TestQuestionSuggestionsApi(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()
@@ -42,7 +41,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
     def test_anonymous_user_can_suggest_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="  What is PEP 8?  ")
 
-        assert response.status_code == codes.NO_CONTENT, response.content
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.suggest_question.assert_called_once_with(
             params=ANY,
         )
@@ -61,7 +60,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             headers={"X-Forwarded-For": "203.0.113.10, 10.0.0.2"},
         )
 
-        assert response.status_code == codes.NO_CONTENT, response.content
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.suggest_question.assert_called_once_with(
             params=ANY,
         )
@@ -94,13 +93,13 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
     def test_suggest_question_rejects_empty_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="")
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.suggest_question.assert_not_called()
 
     def test_suggest_question_rejects_blank_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="   ")
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.suggest_question.assert_not_called()
 
     def test_suggest_question_returns_429_when_daily_quota_is_exhausted(self) -> None:
@@ -108,24 +107,22 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.no_auth_api.post_question_suggestion(question="What is PEP 8?")
 
-        assert response.status_code == codes.TOO_MANY_REQUESTS
-        assert response.json()["message"] == "Question suggestion daily quota exceeded"
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.TOO_MANY_REQUESTS,
+            expected_message="Question suggestion daily quota exceeded",
+        )
 
     def test_content_manager_can_list_queue_in_fifo_order(self) -> None:
         self.use_case.list_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
             values=[
-                QueuedCompetencyMatrixQuestion(
-                    id=IntId(1),
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=1,
                     question="First question",
-                    grade=None,
-                    sheet=None,
-                    section=None,
-                    subsection=None,
-                    suggested_by_username=None,
                     created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
                 ),
-                QueuedCompetencyMatrixQuestion(
-                    id=IntId(2),
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=2,
                     question="Second question",
                     grade=GradeEnum.JUNIOR,
                     sheet="Python",
@@ -139,31 +136,34 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_queued_matrix_questions()
 
-        assert response.status_code == codes.OK, response.content
-        assert response.json() == {
-            "questions": [
-                {
-                    "id": 1,
-                    "question": "First question",
-                    "grade": None,
-                    "sheet": None,
-                    "section": None,
-                    "subsection": None,
-                    "suggestedByUsername": None,
-                    "createdAt": "2026-06-07T12:00:00+00:00",
-                },
-                {
-                    "id": 2,
-                    "question": "Second question",
-                    "grade": "Junior",
-                    "sheet": "Python",
-                    "section": "Core",
-                    "subsection": "Syntax",
-                    "suggestedByUsername": "alice",
-                    "createdAt": "2026-06-07T12:01:00+00:00",
-                },
-            ],
-        }
+        self.asserts.json_body(
+            response=response,
+            expected_status=codes.OK,
+            expected_body={
+                "questions": [
+                    {
+                        "id": 1,
+                        "question": "First question",
+                        "grade": None,
+                        "sheet": None,
+                        "section": None,
+                        "subsection": None,
+                        "suggestedByUsername": None,
+                        "createdAt": "2026-06-07T12:00:00+00:00",
+                    },
+                    {
+                        "id": 2,
+                        "question": "Second question",
+                        "grade": "Junior",
+                        "sheet": "Python",
+                        "section": "Core",
+                        "subsection": "Syntax",
+                        "suggestedByUsername": "alice",
+                        "createdAt": "2026-06-07T12:01:00+00:00",
+                    },
+                ],
+            },
+        )
         self.use_case.list_queued_questions.assert_called_once_with()
 
     def test_regular_user_cannot_list_queue(self) -> None:
@@ -174,34 +174,34 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.get_queued_matrix_questions()
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_queued_questions.assert_not_called()
 
     def test_content_manager_can_create_queued_question(self) -> None:
-        self.use_case.suggest_question.return_value = QueuedCompetencyMatrixQuestion(
-            id=IntId(3),
-            question="What is PEP 8?",
-            grade=None,
-            sheet=None,
-            section=None,
-            subsection=None,
-            suggested_by_username=None,
-            created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
+        self.use_case.suggest_question.return_value = (
+            self.factory.core.queued_competency_matrix_question(
+                question_id=3,
+                question="What is PEP 8?",
+                created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
+            )
         )
 
         response = self.api.post_create_queued_matrix_question(question="  What is PEP 8?  ")
 
-        assert response.status_code == codes.CREATED, response.content
-        assert response.json() == {
-            "id": 3,
-            "question": "What is PEP 8?",
-            "grade": None,
-            "sheet": None,
-            "section": None,
-            "subsection": None,
-            "suggestedByUsername": None,
-            "createdAt": "2026-06-07T12:03:00+00:00",
-        }
+        self.asserts.json_body(
+            response=response,
+            expected_status=codes.CREATED,
+            expected_body={
+                "id": 3,
+                "question": "What is PEP 8?",
+                "grade": None,
+                "sheet": None,
+                "section": None,
+                "subsection": None,
+                "suggestedByUsername": None,
+                "createdAt": "2026-06-07T12:03:00+00:00",
+            },
+        )
         self.use_case.suggest_question.assert_called_once_with(params=ANY)
         call_params = self.use_case.suggest_question.call_args.kwargs["params"]
         assert call_params == QuestionSuggestionCreateParams(
@@ -231,8 +231,8 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/plain",
         )
 
-        assert response.status_code == codes.CREATED, response.content
-        assert response.json()["questions"] == [
+        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        assert body["questions"] == [
             {
                 "id": 3,
                 "question": "What is PEP 8?",
@@ -256,7 +256,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
         ]
         self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
-        assert [question.question for question in call_params.questions] == [
+        assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8?",
             "How does mypy help?",
         ]
@@ -278,10 +278,12 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/csv",
         )
 
-        assert response.status_code == codes.CREATED, response.content
+        self.asserts.status(response=response, expected_status=codes.CREATED)
         self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
-        assert [question.question for question in call_params.questions] == ["Что такое PEP 8?"]
+        assert self.collections.pluck(items=call_params.questions, attr="question") == [
+            "Что такое PEP 8?",
+        ]
 
     def test_import_normalizes_line_breaks_inside_question_text(self) -> None:
         self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
@@ -300,10 +302,10 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/csv",
         )
 
-        assert response.status_code == codes.CREATED, response.content
+        self.asserts.status(response=response, expected_status=codes.CREATED)
         self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
-        assert [question.question for question in call_params.questions] == [
+        assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8? How should it be used?",
         ]
 
@@ -324,10 +326,12 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-        assert response.status_code == codes.CREATED, response.content
+        self.asserts.status(response=response, expected_status=codes.CREATED)
         self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
-        assert [question.question for question in call_params.questions] == ["What is PEP 8?"]
+        assert self.collections.pluck(items=call_params.questions, attr="question") == [
+            "What is PEP 8?",
+        ]
 
     def test_content_manager_can_import_xlsm_queued_questions_without_header(self) -> None:
         self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
@@ -346,10 +350,12 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="application/vnd.ms-excel.sheet.macroEnabled.12",
         )
 
-        assert response.status_code == codes.CREATED, response.content
+        self.asserts.status(response=response, expected_status=codes.CREATED)
         self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
-        assert [question.question for question in call_params.questions] == ["What is PEP 8?"]
+        assert self.collections.pluck(items=call_params.questions, attr="question") == [
+            "What is PEP 8?",
+        ]
 
     def test_regular_user_cannot_import_queued_questions(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
@@ -363,7 +369,7 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/plain",
         )
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_import_rejects_csv_without_question_header(self) -> None:
@@ -373,9 +379,12 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/csv",
         )
 
-        assert response.status_code == codes.BAD_REQUEST
-        assert response.json()["message"] == "Question queue import file is invalid."
-        assert response.json()["nested_errors"][0]["message"] == (
+        body = self.asserts.error_message(
+            response=response,
+            expected_status=codes.BAD_REQUEST,
+            expected_message="Question queue import file is invalid.",
+        )
+        assert body["nested_errors"][0]["message"] == (
             "CSV header must contain one of: question, questions, вопрос, вопросы."
         )
         self.use_case.import_queued_questions.assert_not_called()
@@ -387,10 +396,8 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="application/vnd.ms-excel",
         )
 
-        assert response.status_code == codes.BAD_REQUEST
-        assert response.json()["nested_errors"][0]["message"] == (
-            "Unsupported import file extension: .xls."
-        )
+        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        assert body["nested_errors"][0]["message"] == ("Unsupported import file extension: .xls.")
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_import_rejects_empty_txt_lines_without_creating_questions(self) -> None:
@@ -400,8 +407,8 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/plain",
         )
 
-        assert response.status_code == codes.BAD_REQUEST
-        assert response.json()["nested_errors"][0]["message"] == "Row 2 question must not be blank."
+        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        assert body["nested_errors"][0]["message"] == "Row 2 question must not be blank."
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_import_rejects_long_questions_without_creating_questions(self) -> None:
@@ -411,8 +418,8 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="text/plain",
         )
 
-        assert response.status_code == codes.BAD_REQUEST
-        assert response.json()["nested_errors"][0]["message"] == (
+        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        assert body["nested_errors"][0]["message"] == (
             "Row 1 question must be at most 255 characters."
         )
         self.use_case.import_queued_questions.assert_not_called()
@@ -424,8 +431,8 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-        assert response.status_code == codes.BAD_REQUEST
-        assert response.json()["nested_errors"][0]["message"] == "Row 2 question must be text."
+        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        assert body["nested_errors"][0]["message"] == "Row 2 question must be text."
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_regular_user_cannot_create_queued_question(self) -> None:
@@ -436,19 +443,19 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.post_create_queued_matrix_question(question="What is PEP 8?")
 
-        assert response.status_code == codes.UNAUTHORIZED
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.suggest_question.assert_not_called()
 
     def test_create_queued_question_rejects_blank_question(self) -> None:
         response = self.api.post_create_queued_matrix_question(question="   ")
 
-        assert response.status_code == codes.BAD_REQUEST
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.suggest_question.assert_not_called()
 
     def test_content_manager_can_reject_queue_entry(self) -> None:
         response = self.api.delete_queued_matrix_question(question_id=7)
 
-        assert response.status_code == codes.NO_CONTENT
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.delete_queued_question.assert_called_once_with(question_id=IntId(7))
 
     def test_reject_queue_entry_returns_not_found(self) -> None:
@@ -458,8 +465,11 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
 
         response = self.api.delete_queued_matrix_question(question_id=404)
 
-        assert response.status_code == codes.NOT_FOUND
-        assert response.json()["message"] == "Queued competency matrix question not found"
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.NOT_FOUND,
+            expected_message="Queued competency matrix question not found",
+        )
 
     def test_content_manager_can_create_matrix_item_from_queue_entry(self) -> None:
         self.use_case.create_item_from_queue.return_value = (
@@ -505,9 +515,9 @@ class TestQuestionSuggestionsApi(ContainerFixture, ApiFixture, FactoryFixture):
             language="en",
         )
 
-        assert response.status_code == codes.CREATED, response.content
-        assert response.json()["id"] == 10
-        assert response.json()["question"] == "What is PEP 8?"
+        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        assert body["id"] == 10
+        assert body["question"] == "What is PEP 8?"
         self.use_case.create_item_from_queue.assert_called_once_with(
             params=ANY,
         )

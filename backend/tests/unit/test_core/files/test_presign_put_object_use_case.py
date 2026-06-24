@@ -6,10 +6,10 @@ import pytest_asyncio
 from core.files.exceptions import ContentTypeNotAllowedError
 from core.files.file_storages import FileStorage
 from core.files.use_cases import FilesUseCase
-from tests.unit.fixtures import ContainerFixture, FactoryFixture
+from tests.test_cases import ContainerTestCase
 
 
-class TestFilesUseCase(FactoryFixture, ContainerFixture):
+class TestFilesUseCase(ContainerTestCase):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.file_name_generator = await self.container.get_file_name_generator()

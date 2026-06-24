@@ -4,14 +4,10 @@ from httpx import codes
 
 from core.enums import PublishStatusEnum
 from entrypoints.litestar.response_cache import ResponseCacheDomain
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestCompetencyMatrixResponseCacheInvalidation(
-    ContainerFixture,
-    ApiFixture,
-    FactoryFixture,
-):
+class TestCompetencyMatrixResponseCacheInvalidation(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

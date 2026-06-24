@@ -20,10 +20,10 @@ from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.types import IntId
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestQuestionSuggestionsUseCase(FactoryFixture):
+class TestQuestionSuggestionsUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)

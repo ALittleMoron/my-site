@@ -16,10 +16,10 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
+class TestCompetencyMatrixStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = CompetencyMatrixDatabaseStorage(session=session)
@@ -164,9 +164,9 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             filters=CompetencyMatrixItemFilters(sheet_key=None, only_published=True),
         )
 
-        slugs = {item.slug for item in items}
-        assert slugs == {"1", "2", "unavailable-question"}
-        assert "draft-question" not in slugs
+        item_slugs = set(self.collections.slugs(items))
+        assert item_slugs == {"1", "2", "unavailable-question"}
+        assert "draft-question" not in item_slugs
 
     async def test_list_workspace_items_filters_sorts_summarizes_and_paginates(self) -> None:
         await self.storage_helper.create_competency_matrix_items(
@@ -245,7 +245,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             dangerous_published=1,
             ready_published=1,
         )
-        assert [item.slug for item in items] == [
+        assert self.collections.slugs(items) == [
             "dangerous-published-python",
             "ready-published-python",
         ]
@@ -305,7 +305,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
 
             assert total_count == 2
             assert summary.total == 2
-            assert {item.slug for item in items} == {
+            assert set(self.collections.slugs(items)) == {
                 "searchable-ready-python",
                 "searchable-missing-python",
             }
@@ -333,7 +333,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
         )
         assert missing_total == 1
         assert missing_summary.dangerous_published == 1
-        assert [item.slug for item in missing_items] == ["searchable-missing-python"]
+        assert self.collections.slugs(missing_items) == ["searchable-missing-python"]
 
         (
             date_items,
@@ -357,7 +357,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             ),
         )
         assert date_total == 1
-        assert [item.slug for item in date_items] == ["searchable-missing-python"]
+        assert self.collections.slugs(date_items) == ["searchable-missing-python"]
 
     async def test_list_workspace_filter_options_includes_admin_visible_values(self) -> None:
         await self.storage_helper.create_competency_matrix_items(
@@ -383,8 +383,11 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             language=LanguageEnum.EN,
         )
 
-        assert [sheet.key for sheet in options.sheets] == ["python", "python-draft", "sql"]
-        assert [sheet.label for sheet in options.sheets] == ["Python", "Python draft", "SQL"]
+        assert self.collections.sheet_keys(options.sheets) == ["python", "python-draft", "sql"]
+        assert self.collections.pluck(
+            items=options.sheets,
+            attr="label",
+        ) == ["Python", "Python draft", "SQL"]
         python_draft = next(sheet for sheet in options.sheets if sheet.key == "python-draft")
         assert [(section.label, section.subsections) for section in python_draft.sections] == [
             ("Drafts", ["Queue"]),
@@ -785,7 +788,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             limit=10,
             language=LanguageEnum.EN,
         )
-        assert [resource.name_en for resource in resources] == ["Pydantic"]
+        assert self.collections.names_en(resources) == ["Pydantic"]
 
     async def test_search_competency_matrix_resources_matches_secondary_language_name(
         self,
@@ -805,7 +808,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             limit=10,
             language=LanguageEnum.EN,
         )
-        assert [resource.name_en for resource in resources] == ["FastAPI docs"]
+        assert self.collections.names_en(resources) == ["FastAPI docs"]
 
     async def test_search_competency_matrix_resources_ranks_active_language_matches(
         self,
@@ -834,7 +837,7 @@ class TestCompetencyMatrixStorage(FactoryFixture, StorageFixture):
             limit=10,
             language=LanguageEnum.EN,
         )
-        assert [resource.name_en for resource in resources][:2] == [
+        assert self.collections.names_en(resources)[:2] == [
             "Python",
             "Python Package Index",
         ]

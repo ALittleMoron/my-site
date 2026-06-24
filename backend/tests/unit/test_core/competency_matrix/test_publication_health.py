@@ -1,10 +1,10 @@
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
 from core.enums import PublishStatusEnum
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestCompetencyMatrixPublicationHealth(FactoryFixture):
+class TestCompetencyMatrixPublicationHealth(TestCase):
     def test_published_item_with_missing_required_answer_is_not_public_ready(self) -> None:
         item = self.factory.core.competency_matrix_item(
             item_id=1,

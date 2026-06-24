@@ -4,10 +4,10 @@ import pytest
 
 from core.contacts.storages import ContactMeStorage
 from core.contacts.use_cases import ContactsUseCase
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestContactsUseCase(FactoryFixture):
+class TestContactsUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=ContactMeStorage)

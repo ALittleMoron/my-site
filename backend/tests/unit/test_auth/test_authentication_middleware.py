@@ -7,10 +7,10 @@ from litestar.middleware import AuthenticationResult
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from entrypoints.litestar.auth import AuthenticationMiddleware
-from tests.unit.fixtures import ContainerFixture, FactoryFixture
+from tests.test_cases import ContainerTestCase
 
 
-class TestAuthenticationMiddleware(ContainerFixture, FactoryFixture):
+class TestAuthenticationMiddleware(ContainerTestCase):
     @pytest.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_auth_use_case()

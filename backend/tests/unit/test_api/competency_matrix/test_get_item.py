@@ -9,10 +9,10 @@ from core.competency_matrix.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.types import IntId
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestGetItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestGetItemAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

@@ -13,10 +13,10 @@ from core.competency_matrix.schemas import (
 )
 from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
-from tests.fixtures import StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestCompetencyMatrixQuestionQueueStorage(StorageFixture):
+class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = CompetencyMatrixDatabaseStorage(session=session)

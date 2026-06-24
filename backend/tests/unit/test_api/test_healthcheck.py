@@ -1,10 +1,10 @@
 from verbose_http_exceptions import status
 
 from infra.healthcheck import ReadinessCheckError
-from tests.unit.fixtures import ApiFixture, ContainerFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestHealthCheckAPI(ContainerFixture, ApiFixture):
+class TestHealthCheckAPI(ApiTestCase):
     def test_healthcheck(self) -> None:
         response = self.api.get_health()
         assert response.status_code == status.HTTP_200_OK

@@ -4,10 +4,10 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestContactMeStorage(FactoryFixture, StorageFixture):
+class TestContactMeStorage(StorageTestCase):
     @pytest.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.storage = ContactMeDatabaseStorage(session=session)

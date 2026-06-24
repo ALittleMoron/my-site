@@ -9,10 +9,10 @@ from core.articles.schemas import ArticleCreateParams, ArticleMetadata, ArticleU
 from core.enums import PublishStatusEnum
 from core.types import IntId
 from entrypoints.litestar.response_cache import ResponseCacheDomain
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestAdminArticlesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestAdminArticlesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.article_id = await self.container.get_random_uuid()

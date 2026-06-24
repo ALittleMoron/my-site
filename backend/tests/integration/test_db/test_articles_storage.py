@@ -9,10 +9,10 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.postgresql.storages.articles import ArticlesDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
+class TestArticlesDatabaseStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.storage = ArticlesDatabaseStorage(session=self.db_session)
@@ -50,8 +50,8 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
         )
 
         assert public_result.localized_title(language=LanguageEnum.RU) == "Test Article"
-        assert [tag.slug for tag in public_result.tags] == ["python"]
-        assert [tag.slug for tag in admin_result.tags] == ["python", "deleted"]
+        assert self.collections.slugs(public_result.tags) == ["python"]
+        assert self.collections.slugs(admin_result.tags) == ["python", "deleted"]
 
     async def test_get_article_by_slug_returns_canonical_translations(self) -> None:
         await self.storage_helper.create_article(
@@ -150,7 +150,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in articles] == ["published-python"]
+        assert self.collections.slugs(articles) == ["published-python"]
         assert total_count == 1
 
     async def test_list_articles_filters_published_without_pagination_or_tags_for_seo(self) -> None:
@@ -191,7 +191,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in articles] == ["newer-published", "older-published"]
+        assert self.collections.slugs(articles) == ["newer-published", "older-published"]
         assert [list(article.tags) for article in articles] == [[], []]
         assert total_count == 2
 
@@ -237,7 +237,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in articles] == [
+        assert self.collections.slugs(articles) == [
             "newer-published",
             "older-published",
             "draft",
@@ -301,7 +301,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in articles] == ["range-end", "range-start"]
+        assert self.collections.slugs(articles) == ["range-end", "range-start"]
         assert total_count == 2
 
     async def test_list_articles_searches_by_title_and_content(self) -> None:
@@ -356,8 +356,8 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in title_articles] == ["title-match"]
-        assert [article.slug for article in content_articles] == ["content-match"]
+        assert self.collections.slugs(title_articles) == ["title-match"]
+        assert self.collections.slugs(content_articles) == ["content-match"]
 
     async def test_list_articles_searches_only_requested_language_vector(self) -> None:
         await self.storage_helper.create_articles(
@@ -408,8 +408,8 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in ru_articles] == ["database-indexes"]
-        assert [article.slug for article in en_articles] == ["task-queues"]
+        assert self.collections.slugs(ru_articles) == ["database-indexes"]
+        assert self.collections.slugs(en_articles) == ["task-queues"]
 
     async def test_list_articles_composes_tag_date_and_search_filters(self) -> None:
         python = self.factory.core.tag(tag_id=IntId(1), slug="python")
@@ -457,7 +457,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             ),
         )
 
-        assert [article.slug for article in articles] == ["match"]
+        assert self.collections.slugs(articles) == ["match"]
 
     async def test_list_tree_groups_folders_and_hides_drafts_for_public(self) -> None:
         await self.storage_helper.create_articles(
@@ -554,7 +554,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
 
         assert active_tags.values == []
         assert deleted_tags.values[0].deleted_at is not None
-        assert [tag.slug for tag in restored_tags] == ["python"]
+        assert self.collections.slugs(restored_tags) == ["python"]
 
     async def test_search_tags_matches_typo(self) -> None:
         await self.storage_helper.create_tags(
@@ -571,7 +571,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             language=LanguageEnum.EN,
         )
 
-        assert [tag.name_en for tag in tags] == ["Python"]
+        assert self.collections.names_en(tags) == ["Python"]
 
     async def test_search_tags_matches_secondary_language_name(self) -> None:
         await self.storage_helper.create_tags(
@@ -592,7 +592,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             language=LanguageEnum.EN,
         )
 
-        assert [tag.name_en for tag in tags] == ["Databases"]
+        assert self.collections.names_en(tags) == ["Databases"]
 
     async def test_search_tags_ranks_active_language_matches_before_slug_matches(self) -> None:
         await self.storage_helper.create_tags(
@@ -622,7 +622,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             language=LanguageEnum.EN,
         )
 
-        assert [tag.name_en for tag in tags][:2] == ["Python", "Python internals"]
+        assert self.collections.names_en(tags)[:2] == ["Python", "Python internals"]
 
     async def test_search_tags_respects_limit(self) -> None:
         await self.storage_helper.create_tags(
@@ -662,7 +662,7 @@ class TestArticlesDatabaseStorage(StorageFixture, FactoryFixture):
             language=LanguageEnum.EN,
         )
 
-        assert [tag.slug for tag in tags] == ["python"]
+        assert self.collections.slugs(tags) == ["python"]
 
     async def test_update_unknown_tag_raises_not_found(self) -> None:
         with pytest.raises(TagNotFoundError):

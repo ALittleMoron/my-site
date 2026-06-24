@@ -3,10 +3,10 @@ from httpx import codes
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestGetPresignPutUrlAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestGetPresignPutUrlAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, jwt_user: JwtUser, jwt_admin: JwtUser) -> None:
         self.user = jwt_user

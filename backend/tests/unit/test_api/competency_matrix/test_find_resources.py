@@ -3,10 +3,10 @@ from httpx import codes
 
 from core.competency_matrix.schemas import CompetencyMatrixResourceSearchParams
 from core.i18n.enums import LanguageEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestFindResourcesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestFindResourcesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

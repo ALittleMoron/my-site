@@ -10,10 +10,10 @@ from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFound
 from core.auth.schemas import JwtUser
 from core.auth.storages import TokenRevocationStorage
 from core.auth.use_cases import AuthUseCase
-from tests.unit.fixtures import ContainerFixture, FactoryFixture
+from tests.test_cases import ContainerTestCase
 
 
-class TestAuthUseCase(ContainerFixture, FactoryFixture):
+class TestAuthUseCase(ContainerTestCase):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.hasher = await self.container.get_hasher()

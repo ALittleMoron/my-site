@@ -4,10 +4,10 @@ from httpx import codes
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import CompetencyMatrixItemPublishStatusSwitchParams
 from core.enums import PublishStatusEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestSetDraftStatusToItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestSetDraftStatusToItemAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

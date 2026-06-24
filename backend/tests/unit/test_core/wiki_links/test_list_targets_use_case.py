@@ -12,10 +12,10 @@ from core.i18n.enums import LanguageEnum
 from core.wiki_links.enums import WikiLinkTargetTypeEnum
 from core.wiki_links.schemas import WikiLinkTargetGroup, WikiLinkTargets
 from core.wiki_links.use_cases import WikiLinksUseCase
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestWikiLinksUseCase(FactoryFixture):
+class TestWikiLinksUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.articles_storage = Mock(spec=ArticlesStorage)

@@ -16,10 +16,10 @@ from core.articles.use_cases import ArticleAnalyticsUseCase
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import Secret
-from tests.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestArticleAnalyticsUseCase(FactoryFixture):
+class TestArticleAnalyticsUseCase(TestCase):
     def setup_method(self) -> None:
         self.articles_storage = Mock(spec=ArticlesStorage)
         self.analytics_storage = Mock(spec=ArticleAnalyticsStorage)

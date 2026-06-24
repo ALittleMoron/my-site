@@ -33,8 +33,8 @@ from entrypoints.taskiq.cache_warm.writer import (
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
-from tests.fixtures import FactoryFixture
 from tests.helpers.factory import FactoryHelper
+from tests.test_cases import TestCase
 
 
 @dataclass
@@ -138,7 +138,7 @@ class FakeCompetencyMatrixUseCase:
         return next(item for item in self.items if item.slug == params.slug)
 
 
-class TestCacheWarmTargetGeneration(FactoryFixture):
+class TestCacheWarmTargetGeneration(TestCase):
     async def test_collects_canonical_targets_for_both_languages(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -258,7 +258,7 @@ class TestCacheWarmTargetGeneration(FactoryFixture):
         assert matrix_use_case.list_items_filters == []
 
 
-class TestCacheWarmWriter(FactoryFixture):
+class TestCacheWarmWriter(TestCase):
     async def test_writes_litestar_compatible_payload_to_domain_store(self) -> None:
         articles_store = FakeStore()
         store = ResponseCacheDomainStore(

@@ -20,10 +20,10 @@ from entrypoints.litestar.api.articles.endpoints import (
     AdminArticlesApiController,
     PublicArticlesApiController,
 )
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestListArticlesAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestListArticlesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()

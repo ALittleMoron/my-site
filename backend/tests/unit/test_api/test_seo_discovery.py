@@ -9,10 +9,10 @@ from core.competency_matrix.schemas import (
     PublishedCompetencyMatrixItemsForSeo,
 )
 from core.enums import PublishStatusEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestSeoDiscoveryAPI(ContainerFixture, ApiFixture):
+class TestSeoDiscoveryAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.articles_use_case = await self.container.get_articles_use_case()

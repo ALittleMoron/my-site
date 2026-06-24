@@ -1,9 +1,9 @@
 from httpx import codes
 
-from tests.unit.fixtures import ApiFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestI18nApi(ApiFixture):
+class TestI18nApi(ApiTestCase):
     def test_list_languages(self) -> None:
         response = self.api.get_i18n_languages()
 

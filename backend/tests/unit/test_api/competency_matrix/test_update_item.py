@@ -10,10 +10,10 @@ from core.competency_matrix.exceptions import (
 )
 from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
 from core.enums import PublishStatusEnum
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestUpdateItemAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestUpdateItemAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()

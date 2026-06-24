@@ -5,10 +5,10 @@ import pytest
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestCompetencyMatrixUseCase(FactoryFixture):
+class TestCompetencyMatrixUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)

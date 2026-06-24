@@ -10,10 +10,10 @@ from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFound
 from core.auth.storages import TokenRevocationStorage
 from core.auth.types import Token
 from core.auth.use_cases import AuthUseCase
-from tests.unit.fixtures import ContainerFixture, FactoryFixture
+from tests.test_cases import ContainerTestCase
 
 
-class TestLoginUseCase(ContainerFixture, FactoryFixture):
+class TestLoginUseCase(ContainerTestCase):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.token_handler = await self.container.get_token_handler()

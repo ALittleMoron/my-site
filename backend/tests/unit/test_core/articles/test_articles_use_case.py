@@ -21,10 +21,10 @@ from core.articles.use_cases import ArticlesUseCase
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
-from tests.unit.fixtures import FactoryFixture
+from tests.test_cases import TestCase
 
 
-class TestArticlesUseCase(FactoryFixture):
+class TestArticlesUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=ArticlesStorage)

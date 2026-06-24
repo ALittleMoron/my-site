@@ -3,10 +3,10 @@ import pytest_asyncio
 from verbose_http_exceptions import status
 
 from infra.config.settings import settings
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestContactMeRequestAPI(ContainerFixture, ApiFixture, FactoryFixture):
+class TestContactMeRequestAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.uuid = await self.container.get_random_uuid()

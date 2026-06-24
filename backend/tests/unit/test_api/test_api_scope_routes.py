@@ -18,10 +18,10 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
 from entrypoints.litestar.api.files.endpoints import FilesApiController
 from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
 from entrypoints.litestar.api.wiki_links.endpoints import WikiLinksApiController
-from tests.unit.fixtures import ApiFixture, ContainerFixture, FactoryFixture
+from tests.test_cases import ApiTestCase
 
 
-class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
+class TestApiScopeRoutes(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()

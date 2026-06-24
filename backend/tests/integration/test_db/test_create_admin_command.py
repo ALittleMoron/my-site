@@ -5,10 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.enums import RoleEnum
 from entrypoints.litestar.cli.commands.admin import create_admin_command
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
-from tests.fixtures import FactoryFixture, StorageFixture
+from tests.test_cases import StorageTestCase
 
 
-class TestCreateAdminCommand(FactoryFixture, StorageFixture):
+class TestCreateAdminCommand(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.user_storage = UserAccountDatabaseStorage(session=session)
