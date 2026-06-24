@@ -13,7 +13,9 @@ from core.resumes.schemas import ResumeFilters
 from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
 from entrypoints.litestar.api.resumes.dependencies import provide_resume_filters
+from entrypoints.litestar.api.resumes.responses import ResumeExportResponse
 from entrypoints.litestar.api.resumes.schemas import (
+    ResumeExportRequestSchema,
     ResumeRequestSchema,
     ResumeResponseSchema,
     ResumesResponseSchema,
@@ -95,6 +97,29 @@ class AdminResumesApiController(Controller):
             author_username=request.user.username,
         )
         return ResumeResponseSchema.from_domain_schema(schema=resume)
+
+    @post(
+        "/{resume_id:int}/export",
+        description="Экспорт резюме.",
+        name="admin-resumes-export-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def export_resume(
+        self,
+        resume_id: FromPath[int],
+        data: Annotated[ResumeExportRequestSchema, Body()],
+        request: Request[JwtUser, Token | None, State],
+        use_case: FromDishka[ResumesUseCase],
+    ) -> ResumeExportResponse:
+        document = await use_case.export_resume(
+            resume_id=IntId(resume_id),
+            params=data.to_export_schema(),
+            author_username=request.user.username,
+        )
+        return ResumeExportResponse.from_resume_export(
+            resume_id=IntId(resume_id),
+            document=document,
+        )
 
     @delete(
         "/{resume_id:int}",

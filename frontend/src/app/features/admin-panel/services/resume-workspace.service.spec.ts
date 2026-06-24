@@ -86,6 +86,28 @@ describe('ResumeWorkspaceService', () => {
     deleteReq.flush(null);
   });
 
+  it('exports current resume payload as a blob through the admin endpoint', () => {
+    const payload = resumePayload();
+    let exportedBlob: Blob | null = null;
+
+    service.exportResume(7, 'pdf', payload).subscribe((blob) => {
+      exportedBlob = blob;
+    });
+
+    const exportReq = httpMock.expectOne((request) =>
+      request.url.endsWith('/api/admin/resumes/7/export'),
+    );
+    expect(exportReq.request.method).toBe('POST');
+    expect(exportReq.request.responseType).toBe('blob');
+    expect(exportReq.request.body).toEqual({
+      format: 'pdf',
+      ...payload,
+    });
+    exportReq.flush(new Blob(['resume'], { type: 'application/pdf' }));
+
+    expect(exportedBlob?.type).toBe('application/pdf');
+  });
+
   it('maps nested resume content without sharing mutable DTO arrays', () => {
     let payloadItems: readonly string[] = [];
     let payloadProjectTechnologies: readonly string[] = [];

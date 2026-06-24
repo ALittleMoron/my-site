@@ -406,20 +406,23 @@ Workspace is admin-only utils, that live only in admin panel.
   - [x] Scope resume CRUD to the authenticated author so users only list and mutate their own resumes.
   - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
   - [x] Add list, create with language selection, detail edit, language badge, selected-language preview, and delete UI.
-  - [x] Keep resumes private: no public pages, sitemap entries, SEO, themes, or export in v1.
+  - [x] Keep resumes private: no public pages, sitemap entries, SEO, or themes in v1.
+  - [ ] Fix resume multilines fields: text with \\n to array.
   - [ ] Resume customization
     - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
     - [ ] Blocks visibility
     - [ ] Themes
-  - [ ] Resume export
-    - [ ] To PDF
-    - [ ] To Docx
+  - [x] Resume export
+    - [x] To PDF
+    - [x] To DOCX
+    - [ ] Step-by-step maximize resume export ATS score.
+    - [ ] Fix readability of exported resume
 
 ### Knowledge database
 
 Each knowledge item has its own subfolder in "knowledge database" folder on side-panel in admin panel.
 
-- [ ] Dashboard
+- [ ] Workspace
   - [ ] Main page
     - [ ] Important info (in-dashboard CRUD – only text oneline items)
     - [ ] Dates and birthdays (current and next month)

@@ -4,7 +4,7 @@ from typing import Annotated, Self
 from pydantic import Field
 
 from core.i18n.enums import LanguageEnum
-from core.resumes.enums import ResumeCurrentStatusEnum
+from core.resumes.enums import ResumeCurrentStatusEnum, ResumeExportFormatEnum
 from core.resumes.schemas import (
     Resume,
     ResumeAdditionalSection,
@@ -14,6 +14,7 @@ from core.resumes.schemas import (
     ResumeCreateParams,
     ResumeEducationItem,
     ResumeExperienceItem,
+    ResumeExportParams,
     ResumeLanguageItem,
     ResumeProfile,
     ResumeProjectItem,
@@ -363,6 +364,18 @@ class ResumeRequestSchema(CamelCaseSchema):
 
     def to_update_schema(self) -> ResumeUpdateParams:
         return ResumeUpdateParams(
+            title=self.title,
+            language=self.language,
+            content=self.content.to_domain_schema(),
+        )
+
+
+class ResumeExportRequestSchema(ResumeRequestSchema):
+    format: Annotated[ResumeExportFormatEnum, Field(title="Export format")]
+
+    def to_export_schema(self) -> ResumeExportParams:
+        return ResumeExportParams(
+            format=self.format,
             title=self.title,
             language=self.language,
             content=self.content.to_domain_schema(),

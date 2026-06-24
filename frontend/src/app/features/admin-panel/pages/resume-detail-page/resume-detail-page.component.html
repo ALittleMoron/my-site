@@ -48,22 +48,159 @@
       </div>
       <button
         type="button"
-        class="btn btn-success btn-sm"
-        [disabled]="saving() || deleting() || loading()"
+        class="btn btn-success btn-sm resume-action-button"
+        [attr.aria-label]="'adminResumeWorkspace.save' | t"
+        [attr.title]="'adminResumeWorkspace.save' | t"
+        [disabled]="saving() || deleting() || loading() || exporting()"
         (click)="saveResume()"
       >
-        {{ 'adminResumeWorkspace.save' | t }}
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
+          ></path>
+          <path d="M17 21v-7H7v7"></path>
+          <path d="M7 3v5h8"></path>
+        </svg>
       </button>
       <button
         type="button"
-        class="btn btn-outline-danger btn-sm"
-        [disabled]="saving() || deleting() || loading()"
+        class="btn btn-warning btn-sm resume-action-button"
+        [attr.aria-label]="'adminResumeWorkspace.export' | t"
+        [attr.title]="'adminResumeWorkspace.export' | t"
+        [disabled]="saving() || deleting() || loading() || exporting()"
+        (click)="openExportModal()"
+      >
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"></path>
+          <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+          <path d="M12 18v-6"></path>
+          <path d="m9 15 3-3 3 3"></path>
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm resume-action-button"
+        [attr.aria-label]="'adminResumeWorkspace.delete' | t"
+        [attr.title]="'adminResumeWorkspace.delete' | t"
+        [disabled]="saving() || deleting() || loading() || exporting()"
         (click)="deleteResume()"
       >
-        {{ 'adminResumeWorkspace.delete' | t }}
+        <svg
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 6h18"></path>
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <path d="m19 6-.9 14a2 2 0 0 1-2 2H7.9a2 2 0 0 1-2-2L5 6"></path>
+          <path d="M10 11v6"></path>
+          <path d="M14 11v6"></path>
+        </svg>
       </button>
     </div>
   </div>
+
+  @if (exportModalOpen()) {
+    <div class="resume-export-modal-backdrop" (click)="closeExportModal()"></div>
+    <div class="resume-export-modal-shell">
+      <section
+        class="resume-export-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="resume-export-title"
+      >
+        <header class="d-flex align-items-center justify-content-between gap-3 mb-3">
+          <h2 id="resume-export-title" class="h5 mb-0">
+            {{ 'adminResumeWorkspace.exportTitle' | t }}
+          </h2>
+          <button
+            type="button"
+            class="btn-close"
+            [attr.aria-label]="'shared.close' | t"
+            [disabled]="exporting()"
+            (click)="closeExportModal()"
+          ></button>
+        </header>
+
+        <div class="mb-3">
+          <label class="form-label" for="resume-export-format">
+            {{ 'adminResumeWorkspace.exportFormat' | t }}
+          </label>
+          <select
+            #exportFormatSelect
+            id="resume-export-format"
+            class="form-select form-select-sm"
+            data-testid="resume-export-format"
+            [value]="selectedExportFormat()"
+            [disabled]="exporting()"
+            (change)="selectExportFormat(exportFormatSelect.value)"
+          >
+            <option value="">{{ 'adminResumeWorkspace.exportFormatPlaceholder' | t }}</option>
+            @for (format of exportFormats; track format.value) {
+              <option [value]="format.value">{{ format.labelKey | t }}</option>
+            }
+          </select>
+        </div>
+
+        @if (exportError()) {
+          <p class="text-danger small mb-3">{{ 'adminResumeWorkspace.exportError' | t }}</p>
+        }
+
+        <footer class="d-flex justify-content-end gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            [disabled]="exporting()"
+            (click)="closeExportModal()"
+          >
+            {{ 'shared.close' | t }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            data-testid="resume-export-submit"
+            [disabled]="exporting() || selectedExportFormat() === ''"
+            (click)="exportResume()"
+          >
+            @if (exporting()) {
+              {{ 'adminResumeWorkspace.exporting' | t }}
+            } @else {
+              {{ 'adminResumeWorkspace.exportSubmit' | t }}
+            }
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
 
   @if (loading()) {
     <app-loading-spinner [ariaLabel]="'adminResumeWorkspace.loading' | t" />

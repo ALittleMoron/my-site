@@ -4,12 +4,14 @@ import { ApiClient } from '../../../core/http/api-client.service';
 import {
   Resume,
   ResumeDto,
+  ResumeExportFormat,
   ResumeListParams,
   ResumePayload,
   Resumes,
   ResumesDto,
   mapResumeDto,
   mapResumesDto,
+  toResumeExportPayloadDto,
   toResumePayloadDto,
 } from '../models/resume-workspace.model';
 
@@ -44,5 +46,12 @@ export class ResumeWorkspaceService {
 
   deleteResume(id: number): Observable<void> {
     return this.api.delete<void>(`/api/admin/resumes/${id}`);
+  }
+
+  exportResume(id: number, format: ResumeExportFormat, payload: ResumePayload): Observable<Blob> {
+    return this.api.postBlob(
+      `/api/admin/resumes/${id}/export`,
+      toResumeExportPayloadDto(payload, format),
+    );
   }
 }

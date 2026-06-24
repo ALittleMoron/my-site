@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from core.resumes.exporters import ResumeDocumentExporter
 from core.resumes.schemas import (
     Resume,
     ResumeCreateParams,
+    ResumeExport,
+    ResumeExportParams,
     ResumeFilters,
     Resumes,
     ResumeUpdateParams,
@@ -15,6 +18,7 @@ from core.types import IntId
 @dataclass(kw_only=True, slots=True, frozen=True)
 class ResumesUseCase:
     storage: ResumesStorage
+    exporter: ResumeDocumentExporter
 
     async def list_resumes(self, *, filters: ResumeFilters) -> Resumes:
         if filters.page is None or filters.page_size is None:
@@ -54,3 +58,16 @@ class ResumesUseCase:
 
     async def delete_resume(self, *, resume_id: IntId, author_username: str) -> None:
         await self.storage.delete_resume(resume_id=resume_id, author_username=author_username)
+
+    async def export_resume(
+        self,
+        *,
+        resume_id: IntId,
+        params: ResumeExportParams,
+        author_username: str,
+    ) -> ResumeExport:
+        await self.storage.get_resume(
+            resume_id=resume_id,
+            author_username=author_username,
+        )
+        return self.exporter.export_resume(params=params)

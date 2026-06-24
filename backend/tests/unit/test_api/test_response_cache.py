@@ -363,7 +363,7 @@ class TestResponseCacheRouteConfiguration:
             assert getattr(AdminCompetencyMatrixApiController, handler_name).cache is False
 
     def test_admin_resume_get_handlers_are_not_cached(self) -> None:
-        for handler_name in ("list_resumes", "get_resume"):
+        for handler_name in ("list_resumes", "get_resume", "export_resume"):
             assert getattr(AdminResumesApiController, handler_name).cache is False
 
     def test_i18n_get_handlers_use_i18n_cache(self) -> None:

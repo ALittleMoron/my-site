@@ -57,6 +57,22 @@ class _FilesConstants:
     allowed_to_upload_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 
 
+class _ResumeExportConstants:
+    fonts_dir: Path = _PathConstants.infra_dir / "resume_export" / "fonts"
+    font_regular_path: Path = fonts_dir / "NotoSans-Regular.ttf"
+    font_bold_path: Path = fonts_dir / "NotoSans-Bold.ttf"
+    font_license_path: Path = fonts_dir / "OFL.txt"
+    font_regular_name: Literal["NotoSans"] = "NotoSans"
+    font_bold_name: Literal["NotoSans-Bold"] = "NotoSans-Bold"
+    content_disposition_header_name: Literal["Content-Disposition"] = "Content-Disposition"
+    pdf_media_type: Literal["application/pdf"] = "application/pdf"
+    docx_media_type: Literal[
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    pdf_extension: Literal["pdf"] = "pdf"
+    docx_extension: Literal["docx"] = "docx"
+
+
 class _SearchConstants:
     min_trigram_fuzzy_query_length: int = 6
 
@@ -81,6 +97,7 @@ class Constants:
     response_cache: _ResponseCacheConstants = _ResponseCacheConstants()
     taskiq: _TaskiqConstants = _TaskiqConstants()
     files: _FilesConstants = _FilesConstants()
+    resume_export: _ResumeExportConstants = _ResumeExportConstants()
     search: _SearchConstants = _SearchConstants()
     question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()
 

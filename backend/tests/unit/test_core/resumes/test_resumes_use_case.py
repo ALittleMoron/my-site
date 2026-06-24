@@ -5,8 +5,9 @@ from unittest.mock import Mock
 import pytest
 
 from core.i18n.enums import LanguageEnum
-from core.resumes.enums import ResumeCurrentStatusEnum
+from core.resumes.enums import ResumeCurrentStatusEnum, ResumeExportFormatEnum
 from core.resumes.exceptions import ResumeNotFoundError
+from core.resumes.exporters import ResumeDocumentExporter
 from core.resumes.schemas import (
     Resume,
     ResumeAdditionalSection,
@@ -16,6 +17,8 @@ from core.resumes.schemas import (
     ResumeCreateParams,
     ResumeEducationItem,
     ResumeExperienceItem,
+    ResumeExport,
+    ResumeExportParams,
     ResumeFilters,
     ResumeLanguageItem,
     ResumeProfile,
@@ -138,7 +141,8 @@ class TestResumesUseCase:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=ResumesStorage)
-        self.use_case = ResumesUseCase(storage=self.storage)
+        self.exporter = Mock(spec=ResumeDocumentExporter)
+        self.use_case = ResumesUseCase(storage=self.storage, exporter=self.exporter)
 
     def test_resume_filters_require_explicit_values(self) -> None:
         missing_filter_values: dict[str, Any] = {}
@@ -290,3 +294,50 @@ class TestResumesUseCase:
             resume_id=IntId(1),
             author_username="test",
         )
+
+    async def test_export_resume_checks_owner_and_exports_current_payload(self) -> None:
+        existing_resume = build_resume(
+            resume_id=IntId(1),
+            content=build_content(summary="Saved summary", skill_items=["Python"]),
+        )
+        export_content = build_content(summary="Unsaved summary", skill_items=["Litestar"])
+        params = ResumeExportParams(
+            format=ResumeExportFormatEnum.PDF,
+            title="Unsaved resume",
+            language=LanguageEnum.EN,
+            content=export_content,
+        )
+        expected = ResumeExport(format=ResumeExportFormatEnum.PDF, content=b"%PDF-1.4")
+        self.storage.get_resume.return_value = existing_resume
+        self.exporter.export_resume.return_value = expected
+
+        result = await self.use_case.export_resume(
+            resume_id=IntId(1),
+            params=params,
+            author_username="test",
+        )
+
+        assert result == expected
+        self.storage.get_resume.assert_called_once_with(
+            resume_id=IntId(1),
+            author_username="test",
+        )
+        self.exporter.export_resume.assert_called_once_with(params=params)
+
+    async def test_export_resume_propagates_not_found_before_rendering(self) -> None:
+        params = ResumeExportParams(
+            format=ResumeExportFormatEnum.DOCX,
+            title="Resume",
+            language=LanguageEnum.RU,
+            content=build_content(summary="Summary", skill_items=["Python"]),
+        )
+        self.storage.get_resume.side_effect = ResumeNotFoundError
+
+        with pytest.raises(ResumeNotFoundError):
+            await self.use_case.export_resume(
+                resume_id=IntId(404),
+                params=params,
+                author_username="test",
+            )
+
+        self.exporter.export_resume.assert_not_called()

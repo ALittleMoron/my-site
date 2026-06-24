@@ -15,6 +15,7 @@ describe('AdminResumeDetailPageComponent', () => {
     getResume: jest.Mock;
     updateResume: jest.Mock;
     deleteResume: jest.Mock;
+    exportResume: jest.Mock;
   };
   let router: Router;
   let i18n: I18nService;
@@ -28,6 +29,9 @@ describe('AdminResumeDetailPageComponent', () => {
       getResume: jest.fn().mockReturnValue(of(resume())),
       updateResume: jest.fn().mockReturnValue(of(resume({ title: 'Updated resume' }))),
       deleteResume: jest.fn().mockReturnValue(of(undefined)),
+      exportResume: jest
+        .fn()
+        .mockReturnValue(of(new Blob(['resume'], { type: 'application/pdf' }))),
     };
     notifications = {
       success: jest.fn(),
@@ -57,6 +61,15 @@ describe('AdminResumeDetailPageComponent', () => {
     router = TestBed.inject(Router);
     i18n = TestBed.inject(I18nService);
     jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    Object.defineProperty(window.URL, 'createObjectURL', {
+      configurable: true,
+      value: jest.fn().mockReturnValue('blob:resume-export'),
+    });
+    Object.defineProperty(window.URL, 'revokeObjectURL', {
+      configurable: true,
+      value: jest.fn(),
+    });
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     fixture = TestBed.createComponent(AdminResumeDetailPageComponent);
     fixture.detectChanges();
   });
@@ -131,6 +144,74 @@ describe('AdminResumeDetailPageComponent', () => {
     ) as HTMLButtonElement | undefined;
 
     expect(backButton?.querySelector('svg')).not.toBeNull();
+  });
+
+  it('renders save, export, and delete as accessible icon buttons', () => {
+    const saveButton = buttonByLabel('Сохранить');
+    const exportButton = buttonByLabel('Экспорт');
+    const deleteButton = buttonByLabel('Удалить');
+
+    expect(saveButton.querySelector('svg')).not.toBeNull();
+    expect(exportButton.querySelector('svg')).not.toBeNull();
+    expect(deleteButton.querySelector('svg')).not.toBeNull();
+    expect(textNodeContent(saveButton)).toBe('');
+    expect(textNodeContent(exportButton)).toBe('');
+    expect(textNodeContent(deleteButton)).toBe('');
+  });
+
+  it('opens and closes the export modal', () => {
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Формат');
+    expect(fixture.nativeElement.textContent).toContain('Выберите формат');
+    expect(elementByTestId<HTMLSelectElement>('resume-export-format').value).toBe('');
+    expect(elementByTestId<HTMLButtonElement>('resume-export-submit').disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('.resume-export-modal .btn-warning')).toBeNull();
+
+    buttonByLabel('Закрыть').click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('exports unsaved form edits in the selected format', () => {
+    fixture.componentInstance.setActiveTab('summary');
+    fixture.detectChanges();
+    setInputValue('resume-summary', 'Unsaved export summary');
+
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+    setInputValue('resume-export-format', 'docx');
+    elementByTestId<HTMLButtonElement>('resume-export-submit').click();
+    fixture.detectChanges();
+
+    expect(service.exportResume).toHaveBeenCalledWith(
+      7,
+      'docx',
+      expect.objectContaining({
+        content: expect.objectContaining({
+          summary: {
+            text: 'Unsaved export summary',
+          },
+        }),
+      }),
+    );
+    expect(window.URL.createObjectURL).toHaveBeenCalled();
+    expect(notifications.success).toHaveBeenCalledWith('Резюме экспортировано.');
+  });
+
+  it('blocks export when the current form is invalid', () => {
+    setInputValue('resume-title', '');
+
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+    setInputValue('resume-export-format', 'pdf');
+    elementByTestId<HTMLButtonElement>('resume-export-submit').click();
+    fixture.detectChanges();
+
+    expect(service.exportResume).not.toHaveBeenCalled();
   });
 
   it('deletes the resume and returns to the list', () => {
@@ -306,6 +387,29 @@ describe('AdminResumeDetailPageComponent', () => {
       | HTMLInputElement
       | HTMLTextAreaElement;
     return input.value;
+  }
+
+  function buttonByLabel(label: string): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector(
+      `button[aria-label="${label}"]`,
+    ) as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    return button as HTMLButtonElement;
+  }
+
+  function elementByTestId<TElement extends HTMLElement>(testId: string): TElement {
+    const element = fixture.nativeElement.querySelector(
+      `[data-testid="${testId}"]`,
+    ) as TElement | null;
+    expect(element).not.toBeNull();
+    return element as TElement;
+  }
+
+  function textNodeContent(button: HTMLButtonElement): string {
+    return Array.from(button.childNodes)
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent?.trim() ?? '')
+      .join('');
   }
 });
 

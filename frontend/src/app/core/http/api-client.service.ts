@@ -20,6 +20,14 @@ export class ApiClient {
     return this.http.post<T>(`${this.baseUrl}${path}`, body, { params: httpParams });
   }
 
+  postBlob(path: string, body: unknown, params?: QueryParams): Observable<Blob> {
+    const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
+    return this.http.post(`${this.baseUrl}${path}`, body, {
+      params: httpParams,
+      responseType: 'blob',
+    });
+  }
+
   put<T>(path: string, body: unknown, params?: QueryParams): Observable<T> {
     const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
     return this.http.put<T>(`${this.baseUrl}${path}`, body, { params: httpParams });

@@ -150,6 +150,7 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         assert AdminResumesApiController.get_resume.name == "admin-resumes-detail-api-handler"
         assert AdminResumesApiController.update_resume.name == "admin-resumes-update-api-handler"
         assert AdminResumesApiController.delete_resume.name == "admin-resumes-delete-api-handler"
+        assert AdminResumesApiController.export_resume.name == "admin-resumes-export-api-handler"
         assert (
             WikiLinksApiController.list_wiki_link_targets.name
             == "admin-wiki-links-targets-list-api-handler"
@@ -163,6 +164,15 @@ class TestApiScopeRoutes(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.NOT_FOUND
 
         response = self.no_auth_api.client.get("/api/resumes/1")
+        assert response.status_code == codes.NOT_FOUND
+
+        response = self.no_auth_api.client.post(
+            "/api/resumes/1/export",
+            json={
+                "format": "pdf",
+                **self.factory.api.resume_request(),
+            },
+        )
         assert response.status_code == codes.NOT_FOUND
 
     def test_matrix_admin_urls_are_not_exposed_under_public_api(self) -> None:

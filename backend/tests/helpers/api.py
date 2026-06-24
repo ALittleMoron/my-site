@@ -423,6 +423,9 @@ class APIHelper:
     def put_update_resume(self, resume_id: int, data: dict[str, Any]) -> Response:
         return self.client.put(f"/api/admin/resumes/{resume_id}", json=data)
 
+    def post_export_resume(self, resume_id: int, data: dict[str, Any]) -> Response:
+        return self.client.post(f"/api/admin/resumes/{resume_id}/export", json=data)
+
     def delete_resume(self, resume_id: int) -> Response:
         return self.client.delete(f"/api/admin/resumes/{resume_id}")
 

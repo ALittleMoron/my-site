@@ -4,11 +4,13 @@ from httpx import codes
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.i18n.enums import LanguageEnum
-from core.resumes.enums import ResumeCurrentStatusEnum
+from core.resumes.enums import ResumeCurrentStatusEnum, ResumeExportFormatEnum
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import (
     ResumeCreateParams,
     ResumeExperienceItem,
+    ResumeExport,
+    ResumeExportParams,
     ResumeFilters,
     ResumeProjectItem,
     ResumeUpdateParams,
@@ -229,6 +231,101 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
             author_username="test",
         )
 
+    def test_export_resume_pdf_from_current_payload(self) -> None:
+        content = self.factory.core.resume_content(
+            full_name="Dmitriy",
+            role="Backend engineer",
+            summary="Unsaved current summary",
+        )
+        self.use_case.export_resume.return_value = ResumeExport(
+            format=ResumeExportFormatEnum.PDF,
+            content=b"%PDF-1.4",
+        )
+
+        response = self.api.post_export_resume(
+            resume_id=3,
+            data={
+                "format": "pdf",
+                **self.factory.api.resume_request(
+                    title="Target resume",
+                    language="en",
+                    content=self.factory.api.resume_content(
+                        full_name="Dmitriy",
+                        role="Backend engineer",
+                        summary="Unsaved current summary",
+                    ),
+                ),
+            },
+        )
+
+        assert response.status_code == codes.OK, response.content
+        assert response.content == b"%PDF-1.4"
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.headers["content-disposition"] == 'attachment; filename="resume-3.pdf"'
+        self.use_case.export_resume.assert_called_once_with(
+            resume_id=IntId(3),
+            params=ResumeExportParams(
+                format=ResumeExportFormatEnum.PDF,
+                title="Target resume",
+                language=LanguageEnum.EN,
+                content=content,
+            ),
+            author_username="test",
+        )
+
+    def test_export_resume_docx_from_current_payload(self) -> None:
+        self.use_case.export_resume.return_value = ResumeExport(
+            format=ResumeExportFormatEnum.DOCX,
+            content=b"docx-bytes",
+        )
+
+        response = self.api.post_export_resume(
+            resume_id=5,
+            data={
+                "format": "docx",
+                **self.factory.api.resume_request(
+                    title="Docx resume",
+                    language="ru",
+                ),
+            },
+        )
+
+        assert response.status_code == codes.OK, response.content
+        assert response.content == b"docx-bytes"
+        assert (
+            response.headers["content-type"]
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        assert response.headers["content-disposition"] == 'attachment; filename="resume-5.docx"'
+        self.use_case.export_resume.assert_called_once()
+
+    def test_export_resume_rejects_unknown_format(self) -> None:
+        response = self.api.post_export_resume(
+            resume_id=3,
+            data={
+                "format": "xlsx",
+                **self.factory.api.resume_request(),
+            },
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.export_resume.assert_not_called()
+
+    def test_export_resume_not_found(self) -> None:
+        self.use_case.export_resume.side_effect = ResumeNotFoundError()
+
+        response = self.api.post_export_resume(
+            resume_id=404,
+            data={
+                "format": "pdf",
+                **self.factory.api.resume_request(),
+            },
+        )
+
+        assert response.status_code == codes.NOT_FOUND
+        assert response.json()["message"] == ResumeNotFoundError.message
+        self.use_case.export_resume.assert_called_once()
+
     def test_delete_resume_not_found(self) -> None:
         self.use_case.delete_resume.side_effect = ResumeNotFoundError()
 
@@ -256,6 +353,17 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
         assert response.status_code == codes.UNAUTHORIZED
         self.use_case.list_resumes.assert_not_called()
 
+        response = self.no_auth_api.post_export_resume(
+            resume_id=3,
+            data={
+                "format": "pdf",
+                **self.factory.api.resume_request(),
+            },
+        )
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.export_resume.assert_not_called()
+
     def test_requires_admin_role(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="moderator",
@@ -266,6 +374,17 @@ class TestAdminResumesAPI(ContainerFixture, ApiFixture, FactoryFixture):
 
         assert response.status_code == codes.UNAUTHORIZED
         self.use_case.list_resumes.assert_not_called()
+
+        response = self.api.post_export_resume(
+            resume_id=3,
+            data={
+                "format": "pdf",
+                **self.factory.api.resume_request(),
+            },
+        )
+
+        assert response.status_code == codes.UNAUTHORIZED
+        self.use_case.export_resume.assert_not_called()
 
 
 RESUME_RESPONSE_ALLOWED_NULL_KEYS = frozenset({"startDate", "endDate", "issuedOn", "expiresOn"})

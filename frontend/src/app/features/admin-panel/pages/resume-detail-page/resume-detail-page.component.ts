@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -34,6 +35,7 @@ import {
   ResumeContent,
   ResumeCurrentStatus,
   ResumeEducationItem,
+  ResumeExportFormat,
   ResumeExperienceItem,
   ResumeLanguage,
   ResumeLanguageItem,
@@ -55,6 +57,7 @@ type ResumeEditorTab =
   | 'certifications'
   | 'additional';
 type ResumeEditorMode = 'edit' | 'preview';
+type ResumeExportFormatSelection = ResumeExportFormat | '';
 type TextControl = FormControl<string>;
 type NullableTextControl = FormControl<string | null>;
 type CurrentStatusControl = FormControl<ResumeCurrentStatus>;
@@ -72,6 +75,11 @@ interface ResumeCurrentStatusOption {
 
 interface ResumeLanguageOption {
   value: ResumeLanguage;
+  labelKey: string;
+}
+
+interface ResumeExportFormatOption {
+  value: ResumeExportFormat;
   labelKey: string;
 }
 
@@ -187,6 +195,11 @@ const RESUME_LANGUAGE_OPTIONS: readonly ResumeLanguageOption[] = [
   { value: 'en', labelKey: 'adminResumeWorkspace.languageEn' },
 ];
 
+const RESUME_EXPORT_FORMAT_OPTIONS: readonly ResumeExportFormatOption[] = [
+  { value: 'pdf', labelKey: 'adminResumeWorkspace.exportFormatPdf' },
+  { value: 'docx', labelKey: 'adminResumeWorkspace.exportFormatDocx' },
+];
+
 @Component({
   selector: 'app-admin-resume-detail-page',
   standalone: true,
@@ -209,13 +222,17 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
   private readonly resumeId = this.resolveResumeId();
 
   readonly tabs = RESUME_EDITOR_TABS;
   readonly currentStatusOptions = RESUME_CURRENT_STATUS_OPTIONS;
   readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
+  readonly exportFormats = RESUME_EXPORT_FORMAT_OPTIONS;
   readonly activeTab = signal<ResumeEditorTab>('profile');
   readonly mode = signal<ResumeEditorMode>('edit');
+  readonly exportModalOpen = signal(false);
+  readonly selectedExportFormat = signal<ResumeExportFormatSelection>('');
   readonly previewLanguage = computed<ResumeLanguage>(() =>
     toResumeLanguage(this.resumeForm.controls.language.getRawValue()),
   );
@@ -251,8 +268,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly deleting = signal(false);
+  readonly exporting = signal(false);
   readonly error = signal<ApiError | null>(null);
   readonly formError = signal<ApiError | null>(null);
+  readonly exportError = signal<ApiError | null>(null);
   readonly formVersion = signal(0);
 
   readonly resumeForm = new FormGroup<ResumeEditorForm>({
@@ -387,7 +406,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   deleteResume(): void {
-    if (!window.confirm(this.i18n.translate('adminResumeWorkspace.confirmDelete'))) return;
+    const browserWindow = this.document.defaultView;
+    if (!browserWindow?.confirm(this.i18n.translate('adminResumeWorkspace.confirmDelete'))) return;
     this.deleting.set(true);
     this.resumeWorkspace
       .deleteResume(this.resumeId)
@@ -401,6 +421,50 @@ export class AdminResumeDetailPageComponent implements OnInit {
         error: () => {
           this.deleting.set(false);
           this.notifications.error(this.i18n.translate('adminResumeWorkspace.deleteError'));
+        },
+      });
+  }
+
+  openExportModal(): void {
+    this.exportError.set(null);
+    this.selectedExportFormat.set('');
+    this.exportModalOpen.set(true);
+  }
+
+  closeExportModal(): void {
+    if (this.exporting()) return;
+    this.exportModalOpen.set(false);
+    this.exportError.set(null);
+  }
+
+  selectExportFormat(format: string): void {
+    this.selectedExportFormat.set(isResumeExportFormat(format) ? format : '');
+  }
+
+  exportResume(): void {
+    const format = this.selectedExportFormat();
+    if (!isResumeExportFormat(format)) return;
+    if (this.resumeForm.invalid) {
+      this.resumeForm.markAllAsTouched();
+      return;
+    }
+    const payload = this.buildPayload();
+    this.exporting.set(true);
+    this.exportError.set(null);
+    this.resumeWorkspace
+      .exportResume(this.resumeId, format, payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.downloadExport(blob, format);
+          this.exporting.set(false);
+          this.exportModalOpen.set(false);
+          this.notifications.success(this.i18n.translate('adminResumeWorkspace.exported'));
+        },
+        error: (err: ApiError) => {
+          this.exportError.set(err);
+          this.exporting.set(false);
+          this.notifications.error(this.i18n.translate('adminResumeWorkspace.exportError'));
         },
       });
   }
@@ -844,6 +908,23 @@ export class AdminResumeDetailPageComponent implements OnInit {
     if (!Number.isInteger(id)) return 0;
     return id;
   }
+
+  private downloadExport(blob: Blob, format: ResumeExportFormat): void {
+    const browserWindow = this.document.defaultView;
+    if (!browserWindow) return;
+    const objectUrl = browserWindow.URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = `resume-${this.resumeId}.${format}`;
+    anchor.rel = 'noopener';
+    try {
+      this.document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+    } finally {
+      browserWindow.URL.revokeObjectURL(objectUrl);
+    }
+  }
 }
 
 function cleanText(value: string): string {
@@ -873,6 +954,10 @@ function linesToText(values: string[]): string {
 
 function isResumeLanguage(value: string): value is ResumeLanguage {
   return value === 'ru' || value === 'en';
+}
+
+function isResumeExportFormat(value: string): value is ResumeExportFormat {
+  return value === 'pdf' || value === 'docx';
 }
 
 function toResumeLanguage(value: string): ResumeLanguage {

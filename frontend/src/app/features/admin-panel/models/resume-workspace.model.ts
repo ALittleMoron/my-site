@@ -2,6 +2,7 @@ import { LanguageCode } from '../../../core/i18n/i18n.model';
 
 export type ResumeCurrentStatus = 'notSet' | 'current' | 'notCurrent';
 export type ResumeLanguage = LanguageCode;
+export type ResumeExportFormat = 'pdf' | 'docx';
 
 export interface ResumeProfileDto {
   fullName: string;
@@ -110,6 +111,10 @@ export interface ResumePayloadDto {
   title: string;
   language: ResumeLanguage;
   content: ResumeContentDto;
+}
+
+export interface ResumeExportPayloadDto extends ResumePayloadDto {
+  format: ResumeExportFormat;
 }
 
 export interface ResumeProfile {
@@ -250,6 +255,16 @@ export function toResumePayloadDto(payload: ResumePayload): ResumePayloadDto {
     title: payload.title,
     language: payload.language,
     content: mapResumeContentToDto(payload.content),
+  };
+}
+
+export function toResumeExportPayloadDto(
+  payload: ResumePayload,
+  format: ResumeExportFormat,
+): ResumeExportPayloadDto {
+  return {
+    format,
+    ...toResumePayloadDto(payload),
   };
 }
 
