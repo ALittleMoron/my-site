@@ -23,25 +23,39 @@ class TestSettings:
         self.settings.app.url_schema = "http"
         self.settings.minio.public_url = orig_public_url
 
-    def test_base_url(self) -> None:
-        assert self.settings.base_url == "https://alittlemoron.ru"
+    def test_app_base_url(self) -> None:
+        assert self.settings.app.base_url == "https://alittlemoron.ru"
 
-    def test_public_app_origin(self) -> None:
+    def test_app_base_url_adds_debug_port_for_local_domain(self) -> None:
+        self.settings.app.domain = "localhost"
         self.settings.app.debug = True
-        assert self.settings.public_app_origin == "https://alittlemoron.ru"
+        assert self.settings.app.base_url == "https://localhost:8000"
+
+    def test_app_public_origin_ignores_debug_port(self) -> None:
+        self.settings.app.debug = True
+        assert self.settings.app.public_origin == "https://alittlemoron.ru"
+
+    def test_app_get_url(self) -> None:
+        assert (
+            self.settings.app.get_url(path="/sitemap.xml") == "https://alittlemoron.ru/sitemap.xml"
+        )
 
     def test_minio_region(self) -> None:
         assert self.settings.minio.region == "us-east-1"
 
-    def test_get_minio_object_url(self) -> None:
+    def test_minio_public_endpoint_url_trims_trailing_slash(self) -> None:
+        self.settings.minio.public_url = "https://s3.alittlemoron.ru/"
+        assert self.settings.minio.public_endpoint_url == "https://s3.alittlemoron.ru"
+
+    def test_minio_get_object_url(self) -> None:
         assert (
-            self.settings.get_minio_object_url(bucket="media", object_path="test.txt")
+            self.settings.minio.get_object_url(bucket="media", object_path="test.txt")
             == "https://s3.alittlemoron.ru/media/test.txt"
         )
 
-    def test_get_minio_object_url_object_path_startswith_slash(self) -> None:
+    def test_minio_get_object_url_object_path_startswith_slash(self) -> None:
         assert (
-            self.settings.get_minio_object_url(bucket="media", object_path="/test.txt")
+            self.settings.minio.get_object_url(bucket="media", object_path="/test.txt")
             == "https://s3.alittlemoron.ru/media/test.txt"
         )
 

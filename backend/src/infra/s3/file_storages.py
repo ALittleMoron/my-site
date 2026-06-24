@@ -81,7 +81,7 @@ class S3FileStorage(FileStorage):
             await self.clients.internal.put_bucket_cors(
                 Bucket=namespace,
                 CORSConfiguration=self.create_bucket_cors(
-                    allowed_origin=settings.public_app_origin,
+                    allowed_origin=settings.app.public_origin,
                     max_age_seconds=settings.minio.presign_put_expires_seconds,
                 ),
             )
@@ -113,7 +113,7 @@ class S3FileStorage(FileStorage):
                 Body=object_bytes,
                 ContentType=resolved_content_type,
             )
-            file_url = settings.get_minio_object_url(bucket=_namespace, object_path=object_name)
+            file_url = settings.minio.get_object_url(bucket=_namespace, object_path=object_name)
             upload_result = FileUploadResult(
                 url=file_url,
                 bucket=_namespace,
@@ -158,7 +158,7 @@ class S3FileStorage(FileStorage):
         )
         return PresignPutObject(
             upload_url=upload_url,
-            access_url=settings.get_minio_object_url(
+            access_url=settings.minio.get_object_url(
                 bucket=_namespace,
                 object_path=object_name,
             ),

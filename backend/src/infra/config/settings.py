@@ -33,6 +33,18 @@ class _AppSettings(_ProjectBaseSettings):
     def is_local_domain(self) -> bool:
         return self.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104  # nosec B104
 
+    @property
+    def base_url(self) -> str:
+        postfix = ":8000" if self.debug and self.is_local_domain else ""
+        return f"{self.url_schema}://{self.domain}{postfix}"
+
+    @property
+    def public_origin(self) -> str:
+        return f"{self.url_schema}://{self.domain}"
+
+    def get_url(self, path: str) -> str:
+        return f"{self.base_url}/{path.removeprefix('/')}"
+
     def get_cache_duration(
         self,
         value: bool | int | type[CACHE_FOREVER],  # noqa: FBT001
@@ -103,6 +115,13 @@ class _MinioSettings(_ProjectBaseSettings):
     def internal_endpoint_url(self) -> str:
         schema = "https" if self.secure else "http"
         return f"{schema}://{self.endpoint}"
+
+    @property
+    def public_endpoint_url(self) -> str:
+        return self.public_url.rstrip("/")
+
+    def get_object_url(self, object_path: str, bucket: Namespace) -> str:
+        return f"{self.public_endpoint_url}/{bucket}/{object_path.removeprefix('/')}"
 
 
 class _SentrySettings(_ProjectBaseSettings):
@@ -176,21 +195,6 @@ class Settings:
         self.sentry = _SentrySettings()
         self.taskiq = _TaskiqSettings()
         self.valkey = _ValkeySettings()
-
-    @property
-    def base_url(self) -> str:
-        postfix = ":8000" if self.app.debug and self.app.is_local_domain else ""
-        return f"{self.app.url_schema}://{self.app.domain}{postfix}"
-
-    @property
-    def public_app_origin(self) -> str:
-        return f"{self.app.url_schema}://{self.app.domain}"
-
-    def get_minio_object_url(self, object_path: str, bucket: Namespace) -> str:
-        return f"{self.minio.public_url.rstrip('/')}/{bucket}/{object_path.removeprefix('/')}"
-
-    def get_url(self, path: str) -> str:
-        return f"{self.base_url}/{path.removeprefix('/')}"
 
 
 settings = Settings()

@@ -53,7 +53,7 @@ class FilesProvider(Provider):
                 await exit_stack.enter_async_context(
                     session.create_client(
                         "s3",
-                        endpoint_url=settings.minio.public_url.rstrip("/"),
+                        endpoint_url=settings.minio.public_endpoint_url,
                         **client_options,
                     ),
                 ),

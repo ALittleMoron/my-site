@@ -56,7 +56,7 @@ class TestFilesProvider:
             mock_settings.minio.access_key = "test-access-key"
             mock_settings.minio.secret_key.get_secret_value.return_value = "test-secret-key"
             mock_settings.minio.internal_endpoint_url = "http://minio:9000"
-            mock_settings.minio.public_url = "https://s3.example.test/"
+            mock_settings.minio.public_endpoint_url = "https://s3.example.test"
             container = make_async_container(FilesProvider())
             try:
                 provided_clients = await container.get(S3ClientBundle)

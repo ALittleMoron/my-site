@@ -72,7 +72,7 @@ class TestS3FileStorage:
         self.internal_client.head_bucket.return_value = {}
 
         with patch("infra.s3.file_storages.settings") as mock_settings:
-            mock_settings.public_app_origin = "https://alittlemoron.ru"
+            mock_settings.app.public_origin = "https://alittlemoron.ru"
             mock_settings.minio.presign_put_expires_seconds = 300
             await self.storage.ensure_namespace_exists(bucket_name)
 
@@ -111,7 +111,7 @@ class TestS3FileStorage:
 
     @patch("infra.s3.file_storages.settings")
     async def test_upload_file_success(self, mock_settings: Mock) -> None:
-        mock_settings.get_minio_object_url.return_value = "http://localhost/media/test.txt"
+        mock_settings.minio.get_object_url.return_value = "http://localhost/media/test.txt"
         file_data = BytesIO(b"test content")
         object_name = "test.txt"
         content_type = "text/plain"
@@ -137,7 +137,7 @@ class TestS3FileStorage:
             Body=b"test content",
             ContentType=content_type,
         )
-        mock_settings.get_minio_object_url.assert_called_once_with(
+        mock_settings.minio.get_object_url.assert_called_once_with(
             bucket="media",
             object_path=object_name,
         )
@@ -179,7 +179,7 @@ class TestS3FileStorage:
         mock_settings: Mock,
     ) -> None:
         mock_settings.minio.presign_put_expires_seconds = 60
-        mock_settings.get_minio_object_url.return_value = "http://localhost/media/test.txt"
+        mock_settings.minio.get_object_url.return_value = "http://localhost/media/test.txt"
         self.public_client.generate_presigned_url.return_value = "http://minio/upload"
 
         result = await self.storage.presign_put_object(
@@ -202,7 +202,7 @@ class TestS3FileStorage:
             ExpiresIn=60,
             HttpMethod="PUT",
         )
-        mock_settings.get_minio_object_url.assert_called_once_with(
+        mock_settings.minio.get_object_url.assert_called_once_with(
             bucket="media",
             object_path="test.txt",
         )

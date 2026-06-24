@@ -14,11 +14,11 @@ class PublicUrl:
     updated_at: str | None
 
     def absolute_url(self) -> str:
-        return settings.get_url(self.path)
+        return settings.app.get_url(self.path)
 
     def localized_variants(self) -> dict[LanguageEnum, str]:
         return {
-            language: settings.get_url(self.path_for_language(language=language))
+            language: settings.app.get_url(self.path_for_language(language=language))
             for language in LanguageEnum
         }
 
@@ -116,5 +116,5 @@ class RobotsTxt:
             "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"
-            f"Sitemap: {settings.get_url('/sitemap.xml')}\n"
+            f"Sitemap: {settings.app.get_url('/sitemap.xml')}\n"
         )
