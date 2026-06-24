@@ -96,7 +96,7 @@
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
 - [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
 - [x] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
-- [ ] Replace uvicorn with Granian
+- [x] Replace uvicorn with Granian
 - [ ] OWASP Top 10 compliance check
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit

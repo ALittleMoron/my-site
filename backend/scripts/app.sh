@@ -23,11 +23,11 @@ require_uv
 
 case "$action" in
     run)
-        PYTHONPATH=src uv run uvicorn main:create_app --port 8080 --host 0.0.0.0
+        PYTHONPATH=src uv run granian --interface asgi --factory --host 0.0.0.0 --port 8080 main:create_app
         ;;
     run-local)
         PYTHONPATH=src APP_DEBUG=true DB_HOST=localhost MINIO_HOST=localhost VALKEY_HOST=localhost \
-            uv run python src/main.py
+            uv run granian --interface asgi --factory --host localhost --port 8000 --reload main:create_app
         ;;
     cli)
         run_cli "$@"

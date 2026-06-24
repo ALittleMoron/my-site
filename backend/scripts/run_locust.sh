@@ -79,7 +79,7 @@ start_local_backend_if_needed() {
     port="$(performance_host_port "$PERFORMANCE_HOST")"
     log_file="${PERFORMANCE_BACKEND_LOG:-${PERFORMANCE_REPORT_RUN_DIR}/backend.log}"
 
-    PYTHONPATH=src uv run uvicorn main:create_app --port "$port" --host 127.0.0.1 \
+    PYTHONPATH=src uv run granian --interface asgi --factory --host 127.0.0.1 --port "$port" main:create_app \
         >"$log_file" 2>&1 &
     PERFORMANCE_BACKEND_PID="$!"
 

@@ -13,7 +13,7 @@ case "$action" in
             --password "${ADMIN_INIT_PASSWORD}"
         ;;
     run)
-        uvicorn main:create_app --port 8080 --host 0.0.0.0
+        granian --interface asgi --factory --host 0.0.0.0 --port 8080 main:create_app
         ;;
     *)
         echo "Unknown application action: ${action}" >&2

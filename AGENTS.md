@@ -6,7 +6,7 @@ Portfolio and articles site with a knowledge database
 
 ## Stack
 
-- Runtime: Python 3.14, uv
+- Runtime: Python 3.14, uv, Granian ASGI server
 - Framework: Litestar 2.23+
 - DB: PostgreSQL 18.4 + SQLAlchemy 2.0 async + Alembic
 - DI: Dishka
