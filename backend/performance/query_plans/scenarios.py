@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFilters, ArticleMetadata, Tag, Tags
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    GradeEnum,
+    InterviewFrequencyEnum,
+)
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
@@ -418,10 +422,11 @@ async def run_list_competency_matrix_workspace_items(session: AsyncSession) -> N
             page=1,
             page_size=20,
             language=LanguageEnum.EN,
-            sort=CompetencyMatrixWorkspaceSortEnum.SECTION,
+            sort=CompetencyMatrixWorkspaceSortEnum.INTERVIEW_FREQUENCY,
             search_query=None,
             sheet_keys=("python",),
             grades=(GradeEnum.JUNIOR,),
+            interview_frequencies=(InterviewFrequencyEnum.OFTEN,),
             sections=(),
             subsections=(),
             publish_statuses=(PublishStatusEnum.PUBLISHED,),
@@ -648,6 +653,7 @@ def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
         sheet_ru="Питон",
         sheet_en="Python",
         grade=GradeEnum.JUNIOR,
+        interview_frequency=InterviewFrequencyEnum.OFTEN,
         section_ru="Основы",
         section_en="Basics",
         subsection_ru="Производительность",

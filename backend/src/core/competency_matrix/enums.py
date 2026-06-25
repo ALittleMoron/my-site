@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class CompetencyMatrixWorkspaceSortEnum(StrEnum):
     GRADE = "grade"
+    INTERVIEW_FREQUENCY = "interviewFrequency"
     SECTION = "section"
     SUBSECTION = "subsection"
     NEWEST = "newest"
@@ -17,3 +18,10 @@ class GradeEnum(StrEnum):
     MIDDLE = "Middle"
     MIDDLE_PLUS = "Middle+"
     SENIOR = "Senior"
+
+
+class InterviewFrequencyEnum(StrEnum):
+    CONSTANTLY = "constantly"
+    OFTEN = "often"
+    RARELY = "rarely"
+    NEVER_SEEN = "neverSeen"

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
@@ -140,6 +140,15 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
         doc="Competency grade",
     )
+    interview_frequency: Mapped[InterviewFrequencyEnum | None] = mapped_column(
+        Enum(
+            InterviewFrequencyEnum,
+            native_enum=False,
+            length=11,
+            name="interview_frequency_enum",
+        ),
+        doc="How often the question appears in interviews",
+    )
 
     resource_links: Mapped[list[ResourceToItemSecondaryModel]] = relationship(
         back_populates="item",
@@ -256,6 +265,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             subsection_ru=item.subsection_ru,
             subsection_en=item.subsection_en,
             grade=item.grade,
+            interview_frequency=item.interview_frequency,
             resource_links=[
                 ResourceToItemSecondaryModel.from_domain_schema(schema=resource)
                 for resource in item.resources
@@ -283,6 +293,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         self.subsection_ru = item.subsection_ru
         self.subsection_en = item.subsection_en
         self.grade = item.grade
+        self.interview_frequency = item.interview_frequency
 
     def to_domain_schema(self, *, include_relationships: bool) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
@@ -304,6 +315,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             subsection_ru=self.subsection_ru,
             subsection_en=self.subsection_en,
             grade=self.grade,
+            interview_frequency=self.interview_frequency,
             resources=AttachedExternalResources(
                 values=(
                     [link.to_domain_schema() for link in self.resource_links]

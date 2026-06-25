@@ -116,6 +116,21 @@
       </select>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
+      <label class="form-label" for="matrix-workspace-interview-frequency">
+        {{ 'matrix.form.interviewFrequency' | t }}
+      </label>
+      <select
+        id="matrix-workspace-interview-frequency"
+        class="form-select form-select-sm"
+        formControlName="interviewFrequency"
+      >
+        <option value="">{{ 'shared.notSet' | t }}</option>
+        @for (frequency of filterOptions().interviewFrequencies; track frequency) {
+          <option [value]="frequency">{{ interviewFrequencyLabel(frequency) }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-section">
         {{ 'matrix.form.section' | t }}
       </label>
@@ -251,6 +266,7 @@
             <th>{{ 'matrix.suggestion.question' | t }}</th>
             <th>{{ 'matrix.form.sheet' | t }}</th>
             <th>{{ 'matrix.form.grade' | t }}</th>
+            <th>{{ 'matrix.form.interviewFrequency' | t }}</th>
             <th>{{ 'adminMatrixWorkspace.status' | t }}</th>
             <th>{{ 'adminMatrixWorkspace.missingFields' | t }}</th>
             <th class="text-end">{{ 'adminMatrixWorkspace.actions' | t }}</th>
@@ -278,6 +294,7 @@
               </td>
               <td>{{ item.sheet }}</td>
               <td>{{ gradeLabel(item.grade) }}</td>
+              <td>{{ interviewFrequencyLabel(item.interviewFrequency) }}</td>
               <td>
                 <span
                   class="badge"
@@ -472,6 +489,21 @@
                   <option value="">{{ 'shared.notSet' | t }}</option>
                   @for (grade of grades; track grade) {
                     <option [value]="grade">{{ gradeLabel(grade) }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="matrix-form-interview-frequency">
+                  {{ 'matrix.form.interviewFrequency' | t }}
+                </label>
+                <select
+                  id="matrix-form-interview-frequency"
+                  class="form-select"
+                  formControlName="interviewFrequency"
+                >
+                  <option value="">{{ 'shared.notSet' | t }}</option>
+                  @for (frequency of interviewFrequencies; track frequency) {
+                    <option [value]="frequency">{{ interviewFrequencyLabel(frequency) }}</option>
                   }
                 </select>
               </div>

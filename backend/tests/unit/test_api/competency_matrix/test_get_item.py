@@ -1,7 +1,7 @@
 import pytest_asyncio
 from httpx import codes
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
@@ -58,6 +58,7 @@ class TestGetItemAPI(ApiTestCase):
             sheet_key="python",
             sheet_ru="Питон",
             sheet_en="Python",
+            interview_frequency=InterviewFrequencyEnum.CONSTANTLY,
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=1,
@@ -82,6 +83,7 @@ class TestGetItemAPI(ApiTestCase):
             "section": "Basics",
             "sheetKey": "python",
             "sheet": "Python",
+            "interviewFrequency": "constantly",
             "publishStatus": "Published",
             "translations": {
                 "ru": {
@@ -140,6 +142,7 @@ class TestGetItemAPI(ApiTestCase):
             sheet_key="python",
             sheet_ru="Питон",
             sheet_en="Python",
+            interview_frequency=InterviewFrequencyEnum.NEVER_SEEN,
         )
         response = self.no_auth_api.get_public_competency_matrix_item(
             slug="how-to-write-function",
@@ -148,6 +151,7 @@ class TestGetItemAPI(ApiTestCase):
         assert response.status_code == codes.OK
         assert response.json()["slug"] == "how-to-write-function"
         assert response.json()["question"] == "How to write a function?"
+        assert response.json()["interviewFrequency"] == "neverSeen"
         self.use_case.get_item_by_slug.assert_called_once_with(
             params=CompetencyMatrixItemBySlugGetParams(
                 slug="how-to-write-function",

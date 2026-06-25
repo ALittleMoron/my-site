@@ -85,6 +85,10 @@ export class I18nService {
     return `enum.grade.${normalized}`;
   }
 
+  enumInterviewFrequencyKey(frequency: string): string {
+    return `enum.interviewFrequency.${frequency}`;
+  }
+
   dateLocale(): string {
     return this.language() === 'en' ? 'en-US' : 'ru-RU';
   }

@@ -1,4 +1,6 @@
 import { DOCUMENT } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   Component,
   ChangeDetectionStrategy,
@@ -13,6 +15,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatrixService } from '../../services/matrix.service';
 import {
+  MatrixQuestion,
   MatrixQuestionDetail,
   MatrixQuestionList,
   MatrixSheet,
@@ -46,6 +49,7 @@ const LINE_BREAKS_PATTERN = /[\r\n]+/g;
     MatrixFilterBarComponent,
     MatrixGroupedGridComponent,
     MatrixQuestionDetailComponent,
+    RouterLink,
     TranslatePipe,
   ],
   templateUrl: './matrix-list.component.html',
@@ -216,8 +220,7 @@ export class MatrixListComponent implements OnInit {
     this.selectedQuestion.set(null);
     this.detailLoading.set(true);
     this.detailError.set(null);
-    this.matrixService
-      .getPublicQuestion(id, this.currentLanguage())
+    this.publicDetailRequest(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (detail) => {
@@ -306,9 +309,30 @@ export class MatrixListComponent implements OnInit {
     return language;
   }
 
+  private publicDetailRequest(id: number): Observable<MatrixQuestionDetail> {
+    const language = this.currentLanguage();
+    const question = findQuestionById(this.questions(), id);
+    return question === null
+      ? this.matrixService.getPublicQuestion(id, language)
+      : this.matrixService.getPublicQuestionBySlug(question.slug, language);
+  }
+
   private storage(): Storage | null {
     return this.document.defaultView?.localStorage ?? null;
   }
+}
+
+function findQuestionById(list: MatrixQuestionList | null, id: number): MatrixQuestion | null {
+  if (list === null) return null;
+  for (const section of list.sections) {
+    for (const subsection of section.subsections) {
+      for (const grade of subsection.grades) {
+        const question = grade.questions.find((item) => item.id === id);
+        if (question !== undefined) return question;
+      }
+    }
+  }
+  return null;
 }
 
 function normalizeSuggestionQuestion(value: string): string {

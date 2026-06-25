@@ -35,6 +35,7 @@ describe('MatrixQuestionWorkspaceService', () => {
         searchQuery: 'typing',
         sheetKeys: ['python', 'sql'],
         grades: ['Junior', 'Senior'],
+        interviewFrequencies: ['often', 'rarely'],
         sections: ['Core'],
         subsections: ['Syntax'],
         publishStatuses: ['Draft', 'Published'],
@@ -54,6 +55,7 @@ describe('MatrixQuestionWorkspaceService', () => {
     expect(req.request.params.get('pageSize')).toBe('50');
     expect(req.request.params.getAll('sheetKeys')).toEqual(['python', 'sql']);
     expect(req.request.params.getAll('grades')).toEqual(['Junior', 'Senior']);
+    expect(req.request.params.getAll('interviewFrequencies')).toEqual(['often', 'rarely']);
     expect(req.request.params.get('hasMissingFields')).toBe('true');
     req.flush({
       totalCount: 1,
@@ -73,6 +75,7 @@ describe('MatrixQuestionWorkspaceService', () => {
           sheetKey: 'python',
           sheet: 'Python',
           grade: 'Junior',
+          interviewFrequency: 'often',
           section: 'Core',
           subsection: 'Syntax',
           publishStatus: 'Published',
@@ -106,6 +109,7 @@ describe('MatrixQuestionWorkspaceService', () => {
         },
       ],
       grades: ['Junior'],
+      interviewFrequencies: ['often'],
       sections: ['Основы'],
       subsections: ['Синтаксис'],
       publishStatuses: ['Draft', 'Published'],
@@ -175,7 +179,14 @@ describe('MatrixQuestionWorkspaceService', () => {
               grades: [
                 {
                   grade: 'Junior',
-                  items: [{ id: 1, slug: 'typing', question: 'What is typing?' }],
+                  items: [
+                    {
+                      id: 1,
+                      slug: 'typing',
+                      question: 'What is typing?',
+                      interviewFrequency: 'often',
+                    },
+                  ],
                 },
               ],
             },

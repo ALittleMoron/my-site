@@ -49,6 +49,8 @@ GENERAL_TAG_START_ID = 4
 TARGET_ARTICLE_DIVISOR = 100
 MATRIX_GRADE_BUCKET_MIDDLE = 2
 MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
+MATRIX_FREQUENCY_BUCKET_RARELY = 2
+MATRIX_FREQUENCY_BUCKET_NEVER_SEEN = 3
 USER_SEED_COUNT = 10_000
 ARTICLE_REACTION_SEED_COUNT = 50_000
 QUEUED_QUESTION_SEED_COUNT = 50_000
@@ -392,6 +394,7 @@ async def insert_competency_matrix_items(
     section_bucket = func.mod(value, 8)
     subsection_bucket = func.mod(value, 12)
     grade_bucket = func.mod(value, 5)
+    frequency_bucket = func.mod(value, 5)
     await connection.execute(
         insert(CompetencyMatrixItemModel.__table__).from_select(
             [
@@ -411,6 +414,7 @@ async def insert_competency_matrix_items(
                 "subsection_ru",
                 "subsection_en",
                 "grade",
+                "interview_frequency",
                 "published_at",
                 "publish_status",
             ],
@@ -460,6 +464,16 @@ async def insert_competency_matrix_items(
                     (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE, literal("MIDDLE")),
                     (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE_PLUS, literal("MIDDLE_PLUS")),
                     else_=literal("SENIOR"),
+                ),
+                case(
+                    (frequency_bucket == 0, literal("CONSTANTLY")),
+                    (frequency_bucket == 1, literal("OFTEN")),
+                    (frequency_bucket == MATRIX_FREQUENCY_BUCKET_RARELY, literal("RARELY")),
+                    (
+                        frequency_bucket == MATRIX_FREQUENCY_BUCKET_NEVER_SEEN,
+                        literal("NEVER_SEEN"),
+                    ),
+                    else_=literal(None),
                 ),
                 case((draft_item, literal(None)), else_=literal(SEED_NOW)),
                 case((draft_item, literal("DRAFT")), else_=literal("PUBLISHED")),

@@ -1,5 +1,6 @@
 export type MatrixPublishStatus = 'Draft' | 'Published';
 export type MatrixGrade = 'Junior' | 'Junior+' | 'Middle' | 'Middle+' | 'Senior';
+export type MatrixInterviewFrequency = 'constantly' | 'often' | 'rarely' | 'neverSeen';
 
 export interface MatrixResourceTranslationDto {
   name: string;
@@ -50,6 +51,7 @@ export interface MatrixItemDto {
   id: number;
   slug: string;
   question: string;
+  interviewFrequency: MatrixInterviewFrequency | null;
 }
 
 export interface MatrixItemDetailDto extends MatrixItemDto {
@@ -153,6 +155,7 @@ export interface MatrixQuestion {
   id: number;
   slug: string;
   question: string;
+  interviewFrequency: MatrixInterviewFrequency | null;
 }
 
 export interface MatrixQuestionDetail extends MatrixQuestion {
@@ -200,6 +203,7 @@ export interface MatrixQuestionPayload {
   slug: string;
   sheetKey: string;
   grade: MatrixGrade;
+  interviewFrequency: MatrixInterviewFrequency | null;
   publishStatus: MatrixPublishStatus;
   translations: MatrixItemTranslations;
   resources: MatrixResourceAttachmentPayload[];
@@ -247,6 +251,7 @@ export function mapMatrixListDto(dto: MatrixItemsListDto): MatrixQuestionList {
             id: item.id,
             slug: item.slug,
             question: item.question,
+            interviewFrequency: item.interviewFrequency,
           })),
         })),
       })),
@@ -259,6 +264,7 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
     id: dto.id,
     slug: dto.slug,
     question: dto.question,
+    interviewFrequency: dto.interviewFrequency,
     answer: dto.answer,
     interviewExpectedAnswer: dto.interviewExpectedAnswer,
     sheetKey: dto.sheetKey,

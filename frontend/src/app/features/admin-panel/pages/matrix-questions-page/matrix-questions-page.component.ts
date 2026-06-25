@@ -29,6 +29,7 @@ import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
 import {
   AdminMatrixGrade,
+  AdminMatrixInterviewFrequency,
   AdminMatrixMissingField,
   AdminMatrixPublishStatus,
   AdminMatrixQuestionDetailDto,
@@ -46,11 +47,18 @@ import {
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
+const INTERVIEW_FREQUENCIES: readonly AdminMatrixInterviewFrequency[] = [
+  'constantly',
+  'often',
+  'rarely',
+  'neverSeen',
+];
 const PUBLISH_STATUSES: readonly AdminMatrixPublishStatus[] = ['Draft', 'Published'];
 const SORTS: readonly AdminMatrixWorkspaceSort[] = [
   'newest',
   'oldest',
   'grade',
+  'interviewFrequency',
   'section',
   'subsection',
   'missingFields',
@@ -119,6 +127,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
   private readonly document = inject(DOCUMENT);
 
   readonly grades = GRADES;
+  readonly interviewFrequencies = INTERVIEW_FREQUENCIES;
   readonly publishStatuses = PUBLISH_STATUSES;
   readonly sorts = SORTS;
   readonly pageSizes = PAGE_SIZES;
@@ -128,6 +137,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
   readonly filterOptions = signal<AdminMatrixWorkspaceFilterOptions>({
     sheets: [],
     grades: [],
+    interviewFrequencies: [],
     sections: [],
     subsections: [],
     publishStatuses: [],
@@ -163,6 +173,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
     searchQuery: [''],
     sheetKey: [''],
     grade: [''],
+    interviewFrequency: [''],
     section: [''],
     subsection: [''],
     publishStatus: [''],
@@ -179,6 +190,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
     slug: ['', [trimRequired, Validators.maxLength(255)]],
     sheetKey: ['', [trimRequired, Validators.maxLength(255)]],
     grade: this.formBuilder.control<AdminMatrixGrade | ''>(''),
+    interviewFrequency: this.formBuilder.control<AdminMatrixInterviewFrequency | ''>(''),
     publishStatus: this.formBuilder.control<AdminMatrixPublishStatus>('Draft', {
       validators: Validators.required,
     }),
@@ -299,6 +311,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       searchQuery: '',
       sheetKey: '',
       grade: '',
+      interviewFrequency: '',
       section: '',
       subsection: '',
       publishStatus: '',
@@ -384,6 +397,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       slug: '',
       sheetKey: '',
       grade: '',
+      interviewFrequency: '',
       publishStatus: 'Draft',
       questionRu: '',
       questionEn: '',
@@ -531,6 +545,12 @@ export class MatrixQuestionsPageComponent implements OnInit {
       : this.i18n.translate(this.i18n.enumGradeKey(grade));
   }
 
+  interviewFrequencyLabel(frequency: AdminMatrixInterviewFrequency | null): string {
+    return frequency === null
+      ? this.i18n.translate('shared.notSet')
+      : this.i18n.translate(this.i18n.enumInterviewFrequencyKey(frequency));
+  }
+
   sortLabel(sort: AdminMatrixWorkspaceSort): string {
     return this.i18n.translate(`adminMatrixWorkspace.sort.${sort}`);
   }
@@ -663,6 +683,9 @@ export class MatrixQuestionsPageComponent implements OnInit {
       searchQuery: normalizedValue(raw.searchQuery),
       sheetKeys: singleValueArray(raw.sheetKey),
       grades: singleValueArray(raw.grade) as AdminMatrixGrade[],
+      interviewFrequencies: singleValueArray(raw.interviewFrequency) as
+        | AdminMatrixInterviewFrequency[]
+        | undefined,
       sections: singleValueArray(raw.section),
       subsections: singleValueArray(raw.subsection),
       publishStatuses: singleValueArray(raw.publishStatus) as AdminMatrixPublishStatus[],
@@ -677,6 +700,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       slug: detail.slug,
       sheetKey: detail.sheetKey,
       grade: detail.grade ?? '',
+      interviewFrequency: detail.interviewFrequency ?? '',
       publishStatus: detail.publishStatus,
       questionRu: detail.translations.ru.question,
       questionEn: detail.translations.en.question,
@@ -700,6 +724,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       slug: raw.slug.trim(),
       sheetKey: raw.sheetKey.trim(),
       grade: raw.grade === '' ? null : raw.grade,
+      interviewFrequency: raw.interviewFrequency === '' ? null : raw.interviewFrequency,
       publishStatus: raw.publishStatus,
       translations: {
         ru: {

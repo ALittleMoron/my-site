@@ -5,7 +5,11 @@ from datetime import date, datetime
 from enum import StrEnum
 from math import ceil
 
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    GradeEnum,
+    InterviewFrequencyEnum,
+)
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
@@ -234,6 +238,7 @@ class BaseCompetencyMatrixItem:
     sheet_ru: str
     sheet_en: str
     grade: GradeEnum | None
+    interview_frequency: InterviewFrequencyEnum | None
     section_ru: str
     section_en: str
     subsection_ru: str
@@ -374,6 +379,7 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
             sheet_ru=self.sheet_ru,
             sheet_en=self.sheet_en,
             grade=self.grade,
+            interview_frequency=self.interview_frequency,
             section_ru=self.section_ru,
             section_en=self.section_en,
             subsection_ru=self.subsection_ru,
@@ -407,6 +413,7 @@ class CompetencyMatrixWorkspaceFilters:
     search_query: str | None = None
     sheet_keys: tuple[str, ...] = ()
     grades: tuple[GradeEnum, ...] = ()
+    interview_frequencies: tuple[InterviewFrequencyEnum, ...] = ()
     sections: tuple[str, ...] = ()
     subsections: tuple[str, ...] = ()
     publish_statuses: tuple[PublishStatusEnum, ...] = ()
@@ -440,6 +447,7 @@ class CompetencyMatrixWorkspaceItem:
     sheet_key: str
     sheet: str
     grade: GradeEnum | None
+    interview_frequency: InterviewFrequencyEnum | None
     section: str
     subsection: str
     publish_status: PublishStatusEnum
@@ -491,6 +499,7 @@ class CompetencyMatrixFilterSheetOption(CompetencyMatrixFilterOption):
 class CompetencyMatrixFilterOptions:
     sheets: list[CompetencyMatrixFilterSheetOption]
     grades: list[GradeEnum]
+    interview_frequencies: list[InterviewFrequencyEnum]
     sections: list[str]
     subsections: list[str]
     publish_statuses: list[PublishStatusEnum]

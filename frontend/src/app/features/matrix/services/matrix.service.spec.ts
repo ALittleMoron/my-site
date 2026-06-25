@@ -37,11 +37,13 @@ describe('MatrixService', () => {
     let resultSheet: string | undefined;
     let firstQuestion: string | undefined;
     let firstSlug: string | undefined;
+    let firstFrequency: string | null | undefined;
 
     service.getPublicQuestions('python', 'en').subscribe((list) => {
       resultSheet = list.sheet;
       firstQuestion = list.sections[0].subsections[0].grades[0].questions[0].question;
       firstSlug = list.sections[0].subsections[0].grades[0].questions[0].slug;
+      firstFrequency = list.sections[0].subsections[0].grades[0].questions[0].interviewFrequency;
     });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
@@ -60,7 +62,14 @@ describe('MatrixService', () => {
               grades: [
                 {
                   grade: 'Junior',
-                  items: [{ id: 1, slug: 'what-is-pep8', question: 'What is PEP8?' }],
+                  items: [
+                    {
+                      id: 1,
+                      slug: 'what-is-pep8',
+                      question: 'What is PEP8?',
+                      interviewFrequency: 'often',
+                    },
+                  ],
                 },
               ],
             },
@@ -72,15 +81,21 @@ describe('MatrixService', () => {
     expect(resultSheet).toBe('Python');
     expect(firstQuestion).toBe('What is PEP8?');
     expect(firstSlug).toBe('what-is-pep8');
+    expect(firstFrequency).toBe('often');
   });
 
   it('loads localized public question detail from the backend detail endpoint', () => {
-    service.getPublicQuestion(1, 'en').subscribe();
+    let frequency: string | null | undefined;
+
+    service.getPublicQuestion(1, 'en').subscribe((question) => {
+      frequency = question.interviewFrequency;
+    });
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
     expect(req.request.params.has('onlyPublished')).toBe(false);
     expect(req.request.params.get('language')).toBe('en');
     req.flush(matrixDetailDto());
+    expect(frequency).toBe('often');
   });
 
   it('loads public localized question detail by slug', () => {
@@ -129,6 +144,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
     sheetKey: 'python',
     sheet: 'Python',
     grade: 'Junior',
+    interviewFrequency: 'often',
     section: 'Core',
     subsection: 'Style',
     publishStatus: 'Published',

@@ -134,6 +134,7 @@ class ApiFactoryHelper:
         sheet_ru: str = "Питон",
         sheet_en: str = "Python",
         grade: str | None = "Junior",
+        interview_frequency: str | None = "often",
         section_ru: str = "Основы",
         section_en: str = "Basics",
         subsection_ru: str = "Функции",
@@ -145,6 +146,7 @@ class ApiFactoryHelper:
             "slug": slug,
             "sheetKey": sheet_key,
             "grade": grade,
+            "interviewFrequency": interview_frequency,
             "publishStatus": publish_status,
             "translations": {
                 "ru": {

@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 
@@ -14,6 +14,13 @@ GRADE_MESSAGE_KEYS: Mapping[GradeEnum, str] = {
     GradeEnum.MIDDLE: "enum.grade.Middle",
     GradeEnum.MIDDLE_PLUS: "enum.grade.MiddlePlus",
     GradeEnum.SENIOR: "enum.grade.Senior",
+}
+
+INTERVIEW_FREQUENCY_MESSAGE_KEYS: Mapping[InterviewFrequencyEnum, str] = {
+    InterviewFrequencyEnum.CONSTANTLY: "enum.interviewFrequency.constantly",
+    InterviewFrequencyEnum.OFTEN: "enum.interviewFrequency.often",
+    InterviewFrequencyEnum.RARELY: "enum.interviewFrequency.rarely",
+    InterviewFrequencyEnum.NEVER_SEEN: "enum.interviewFrequency.neverSeen",
 }
 
 MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
@@ -207,6 +214,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.newest": "Сначала новые",
         "adminMatrixWorkspace.sort.oldest": "Сначала старые",
         "adminMatrixWorkspace.sort.grade": "Грейд",
+        "adminMatrixWorkspace.sort.interviewFrequency": "Частота на собеседовании",
         "adminMatrixWorkspace.sort.section": "Раздел",
         "adminMatrixWorkspace.sort.subsection": "Подраздел",
         "adminMatrixWorkspace.sort.missingFields": "Пропуски",
@@ -449,7 +457,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.quotaExceeded": "Лимит предложений на сегодня исчерпан.",
         "matrix.modal.create": "Добавление вопроса",
         "matrix.modal.edit": "Редактирование вопроса",
-        "matrix.modal.detail": "Детализация вопроса",
         "matrix.question.notFoundTitle": "Вопрос не найден",
         "matrix.question.notFoundDescription": "Вопрос матрицы недоступен или ещё не опубликован.",
         "matrix.question.backToMatrix": "Назад",
@@ -462,6 +469,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.sheetRu": "Лист RU",
         "matrix.form.sheetEn": "Лист EN",
         "matrix.form.grade": "Грейд",
+        "matrix.form.interviewFrequency": "Как часто спрашивают",
         "matrix.form.section": "Раздел",
         "matrix.form.sectionRu": "Раздел RU",
         "matrix.form.sectionEn": "Раздел EN",
@@ -489,6 +497,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.resources.contextEnPlaceholder": "Контекст для этого вопроса EN",
         "matrix.resources.detach": "Открепить",
         "matrix.detail.question": "Вопрос:",
+        "matrix.detail.interviewFrequency": "Как часто спрашивают:",
         "matrix.detail.answer": "Ответ:",
         "matrix.detail.expectedAnswer": "Ответ, который ожидается на собеседовании:",
         "matrix.detail.resources": "Внешние ресурсы:",
@@ -707,6 +716,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.grade.Middle": "Middle",
         "enum.grade.MiddlePlus": "Middle+",
         "enum.grade.Senior": "Senior",
+        "enum.interviewFrequency.constantly": "Постоянно",
+        "enum.interviewFrequency.often": "Часто",
+        "enum.interviewFrequency.rarely": "Очень редко",
+        "enum.interviewFrequency.neverSeen": "Никогда не видел",
         "enum.role.anon": "Анонимный",
         "enum.role.user": "Пользователя",
         "enum.role.moderator": "Модератор",
@@ -911,6 +924,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.newest": "Newest first",
         "adminMatrixWorkspace.sort.oldest": "Oldest first",
         "adminMatrixWorkspace.sort.grade": "Grade",
+        "adminMatrixWorkspace.sort.interviewFrequency": "Interview frequency",
         "adminMatrixWorkspace.sort.section": "Section",
         "adminMatrixWorkspace.sort.subsection": "Subsection",
         "adminMatrixWorkspace.sort.missingFields": "Missing fields",
@@ -1149,7 +1163,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.quotaExceeded": "Today's suggestion limit has been reached.",
         "matrix.modal.create": "Add question",
         "matrix.modal.edit": "Edit question",
-        "matrix.modal.detail": "Question details",
         "matrix.question.notFoundTitle": "Question not found",
         "matrix.question.notFoundDescription": "The matrix question is unavailable or unpublished.",
         "matrix.question.backToMatrix": "Back",
@@ -1162,6 +1175,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.sheetRu": "Sheet RU",
         "matrix.form.sheetEn": "Sheet EN",
         "matrix.form.grade": "Grade",
+        "matrix.form.interviewFrequency": "How often asked",
         "matrix.form.section": "Section",
         "matrix.form.sectionRu": "Section RU",
         "matrix.form.sectionEn": "Section EN",
@@ -1189,6 +1203,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.resources.contextEnPlaceholder": "Context for this question EN",
         "matrix.resources.detach": "Detach",
         "matrix.detail.question": "Question:",
+        "matrix.detail.interviewFrequency": "How often asked:",
         "matrix.detail.answer": "Answer:",
         "matrix.detail.expectedAnswer": "Expected interview answer:",
         "matrix.detail.resources": "External resources:",
@@ -1403,6 +1418,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.grade.Middle": "Middle",
         "enum.grade.MiddlePlus": "Middle+",
         "enum.grade.Senior": "Senior",
+        "enum.interviewFrequency.constantly": "Constantly",
+        "enum.interviewFrequency.often": "Often",
+        "enum.interviewFrequency.rarely": "Rarely",
+        "enum.interviewFrequency.neverSeen": "Never seen",
         "enum.role.anon": "Anonymous",
         "enum.role.user": "User",
         "enum.role.moderator": "Moderator",
@@ -1447,6 +1466,8 @@ def validate_i18n_catalog() -> None:
         for status in PublishStatusEnum:
             _ = messages[f"enum.publishStatus.{status.value}"]
         for key in GRADE_MESSAGE_KEYS.values():
+            _ = messages[key]
+        for key in INTERVIEW_FREQUENCY_MESSAGE_KEYS.values():
             _ = messages[key]
         for role in RoleEnum:
             _ = messages[f"enum.role.{role.value}"]

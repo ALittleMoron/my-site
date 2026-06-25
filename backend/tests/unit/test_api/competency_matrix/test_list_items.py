@@ -3,7 +3,7 @@ from httpx import codes
 
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.enums import PublishStatusEnum
 from tests.test_cases import ApiTestCase
@@ -31,6 +31,7 @@ class TestItemsAPI(ApiTestCase):
                     sheet_key="python",
                     sheet_ru="Питон",
                     sheet_en="Python",
+                    interview_frequency=InterviewFrequencyEnum.RARELY,
                 ),
             ],
         )
@@ -61,6 +62,7 @@ class TestItemsAPI(ApiTestCase):
                     sheet_key="python",
                     sheet_ru="Питон",
                     sheet_en="Python",
+                    interview_frequency=InterviewFrequencyEnum.RARELY,
                 ),
             ],
         )
@@ -83,6 +85,7 @@ class TestItemsAPI(ApiTestCase):
                                             "id": 1,
                                             "slug": "how-to-write-a-function",
                                             "question": "How to write a function?",
+                                            "interviewFrequency": "rarely",
                                         },
                                     ],
                                 },

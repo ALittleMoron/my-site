@@ -7,7 +7,11 @@ from litestar.params import FromPath, QueryParameter
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    GradeEnum,
+    InterviewFrequencyEnum,
+)
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemGetParams,
@@ -78,6 +82,10 @@ def provide_competency_matrix_workspace_filters(  # noqa: PLR0913
     search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
     sheet_keys: Annotated[list[str] | None, QueryParameter(name="sheetKeys")] = None,
     grades: Annotated[list[GradeEnum] | None, QueryParameter(name="grades")] = None,
+    interview_frequencies: Annotated[
+        list[InterviewFrequencyEnum] | None,
+        QueryParameter(name="interviewFrequencies"),
+    ] = None,
     sections: Annotated[list[str] | None, QueryParameter(name="sections")] = None,
     subsections: Annotated[list[str] | None, QueryParameter(name="subsections")] = None,
     publish_statuses: Annotated[
@@ -102,6 +110,7 @@ def provide_competency_matrix_workspace_filters(  # noqa: PLR0913
         search_query=normalized_search_query,
         sheet_keys=tuple(sheet_keys or ()),
         grades=tuple(grades or ()),
+        interview_frequencies=tuple(interview_frequencies or ()),
         sections=tuple(sections or ()),
         subsections=tuple(subsections or ()),
         publish_statuses=tuple(publish_statuses or ()),

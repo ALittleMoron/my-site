@@ -1,6 +1,6 @@
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.i18n.catalog import get_i18n_messages
@@ -21,6 +21,8 @@ class TestI18nCatalog:
                 assert f"enum.publishStatus.{status.value}" in messages
             for grade in GradeEnum:
                 assert f"enum.grade.{grade.name.title().replace('_', '')}" in messages
+            for frequency in InterviewFrequencyEnum:
+                assert f"enum.interviewFrequency.{frequency.value}" in messages
             for role in RoleEnum:
                 assert f"enum.role.{role.value}" in messages
             for reaction in ArticleReactionKind:

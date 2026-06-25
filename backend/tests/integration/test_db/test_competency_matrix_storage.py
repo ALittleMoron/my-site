@@ -4,7 +4,11 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    GradeEnum,
+    InterviewFrequencyEnum,
+)
 from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
@@ -393,10 +397,132 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             ("Drafts", ["Queue"]),
         ]
         assert GradeEnum.JUNIOR in options.grades
+        assert InterviewFrequencyEnum.OFTEN in options.interview_frequencies
         assert "Drafts" in options.sections
         assert "Queue" in options.subsections
         assert PublishStatusEnum.DRAFT in options.publish_statuses
         assert PublishStatusEnum.PUBLISHED in options.publish_statuses
+
+    async def test_list_workspace_items_filters_and_sorts_by_interview_frequency(self) -> None:
+        await self.storage_helper.create_competency_matrix_items(
+            items=[
+                self.factory.core.competency_matrix_item(
+                    item_id=10,
+                    slug="constant-question",
+                    question="Constant question",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                    interview_frequency=InterviewFrequencyEnum.CONSTANTLY,
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=11,
+                    slug="often-question",
+                    question="Often question",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                    interview_frequency=InterviewFrequencyEnum.OFTEN,
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=12,
+                    slug="rare-question",
+                    question="Rare question",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                    interview_frequency=InterviewFrequencyEnum.RARELY,
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=13,
+                    slug="never-seen-question",
+                    question="Never seen question",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                    interview_frequency=InterviewFrequencyEnum.NEVER_SEEN,
+                ),
+                self.factory.core.competency_matrix_item(
+                    item_id=14,
+                    slug="empty-frequency-question",
+                    question="Empty frequency question",
+                    sheet="Python",
+                    grade=GradeEnum.JUNIOR,
+                    section="Basics",
+                    subsection="Functions",
+                    interview_frequency=None,
+                ),
+            ],
+        )
+
+        (
+            filtered_items,
+            filtered_total,
+            _summary,
+        ) = await self.storage.list_competency_matrix_workspace_items(
+            filters=CompetencyMatrixWorkspaceFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.EN,
+                sort=CompetencyMatrixWorkspaceSortEnum.INTERVIEW_FREQUENCY,
+                search_query="question",
+                sheet_keys=("python",),
+                grades=(),
+                interview_frequencies=(
+                    InterviewFrequencyEnum.RARELY,
+                    InterviewFrequencyEnum.NEVER_SEEN,
+                ),
+                sections=("Basics",),
+                subsections=("Functions",),
+                publish_statuses=(),
+                published_from=None,
+                published_to=None,
+                has_missing_fields=None,
+            ),
+        )
+
+        assert filtered_total == 2
+        assert [item.slug for item in filtered_items] == [
+            "rare-question",
+            "never-seen-question",
+        ]
+        assert filtered_items[0].interview_frequency == InterviewFrequencyEnum.RARELY
+
+        (
+            sorted_items,
+            sorted_total,
+            _summary,
+        ) = await self.storage.list_competency_matrix_workspace_items(
+            filters=CompetencyMatrixWorkspaceFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.EN,
+                sort=CompetencyMatrixWorkspaceSortEnum.INTERVIEW_FREQUENCY,
+                search_query="question",
+                sheet_keys=("python",),
+                grades=(),
+                interview_frequencies=(),
+                sections=("Basics",),
+                subsections=("Functions",),
+                publish_statuses=(),
+                published_from=None,
+                published_to=None,
+                has_missing_fields=None,
+            ),
+        )
+
+        assert sorted_total == 5
+        assert [item.slug for item in sorted_items] == [
+            "constant-question",
+            "often-question",
+            "rare-question",
+            "never-seen-question",
+            "empty-frequency-question",
+        ]
 
     async def test_create_competency_matrix_item_allows_draft_without_grade(self) -> None:
         item = await self.storage.create_competency_matrix_item(

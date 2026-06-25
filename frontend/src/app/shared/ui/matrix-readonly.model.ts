@@ -7,6 +7,7 @@ export interface ReadonlyMatrixQuestion {
   id: number;
   slug: string;
   question: string;
+  interviewFrequency: string | null;
 }
 
 export interface ReadonlyMatrixGradeGroup {

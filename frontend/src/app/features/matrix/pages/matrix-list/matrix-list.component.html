@@ -57,12 +57,14 @@
     >
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            {{ 'matrix.modal.detail' | t }}
-          </h5>
+          @if (selectedQuestionPageLink(); as questionPageLink) {
+            <a class="btn btn-sm button-active" [routerLink]="questionPageLink">
+              {{ 'matrix.detail.openQuestion' | t }}
+            </a>
+          }
           <button
             type="button"
-            class="btn-close"
+            class="btn-close ms-auto"
             [attr.aria-label]="'shared.close' | t"
             (click)="closeDetail()"
           ></button>
@@ -74,7 +76,6 @@
               [loading]="detailLoading()"
               [error]="detailError()"
               [language]="language()!"
-              [questionPageLink]="selectedQuestionPageLink()"
             />
           }
         </div>

@@ -14,7 +14,7 @@ from core.articles.schemas import (
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser, User
 from core.auth.types import Token
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
@@ -172,6 +172,7 @@ class CoreFactoryHelper:
         sheet_ru: str | None = None,
         sheet_en: str | None = None,
         grade: GradeEnum | None = GradeEnum.JUNIOR,
+        interview_frequency: InterviewFrequencyEnum | None = InterviewFrequencyEnum.OFTEN,
         section: str = "Section",
         section_ru: str | None = None,
         section_en: str | None = None,
@@ -206,6 +207,7 @@ class CoreFactoryHelper:
             sheet_ru=cls._fallback(sheet_ru, sheet),
             sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
+            interview_frequency=interview_frequency,
             section_ru=cls._fallback(section_ru, section),
             section_en=cls._fallback(section_en, section),
             subsection_ru=cls._fallback(subsection_ru, subsection),
@@ -233,6 +235,7 @@ class CoreFactoryHelper:
         sheet_ru: str | None = None,
         sheet_en: str | None = None,
         grade: GradeEnum | None = GradeEnum.JUNIOR,
+        interview_frequency: InterviewFrequencyEnum | None = InterviewFrequencyEnum.OFTEN,
         section: str = "Section",
         section_ru: str | None = None,
         section_en: str | None = None,
@@ -264,6 +267,7 @@ class CoreFactoryHelper:
             sheet_ru=cls._fallback(sheet_ru, sheet),
             sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
+            interview_frequency=interview_frequency,
             section_ru=cls._fallback(section_ru, section),
             section_en=cls._fallback(section_en, section),
             subsection_ru=cls._fallback(subsection_ru, subsection),
@@ -291,6 +295,7 @@ class CoreFactoryHelper:
         sheet_ru: str | None = None,
         sheet_en: str | None = None,
         grade: GradeEnum | None = GradeEnum.JUNIOR,
+        interview_frequency: InterviewFrequencyEnum | None = InterviewFrequencyEnum.OFTEN,
         section: str = "Section",
         section_ru: str | None = None,
         section_en: str | None = None,
@@ -322,6 +327,7 @@ class CoreFactoryHelper:
             sheet_ru=cls._fallback(sheet_ru, sheet),
             sheet_en=cls._fallback(sheet_en, sheet),
             grade=grade,
+            interview_frequency=interview_frequency,
             section_ru=cls._fallback(section_ru, section),
             section_en=cls._fallback(section_en, section),
             subsection_ru=cls._fallback(subsection_ru, subsection),

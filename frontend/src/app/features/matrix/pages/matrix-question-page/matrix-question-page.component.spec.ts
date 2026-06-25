@@ -150,6 +150,7 @@ function matrixQuestion(overrides: Partial<MatrixQuestionDetail> = {}): MatrixQu
     sheetKey: 'javascript',
     sheet: 'JavaScript',
     grade: 'Junior',
+    interviewFrequency: 'often',
     section: 'Core',
     subsection: 'Syntax',
     publishStatus: 'Published',

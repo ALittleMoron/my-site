@@ -3,7 +3,7 @@ from unittest.mock import ANY
 import pytest_asyncio
 from httpx import codes
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.enums import PublishStatusEnum
 from tests.test_cases import ApiTestCase
 
@@ -26,6 +26,7 @@ class TestCreateItemAPI(ApiTestCase):
             sheet_ru="Питон",
             sheet_en="Python",
             grade=GradeEnum.JUNIOR,
+            interview_frequency=InterviewFrequencyEnum.OFTEN,
             section_ru="Основы",
             section_en="Basics",
             subsection_ru="Функции",
@@ -79,6 +80,7 @@ class TestCreateItemAPI(ApiTestCase):
                 sheet_ru="Питон",
                 sheet_en="Python",
                 grade=GradeEnum.JUNIOR,
+                interview_frequency=InterviewFrequencyEnum.OFTEN,
                 section_ru="Основы",
                 section_en="Basics",
                 subsection_ru="Функции",
@@ -116,6 +118,7 @@ class TestCreateItemAPI(ApiTestCase):
             "sheetKey": "python",
             "sheet": "Python",
             "grade": "Junior",
+            "interviewFrequency": "often",
             "section": "Basics",
             "subsection": "Functions",
             "publishStatus": PublishStatusEnum.DRAFT.value,
@@ -218,6 +221,7 @@ class TestCreateItemAPI(ApiTestCase):
             question_en="partial question",
             publish_status=PublishStatusEnum.DRAFT,
             grade=None,
+            interview_frequency=None,
             answer_ru="",
             answer_en="",
             interview_expected_answer_ru="",
@@ -244,6 +248,7 @@ class TestCreateItemAPI(ApiTestCase):
                 sheet_ru="",
                 sheet_en="",
                 grade=None,
+                interview_frequency=None,
                 section_ru="",
                 section_en="",
                 subsection_ru="",
@@ -268,6 +273,7 @@ class TestCreateItemAPI(ApiTestCase):
                 sheet_ru="",
                 sheet_en="",
                 grade=None,
+                interview_frequency=None,
                 section_ru="",
                 section_en="",
                 subsection_ru="",

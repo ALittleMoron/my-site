@@ -31,8 +31,18 @@ const mockQuestionList: MatrixQuestionList = {
             {
               grade: 'Junior',
               questions: [
-                { id: 1, slug: 'what-is-a-closure', question: 'What is a closure?' },
-                { id: 2, slug: 'what-is-hoisting', question: 'What is hoisting?' },
+                {
+                  id: 1,
+                  slug: 'what-is-a-closure',
+                  question: 'What is a closure?',
+                  interviewFrequency: 'often',
+                },
+                {
+                  id: 2,
+                  slug: 'what-is-hoisting',
+                  question: 'What is hoisting?',
+                  interviewFrequency: null,
+                },
               ],
             },
           ],
@@ -59,6 +69,7 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
                   id: 1,
                   slug: 'how-does-the-event-loop-work',
                   question: 'How does the event loop work?',
+                  interviewFrequency: 'rarely',
                 },
               ],
             },
@@ -79,6 +90,7 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
                   id: 2,
                   slug: 'what-is-dom-event-delegation',
                   question: 'What is DOM event delegation?',
+                  interviewFrequency: 'neverSeen',
                 },
               ],
             },
@@ -98,6 +110,7 @@ const mockDetail: MatrixQuestionDetail = {
   sheetKey: 'javascript',
   sheet: 'JavaScript',
   grade: 'Junior',
+  interviewFrequency: 'often',
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
@@ -139,6 +152,7 @@ describe('MatrixListComponent', () => {
     getPublicQuestions: jest.Mock;
     getAdminQuestions: jest.Mock;
     getPublicQuestion: jest.Mock;
+    getPublicQuestionBySlug: jest.Mock;
     getAdminQuestion: jest.Mock;
     searchAdminResources: jest.Mock;
     createAdminQuestion: jest.Mock;
@@ -157,6 +171,7 @@ describe('MatrixListComponent', () => {
       getPublicQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
       getAdminQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
       getPublicQuestion: jest.fn().mockReturnValue(of(mockDetail)),
+      getPublicQuestionBySlug: jest.fn().mockReturnValue(of(mockDetail)),
       getAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
       searchAdminResources: jest.fn().mockReturnValue(of([])),
       createAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
@@ -412,29 +427,39 @@ describe('MatrixListComponent', () => {
     expect(fixture.nativeElement.querySelector('app-matrix-question-detail')).toBeTruthy();
   });
 
-  it('does not call admin question detail endpoints on public routes', () => {
+  it('opens public detail modals through the slug endpoint used by question pages', () => {
     fixture.detectChanges();
 
     component.openDetail(1);
 
-    expect(matrixService.getPublicQuestion).toHaveBeenCalledWith(1, 'ru');
+    expect(matrixService.getPublicQuestionBySlug).toHaveBeenCalledWith('what-is-a-closure', 'ru');
+    expect(matrixService.getPublicQuestion).not.toHaveBeenCalled();
     expect(matrixService.getAdminQuestion).not.toHaveBeenCalled();
   });
 
-  it('should render link from detail modal to public question page', () => {
+  it('renders the public question page link in the detail modal header', () => {
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
 
-    const link = fixture.nativeElement.querySelector(
+    const modal = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    const header = modal.querySelector('.modal-header') as HTMLElement | null;
+    const link = header?.querySelector(
       'a[href="/ru/competency-matrix/questions/what-is-a-closure"]',
     ) as HTMLAnchorElement | null;
+
+    expect(modal.querySelector('.modal-title')).toBeNull();
     expect(link?.textContent).toContain('К вопросу');
+    expect(
+      modal.querySelector(
+        '.question-detail a[href="/ru/competency-matrix/questions/what-is-a-closure"]',
+      ),
+    ).toBeNull();
   });
 
   it('should set detailLoading when loading a question', () => {
     const subject = new Subject();
-    matrixService.getPublicQuestion.mockReturnValue(subject.asObservable());
+    matrixService.getPublicQuestionBySlug.mockReturnValue(subject.asObservable());
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();
@@ -454,7 +479,7 @@ describe('MatrixListComponent', () => {
   });
 
   it('should set detailError when detail load fails', () => {
-    matrixService.getPublicQuestion.mockReturnValue(throwError(() => mockError));
+    matrixService.getPublicQuestionBySlug.mockReturnValue(throwError(() => mockError));
     fixture.detectChanges();
     component.openDetail(1);
     fixture.detectChanges();

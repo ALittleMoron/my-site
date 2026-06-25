@@ -26,3 +26,14 @@ class TestCompetencyMatrixPublicationHealth(TestCase):
 
         assert item.is_available() is True
         assert item.missing_publication_fields() == ()
+
+    def test_interview_frequency_is_not_required_for_public_readiness(self) -> None:
+        item = self.factory.core.competency_matrix_item(
+            item_id=1,
+            publish_status=PublishStatusEnum.PUBLISHED,
+            grade=GradeEnum.JUNIOR,
+            interview_frequency=None,
+        )
+
+        assert item.is_available() is True
+        assert item.missing_publication_fields() == ()

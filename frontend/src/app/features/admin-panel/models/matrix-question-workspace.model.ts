@@ -5,9 +5,11 @@ import {
 } from '../../../shared/ui/matrix-readonly.model';
 
 export type AdminMatrixGrade = 'Junior' | 'Junior+' | 'Middle' | 'Middle+' | 'Senior';
+export type AdminMatrixInterviewFrequency = 'constantly' | 'often' | 'rarely' | 'neverSeen';
 export type AdminMatrixPublishStatus = 'Draft' | 'Published';
 export type AdminMatrixWorkspaceSort =
   | 'grade'
+  | 'interviewFrequency'
   | 'section'
   | 'subsection'
   | 'newest'
@@ -42,6 +44,7 @@ export interface AdminMatrixQuestionWorkspaceFilters {
   searchQuery?: string;
   sheetKeys?: string[];
   grades?: AdminMatrixGrade[];
+  interviewFrequencies?: AdminMatrixInterviewFrequency[];
   sections?: string[];
   subsections?: string[];
   publishStatuses?: AdminMatrixPublishStatus[];
@@ -65,6 +68,7 @@ export interface AdminMatrixWorkspaceItem {
   sheetKey: string;
   sheet: string;
   grade: AdminMatrixGrade | null;
+  interviewFrequency: AdminMatrixInterviewFrequency | null;
   section: string;
   subsection: string;
   publishStatus: AdminMatrixPublishStatus;
@@ -96,6 +100,7 @@ export interface AdminMatrixFilterSheetOption extends AdminMatrixFilterOption {
 export interface AdminMatrixWorkspaceFilterOptions {
   sheets: AdminMatrixFilterSheetOption[];
   grades: AdminMatrixGrade[];
+  interviewFrequencies: AdminMatrixInterviewFrequency[];
   sections: string[];
   subsections: string[];
   publishStatuses: AdminMatrixPublishStatus[];
@@ -135,6 +140,7 @@ export interface AdminMatrixQuestionDetailDto {
   sheetKey: string;
   sheet: string;
   grade: AdminMatrixGrade | null;
+  interviewFrequency: AdminMatrixInterviewFrequency | null;
   section: string;
   subsection: string;
   publishStatus: AdminMatrixPublishStatus;
@@ -191,6 +197,7 @@ export interface AdminMatrixQuestionPayload {
   slug: string;
   sheetKey: string;
   grade: AdminMatrixGrade | null;
+  interviewFrequency: AdminMatrixInterviewFrequency | null;
   publishStatus: AdminMatrixPublishStatus;
   translations: AdminMatrixQuestionTranslations;
   resources: AdminMatrixResourceAttachmentPayload[];
@@ -209,6 +216,7 @@ export interface MatrixItemDto {
   id: number;
   slug: string;
   question: string;
+  interviewFrequency: AdminMatrixInterviewFrequency | null;
 }
 
 export interface MatrixGradeGroupDto {
@@ -254,6 +262,7 @@ export function mapPublicQuestionsDto(dto: MatrixItemsListDto): AdminReadonlyMat
             id: item.id,
             slug: item.slug,
             question: item.question,
+            interviewFrequency: item.interviewFrequency,
           })),
         })),
       })),

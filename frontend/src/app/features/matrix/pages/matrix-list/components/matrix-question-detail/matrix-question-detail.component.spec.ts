@@ -14,6 +14,7 @@ const mockDetail: MatrixQuestionDetail = {
   sheetKey: 'javascript',
   sheet: 'JavaScript',
   grade: 'Junior',
+  interviewFrequency: 'often',
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
@@ -104,30 +105,10 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(el.textContent).toContain('What is a closure?');
   });
 
-  it('should render a link to the public question page when link is provided', () => {
+  it('does not render the public question page link inside detail content', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', mockDetail);
     fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput(
-      'questionPageLink',
-      '/ru/competency-matrix/questions/what-is-a-closure',
-    );
-    fixture.detectChanges();
-
-    const link = el.querySelector<HTMLAnchorElement>(
-      'a[href="/ru/competency-matrix/questions/what-is-a-closure"]',
-    );
-    expect(link?.textContent).toContain('К вопросу');
-  });
-
-  it('should hide the public question page link for drafts', () => {
-    fixture.componentRef.setInput('loading', false);
-    fixture.componentRef.setInput('question', { ...mockDetail, publishStatus: 'Draft' });
-    fixture.componentRef.setInput('error', null);
-    fixture.componentRef.setInput(
-      'questionPageLink',
-      '/ru/competency-matrix/questions/what-is-a-closure',
-    );
     fixture.detectChanges();
 
     expect(
@@ -146,6 +127,29 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(headings).toContain('Вопрос:');
     expect(headings).toContain('Ответ:');
     expect(headings).toContain('Ответ, который ожидается на собеседовании:');
+    expect(headings).not.toContain('Как часто спрашивают:');
+  });
+
+  it('should render localized interview frequency as an inline detail row when it is set', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', mockDetail);
+    fixture.componentRef.setInput('error', null);
+    fixture.detectChanges();
+
+    const paragraphs = Array.from(el.querySelectorAll('p')).map((paragraph) =>
+      paragraph.textContent?.trim(),
+    );
+    expect(paragraphs).toContain('Как часто спрашивают: Часто');
+    expect(el.querySelector('.badge')).toBeNull();
+  });
+
+  it('should hide interview frequency when it is not set', () => {
+    fixture.componentRef.setInput('loading', false);
+    fixture.componentRef.setInput('question', { ...mockDetail, interviewFrequency: null });
+    fixture.componentRef.setInput('error', null);
+    fixture.detectChanges();
+
+    expect(el.textContent).not.toContain('Как часто спрашивают:');
   });
 
   it('should render answer as HTML (markdown converted)', () => {

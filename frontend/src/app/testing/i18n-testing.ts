@@ -170,6 +170,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixWorkspace.sort.newest': 'Сначала новые',
   'adminMatrixWorkspace.sort.oldest': 'Сначала старые',
   'adminMatrixWorkspace.sort.grade': 'Грейд',
+  'adminMatrixWorkspace.sort.interviewFrequency': 'Частота на собеседовании',
   'adminMatrixWorkspace.sort.section': 'Раздел',
   'adminMatrixWorkspace.sort.subsection': 'Подраздел',
   'adminMatrixWorkspace.sort.missingFields': 'Пропуски',
@@ -240,6 +241,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.suggestion.quotaExceeded': 'Лимит предложений на сегодня исчерпан.',
   'matrix.form.sheetKey': 'Ключ листа',
   'matrix.form.grade': 'Грейд',
+  'matrix.form.interviewFrequency': 'Как часто спрашивают',
   'matrix.form.draft': 'Черновик',
   'matrix.form.slug': 'Slug',
   'matrix.form.sheet': 'Лист',
@@ -273,6 +275,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.detail.question': 'Вопрос:',
   'matrix.detail.answer': 'Ответ:',
   'matrix.detail.expectedAnswer': 'Ответ, который ожидается на собеседовании:',
+  'matrix.detail.interviewFrequency': 'Как часто спрашивают:',
   'matrix.detail.resources': 'Внешние ресурсы:',
   'matrix.detail.openQuestion': 'К вопросу',
   'matrix.question.notFoundTitle': 'Вопрос не найден',
@@ -440,6 +443,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'enum.grade.Middle': 'Middle',
   'enum.grade.MiddlePlus': 'Middle+',
   'enum.grade.Senior': 'Senior',
+  'enum.interviewFrequency.constantly': 'Постоянно',
+  'enum.interviewFrequency.often': 'Часто',
+  'enum.interviewFrequency.rarely': 'Очень редко',
+  'enum.interviewFrequency.neverSeen': 'Никогда не видел',
   'enum.articleReaction.heart': 'Понравилось',
   'enum.articleReaction.fire': 'Хочу ещё',
   'enum.articleReaction.thinking': 'Заставило подумать',
@@ -510,6 +517,7 @@ export function createI18nTestingValue(
       return interpolate(languageMessages[key] ?? mergedMessages[key] ?? key, params);
     },
     enumGradeKey: (grade: string) => `enum.grade.${grade.replace('+', 'Plus')}`,
+    enumInterviewFrequencyKey: (frequency: string) => `enum.interviewFrequency.${frequency}`,
     dateLocale: () => (language() === 'en' ? 'en-US' : 'ru-RU'),
   };
 }

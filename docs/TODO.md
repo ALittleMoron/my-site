@@ -288,7 +288,7 @@
     - [x] Grid/table layout
     - [x] Search that hides empty sections and subsections
     - [x] Public matrix always uses public endpoints; admin `onlyPublished` filters live in the admin matrix workspace
-    - [x] Question detail modal/page from `/api/competency-matrix/items/detail/{pk}`
+    - [x] Question detail modal/page from public detail endpoints
     - [x] Markdown rendering for answers and resource context
     - [x] Code highlighting for Markdown code blocks
     - [x] External resources list

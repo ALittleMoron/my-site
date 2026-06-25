@@ -4,7 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import Field, field_validator
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
@@ -257,6 +257,10 @@ class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
     id: Annotated[int, Field(title="Идентификатор")]
     slug: Annotated[str, Field(title="Slug")]
     question: Annotated[str, Field(title="Вопрос")]
+    interview_frequency: Annotated[
+        InterviewFrequencyEnum | None,
+        Field(title="Частота вопроса на собеседованиях"),
+    ]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixItem, language: LanguageEnum) -> Self:
@@ -264,6 +268,7 @@ class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
             id=schema.id,
             slug=schema.slug,
             question=schema.localized_question(language=language),
+            interview_frequency=schema.interview_frequency,
         )
 
 
@@ -317,6 +322,10 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
     sheet_key: Annotated[str, Field(title="Ключ листа", min_length=1, max_length=255)]
     grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    interview_frequency: Annotated[
+        InterviewFrequencyEnum | None,
+        Field(title="Частота вопроса на собеседованиях"),
+    ]
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
     translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Переводы")]
     resources: Annotated[
@@ -342,6 +351,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             sheet_ru=self.translations.ru.sheet,
             sheet_en=self.translations.en.sheet,
             grade=self.grade,
+            interview_frequency=self.interview_frequency,
             section_ru=self.translations.ru.section,
             section_en=self.translations.en.section,
             subsection_ru=self.translations.ru.subsection,
@@ -382,6 +392,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             sheet_ru=self.translations.ru.sheet,
             sheet_en=self.translations.en.sheet,
             grade=self.grade,
+            interview_frequency=self.interview_frequency,
             section_ru=self.translations.ru.section,
             section_en=self.translations.en.section,
             subsection_ru=self.translations.ru.subsection,
@@ -596,6 +607,10 @@ class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
     sheet_key: Annotated[str, Field(title="Ключ листа")]
     sheet: Annotated[str, Field(title="Лист")]
     grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    interview_frequency: Annotated[
+        InterviewFrequencyEnum | None,
+        Field(title="Частота вопроса на собеседованиях"),
+    ]
     section: Annotated[str, Field(title="Раздел")]
     subsection: Annotated[str, Field(title="Подраздел")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
@@ -614,6 +629,7 @@ class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
             sheet_key=schema.sheet_key,
             sheet=schema.sheet,
             grade=schema.grade,
+            interview_frequency=schema.interview_frequency,
             section=schema.section,
             subsection=schema.subsection,
             publish_status=schema.publish_status,
@@ -688,6 +704,10 @@ class CompetencyMatrixFilterSheetOptionResponseSchema(CamelCaseSchema):
 class CompetencyMatrixFilterOptionsResponseSchema(CamelCaseSchema):
     sheets: Annotated[list[CompetencyMatrixFilterSheetOptionResponseSchema], Field(title="Листы")]
     grades: Annotated[list[GradeEnum], Field(title="Компетенции")]
+    interview_frequencies: Annotated[
+        list[InterviewFrequencyEnum],
+        Field(title="Частоты вопросов на собеседованиях"),
+    ]
     sections: Annotated[list[str], Field(title="Разделы")]
     subsections: Annotated[list[str], Field(title="Подразделы")]
     publish_statuses: Annotated[list[PublishStatusEnum], Field(title="Статусы публикации")]
@@ -700,6 +720,7 @@ class CompetencyMatrixFilterOptionsResponseSchema(CamelCaseSchema):
                 for sheet in schema.sheets
             ],
             grades=schema.grades,
+            interview_frequencies=schema.interview_frequencies,
             sections=schema.sections,
             subsections=schema.subsections,
             publish_statuses=schema.publish_statuses,

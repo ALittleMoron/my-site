@@ -3,7 +3,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum, GradeEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    GradeEnum,
+    InterviewFrequencyEnum,
+)
 from core.competency_matrix.schemas import (
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceItem,
@@ -42,6 +46,7 @@ class TestCompetencyMatrixWorkspaceUseCase(TestCase):
             sheet_key="python",
             sheet="Python",
             grade=GradeEnum.JUNIOR,
+            interview_frequency=InterviewFrequencyEnum.OFTEN,
             section="Basics",
             subsection="Functions",
             publish_status=PublishStatusEnum.PUBLISHED,

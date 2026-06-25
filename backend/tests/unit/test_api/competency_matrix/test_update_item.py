@@ -3,7 +3,7 @@ from unittest.mock import ANY
 import pytest_asyncio
 from httpx import codes
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
     CompetencyMatrixItemNotPublicReadyError,
@@ -50,6 +50,7 @@ class TestUpdateItemAPI(ApiTestCase):
             sheet_ru="Питон",
             sheet_en="Python",
             grade=GradeEnum.JUNIOR,
+            interview_frequency=InterviewFrequencyEnum.RARELY,
             section_ru="Основы",
             section_en="Basics",
             subsection_ru="Функции",
@@ -69,6 +70,7 @@ class TestUpdateItemAPI(ApiTestCase):
         response = self.api.put_update_item(
             pk=100500,
             data=self.factory.api.competency_matrix_item_request(
+                interview_frequency="rarely",
                 resources=[
                     self.factory.api.existing_matrix_resource_attachment_request(
                         resource_id=1,
@@ -99,6 +101,7 @@ class TestUpdateItemAPI(ApiTestCase):
                 sheet_ru="Питон",
                 sheet_en="Python",
                 grade=GradeEnum.JUNIOR,
+                interview_frequency=InterviewFrequencyEnum.RARELY,
                 section_ru="Основы",
                 section_en="Basics",
                 subsection_ru="Функции",
@@ -125,6 +128,7 @@ class TestUpdateItemAPI(ApiTestCase):
         assert response.json()["slug"] == "question-1"
         assert response.json()["question"] == "question 1"
         assert response.json()["sheetKey"] == "python"
+        assert response.json()["interviewFrequency"] == "rarely"
         assert response.json()["resources"][0]["translations"] == {
             "ru": {"name": "ресурс 1", "context": "контекст ресурса 1"},
             "en": {"name": "resource 1", "context": "resource context 1"},

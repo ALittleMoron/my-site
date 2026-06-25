@@ -32,6 +32,7 @@ const workspace: AdminMatrixQuestionWorkspace = {
       sheetKey: 'python',
       sheet: 'Python',
       grade: 'Junior',
+      interviewFrequency: 'often',
       section: 'Core',
       subsection: 'Syntax',
       publishStatus: 'Draft',
@@ -45,6 +46,7 @@ const workspace: AdminMatrixQuestionWorkspace = {
       sheetKey: 'python',
       sheet: 'Python',
       grade: 'Middle',
+      interviewFrequency: 'rarely',
       section: 'Core',
       subsection: 'Syntax',
       publishStatus: 'Published',
@@ -68,6 +70,7 @@ const options: AdminMatrixWorkspaceFilterOptions = {
     },
   ],
   grades: ['Junior', 'Middle'],
+  interviewFrequencies: ['often', 'rarely'],
   sections: ['Core', 'Queries'],
   subsections: ['Syntax', 'Select'],
   publishStatuses: ['Draft', 'Published'],
@@ -82,6 +85,7 @@ const savedQuestion: AdminMatrixQuestionDetailDto = {
   sheetKey: 'python',
   sheet: '',
   grade: null,
+  interviewFrequency: null,
   section: '',
   subsection: '',
   publishStatus: 'Draft',
@@ -129,7 +133,14 @@ const previewQuestions: AdminReadonlyMatrixQuestionList = {
           grades: [
             {
               grade: 'Junior',
-              questions: [{ id: 7, slug: 'typing', question: 'What is typing?' }],
+              questions: [
+                {
+                  id: 7,
+                  slug: 'typing',
+                  question: 'What is typing?',
+                  interviewFrequency: 'often',
+                },
+              ],
             },
           ],
         },
@@ -179,6 +190,7 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Всего');
     expect(fixture.nativeElement.textContent).toContain('Опасно опубликованы');
     expect(fixture.nativeElement.textContent).toContain('What is typing?');
+    expect(fixture.nativeElement.textContent).toContain('Часто');
     expect(fixture.nativeElement.textContent).toContain('answerEn');
   });
 
@@ -200,17 +212,24 @@ describe('MatrixQuestionsPageComponent', () => {
     ) as HTMLInputElement;
     search.value = 'typing';
     search.dispatchEvent(new Event('input'));
+    const frequency = fixture.nativeElement.querySelector(
+      '#matrix-workspace-interview-frequency',
+    ) as HTMLSelectElement;
+    frequency.value = 'rarely';
+    frequency.dispatchEvent(new Event('change'));
     fixture.nativeElement
       .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-apply"]')
       ?.click();
 
     expect(lastWorkspaceFilters().searchQuery).toBe('typing');
+    expect(lastWorkspaceFilters().interviewFrequencies).toEqual(['rarely']);
 
     fixture.nativeElement
       .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-reset"]')
       ?.click();
 
     expect(lastWorkspaceFilters().searchQuery).toBeUndefined();
+    expect(lastWorkspaceFilters().interviewFrequencies).toBeUndefined();
     expect(lastWorkspaceFilters().page).toBe(1);
   });
 
@@ -297,9 +316,28 @@ describe('MatrixQuestionsPageComponent', () => {
 
     const payload = service.createQuestion.mock.calls[0][0];
     expect(payload.grade).toBeNull();
+    expect(payload.interviewFrequency).toBeNull();
     expect(payload.publishStatus).toBe('Draft');
     expect(payload.translations.ru.answer).toBe('');
     expect(payload.resources).toEqual([]);
+  });
+
+  it('saves the selected interview frequency from the admin form', () => {
+    fixture.componentInstance.openCreate();
+    fixture.detectChanges();
+    setInput('#matrix-form-slug', 'frequent-question');
+    setInput('#matrix-form-sheet-key', 'python');
+    setInput('#matrix-form-question-ru', 'Частый вопрос?');
+    setInput('#matrix-form-question-en', 'Frequent question?');
+    const frequency = fixture.nativeElement.querySelector(
+      '#matrix-form-interview-frequency',
+    ) as HTMLSelectElement;
+    frequency.value = 'often';
+    frequency.dispatchEvent(new Event('change'));
+
+    saveButton().click();
+
+    expect(service.createQuestion.mock.calls[0][0].interviewFrequency).toBe('often');
   });
 
   it('warns and skips the API when trying to publish an incomplete form payload', () => {

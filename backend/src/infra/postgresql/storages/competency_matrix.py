@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 from sqlalchemy.sql.elements import ColumnElement
 
-from core.competency_matrix.enums import CompetencyMatrixWorkspaceSortEnum
+from core.competency_matrix.enums import (
+    CompetencyMatrixWorkspaceSortEnum,
+    InterviewFrequencyEnum,
+)
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
     QueuedCompetencyMatrixQuestionNotFoundError,
@@ -140,6 +143,9 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             .distinct()
             .order_by(CompetencyMatrixItemModel.grade),
         )
+        interview_frequencies = await self.session.scalars(
+            select(CompetencyMatrixItemModel.interview_frequency).distinct(),
+        )
         sections = await self.session.scalars(
             select(section_column).distinct().order_by(section_column),
         )
@@ -154,6 +160,9 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         return CompetencyMatrixFilterOptions(
             sheets=self._workspace_filter_sheet_options(rows=list(sheets_rows)),
             grades=[grade for grade in grades if grade is not None],
+            interview_frequencies=self._ordered_interview_frequencies(
+                values=[frequency for frequency in interview_frequencies if frequency is not None],
+            ),
             sections=[section for section in sections if section],
             subsections=[subsection for subsection in subsections if subsection],
             publish_statuses=[
@@ -312,33 +321,66 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         *,
         filters: CompetencyMatrixWorkspaceFilters,
     ) -> Select[Any]:
+        conditions = self._workspace_filter_conditions(filters=filters)
+        return stmt.where(*conditions) if conditions else stmt
+
+    def _workspace_filter_conditions(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> list[ColumnElement[bool]]:
+        return [
+            *self._workspace_dimension_filter_conditions(filters=filters),
+            *self._workspace_state_filter_conditions(filters=filters),
+        ]
+
+    def _workspace_dimension_filter_conditions(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> list[ColumnElement[bool]]:
+        conditions: list[ColumnElement[bool]] = []
         if filters.sheet_keys:
-            stmt = stmt.where(CompetencyMatrixItemModel.sheet_key.in_(filters.sheet_keys))
+            conditions.append(CompetencyMatrixItemModel.sheet_key.in_(filters.sheet_keys))
         if filters.grades:
-            stmt = stmt.where(CompetencyMatrixItemModel.grade.in_(filters.grades))
+            conditions.append(CompetencyMatrixItemModel.grade.in_(filters.grades))
+        if filters.interview_frequencies:
+            conditions.append(
+                CompetencyMatrixItemModel.interview_frequency.in_(filters.interview_frequencies),
+            )
         if filters.sections:
-            stmt = stmt.where(self._section_column(language=filters.language).in_(filters.sections))
+            conditions.append(
+                self._section_column(language=filters.language).in_(filters.sections),
+            )
         if filters.subsections:
-            stmt = stmt.where(
+            conditions.append(
                 self._subsection_column(language=filters.language).in_(filters.subsections),
             )
         if filters.publish_statuses:
-            stmt = stmt.where(
+            conditions.append(
                 CompetencyMatrixItemModel.publish_status.in_(filters.publish_statuses),
             )
+        return conditions
+
+    def _workspace_state_filter_conditions(
+        self,
+        *,
+        filters: CompetencyMatrixWorkspaceFilters,
+    ) -> list[ColumnElement[bool]]:
+        conditions: list[ColumnElement[bool]] = []
         if filters.published_from is not None:
-            stmt = stmt.where(
+            conditions.append(
                 CompetencyMatrixItemModel.published_at
                 >= self._date_start(value=filters.published_from),
             )
         if filters.published_to is not None:
-            stmt = stmt.where(
+            conditions.append(
                 CompetencyMatrixItemModel.published_at
                 <= self._date_end(value=filters.published_to),
             )
         if filters.search_query is not None:
             search_pattern = f"%{filters.search_query.lower()}%"
-            stmt = stmt.where(
+            conditions.append(
                 or_(
                     func.lower(CompetencyMatrixItemModel.slug).ilike(search_pattern),
                     func.lower(
@@ -347,10 +389,10 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 ),
             )
         if filters.has_missing_fields is True:
-            stmt = stmt.where(self._workspace_missing_condition())
+            conditions.append(self._workspace_missing_condition())
         if filters.has_missing_fields is False:
-            stmt = stmt.where(~self._workspace_missing_condition())
-        return stmt
+            conditions.append(~self._workspace_missing_condition())
+        return conditions
 
     async def _workspace_summary(
         self,
@@ -413,6 +455,13 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 question_column,
                 CompetencyMatrixItemModel.id,
             ),
+            CompetencyMatrixWorkspaceSortEnum.INTERVIEW_FREQUENCY: (
+                self._interview_frequency_ordering(),
+                section_column,
+                subsection_column,
+                question_column,
+                CompetencyMatrixItemModel.id,
+            ),
             CompetencyMatrixWorkspaceSortEnum.SECTION: default_ordering,
             CompetencyMatrixWorkspaceSortEnum.SUBSECTION: (
                 subsection_column,
@@ -457,12 +506,41 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             sheet_key=schema.sheet_key,
             sheet=schema.localized_sheet(language=language),
             grade=schema.grade,
+            interview_frequency=schema.interview_frequency,
             section=schema.localized_section(language=language),
             subsection=schema.localized_subsection(language=language),
             publish_status=schema.publish_status,
             published_at=schema.published_at,
             missing_fields=schema.missing_publication_fields(),
         )
+
+    def _interview_frequency_ordering(self) -> ColumnElement[int]:
+        return case(
+            (
+                CompetencyMatrixItemModel.interview_frequency == InterviewFrequencyEnum.CONSTANTLY,
+                0,
+            ),
+            (CompetencyMatrixItemModel.interview_frequency == InterviewFrequencyEnum.OFTEN, 1),
+            (CompetencyMatrixItemModel.interview_frequency == InterviewFrequencyEnum.RARELY, 2),
+            (
+                CompetencyMatrixItemModel.interview_frequency == InterviewFrequencyEnum.NEVER_SEEN,
+                3,
+            ),
+            else_=4,
+        )
+
+    def _ordered_interview_frequencies(
+        self,
+        *,
+        values: list[InterviewFrequencyEnum],
+    ) -> list[InterviewFrequencyEnum]:
+        order = {
+            InterviewFrequencyEnum.CONSTANTLY: 0,
+            InterviewFrequencyEnum.OFTEN: 1,
+            InterviewFrequencyEnum.RARELY: 2,
+            InterviewFrequencyEnum.NEVER_SEEN: 3,
+        }
+        return sorted(values, key=lambda value: order[value])
 
     def _workspace_missing_condition(self) -> ColumnElement[bool]:
         return or_(

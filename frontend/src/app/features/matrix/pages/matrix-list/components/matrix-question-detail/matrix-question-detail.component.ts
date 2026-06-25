@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { LanguageCode } from '../../../../../../core/i18n/i18n.model';
+import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
 import { ApiError } from '../../../../../../core/models/api-error.model';
@@ -12,17 +12,17 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
   selector: 'app-matrix-question-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe],
+  imports: [LoadingSpinnerComponent, ErrorMessageComponent, TranslatePipe],
   templateUrl: './matrix-question-detail.component.html',
 })
 export class MatrixQuestionDetailComponent {
   private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
+  private readonly i18n = inject(I18nService);
 
   readonly question = input<MatrixQuestionDetail | null>(null);
   readonly loading = input<boolean>(false);
   readonly error = input<ApiError | null>(null);
   readonly language = input.required<LanguageCode>();
-  readonly questionPageLink = input<string | null>(null);
 
   readonly answerHtml = computed<string>(() => {
     const q = this.question();
@@ -35,9 +35,9 @@ export class MatrixQuestionDetailComponent {
     if (!q?.interviewExpectedAnswer) return '';
     return this.wikiLinkRenderer.render(q.interviewExpectedAnswer, this.language());
   });
-
-  readonly isPublished = computed<boolean>(() => this.question()?.publishStatus === 'Published');
-  readonly canOpenQuestionPage = computed<boolean>(
-    () => this.questionPageLink() !== null && this.isPublished(),
-  );
+  readonly interviewFrequencyLabel = computed<string | null>(() => {
+    const frequency = this.question()?.interviewFrequency ?? null;
+    if (frequency === null) return null;
+    return this.i18n.translate(this.i18n.enumInterviewFrequencyKey(frequency));
+  });
 }

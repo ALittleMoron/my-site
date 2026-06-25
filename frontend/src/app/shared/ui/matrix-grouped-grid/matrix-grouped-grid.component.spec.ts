@@ -14,7 +14,14 @@ const questions: ReadonlyMatrixQuestionList = {
           grades: [
             {
               grade: 'Junior',
-              questions: [{ id: 1, slug: 'pep-8', question: 'What is PEP 8?' }],
+              questions: [
+                {
+                  id: 1,
+                  slug: 'pep-8',
+                  question: 'What is PEP 8?',
+                  interviewFrequency: 'often',
+                },
+              ],
             },
           ],
         },
@@ -47,6 +54,8 @@ describe('MatrixGroupedGridComponent', () => {
     expect(el.textContent).toContain('Subsection');
     expect(el.textContent).toContain('Junior');
     expect(el.textContent).toContain('What is PEP 8?');
+    expect(el.textContent).not.toContain('often');
+    expect(el.querySelector('.badge')).toBeNull();
   });
 
   it('emits selected question ids', () => {

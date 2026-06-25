@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
+from core.competency_matrix.enums import InterviewFrequencyEnum
 from core.enums import PublishStatusEnum
 from infra.config.loggers import logger
 from infra.postgresql.meta import sessionmaker
@@ -332,6 +333,7 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
         "subsection_ru": "Baseline",
         "subsection_en": "Baseline",
         "grade": grade_for_index(item_index=item_index),
+        "interview_frequency": interview_frequency_for_index(item_index=item_index),
         "published_at": SEED_START + timedelta(hours=item_index),
         "publish_status": PublishStatusEnum.PUBLISHED,
     }
@@ -340,6 +342,17 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
 def grade_for_index(*, item_index: int) -> str:
     grades = ("JUNIOR", "JUNIOR_PLUS", "MIDDLE", "MIDDLE_PLUS", "SENIOR")
     return grades[(item_index - 1) % len(grades)]
+
+
+def interview_frequency_for_index(*, item_index: int) -> str | None:
+    frequencies = (
+        InterviewFrequencyEnum.CONSTANTLY.name,
+        InterviewFrequencyEnum.OFTEN.name,
+        InterviewFrequencyEnum.RARELY.name,
+        InterviewFrequencyEnum.NEVER_SEEN.name,
+        None,
+    )
+    return frequencies[(item_index - 1) % len(frequencies)]
 
 
 def article_tag_indexes(*, article_index: int) -> tuple[int, int]:
