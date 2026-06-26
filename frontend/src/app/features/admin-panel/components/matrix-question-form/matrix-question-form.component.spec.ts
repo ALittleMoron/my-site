@@ -141,6 +141,30 @@ describe('MatrixQuestionFormComponent', () => {
     expect(slug.value).toBe('what-is-dependency-injection');
   });
 
+  it('lays out metadata, question text, and multiline fields in readable rows', () => {
+    fixture.componentInstance.attachResource(resource);
+    fixture.detectChanges();
+
+    expect(fieldColumn('#matrix-form-grade').classList).toContain('col-md-4');
+    expect(fieldColumn('#matrix-form-interview-frequency').classList).toContain('col-md-4');
+    expect(fieldColumn('#matrix-form-status').classList).toContain('col-md-4');
+    expect(fieldColumn('#matrix-form-question-ru').classList).toContain('col-md-6');
+    expect(fieldColumn('#matrix-form-question-en').classList).toContain('col-md-6');
+
+    for (const selector of [
+      '#matrix-form-answer-ru',
+      '#matrix-form-answer-en',
+      '#matrix-form-expected-ru',
+      '#matrix-form-expected-en',
+      '#matrixResourceContextRu0',
+      '#matrixResourceContextEn0',
+    ]) {
+      const column = fieldColumn(selector);
+      expect(column.classList).toContain('col-12');
+      expect(column.classList).not.toContain('col-md-6');
+    }
+  });
+
   it('blocks invalid new resource URL and too-long resource context', () => {
     setInput('[data-testid="matrix-resource-new-name-ru"]', 'Документация');
     setInput('[data-testid="matrix-resource-new-name-en"]', 'Documentation');
@@ -239,6 +263,15 @@ describe('MatrixQuestionFormComponent', () => {
   function inputValue(selector: string): string {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     return input.value;
+  }
+
+  function fieldColumn(selector: string): HTMLElement {
+    const field = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    const column = field?.closest('.row > div, .row > section');
+    if (!(column instanceof HTMLElement)) {
+      throw new Error(`No grid column found for ${selector}`);
+    }
+    return column;
   }
 });
 
