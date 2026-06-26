@@ -14,6 +14,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'shared.delete': 'Удалить',
   'shared.publish': 'Опубликовать',
   'shared.unpublish': 'Снять с публикации',
+  'shared.actions': 'Действия',
+  'shared.destructiveAction': 'опасное действие',
   'shared.add': 'Добавить',
   'shared.update': 'Обновить',
   'shared.draft': 'Черновик',

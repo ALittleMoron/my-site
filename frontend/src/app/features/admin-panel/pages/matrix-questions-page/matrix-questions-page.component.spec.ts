@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
 import {
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionWorkspace,
@@ -171,6 +173,7 @@ const previewQuestions: AdminReadonlyMatrixQuestionList = {
 describe('MatrixQuestionsPageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionsPageComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
+  let router: Router;
   let notifications: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
@@ -204,6 +207,8 @@ describe('MatrixQuestionsPageComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixQuestionsPageComponent);
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 
@@ -331,7 +336,7 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
     setInput('#matrix-form-slug', 'draft-question');
-    fixture.componentInstance.selectQuestionSubsection(3);
+    selectQuestionSubsection(3);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
     setInput('#matrix-form-question-en', 'Incomplete question?');
 
@@ -351,7 +356,7 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
     setInput('#matrix-form-slug', 'frequent-question');
-    fixture.componentInstance.selectQuestionSubsection(3);
+    selectQuestionSubsection(3);
     setInput('#matrix-form-question-ru', 'Частый вопрос?');
     setInput('#matrix-form-question-en', 'Frequent question?');
     const frequency = fixture.nativeElement.querySelector(
@@ -365,47 +370,27 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(service.createQuestion.mock.calls[0][0].interviewFrequency).toBe('often');
   });
 
-  it('warns and skips the API when trying to publish an incomplete form payload', () => {
-    fixture.componentInstance.openCreate();
-    fixture.detectChanges();
-    setInput('#matrix-form-slug', 'draft-question');
-    fixture.componentInstance.selectQuestionSubsection(3);
-    setInput('#matrix-form-question-ru', 'Неполный вопрос?');
-    setInput('#matrix-form-question-en', 'Incomplete question?');
-    const status = fixture.nativeElement.querySelector('#matrix-form-status') as HTMLSelectElement;
-    status.value = 'Published';
-    status.dispatchEvent(new Event('change'));
-
-    saveButton().click();
-
-    expect(service.createQuestion).not.toHaveBeenCalled();
-    expect(notifications.error.mock.calls[0][0]).toContain('Нельзя опубликовать вопрос');
-  });
-
   it('warns and skips the publish API for incomplete workspace rows', () => {
-    const publishButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (button): button is HTMLButtonElement =>
-        (button as HTMLButtonElement).textContent?.includes('Опубликовать') ?? false,
-    );
-
-    publishButton?.click();
+    openRowActions('7');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-publish"]')
+      ?.click();
 
     expect(service.publishQuestion).not.toHaveBeenCalled();
     expect(notifications.error.mock.calls[0][0]).toContain('answerEn');
   });
 
-  it('opens the edit form by requesting the exact admin workspace id', () => {
+  it('routes the row edit action to the matrix question detail page', () => {
     service.getQuestion.mockReturnValue(of(savedQuestion));
 
-    const editButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
-      (button): button is HTMLButtonElement =>
-        (button as HTMLButtonElement).textContent?.includes('Редактировать') ?? false,
-    );
-    editButton?.click();
+    openRowActions('7');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-edit"]')
+      ?.click();
     fixture.detectChanges();
 
-    expect(service.getQuestion).toHaveBeenCalledWith('7', 'ru');
-    expect(fixture.nativeElement.querySelector('#matrix-form-slug')).toBeTruthy();
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', '7']);
+    expect(service.getQuestion).not.toHaveBeenCalled();
   });
 
   it('adds, searches, edits context, and removes resources in the admin form', () => {
@@ -439,7 +424,7 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Новый ресурс');
 
     setInput('#matrix-form-slug', 'draft-question');
-    fixture.componentInstance.selectQuestionSubsection(3);
+    selectQuestionSubsection(3);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
     saveButton().click();
@@ -487,8 +472,9 @@ describe('MatrixQuestionsPageComponent', () => {
   it('confirms deletes before calling the admin delete endpoint', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 
+    openRowActions('7');
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-delete-7"]')
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-delete"]')
       ?.click();
 
     expect(window.confirm).toHaveBeenCalled();
@@ -503,6 +489,20 @@ describe('MatrixQuestionsPageComponent', () => {
       throw new Error('No workspace request');
     }
     return filters;
+  }
+
+  function openRowActions(id: string): void {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-actions-${id}-toggle"]`)
+      ?.click();
+    fixture.detectChanges();
+  }
+
+  function selectQuestionSubsection(subsectionId: number): void {
+    const form = fixture.debugElement.query(By.directive(MatrixQuestionFormComponent))
+      .componentInstance as MatrixQuestionFormComponent;
+    form.selectQuestionSubsection(subsectionId);
+    fixture.detectChanges();
   }
 
   function setInput(selector: string, value: string): void {

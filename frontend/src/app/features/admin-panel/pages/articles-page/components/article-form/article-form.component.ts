@@ -4,6 +4,7 @@ import {
   DestroyRef,
   OnInit,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -204,30 +205,13 @@ export class ArticleFormComponent implements OnInit {
     };
   });
 
+  constructor() {
+    effect(() => {
+      this.applyArticle(this.article());
+    });
+  }
+
   ngOnInit(): void {
-    const article = this.article();
-    if (article) {
-      this.slugEdited = true;
-      this.form.setValue({
-        titleRu: article.translations.ru.title,
-        titleEn: article.translations.en.title,
-        contentRu: article.translations.ru.content,
-        contentEn: article.translations.en.content,
-        slug: article.slug,
-        folderRu: article.translations.ru.folder,
-        folderEn: article.translations.en.folder,
-        seoTitleRu: article.metadata.seoTitleRu ?? '',
-        seoTitleEn: article.metadata.seoTitleEn ?? '',
-        seoDescriptionRu: article.metadata.seoDescriptionRu ?? '',
-        seoDescriptionEn: article.metadata.seoDescriptionEn ?? '',
-        coverImageUrl: article.metadata.coverImageUrl ?? '',
-        coverImageAltRu: article.metadata.coverImageAltRu ?? '',
-        coverImageAltEn: article.metadata.coverImageAltEn ?? '',
-        publishStatus: article.publishStatus,
-      });
-      this.formSnapshot.set(this.form.getRawValue());
-      this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
-    }
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.formSnapshot.set(this.form.getRawValue());
     });
@@ -475,6 +459,52 @@ export class ArticleFormComponent implements OnInit {
         next: (targets) => this.availableWikiLinkTargets.set(targets),
         error: () => this.availableWikiLinkTargets.set(null),
       });
+  }
+
+  private applyArticle(article: ArticleDetail | null): void {
+    if (article === null) {
+      this.slugEdited = false;
+      this.form.reset({
+        titleRu: '',
+        titleEn: '',
+        contentRu: '',
+        contentEn: '',
+        slug: '',
+        folderRu: '',
+        folderEn: '',
+        seoTitleRu: '',
+        seoTitleEn: '',
+        seoDescriptionRu: '',
+        seoDescriptionEn: '',
+        coverImageUrl: '',
+        coverImageAltRu: '',
+        coverImageAltEn: '',
+        publishStatus: 'Draft',
+      });
+      this.formSnapshot.set(this.form.getRawValue());
+      this.selectedTagIds.set(new Set<number>());
+      return;
+    }
+    this.slugEdited = true;
+    this.form.setValue({
+      titleRu: article.translations.ru.title,
+      titleEn: article.translations.en.title,
+      contentRu: article.translations.ru.content,
+      contentEn: article.translations.en.content,
+      slug: article.slug,
+      folderRu: article.translations.ru.folder,
+      folderEn: article.translations.en.folder,
+      seoTitleRu: article.metadata.seoTitleRu ?? '',
+      seoTitleEn: article.metadata.seoTitleEn ?? '',
+      seoDescriptionRu: article.metadata.seoDescriptionRu ?? '',
+      seoDescriptionEn: article.metadata.seoDescriptionEn ?? '',
+      coverImageUrl: article.metadata.coverImageUrl ?? '',
+      coverImageAltRu: article.metadata.coverImageAltRu ?? '',
+      coverImageAltEn: article.metadata.coverImageAltEn ?? '',
+      publishStatus: article.publishStatus,
+    });
+    this.formSnapshot.set(this.form.getRawValue());
+    this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
   }
 
   private activeTags(): ArticleTag[] {

@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -17,13 +17,16 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-sta
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
-  AdminArticleDetail,
   AdminArticleList,
   AdminArticlePayload,
   AdminArticleTag,
   AdminArticleTree,
 } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
+import {
+  AdminAction,
+  AdminActionsDropdownComponent,
+} from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
 import { ArticleFormComponent } from './components/article-form/article-form.component';
 
 const PAGE_SIZE = 20;
@@ -37,6 +40,7 @@ const PAGE_SIZE = 20;
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    AdminActionsDropdownComponent,
     ArticleFormComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,6 +52,7 @@ export class AdminArticlesPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
   readonly page = signal(1);
   readonly searchQuery = signal('');
@@ -58,11 +63,9 @@ export class AdminArticlesPageComponent implements OnInit {
   readonly articles = signal<AdminArticleList | null>(null);
   readonly tags = signal<AdminArticleTag[]>([]);
   readonly tree = signal<AdminArticleTree>({ folders: [] });
-  readonly selectedArticle = signal<AdminArticleDetail | null>(null);
   readonly loading = signal(false);
   readonly error = signal<ApiError | null>(null);
   readonly formVisible = signal(false);
-  readonly formLoading = signal(false);
   readonly formError = signal<ApiError | null>(null);
 
   ngOnInit(): void {
@@ -127,58 +130,32 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   openCreate(): void {
-    this.selectedArticle.set(null);
     this.formError.set(null);
-    this.formLoading.set(false);
     this.formVisible.set(true);
-  }
-
-  openEdit(slug: string): void {
-    this.selectedArticle.set(null);
-    this.formError.set(null);
-    this.formLoading.set(true);
-    this.formVisible.set(true);
-    this.articleWorkspace
-      .getArticle(slug, this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (article) => {
-          this.selectedArticle.set(article);
-          this.formLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.formError.set(err);
-          this.formLoading.set(false);
-        },
-      });
   }
 
   closeForm(): void {
     this.formVisible.set(false);
-    this.selectedArticle.set(null);
     this.formError.set(null);
-    this.formLoading.set(false);
   }
 
   saveArticle(payload: AdminArticlePayload): void {
-    const current = this.selectedArticle();
-    const request =
-      current === null
-        ? this.articleWorkspace.createArticle(payload, this.currentLanguage())
-        : this.articleWorkspace.updateArticle(current.slug, payload, this.currentLanguage());
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.notifications.success(this.i18n.translate('articles.notify.saved'));
-        this.closeForm();
-        this.loadWorkspace();
-        this.loadTags();
-        this.loadTree();
-      },
-      error: (err: ApiError) => {
-        this.formError.set(err);
-        this.notifications.error(this.i18n.translate('articles.notify.saveError'));
-      },
-    });
+    this.articleWorkspace
+      .createArticle(payload, this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.notifications.success(this.i18n.translate('articles.notify.saved'));
+          this.closeForm();
+          this.loadWorkspace();
+          this.loadTags();
+          this.loadTree();
+        },
+        error: (err: ApiError) => {
+          this.formError.set(err);
+          this.notifications.error(this.i18n.translate('articles.notify.saveError'));
+        },
+      });
   }
 
   publishArticle(slug: string): void {
@@ -193,6 +170,57 @@ export class AdminArticlesPageComponent implements OnInit {
         },
         error: () => this.notifications.error(this.i18n.translate('articles.notify.publishError')),
       });
+  }
+
+  articleActions(article: AdminArticleList['articles'][number]): AdminAction[] {
+    const publicationAction =
+      article.publishStatus === 'Published'
+        ? {
+            id: 'unpublish',
+            label: this.i18n.translate('shared.unpublish'),
+            destructive: false,
+            disabled: false,
+          }
+        : {
+            id: 'publish',
+            label: this.i18n.translate('shared.publish'),
+            destructive: false,
+            disabled: false,
+          };
+    return [
+      {
+        id: 'edit',
+        label: this.i18n.translate('shared.edit'),
+        destructive: false,
+        disabled: false,
+      },
+      publicationAction,
+      {
+        id: 'delete',
+        label: this.i18n.translate('shared.delete'),
+        destructive: true,
+        disabled: false,
+      },
+    ];
+  }
+
+  handleArticleAction(actionId: string, article: AdminArticleList['articles'][number]): void {
+    switch (actionId) {
+      case 'edit':
+        void this.router.navigate(['/admin-panel/articles', article.slug]);
+        return;
+      case 'publish':
+        this.publishArticle(article.slug);
+        return;
+      case 'unpublish':
+        this.unpublishArticle(article.slug);
+        return;
+      case 'delete':
+        this.deleteArticle(article.slug);
+        return;
+      default:
+        throw new Error(`Unsupported article action: ${actionId}`);
+    }
   }
 
   unpublishArticle(slug: string): void {

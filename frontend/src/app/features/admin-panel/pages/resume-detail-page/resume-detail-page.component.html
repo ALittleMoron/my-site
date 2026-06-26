@@ -130,7 +130,12 @@
   </div>
 
   @if (exportModalOpen()) {
-    <div class="resume-export-modal-backdrop" (click)="closeExportModal()"></div>
+    <button
+      type="button"
+      class="resume-export-modal-backdrop"
+      [attr.aria-label]="'shared.close' | t"
+      (click)="closeExportModal()"
+    ></button>
     <div class="resume-export-modal-shell">
       <section
         class="resume-export-modal"

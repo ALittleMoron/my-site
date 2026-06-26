@@ -374,7 +374,7 @@
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
-- [x] Add admin/moderator content workspace for articles with admin filters, create/edit modal, tag management, and publish/delete quick actions.
+- [x] Add admin/moderator content workspace for articles with admin filters, create modal, edit detail route, tag management, and publish/delete dropdown actions.
 - [ ] Add article editorial queues and richer workspace views.
 - [ ] Add content health checks for articles: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
 - [ ] Add article revision history with diff and restore.
@@ -506,7 +506,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
-- [x] Add admin/moderator content workspace for matrix questions with richer filters, public preview, and quick actions.
+- [x] Add admin/moderator content workspace for matrix questions with richer filters, public preview, edit detail route, and dropdown actions.
 - [ ] Add content health checks for matrix questions: stale translations, wiki-link issues, resource issues, and broken external links.
 - [ ] Add self-assessment / interview mode with expected-answer reveal.
 - [ ] Track weak matrix topics for later study recommendations.
@@ -576,7 +576,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Prevent the English `Logout` button text from wrapping as `Log` / `out`.
   - [x] Make the add competency matrix question button green and move it inline after search.
   - [x] Make `published only` toggles green when enabled in admin matrix and article workspaces.
-  - [x] Tone down admin action buttons for matrix questions and articles: make `Edit` green, and keep `Unpublish`, `Publish`, and `Delete` accent colors only on border/text with background matching the surrounding surface.
+  - [x] Simplify admin actions for matrix questions and articles: use one actions dropdown in list rows and edit detail pages instead of several inline buttons.
   - [x] Make the admin `add article` button and public article `statistics` button green.
   - [x] Add a simple animation for showing and hiding statistics.
   - [x] Hide folders and filters when opening an article detail page.

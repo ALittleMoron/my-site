@@ -22,10 +22,24 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'articles/:slug',
+        loadComponent: () =>
+          import('./pages/article-detail-page/article-detail-page.component').then(
+            (m) => m.AdminArticleDetailPageComponent,
+          ),
+      },
+      {
         path: 'matrix-questions',
         loadComponent: () =>
           import('./pages/matrix-questions-page/matrix-questions-page.component').then(
             (m) => m.MatrixQuestionsPageComponent,
+          ),
+      },
+      {
+        path: 'matrix-questions/:id',
+        loadComponent: () =>
+          import('./pages/matrix-question-detail-page/matrix-question-detail-page.component').then(
+            (m) => m.MatrixQuestionDetailPageComponent,
           ),
       },
       {

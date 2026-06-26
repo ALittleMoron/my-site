@@ -1,0 +1,275 @@
+<form [formGroup]="questionForm" (ngSubmit)="submit()" novalidate>
+  @if (publishError()) {
+    <div class="alert alert-danger" role="alert">{{ publishError() }}</div>
+  }
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-slug">
+        {{ 'matrix.form.slug' | t }}
+        <span class="required-marker" aria-hidden="true">*</span>
+      </label>
+      <div class="input-group">
+        <input
+          id="matrix-form-slug"
+          class="form-control"
+          [class.is-invalid]="fieldInvalid('slug')"
+          formControlName="slug"
+        />
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="!canGenerateSlug() || submitting"
+          (click)="generateSlug()"
+        >
+          {{ 'adminMatrixWorkspace.generateSlug' | t }}
+        </button>
+      </div>
+    </div>
+    <div class="col-12">
+      <app-matrix-structure-picker
+        [language]="currentLanguage()"
+        [selectedSubsectionId]="questionForm.controls.subsectionId.value"
+        [disabled]="submitting"
+        (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
+      />
+      @if (fieldInvalid('subsectionId')) {
+        <div class="invalid-feedback d-block">
+          {{ 'matrix.form.subsectionRequired' | t }}
+        </div>
+      }
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-grade">{{ 'matrix.form.grade' | t }}</label>
+      <select id="matrix-form-grade" class="form-select" formControlName="grade">
+        <option value="">{{ 'shared.notSet' | t }}</option>
+        @for (grade of grades; track grade) {
+          <option [value]="grade">{{ gradeLabel(grade) }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-interview-frequency">
+        {{ 'matrix.form.interviewFrequency' | t }}
+      </label>
+      <select
+        id="matrix-form-interview-frequency"
+        class="form-select"
+        formControlName="interviewFrequency"
+      >
+        <option value="">{{ 'shared.notSet' | t }}</option>
+        @for (frequency of interviewFrequencies; track frequency) {
+          <option [value]="frequency">{{ interviewFrequencyLabel(frequency) }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-status">
+        {{ 'adminMatrixWorkspace.status' | t }}
+      </label>
+      <select id="matrix-form-status" class="form-select" formControlName="publishStatus">
+        @for (status of publishStatuses; track status) {
+          <option [value]="status">{{ publishStatusLabel(status) }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-question-ru">
+        {{ 'matrix.form.questionRu' | t }}
+        <span class="required-marker" aria-hidden="true">*</span>
+      </label>
+      <input
+        id="matrix-form-question-ru"
+        class="form-control"
+        [class.is-invalid]="fieldInvalid('questionRu')"
+        formControlName="questionRu"
+      />
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-question-en">
+        {{ 'matrix.form.questionEn' | t }}
+        <span class="required-marker" aria-hidden="true">*</span>
+      </label>
+      <input
+        id="matrix-form-question-en"
+        class="form-control"
+        [class.is-invalid]="fieldInvalid('questionEn')"
+        formControlName="questionEn"
+      />
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-answer-ru">{{ 'matrix.form.answerRu' | t }}</label>
+      <textarea
+        id="matrix-form-answer-ru"
+        class="form-control"
+        rows="5"
+        formControlName="answerRu"
+      ></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-answer-en">{{ 'matrix.form.answerEn' | t }}</label>
+      <textarea
+        id="matrix-form-answer-en"
+        class="form-control"
+        rows="5"
+        formControlName="answerEn"
+      ></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-expected-ru">
+        {{ 'matrix.form.expectedAnswerRu' | t }}
+      </label>
+      <textarea
+        id="matrix-form-expected-ru"
+        class="form-control"
+        rows="5"
+        formControlName="expectedAnswerRu"
+      ></textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="matrix-form-expected-en">
+        {{ 'matrix.form.expectedAnswerEn' | t }}
+      </label>
+      <textarea
+        id="matrix-form-expected-en"
+        class="form-control"
+        rows="5"
+        formControlName="expectedAnswerEn"
+      ></textarea>
+    </div>
+    <section class="col-12">
+      <h3 class="h6">{{ 'matrix.resources.title' | t }}</h3>
+      <div class="input-group input-group-sm mb-2">
+        <input
+          type="search"
+          class="form-control"
+          data-testid="matrix-resource-search"
+          [placeholder]="'matrix.resources.searchPlaceholder' | t"
+          (input)="searchResources($any($event.target).value)"
+        />
+      </div>
+      @if (resourceSearchResults().length > 0) {
+        <div class="list-group mb-3">
+          @for (resource of resourceSearchResults(); track resource.id) {
+            <button
+              type="button"
+              class="list-group-item list-group-item-action"
+              [attr.data-testid]="'matrix-resource-attach-' + resource.id"
+              (click)="attachResource(resource)"
+            >
+              <span class="d-block fw-semibold">{{ resource.name }}</span>
+              <span class="small text-muted">{{ resource.url }}</span>
+            </button>
+          }
+        </div>
+      }
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-md-6 col-xl-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            data-testid="matrix-resource-new-name-ru"
+            [placeholder]="'matrix.resources.newNameRuPlaceholder' | t"
+            [value]="newResourceNameRu()"
+            (input)="newResourceNameRu.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            data-testid="matrix-resource-new-name-en"
+            [placeholder]="'matrix.resources.newNameEnPlaceholder' | t"
+            [value]="newResourceNameEn()"
+            (input)="newResourceNameEn.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-12 col-md-8 col-xl-4">
+          <input
+            type="url"
+            class="form-control form-control-sm"
+            data-testid="matrix-resource-new-url"
+            [placeholder]="'matrix.resources.urlPlaceholder' | t"
+            [value]="newResourceUrl()"
+            (input)="newResourceUrl.set($any($event.target).value)"
+          />
+        </div>
+        <div class="col-12 col-md-4 col-xl-2 d-grid">
+          <button
+            type="button"
+            class="btn btn-sm btn-success text-nowrap"
+            data-testid="matrix-resource-add-new"
+            (click)="addNewResource()"
+          >
+            {{ 'shared.add' | t }}
+          </button>
+        </div>
+      </div>
+      @for (resource of resourceDrafts(); track resource.id; let index = $index) {
+        <div class="border rounded p-2 mb-2">
+          <div class="d-flex justify-content-between gap-2">
+            <div>
+              <div class="fw-semibold">{{ resource.name }}</div>
+              <div class="small text-muted">{{ resource.url }}</div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              [attr.data-testid]="'matrix-resource-detach-' + index"
+              (click)="detachResource(index)"
+            >
+              {{ 'matrix.resources.detach' | t }}
+            </button>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <label class="form-label small" [for]="'matrixResourceContextRu' + index">
+                {{ 'matrix.resources.contextRuLabel' | t }}
+              </label>
+              <textarea
+                [id]="'matrixResourceContextRu' + index"
+                class="form-control form-control-sm"
+                rows="2"
+                [placeholder]="'matrix.resources.contextRuPlaceholder' | t"
+                [value]="resource.translations.ru.context"
+                (input)="updateResourceContext(index, 'ru', $any($event.target).value)"
+              ></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small" [for]="'matrixResourceContextEn' + index">
+                {{ 'matrix.resources.contextEnLabel' | t }}
+              </label>
+              <textarea
+                [id]="'matrixResourceContextEn' + index"
+                class="form-control form-control-sm"
+                rows="2"
+                [placeholder]="'matrix.resources.contextEnPlaceholder' | t"
+                [value]="resource.translations.en.context"
+                (input)="updateResourceContext(index, 'en', $any($event.target).value)"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [disabled]="submitting"
+      (click)="formCancel.emit()"
+    >
+      {{ 'shared.cancel' | t }}
+    </button>
+    <button
+      type="submit"
+      class="btn btn-success"
+      data-testid="matrix-form-save"
+      [disabled]="submitting"
+    >
+      {{ 'adminMatrixWorkspace.save' | t }}
+    </button>
+  </div>
+</form>

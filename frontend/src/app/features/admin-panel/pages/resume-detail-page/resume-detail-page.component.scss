@@ -12,8 +12,11 @@
 }
 
 .resume-export-modal-backdrop {
+  appearance: none;
   background: rgba(0, 0, 0, 0.35);
+  border: 0;
   inset: 0;
+  padding: 0;
   position: fixed;
   z-index: 1050;
 }

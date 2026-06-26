@@ -26,6 +26,17 @@ export type AdminMatrixMissingField =
   | 'interviewExpectedAnswerRu'
   | 'interviewExpectedAnswerEn';
 
+export const ADMIN_MATRIX_PUBLICATION_FIELDS: readonly AdminMatrixMissingField[] = [
+  'slug',
+  'grade',
+  'questionRu',
+  'questionEn',
+  'answerRu',
+  'answerEn',
+  'interviewExpectedAnswerRu',
+  'interviewExpectedAnswerEn',
+];
+
 export type AdminReadonlyMatrixSheet = ReadonlyMatrixSheet;
 export type AdminReadonlyMatrixQuestionList = ReadonlyMatrixQuestionList;
 
@@ -316,4 +327,50 @@ export function mapResourcePayloads(
       en: { context: resource.translations.en.context },
     },
   }));
+}
+
+export function buildMatrixQuestionPayloadFromDetail(
+  detail: AdminMatrixQuestionDetailDto,
+): AdminMatrixQuestionPayload {
+  return {
+    slug: detail.slug,
+    subsectionId: detail.subsectionId,
+    grade: detail.grade,
+    interviewFrequency: detail.interviewFrequency,
+    publishStatus: detail.publishStatus,
+    translations: detail.translations,
+    resources: mapResourcePayloads(detail),
+  };
+}
+
+export function missingMatrixQuestionPayloadFields(
+  payload: AdminMatrixQuestionPayload,
+): AdminMatrixMissingField[] {
+  return ADMIN_MATRIX_PUBLICATION_FIELDS.filter((field) =>
+    isMatrixQuestionPayloadFieldMissing(payload, field),
+  );
+}
+
+function isMatrixQuestionPayloadFieldMissing(
+  payload: AdminMatrixQuestionPayload,
+  field: AdminMatrixMissingField,
+): boolean {
+  switch (field) {
+    case 'slug':
+      return payload.slug.trim() === '';
+    case 'grade':
+      return payload.grade === null;
+    case 'questionRu':
+      return payload.translations.ru.question.trim() === '';
+    case 'questionEn':
+      return payload.translations.en.question.trim() === '';
+    case 'answerRu':
+      return payload.translations.ru.answer.trim() === '';
+    case 'answerEn':
+      return payload.translations.en.answer.trim() === '';
+    case 'interviewExpectedAnswerRu':
+      return payload.translations.ru.interviewExpectedAnswer.trim() === '';
+    case 'interviewExpectedAnswerEn':
+      return payload.translations.en.interviewExpectedAnswer.trim() === '';
+  }
 }

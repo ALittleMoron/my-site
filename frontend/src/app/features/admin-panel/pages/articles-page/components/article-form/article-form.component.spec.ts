@@ -7,6 +7,7 @@ import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-l
 import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
+import { ArticleDetail } from '../../../../models/article-workspace.model';
 import { ArticleFormComponent } from './article-form.component';
 
 describe('ArticleFormComponent', () => {
@@ -96,6 +97,20 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
 
     expect(slug.value).toBe('manual-slug');
+  });
+
+  it('refreshes form values when a different article input is loaded', () => {
+    fixture.componentRef.setInput('article', articleDetail('first-article', 'First article'));
+    fixture.detectChanges();
+
+    expect(elementValue('#articleSlug')).toBe('first-article');
+    expect(elementValue('#articleTitleEn')).toBe('First article');
+
+    fixture.componentRef.setInput('article', articleDetail('second-article', 'Second article'));
+    fixture.detectChanges();
+
+    expect(elementValue('#articleSlug')).toBe('second-article');
+    expect(elementValue('#articleTitleEn')).toBe('Second article');
   });
 
   it('emits payload with selected active tags', () => {
@@ -324,6 +339,12 @@ describe('ArticleFormComponent', () => {
     expect(preview.textContent).toContain('типизированную статью');
     expect(link.getAttribute('href')).toBe('/ru/articles/typed-article');
   });
+
+  function elementValue(selector: string): string {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
+    expect(input).not.toBeNull();
+    return (input as HTMLInputElement).value;
+  }
 });
 
 @Component({
@@ -347,6 +368,38 @@ function tag(params: {
     translations: {
       ru: { name: params.name },
       en: { name: params.name },
+    },
+  };
+}
+
+function articleDetail(slug: string, title: string): ArticleDetail {
+  return {
+    id: `00000000-0000-0000-0000-00000000000${slug === 'first-article' ? '1' : '2'}`,
+    title,
+    slug,
+    folder: 'Engineering',
+    authorUsername: 'admin',
+    publishedAt: null,
+    publishStatus: 'Draft',
+    updatedAt: '2026-01-03T03:04:05+00:00',
+    excerpt: '',
+    metadata: {
+      seoTitleRu: null,
+      seoTitleEn: null,
+      seoDescriptionRu: null,
+      seoDescriptionEn: null,
+      coverImageUrl: null,
+      coverImageAltRu: null,
+      coverImageAltEn: null,
+    },
+    viewCount: 0,
+    tags: [],
+    content: '# Content',
+    createdAt: '2026-01-01T03:04:05+00:00',
+    reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
+    translations: {
+      ru: { title: `${title} RU`, content: '# RU', folder: 'Инженерия' },
+      en: { title, content: '# EN', folder: 'Engineering' },
     },
   };
 }

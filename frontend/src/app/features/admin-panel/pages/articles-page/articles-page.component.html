@@ -101,7 +101,7 @@
           <th>{{ 'articles.form.title' | t }}</th>
           <th>{{ 'articles.form.folder' | t }}</th>
           <th>{{ 'adminMatrixWorkspace.status' | t }}</th>
-          <th class="text-end">{{ 'adminMatrixWorkspace.actions' | t }}</th>
+          <th class="text-end">{{ 'shared.actions' | t }}</th>
         </tr>
       </thead>
       <tbody>
@@ -128,39 +128,14 @@
               </span>
             </td>
             <td class="text-end">
-              <div class="btn-group btn-group-sm" role="group">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary"
-                  (click)="openEdit(article.slug)"
-                >
-                  {{ 'shared.edit' | t }}
-                </button>
-                @if (article.publishStatus === 'Published') {
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    (click)="unpublishArticle(article.slug)"
-                  >
-                    {{ 'shared.unpublish' | t }}
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn btn-outline-success"
-                    (click)="publishArticle(article.slug)"
-                  >
-                    {{ 'shared.publish' | t }}
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="btn btn-outline-danger"
-                  (click)="deleteArticle(article.slug)"
-                >
-                  {{ 'shared.delete' | t }}
-                </button>
-              </div>
+              <app-admin-actions-dropdown
+                [actions]="articleActions(article)"
+                [buttonLabel]="'shared.actions' | t"
+                [ariaLabel]="'shared.actions' | t"
+                [destructiveActionLabel]="'shared.destructiveAction' | t"
+                [testId]="'article-actions-' + article.slug"
+                (actionSelected)="handleArticleAction($event, article)"
+              />
             </td>
           </tr>
         }
@@ -213,7 +188,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="h5 modal-title">
-            {{ (selectedArticle() ? 'articles.modal.edit' : 'articles.modal.create') | t }}
+            {{ 'articles.modal.create' | t }}
           </h2>
           <button
             type="button"
@@ -223,19 +198,15 @@
           ></button>
         </div>
         <div class="modal-body">
-          @if (formLoading()) {
-            <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
-          } @else {
-            @if (formError()) {
-              <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
-            }
-            <app-admin-article-form
-              [article]="selectedArticle()"
-              (articleSave)="saveArticle($event)"
-              (formCancel)="closeForm()"
-              (tagsChanged)="loadWorkspace(); loadTags()"
-            />
+          @if (formError()) {
+            <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
           }
+          <app-admin-article-form
+            [article]="null"
+            (articleSave)="saveArticle($event)"
+            (formCancel)="closeForm()"
+            (tagsChanged)="loadWorkspace(); loadTags()"
+          />
         </div>
       </div>
     </div>

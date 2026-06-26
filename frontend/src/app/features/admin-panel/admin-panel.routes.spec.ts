@@ -8,7 +8,9 @@ describe('adminPanelRoutes', () => {
     expect(adminPanelRoutes[0].children?.map((route) => route.path)).toEqual([
       '',
       'articles',
+      'articles/:slug',
       'matrix-questions',
+      'matrix-questions/:id',
       'matrix-question-queue',
       'workspace/resumes',
       'workspace/resumes/:id',
@@ -20,6 +22,16 @@ describe('adminPanelRoutes', () => {
     expect(resumeRoutes?.length).toBe(2);
     expect(resumeRoutes?.[0].canActivate).toEqual([adminGuard]);
     expect(resumeRoutes?.[1].canActivate).toEqual([adminGuard]);
+    await expect(
+      adminPanelRoutes[0].children
+        ?.find((route) => route.path === 'articles/:slug')
+        ?.loadComponent?.(),
+    ).resolves.toBeDefined();
+    await expect(
+      adminPanelRoutes[0].children
+        ?.find((route) => route.path === 'matrix-questions/:id')
+        ?.loadComponent?.(),
+    ).resolves.toBeDefined();
     await expect(resumeRoutes?.[0].loadComponent?.()).resolves.toBeDefined();
     await expect(resumeRoutes?.[1].loadComponent?.()).resolves.toBeDefined();
   });

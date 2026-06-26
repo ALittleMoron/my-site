@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,37 +8,29 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import {
-  AbstractControl,
-  FormControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { NotificationService } from '../../../../core/notifications/notification.service';
-import { slugify } from '../../../../shared/utils/slugify';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
-import { MatrixStructurePickerComponent } from '../../components/matrix-structure-picker/matrix-structure-picker.component';
+import {
+  AdminAction,
+  AdminActionsDropdownComponent,
+} from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
+import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
 import {
   AdminMatrixGrade,
   AdminMatrixInterviewFrequency,
   AdminMatrixMissingField,
   AdminMatrixPublishStatus,
-  AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
-  AdminMatrixResource,
-  AdminMatrixResourceAttachmentPayload,
   AdminMatrixQuestionWorkspace,
   AdminMatrixQuestionWorkspaceFilters,
   AdminMatrixWorkspaceFilterOptions,
@@ -49,13 +42,6 @@ import {
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
-const INTERVIEW_FREQUENCIES: readonly AdminMatrixInterviewFrequency[] = [
-  'constantly',
-  'often',
-  'rarely',
-  'neverSeen',
-];
-const PUBLISH_STATUSES: readonly AdminMatrixPublishStatus[] = ['Draft', 'Published'];
 const SORTS: readonly AdminMatrixWorkspaceSort[] = [
   'newest',
   'oldest',
@@ -67,34 +53,8 @@ const SORTS: readonly AdminMatrixWorkspaceSort[] = [
   'dangerousPublished',
 ];
 const PAGE_SIZES: readonly number[] = [20, 50, 100];
-const RESOURCE_SEARCH_LIMIT = 10;
-const PUBLICATION_FIELDS: readonly AdminMatrixMissingField[] = [
-  'slug',
-  'grade',
-  'questionRu',
-  'questionEn',
-  'answerRu',
-  'answerEn',
-  'interviewExpectedAnswerRu',
-  'interviewExpectedAnswerEn',
-];
 
 type WorkspaceTab = 'list' | 'preview';
-type RequiredFormField = 'slug' | 'subsectionId' | 'questionRu' | 'questionEn';
-
-interface AdminMatrixAttachedResourceTranslations {
-  ru: { name: string; context: string };
-  en: { name: string; context: string };
-}
-
-interface AdminMatrixResourceDraft {
-  id: number;
-  name: string;
-  url: string;
-  context: string;
-  isNew: boolean;
-  translations: AdminMatrixAttachedResourceTranslations;
-}
 
 @Component({
   selector: 'app-matrix-questions-page',
@@ -108,7 +68,8 @@ interface AdminMatrixResourceDraft {
     EmptyStateComponent,
     MatrixSheetTabsComponent,
     MatrixGroupedGridComponent,
-    MatrixStructurePickerComponent,
+    AdminActionsDropdownComponent,
+    MatrixQuestionFormComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-questions-page.component.html',
@@ -121,10 +82,9 @@ export class MatrixQuestionsPageComponent implements OnInit {
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
   readonly grades = GRADES;
-  readonly interviewFrequencies = INTERVIEW_FREQUENCIES;
-  readonly publishStatuses = PUBLISH_STATUSES;
   readonly sorts = SORTS;
   readonly pageSizes = PAGE_SIZES;
 
@@ -151,19 +111,9 @@ export class MatrixQuestionsPageComponent implements OnInit {
   readonly previewError = signal<ApiError | null>(null);
   readonly previewLoaded = signal(false);
 
-  readonly formMode = signal<'create' | 'edit' | null>(null);
-  readonly formLoading = signal(false);
+  readonly formMode = signal<'create' | null>(null);
   readonly formSubmitting = signal(false);
-  readonly formSubmitted = signal(false);
   readonly formError = signal<ApiError | null>(null);
-  readonly editingQuestion = signal<AdminMatrixQuestionDetailDto | null>(null);
-  readonly resourceDrafts = signal<AdminMatrixResourceDraft[]>([]);
-  readonly resourceSearchResults = signal<AdminMatrixResource[]>([]);
-  readonly newResourceNameRu = signal('');
-  readonly newResourceNameEn = signal('');
-  readonly newResourceUrl = signal('');
-
-  private nextNewResourceId = -1;
 
   readonly filtersForm = this.formBuilder.group({
     searchQuery: [''],
@@ -180,22 +130,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
       validators: Validators.required,
     }),
     pageSize: this.formBuilder.control('20', { validators: Validators.required }),
-  });
-
-  readonly questionForm = this.formBuilder.group({
-    slug: ['', [trimRequired, Validators.maxLength(255)]],
-    subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
-    grade: this.formBuilder.control<AdminMatrixGrade | ''>(''),
-    interviewFrequency: this.formBuilder.control<AdminMatrixInterviewFrequency | ''>(''),
-    publishStatus: this.formBuilder.control<AdminMatrixPublishStatus>('Draft', {
-      validators: Validators.required,
-    }),
-    questionRu: ['', [trimRequired, Validators.maxLength(255)]],
-    questionEn: ['', [trimRequired, Validators.maxLength(255)]],
-    answerRu: [''],
-    answerEn: [''],
-    expectedAnswerRu: [''],
-    expectedAnswerEn: [''],
   });
 
   readonly isEmpty = computed(() => !this.loading() && (this.workspace()?.items.length ?? 0) === 0);
@@ -379,94 +313,35 @@ export class MatrixQuestionsPageComponent implements OnInit {
   openCreate(): void {
     this.formMode.set('create');
     this.formError.set(null);
-    this.formLoading.set(false);
-    this.formSubmitted.set(false);
-    this.editingQuestion.set(null);
-    this.resetResourceDrafts();
-    this.questionForm.reset({
-      slug: '',
-      subsectionId: null,
-      grade: '',
-      interviewFrequency: '',
-      publishStatus: 'Draft',
-      questionRu: '',
-      questionEn: '',
-      answerRu: '',
-      answerEn: '',
-      expectedAnswerRu: '',
-      expectedAnswerEn: '',
-    });
-  }
-
-  openEdit(item: AdminMatrixWorkspaceItem): void {
-    this.formMode.set('edit');
-    this.formLoading.set(true);
-    this.formError.set(null);
-    this.formSubmitted.set(false);
-    this.editingQuestion.set(null);
-    this.resetResourceDrafts();
-    this.workspaceService
-      .getQuestion(item.id, this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (detail) => {
-          this.editingQuestion.set(detail);
-          this.populateQuestionForm(detail);
-          this.formLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.formError.set(err);
-          this.formLoading.set(false);
-        },
-      });
+    this.formSubmitting.set(false);
   }
 
   closeForm(): void {
     if (this.formSubmitting()) return;
     this.formMode.set(null);
     this.formError.set(null);
-    this.formSubmitted.set(false);
-    this.editingQuestion.set(null);
-    this.resetResourceDrafts();
   }
 
-  saveQuestion(): void {
-    this.formSubmitted.set(true);
-    if (this.questionForm.invalid) {
-      this.questionForm.markAllAsTouched();
-      return;
-    }
-    const payload = this.buildQuestionPayload();
-    const missingFields = this.missingPayloadFields(payload);
-    if (payload.publishStatus === 'Published' && missingFields.length > 0) {
-      this.notifications.error(
-        this.i18n.translate('adminMatrixWorkspace.publishMissingFields', {
-          fields: this.missingFieldsText(missingFields),
-        }),
-      );
-      return;
-    }
-    const editingQuestion = this.editingQuestion();
-    const request =
-      this.formMode() === 'edit' && editingQuestion !== null
-        ? this.workspaceService.updateQuestion(editingQuestion.id, payload, this.currentLanguage())
-        : this.workspaceService.createQuestion(payload, this.currentLanguage());
+  saveQuestion(payload: AdminMatrixQuestionPayload): void {
     this.formSubmitting.set(true);
     this.formError.set(null);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.formSubmitting.set(false);
-        this.closeForm();
-        this.notifications.success(this.i18n.translate('adminMatrixWorkspace.saved'));
-        this.loadFilterOptions();
-        this.loadWorkspace();
-      },
-      error: (err: ApiError) => {
-        this.formError.set(err);
-        this.formSubmitting.set(false);
-        this.notifications.error(this.i18n.translate('adminMatrixWorkspace.saveError'));
-      },
-    });
+    this.workspaceService
+      .createQuestion(payload, this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.formSubmitting.set(false);
+          this.closeForm();
+          this.notifications.success(this.i18n.translate('adminMatrixWorkspace.saved'));
+          this.loadFilterOptions();
+          this.loadWorkspace();
+        },
+        error: (err: ApiError) => {
+          this.formError.set(err);
+          this.formSubmitting.set(false);
+          this.notifications.error(this.i18n.translate('adminMatrixWorkspace.saveError'));
+        },
+      });
   }
 
   publish(item: AdminMatrixWorkspaceItem): void {
@@ -523,6 +398,57 @@ export class MatrixQuestionsPageComponent implements OnInit {
       });
   }
 
+  matrixActions(item: AdminMatrixWorkspaceItem): AdminAction[] {
+    const publicationAction =
+      item.publishStatus === 'Published'
+        ? {
+            id: 'unpublish',
+            label: this.i18n.translate('shared.unpublish'),
+            destructive: false,
+            disabled: false,
+          }
+        : {
+            id: 'publish',
+            label: this.i18n.translate('shared.publish'),
+            destructive: false,
+            disabled: false,
+          };
+    return [
+      {
+        id: 'edit',
+        label: this.i18n.translate('shared.edit'),
+        destructive: false,
+        disabled: false,
+      },
+      publicationAction,
+      {
+        id: 'delete',
+        label: this.i18n.translate('shared.delete'),
+        destructive: true,
+        disabled: false,
+      },
+    ];
+  }
+
+  handleMatrixAction(actionId: string, item: AdminMatrixWorkspaceItem): void {
+    switch (actionId) {
+      case 'edit':
+        void this.router.navigate(['/admin-panel/matrix-questions', item.id]);
+        return;
+      case 'publish':
+        this.publish(item);
+        return;
+      case 'unpublish':
+        this.unpublish(item);
+        return;
+      case 'delete':
+        this.delete(item);
+        return;
+      default:
+        throw new Error(`Unsupported matrix question action: ${actionId}`);
+    }
+  }
+
   gradeLabel(grade: AdminMatrixGrade | null): string {
     return grade === null
       ? this.i18n.translate('shared.notSet')
@@ -559,110 +485,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
     return `/${this.currentLanguage()}/competency-matrix/questions/${item.slug}`;
   }
 
-  fieldInvalid(field: RequiredFormField): boolean {
-    const control = this.questionForm.controls[field];
-    return control.invalid && (this.formSubmitted() || control.touched);
-  }
-
-  selectQuestionSubsection(subsectionId: number | null): void {
-    this.questionForm.controls.subsectionId.setValue(subsectionId);
-    this.questionForm.controls.subsectionId.markAsTouched();
-    this.questionForm.controls.subsectionId.markAsDirty();
-  }
-
-  generateSlug(): void {
-    const source = this.questionForm.controls.questionEn.value.trim();
-    if (!source) return;
-    this.questionForm.controls.slug.setValue(slugify(source));
-    this.questionForm.controls.slug.markAsDirty();
-    this.questionForm.controls.slug.markAsTouched();
-  }
-
-  canGenerateSlug(): boolean {
-    return this.questionForm.controls.questionEn.value.trim() !== '';
-  }
-
-  searchResources(value: string): void {
-    const searchName = value.trim();
-    if (searchName.length < 2) {
-      this.resourceSearchResults.set([]);
-      return;
-    }
-    this.workspaceService
-      .searchResources(searchName, RESOURCE_SEARCH_LIMIT, this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resources) => this.resourceSearchResults.set(resources),
-        error: () => {
-          this.resourceSearchResults.set([]);
-          this.notifications.error(this.i18n.translate('matrix.notify.resourcesError'));
-        },
-      });
-  }
-
-  attachResource(resource: AdminMatrixResource): void {
-    if (this.resourceDrafts().some((draft) => !draft.isNew && draft.id === resource.id)) return;
-    this.resourceDrafts.update((drafts) => [
-      ...drafts,
-      {
-        ...resource,
-        context: '',
-        translations: {
-          ru: { name: resource.translations.ru.name, context: '' },
-          en: { name: resource.translations.en.name, context: '' },
-        },
-        isNew: false,
-      },
-    ]);
-  }
-
-  addNewResource(): void {
-    const nameRu = this.newResourceNameRu().trim();
-    const nameEn = this.newResourceNameEn().trim();
-    const url = this.newResourceUrl().trim();
-    if (!nameRu || !nameEn || !url) return;
-    this.resourceDrafts.update((drafts) => [
-      ...drafts,
-      {
-        id: this.nextNewResourceId--,
-        name: this.currentLanguage() === 'ru' ? nameRu : nameEn,
-        url,
-        context: '',
-        translations: {
-          ru: { name: nameRu, context: '' },
-          en: { name: nameEn, context: '' },
-        },
-        isNew: true,
-      },
-    ]);
-    this.newResourceNameRu.set('');
-    this.newResourceNameEn.set('');
-    this.newResourceUrl.set('');
-  }
-
-  updateResourceContext(index: number, language: 'ru' | 'en', context: string): void {
-    this.resourceDrafts.update((drafts) =>
-      drafts.map((draft, currentIndex) =>
-        currentIndex === index
-          ? {
-              ...draft,
-              context: language === this.currentLanguage() ? context : draft.context,
-              translations: {
-                ...draft.translations,
-                [language]: { ...draft.translations[language], context },
-              },
-            }
-          : draft,
-      ),
-    );
-  }
-
-  detachResource(index: number): void {
-    this.resourceDrafts.update((drafts) =>
-      drafts.filter((_, currentIndex) => currentIndex !== index),
-    );
-  }
-
   private buildWorkspaceFilters(): AdminMatrixQuestionWorkspaceFilters {
     const raw = this.filtersForm.getRawValue();
     return {
@@ -683,63 +505,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
       publishedTo: normalizedValue(raw.publishedTo),
       hasMissingFields: raw.hasMissingFields === '' ? undefined : raw.hasMissingFields === 'true',
     };
-  }
-
-  private populateQuestionForm(detail: AdminMatrixQuestionDetailDto): void {
-    this.questionForm.reset({
-      slug: detail.slug,
-      subsectionId: detail.subsectionId,
-      grade: detail.grade ?? '',
-      interviewFrequency: detail.interviewFrequency ?? '',
-      publishStatus: detail.publishStatus,
-      questionRu: detail.translations.ru.question,
-      questionEn: detail.translations.en.question,
-      answerRu: detail.translations.ru.answer,
-      answerEn: detail.translations.en.answer,
-      expectedAnswerRu: detail.translations.ru.interviewExpectedAnswer,
-      expectedAnswerEn: detail.translations.en.interviewExpectedAnswer,
-    });
-    this.resourceDrafts.set(detail.resources.map(toResourceDraft));
-  }
-
-  private buildQuestionPayload(): AdminMatrixQuestionPayload {
-    const raw = this.questionForm.getRawValue();
-    if (raw.subsectionId === null) {
-      throw new Error('Matrix question subsection is required');
-    }
-    return {
-      slug: raw.slug.trim(),
-      subsectionId: raw.subsectionId,
-      grade: raw.grade === '' ? null : raw.grade,
-      interviewFrequency: raw.interviewFrequency === '' ? null : raw.interviewFrequency,
-      publishStatus: raw.publishStatus,
-      translations: {
-        ru: {
-          question: raw.questionRu.trim(),
-          answer: raw.answerRu,
-          interviewExpectedAnswer: raw.expectedAnswerRu,
-        },
-        en: {
-          question: raw.questionEn.trim(),
-          answer: raw.answerEn,
-          interviewExpectedAnswer: raw.expectedAnswerEn,
-        },
-      },
-      resources: this.resourceDrafts().map(toResourceAttachmentPayload),
-    };
-  }
-
-  private missingPayloadFields(payload: AdminMatrixQuestionPayload): AdminMatrixMissingField[] {
-    return PUBLICATION_FIELDS.filter((field) => isPayloadFieldMissing(payload, field));
-  }
-
-  private resetResourceDrafts(): void {
-    this.resourceDrafts.set([]);
-    this.resourceSearchResults.set([]);
-    this.newResourceNameRu.set('');
-    this.newResourceNameEn.set('');
-    this.newResourceUrl.set('');
-    this.nextNewResourceId = -1;
   }
 
   private refreshDependentFilterControls(): void {
@@ -773,69 +538,4 @@ function normalizedValue(value: string): string | undefined {
 function singleValueArray(value: string): string[] | undefined {
   const normalized = normalizedValue(value);
   return normalized === undefined ? undefined : [normalized];
-}
-
-function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
-  return control.value.trim() === '' ? { required: true } : null;
-}
-
-function toResourceDraft(
-  resource: AdminMatrixQuestionDetailDto['resources'][number],
-): AdminMatrixResourceDraft {
-  return {
-    ...resource,
-    translations: resource.translations,
-    isNew: false,
-  };
-}
-
-function toResourceAttachmentPayload(
-  resource: AdminMatrixResourceDraft,
-): AdminMatrixResourceAttachmentPayload {
-  if (resource.isNew) {
-    return {
-      resource: {
-        url: resource.url,
-        translations: {
-          ru: { name: resource.translations.ru.name },
-          en: { name: resource.translations.en.name },
-        },
-      },
-      translations: {
-        ru: { context: resource.translations.ru.context },
-        en: { context: resource.translations.en.context },
-      },
-    };
-  }
-  return {
-    resourceId: resource.id,
-    translations: {
-      ru: { context: resource.translations.ru.context },
-      en: { context: resource.translations.en.context },
-    },
-  };
-}
-
-function isPayloadFieldMissing(
-  payload: AdminMatrixQuestionPayload,
-  field: AdminMatrixMissingField,
-): boolean {
-  switch (field) {
-    case 'slug':
-      return payload.slug.trim() === '';
-    case 'grade':
-      return payload.grade === null;
-    case 'questionRu':
-      return payload.translations.ru.question.trim() === '';
-    case 'questionEn':
-      return payload.translations.en.question.trim() === '';
-    case 'answerRu':
-      return payload.translations.ru.answer.trim() === '';
-    case 'answerEn':
-      return payload.translations.en.answer.trim() === '';
-    case 'interviewExpectedAnswerRu':
-      return payload.translations.ru.interviewExpectedAnswer.trim() === '';
-    case 'interviewExpectedAnswerEn':
-      return payload.translations.en.interviewExpectedAnswer.trim() === '';
-  }
 }

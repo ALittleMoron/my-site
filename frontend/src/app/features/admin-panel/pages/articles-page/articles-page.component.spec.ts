@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -26,6 +26,7 @@ describe('AdminArticlesPageComponent', () => {
     unpublishArticle: jest.Mock;
     deleteArticle: jest.Mock;
   };
+  let router: Router;
 
   beforeEach(async () => {
     service = {
@@ -51,6 +52,8 @@ describe('AdminArticlesPageComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminArticlesPageComponent);
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
   it('loads article workspace through admin endpoints and renders authoring controls', () => {
@@ -94,17 +97,21 @@ describe('AdminArticlesPageComponent', () => {
     expect(service.listArticles).toHaveBeenCalledTimes(2);
   });
 
-  it('edits an article from the admin workspace', () => {
-    const payload = articlePayload();
+  it('routes the row edit action to the article detail page from the actions dropdown', () => {
     fixture.detectChanges();
 
-    fixture.componentInstance.openEdit('typed-articles');
-    fixture.componentInstance.saveArticle(payload);
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-testid="article-actions-typed-articles-toggle"]',
+    ) as HTMLButtonElement | null;
+    expect(toggle).not.toBeNull();
+    toggle?.click();
+    fixture.detectChanges();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="article-actions-typed-articles-edit"]')
+      ?.click();
 
-    expect(service.getArticle).toHaveBeenCalledWith('typed-articles', 'ru');
-    expect(service.updateArticle).toHaveBeenCalledWith('typed-articles', payload, 'ru');
-    expect(service.createArticle).not.toHaveBeenCalled();
-    expect(service.listArticles).toHaveBeenCalledTimes(2);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles', 'typed-articles']);
+    expect(service.getArticle).not.toHaveBeenCalled();
   });
 
   it('unpublishes and deletes articles from the admin workspace', () => {

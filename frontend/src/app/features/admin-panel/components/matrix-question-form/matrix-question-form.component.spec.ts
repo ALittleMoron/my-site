@@ -1,0 +1,233 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
+import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import {
+  AdminMatrixQuestionDetailDto,
+  AdminMatrixQuestionPayload,
+  AdminMatrixResource,
+} from '../../models/matrix-question-workspace.model';
+import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
+import { MatrixQuestionFormComponent } from './matrix-question-form.component';
+
+const resource: AdminMatrixResource = {
+  id: 3,
+  name: 'Python docs',
+  url: 'https://docs.python.org',
+  translations: {
+    ru: { name: 'Документация Python' },
+    en: { name: 'Python docs' },
+  },
+};
+
+describe('MatrixQuestionFormComponent', () => {
+  let fixture: ComponentFixture<MatrixQuestionFormComponent>;
+  let service: jest.Mocked<MatrixQuestionWorkspaceService>;
+  let emittedPayloads: AdminMatrixQuestionPayload[];
+
+  beforeEach(async () => {
+    service = {
+      searchResources: jest.fn().mockReturnValue(of([resource])),
+    } as unknown as jest.Mocked<MatrixQuestionWorkspaceService>;
+    emittedPayloads = [];
+
+    await TestBed.configureTestingModule({
+      imports: [MatrixQuestionFormComponent],
+      providers: [
+        provideI18nTesting(),
+        { provide: MatrixQuestionWorkspaceService, useValue: service },
+      ],
+    })
+      .overrideComponent(MatrixQuestionFormComponent, {
+        remove: { imports: [MatrixStructurePickerComponent] },
+        add: { imports: [MatrixStructurePickerStubComponent] },
+      })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(MatrixQuestionFormComponent);
+    fixture.componentRef.setInput('mode', 'create');
+    fixture.componentRef.setInput('question', null);
+    fixture.componentRef.setInput('submitting', false);
+    fixture.componentInstance.questionSave.subscribe((payload) => emittedPayloads.push(payload));
+    fixture.detectChanges();
+  });
+
+  it('marks required fields and clears the red border after a required value is entered', () => {
+    const slug = fixture.nativeElement.querySelector('#matrix-form-slug') as HTMLInputElement;
+
+    expect(fixture.nativeElement.textContent).toContain('Slug *');
+    submitForm();
+    fixture.detectChanges();
+    expect(slug.classList).toContain('is-invalid');
+
+    slug.value = 'draft-question';
+    slug.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(slug.classList).not.toContain('is-invalid');
+  });
+
+  it('emits an incomplete draft payload with only minimum required fields', () => {
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Неполный вопрос?');
+    setInput('#matrix-form-question-en', 'Incomplete question?');
+
+    submitForm();
+
+    expect(emittedPayloads[0]).toEqual(
+      expect.objectContaining({
+        subsectionId: 3,
+        grade: null,
+        interviewFrequency: null,
+        publishStatus: 'Draft',
+        translations: expect.objectContaining({
+          ru: expect.objectContaining({ answer: '' }),
+        }),
+        resources: [],
+      }),
+    );
+  });
+
+  it('blocks an incomplete published payload before emitting', () => {
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Неполный вопрос?');
+    setInput('#matrix-form-question-en', 'Incomplete question?');
+    setSelect('#matrix-form-status', 'Published');
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Нельзя опубликовать вопрос');
+  });
+
+  it('generates slug only from the explicit button action', () => {
+    const slug = fixture.nativeElement.querySelector('#matrix-form-slug') as HTMLInputElement;
+    const generateButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (button): button is HTMLButtonElement =>
+        (button as HTMLButtonElement).textContent?.includes('Сгенерировать') ?? false,
+    );
+
+    expect(generateButton?.disabled).toBe(true);
+    setInput('#matrix-form-question-en', 'What is dependency injection?');
+    fixture.detectChanges();
+
+    expect(slug.value).toBe('');
+    expect(generateButton?.disabled).toBe(false);
+    generateButton?.click();
+    fixture.detectChanges();
+
+    expect(slug.value).toBe('what-is-dependency-injection');
+  });
+
+  it('adds, searches, edits context, and removes resources in the form payload', () => {
+    setInput('[data-testid="matrix-resource-search"]', 'python');
+    fixture.detectChanges();
+    expect(service.searchResources).toHaveBeenCalledWith('python', 10, 'ru');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-resource-attach-3"]')
+      ?.click();
+    fixture.detectChanges();
+    setTextarea('#matrixResourceContextRu0', 'Читать');
+    setTextarea('#matrixResourceContextEn0', 'Read');
+
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Вопрос?');
+    setInput('#matrix-form-question-en', 'Question?');
+    submitForm();
+
+    expect(emittedPayloads[0].resources).toEqual([
+      {
+        resourceId: 3,
+        translations: { ru: { context: 'Читать' }, en: { context: 'Read' } },
+      },
+    ]);
+  });
+
+  it('loads existing question values into the edit form', () => {
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('question', questionDetail());
+    fixture.detectChanges();
+
+    expect(inputValue('#matrix-form-slug')).toBe('existing-question');
+    expect(inputValue('#matrix-form-question-en')).toBe('Existing question?');
+  });
+
+  function submitForm(): void {
+    fixture.debugElement.query(By.css('form')).nativeElement.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+  }
+
+  function setInput(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function setTextarea(selector: string, value: string): void {
+    const textarea = fixture.nativeElement.querySelector(selector) as HTMLTextAreaElement;
+    textarea.value = value;
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function setSelect(selector: string, value: string): void {
+    const select = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
+    select.value = value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function selectQuestionSubsection(subsectionId: number): void {
+    const picker = fixture.debugElement.query(By.directive(MatrixStructurePickerStubComponent))
+      .componentInstance as MatrixStructurePickerStubComponent;
+    picker.selectedSubsectionIdChange.emit(subsectionId);
+    fixture.detectChanges();
+  }
+
+  function inputValue(selector: string): string {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
+    return input.value;
+  }
+});
+
+@Component({
+  selector: 'app-matrix-structure-picker',
+  standalone: true,
+  template: '',
+})
+class MatrixStructurePickerStubComponent {
+  @Input({ required: true }) language!: 'ru' | 'en';
+  @Input({ required: true }) selectedSubsectionId!: number | null;
+  @Input() disabled = false;
+  @Output() readonly selectedSubsectionIdChange = new EventEmitter<number | null>();
+}
+
+function questionDetail(): AdminMatrixQuestionDetailDto {
+  return {
+    id: '7',
+    slug: 'existing-question',
+    question: 'Existing question?',
+    answer: '',
+    interviewExpectedAnswer: '',
+    subsectionId: 3,
+    sheetKey: 'python',
+    sheet: 'Python',
+    grade: null,
+    interviewFrequency: null,
+    section: 'Core',
+    subsection: 'Syntax',
+    publishStatus: 'Draft',
+    translations: {
+      ru: { question: 'Существующий вопрос?', answer: '', interviewExpectedAnswer: '' },
+      en: { question: 'Existing question?', answer: '', interviewExpectedAnswer: '' },
+    },
+    resources: [],
+  };
+}
