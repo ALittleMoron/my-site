@@ -186,6 +186,21 @@ class TestTagsAPI(ApiTestCase):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.create_tag.assert_not_called()
 
+    @pytest.mark.parametrize("slug", ["", "   ", "Backend", "backend_tag", "backend--tag"])
+    def test_create_tag_rejects_blank_or_invalid_slug(self, slug: str) -> None:
+        response = self.api.post_create_tag(data=self.factory.api.tag_request(slug=slug))
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_tag.assert_not_called()
+
+    def test_create_tag_rejects_whitespace_translation_name(self) -> None:
+        response = self.api.post_create_tag(
+            data=self.factory.api.tag_request(name_ru="   "),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_tag.assert_not_called()
+
     def test_delete_tag(self) -> None:
         response = self.api.delete_tag(tag_id=3)
 

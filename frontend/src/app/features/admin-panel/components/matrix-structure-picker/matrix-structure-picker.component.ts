@@ -12,9 +12,15 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, map, switchMap } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import {
@@ -24,6 +30,12 @@ import {
   AdminMatrixStructureSubsection,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  slugValidator,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
 
 interface MatrixStructureCreateFormValue {
   nameRu: string;
@@ -40,6 +52,7 @@ interface MatrixStructureCreateFormValue {
 export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   private readonly workspaceService = inject(MatrixQuestionWorkspaceService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
 
   @Input({ required: true }) language!: LanguageCode;
@@ -54,6 +67,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   readonly errorKey = signal<string | null>(null);
   readonly selectedSheetId = signal<number | null>(null);
   readonly selectedSectionId = signal<number | null>(null);
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly selectedSections = computed(() => {
     const sheetId = this.selectedSheetId();
@@ -67,17 +81,20 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   });
 
   readonly sheetForm = this.formBuilder.group({
-    key: ['', [Validators.required, Validators.maxLength(255)]],
-    nameRu: ['', [Validators.required, Validators.maxLength(255)]],
-    nameEn: ['', [Validators.required, Validators.maxLength(255)]],
+    key: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
+    ],
+    nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
   readonly sectionForm = this.formBuilder.group({
-    nameRu: ['', [Validators.required, Validators.maxLength(255)]],
-    nameEn: ['', [Validators.required, Validators.maxLength(255)]],
+    nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
   readonly subsectionForm = this.formBuilder.group({
-    nameRu: ['', [Validators.required, Validators.maxLength(255)]],
-    nameEn: ['', [Validators.required, Validators.maxLength(255)]],
+    nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
 
   ngOnInit(): void {
@@ -107,6 +124,14 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
 
   onSubsectionChange(value: string): void {
     this.selectedSubsectionIdChange.emit(optionalNumber(value));
+  }
+
+  controlInvalid(control: AbstractControl<unknown>): boolean {
+    return control.invalid && control.touched;
+  }
+
+  controlMessage(control: AbstractControl<unknown>): string | null {
+    return validationMessage(control, this.i18n);
   }
 
   createSheet(): void {

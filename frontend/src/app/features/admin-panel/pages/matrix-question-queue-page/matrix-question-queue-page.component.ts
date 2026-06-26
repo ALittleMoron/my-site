@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NonNullableFormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -27,6 +27,13 @@ import {
   QueuedMatrixQuestion,
 } from '../../models/matrix-question-queue.model';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  slugValidator,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
@@ -66,6 +73,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly manualAddVisible = signal(false);
   readonly addMode = signal<QueueAddMode>('manual');
   readonly manualAddQuestion = signal('');
+  readonly manualAddSubmitted = signal(false);
   readonly manualAddSubmitting = signal(false);
   readonly importFileAccept = IMPORT_FILE_ACCEPT;
   readonly selectedImportFile = signal<File | null>(null);
@@ -73,7 +81,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly importError = signal<ApiError | null>(null);
   readonly importFileSelectionErrorKey = signal<string | null>(null);
   readonly hasQuestions = computed(() => this.questions().length > 0);
-  readonly canSubmitManualAdd = computed(() => this.manualAddQuestion().trim().length > 0);
+  readonly manualAddQuestionError = computed(() => {
+    const question = this.manualAddQuestion().trim();
+    if (question.length === 0) return 'validation.required';
+    if (question.length > ADMIN_VALIDATION_LIMITS.shortText) return 'validation.maxLength';
+    return null;
+  });
+  readonly canSubmitManualAdd = computed(() => this.manualAddQuestionError() === null);
   readonly canSubmitImport = computed(
     () => this.selectedImportFile() !== null && !this.importSubmitting(),
   );
@@ -89,17 +103,26 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   });
 
   readonly form = this.formBuilder.group({
-    slug: ['', [Validators.required, Validators.maxLength(255)]],
+    slug: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
+    ],
     subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade>('Junior', {
       validators: Validators.required,
     }),
-    questionRu: ['', [Validators.required, Validators.maxLength(255)]],
-    questionEn: ['', [Validators.required, Validators.maxLength(255)]],
-    answerRu: ['', Validators.required],
-    answerEn: ['', Validators.required],
-    expectedAnswerRu: ['', Validators.required],
-    expectedAnswerEn: ['', Validators.required],
+    questionRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    questionEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    answerRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)]],
+    answerEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)]],
+    expectedAnswerRu: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    ],
+    expectedAnswerEn: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    ],
   });
 
   ngOnInit(): void {
@@ -144,6 +167,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.manualAddVisible.set(true);
     this.addMode.set('manual');
     this.manualAddQuestion.set('');
+    this.manualAddSubmitted.set(false);
     this.manualAddSubmitting.set(false);
     this.resetImportState();
   }
@@ -152,6 +176,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (this.manualAddSubmitting() || this.importSubmitting()) return;
     this.manualAddVisible.set(false);
     this.manualAddQuestion.set('');
+    this.manualAddSubmitted.set(false);
     this.addMode.set('manual');
     this.resetImportState();
   }
@@ -191,8 +216,9 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   createQueuedQuestion(): void {
+    this.manualAddSubmitted.set(true);
     const question = normalizeManualQuestion(this.manualAddQuestion()).trim();
-    if (!question) return;
+    if (this.manualAddQuestionError() !== null) return;
     this.manualAddSubmitting.set(true);
     this.queueService
       .createQueuedQuestion(question)
@@ -202,6 +228,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.manualAddSubmitting.set(false);
           this.manualAddVisible.set(false);
           this.manualAddQuestion.set('');
+          this.manualAddSubmitted.set(false);
           this.notifications.success(this.i18n.translate('adminMatrixQueue.addManualAdded'));
           this.loadQueue();
         },
@@ -240,6 +267,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.importSubmitting.set(false);
           this.manualAddVisible.set(false);
           this.manualAddQuestion.set('');
+          this.manualAddSubmitted.set(false);
           this.addMode.set('manual');
           this.resetImportState();
           this.notifications.success(
@@ -310,6 +338,26 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.form.controls.subsectionId.setValue(subsectionId);
     this.form.controls.subsectionId.markAsTouched();
     this.form.controls.subsectionId.markAsDirty();
+  }
+
+  queueFieldInvalid(control: AbstractControl<unknown>): boolean {
+    return controlInvalid(control, true);
+  }
+
+  queueFieldMessage(control: AbstractControl<unknown>): string | null {
+    return validationMessage(control, this.i18n);
+  }
+
+  manualAddErrorMessage(): string | null {
+    if (!this.manualAddSubmitted()) return null;
+    const errorKey = this.manualAddQuestionError();
+    if (errorKey === null) return null;
+    if (errorKey === 'validation.maxLength') {
+      return this.i18n.translate(errorKey, {
+        max: String(ADMIN_VALIDATION_LIMITS.shortText),
+      });
+    }
+    return this.i18n.translate(errorKey);
   }
 
   private toPayload(): AdminMatrixItemPayload {

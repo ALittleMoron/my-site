@@ -1,5 +1,6 @@
 from unittest.mock import ANY
 
+import pytest
 import pytest_asyncio
 from httpx import codes
 
@@ -240,6 +241,52 @@ class TestCreateItemAPI(ApiTestCase):
                 ],
             ),
         )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.create_item.assert_not_called()
+
+    @pytest.mark.parametrize("slug", ["", "   ", "Question One", "question_one"])
+    def test_create_item_rejects_blank_or_invalid_slug(self, slug: str) -> None:
+        response = self.api.post_create_item(
+            data=self.factory.api.competency_matrix_item_request(slug=slug),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.create_item.assert_not_called()
+
+    def test_create_item_rejects_whitespace_question_translation(self) -> None:
+        response = self.api.post_create_item(
+            data=self.factory.api.competency_matrix_item_request(question_en="   "),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.create_item.assert_not_called()
+
+    def test_create_item_rejects_invalid_new_resource_url(self) -> None:
+        response = self.api.post_create_item(
+            data=self.factory.api.competency_matrix_item_request(
+                resources=[
+                    self.factory.api.new_matrix_resource_attachment_request(
+                        url="file:///tmp/resource",
+                    ),
+                ],
+            ),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.create_item.assert_not_called()
+
+    def test_create_item_rejects_too_long_matrix_text(self) -> None:
+        response = self.api.post_create_item(
+            data=self.factory.api.competency_matrix_item_request(
+                answer_en="x" * 20_001,
+                resources=[
+                    self.factory.api.existing_matrix_resource_attachment_request(
+                        context_en="x" * 20_001,
+                    ),
+                ],
+            ),
+        )
+
         assert response.status_code == codes.BAD_REQUEST, response.json()
         self.use_case.create_item.assert_not_called()
 

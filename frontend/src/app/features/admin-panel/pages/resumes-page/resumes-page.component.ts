@@ -6,13 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import {
-  AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -29,6 +23,12 @@ import {
   Resumes,
 } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
 
 const PAGE_SIZE = 20;
 type RequiredCreateField = 'title' | 'language' | 'fullName' | 'role' | 'summary';
@@ -75,13 +75,14 @@ export class AdminResumesPageComponent implements OnInit {
   readonly createFormSubmitted = signal(false);
   readonly createError = signal<ApiError | null>(null);
   readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly createForm = this.formBuilder.group({
-    title: ['', [trimRequired, Validators.maxLength(255)]],
+    title: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     language: ['', trimRequired],
-    fullName: ['', [trimRequired, Validators.maxLength(255)]],
-    role: ['', [trimRequired, Validators.maxLength(255)]],
-    summary: ['', trimRequired],
+    fullName: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    role: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    summary: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.resumeLongText)]],
   });
 
   ngOnInit(): void {
@@ -187,8 +188,11 @@ export class AdminResumesPageComponent implements OnInit {
   }
 
   createFieldInvalid(field: RequiredCreateField): boolean {
-    const control = this.createForm.controls[field];
-    return control.invalid && (this.createFormSubmitted() || control.touched);
+    return controlInvalid(this.createForm.controls[field], this.createFormSubmitted());
+  }
+
+  createFieldMessage(field: RequiredCreateField): string | null {
+    return validationMessage(this.createForm.controls[field], this.i18n);
   }
 
   private buildCreatePayload(): ResumePayload {
@@ -220,10 +224,6 @@ export class AdminResumesPageComponent implements OnInit {
       },
     };
   }
-}
-
-function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
-  return control.value.trim() === '' ? { required: true } : null;
 }
 
 function toResumeLanguage(value: string): ResumeLanguage {

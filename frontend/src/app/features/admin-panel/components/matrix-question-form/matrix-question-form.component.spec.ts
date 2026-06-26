@@ -91,6 +91,24 @@ describe('MatrixQuestionFormComponent', () => {
     );
   });
 
+  it('blocks invalid slug and long answer text before emitting', () => {
+    setInput('#matrix-form-slug', 'Invalid Slug');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Вопрос?');
+    setInput('#matrix-form-question-en', 'Question?');
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+
+    setInput('#matrix-form-slug', 'valid-question');
+    setTextarea('#matrix-form-answer-en', 'x'.repeat(20_001));
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+  });
+
   it('blocks an incomplete published payload before emitting', () => {
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(3);
@@ -121,6 +139,33 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(slug.value).toBe('what-is-dependency-injection');
+  });
+
+  it('blocks invalid new resource URL and too-long resource context', () => {
+    setInput('[data-testid="matrix-resource-new-name-ru"]', 'Документация');
+    setInput('[data-testid="matrix-resource-new-name-en"]', 'Documentation');
+    setInput('[data-testid="matrix-resource-new-url"]', 'ftp://example.com/docs');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-resource-add-new"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('ftp://example.com/docs');
+
+    fixture.nativeElement
+      .querySelector<HTMLInputElement>('[data-testid="matrix-resource-search"]')!
+      .dispatchEvent(new Event('input'));
+    fixture.componentInstance.attachResource(resource);
+    fixture.detectChanges();
+    setTextarea('#matrixResourceContextEn0', 'x'.repeat(20_001));
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Вопрос?');
+    setInput('#matrix-form-question-en', 'Question?');
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
   });
 
   it('adds, searches, edits context, and removes resources in the form payload', () => {

@@ -78,25 +78,31 @@
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(sheetForm.controls.key)"
         data-testid="matrix-structure-sheet-key"
         formControlName="key"
         [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.sheetKey' | t"
       />
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(sheetForm.controls.nameRu)"
         data-testid="matrix-structure-sheet-ru"
         formControlName="nameRu"
         [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.sheetRu' | t"
       />
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(sheetForm.controls.nameEn)"
         data-testid="matrix-structure-sheet-en"
         formControlName="nameEn"
         [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.sheetEn' | t"
       />
       <button
@@ -109,6 +115,22 @@
         {{ 'shared.add' | t }}
       </button>
     </div>
+    @if (
+      controlInvalid(sheetForm.controls.key) && controlMessage(sheetForm.controls.key);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    } @else if (
+      controlInvalid(sheetForm.controls.nameRu) && controlMessage(sheetForm.controls.nameRu);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    } @else if (
+      controlInvalid(sheetForm.controls.nameEn) && controlMessage(sheetForm.controls.nameEn);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    }
   </div>
 
   <div class="col-12 col-xl-4">
@@ -116,17 +138,21 @@
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(sectionForm.controls.nameRu)"
         data-testid="matrix-structure-section-ru"
         formControlName="nameRu"
         [attr.disabled]="disabled || creating() || selectedSheetId() === null ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.sectionRu' | t"
       />
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(sectionForm.controls.nameEn)"
         data-testid="matrix-structure-section-en"
         formControlName="nameEn"
         [attr.disabled]="disabled || creating() || selectedSheetId() === null ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.sectionEn' | t"
       />
       <button
@@ -139,6 +165,17 @@
         {{ 'shared.add' | t }}
       </button>
     </div>
+    @if (
+      controlInvalid(sectionForm.controls.nameRu) && controlMessage(sectionForm.controls.nameRu);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    } @else if (
+      controlInvalid(sectionForm.controls.nameEn) && controlMessage(sectionForm.controls.nameEn);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    }
   </div>
 
   <div class="col-12 col-xl-4">
@@ -146,17 +183,21 @@
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(subsectionForm.controls.nameRu)"
         data-testid="matrix-structure-subsection-ru"
         formControlName="nameRu"
         [attr.disabled]="disabled || creating() || selectedSectionId() === null ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.subsectionRu' | t"
       />
       <input
         type="text"
         class="form-control"
+        [class.is-invalid]="controlInvalid(subsectionForm.controls.nameEn)"
         data-testid="matrix-structure-subsection-en"
         formControlName="nameEn"
         [attr.disabled]="disabled || creating() || selectedSectionId() === null ? '' : null"
+        [attr.maxlength]="validationLimits.shortText"
         [attr.placeholder]="'matrix.form.subsectionEn' | t"
       />
       <button
@@ -171,5 +212,18 @@
         {{ 'shared.add' | t }}
       </button>
     </div>
+    @if (
+      controlInvalid(subsectionForm.controls.nameRu) &&
+        controlMessage(subsectionForm.controls.nameRu);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    } @else if (
+      controlInvalid(subsectionForm.controls.nameEn) &&
+        controlMessage(subsectionForm.controls.nameEn);
+      as message
+    ) {
+      <div class="invalid-feedback d-block">{{ message }}</div>
+    }
   </div>
 </div>

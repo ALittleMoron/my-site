@@ -137,6 +137,26 @@ describe('MatrixStructurePickerComponent', () => {
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('4');
   });
 
+  it('blocks invalid sheet key and whitespace-only structure names', () => {
+    setInput('[data-testid="matrix-structure-sheet-key"]', 'Python Core');
+    setInput('[data-testid="matrix-structure-sheet-ru"]', 'Питон');
+    setInput('[data-testid="matrix-structure-sheet-en"]', 'Python');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-structure-add-sheet"]')
+      ?.click();
+
+    expect(service.createSheet).not.toHaveBeenCalled();
+
+    setInput('[data-testid="matrix-structure-sheet-key"]', 'python-core');
+    setInput('[data-testid="matrix-structure-sheet-ru"]', '   ');
+    setInput('[data-testid="matrix-structure-sheet-en"]', 'Python');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-structure-add-sheet"]')
+      ?.click();
+
+    expect(service.createSheet).not.toHaveBeenCalled();
+  });
+
   it('reloads structure and emits newly created subsection', () => {
     const updatedStructure: AdminMatrixStructure = {
       sheets: [

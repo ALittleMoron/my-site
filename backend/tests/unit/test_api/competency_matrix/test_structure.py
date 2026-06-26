@@ -141,6 +141,37 @@ class TestMatrixStructureAPI(ApiTestCase):
         assert section_response.json()["name"] == "Basics"
         assert subsection_response.json()["name"] == "Functions"
 
+    def test_create_sheet_rejects_invalid_key(self) -> None:
+        response = self.api.client.post(
+            "/api/admin/competency-matrix/sheets",
+            params={"language": "en"},
+            json={
+                "key": "Python Core",
+                "translations": {
+                    "ru": {"name": "Питон"},
+                    "en": {"name": "Python"},
+                },
+            },
+        )
+
+        assert response.status_code == codes.BAD_REQUEST, response.content
+        self.use_case.create_sheet.assert_not_called()
+
+    def test_create_structure_node_rejects_whitespace_name(self) -> None:
+        response = self.api.client.post(
+            "/api/admin/competency-matrix/sheets/1/sections",
+            params={"language": "en"},
+            json={
+                "translations": {
+                    "ru": {"name": "Основы"},
+                    "en": {"name": "   "},
+                },
+            },
+        )
+
+        assert response.status_code == codes.BAD_REQUEST, response.content
+        self.use_case.create_section.assert_not_called()
+
     def test_structure_endpoints_are_admin_only(self) -> None:
         response = self.no_auth_api.client.get(
             "/api/competency-matrix/structure",

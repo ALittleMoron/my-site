@@ -31,6 +31,13 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from entrypoints.litestar.api.schemas import CamelCaseSchema
+from entrypoints.litestar.api.validation import (
+    ArticleContentText,
+    OptionalHttpUrlString,
+    RequiredShortText,
+    SlugString,
+)
+from infra.config.constants import constants
 
 
 class TagResponseSchema(CamelCaseSchema):
@@ -52,7 +59,7 @@ class TagResponseSchema(CamelCaseSchema):
 
 
 class TagTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
+    name: Annotated[RequiredShortText, Field(title="Name")]
 
 
 class TagTranslationsSchema(CamelCaseSchema):
@@ -86,7 +93,7 @@ class TagsResponseSchema(CamelCaseSchema):
 
 
 class TagRequestSchema(CamelCaseSchema):
-    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
+    slug: Annotated[SlugString, Field(title="Slug")]
     translations: Annotated[TagTranslationsSchema, Field(title="Translations")]
 
     def to_create_schema(self, *, tag_id: IntId) -> TagCreateParams:
@@ -124,13 +131,43 @@ class ArticleReactionCountsResponseSchema(CamelCaseSchema):
 
 
 class ArticleMetadataSchema(CamelCaseSchema):
-    seo_title_ru: Annotated[str | None, Field(title="RU SEO title", max_length=255)]
-    seo_title_en: Annotated[str | None, Field(title="EN SEO title", max_length=255)]
-    seo_description_ru: Annotated[str | None, Field(title="RU SEO description", max_length=320)]
-    seo_description_en: Annotated[str | None, Field(title="EN SEO description", max_length=320)]
-    cover_image_url: Annotated[str | None, Field(title="Cover image URL", max_length=2048)]
-    cover_image_alt_ru: Annotated[str | None, Field(title="RU cover image alt", max_length=255)]
-    cover_image_alt_en: Annotated[str | None, Field(title="EN cover image alt", max_length=255)]
+    seo_title_ru: Annotated[
+        str | None,
+        Field(title="RU SEO title", max_length=constants.admin_validation.short_text_max_length),
+    ]
+    seo_title_en: Annotated[
+        str | None,
+        Field(title="EN SEO title", max_length=constants.admin_validation.short_text_max_length),
+    ]
+    seo_description_ru: Annotated[
+        str | None,
+        Field(
+            title="RU SEO description",
+            max_length=constants.admin_validation.seo_description_max_length,
+        ),
+    ]
+    seo_description_en: Annotated[
+        str | None,
+        Field(
+            title="EN SEO description",
+            max_length=constants.admin_validation.seo_description_max_length,
+        ),
+    ]
+    cover_image_url: Annotated[OptionalHttpUrlString, Field(title="Cover image URL")]
+    cover_image_alt_ru: Annotated[
+        str | None,
+        Field(
+            title="RU cover image alt",
+            max_length=constants.admin_validation.short_text_max_length,
+        ),
+    ]
+    cover_image_alt_en: Annotated[
+        str | None,
+        Field(
+            title="EN cover image alt",
+            max_length=constants.admin_validation.short_text_max_length,
+        ),
+    ]
 
     def to_domain_schema(self) -> ArticleMetadata:
         return ArticleMetadata(
@@ -281,9 +318,9 @@ class ArticlePublicStatsCollectionResponseSchema(CamelCaseSchema):
 
 
 class ArticleTranslationSchema(CamelCaseSchema):
-    title: Annotated[str, Field(title="Title", min_length=1, max_length=255)]
-    content: Annotated[str, Field(title="Content", min_length=1)]
-    folder: Annotated[str, Field(title="Folder", min_length=1, max_length=255)]
+    title: Annotated[RequiredShortText, Field(title="Title")]
+    content: Annotated[ArticleContentText, Field(title="Content")]
+    folder: Annotated[RequiredShortText, Field(title="Folder")]
 
 
 class ArticleTranslationsSchema(CamelCaseSchema):
@@ -312,7 +349,7 @@ class ArticleTranslationsResponseSchema(CamelCaseSchema):
 
 
 class ArticleRequestSchema(CamelCaseSchema):
-    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
+    slug: Annotated[SlugString, Field(title="Slug")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     tag_ids: Annotated[list[int], Field(title="Tag identifiers")]
     translations: Annotated[ArticleTranslationsSchema, Field(title="Translations")]

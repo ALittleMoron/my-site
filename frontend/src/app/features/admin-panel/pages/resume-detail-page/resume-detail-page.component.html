@@ -234,9 +234,17 @@
             <input
               id="resume-title"
               class="form-control"
+              [class.is-invalid]="fieldInvalid(resumeForm.controls.title)"
               data-testid="resume-title"
+              [attr.maxlength]="validationLimits.shortText"
               formControlName="title"
             />
+            @if (
+              fieldInvalid(resumeForm.controls.title) && fieldMessage(resumeForm.controls.title);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-12 col-lg-4">
             <label class="form-label" for="resume-language">
@@ -245,6 +253,7 @@
             <select
               id="resume-language"
               class="form-select"
+              [class.is-invalid]="fieldInvalid(resumeForm.controls.language)"
               data-testid="resume-language"
               formControlName="language"
             >
@@ -253,6 +262,13 @@
                 <option [value]="language.value">{{ language.labelKey | t }}</option>
               }
             </select>
+            @if (
+              fieldInvalid(resumeForm.controls.language) &&
+                fieldMessage(resumeForm.controls.language);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
         </div>
 
@@ -282,21 +298,50 @@
                   <input
                     id="resume-profile-full-name"
                     class="form-control"
+                    [class.is-invalid]="fieldInvalid(resumeForm.controls.profile.controls.fullName)"
                     data-testid="resume-profile-full-name"
+                    [attr.maxlength]="validationLimits.shortText"
                     formControlName="fullName"
                   />
+                  @if (
+                    fieldInvalid(resumeForm.controls.profile.controls.fullName) &&
+                      fieldMessage(resumeForm.controls.profile.controls.fullName);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-email">
                     {{ 'adminResumeWorkspace.field.email' | t }}
                   </label>
-                  <input id="resume-profile-email" class="form-control" formControlName="email" />
+                  <input
+                    id="resume-profile-email"
+                    type="email"
+                    class="form-control"
+                    [class.is-invalid]="fieldInvalid(resumeForm.controls.profile.controls.email)"
+                    [attr.maxlength]="validationLimits.email"
+                    formControlName="email"
+                  />
+                  @if (
+                    fieldInvalid(resumeForm.controls.profile.controls.email) &&
+                      fieldMessage(resumeForm.controls.profile.controls.email);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-role">
                     {{ 'adminResumeWorkspace.field.role' | t }}
                   </label>
-                  <input id="resume-profile-role" class="form-control" formControlName="role" />
+                  <input
+                    id="resume-profile-role"
+                    class="form-control"
+                    [class.is-invalid]="fieldInvalid(resumeForm.controls.profile.controls.role)"
+                    [attr.maxlength]="validationLimits.shortText"
+                    formControlName="role"
+                  />
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-location">
@@ -305,6 +350,7 @@
                   <input
                     id="resume-profile-location"
                     class="form-control"
+                    [attr.maxlength]="validationLimits.shortText"
                     formControlName="location"
                   />
                 </div>
@@ -312,7 +358,12 @@
                   <label class="form-label" for="resume-profile-phone">
                     {{ 'adminResumeWorkspace.field.phone' | t }}
                   </label>
-                  <input id="resume-profile-phone" class="form-control" formControlName="phone" />
+                  <input
+                    id="resume-profile-phone"
+                    class="form-control"
+                    maxlength="64"
+                    formControlName="phone"
+                  />
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label" for="resume-profile-website">
@@ -320,9 +371,21 @@
                   </label>
                   <input
                     id="resume-profile-website"
+                    type="url"
                     class="form-control"
+                    [class.is-invalid]="
+                      fieldInvalid(resumeForm.controls.profile.controls.websiteUrl)
+                    "
+                    [attr.maxlength]="validationLimits.url"
                     formControlName="websiteUrl"
                   />
+                  @if (
+                    fieldInvalid(resumeForm.controls.profile.controls.websiteUrl) &&
+                      fieldMessage(resumeForm.controls.profile.controls.websiteUrl);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label" for="resume-profile-telegram">
@@ -331,6 +394,7 @@
                   <input
                     id="resume-profile-telegram"
                     class="form-control"
+                    [attr.maxlength]="validationLimits.shortText"
                     formControlName="telegram"
                   />
                 </div>
@@ -340,9 +404,21 @@
                   </label>
                   <input
                     id="resume-profile-linkedin"
+                    type="url"
                     class="form-control"
+                    [class.is-invalid]="
+                      fieldInvalid(resumeForm.controls.profile.controls.linkedinUrl)
+                    "
+                    [attr.maxlength]="validationLimits.url"
                     formControlName="linkedinUrl"
                   />
+                  @if (
+                    fieldInvalid(resumeForm.controls.profile.controls.linkedinUrl) &&
+                      fieldMessage(resumeForm.controls.profile.controls.linkedinUrl);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-github">
@@ -350,9 +426,21 @@
                   </label>
                   <input
                     id="resume-profile-github"
+                    type="url"
                     class="form-control"
+                    [class.is-invalid]="
+                      fieldInvalid(resumeForm.controls.profile.controls.githubUrl)
+                    "
+                    [attr.maxlength]="validationLimits.url"
                     formControlName="githubUrl"
                   />
+                  @if (
+                    fieldInvalid(resumeForm.controls.profile.controls.githubUrl) &&
+                      fieldMessage(resumeForm.controls.profile.controls.githubUrl);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
               </div>
             }
@@ -366,10 +454,19 @@
                   <textarea
                     id="resume-summary"
                     class="form-control"
+                    [class.is-invalid]="fieldInvalid(resumeForm.controls.summary.controls.text)"
                     rows="8"
                     data-testid="resume-summary"
+                    [attr.maxlength]="validationLimits.resumeLongText"
                     formControlName="text"
                   ></textarea>
+                  @if (
+                    fieldInvalid(resumeForm.controls.summary.controls.text) &&
+                      fieldMessage(resumeForm.controls.summary.controls.text);
+                    as message
+                  ) {
+                    <div class="invalid-feedback d-block">{{ message }}</div>
+                  }
                 </div>
               </div>
             }

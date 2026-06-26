@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest_asyncio
 from httpx import codes
 
@@ -59,6 +61,34 @@ class TestAdminResumesAPI(ApiTestCase):
                 author_username="test",
             ),
         )
+
+    def test_list_resumes_allows_legacy_bare_profile_urls(self) -> None:
+        content = self.factory.core.resume_content()
+        content = replace(
+            content,
+            profile=replace(
+                content.profile,
+                linkedin_url="www.linkedin.com/in/dmitriy-lunev",
+                github_url="github.com/ALittleMoron",
+            ),
+        )
+        resume = self.factory.core.resume(
+            resume_id=1,
+            title="Backend resume",
+            content=content,
+        )
+        self.use_case.list_resumes.return_value = self.factory.core.resumes(
+            values=[resume],
+            total_count=1,
+            total_pages=1,
+        )
+
+        response = self.api.get_admin_resumes(page=1, page_size=10)
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        profile = response.json()["resumes"][0]["content"]["profile"]
+        assert profile["linkedinUrl"] == "www.linkedin.com/in/dmitriy-lunev"
+        assert profile["githubUrl"] == "github.com/ALittleMoron"
 
     def test_create_resume_maps_payload_to_params(self) -> None:
         experience = [
@@ -197,6 +227,44 @@ class TestAdminResumesAPI(ApiTestCase):
     def test_create_resume_rejects_unknown_language(self) -> None:
         response = self.api.post_create_resume(
             data=self.factory.api.resume_request(language="de"),
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_whitespace_title(self) -> None:
+        response = self.api.post_create_resume(data=self.factory.api.resume_request(title="   "))
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_invalid_email(self) -> None:
+        content = self.factory.api.resume_content()
+        content["profile"]["email"] = "not-an-email"
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_invalid_url(self) -> None:
+        content = self.factory.api.resume_content()
+        content["profile"]["websiteUrl"] = "mailto:me@example.com"
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_too_long_summary(self) -> None:
+        content = self.factory.api.resume_content(summary="x" * 10_001)
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
         )
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)

@@ -214,6 +214,58 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(service.exportResume).not.toHaveBeenCalled();
   });
 
+  it('blocks invalid title, email, URL, and long text before saving', () => {
+    setInputValue('resume-title', '   ');
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+
+    setInputValue('resume-title', 'Backend resume');
+    setElementValueById('resume-profile-email', 'not-an-email');
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+
+    setElementValueById('resume-profile-email', 'candidate@example.com');
+    setElementValueById('resume-profile-website', 'ftp://example.com');
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+
+    setElementValueById('resume-profile-website', '');
+    fixture.componentInstance.setActiveTab('summary');
+    fixture.detectChanges();
+    setInputValue('resume-summary', 'x'.repeat(10_001));
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+  });
+
+  it('allows resume URLs up to the backend 2048 character limit', () => {
+    const urlPrefix = 'https://example.com/';
+    setElementValueById(
+      'resume-profile-website',
+      `${urlPrefix}${'a'.repeat(2048 - urlPrefix.length)}`,
+    );
+
+    fixture.componentInstance.saveResume();
+
+    expect(service.updateResume).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        content: expect.objectContaining({
+          profile: expect.objectContaining({
+            websiteUrl: expect.stringMatching(/^https:\/\/example\.com\/a+$/),
+          }),
+        }),
+      }),
+    );
+  });
+
   it('deletes the resume and returns to the list', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 

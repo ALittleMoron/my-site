@@ -11,13 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -42,6 +36,16 @@ import { ArticleWorkspaceService } from '../../../../services/article-workspace.
 import { slugify } from '../../../../../../shared/utils/slugify';
 import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/article-authoring-preview.component';
 import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  httpUrlValidator,
+  isRequiredShortText,
+  isSlug,
+  slugValidator,
+  trimRequired,
+  validationMessage,
+} from '../../../../utils/admin-validation';
 
 interface ArticleFormControls {
   titleRu: FormControl<string>;
@@ -94,15 +98,9 @@ interface TagDraft extends ArticleTag {
   draftSlug: string;
 }
 
-type RequiredArticleField =
-  | 'titleRu'
-  | 'titleEn'
-  | 'contentRu'
-  | 'contentEn'
-  | 'slug'
-  | 'folderRu'
-  | 'folderEn';
+type ArticleField = keyof ArticleFormControls;
 type RequiredTagField = 'nameRu' | 'nameEn' | 'slug';
+type TagDraftField = 'nameRu' | 'nameEn' | 'slug';
 
 @Component({
   selector: 'app-admin-article-form',
@@ -139,29 +137,89 @@ export class ArticleFormComponent implements OnInit {
   readonly activeLanguageTab = signal<LanguageCode>('ru');
   readonly formSubmitted = signal(false);
   readonly newTagFormSubmitted = signal(false);
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly form = new FormGroup<ArticleFormControls>({
-    titleRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    titleEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    contentRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    contentEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    slug: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    folderRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    folderEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    seoTitleRu: new FormControl('', { nonNullable: true }),
-    seoTitleEn: new FormControl('', { nonNullable: true }),
-    seoDescriptionRu: new FormControl('', { nonNullable: true }),
-    seoDescriptionEn: new FormControl('', { nonNullable: true }),
-    coverImageUrl: new FormControl('', { nonNullable: true }),
-    coverImageAltRu: new FormControl('', { nonNullable: true }),
-    coverImageAltEn: new FormControl('', { nonNullable: true }),
+    titleRu: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    titleEn: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    contentRu: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.articleContent)],
+    }),
+    contentEn: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.articleContent)],
+    }),
+    slug: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        trimRequired,
+        Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+        slugValidator,
+      ],
+    }),
+    folderRu: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    folderEn: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    seoTitleRu: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+    }),
+    seoTitleEn: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+    }),
+    seoDescriptionRu: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.seoDescription),
+    }),
+    seoDescriptionEn: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.seoDescription),
+    }),
+    coverImageUrl: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(ADMIN_VALIDATION_LIMITS.url), httpUrlValidator],
+    }),
+    coverImageAltRu: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+    }),
+    coverImageAltEn: new FormControl('', {
+      nonNullable: true,
+      validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+    }),
     publishStatus: new FormControl<'Draft' | 'Published'>('Draft', { nonNullable: true }),
   });
 
   readonly newTagForm = new FormGroup<TagFormControls>({
-    nameRu: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    nameEn: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
-    slug: new FormControl('', { nonNullable: true, validators: [trimRequired] }),
+    nameRu: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    nameEn: new FormControl('', {
+      nonNullable: true,
+      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+    }),
+    slug: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        trimRequired,
+        Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+        slugValidator,
+      ],
+    }),
   });
   readonly formSnapshot = signal(this.form.getRawValue());
 
@@ -341,6 +399,7 @@ export class ArticleFormComponent implements OnInit {
   }
 
   updateTag(tag: TagDraft): void {
+    if (this.tagDraftInvalid(tag)) return;
     this.tagError.set(null);
     this.articlesService
       .updateTag(
@@ -431,14 +490,46 @@ export class ArticleFormComponent implements OnInit {
     });
   }
 
-  articleFieldInvalid(field: RequiredArticleField): boolean {
-    const control = this.form.controls[field];
-    return control.invalid && (this.formSubmitted() || control.touched);
+  articleFieldInvalid(field: ArticleField): boolean {
+    return controlInvalid(this.form.controls[field], this.formSubmitted());
+  }
+
+  articleFieldMessage(field: ArticleField): string | null {
+    return validationMessage(this.form.controls[field], this.i18n);
   }
 
   newTagFieldInvalid(field: RequiredTagField): boolean {
-    const control = this.newTagForm.controls[field];
-    return control.invalid && (this.newTagFormSubmitted() || control.touched);
+    return controlInvalid(this.newTagForm.controls[field], this.newTagFormSubmitted());
+  }
+
+  newTagFieldMessage(field: RequiredTagField): string | null {
+    return validationMessage(this.newTagForm.controls[field], this.i18n);
+  }
+
+  tagDraftFieldInvalid(tag: TagDraft, field: TagDraftField): boolean {
+    if (this.isTagDeleted(tag)) return false;
+    return this.tagDraftFieldMessage(tag, field) !== null;
+  }
+
+  tagDraftFieldMessage(tag: TagDraft, field: TagDraftField): string | null {
+    const value = this.tagDraftFieldValue(tag, field);
+    if (field === 'slug') {
+      return isSlug(value) ? null : this.i18n.translate('validation.slug');
+    }
+    if (value.trim() === '') return this.i18n.translate('validation.required');
+    return isRequiredShortText(value)
+      ? null
+      : this.i18n.translate('validation.maxLength', {
+          max: String(ADMIN_VALIDATION_LIMITS.shortText),
+        });
+  }
+
+  tagDraftInvalid(tag: TagDraft): boolean {
+    return (
+      this.tagDraftFieldInvalid(tag, 'nameRu') ||
+      this.tagDraftFieldInvalid(tag, 'nameEn') ||
+      this.tagDraftFieldInvalid(tag, 'slug')
+    );
   }
 
   private loadTags(): void {
@@ -524,10 +615,12 @@ export class ArticleFormComponent implements OnInit {
     control.markAsDirty();
     control.markAsTouched();
   }
-}
 
-function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
-  return control.value.trim() === '' ? { required: true } : null;
+  private tagDraftFieldValue(tag: TagDraft, field: TagDraftField): string {
+    if (field === 'nameRu') return tag.draftNameRu;
+    if (field === 'nameEn') return tag.draftNameEn;
+    return tag.draftSlug;
+  }
 }
 
 function toMetadata(value: ArticleMetadataFormValue): ArticleMetadata {

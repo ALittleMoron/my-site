@@ -65,7 +65,19 @@
         <form class="row g-3" [formGroup]="form" (ngSubmit)="createQuestion()">
           <div class="col-12">
             <label class="form-label" for="queue-question-slug">{{ 'matrix.form.slug' | t }}</label>
-            <input id="queue-question-slug" class="form-control" formControlName="slug" />
+            <input
+              id="queue-question-slug"
+              class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.slug)"
+              maxlength="255"
+              formControlName="slug"
+            />
+            @if (
+              queueFieldInvalid(form.controls.slug) && queueFieldMessage(form.controls.slug);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-12">
             <app-matrix-structure-picker
@@ -89,27 +101,81 @@
             <label class="form-label" for="queue-question-ru">
               {{ 'matrix.form.questionRu' | t }}
             </label>
-            <input id="queue-question-ru" class="form-control" formControlName="questionRu" />
+            <input
+              id="queue-question-ru"
+              class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.questionRu)"
+              maxlength="255"
+              formControlName="questionRu"
+            />
+            @if (
+              queueFieldInvalid(form.controls.questionRu) &&
+                queueFieldMessage(form.controls.questionRu);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-question-en">
               {{ 'matrix.form.questionEn' | t }}
             </label>
-            <input id="queue-question-en" class="form-control" formControlName="questionEn" />
+            <input
+              id="queue-question-en"
+              class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.questionEn)"
+              maxlength="255"
+              formControlName="questionEn"
+            />
+            @if (
+              queueFieldInvalid(form.controls.questionEn) &&
+                queueFieldMessage(form.controls.questionEn);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-answer-ru">
               {{ 'matrix.form.answerRu' | t }}
             </label>
-            <textarea id="queue-answer-ru" class="form-control" rows="4" formControlName="answerRu">
+            <textarea
+              id="queue-answer-ru"
+              class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.answerRu)"
+              rows="4"
+              maxlength="20000"
+              formControlName="answerRu"
+            >
             </textarea>
+            @if (
+              queueFieldInvalid(form.controls.answerRu) &&
+                queueFieldMessage(form.controls.answerRu);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-answer-en">
               {{ 'matrix.form.answerEn' | t }}
             </label>
-            <textarea id="queue-answer-en" class="form-control" rows="4" formControlName="answerEn">
+            <textarea
+              id="queue-answer-en"
+              class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.answerEn)"
+              rows="4"
+              maxlength="20000"
+              formControlName="answerEn"
+            >
             </textarea>
+            @if (
+              queueFieldInvalid(form.controls.answerEn) &&
+                queueFieldMessage(form.controls.answerEn);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-expected-answer-ru">
@@ -118,9 +184,18 @@
             <textarea
               id="queue-expected-answer-ru"
               class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.expectedAnswerRu)"
               rows="4"
+              maxlength="20000"
               formControlName="expectedAnswerRu"
             ></textarea>
+            @if (
+              queueFieldInvalid(form.controls.expectedAnswerRu) &&
+                queueFieldMessage(form.controls.expectedAnswerRu);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-expected-answer-en">
@@ -129,9 +204,18 @@
             <textarea
               id="queue-expected-answer-en"
               class="form-control"
+              [class.is-invalid]="queueFieldInvalid(form.controls.expectedAnswerEn)"
               rows="4"
+              maxlength="20000"
               formControlName="expectedAnswerEn"
             ></textarea>
+            @if (
+              queueFieldInvalid(form.controls.expectedAnswerEn) &&
+                queueFieldMessage(form.controls.expectedAnswerEn);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-12 d-flex justify-content-end">
             <button type="submit" class="btn btn-success" [disabled]="submitting()">
@@ -213,12 +297,16 @@
               id="matrix-queue-manual-question"
               class="form-control"
               maxlength="255"
+              [class.is-invalid]="manualAddErrorMessage() !== null"
               [placeholder]="'adminMatrixQueue.addManualPlaceholder' | t"
               [value]="manualAddQuestion()"
               [disabled]="manualAddSubmitting()"
               (input)="onManualAddQuestionInput($event)"
               (paste)="onManualAddQuestionPaste($event)"
             />
+            @if (manualAddErrorMessage(); as message) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           } @else {
             <input
               type="file"

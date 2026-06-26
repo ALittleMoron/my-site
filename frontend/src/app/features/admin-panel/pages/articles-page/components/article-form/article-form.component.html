@@ -13,9 +13,13 @@
         [attr.aria-invalid]="articleFieldInvalid('slug') ? 'true' : null"
         required
         aria-required="true"
+        [attr.maxlength]="validationLimits.shortText"
         formControlName="slug"
         (input)="onSlugInput()"
       />
+      @if (articleFieldInvalid('slug') && articleFieldMessage('slug'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-8">
       <label class="form-label" for="articleCoverImageUrl">{{
@@ -25,8 +29,17 @@
         id="articleCoverImageUrl"
         type="url"
         class="form-control"
+        [class.is-invalid]="articleFieldInvalid('coverImageUrl')"
+        [attr.aria-invalid]="articleFieldInvalid('coverImageUrl') ? 'true' : null"
+        [attr.maxlength]="validationLimits.url"
         formControlName="coverImageUrl"
       />
+      @if (
+        articleFieldInvalid('coverImageUrl') && articleFieldMessage('coverImageUrl');
+        as message
+      ) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-4">
       <label class="form-label" for="articleCoverImageFile">{{
@@ -81,8 +94,12 @@
             [attr.aria-invalid]="articleFieldInvalid('titleRu') ? 'true' : null"
             required
             aria-required="true"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="titleRu"
           />
+          @if (articleFieldInvalid('titleRu') && articleFieldMessage('titleRu'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-4">
           <label class="form-label" for="articleFolderRu">
@@ -97,8 +114,12 @@
             [attr.aria-invalid]="articleFieldInvalid('folderRu') ? 'true' : null"
             required
             aria-required="true"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="folderRu"
           />
+          @if (articleFieldInvalid('folderRu') && articleFieldMessage('folderRu'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-8">
           <label class="form-label" for="articleSeoTitleRu">{{
@@ -108,8 +129,13 @@
             id="articleSeoTitleRu"
             type="text"
             class="form-control"
+            [class.is-invalid]="articleFieldInvalid('seoTitleRu')"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="seoTitleRu"
           />
+          @if (articleFieldInvalid('seoTitleRu') && articleFieldMessage('seoTitleRu'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-4">
           <label class="form-label" for="articleCoverImageAltRu">
@@ -119,8 +145,16 @@
             id="articleCoverImageAltRu"
             type="text"
             class="form-control"
+            [class.is-invalid]="articleFieldInvalid('coverImageAltRu')"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="coverImageAltRu"
           />
+          @if (
+            articleFieldInvalid('coverImageAltRu') && articleFieldMessage('coverImageAltRu');
+            as message
+          ) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12">
           <label class="form-label" for="articleSeoDescriptionRu">
@@ -130,8 +164,16 @@
             id="articleSeoDescriptionRu"
             class="form-control"
             rows="3"
+            [class.is-invalid]="articleFieldInvalid('seoDescriptionRu')"
+            [attr.maxlength]="validationLimits.seoDescription"
             formControlName="seoDescriptionRu"
           ></textarea>
+          @if (
+            articleFieldInvalid('seoDescriptionRu') && articleFieldMessage('seoDescriptionRu');
+            as message
+          ) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12">
           <div id="articleContentRuLabel" class="form-label">
@@ -152,6 +194,9 @@
               (valueChange)="setContentRu($event)"
             />
           </div>
+          @if (articleFieldInvalid('contentRu') && articleFieldMessage('contentRu'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
       </div>
     </div>
@@ -171,9 +216,13 @@
             [attr.aria-invalid]="articleFieldInvalid('titleEn') ? 'true' : null"
             required
             aria-required="true"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="titleEn"
             (input)="onTitleEnInput()"
           />
+          @if (articleFieldInvalid('titleEn') && articleFieldMessage('titleEn'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-4">
           <label class="form-label" for="articleFolderEn">
@@ -188,8 +237,12 @@
             [attr.aria-invalid]="articleFieldInvalid('folderEn') ? 'true' : null"
             required
             aria-required="true"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="folderEn"
           />
+          @if (articleFieldInvalid('folderEn') && articleFieldMessage('folderEn'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-8">
           <label class="form-label" for="articleSeoTitleEn">{{
@@ -199,8 +252,13 @@
             id="articleSeoTitleEn"
             type="text"
             class="form-control"
+            [class.is-invalid]="articleFieldInvalid('seoTitleEn')"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="seoTitleEn"
           />
+          @if (articleFieldInvalid('seoTitleEn') && articleFieldMessage('seoTitleEn'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-md-4">
           <label class="form-label" for="articleCoverImageAltEn">
@@ -210,8 +268,16 @@
             id="articleCoverImageAltEn"
             type="text"
             class="form-control"
+            [class.is-invalid]="articleFieldInvalid('coverImageAltEn')"
+            [attr.maxlength]="validationLimits.shortText"
             formControlName="coverImageAltEn"
           />
+          @if (
+            articleFieldInvalid('coverImageAltEn') && articleFieldMessage('coverImageAltEn');
+            as message
+          ) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12">
           <label class="form-label" for="articleSeoDescriptionEn">
@@ -221,8 +287,16 @@
             id="articleSeoDescriptionEn"
             class="form-control"
             rows="3"
+            [class.is-invalid]="articleFieldInvalid('seoDescriptionEn')"
+            [attr.maxlength]="validationLimits.seoDescription"
             formControlName="seoDescriptionEn"
           ></textarea>
+          @if (
+            articleFieldInvalid('seoDescriptionEn') && articleFieldMessage('seoDescriptionEn');
+            as message
+          ) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12">
           <div id="articleContentEnLabel" class="form-label">
@@ -243,6 +317,9 @@
               (valueChange)="setContentEn($event)"
             />
           </div>
+          @if (articleFieldInvalid('contentEn') && articleFieldMessage('contentEn'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
       </div>
     </div>
@@ -293,8 +370,12 @@
           [attr.aria-invalid]="newTagFieldInvalid('nameRu') ? 'true' : null"
           required
           aria-required="true"
+          [attr.maxlength]="validationLimits.shortText"
           formControlName="nameRu"
         />
+        @if (newTagFieldInvalid('nameRu') && newTagFieldMessage('nameRu'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
       <div class="col-md-3">
         <label class="form-label small" for="newTagNameEn">
@@ -308,9 +389,13 @@
           [attr.aria-invalid]="newTagFieldInvalid('nameEn') ? 'true' : null"
           required
           aria-required="true"
+          [attr.maxlength]="validationLimits.shortText"
           formControlName="nameEn"
           (input)="onNewTagNameEnInput()"
         />
+        @if (newTagFieldInvalid('nameEn') && newTagFieldMessage('nameEn'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
       <div class="col-md-4">
         <label class="form-label small" for="newTagSlug">
@@ -324,9 +409,13 @@
           [attr.aria-invalid]="newTagFieldInvalid('slug') ? 'true' : null"
           required
           aria-required="true"
+          [attr.maxlength]="validationLimits.shortText"
           formControlName="slug"
           (input)="onNewTagSlugInput()"
         />
+        @if (newTagFieldInvalid('slug') && newTagFieldMessage('slug'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
       <div class="col-md-2 d-grid">
         <button
@@ -356,29 +445,56 @@
           <div class="col-md-3">
             <input
               class="form-control form-control-sm"
+              [attr.data-testid]="'article-tag-' + tag.id + '-name-ru'"
+              [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameRu')"
               [value]="tag.draftNameRu"
               [disabled]="isTagDeleted(tag)"
+              [attr.maxlength]="validationLimits.shortText"
               (input)="updateTagDraftNameRu(tag.id, $event)"
               [attr.aria-label]="'articles.form.tagNameRuAria' | t"
             />
+            @if (
+              tagDraftFieldInvalid(tag, 'nameRu') && tagDraftFieldMessage(tag, 'nameRu');
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-3">
             <input
               class="form-control form-control-sm"
+              [attr.data-testid]="'article-tag-' + tag.id + '-name-en'"
+              [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameEn')"
               [value]="tag.draftNameEn"
               [disabled]="isTagDeleted(tag)"
+              [attr.maxlength]="validationLimits.shortText"
               (input)="updateTagDraftNameEn(tag.id, $event)"
               [attr.aria-label]="'articles.form.tagNameEnAria' | t"
             />
+            @if (
+              tagDraftFieldInvalid(tag, 'nameEn') && tagDraftFieldMessage(tag, 'nameEn');
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-3">
             <input
               class="form-control form-control-sm"
+              [attr.data-testid]="'article-tag-' + tag.id + '-slug'"
+              [class.is-invalid]="tagDraftFieldInvalid(tag, 'slug')"
               [value]="tag.draftSlug"
               [disabled]="isTagDeleted(tag)"
+              [attr.maxlength]="validationLimits.shortText"
               (input)="updateTagDraftSlug(tag.id, $event)"
               [attr.aria-label]="'articles.form.tagSlugAria' | t"
             />
+            @if (
+              tagDraftFieldInvalid(tag, 'slug') && tagDraftFieldMessage(tag, 'slug');
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-auto">
             @if (isTagDeleted(tag)) {
@@ -395,7 +511,13 @@
                 {{ 'shared.restore' | t }}
               </button>
             } @else {
-              <button type="button" class="btn btn-sm btn-outline-primary" (click)="updateTag(tag)">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                [attr.data-testid]="'article-tag-' + tag.id + '-save'"
+                [disabled]="tagDraftInvalid(tag)"
+                (click)="updateTag(tag)"
+              >
                 {{ 'shared.save' | t }}
               </button>
               <button

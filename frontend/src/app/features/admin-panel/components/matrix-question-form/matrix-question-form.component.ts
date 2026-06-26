@@ -11,11 +11,9 @@ import {
   signal,
 } from '@angular/core';
 import {
-  AbstractControl,
   FormControl,
   NonNullableFormBuilder,
   ReactiveFormsModule,
-  ValidationErrors,
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,6 +33,15 @@ import {
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  isHttpUrl,
+  isRequiredShortText,
+  slugValidator,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 const INTERVIEW_FREQUENCIES: readonly AdminMatrixInterviewFrequency[] = [
@@ -46,7 +53,16 @@ const INTERVIEW_FREQUENCIES: readonly AdminMatrixInterviewFrequency[] = [
 const PUBLISH_STATUSES: readonly AdminMatrixPublishStatus[] = ['Draft', 'Published'];
 const RESOURCE_SEARCH_LIMIT = 10;
 
-type RequiredFormField = 'slug' | 'subsectionId' | 'questionRu' | 'questionEn';
+type MatrixQuestionField =
+  | 'slug'
+  | 'subsectionId'
+  | 'questionRu'
+  | 'questionEn'
+  | 'answerRu'
+  | 'answerEn'
+  | 'expectedAnswerRu'
+  | 'expectedAnswerEn';
+type NewResourceField = 'nameRu' | 'nameEn' | 'url';
 
 interface AdminMatrixAttachedResourceTranslations {
   ru: { name: string; context: string };
@@ -100,23 +116,28 @@ export class MatrixQuestionFormComponent implements OnChanges {
   readonly newResourceNameRu = signal('');
   readonly newResourceNameEn = signal('');
   readonly newResourceUrl = signal('');
+  readonly newResourceSubmitted = signal(false);
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   private nextNewResourceId = -1;
 
   readonly questionForm = this.formBuilder.group({
-    slug: ['', [trimRequired, Validators.maxLength(255)]],
+    slug: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
+    ],
     subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade | ''>(''),
     interviewFrequency: this.formBuilder.control<AdminMatrixInterviewFrequency | ''>(''),
     publishStatus: this.formBuilder.control<AdminMatrixPublishStatus>('Draft', {
       validators: Validators.required,
     }),
-    questionRu: ['', [trimRequired, Validators.maxLength(255)]],
-    questionEn: ['', [trimRequired, Validators.maxLength(255)]],
-    answerRu: [''],
-    answerEn: [''],
-    expectedAnswerRu: [''],
-    expectedAnswerEn: [''],
+    questionRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    questionEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    answerRu: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    answerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    expectedAnswerRu: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    expectedAnswerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -132,6 +153,14 @@ export class MatrixQuestionFormComponent implements OnChanges {
       this.questionForm.markAllAsTouched();
       return;
     }
+    if (this.resourceDraftsInvalid()) {
+      this.publishError.set(
+        this.i18n.translate('validation.maxLength', {
+          max: String(ADMIN_VALIDATION_LIMITS.matrixLongText),
+        }),
+      );
+      return;
+    }
     const payload = this.buildQuestionPayload();
     const missingFields = missingMatrixQuestionPayloadFields(payload);
     if (payload.publishStatus === 'Published' && missingFields.length > 0) {
@@ -145,9 +174,12 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.questionSave.emit(payload);
   }
 
-  fieldInvalid(field: RequiredFormField): boolean {
-    const control = this.questionForm.controls[field];
-    return control.invalid && (this.formSubmitted() || control.touched);
+  fieldInvalid(field: MatrixQuestionField): boolean {
+    return controlInvalid(this.questionForm.controls[field], this.formSubmitted());
+  }
+
+  fieldMessage(field: MatrixQuestionField): string | null {
+    return validationMessage(this.questionForm.controls[field], this.i18n);
   }
 
   selectQuestionSubsection(subsectionId: number | null): void {
@@ -203,10 +235,17 @@ export class MatrixQuestionFormComponent implements OnChanges {
   }
 
   addNewResource(): void {
+    this.newResourceSubmitted.set(true);
     const nameRu = this.newResourceNameRu().trim();
     const nameEn = this.newResourceNameEn().trim();
     const url = this.newResourceUrl().trim();
-    if (!nameRu || !nameEn || !url) return;
+    if (
+      !isRequiredShortText(nameRu) ||
+      !isRequiredShortText(nameEn) ||
+      !this.newResourceUrlValid()
+    ) {
+      return;
+    }
     this.resourceDrafts.update((drafts) => [
       ...drafts,
       {
@@ -224,6 +263,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.newResourceNameRu.set('');
     this.newResourceNameEn.set('');
     this.newResourceUrl.set('');
+    this.newResourceSubmitted.set(false);
   }
 
   updateResourceContext(index: number, language: 'ru' | 'en', context: string): void {
@@ -247,6 +287,44 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.resourceDrafts.update((drafts) =>
       drafts.filter((_, currentIndex) => currentIndex !== index),
     );
+  }
+
+  newResourceFieldInvalid(field: NewResourceField): boolean {
+    if (!this.newResourceSubmitted()) return false;
+    return this.newResourceFieldMessage(field) !== null;
+  }
+
+  newResourceFieldMessage(field: NewResourceField): string | null {
+    const value = this.newResourceValue(field).trim();
+    if (value === '') return this.i18n.translate('validation.required');
+    if (field === 'url') {
+      if (value.length > ADMIN_VALIDATION_LIMITS.url) {
+        return this.i18n.translate('validation.maxLength', {
+          max: String(ADMIN_VALIDATION_LIMITS.url),
+        });
+      }
+      return isHttpUrl(value) ? null : this.i18n.translate('validation.url');
+    }
+    if (value.length > ADMIN_VALIDATION_LIMITS.shortText) {
+      return this.i18n.translate('validation.maxLength', {
+        max: String(ADMIN_VALIDATION_LIMITS.shortText),
+      });
+    }
+    return null;
+  }
+
+  resourceContextInvalid(index: number, language: 'ru' | 'en'): boolean {
+    return (
+      this.resourceDrafts()[index]?.translations[language].context.length >
+      ADMIN_VALIDATION_LIMITS.matrixLongText
+    );
+  }
+
+  resourceContextMessage(index: number, language: 'ru' | 'en'): string | null {
+    if (!this.resourceContextInvalid(index, language)) return null;
+    return this.i18n.translate('validation.maxLength', {
+      max: String(ADMIN_VALIDATION_LIMITS.matrixLongText),
+    });
   }
 
   gradeLabel(grade: AdminMatrixGrade | null): string {
@@ -351,12 +429,32 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.newResourceNameRu.set('');
     this.newResourceNameEn.set('');
     this.newResourceUrl.set('');
+    this.newResourceSubmitted.set(false);
     this.nextNewResourceId = -1;
+  }
+
+  private newResourceValue(field: NewResourceField): string {
+    if (field === 'nameRu') return this.newResourceNameRu();
+    if (field === 'nameEn') return this.newResourceNameEn();
+    return this.newResourceUrl();
+  }
+
+  private newResourceUrlValid(): boolean {
+    const url = this.newResourceUrl().trim();
+    return url.length <= ADMIN_VALIDATION_LIMITS.url && httpUrlValidatorValue(url);
+  }
+
+  private resourceDraftsInvalid(): boolean {
+    return this.resourceDrafts().some(
+      (draft) =>
+        draft.translations.ru.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText ||
+        draft.translations.en.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText,
+    );
   }
 }
 
-function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
-  return control.value.trim() === '' ? { required: true } : null;
+function httpUrlValidatorValue(value: string): boolean {
+  return value !== '' && isHttpUrl(value);
 }
 
 function toResourceDraft(

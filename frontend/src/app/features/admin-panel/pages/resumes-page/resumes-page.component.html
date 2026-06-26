@@ -138,8 +138,12 @@
                   class="form-control"
                   [class.is-invalid]="createFieldInvalid('title')"
                   data-testid="resume-create-title"
+                  [attr.maxlength]="validationLimits.shortText"
                   formControlName="title"
                 />
+                @if (createFieldInvalid('title') && createFieldMessage('title'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
               </div>
               <div class="col-12 col-md-6">
                 <label class="form-label" for="resume-create-language">
@@ -158,6 +162,9 @@
                     <option [value]="language.value">{{ language.labelKey | t }}</option>
                   }
                 </select>
+                @if (createFieldInvalid('language') && createFieldMessage('language'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label" for="resume-create-full-name">
@@ -169,8 +176,12 @@
                   class="form-control"
                   [class.is-invalid]="createFieldInvalid('fullName')"
                   data-testid="resume-create-full-name"
+                  [attr.maxlength]="validationLimits.shortText"
                   formControlName="fullName"
                 />
+                @if (createFieldInvalid('fullName') && createFieldMessage('fullName'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label" for="resume-create-role">
@@ -182,8 +193,12 @@
                   class="form-control"
                   [class.is-invalid]="createFieldInvalid('role')"
                   data-testid="resume-create-role"
+                  [attr.maxlength]="validationLimits.shortText"
                   formControlName="role"
                 />
+                @if (createFieldInvalid('role') && createFieldMessage('role'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
               </div>
               <div class="col-12">
                 <label class="form-label" for="resume-create-summary">
@@ -196,8 +211,12 @@
                   [class.is-invalid]="createFieldInvalid('summary')"
                   rows="4"
                   data-testid="resume-create-summary"
+                  [attr.maxlength]="validationLimits.resumeLongText"
                   formControlName="summary"
                 ></textarea>
+                @if (createFieldInvalid('summary') && createFieldMessage('summary'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
               </div>
             </div>
           </div>

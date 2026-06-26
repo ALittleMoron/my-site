@@ -241,6 +241,33 @@ describe('ArticleFormComponent', () => {
     expect(slug.classList).toContain('is-invalid');
   });
 
+  it('blocks invalid article slug, cover URL, and content length violations', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    fillValidArticleMinimum();
+    setInput('#articleSlug', 'Invalid Slug');
+
+    submitArticleForm();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+
+    setInput('#articleSlug', 'typed-article');
+    setInput('#articleCoverImageUrl', 'ftp://example.com/cover.jpg');
+
+    submitArticleForm();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+
+    setInput('#articleCoverImageUrl', 'https://example.com/cover.jpg');
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+    contentEditors[1].componentInstance.valueChange.emit('x'.repeat(100_001));
+    fixture.detectChanges();
+
+    submitArticleForm();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+  });
+
   it('marks required new-tag fields and blocks empty tag creation', () => {
     const nameRu = fixture.debugElement.query(By.css('#newTagNameRu'))
       .nativeElement as HTMLInputElement;
@@ -263,6 +290,30 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
 
     expect(nameRu.classList).not.toContain('is-invalid');
+  });
+
+  it('blocks invalid new and inline tag edits', () => {
+    setInput('#newTagNameRu', 'Бэкенд');
+    setInput('#newTagNameEn', 'Backend');
+    setInput('#newTagSlug', 'Backend Tag');
+
+    fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    expect(articlesService.createTag).not.toHaveBeenCalled();
+
+    const inlineSlug = fixture.nativeElement.querySelector(
+      '[data-testid="article-tag-1-slug"]',
+    ) as HTMLInputElement | null;
+    expect(inlineSlug).not.toBeNull();
+    inlineSlug!.value = 'Python Tag';
+    inlineSlug!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="article-tag-1-save"]')
+      ?.click();
+
+    expect(articlesService.updateTag).not.toHaveBeenCalled();
   });
 
   it('uploads cover image and writes access URL into the metadata field', () => {
@@ -344,6 +395,32 @@ describe('ArticleFormComponent', () => {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
     expect(input).not.toBeNull();
     return (input as HTMLInputElement).value;
+  }
+
+  function setInput(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as
+      | HTMLInputElement
+      | HTMLTextAreaElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function fillValidArticleMinimum(): void {
+    setInput('#articleSlug', 'typed-article');
+    setInput('#articleTitleRu', 'Типизированная статья');
+    setInput('#articleTitleEn', 'Typed article');
+    setInput('#articleFolderRu', 'Инженерия');
+    setInput('#articleFolderEn', 'Engineering');
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+    contentEditors[0].componentInstance.valueChange.emit('Содержимое');
+    contentEditors[1].componentInstance.valueChange.emit('Content');
+    fixture.detectChanges();
+  }
+
+  function submitArticleForm(): void {
+    fixture.debugElement.query(By.css('form')).nativeElement.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
   }
 });
 

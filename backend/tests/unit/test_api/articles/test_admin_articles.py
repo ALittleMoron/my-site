@@ -182,6 +182,38 @@ class TestAdminArticlesAPI(ApiTestCase):
             cover_image_alt_en=None,
         )
 
+    @pytest.mark.parametrize("slug", ["", "   ", "Invalid Slug", "invalid_slug", "-invalid"])
+    def test_create_article_rejects_blank_or_invalid_slug(self, slug: str) -> None:
+        response = self.api.post_create_article(data=self.factory.api.article_request(slug=slug))
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_create_article_rejects_whitespace_required_translation_fields(self) -> None:
+        response = self.api.post_create_article(
+            data=self.factory.api.article_request(title_ru="   ", folder_en="\t"),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_create_article_rejects_invalid_cover_url(self) -> None:
+        data = self.factory.api.article_request()
+        data["metadata"]["coverImageUrl"] = "ftp://example.com/cover.jpg"
+
+        response = self.api.post_create_article(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_create_article_rejects_too_long_content(self) -> None:
+        response = self.api.post_create_article(
+            data=self.factory.api.article_request(content_en="x" * 100_001),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
     def test_create_article_requires_all_translation_fields(self) -> None:
         data = self.factory.api.article_request()
         del data["translations"]["en"]["content"]

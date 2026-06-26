@@ -189,6 +189,22 @@ describe('MatrixQuestionQueuePageComponent', () => {
     );
   });
 
+  it('blocks too-long manual queue questions', () => {
+    openAddModal();
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-queue-manual-question',
+    )!;
+    input.value = 'x'.repeat(256);
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-submit"]')!
+      .click();
+
+    expect(queueService.createQueuedQuestion).not.toHaveBeenCalled();
+  });
+
   it('closes manual queue modal and reloads queue after successful add', () => {
     openAddModal();
     const input = fixture.nativeElement.querySelector<HTMLInputElement>(
@@ -383,6 +399,22 @@ describe('MatrixQuestionQueuePageComponent', () => {
       }),
       'ru',
     );
+  });
+
+  it('blocks invalid queue create payload before calling the service', () => {
+    component.selectQuestion(queuedQuestion);
+    component.form.patchValue({
+      slug: 'Invalid Slug',
+      subsectionId: 3,
+      answerRu: 'Ответ',
+      answerEn: 'Answer',
+      expectedAnswerRu: 'Ожидаемый ответ',
+      expectedAnswerEn: 'Expected answer',
+    });
+
+    component.createQuestion();
+
+    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
   });
 
   function openAddModal(): void {

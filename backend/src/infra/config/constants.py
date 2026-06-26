@@ -90,6 +90,17 @@ class _QuestionQueueImportConstants:
     )
 
 
+class _AdminValidationConstants:
+    slug_pattern: str = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    short_text_max_length: int = 255
+    url_max_length: int = 2_048
+    seo_description_max_length: int = 320
+    email_max_length: int = 254
+    article_content_max_length: int = 100_000
+    matrix_long_text_max_length: int = 20_000
+    resume_long_text_max_length: int = 10_000
+
+
 class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
@@ -100,6 +111,7 @@ class Constants:
     resume_export: _ResumeExportConstants = _ResumeExportConstants()
     search: _SearchConstants = _SearchConstants()
     question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()
+    admin_validation: _AdminValidationConstants = _AdminValidationConstants()
 
 
 constants = Constants()

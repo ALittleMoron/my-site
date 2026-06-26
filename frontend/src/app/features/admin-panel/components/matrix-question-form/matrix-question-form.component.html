@@ -14,6 +14,8 @@
           id="matrix-form-slug"
           class="form-control"
           [class.is-invalid]="fieldInvalid('slug')"
+          [attr.aria-invalid]="fieldInvalid('slug') ? 'true' : null"
+          [attr.maxlength]="validationLimits.shortText"
           formControlName="slug"
         />
         <button
@@ -25,6 +27,9 @@
           {{ 'adminMatrixWorkspace.generateSlug' | t }}
         </button>
       </div>
+      @if (fieldInvalid('slug') && fieldMessage('slug'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-12">
       <app-matrix-structure-picker
@@ -82,8 +87,13 @@
         id="matrix-form-question-ru"
         class="form-control"
         [class.is-invalid]="fieldInvalid('questionRu')"
+        [attr.aria-invalid]="fieldInvalid('questionRu') ? 'true' : null"
+        [attr.maxlength]="validationLimits.shortText"
         formControlName="questionRu"
       />
+      @if (fieldInvalid('questionRu') && fieldMessage('questionRu'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-question-en">
@@ -94,26 +104,43 @@
         id="matrix-form-question-en"
         class="form-control"
         [class.is-invalid]="fieldInvalid('questionEn')"
+        [attr.aria-invalid]="fieldInvalid('questionEn') ? 'true' : null"
+        [attr.maxlength]="validationLimits.shortText"
         formControlName="questionEn"
       />
+      @if (fieldInvalid('questionEn') && fieldMessage('questionEn'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-answer-ru">{{ 'matrix.form.answerRu' | t }}</label>
       <textarea
         id="matrix-form-answer-ru"
         class="form-control"
+        [class.is-invalid]="fieldInvalid('answerRu')"
+        [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
+        [attr.maxlength]="validationLimits.matrixLongText"
         rows="5"
         formControlName="answerRu"
       ></textarea>
+      @if (fieldInvalid('answerRu') && fieldMessage('answerRu'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-answer-en">{{ 'matrix.form.answerEn' | t }}</label>
       <textarea
         id="matrix-form-answer-en"
         class="form-control"
+        [class.is-invalid]="fieldInvalid('answerEn')"
+        [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
+        [attr.maxlength]="validationLimits.matrixLongText"
         rows="5"
         formControlName="answerEn"
       ></textarea>
+      @if (fieldInvalid('answerEn') && fieldMessage('answerEn'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-expected-ru">
@@ -122,9 +149,15 @@
       <textarea
         id="matrix-form-expected-ru"
         class="form-control"
+        [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
+        [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
+        [attr.maxlength]="validationLimits.matrixLongText"
         rows="5"
         formControlName="expectedAnswerRu"
       ></textarea>
+      @if (fieldInvalid('expectedAnswerRu') && fieldMessage('expectedAnswerRu'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-expected-en">
@@ -133,9 +166,15 @@
       <textarea
         id="matrix-form-expected-en"
         class="form-control"
+        [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
+        [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"
+        [attr.maxlength]="validationLimits.matrixLongText"
         rows="5"
         formControlName="expectedAnswerEn"
       ></textarea>
+      @if (fieldInvalid('expectedAnswerEn') && fieldMessage('expectedAnswerEn'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
     </div>
     <section class="col-12">
       <h3 class="h6">{{ 'matrix.resources.title' | t }}</h3>
@@ -168,31 +207,46 @@
           <input
             type="text"
             class="form-control form-control-sm"
+            [class.is-invalid]="newResourceFieldInvalid('nameRu')"
             data-testid="matrix-resource-new-name-ru"
+            [attr.maxlength]="validationLimits.shortText"
             [placeholder]="'matrix.resources.newNameRuPlaceholder' | t"
             [value]="newResourceNameRu()"
             (input)="newResourceNameRu.set($any($event.target).value)"
           />
+          @if (newResourceFieldInvalid('nameRu') && newResourceFieldMessage('nameRu'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12 col-md-6 col-xl-3">
           <input
             type="text"
             class="form-control form-control-sm"
+            [class.is-invalid]="newResourceFieldInvalid('nameEn')"
             data-testid="matrix-resource-new-name-en"
+            [attr.maxlength]="validationLimits.shortText"
             [placeholder]="'matrix.resources.newNameEnPlaceholder' | t"
             [value]="newResourceNameEn()"
             (input)="newResourceNameEn.set($any($event.target).value)"
           />
+          @if (newResourceFieldInvalid('nameEn') && newResourceFieldMessage('nameEn'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12 col-md-8 col-xl-4">
           <input
             type="url"
             class="form-control form-control-sm"
+            [class.is-invalid]="newResourceFieldInvalid('url')"
             data-testid="matrix-resource-new-url"
+            [attr.maxlength]="validationLimits.url"
             [placeholder]="'matrix.resources.urlPlaceholder' | t"
             [value]="newResourceUrl()"
             (input)="newResourceUrl.set($any($event.target).value)"
           />
+          @if (newResourceFieldInvalid('url') && newResourceFieldMessage('url'); as message) {
+            <div class="invalid-feedback d-block">{{ message }}</div>
+          }
         </div>
         <div class="col-12 col-md-4 col-xl-2 d-grid">
           <button
@@ -229,11 +283,20 @@
               <textarea
                 [id]="'matrixResourceContextRu' + index"
                 class="form-control form-control-sm"
+                [class.is-invalid]="resourceContextInvalid(index, 'ru')"
+                [attr.aria-invalid]="resourceContextInvalid(index, 'ru') ? 'true' : null"
+                [attr.maxlength]="validationLimits.matrixLongText"
                 rows="2"
                 [placeholder]="'matrix.resources.contextRuPlaceholder' | t"
                 [value]="resource.translations.ru.context"
                 (input)="updateResourceContext(index, 'ru', $any($event.target).value)"
               ></textarea>
+              @if (
+                resourceContextInvalid(index, 'ru') && resourceContextMessage(index, 'ru');
+                as message
+              ) {
+                <div class="invalid-feedback d-block">{{ message }}</div>
+              }
             </div>
             <div class="col-md-6">
               <label class="form-label small" [for]="'matrixResourceContextEn' + index">
@@ -242,11 +305,20 @@
               <textarea
                 [id]="'matrixResourceContextEn' + index"
                 class="form-control form-control-sm"
+                [class.is-invalid]="resourceContextInvalid(index, 'en')"
+                [attr.aria-invalid]="resourceContextInvalid(index, 'en') ? 'true' : null"
+                [attr.maxlength]="validationLimits.matrixLongText"
                 rows="2"
                 [placeholder]="'matrix.resources.contextEnPlaceholder' | t"
                 [value]="resource.translations.en.context"
                 (input)="updateResourceContext(index, 'en', $any($event.target).value)"
               ></textarea>
+              @if (
+                resourceContextInvalid(index, 'en') && resourceContextMessage(index, 'en');
+                as message
+              ) {
+                <div class="invalid-feedback d-block">{{ message }}</div>
+              }
             </div>
           </div>
         </div>

@@ -160,6 +160,25 @@ describe('AdminResumesPageComponent', () => {
     expect(service.createResume).not.toHaveBeenCalled();
   });
 
+  it('blocks too-long create summary before calling the service', () => {
+    fixture.componentInstance.openCreateDialog();
+    fixture.detectChanges();
+
+    setInputValue('resume-create-title', 'Target resume');
+    setInputValue('resume-create-language', 'en');
+    setInputValue('resume-create-full-name', 'Dmitriy');
+    setInputValue('resume-create-role', 'Backend engineer');
+    setInputValue('resume-create-summary', 'x'.repeat(10_001));
+
+    const form = fixture.nativeElement.querySelector(
+      '[data-testid="resume-create-form"]',
+    ) as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(service.createResume).not.toHaveBeenCalled();
+  });
+
   it('shows an API error notification on create failure', () => {
     service.createResume.mockReturnValue(throwError(() => apiError()));
     fixture.componentInstance.openCreateDialog();

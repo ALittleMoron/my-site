@@ -44,10 +44,16 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from entrypoints.litestar.api.schemas import CamelCaseSchema
+from entrypoints.litestar.api.validation import (
+    MatrixLongText,
+    RequiredHttpUrlString,
+    RequiredShortText,
+    SlugString,
+)
 
 
 class ResourceTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
+    name: Annotated[RequiredShortText, Field(title="Name")]
 
 
 class ResourceTranslationsSchema(CamelCaseSchema):
@@ -56,7 +62,7 @@ class ResourceTranslationsSchema(CamelCaseSchema):
 
 
 class StructureNameTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
+    name: Annotated[RequiredShortText, Field(title="Name")]
 
 
 class StructureNameTranslationsSchema(CamelCaseSchema):
@@ -172,7 +178,7 @@ class MatrixStructureResponseSchema(CamelCaseSchema):
 
 
 class MatrixSheetCreateRequestSchema(CamelCaseSchema):
-    key: Annotated[str, Field(title="Key", min_length=1, max_length=255)]
+    key: Annotated[SlugString, Field(title="Key")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self) -> CompetencyMatrixSheetCreateParams:
@@ -206,7 +212,7 @@ class MatrixSubsectionCreateRequestSchema(CamelCaseSchema):
 
 
 class QuestionSuggestionRequestSchema(CamelCaseSchema):
-    question: Annotated[str, Field(title="Question", min_length=1, max_length=255)]
+    question: Annotated[RequiredShortText, Field(title="Question")]
 
     @field_validator("question", mode="after")
     @classmethod
@@ -285,7 +291,7 @@ class ResourceResponseSchema(CamelCaseSchema):
 
 
 class ResourceRequestSchema(CamelCaseSchema):
-    url: Annotated[str, Field(title="URL", min_length=1, max_length=2048)]
+    url: Annotated[RequiredHttpUrlString, Field(title="URL")]
     translations: Annotated[ResourceTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self, resource_id: IntId) -> ExternalResource:
@@ -298,7 +304,7 @@ class ResourceRequestSchema(CamelCaseSchema):
 
 
 class AttachmentContextTranslationSchema(CamelCaseSchema):
-    context: Annotated[str, Field(title="Context")]
+    context: Annotated[MatrixLongText, Field(title="Context")]
 
 
 class AttachmentContextTranslationsSchema(CamelCaseSchema):
@@ -349,7 +355,7 @@ class AttachedResourceResponseSchema(CamelCaseSchema):
 
 
 class ExistingResourceAttachmentRequestSchema(CamelCaseSchema):
-    resource_id: Annotated[int, Field(title="Identifier")]
+    resource_id: Annotated[int, Field(title="Identifier", ge=1)]
     translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self) -> ExistingExternalResourceAttachment:
@@ -376,9 +382,12 @@ class NewResourceAttachmentRequestSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemTranslationSchema(CamelCaseSchema):
-    question: Annotated[str, Field(title="Question", min_length=1, max_length=255)]
-    answer: Annotated[str, Field(title="Answer")]
-    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    question: Annotated[RequiredShortText, Field(title="Question")]
+    answer: Annotated[MatrixLongText, Field(title="Answer")]
+    interview_expected_answer: Annotated[
+        MatrixLongText,
+        Field(title="Expected interview answer"),
+    ]
 
 
 class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
@@ -528,7 +537,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
 
 
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
-    slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
+    slug: Annotated[SlugString, Field(title="Slug")]
     subsection_id: Annotated[int, Field(title="Subsection identifier", ge=1)]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
     interview_frequency: Annotated[
