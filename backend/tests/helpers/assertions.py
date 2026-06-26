@@ -13,14 +13,10 @@ class AssertsHelper:
     def status(self, response: Response, expected_status: int) -> None:
         assert response.status_code == expected_status, response.content
 
-    def json(self, response: Response, expected_status: int | None = None) -> Any:
-        if expected_status is not None:
-            self.status(response=response, expected_status=expected_status)
-        return response.json()
-
     def json_body(self, response: Response, expected_status: int, expected_body: object) -> None:
+        self.status(response=response, expected_status=expected_status)
         self.equals(
-            actual=self.json(response=response, expected_status=expected_status),
+            actual=response.json(),
             expected=expected_body,
         )
 
@@ -30,7 +26,8 @@ class AssertsHelper:
         expected_status: int,
         expected_message: str,
     ) -> dict[str, Any]:
-        body = cast("dict[str, Any]", self.json(response=response, expected_status=expected_status))
+        self.status(response=response, expected_status=expected_status)
+        body = cast("dict[str, Any]", response.json())
         assert body["message"] == expected_message
         return body
 

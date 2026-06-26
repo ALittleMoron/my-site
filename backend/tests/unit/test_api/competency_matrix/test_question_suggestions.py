@@ -231,7 +231,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             content_type="text/plain",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        self.asserts.status(response=response, expected_status=codes.CREATED)
+        body = response.json()
         assert body["questions"] == [
             {
                 "id": 3,
@@ -396,7 +397,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             content_type="application/vnd.ms-excel",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        body = response.json()
         assert body["nested_errors"][0]["message"] == ("Unsupported import file extension: .xls.")
         self.use_case.import_queued_questions.assert_not_called()
 
@@ -407,7 +409,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             content_type="text/plain",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        body = response.json()
         assert body["nested_errors"][0]["message"] == "Row 2 question must not be blank."
         self.use_case.import_queued_questions.assert_not_called()
 
@@ -418,7 +421,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             content_type="text/plain",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        body = response.json()
         assert body["nested_errors"][0]["message"] == (
             "Row 1 question must be at most 255 characters."
         )
@@ -431,7 +435,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.BAD_REQUEST)
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        body = response.json()
         assert body["nested_errors"][0]["message"] == "Row 2 question must be text."
         self.use_case.import_queued_questions.assert_not_called()
 
@@ -515,7 +520,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             language="en",
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        self.asserts.status(response=response, expected_status=codes.CREATED)
+        body = response.json()
         assert body["id"] == 10
         assert body["question"] == "What is PEP 8?"
         self.use_case.create_item_from_queue.assert_called_once_with(

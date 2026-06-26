@@ -66,9 +66,10 @@ make test-env-down       # stop isolated test PostgreSQL and remove its data
 - Add API helper methods in `backend/tests/helpers/api.py` instead of duplicating endpoint URL strings across tests.
 - Put shared HTTP assertion methods in `AssertsHelper` under
   `backend/tests/helpers/assertions.py`; call them as `self.asserts.status(...)`,
-  `self.asserts.json(...)`, `self.asserts.error_message(...)`, or
+  `self.asserts.error_message(...)`, `self.asserts.json_body(...)`, or
   `self.asserts.resume_response_contract(...)`. Keep scenario-specific payload assertions visible
-  in the test body.
+  in the test body. When a test needs to inspect a response JSON body after checking only status,
+  call `self.asserts.status(...)` first and then `response.json()` directly.
 - Put small collection projection methods in `CollectionsHelper` under
   `backend/tests/helpers/collections.py`; call them as `self.collections.slugs(items)`,
   `self.collections.ids(items)`, or `self.collections.names_en(items)` when that is clearer than a

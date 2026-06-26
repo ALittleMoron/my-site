@@ -40,7 +40,8 @@ class TestAdminResumesAPI(ApiTestCase):
 
         response = self.api.get_admin_resumes(page=2, page_size=10)
 
-        body = self.asserts.json(response=response, expected_status=codes.OK)
+        self.asserts.status(response=response, expected_status=codes.OK)
+        body = response.json()
         listed_resume = body["resumes"][0]
         assert body["totalCount"] == 1
         assert body["totalPages"] == 1
@@ -134,7 +135,8 @@ class TestAdminResumesAPI(ApiTestCase):
             ),
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.CREATED)
+        self.asserts.status(response=response, expected_status=codes.CREATED)
+        body = response.json()
         assert body["id"] == 2
         assert body["language"] == "en"
         assert body["content"]["profile"]["phone"] == ""
@@ -169,7 +171,8 @@ class TestAdminResumesAPI(ApiTestCase):
             ),
         )
 
-        body = self.asserts.json(response=response, expected_status=codes.OK)
+        self.asserts.status(response=response, expected_status=codes.OK)
+        body = response.json()
         assert body["title"] == "Updated resume"
         assert body["language"] == "en"
         self.use_case.update_resume.assert_called_once_with(
@@ -208,7 +211,8 @@ class TestAdminResumesAPI(ApiTestCase):
 
         response = self.api.get_admin_resume(resume_id=3)
 
-        body = self.asserts.json(response=response, expected_status=codes.OK)
+        self.asserts.status(response=response, expected_status=codes.OK)
+        body = response.json()
         assert body["id"] == 3
         assert body["language"] == "ru"
         self.asserts.resume_response_contract(value=body)
