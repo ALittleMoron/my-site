@@ -19,5 +19,5 @@ class PublishMixin(BaseModelMixin):
     )
     publish_status: Mapped[PublishStatusEnum] = mapped_column(
         Enum(PublishStatusEnum, native_enum=False, length=10, name="publish_status_enum"),
-        doc="Статус опубликования записи",
+        doc="Record publication status",
     )

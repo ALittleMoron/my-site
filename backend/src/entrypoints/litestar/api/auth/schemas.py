@@ -17,8 +17,8 @@ class AccessTokenResponseSchema(CamelCaseSchema):
     access_token: Annotated[
         str,
         Field(
-            title="Access токен",
-            description="Токен PASETO для авторизации",
+            title="Access token",
+            description="PASETO authorization token",
             examples=[PASETO_TOKEN_EXAMPLE],
         ),
     ]

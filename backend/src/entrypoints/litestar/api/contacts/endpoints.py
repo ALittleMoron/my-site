@@ -19,7 +19,7 @@ class ContactsApiController(Controller):
     @post(
         "",
         status_code=status.HTTP_204_NO_CONTENT,
-        description="Создание заявки на то, чтобы связаться со мной",
+        description="Create a contact request.",
     )
     async def contact_me_request(
         self,

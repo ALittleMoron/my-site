@@ -18,7 +18,7 @@ class WikiLinksApiController(Controller):
 
     @get(
         "/targets",
-        description="Получение доступных целей для typed wiki-links.",
+        description="Get available typed wiki link targets.",
         name="admin-wiki-links-targets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )

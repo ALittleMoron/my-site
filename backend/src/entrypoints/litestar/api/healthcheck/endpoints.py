@@ -13,9 +13,9 @@ class HealthcheckController(Controller):
 
     @get(
         "",
-        summary="Базовая проверка",
-        description="Базовая проверка работоспособности приложения (Ответ 200 = живой)",
-        cache=settings.app.get_cache_duration(1),  # 1 секунда
+        summary="Basic health check",
+        description="Basic application health check. A 200 response means the app is alive.",
+        cache=settings.app.get_cache_duration(1),  # 1 second
         cache_key_builder=ResponseCacheDomain.HEALTHCHECK.cache_key_builder,
     )
     async def health(self) -> Response:
@@ -23,8 +23,8 @@ class HealthcheckController(Controller):
 
     @get(
         "/ready",
-        summary="Проверка готовности",
-        description="Проверка готовности приложения и обязательных зависимостей.",
+        summary="Readiness check",
+        description="Checks application readiness and required dependencies.",
     )
     async def ready(self, checker: FromDishka[ReadinessChecker]) -> Response:
         await checker.check()

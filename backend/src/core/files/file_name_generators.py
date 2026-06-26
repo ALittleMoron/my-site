@@ -33,7 +33,7 @@ class TimestampFileNameGenerator(FileNameGenerator):
     random_generator: Callable[[int], str]
 
     def __call__(self, folder: str | None, file_extension: str) -> str:
-        timestamp = int(time.time() * 1_000_000)  # микросекунды
+        timestamp = int(time.time() * 1_000_000)  # microseconds
         random_suffix = self.random_generator(self.random_suffix_length)
         normalized_extension = self.normalize_extension(file_extension)
         file_name = f"{timestamp}_{random_suffix}{normalized_extension}"

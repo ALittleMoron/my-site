@@ -34,11 +34,11 @@ from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class TagResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
-    name: Annotated[str, Field(title="Название")]
+    id: Annotated[int, Field(title="Identifier")]
+    name: Annotated[str, Field(title="Name")]
     slug: Annotated[str, Field(title="Slug")]
-    deleted_at: Annotated[str | None, Field(title="Дата удаления")]
-    translations: Annotated[TagTranslationsResponseSchema, Field(title="Переводы")]
+    deleted_at: Annotated[str | None, Field(title="Deletion date")]
+    translations: Annotated[TagTranslationsResponseSchema, Field(title="Translations")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Tag, language: LanguageEnum) -> Self:
@@ -52,17 +52,17 @@ class TagResponseSchema(CamelCaseSchema):
 
 
 class TagTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Название", min_length=1, max_length=255)]
+    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
 
 
 class TagTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[TagTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[TagTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[TagTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[TagTranslationSchema, Field(title="English translation")]
 
 
 class TagTranslationsResponseSchema(CamelCaseSchema):
-    ru: Annotated[TagTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[TagTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[TagTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[TagTranslationSchema, Field(title="English translation")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Tag) -> Self:
@@ -73,7 +73,7 @@ class TagTranslationsResponseSchema(CamelCaseSchema):
 
 
 class TagsResponseSchema(CamelCaseSchema):
-    tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
+    tags: Annotated[list[TagResponseSchema], Field(title="Tags")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Tags, language: LanguageEnum) -> Self:
@@ -87,7 +87,7 @@ class TagsResponseSchema(CamelCaseSchema):
 
 class TagRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
-    translations: Annotated[TagTranslationsSchema, Field(title="Переводы")]
+    translations: Annotated[TagTranslationsSchema, Field(title="Translations")]
 
     def to_create_schema(self, *, tag_id: IntId) -> TagCreateParams:
         return TagCreateParams(
@@ -106,11 +106,11 @@ class TagRequestSchema(CamelCaseSchema):
 
 
 class ArticleReactionCountsResponseSchema(CamelCaseSchema):
-    heart: Annotated[int, Field(title="Реакция: понравилось")]
-    fire: Annotated[int, Field(title="Реакция: хочу ещё")]
-    thinking: Annotated[int, Field(title="Реакция: заставило подумать")]
-    neutral: Annotated[int, Field(title="Реакция: нормально")]
-    poop: Annotated[int, Field(title="Реакция: не зашло")]
+    heart: Annotated[int, Field(title="Reaction: liked")]
+    fire: Annotated[int, Field(title="Reaction: want more")]
+    thinking: Annotated[int, Field(title="Reaction: thought-provoking")]
+    neutral: Annotated[int, Field(title="Reaction: neutral")]
+    poop: Annotated[int, Field(title="Reaction: disliked")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleReactionCounts) -> Self:
@@ -124,13 +124,13 @@ class ArticleReactionCountsResponseSchema(CamelCaseSchema):
 
 
 class ArticleMetadataSchema(CamelCaseSchema):
-    seo_title_ru: Annotated[str | None, Field(title="SEO заголовок RU", max_length=255)]
-    seo_title_en: Annotated[str | None, Field(title="SEO заголовок EN", max_length=255)]
-    seo_description_ru: Annotated[str | None, Field(title="SEO описание RU", max_length=320)]
-    seo_description_en: Annotated[str | None, Field(title="SEO описание EN", max_length=320)]
-    cover_image_url: Annotated[str | None, Field(title="URL обложки", max_length=2048)]
-    cover_image_alt_ru: Annotated[str | None, Field(title="Alt обложки RU", max_length=255)]
-    cover_image_alt_en: Annotated[str | None, Field(title="Alt обложки EN", max_length=255)]
+    seo_title_ru: Annotated[str | None, Field(title="RU SEO title", max_length=255)]
+    seo_title_en: Annotated[str | None, Field(title="EN SEO title", max_length=255)]
+    seo_description_ru: Annotated[str | None, Field(title="RU SEO description", max_length=320)]
+    seo_description_en: Annotated[str | None, Field(title="EN SEO description", max_length=320)]
+    cover_image_url: Annotated[str | None, Field(title="Cover image URL", max_length=2048)]
+    cover_image_alt_ru: Annotated[str | None, Field(title="RU cover image alt", max_length=255)]
+    cover_image_alt_en: Annotated[str | None, Field(title="EN cover image alt", max_length=255)]
 
     def to_domain_schema(self) -> ArticleMetadata:
         return ArticleMetadata(
@@ -157,17 +157,17 @@ class ArticleMetadataSchema(CamelCaseSchema):
 
 
 class ArticleSummaryResponseSchema(CamelCaseSchema):
-    id: Annotated[str, Field(title="Идентификатор")]
-    title: Annotated[str, Field(title="Заголовок")]
+    id: Annotated[str, Field(title="Identifier")]
+    title: Annotated[str, Field(title="Title")]
     slug: Annotated[str, Field(title="Slug")]
-    folder: Annotated[str, Field(title="Папка")]
-    author_username: Annotated[str, Field(title="Автор")]
-    published_at: Annotated[str | None, Field(title="Дата публикации")]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    updated_at: Annotated[str, Field(title="Дата обновления")]
-    excerpt: Annotated[str, Field(title="Короткое превью")]
+    folder: Annotated[str, Field(title="Folder")]
+    author_username: Annotated[str, Field(title="Author")]
+    published_at: Annotated[str | None, Field(title="Publication date")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    updated_at: Annotated[str, Field(title="Update date")]
+    excerpt: Annotated[str, Field(title="Short preview")]
     metadata: Annotated[ArticleMetadataSchema, Field(title="SEO metadata")]
-    tags: Annotated[list[TagResponseSchema], Field(title="Теги")]
+    tags: Annotated[list[TagResponseSchema], Field(title="Tags")]
 
     @classmethod
     def from_domain_schema(
@@ -203,9 +203,9 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
 
 
 class ArticleDetailResponseSchema(ArticleSummaryResponseSchema):
-    content: Annotated[str, Field(title="Содержимое")]
-    created_at: Annotated[str, Field(title="Дата создания")]
-    translations: Annotated[ArticleTranslationsResponseSchema, Field(title="Переводы")]
+    content: Annotated[str, Field(title="Content")]
+    created_at: Annotated[str, Field(title="Creation date")]
+    translations: Annotated[ArticleTranslationsResponseSchema, Field(title="Translations")]
 
     @classmethod
     def from_domain_schema(
@@ -227,9 +227,9 @@ class ArticleDetailResponseSchema(ArticleSummaryResponseSchema):
 
 
 class ArticleListResponseSchema(CamelCaseSchema):
-    total_count: Annotated[int, Field(title="Количество статей")]
-    total_pages: Annotated[int, Field(title="Количество страниц")]
-    articles: Annotated[list[ArticleSummaryResponseSchema], Field(title="Статьи")]
+    total_count: Annotated[int, Field(title="Article count")]
+    total_pages: Annotated[int, Field(title="Page count")]
+    articles: Annotated[list[ArticleSummaryResponseSchema], Field(title="Articles")]
 
     @classmethod
     def from_domain_schema(
@@ -252,9 +252,9 @@ class ArticleListResponseSchema(CamelCaseSchema):
 
 
 class ArticlePublicStatsResponseSchema(CamelCaseSchema):
-    article_id: Annotated[str, Field(title="Идентификатор статьи")]
-    view_count: Annotated[int, Field(title="Количество просмотров")]
-    reaction_counts: Annotated[ArticleReactionCountsResponseSchema, Field(title="Реакции")]
+    article_id: Annotated[str, Field(title="Article identifier")]
+    view_count: Annotated[int, Field(title="View count")]
+    reaction_counts: Annotated[ArticleReactionCountsResponseSchema, Field(title="Reactions")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticlePublicStats) -> Self:
@@ -268,7 +268,7 @@ class ArticlePublicStatsResponseSchema(CamelCaseSchema):
 
 
 class ArticlePublicStatsCollectionResponseSchema(CamelCaseSchema):
-    stats: Annotated[list[ArticlePublicStatsResponseSchema], Field(title="Публичная статистика")]
+    stats: Annotated[list[ArticlePublicStatsResponseSchema], Field(title="Public statistics")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticlePublicStatsCollection) -> Self:
@@ -281,19 +281,19 @@ class ArticlePublicStatsCollectionResponseSchema(CamelCaseSchema):
 
 
 class ArticleTranslationSchema(CamelCaseSchema):
-    title: Annotated[str, Field(title="Заголовок", min_length=1, max_length=255)]
-    content: Annotated[str, Field(title="Содержимое", min_length=1)]
-    folder: Annotated[str, Field(title="Папка", min_length=1, max_length=255)]
+    title: Annotated[str, Field(title="Title", min_length=1, max_length=255)]
+    content: Annotated[str, Field(title="Content", min_length=1)]
+    folder: Annotated[str, Field(title="Folder", min_length=1, max_length=255)]
 
 
 class ArticleTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[ArticleTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[ArticleTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[ArticleTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[ArticleTranslationSchema, Field(title="English translation")]
 
 
 class ArticleTranslationsResponseSchema(CamelCaseSchema):
-    ru: Annotated[ArticleTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[ArticleTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[ArticleTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[ArticleTranslationSchema, Field(title="English translation")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Article) -> Self:
@@ -313,9 +313,9 @@ class ArticleTranslationsResponseSchema(CamelCaseSchema):
 
 class ArticleRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    tag_ids: Annotated[list[int], Field(title="Идентификаторы тегов")]
-    translations: Annotated[ArticleTranslationsSchema, Field(title="Переводы")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    tag_ids: Annotated[list[int], Field(title="Tag identifiers")]
+    translations: Annotated[ArticleTranslationsSchema, Field(title="Translations")]
     metadata: Annotated[ArticleMetadataSchema, Field(title="SEO metadata")]
 
     def to_create_schema(
@@ -355,19 +355,19 @@ class ArticleRequestSchema(CamelCaseSchema):
 
 
 class ArticleReactionRequestSchema(CamelCaseSchema):
-    reaction_kind: Annotated[ArticleReactionKind | None, Field(title="Реакция")]
+    reaction_kind: Annotated[ArticleReactionKind | None, Field(title="Reaction")]
     client_token: Annotated[
         str,
-        Field(title="Анонимный клиентский токен", min_length=1, max_length=255),
+        Field(title="Anonymous client token", min_length=1, max_length=255),
     ]
 
 
 class ArticleTreeItemResponseSchema(CamelCaseSchema):
-    title: Annotated[str, Field(title="Заголовок")]
+    title: Annotated[str, Field(title="Title")]
     slug: Annotated[str, Field(title="Slug")]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    published_at: Annotated[str | None, Field(title="Дата публикации")]
-    updated_at: Annotated[str, Field(title="Дата обновления")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    published_at: Annotated[str | None, Field(title="Publication date")]
+    updated_at: Annotated[str, Field(title="Update date")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleTreeItem) -> Self:
@@ -383,8 +383,8 @@ class ArticleTreeItemResponseSchema(CamelCaseSchema):
 
 
 class ArticleTreeFolderResponseSchema(CamelCaseSchema):
-    folder: Annotated[str, Field(title="Папка")]
-    articles: Annotated[list[ArticleTreeItemResponseSchema], Field(title="Статьи")]
+    folder: Annotated[str, Field(title="Folder")]
+    articles: Annotated[list[ArticleTreeItemResponseSchema], Field(title="Articles")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleTreeFolder) -> Self:
@@ -398,7 +398,7 @@ class ArticleTreeFolderResponseSchema(CamelCaseSchema):
 
 
 class ArticleTreeResponseSchema(CamelCaseSchema):
-    folders: Annotated[list[ArticleTreeFolderResponseSchema], Field(title="Папки")]
+    folders: Annotated[list[ArticleTreeFolderResponseSchema], Field(title="Folders")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleTree) -> Self:
@@ -411,9 +411,9 @@ class ArticleTreeResponseSchema(CamelCaseSchema):
 
 
 class ArticleAnalyticsTotalsResponseSchema(CamelCaseSchema):
-    view_count: Annotated[int, Field(title="Количество просмотров")]
-    engaged_view_count: Annotated[int, Field(title="Количество вовлечённых просмотров")]
-    reaction_count: Annotated[int, Field(title="Количество реакций")]
+    view_count: Annotated[int, Field(title="View count")]
+    engaged_view_count: Annotated[int, Field(title="Engaged view count")]
+    reaction_count: Annotated[int, Field(title="Reaction count")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleAnalyticsTotals) -> Self:
@@ -425,12 +425,12 @@ class ArticleAnalyticsTotalsResponseSchema(CamelCaseSchema):
 
 
 class ArticleAnalyticsArticleStatsResponseSchema(CamelCaseSchema):
-    article_id: Annotated[str, Field(title="Идентификатор статьи")]
-    title: Annotated[str, Field(title="Заголовок")]
+    article_id: Annotated[str, Field(title="Article identifier")]
+    title: Annotated[str, Field(title="Title")]
     slug: Annotated[str, Field(title="Slug")]
-    view_count: Annotated[int, Field(title="Количество просмотров")]
-    engaged_view_count: Annotated[int, Field(title="Количество вовлечённых просмотров")]
-    reaction_counts: Annotated[ArticleReactionCountsResponseSchema, Field(title="Реакции")]
+    view_count: Annotated[int, Field(title="View count")]
+    engaged_view_count: Annotated[int, Field(title="Engaged view count")]
+    reaction_counts: Annotated[ArticleReactionCountsResponseSchema, Field(title="Reactions")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleAnalyticsArticleStats) -> Self:
@@ -447,13 +447,13 @@ class ArticleAnalyticsArticleStatsResponseSchema(CamelCaseSchema):
 
 
 class ArticleAnalyticsDailyStatsResponseSchema(CamelCaseSchema):
-    article_id: Annotated[str, Field(title="Идентификатор статьи")]
-    title: Annotated[str, Field(title="Заголовок")]
+    article_id: Annotated[str, Field(title="Article identifier")]
+    title: Annotated[str, Field(title="Title")]
     slug: Annotated[str, Field(title="Slug")]
-    date: Annotated[date, Field(title="Дата")]
-    source_category: Annotated[ArticleViewSourceCategory, Field(title="Источник")]
-    view_count: Annotated[int, Field(title="Количество просмотров")]
-    engaged_view_count: Annotated[int, Field(title="Количество вовлечённых просмотров")]
+    date: Annotated[date, Field(title="Date")]
+    source_category: Annotated[ArticleViewSourceCategory, Field(title="Source")]
+    view_count: Annotated[int, Field(title="View count")]
+    engaged_view_count: Annotated[int, Field(title="Engaged view count")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleAnalyticsDailyStats) -> Self:
@@ -469,11 +469,11 @@ class ArticleAnalyticsDailyStatsResponseSchema(CamelCaseSchema):
 
 
 class ArticleAnalyticsStatsResponseSchema(CamelCaseSchema):
-    date_from: Annotated[date, Field(title="Дата начала")]
-    date_to: Annotated[date, Field(title="Дата окончания")]
-    totals: Annotated[ArticleAnalyticsTotalsResponseSchema, Field(title="Итого")]
-    articles: Annotated[list[ArticleAnalyticsArticleStatsResponseSchema], Field(title="Статьи")]
-    daily: Annotated[list[ArticleAnalyticsDailyStatsResponseSchema], Field(title="Дни")]
+    date_from: Annotated[date, Field(title="Start date")]
+    date_to: Annotated[date, Field(title="End date")]
+    totals: Annotated[ArticleAnalyticsTotalsResponseSchema, Field(title="Totals")]
+    articles: Annotated[list[ArticleAnalyticsArticleStatsResponseSchema], Field(title="Articles")]
+    daily: Annotated[list[ArticleAnalyticsDailyStatsResponseSchema], Field(title="Days")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleAnalyticsStats) -> Self:

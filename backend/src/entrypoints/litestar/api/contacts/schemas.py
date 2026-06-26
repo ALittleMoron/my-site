@@ -13,8 +13,8 @@ class ContactMeRequest(CamelCaseSchema):
         Field(
             min_length=1,
             max_length=255,
-            description="Имя пользователя (можно полное по желанию).",
-            examples=["Дмитрий Лунев"],
+            description="User name. A full name may be provided.",
+            examples=["Dmitriy Lunev"],
         ),
     ]
     email: Annotated[
@@ -22,7 +22,7 @@ class ContactMeRequest(CamelCaseSchema):
         Field(
             min_length=1,
             max_length=255,
-            description="Адрес электронной почты пользователя.",
+            description="User email address.",
             examples=["example@mail.ru"],
         ),
     ]
@@ -31,7 +31,7 @@ class ContactMeRequest(CamelCaseSchema):
         Field(
             min_length=2,
             max_length=256,
-            description="Телеграм аккаунт для связи с пользователем",
+            description="Telegram account for contacting the user.",
             examples=["@alm_dmitriy_dev"],
         ),
     ]
@@ -40,8 +40,8 @@ class ContactMeRequest(CamelCaseSchema):
         Field(
             min_length=1,
             max_length=10000,
-            description="Сообщение для связи",
-            examples=["Хочу ЗП 500к"],
+            description="Contact message.",
+            examples=["I would like to discuss a project."],
         ),
     ]
 

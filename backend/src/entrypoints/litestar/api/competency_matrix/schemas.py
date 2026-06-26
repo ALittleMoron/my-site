@@ -40,16 +40,16 @@ from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class ResourceTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Наименование", min_length=1, max_length=255)]
+    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
 
 
 class ResourceTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[ResourceTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[ResourceTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[ResourceTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[ResourceTranslationSchema, Field(title="English translation")]
 
 
 class QuestionSuggestionRequestSchema(CamelCaseSchema):
-    question: Annotated[str, Field(title="Вопрос", min_length=1, max_length=255)]
+    question: Annotated[str, Field(title="Question", min_length=1, max_length=255)]
 
     @field_validator("question", mode="after")
     @classmethod
@@ -72,14 +72,14 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
 
 
 class QueuedQuestionResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
-    question: Annotated[str, Field(title="Вопрос")]
-    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
-    sheet: Annotated[str | None, Field(title="Лист")]
-    section: Annotated[str | None, Field(title="Раздел")]
-    subsection: Annotated[str | None, Field(title="Подраздел")]
-    suggested_by_username: Annotated[str | None, Field(title="Кто предложил")]
-    created_at: Annotated[str, Field(title="Дата создания")]
+    id: Annotated[int, Field(title="Identifier")]
+    question: Annotated[str, Field(title="Question")]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
+    sheet: Annotated[str | None, Field(title="Sheet")]
+    section: Annotated[str | None, Field(title="Section")]
+    subsection: Annotated[str | None, Field(title="Subsection")]
+    suggested_by_username: Annotated[str | None, Field(title="Suggested by")]
+    created_at: Annotated[str, Field(title="Creation date")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: QueuedCompetencyMatrixQuestion) -> Self:
@@ -96,7 +96,7 @@ class QueuedQuestionResponseSchema(CamelCaseSchema):
 
 
 class QueuedQuestionsResponseSchema(CamelCaseSchema):
-    questions: Annotated[list[QueuedQuestionResponseSchema], Field(title="Список")]
+    questions: Annotated[list[QueuedQuestionResponseSchema], Field(title="List")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: QueuedCompetencyMatrixQuestions) -> Self:
@@ -109,10 +109,10 @@ class QueuedQuestionsResponseSchema(CamelCaseSchema):
 
 
 class ResourceResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
-    name: Annotated[str, Field(title="Наименование")]
-    url: Annotated[str, Field(title="Ссылка")]
-    translations: Annotated[ResourceTranslationsSchema, Field(title="Переводы")]
+    id: Annotated[int, Field(title="Identifier")]
+    name: Annotated[str, Field(title="Name")]
+    url: Annotated[str, Field(title="URL")]
+    translations: Annotated[ResourceTranslationsSchema, Field(title="Translations")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ExternalResource, language: LanguageEnum) -> Self:
@@ -128,8 +128,8 @@ class ResourceResponseSchema(CamelCaseSchema):
 
 
 class ResourceRequestSchema(CamelCaseSchema):
-    url: Annotated[str, Field(title="Ссылка", min_length=1, max_length=2048)]
-    translations: Annotated[ResourceTranslationsSchema, Field(title="Переводы")]
+    url: Annotated[str, Field(title="URL", min_length=1, max_length=2048)]
+    translations: Annotated[ResourceTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self, resource_id: IntId) -> ExternalResource:
         return ExternalResource(
@@ -141,30 +141,30 @@ class ResourceRequestSchema(CamelCaseSchema):
 
 
 class AttachmentContextTranslationSchema(CamelCaseSchema):
-    context: Annotated[str, Field(title="Контекст")]
+    context: Annotated[str, Field(title="Context")]
 
 
 class AttachmentContextTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[AttachmentContextTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[AttachmentContextTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[AttachmentContextTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[AttachmentContextTranslationSchema, Field(title="English translation")]
 
 
 class AttachedResourceTranslationSchema(CamelCaseSchema):
-    name: Annotated[str, Field(title="Наименование")]
-    context: Annotated[str, Field(title="Контекст")]
+    name: Annotated[str, Field(title="Name")]
+    context: Annotated[str, Field(title="Context")]
 
 
 class AttachedResourceTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[AttachedResourceTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[AttachedResourceTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[AttachedResourceTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[AttachedResourceTranslationSchema, Field(title="English translation")]
 
 
 class AttachedResourceResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
-    name: Annotated[str, Field(title="Наименование")]
-    url: Annotated[str, Field(title="Ссылка")]
-    context: Annotated[str, Field(title="Контекст")]
-    translations: Annotated[AttachedResourceTranslationsSchema, Field(title="Переводы")]
+    id: Annotated[int, Field(title="Identifier")]
+    name: Annotated[str, Field(title="Name")]
+    url: Annotated[str, Field(title="URL")]
+    context: Annotated[str, Field(title="Context")]
+    translations: Annotated[AttachedResourceTranslationsSchema, Field(title="Translations")]
 
     @classmethod
     def from_domain_schema(
@@ -192,8 +192,8 @@ class AttachedResourceResponseSchema(CamelCaseSchema):
 
 
 class ExistingResourceAttachmentRequestSchema(CamelCaseSchema):
-    resource_id: Annotated[int, Field(title="Идентификатор")]
-    translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Переводы")]
+    resource_id: Annotated[int, Field(title="Identifier")]
+    translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self) -> ExistingExternalResourceAttachment:
         return ExistingExternalResourceAttachment(
@@ -206,9 +206,9 @@ class ExistingResourceAttachmentRequestSchema(CamelCaseSchema):
 class NewResourceAttachmentRequestSchema(CamelCaseSchema):
     resource: Annotated[
         ResourceRequestSchema,
-        Field(title="Ресурс"),
+        Field(title="Resource"),
     ]
-    translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Переводы")]
+    translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self, resource_id: IntId) -> NewExternalResourceAttachment:
         return NewExternalResourceAttachment(
@@ -219,17 +219,17 @@ class NewResourceAttachmentRequestSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemTranslationSchema(CamelCaseSchema):
-    question: Annotated[str, Field(title="Вопрос", min_length=1, max_length=255)]
-    answer: Annotated[str, Field(title="Ответ")]
-    interview_expected_answer: Annotated[str, Field(title="Ожидаемый ответ")]
-    sheet: Annotated[str, Field(title="Лист", max_length=255)]
-    section: Annotated[str, Field(title="Раздел", max_length=255)]
-    subsection: Annotated[str, Field(title="Подраздел", max_length=255)]
+    question: Annotated[str, Field(title="Question", min_length=1, max_length=255)]
+    answer: Annotated[str, Field(title="Answer")]
+    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    sheet: Annotated[str, Field(title="Sheet", max_length=255)]
+    section: Annotated[str, Field(title="Section", max_length=255)]
+    subsection: Annotated[str, Field(title="Subsection", max_length=255)]
 
 
 class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
-    ru: Annotated[CompetencyMatrixItemTranslationSchema, Field(title="Русский перевод")]
-    en: Annotated[CompetencyMatrixItemTranslationSchema, Field(title="Английский перевод")]
+    ru: Annotated[CompetencyMatrixItemTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[CompetencyMatrixItemTranslationSchema, Field(title="English translation")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixItem) -> Self:
@@ -254,12 +254,12 @@ class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
+    id: Annotated[int, Field(title="Identifier")]
     slug: Annotated[str, Field(title="Slug")]
-    question: Annotated[str, Field(title="Вопрос")]
+    question: Annotated[str, Field(title="Question")]
     interview_frequency: Annotated[
         InterviewFrequencyEnum | None,
-        Field(title="Частота вопроса на собеседованиях"),
+        Field(title="Interview frequency"),
     ]
 
     @classmethod
@@ -273,16 +273,16 @@ class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
-    answer: Annotated[str, Field(title="Ответ")]
-    interview_expected_answer: Annotated[str, Field(title="Ожидаемый ответ")]
-    sheet_key: Annotated[str, Field(title="Ключ листа")]
-    sheet: Annotated[str, Field(title="Лист")]
-    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
-    section: Annotated[str, Field(title="Раздел")]
-    subsection: Annotated[str, Field(title="Подраздел")]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    resources: Annotated[list[AttachedResourceResponseSchema], Field(title="Ресурсы")]
-    translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Переводы")]
+    answer: Annotated[str, Field(title="Answer")]
+    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    sheet_key: Annotated[str, Field(title="Sheet key")]
+    sheet: Annotated[str, Field(title="Sheet")]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
+    section: Annotated[str, Field(title="Section")]
+    subsection: Annotated[str, Field(title="Subsection")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    resources: Annotated[list[AttachedResourceResponseSchema], Field(title="Resources")]
+    translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Translations")]
 
     @classmethod
     def from_domain_schema(
@@ -320,17 +320,17 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
 
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
-    sheet_key: Annotated[str, Field(title="Ключ листа", min_length=1, max_length=255)]
-    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    sheet_key: Annotated[str, Field(title="Sheet key", min_length=1, max_length=255)]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
     interview_frequency: Annotated[
         InterviewFrequencyEnum | None,
-        Field(title="Частота вопроса на собеседованиях"),
+        Field(title="Interview frequency"),
     ]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Переводы")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Translations")]
     resources: Annotated[
         list[ExistingResourceAttachmentRequestSchema | NewResourceAttachmentRequestSchema],
-        Field(title="Ресурсы"),
+        Field(title="Resources"),
     ]
 
     def to_create_schema(
@@ -414,8 +414,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
-    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
-    items: Annotated[list[CompetencyMatrixItemResponseSchema], Field(title="Список")]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
+    items: Annotated[list[CompetencyMatrixItemResponseSchema], Field(title="List")]
 
     @classmethod
     def from_domain_schema(
@@ -438,8 +438,8 @@ class CompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixGroupedSubsectionsResponseSchema(CamelCaseSchema):
-    subsection: Annotated[str, Field(title="Подраздел")]
-    grades: Annotated[list[CompetencyMatrixGroupedGradesResponseSchema], Field(title="Список")]
+    subsection: Annotated[str, Field(title="Subsection")]
+    grades: Annotated[list[CompetencyMatrixGroupedGradesResponseSchema], Field(title="List")]
 
     @classmethod
     def from_domain_schema(
@@ -463,10 +463,10 @@ class CompetencyMatrixGroupedSubsectionsResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixGroupedSectionsResponseSchema(CamelCaseSchema):
-    section: Annotated[str, Field(title="Раздел")]
+    section: Annotated[str, Field(title="Section")]
     subsections: Annotated[
         list[CompetencyMatrixGroupedSubsectionsResponseSchema],
-        Field(title="Список"),
+        Field(title="List"),
     ]
 
     @classmethod
@@ -494,11 +494,11 @@ class CompetencyMatrixGroupedSectionsResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
-    sheet_key: Annotated[str, Field(title="Ключ листа")]
-    sheet: Annotated[str, Field(title="Лист")]
+    sheet_key: Annotated[str, Field(title="Sheet key")]
+    sheet: Annotated[str, Field(title="Sheet")]
     sections: Annotated[
         list[CompetencyMatrixGroupedSectionsResponseSchema],
-        Field(title="Список"),
+        Field(title="List"),
     ]
 
     @classmethod
@@ -543,8 +543,8 @@ class CompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
 
 
 class SheetResponseSchema(CamelCaseSchema):
-    key: Annotated[str, Field(title="Ключ")]
-    name: Annotated[str, Field(title="Название")]
+    key: Annotated[str, Field(title="Key")]
+    name: Annotated[str, Field(title="Name")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Sheet, language: LanguageEnum) -> Self:
@@ -552,7 +552,7 @@ class SheetResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixSheetsListResponseSchema(CamelCaseSchema):
-    sheets: Annotated[list[SheetResponseSchema], Field(title="Список")]
+    sheets: Annotated[list[SheetResponseSchema], Field(title="List")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: Sheets, language: LanguageEnum) -> Self:
@@ -565,7 +565,7 @@ class CompetencyMatrixSheetsListResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixResourcesResponseSchema(CamelCaseSchema):
-    resources: Annotated[list[ResourceResponseSchema], Field(title="Ресурсы")]
+    resources: Annotated[list[ResourceResponseSchema], Field(title="Resources")]
 
     @classmethod
     def from_domain_schema(
@@ -583,11 +583,11 @@ class CompetencyMatrixResourcesResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixWorkspaceSummaryResponseSchema(CamelCaseSchema):
-    total: Annotated[int, Field(title="Всего")]
-    draft: Annotated[int, Field(title="Черновиков")]
-    missing_draft: Annotated[int, Field(title="Черновиков с пропусками")]
-    dangerous_published: Annotated[int, Field(title="Опубликованных с пропусками")]
-    ready_published: Annotated[int, Field(title="Готовых опубликованных")]
+    total: Annotated[int, Field(title="Total")]
+    draft: Annotated[int, Field(title="Draft")]
+    missing_draft: Annotated[int, Field(title="Draft items with missing fields")]
+    dangerous_published: Annotated[int, Field(title="Published items with missing fields")]
+    ready_published: Annotated[int, Field(title="Ready published items")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspaceSummary) -> Self:
@@ -601,23 +601,23 @@ class CompetencyMatrixWorkspaceSummaryResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Идентификатор")]
+    id: Annotated[int, Field(title="Identifier")]
     slug: Annotated[str, Field(title="Slug")]
-    question: Annotated[str, Field(title="Вопрос")]
-    sheet_key: Annotated[str, Field(title="Ключ листа")]
-    sheet: Annotated[str, Field(title="Лист")]
-    grade: Annotated[GradeEnum | None, Field(title="Компетенция")]
+    question: Annotated[str, Field(title="Question")]
+    sheet_key: Annotated[str, Field(title="Sheet key")]
+    sheet: Annotated[str, Field(title="Sheet")]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
     interview_frequency: Annotated[
         InterviewFrequencyEnum | None,
-        Field(title="Частота вопроса на собеседованиях"),
+        Field(title="Interview frequency"),
     ]
-    section: Annotated[str, Field(title="Раздел")]
-    subsection: Annotated[str, Field(title="Подраздел")]
-    publish_status: Annotated[PublishStatusEnum, Field(title="Статус публикации")]
-    published_at: Annotated[str | None, Field(title="Дата публикации")]
+    section: Annotated[str, Field(title="Section")]
+    subsection: Annotated[str, Field(title="Subsection")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    published_at: Annotated[str | None, Field(title="Publication date")]
     missing_fields: Annotated[
         list[CompetencyMatrixMissingFieldEnum],
-        Field(title="Незаполненные поля"),
+        Field(title="Missing fields"),
     ]
 
     @classmethod
@@ -641,10 +641,10 @@ class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixWorkspaceResponseSchema(CamelCaseSchema):
-    total_count: Annotated[int, Field(title="Количество вопросов")]
-    total_pages: Annotated[int, Field(title="Количество страниц")]
-    summary: Annotated[CompetencyMatrixWorkspaceSummaryResponseSchema, Field(title="Сводка")]
-    items: Annotated[list[CompetencyMatrixWorkspaceItemResponseSchema], Field(title="Вопросы")]
+    total_count: Annotated[int, Field(title="Question count")]
+    total_pages: Annotated[int, Field(title="Page count")]
+    summary: Annotated[CompetencyMatrixWorkspaceSummaryResponseSchema, Field(title="Summary")]
+    items: Annotated[list[CompetencyMatrixWorkspaceItemResponseSchema], Field(title="Questions")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspace) -> Self:
@@ -662,8 +662,8 @@ class CompetencyMatrixWorkspaceResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixFilterOptionResponseSchema(CamelCaseSchema):
-    key: Annotated[str, Field(title="Ключ")]
-    label: Annotated[str, Field(title="Подпись")]
+    key: Annotated[str, Field(title="Key")]
+    label: Annotated[str, Field(title="Label")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixFilterOption) -> Self:
@@ -671,8 +671,8 @@ class CompetencyMatrixFilterOptionResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixFilterSectionOptionResponseSchema(CamelCaseSchema):
-    label: Annotated[str, Field(title="Раздел")]
-    subsections: Annotated[list[str], Field(title="Подразделы")]
+    label: Annotated[str, Field(title="Section")]
+    subsections: Annotated[list[str], Field(title="Subsections")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixFilterSectionOption) -> Self:
@@ -680,11 +680,11 @@ class CompetencyMatrixFilterSectionOptionResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixFilterSheetOptionResponseSchema(CamelCaseSchema):
-    key: Annotated[str, Field(title="Ключ")]
-    label: Annotated[str, Field(title="Подпись")]
+    key: Annotated[str, Field(title="Key")]
+    label: Annotated[str, Field(title="Label")]
     sections: Annotated[
         list[CompetencyMatrixFilterSectionOptionResponseSchema],
-        Field(title="Разделы"),
+        Field(title="Sections"),
     ]
 
     @classmethod
@@ -702,15 +702,15 @@ class CompetencyMatrixFilterSheetOptionResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixFilterOptionsResponseSchema(CamelCaseSchema):
-    sheets: Annotated[list[CompetencyMatrixFilterSheetOptionResponseSchema], Field(title="Листы")]
-    grades: Annotated[list[GradeEnum], Field(title="Компетенции")]
+    sheets: Annotated[list[CompetencyMatrixFilterSheetOptionResponseSchema], Field(title="Sheets")]
+    grades: Annotated[list[GradeEnum], Field(title="Grades")]
     interview_frequencies: Annotated[
         list[InterviewFrequencyEnum],
-        Field(title="Частоты вопросов на собеседованиях"),
+        Field(title="Interview frequencies"),
     ]
-    sections: Annotated[list[str], Field(title="Разделы")]
-    subsections: Annotated[list[str], Field(title="Подразделы")]
-    publish_statuses: Annotated[list[PublishStatusEnum], Field(title="Статусы публикации")]
+    sections: Annotated[list[str], Field(title="Sections")]
+    subsections: Annotated[list[str], Field(title="Subsections")]
+    publish_statuses: Annotated[list[PublishStatusEnum], Field(title="Publication statuses")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixFilterOptions) -> Self:

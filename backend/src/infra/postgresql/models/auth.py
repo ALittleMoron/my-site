@@ -10,16 +10,16 @@ from infra.postgresql.models.base import BaseModel
 class UserModel(BaseModel):
     username: Mapped[str] = mapped_column(
         String(255),
-        doc="Имя пользователя",
+        doc="Username",
         primary_key=True,
     )
     password_hash: Mapped[str] = mapped_column(
         String(127),
-        doc="Зашифрованный парользо пользователя",
+        doc="User password hash",
     )
     role: Mapped[RoleEnum] = mapped_column(
         Enum(RoleEnum, native_enum=False, length=10, name="role_enum"),
-        doc="Роль пользователя",
+        doc="User role",
     )
 
     __table_args__ = (Index("users_username_idx", username),)

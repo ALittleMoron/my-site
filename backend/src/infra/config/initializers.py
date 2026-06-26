@@ -11,10 +11,9 @@ from infra.postgresql.utils import migrate
 
 def init_sentry() -> None:
     if not settings.sentry.use:
-        # NOTE: просто не надо во время локальной разработки срать в sentry. На проде можно
-        #
-        # debug использую, потому что у меня нет много окружений. Только прод и локальный запуск.
-        # Поэтому мне не нужно на каждый инструмент делать параметр enabled.
+        # Keep local development from sending events to Sentry; production enables it explicitly.
+        # The debug flag is enough because this project currently has only local and
+        # production modes.
         return
     sentry_sdk.init(
         dsn=settings.sentry.dsn,

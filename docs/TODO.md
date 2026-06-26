@@ -559,7 +559,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Production public UI QA
   - [x] Make the active `ru/en` language switch green instead of blue, matching the competency matrix active controls.
   - [x] Make the "to question" button on the competency matrix detail page green, consistent with the existing project button style.
-  - [x] Localise the date-range filter placeholder: Russian may stay `дд.мм.гггг`, but English should use a clearer US-style `mm.dd.yyyy` format.
+  - [x] Localise the date-range filter placeholder: Russian may stay day-month-year format, but English should use a clearer US-style `mm.dd.yyyy` format.
   - [x] Add comfortable left and right padding to article text in the public articles list.
   - [x] Make the active article reaction state green instead of blue.
   - [x] On article detail pages, visually separate the back button from tags and make it green.

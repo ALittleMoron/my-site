@@ -6,7 +6,7 @@ from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.datastructures.upload_file import UploadFile
-from litestar.di import Provide
+from litestar.di import NamedDependency, Provide
 from litestar.params import Body, FromPath, MultipartBody, QueryParameter
 
 from core.auth.schemas import JwtUser
@@ -67,7 +67,7 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @get(
         "/sheets",
-        description="Получение публичного списка листов матрицы компетенций.",
+        description="Get the public competency matrix sheet list.",
         name="public-competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -86,7 +86,7 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @get(
         "/items",
-        description="Получение публичного списка вопросов по матрице компетенций.",
+        description="Get the public competency matrix question list.",
         name="public-competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -108,7 +108,7 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @get(
         "/items/detail/{pk:int}",
-        description="Получение публичной подробной информации о вопросе матрицы по id.",
+        description="Get public competency matrix question details by id.",
         name="public-competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -133,7 +133,7 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @get(
         "/items/public/{slug:str}",
-        description="Получение публичной подробной информации о вопросе матрицы по slug.",
+        description="Get public competency matrix question details by slug.",
         name="public-competency-matrix-public-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -148,7 +148,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def get_public_competency_matrix_item(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        params: CompetencyMatrixItemBySlugGetParams,
+        params: NamedDependency[CompetencyMatrixItemBySlugGetParams],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item_by_slug(params=params)
@@ -159,7 +159,7 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @post(
         "/question-suggestions",
-        description="Анонимное предложение вопроса для матрицы компетенций.",
+        description="Suggest an anonymous competency matrix question.",
         name="public-competency-matrix-question-suggestion-create-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
         dependencies={
@@ -173,7 +173,7 @@ class PublicCompetencyMatrixApiController(Controller):
         self,
         data: Annotated[QuestionSuggestionRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        limit: QuestionSuggestionLimitParams,
+        limit: NamedDependency[QuestionSuggestionLimitParams],
     ) -> None:
         await use_case.suggest_question(params=data.to_schema(limit=limit))
 
@@ -185,7 +185,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/sheets",
-        description="Получение админского списка листов матрицы компетенций.",
+        description="Get the admin competency matrix sheet list.",
         name="admin-competency-matrix-sheets-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -202,7 +202,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/resources/search",
-        description="Админский поиск вопросов по матрице компетенций по названию и url.",
+        description="Search admin competency matrix resources by name and URL.",
         name="admin-competency-matrix-resources-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={
@@ -215,7 +215,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def search_competency_matrix_resources(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        params: CompetencyMatrixResourceSearchParams,
+        params: NamedDependency[CompetencyMatrixResourceSearchParams],
     ) -> CompetencyMatrixResourcesResponseSchema:
         items = await use_case.find_resources(params=params)
         return CompetencyMatrixResourcesResponseSchema.from_domain_schema(
@@ -225,7 +225,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/queued-questions",
-        description="Получение очереди предложенных вопросов матрицы компетенций.",
+        description="Get the queued competency matrix question list.",
         name="admin-competency-matrix-queued-questions-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -238,7 +238,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/queued-questions",
-        description="Ручное добавление вопроса в очередь матрицы компетенций.",
+        description="Manually add a competency matrix question to the queue.",
         name="admin-competency-matrix-queued-question-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -252,7 +252,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/queued-questions/import",
-        description="Импорт вопросов в очередь матрицы компетенций из файла.",
+        description="Import queued competency matrix questions from a file.",
         name="admin-competency-matrix-queued-questions-import-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -273,7 +273,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @delete(
         "/queued-questions/{pk:int}",
-        description="Отклонение вопроса из очереди матрицы компетенций.",
+        description="Reject a queued competency matrix question.",
         name="admin-competency-matrix-queued-question-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -286,7 +286,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/queued-questions/{pk:int}/create-item",
-        description="Создание вопроса матрицы компетенций из очереди.",
+        description="Create a competency matrix question from the queue.",
         name="admin-competency-matrix-queued-question-create-item-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -318,7 +318,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/items/workspace",
-        description="Получение админского рабочего списка вопросов матрицы компетенций.",
+        description="Get the admin competency matrix question workspace list.",
         name="admin-competency-matrix-items-workspace-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={
@@ -331,14 +331,14 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_workspace_items(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        filters: CompetencyMatrixWorkspaceFilters,
+        filters: NamedDependency[CompetencyMatrixWorkspaceFilters],
     ) -> CompetencyMatrixWorkspaceResponseSchema:
         workspace = await use_case.list_workspace_items(filters=filters)
         return CompetencyMatrixWorkspaceResponseSchema.from_domain_schema(schema=workspace)
 
     @get(
         "/items/filter-options",
-        description="Получение значений фильтров рабочего списка вопросов матрицы.",
+        description="Get competency matrix workspace filter values.",
         name="admin-competency-matrix-items-filter-options-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -352,7 +352,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/items",
-        description="Получение админского списка вопросов по матрице компетенций.",
+        description="Get the admin competency matrix question list.",
         name="admin-competency-matrix-items-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -376,7 +376,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/items",
-        description="Создание вопроса в матрице компетенций.",
+        description="Create a competency matrix question.",
         name="admin-competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -406,7 +406,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @get(
         "/items/detail/{pk:int}",
-        description="Получение админской подробной информации о вопросе матрицы.",
+        description="Get admin competency matrix question details.",
         name="admin-competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={
@@ -419,7 +419,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def get_competency_matrix_item(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        params: CompetencyMatrixItemGetParams,
+        params: NamedDependency[CompetencyMatrixItemGetParams],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item(params=params)
@@ -430,7 +430,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @put(
         "/items/detail/{pk:int}",
-        description="Обновление вопроса в матрице компетенций.",
+        description="Update a competency matrix question.",
         name="admin-competency-matrix-item-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -460,7 +460,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @delete(
         "/items/detail/{pk:int}",
-        description="Удаление вопроса в матрице компетенций.",
+        description="Delete a competency matrix question.",
         name="admin-competency-matrix-item-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -478,7 +478,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/items/detail/{pk:int}/set-draft",
-        description='Установка статуса "Черновик" на вопрос в матрице компетенций.',
+        description='Set competency matrix question status to "Draft".',
         name="admin-competency-matrix-item-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
         dependencies={
@@ -492,7 +492,7 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        params: CompetencyMatrixItemPublishStatusSwitchParams,
+        params: NamedDependency[CompetencyMatrixItemPublishStatusSwitchParams],
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -502,7 +502,7 @@ class AdminCompetencyMatrixApiController(Controller):
 
     @post(
         "/items/detail/{pk:int}/set-published",
-        description='Установка статуса "Опубликовано" на вопрос в матрице компетенций.',
+        description='Set competency matrix question status to "Published".',
         name="admin-competency-matrix-item-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
         dependencies={
@@ -516,7 +516,7 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        params: CompetencyMatrixItemPublishStatusSwitchParams,
+        params: NamedDependency[CompetencyMatrixItemPublishStatusSwitchParams],
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
         await invalidate_and_enqueue_response_cache_warm_domain(

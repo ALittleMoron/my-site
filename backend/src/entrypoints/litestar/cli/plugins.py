@@ -11,10 +11,10 @@ from entrypoints.litestar.cli.utils import run_sync
 class CLIPlugin(CLIPluginProtocol):
     def on_cli_init(self, cli: click.Group) -> None:
         @cli.command()
-        @click.option("--username", "-U", help="Никнейм администратора")
-        @click.option("--password", "-P", help="Пароль администратора")
+        @click.option("--username", "-U", help="Administrator username")
+        @click.option("--password", "-P", help="Administrator password")
         def createsuperuser(app: Litestar, username: str, password: str) -> None:  # noqa: ARG001
-            """Создает нового администратора для админ-панели."""
+            """Create a new admin-panel administrator."""
 
             run_sync(create_admin_command(username, password))
 

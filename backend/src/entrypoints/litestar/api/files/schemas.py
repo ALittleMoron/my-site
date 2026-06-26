@@ -10,16 +10,16 @@ class FilePresignPutResponseSchema(CamelCaseSchema):
     upload_url: Annotated[
         HttpUrl,
         Field(
-            title="Ссылка для загрузки",
-            description="Ссылка для загрузки файла",
+            title="Upload URL",
+            description="File upload URL",
             examples=["https://example.com/path/to/file"],
         ),
     ]
     access_url: Annotated[
         HttpUrl,
         Field(
-            title="Ссылка для доступа",
-            description="Ссылка для доступа к загруженному файлу",
+            title="Access URL",
+            description="Uploaded file access URL",
             examples=["https://example.com/path/to/file"],
         ),
     ]

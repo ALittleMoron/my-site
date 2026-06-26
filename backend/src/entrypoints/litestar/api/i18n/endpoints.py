@@ -20,7 +20,7 @@ class I18nApiController(Controller):
 
     @get(
         "/languages",
-        description="Получение списка доступных языков интерфейса.",
+        description="Get the available interface language list.",
         name="i18n-languages-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -40,7 +40,7 @@ class I18nApiController(Controller):
 
     @get(
         "/bundles/{language:str}",
-        description="Получение i18n bundle для интерфейса.",
+        description="Get an interface i18n bundle.",
         name="i18n-bundle-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),

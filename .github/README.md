@@ -1,6 +1,6 @@
 # My Personal Site
 
-[🇷🇺 Русская версия](./README_RU.md)
+[🇷🇺 Russian version](./README_RU.md)
 
 | Category | Technologies |
 |----------|--------------|

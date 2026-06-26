@@ -27,12 +27,12 @@ async def create_admin_command(username: str, password: str) -> None:
             await session.execute(stmt)
             await session.commit()
         except SQLAlchemyError:
-            msg = "Ошибка базы данных"
+            msg = "Database error"
             logger.exception(msg)
             await session.rollback()
         except Exception as exc:  # noqa: BLE001
-            msg = f"Внутренняя ошибка: {exc!s}"
+            msg = f"Internal error: {exc!s}"
             logger.exception(msg)
         else:
-            msg = "Администратор успешно создан."
+            msg = "Administrator created successfully."
             logger.info(msg)

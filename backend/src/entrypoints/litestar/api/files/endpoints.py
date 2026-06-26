@@ -17,7 +17,7 @@ class FilesApiController(Controller):
 
     @get(
         "/presign-put",
-        description="Получение предподписанной ссылки для загрузки медиа-файла.",
+        description="Get a presigned media file upload URL.",
         name="admin-files-presign-put-api-handler",
     )
     async def presign_put_media_file(

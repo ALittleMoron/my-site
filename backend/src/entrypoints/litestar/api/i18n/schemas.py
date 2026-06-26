@@ -7,8 +7,8 @@ from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class LanguageResponseSchema(CamelCaseSchema):
-    code: Annotated[LanguageEnum, Field(title="Код языка")]
-    label: Annotated[str, Field(title="Название языка")]
+    code: Annotated[LanguageEnum, Field(title="Language code")]
+    label: Annotated[str, Field(title="Language name")]
 
     @classmethod
     def from_language(cls, *, language: LanguageEnum, label: str) -> Self:
@@ -16,10 +16,10 @@ class LanguageResponseSchema(CamelCaseSchema):
 
 
 class LanguagesResponseSchema(CamelCaseSchema):
-    default_language: Annotated[LanguageEnum, Field(title="Язык по умолчанию")]
-    languages: Annotated[list[LanguageResponseSchema], Field(title="Доступные языки")]
+    default_language: Annotated[LanguageEnum, Field(title="Default language")]
+    languages: Annotated[list[LanguageResponseSchema], Field(title="Available languages")]
 
 
 class I18nBundleResponseSchema(CamelCaseSchema):
-    language: Annotated[LanguageEnum, Field(title="Язык")]
-    messages: Annotated[dict[str, str], Field(title="Переводы")]
+    language: Annotated[LanguageEnum, Field(title="Language")]
+    messages: Annotated[dict[str, str], Field(title="Translations")]

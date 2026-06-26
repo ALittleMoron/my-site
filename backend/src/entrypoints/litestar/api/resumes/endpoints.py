@@ -4,7 +4,7 @@ from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
-from litestar.di import Provide
+from litestar.di import NamedDependency, Provide
 from litestar.params import Body, FromPath
 
 from core.auth.schemas import JwtUser
@@ -30,7 +30,7 @@ class AdminResumesApiController(Controller):
 
     @get(
         "",
-        description="Получение админского списка резюме.",
+        description="Get the admin resume list.",
         name="admin-resumes-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={"filters": Provide(provide_resume_filters, sync_to_thread=False)},
@@ -38,14 +38,14 @@ class AdminResumesApiController(Controller):
     async def list_resumes(
         self,
         use_case: FromDishka[ResumesUseCase],
-        filters: ResumeFilters,
+        filters: NamedDependency[ResumeFilters],
     ) -> ResumesResponseSchema:
         resumes = await use_case.list_resumes(filters=filters)
         return ResumesResponseSchema.from_domain_schema(schema=resumes)
 
     @post(
         "",
-        description="Создание резюме.",
+        description="Create a resume.",
         name="admin-resumes-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -62,7 +62,7 @@ class AdminResumesApiController(Controller):
 
     @get(
         "/{resume_id:int}",
-        description="Получение админской подробной информации о резюме.",
+        description="Get admin resume details.",
         name="admin-resumes-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -80,7 +80,7 @@ class AdminResumesApiController(Controller):
 
     @put(
         "/{resume_id:int}",
-        description="Обновление резюме.",
+        description="Update a resume.",
         name="admin-resumes-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -100,7 +100,7 @@ class AdminResumesApiController(Controller):
 
     @post(
         "/{resume_id:int}/export",
-        description="Экспорт резюме.",
+        description="Export a resume.",
         name="admin-resumes-export-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -123,7 +123,7 @@ class AdminResumesApiController(Controller):
 
     @delete(
         "/{resume_id:int}",
-        description="Удаление резюме.",
+        description="Delete a resume.",
         name="admin-resumes-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )

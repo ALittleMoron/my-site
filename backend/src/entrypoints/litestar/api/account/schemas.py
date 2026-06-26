@@ -11,16 +11,16 @@ class GetBaseCurrentUserAccountResponseSchema(CamelCaseSchema):
     username: Annotated[
         str,
         Field(
-            title="Имя пользователя",
-            description="Имя пользователя",
+            title="Username",
+            description="Username",
             examples=["user1"],
         ),
     ]
     role: Annotated[
         RoleEnum,
         Field(
-            title="Роль пользователя",
-            description="Роль пользователя",
+            title="User role",
+            description="User role",
             examples=[RoleEnum.USER],
         ),
     ]

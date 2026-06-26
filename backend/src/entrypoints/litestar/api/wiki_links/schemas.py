@@ -8,8 +8,8 @@ from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 
 class WikiLinkTargetGroupResponseSchema(CamelCaseSchema):
-    type: Annotated[WikiLinkTargetTypeEnum, Field(title="Тип цели")]
-    slugs: Annotated[list[str], Field(title="Slug целей")]
+    type: Annotated[WikiLinkTargetTypeEnum, Field(title="Target type")]
+    slugs: Annotated[list[str], Field(title="Target slugs")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: WikiLinkTargetGroup) -> Self:
@@ -17,7 +17,7 @@ class WikiLinkTargetGroupResponseSchema(CamelCaseSchema):
 
 
 class WikiLinkTargetsResponseSchema(CamelCaseSchema):
-    targets: Annotated[list[WikiLinkTargetGroupResponseSchema], Field(title="Цели")]
+    targets: Annotated[list[WikiLinkTargetGroupResponseSchema], Field(title="Targets")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: WikiLinkTargets) -> Self:

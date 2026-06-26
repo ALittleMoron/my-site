@@ -5,7 +5,7 @@ from typing import Annotated
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
-from litestar.di import Provide
+from litestar.di import NamedDependency, Provide
 from litestar.params import Body, FromPath, QueryParameter
 
 from core.articles.enums import ArticleViewSourceCategory
@@ -47,7 +47,7 @@ class PublicArticlesApiController(Controller):
 
     @get(
         "",
-        description="Получение публичного списка статей.",
+        description="Get the public article list.",
         name="public-articles-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -57,7 +57,7 @@ class PublicArticlesApiController(Controller):
     async def list_articles(
         self,
         use_case: FromDishka[ArticlesUseCase],
-        filters: ArticleFilters,
+        filters: NamedDependency[ArticleFilters],
     ) -> ArticleListResponseSchema:
         articles = await use_case.list_articles(filters=filters)
         return ArticleListResponseSchema.from_domain_schema(
@@ -67,7 +67,7 @@ class PublicArticlesApiController(Controller):
 
     @get(
         "/tree",
-        description="Получение публичного дерева папок и статей.",
+        description="Get the public article folder tree.",
         name="public-articles-tree-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -83,7 +83,7 @@ class PublicArticlesApiController(Controller):
 
     @get(
         "/detail/{slug:str}",
-        description="Получение публичной подробной информации о статье.",
+        description="Get public article details.",
         name="public-articles-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -103,7 +103,7 @@ class PublicArticlesApiController(Controller):
 
     @get(
         "/public-stats",
-        description="Получение публичной статистики статей.",
+        description="Get public article statistics.",
         name="public-articles-public-stats-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -117,7 +117,7 @@ class PublicArticlesApiController(Controller):
 
     @post(
         "/detail/{slug:str}/analytics/view",
-        description="Фиксация публичного просмотра статьи.",
+        description="Track a public article view.",
         name="public-articles-track-public-view-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -139,7 +139,7 @@ class PublicArticlesApiController(Controller):
 
     @post(
         "/detail/{slug:str}/analytics/engaged-view",
-        description="Фиксация вовлечённого просмотра статьи.",
+        description="Track an engaged article view.",
         name="public-articles-track-engaged-view-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -159,7 +159,7 @@ class PublicArticlesApiController(Controller):
 
     @post(
         "/detail/{slug:str}/reaction",
-        description="Установка или снятие анонимной реакции на статью.",
+        description="Set or clear an anonymous article reaction.",
         name="public-articles-set-reaction-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -178,7 +178,7 @@ class PublicArticlesApiController(Controller):
 
     @get(
         "/tags",
-        description="Получение публичного списка тегов.",
+        description="Get the public tag list.",
         name="public-articles-tags-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
@@ -200,7 +200,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "",
-        description="Получение админского списка статей.",
+        description="Get the admin article list.",
         name="admin-articles-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={"filters": Provide(provide_article_filters, sync_to_thread=False)},
@@ -208,7 +208,7 @@ class AdminArticlesApiController(Controller):
     async def list_articles(
         self,
         use_case: FromDishka[ArticlesUseCase],
-        filters: ArticleFilters,
+        filters: NamedDependency[ArticleFilters],
     ) -> ArticleListResponseSchema:
         articles = await use_case.list_articles(filters=filters)
         return ArticleListResponseSchema.from_domain_schema(
@@ -218,7 +218,7 @@ class AdminArticlesApiController(Controller):
 
     @post(
         "",
-        description="Создание статьи.",
+        description="Create an article.",
         name="admin-articles-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -247,7 +247,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "/tree",
-        description="Получение админского дерева папок и статей.",
+        description="Get the admin article folder tree.",
         name="admin-articles-tree-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -261,7 +261,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "/detail/{slug:str}",
-        description="Получение админской подробной информации о статье.",
+        description="Get admin article details.",
         name="admin-articles-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -280,7 +280,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "/stats",
-        description="Получение админской статистики статей.",
+        description="Get admin article statistics.",
         name="admin-articles-stats-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -300,7 +300,7 @@ class AdminArticlesApiController(Controller):
 
     @put(
         "/detail/{slug:str}",
-        description="Обновление статьи.",
+        description="Update an article.",
         name="admin-articles-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -327,7 +327,7 @@ class AdminArticlesApiController(Controller):
 
     @delete(
         "/detail/{slug:str}",
-        description="Удаление статьи.",
+        description="Delete an article.",
         name="admin-articles-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -345,7 +345,7 @@ class AdminArticlesApiController(Controller):
 
     @post(
         "/detail/{slug:str}/set-draft",
-        description='Установка статуса "Черновик" на статью.',
+        description='Set article status to "Draft".',
         name="admin-articles-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -366,7 +366,7 @@ class AdminArticlesApiController(Controller):
 
     @post(
         "/detail/{slug:str}/set-published",
-        description='Установка статуса "Опубликовано" на статью.',
+        description='Set article status to "Published".',
         name="admin-articles-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -387,7 +387,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "/tags",
-        description="Получение админского списка тегов.",
+        description="Get the admin tag list.",
         name="admin-articles-tags-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -402,7 +402,7 @@ class AdminArticlesApiController(Controller):
 
     @get(
         "/tags/search",
-        description="Админский поиск тегов.",
+        description="Search admin tags.",
         name="admin-articles-tags-search-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -424,7 +424,7 @@ class AdminArticlesApiController(Controller):
 
     @post(
         "/tags",
-        description="Создание тега.",
+        description="Create a tag.",
         name="admin-articles-tags-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
@@ -447,7 +447,7 @@ class AdminArticlesApiController(Controller):
 
     @put(
         "/tags/{tag_id:int}",
-        description="Обновление тега.",
+        description="Update a tag.",
         name="admin-articles-tags-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
@@ -471,7 +471,7 @@ class AdminArticlesApiController(Controller):
 
     @delete(
         "/tags/{tag_id:int}",
-        description="Удаление тега.",
+        description="Delete a tag.",
         name="admin-articles-tags-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
@@ -489,7 +489,7 @@ class AdminArticlesApiController(Controller):
 
     @post(
         "/tags/{tag_id:int}/restore",
-        description="Восстановление тега.",
+        description="Restore a tag.",
         name="admin-articles-tags-restore-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )

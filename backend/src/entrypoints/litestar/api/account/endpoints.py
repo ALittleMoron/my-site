@@ -14,10 +14,7 @@ class AccountApiController(Controller):
     @get(
         "/base",
         name="current-user-account-api-handler",
-        description=(
-            "Эндпоинт для получения информации о текущем пользователе "
-            "+ базовая информация об аккаунте"
-        ),
+        description="Get current user information plus basic account information.",
     )
     async def get_base_current_user_account(
         self,

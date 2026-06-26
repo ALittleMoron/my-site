@@ -27,8 +27,8 @@ class DetailResponseSchema(CamelCaseSchema):
     detail: Annotated[
         str,
         Field(
-            title="Сообщение",
-            description="Детальное описание результата операции",
-            examples=["Операция выполнена успешно"],
+            title="Message",
+            description="Detailed operation result description",
+            examples=["Operation completed successfully"],
         ),
     ]

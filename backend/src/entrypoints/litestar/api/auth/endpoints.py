@@ -19,9 +19,8 @@ class AuthApiController(Controller):
         "/login",
         name="login-api-handler",
         description=(
-            "Эндпоинт для входа в систему. Создает токен PASETO и возвращает его. В "
-            "дальнейшем будет использоваться server-side сессия, а токен можно будет "
-            "перезапросить новый по сессии"
+            "Log in to the system. Creates and returns a PASETO token. A server-side session "
+            "will be used later, and the token will be refreshable through that session."
         ),
         status_code=status_codes.HTTP_200_OK,
     )
@@ -40,7 +39,7 @@ class AuthApiController(Controller):
     @post(
         "/logout",
         name="logout-api-handler",
-        description="Эндпоинт для выхода из системы. Отзывает текущий PASETO токен.",
+        description="Log out of the system. Revokes the current PASETO token.",
         status_code=status_codes.HTTP_200_OK,
     )
     async def logout(
