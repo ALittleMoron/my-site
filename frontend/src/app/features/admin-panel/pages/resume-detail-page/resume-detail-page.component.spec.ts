@@ -159,6 +159,104 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(textNodeContent(deleteButton)).toBe('');
   });
 
+  it('renders resume editor tabs without horizontal scrolling classes', () => {
+    const tabs = fixture.nativeElement.querySelector('.nav-tabs') as HTMLElement | null;
+
+    expect(tabs).not.toBeNull();
+    expect(tabs?.classList.contains('flex-wrap')).toBe(true);
+    expect(tabs?.classList.contains('flex-nowrap')).toBe(false);
+    expect(tabs?.classList.contains('overflow-auto')).toBe(false);
+  });
+
+  it('renders the resume language control as a compact dropdown', () => {
+    const languageField = fixture.nativeElement.querySelector(
+      '.resume-language-field',
+    ) as HTMLElement | null;
+    const languageSelect = elementByTestId<HTMLSelectElement>('resume-language');
+
+    expect(languageField?.classList.contains('col-md-auto')).toBe(true);
+    expect(languageSelect.classList.contains('form-select-sm')).toBe(false);
+    expect(languageSelect.classList.contains('resume-language-select')).toBe(true);
+  });
+
+  it('renders top-level repeatable add actions after their lists', () => {
+    const cases = [
+      { tab: 'skills', label: 'Добавить группу навыков' },
+      { tab: 'experience', label: 'Добавить компанию' },
+      { tab: 'education', label: 'Добавить образование' },
+      { tab: 'languages', label: 'Добавить язык' },
+      { tab: 'certifications', label: 'Добавить сертификат' },
+      { tab: 'additional', label: 'Добавить раздел' },
+    ] as const;
+
+    for (const item of cases) {
+      fixture.componentInstance.setActiveTab(item.tab);
+      fixture.detectChanges();
+
+      const list = fixture.nativeElement.querySelector('.resume-entry-list') as HTMLElement | null;
+      const addButton = buttonByLabel(item.label);
+
+      expect(list).not.toBeNull();
+      expect(textNodeContent(addButton)).toBe('+');
+      expect(list?.compareDocumentPosition(addButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    }
+  });
+
+  it('renders experience repeatable actions as accessible symbol buttons', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+
+    const addCompanyButton = buttonByLabel('Добавить компанию');
+    const removeCompanyButton = buttonByLabel('Удалить компанию');
+    const addProjectButton = buttonByLabel('Добавить проект');
+    const removeProjectButton = buttonByLabel('Удалить проект');
+
+    expect(textNodeContent(addCompanyButton)).toBe('+');
+    expect(textNodeContent(removeCompanyButton)).toBe('−');
+    expect(textNodeContent(addProjectButton)).toBe('+');
+    expect(textNodeContent(removeProjectButton)).toBe('−');
+    expect(fixture.nativeElement.textContent).toContain('Компания 1');
+  });
+
+  it('renders free-text multiline fields full-width without changing newline-list fields', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+
+    const companySummary = elementById<HTMLTextAreaElement>('resume-experience-0-summary');
+    const companyHighlights = elementById<HTMLTextAreaElement>('resume-experience-0-highlights');
+    const projectName = elementById<HTMLInputElement>('resume-experience-0-project-0-name');
+    const projectRole = elementById<HTMLInputElement>('resume-experience-0-project-0-role');
+    const projectDescription = elementById<HTMLTextAreaElement>(
+      'resume-experience-0-project-0-description',
+    );
+    const projectHighlights = elementById<HTMLTextAreaElement>(
+      'resume-experience-0-project-0-highlights',
+    );
+
+    expect(fieldColumn(companySummary).classList.contains('col-12')).toBe(true);
+    expect(fieldColumn(projectDescription).classList.contains('col-12')).toBe(true);
+    expect(fieldColumn(companyHighlights).classList.contains('col-md-6')).toBe(true);
+    expect(fieldColumn(projectName).classList.contains('col-md-6')).toBe(true);
+    expect(fieldColumn(projectRole).classList.contains('col-md-6')).toBe(true);
+    expect(fieldColumn(projectHighlights).classList.contains('col-md-6')).toBe(true);
+  });
+
+  it('renders additional item add action after the section fields', () => {
+    fixture.componentInstance.setActiveTab('additional');
+    fixture.componentInstance.addAdditionalSection();
+    fixture.detectChanges();
+
+    const sectionTitle = fixture.nativeElement.querySelector(
+      '#resume-additional-section-0-title',
+    ) as HTMLElement | null;
+    const addItemButton = buttonByLabel('Добавить пункт раздела');
+
+    expect(textNodeContent(addItemButton)).toBe('+');
+    expect(sectionTitle?.compareDocumentPosition(addItemButton)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it('opens and closes the export modal', () => {
     buttonByLabel('Экспорт').click();
     fixture.detectChanges();
@@ -439,6 +537,18 @@ describe('AdminResumeDetailPageComponent', () => {
       | HTMLInputElement
       | HTMLTextAreaElement;
     return input.value;
+  }
+
+  function elementById<TElement extends HTMLElement>(elementId: string): TElement {
+    const element = fixture.nativeElement.querySelector(`#${elementId}`) as TElement | null;
+    expect(element).not.toBeNull();
+    return element as TElement;
+  }
+
+  function fieldColumn(element: HTMLElement): HTMLElement {
+    const column = element.closest('div');
+    expect(column).not.toBeNull();
+    return column as HTMLElement;
   }
 
   function buttonByLabel(label: string): HTMLButtonElement {

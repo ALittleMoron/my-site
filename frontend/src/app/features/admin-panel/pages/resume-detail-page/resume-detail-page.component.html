@@ -226,8 +226,8 @@
 
     @if (mode() === 'edit') {
       <form class="resume-editor" [formGroup]="resumeForm" (ngSubmit)="saveResume()">
-        <div class="row g-3 mb-3">
-          <div class="col-12 col-lg-8">
+        <div class="row g-3 align-items-start mb-3">
+          <div class="col-12 col-md">
             <label class="form-label" for="resume-title">
               {{ 'adminResumeWorkspace.field.title' | t }}
             </label>
@@ -246,13 +246,13 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-12 col-lg-4">
+          <div class="col-6 col-sm-4 col-md-auto resume-language-field">
             <label class="form-label" for="resume-language">
               {{ 'adminResumeWorkspace.field.language' | t }}
             </label>
             <select
               id="resume-language"
-              class="form-select"
+              class="form-select resume-language-select"
               [class.is-invalid]="fieldInvalid(resumeForm.controls.language)"
               data-testid="resume-language"
               formControlName="language"
@@ -272,7 +272,7 @@
           </div>
         </div>
 
-        <ul class="nav nav-tabs flex-nowrap overflow-auto mb-3">
+        <ul class="nav nav-tabs flex-wrap gap-1 mb-3">
           @for (tab of tabs; track tab.key) {
             <li class="nav-item">
               <button
@@ -472,28 +472,24 @@
             }
 
             @case ('skills') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addSkillGroup()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="skills">
+              <div class="resume-entry-list" formArrayName="skills">
                 @for (skillGroup of skills.controls; track $index; let index = $index) {
-                  <div class="resume-repeatable" [formGroupName]="index">
-                    <div class="d-flex justify-content-end mb-3">
+                  <section class="resume-entry" [formGroupName]="index">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{ 'adminResumeWorkspace.entry.skillGroup' | t: { index: index + 1 } }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="'adminResumeWorkspace.action.removeSkillGroup' | t"
+                        [attr.title]="'adminResumeWorkspace.action.removeSkillGroup' | t"
                         (click)="removeSkillGroup(index)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-12 col-md-6">
                         <label class="form-label" [for]="'resume-skill-' + index + '-category'">
                           {{ 'adminResumeWorkspace.field.category' | t }}
@@ -518,34 +514,41 @@
                         ></textarea>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addSkillGroup' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addSkillGroup' | t"
+                  (click)="addSkillGroup()"
+                >
+                  +
+                </button>
               </div>
             }
 
             @case ('experience') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addExperienceItem()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="experience">
+              <div class="resume-entry-list" formArrayName="experience">
                 @for (experienceItem of experience.controls; track $index; let index = $index) {
-                  <div class="resume-repeatable" [formGroupName]="index">
-                    <div class="d-flex justify-content-end mb-3">
+                  <section class="resume-entry resume-entry-accent" [formGroupName]="index">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{ 'adminResumeWorkspace.entry.company' | t: { index: index + 1 } }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="'adminResumeWorkspace.action.removeCompany' | t"
+                        [attr.title]="'adminResumeWorkspace.action.removeCompany' | t"
                         (click)="removeExperienceItem(index)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-experience-' + index + '-company'">
                           {{ 'adminResumeWorkspace.field.company' | t }}
@@ -648,7 +651,7 @@
                           (valueChange)="updateDate(experienceItem.controls.endDate, $event)"
                         />
                       </div>
-                      <div class="col-md-6">
+                      <div class="col-12">
                         <label class="form-label" [for]="'resume-experience-' + index + '-summary'">
                           {{ 'adminResumeWorkspace.field.summary' | t }}
                         </label>
@@ -688,220 +691,251 @@
                         ></textarea>
                       </div>
                       <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                          <h3 class="h6 mb-0">{{ 'adminResumeWorkspace.field.projects' | t }}</h3>
-                          <button
-                            type="button"
-                            class="btn btn-outline-success btn-sm"
-                            (click)="addExperienceProject(index)"
+                        <section class="resume-subsection">
+                          <header class="resume-subsection-header">
+                            <h4 class="resume-subsection-title">
+                              {{ 'adminResumeWorkspace.field.projects' | t }}
+                            </h4>
+                          </header>
+                          <div
+                            class="resume-subitem-list resume-project-list"
+                            formArrayName="projects"
                           >
-                            {{ 'shared.add' | t }}
-                          </button>
-                        </div>
-                        <div class="vstack gap-3" formArrayName="projects">
-                          @for (
-                            project of experienceProjects(index).controls;
-                            track $index;
-                            let projectIndex = $index
-                          ) {
-                            <div class="resume-nested-repeatable" [formGroupName]="projectIndex">
-                              <div class="d-flex justify-content-end mb-3">
-                                <button
-                                  type="button"
-                                  class="btn btn-outline-danger btn-sm"
-                                  (click)="removeExperienceProject(index, projectIndex)"
-                                >
-                                  {{ 'shared.delete' | t }}
-                                </button>
-                              </div>
-                              <div class="row g-3">
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-name'
+                            @for (
+                              project of experienceProjects(index).controls;
+                              track $index;
+                              let projectIndex = $index
+                            ) {
+                              <section
+                                class="resume-subitem resume-project-item"
+                                [formGroupName]="projectIndex"
+                              >
+                                <header class="resume-subitem-header">
+                                  <h5 class="resume-subitem-title">
+                                    {{
+                                      'adminResumeWorkspace.entry.project'
+                                        | t: { index: projectIndex + 1 }
+                                    }}
+                                  </h5>
+                                  <button
+                                    type="button"
+                                    class="btn btn-outline-danger btn-sm resume-icon-action"
+                                    [attr.aria-label]="
+                                      'adminResumeWorkspace.action.removeProject' | t
                                     "
+                                    [attr.title]="'adminResumeWorkspace.action.removeProject' | t"
+                                    (click)="removeExperienceProject(index, projectIndex)"
                                   >
-                                    {{ 'adminResumeWorkspace.field.projectName' | t }}
-                                  </label>
-                                  <input
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-name'
-                                    "
-                                    formControlName="name"
-                                  />
+                                    −
+                                  </button>
+                                </header>
+                                <div class="resume-subitem-body row g-3">
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-name'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.projectName' | t }}
+                                    </label>
+                                    <input
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-name'
+                                      "
+                                      formControlName="name"
+                                    />
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-role'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.role' | t }}
+                                    </label>
+                                    <input
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-role'
+                                      "
+                                      formControlName="role"
+                                    />
+                                  </div>
+                                  <div class="col-12">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-description'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.description' | t }}
+                                    </label>
+                                    <textarea
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-description'
+                                      "
+                                      rows="4"
+                                      formControlName="description"
+                                    ></textarea>
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-highlights'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.highlights' | t }}
+                                    </label>
+                                    <textarea
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-highlights'
+                                      "
+                                      rows="4"
+                                      formControlName="highlightsText"
+                                    ></textarea>
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-technologies'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.technologies' | t }}
+                                    </label>
+                                    <textarea
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-technologies'
+                                      "
+                                      rows="4"
+                                      formControlName="technologiesText"
+                                    ></textarea>
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-url'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.url' | t }}
+                                    </label>
+                                    <input
+                                      class="form-control"
+                                      [id]="
+                                        'resume-experience-' +
+                                        index +
+                                        '-project-' +
+                                        projectIndex +
+                                        '-url'
+                                      "
+                                      formControlName="url"
+                                    />
+                                  </div>
                                 </div>
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-role'
-                                    "
-                                  >
-                                    {{ 'adminResumeWorkspace.field.role' | t }}
-                                  </label>
-                                  <input
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-role'
-                                    "
-                                    formControlName="role"
-                                  />
-                                </div>
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-description'
-                                    "
-                                  >
-                                    {{ 'adminResumeWorkspace.field.description' | t }}
-                                  </label>
-                                  <textarea
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-description'
-                                    "
-                                    rows="4"
-                                    formControlName="description"
-                                  ></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-highlights'
-                                    "
-                                  >
-                                    {{ 'adminResumeWorkspace.field.highlights' | t }}
-                                  </label>
-                                  <textarea
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-highlights'
-                                    "
-                                    rows="4"
-                                    formControlName="highlightsText"
-                                  ></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-technologies'
-                                    "
-                                  >
-                                    {{ 'adminResumeWorkspace.field.technologies' | t }}
-                                  </label>
-                                  <textarea
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-technologies'
-                                    "
-                                    rows="4"
-                                    formControlName="technologiesText"
-                                  ></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                  <label
-                                    class="form-label"
-                                    [for]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-url'
-                                    "
-                                  >
-                                    {{ 'adminResumeWorkspace.field.url' | t }}
-                                  </label>
-                                  <input
-                                    class="form-control"
-                                    [id]="
-                                      'resume-experience-' +
-                                      index +
-                                      '-project-' +
-                                      projectIndex +
-                                      '-url'
-                                    "
-                                    formControlName="url"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          }
-                        </div>
+                              </section>
+                            }
+                          </div>
+                          <footer class="resume-subsection-footer">
+                            <button
+                              type="button"
+                              class="btn btn-outline-success btn-sm resume-icon-action"
+                              [attr.aria-label]="'adminResumeWorkspace.action.addProject' | t"
+                              [attr.title]="'adminResumeWorkspace.action.addProject' | t"
+                              (click)="addExperienceProject(index)"
+                            >
+                              +
+                            </button>
+                          </footer>
+                        </section>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addCompany' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addCompany' | t"
+                  (click)="addExperienceItem()"
+                >
+                  +
+                </button>
               </div>
             }
 
             @case ('education') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addEducationItem()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="education">
+              <div class="resume-entry-list" formArrayName="education">
                 @for (educationItem of education.controls; track $index; let index = $index) {
-                  <div class="resume-repeatable" [formGroupName]="index">
-                    <div class="d-flex justify-content-end mb-3">
+                  <section class="resume-entry" [formGroupName]="index">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{ 'adminResumeWorkspace.entry.education' | t: { index: index + 1 } }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="'adminResumeWorkspace.action.removeEducation' | t"
+                        [attr.title]="'adminResumeWorkspace.action.removeEducation' | t"
                         (click)="removeEducationItem(index)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-md-6">
                         <label
                           class="form-label"
@@ -1009,34 +1043,41 @@
                         ></textarea>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addEducation' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addEducation' | t"
+                  (click)="addEducationItem()"
+                >
+                  +
+                </button>
               </div>
             }
 
             @case ('languages') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addLanguageItem()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="languages">
+              <div class="resume-entry-list" formArrayName="languages">
                 @for (language of languages.controls; track $index; let index = $index) {
-                  <div class="resume-repeatable" [formGroupName]="index">
-                    <div class="d-flex justify-content-end mb-3">
+                  <section class="resume-entry" [formGroupName]="index">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{ 'adminResumeWorkspace.entry.language' | t: { index: index + 1 } }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="'adminResumeWorkspace.action.removeLanguage' | t"
+                        [attr.title]="'adminResumeWorkspace.action.removeLanguage' | t"
                         (click)="removeLanguageItem(index)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-language-' + index + '-name'">
                           {{ 'adminResumeWorkspace.field.languageName' | t }}
@@ -1061,34 +1102,41 @@
                         />
                       </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addLanguage' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addLanguage' | t"
+                  (click)="addLanguageItem()"
+                >
+                  +
+                </button>
               </div>
             }
 
             @case ('certifications') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addCertificationItem()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="certifications">
+              <div class="resume-entry-list" formArrayName="certifications">
                 @for (certification of certifications.controls; track $index; let index = $index) {
-                  <div class="resume-repeatable" [formGroupName]="index">
-                    <div class="d-flex justify-content-end mb-3">
+                  <section class="resume-entry" [formGroupName]="index">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{ 'adminResumeWorkspace.entry.certification' | t: { index: index + 1 } }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="'adminResumeWorkspace.action.removeCertification' | t"
+                        [attr.title]="'adminResumeWorkspace.action.removeCertification' | t"
                         (click)="removeCertificationItem(index)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-certification-' + index + '-name'">
                           {{ 'adminResumeWorkspace.field.certificationName' | t }}
@@ -1178,45 +1226,50 @@
                         />
                       </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addCertification' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addCertification' | t"
+                  (click)="addCertificationItem()"
+                >
+                  +
+                </button>
               </div>
             }
 
             @case ('additional') {
-              <div class="d-flex justify-content-end mb-3">
-                <button
-                  type="button"
-                  class="btn btn-outline-success btn-sm"
-                  (click)="addAdditionalSection()"
-                >
-                  {{ 'shared.add' | t }}
-                </button>
-              </div>
-              <div class="vstack gap-3" formArrayName="additionalSections">
+              <div class="resume-entry-list" formArrayName="additionalSections">
                 @for (
                   section of additionalSections.controls;
                   track $index;
                   let sectionIndex = $index
                 ) {
-                  <div class="resume-repeatable" [formGroupName]="sectionIndex">
-                    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                  <section class="resume-entry" [formGroupName]="sectionIndex">
+                    <header class="resume-entry-header">
+                      <h3 class="resume-entry-title">
+                        {{
+                          'adminResumeWorkspace.entry.additionalSection'
+                            | t: { index: sectionIndex + 1 }
+                        }}
+                      </h3>
                       <button
                         type="button"
-                        class="btn btn-outline-success btn-sm"
-                        (click)="addAdditionalItem(sectionIndex)"
-                      >
-                        {{ 'shared.add' | t }}
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm"
+                        class="btn btn-outline-danger btn-sm resume-icon-action"
+                        [attr.aria-label]="
+                          'adminResumeWorkspace.action.removeAdditionalSection' | t
+                        "
+                        [attr.title]="'adminResumeWorkspace.action.removeAdditionalSection' | t"
                         (click)="removeAdditionalSection(sectionIndex)"
                       >
-                        {{ 'shared.delete' | t }}
+                        −
                       </button>
-                    </div>
-                    <div class="row g-3 mb-3">
+                    </header>
+                    <div class="resume-entry-body row g-3">
                       <div class="col-12">
                         <label
                           class="form-label"
@@ -1230,106 +1283,146 @@
                           formControlName="title"
                         />
                       </div>
-                    </div>
-                    <div class="vstack gap-3" formArrayName="items">
-                      @for (
-                        additionalItem of additionalItems(sectionIndex).controls;
-                        track $index;
-                        let itemIndex = $index
-                      ) {
-                        <div class="resume-nested-repeatable" [formGroupName]="itemIndex">
-                          <div class="d-flex justify-content-end mb-3">
+                      <div class="col-12">
+                        <section class="resume-subsection">
+                          <div class="resume-subitem-list" formArrayName="items">
+                            @for (
+                              additionalItem of additionalItems(sectionIndex).controls;
+                              track $index;
+                              let itemIndex = $index
+                            ) {
+                              <section class="resume-subitem" [formGroupName]="itemIndex">
+                                <header class="resume-subitem-header">
+                                  <h4 class="resume-subitem-title">
+                                    {{
+                                      'adminResumeWorkspace.entry.additionalItem'
+                                        | t: { index: itemIndex + 1 }
+                                    }}
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    class="btn btn-outline-danger btn-sm resume-icon-action"
+                                    [attr.aria-label]="
+                                      'adminResumeWorkspace.action.removeAdditionalItem' | t
+                                    "
+                                    [attr.title]="
+                                      'adminResumeWorkspace.action.removeAdditionalItem' | t
+                                    "
+                                    (click)="removeAdditionalItem(sectionIndex, itemIndex)"
+                                  >
+                                    −
+                                  </button>
+                                </header>
+                                <div class="resume-subitem-body row g-3">
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-title'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.itemTitle' | t }}
+                                    </label>
+                                    <input
+                                      class="form-control"
+                                      [id]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-title'
+                                      "
+                                      formControlName="title"
+                                    />
+                                  </div>
+                                  <div class="col-md-6">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-url'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.url' | t }}
+                                    </label>
+                                    <input
+                                      class="form-control"
+                                      [id]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-url'
+                                      "
+                                      formControlName="url"
+                                    />
+                                  </div>
+                                  <div class="col-12">
+                                    <label
+                                      class="form-label"
+                                      [for]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-description'
+                                      "
+                                    >
+                                      {{ 'adminResumeWorkspace.field.description' | t }}
+                                    </label>
+                                    <textarea
+                                      class="form-control"
+                                      [id]="
+                                        'resume-additional-section-' +
+                                        sectionIndex +
+                                        '-item-' +
+                                        itemIndex +
+                                        '-description'
+                                      "
+                                      rows="4"
+                                      formControlName="description"
+                                    ></textarea>
+                                  </div>
+                                </div>
+                              </section>
+                            }
+                          </div>
+                          <footer class="resume-subsection-footer">
                             <button
                               type="button"
-                              class="btn btn-outline-danger btn-sm"
-                              (click)="removeAdditionalItem(sectionIndex, itemIndex)"
+                              class="btn btn-outline-success btn-sm resume-icon-action"
+                              [attr.aria-label]="
+                                'adminResumeWorkspace.action.addAdditionalItem' | t
+                              "
+                              [attr.title]="'adminResumeWorkspace.action.addAdditionalItem' | t"
+                              (click)="addAdditionalItem(sectionIndex)"
                             >
-                              {{ 'shared.delete' | t }}
+                              +
                             </button>
-                          </div>
-                          <div class="row g-3">
-                            <div class="col-md-6">
-                              <label
-                                class="form-label"
-                                [for]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-title'
-                                "
-                              >
-                                {{ 'adminResumeWorkspace.field.sectionTitle' | t }}
-                              </label>
-                              <input
-                                class="form-control"
-                                [id]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-title'
-                                "
-                                formControlName="title"
-                              />
-                            </div>
-                            <div class="col-md-6">
-                              <label
-                                class="form-label"
-                                [for]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-url'
-                                "
-                              >
-                                {{ 'adminResumeWorkspace.field.url' | t }}
-                              </label>
-                              <input
-                                class="form-control"
-                                [id]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-url'
-                                "
-                                formControlName="url"
-                              />
-                            </div>
-                            <div class="col-12">
-                              <label
-                                class="form-label"
-                                [for]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-description'
-                                "
-                              >
-                                {{ 'adminResumeWorkspace.field.description' | t }}
-                              </label>
-                              <textarea
-                                class="form-control"
-                                [id]="
-                                  'resume-additional-section-' +
-                                  sectionIndex +
-                                  '-item-' +
-                                  itemIndex +
-                                  '-description'
-                                "
-                                rows="4"
-                                formControlName="description"
-                              ></textarea>
-                            </div>
-                          </div>
-                        </div>
-                      }
+                          </footer>
+                        </section>
+                      </div>
                     </div>
-                  </div>
+                  </section>
                 }
+              </div>
+              <div class="resume-section-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-outline-success btn-sm resume-icon-action"
+                  [attr.aria-label]="'adminResumeWorkspace.action.addAdditionalSection' | t"
+                  [attr.title]="'adminResumeWorkspace.action.addAdditionalSection' | t"
+                  (click)="addAdditionalSection()"
+                >
+                  +
+                </button>
               </div>
             }
           }
