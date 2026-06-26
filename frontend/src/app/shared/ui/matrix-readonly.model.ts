@@ -4,7 +4,6 @@ export interface ReadonlyMatrixSheet {
 }
 
 export interface ReadonlyMatrixQuestion {
-  id: number;
   slug: string;
   question: string;
   interviewFrequency: string | null;

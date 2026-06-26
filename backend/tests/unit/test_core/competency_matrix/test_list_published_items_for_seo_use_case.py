@@ -45,10 +45,8 @@ class TestCompetencyMatrixUseCase(TestCase):
                 slug="unavailable-question",
                 question="Unavailable question",
                 publish_status=PublishStatusEnum.PUBLISHED,
-                sheet="",
+                answer_en="",
                 grade=GradeEnum.JUNIOR,
-                section="",
-                subsection="",
             ),
         ]
 

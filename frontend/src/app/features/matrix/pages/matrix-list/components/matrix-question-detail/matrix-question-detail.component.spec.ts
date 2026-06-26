@@ -6,7 +6,6 @@ import { MatrixQuestionDetail } from '../../../../models/matrix-question.model';
 import { MatrixQuestionDetailComponent } from './matrix-question-detail.component';
 
 const mockDetail: MatrixQuestionDetail = {
-  id: 1,
   slug: 'what-is-a-closure',
   question: 'What is a closure?',
   answer: 'A **closure** is a function with access to its outer scope.',

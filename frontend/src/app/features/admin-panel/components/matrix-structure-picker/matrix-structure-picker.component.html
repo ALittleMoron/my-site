@@ -1,0 +1,175 @@
+<div class="row g-2">
+  @if (errorKey(); as key) {
+    <div class="col-12">
+      <div class="alert alert-danger py-2 mb-0" role="alert">{{ key | t }}</div>
+    </div>
+  }
+
+  <div class="col-12 col-md-4">
+    <label class="form-label" for="matrix-structure-sheet">
+      {{ 'matrix.form.sheet' | t }}
+      <span class="required-marker" aria-hidden="true">*</span>
+    </label>
+    <select
+      id="matrix-structure-sheet"
+      class="form-select"
+      data-testid="matrix-structure-sheet"
+      [disabled]="disabled || loading()"
+      [value]="selectedSheetId() ?? ''"
+      (change)="onSheetChange($any($event.target).value)"
+    >
+      <option value="" [selected]="selectedSheetId() === null">{{ 'shared.notSet' | t }}</option>
+      @for (sheet of structure().sheets; track sheet.id) {
+        <option [value]="sheet.id" [selected]="selectedSheetId() === sheet.id">
+          {{ sheet.name }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <div class="col-12 col-md-4">
+    <label class="form-label" for="matrix-structure-section">
+      {{ 'matrix.form.section' | t }}
+      <span class="required-marker" aria-hidden="true">*</span>
+    </label>
+    <select
+      id="matrix-structure-section"
+      class="form-select"
+      data-testid="matrix-structure-section"
+      [disabled]="disabled || loading() || selectedSheetId() === null"
+      [value]="selectedSectionId() ?? ''"
+      (change)="onSectionChange($any($event.target).value)"
+    >
+      <option value="" [selected]="selectedSectionId() === null">{{ 'shared.notSet' | t }}</option>
+      @for (section of selectedSections(); track section.id) {
+        <option [value]="section.id" [selected]="selectedSectionId() === section.id">
+          {{ section.name }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <div class="col-12 col-md-4">
+    <label class="form-label" for="matrix-structure-subsection">
+      {{ 'matrix.form.subsection' | t }}
+      <span class="required-marker" aria-hidden="true">*</span>
+    </label>
+    <select
+      id="matrix-structure-subsection"
+      class="form-select"
+      data-testid="matrix-structure-subsection"
+      [disabled]="disabled || loading() || selectedSectionId() === null"
+      [value]="selectedSubsectionId ?? ''"
+      (change)="onSubsectionChange($any($event.target).value)"
+    >
+      <option value="" [selected]="selectedSubsectionId === null">{{ 'shared.notSet' | t }}</option>
+      @for (subsection of selectedSubsections(); track subsection.id) {
+        <option [value]="subsection.id" [selected]="selectedSubsectionId === subsection.id">
+          {{ subsection.name }}
+        </option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="row g-2 mt-1">
+  <div class="col-12 col-xl-4">
+    <div class="input-group input-group-sm" [formGroup]="sheetForm">
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-sheet-key"
+        formControlName="key"
+        [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.placeholder]="'matrix.form.sheetKey' | t"
+      />
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-sheet-ru"
+        formControlName="nameRu"
+        [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.placeholder]="'matrix.form.sheetRu' | t"
+      />
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-sheet-en"
+        formControlName="nameEn"
+        [attr.disabled]="disabled || creating() ? '' : null"
+        [attr.placeholder]="'matrix.form.sheetEn' | t"
+      />
+      <button
+        type="button"
+        class="btn btn-outline-success"
+        data-testid="matrix-structure-add-sheet"
+        [disabled]="disabled || creating() || sheetForm.invalid"
+        (click)="createSheet()"
+      >
+        {{ 'shared.add' | t }}
+      </button>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-4">
+    <div class="input-group input-group-sm" [formGroup]="sectionForm">
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-section-ru"
+        formControlName="nameRu"
+        [attr.disabled]="disabled || creating() || selectedSheetId() === null ? '' : null"
+        [attr.placeholder]="'matrix.form.sectionRu' | t"
+      />
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-section-en"
+        formControlName="nameEn"
+        [attr.disabled]="disabled || creating() || selectedSheetId() === null ? '' : null"
+        [attr.placeholder]="'matrix.form.sectionEn' | t"
+      />
+      <button
+        type="button"
+        class="btn btn-outline-success"
+        data-testid="matrix-structure-add-section"
+        [disabled]="disabled || creating() || selectedSheetId() === null || sectionForm.invalid"
+        (click)="createSection()"
+      >
+        {{ 'shared.add' | t }}
+      </button>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-4">
+    <div class="input-group input-group-sm" [formGroup]="subsectionForm">
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-subsection-ru"
+        formControlName="nameRu"
+        [attr.disabled]="disabled || creating() || selectedSectionId() === null ? '' : null"
+        [attr.placeholder]="'matrix.form.subsectionRu' | t"
+      />
+      <input
+        type="text"
+        class="form-control"
+        data-testid="matrix-structure-subsection-en"
+        formControlName="nameEn"
+        [attr.disabled]="disabled || creating() || selectedSectionId() === null ? '' : null"
+        [attr.placeholder]="'matrix.form.subsectionEn' | t"
+      />
+      <button
+        type="button"
+        class="btn btn-outline-success"
+        data-testid="matrix-structure-add-subsection"
+        [disabled]="
+          disabled || creating() || selectedSectionId() === null || subsectionForm.invalid
+        "
+        (click)="createSubsection()"
+      >
+        {{ 'shared.add' | t }}
+      </button>
+    </div>
+  </div>
+</div>

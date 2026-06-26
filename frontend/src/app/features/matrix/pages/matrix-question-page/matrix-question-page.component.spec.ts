@@ -142,7 +142,6 @@ describe('MatrixQuestionPageComponent', () => {
 
 function matrixQuestion(overrides: Partial<MatrixQuestionDetail> = {}): MatrixQuestionDetail {
   const question: MatrixQuestionDetail = {
-    id: 1,
     slug: 'what-is-a-closure',
     question: 'Что такое замыкание?',
     answer: '**Замыкание** хранит внешнюю область видимости.',

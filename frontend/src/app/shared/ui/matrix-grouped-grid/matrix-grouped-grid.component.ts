@@ -31,7 +31,7 @@ export class MatrixGroupedGridComponent {
   readonly gradeLabels = input<Record<string, string>>({});
   readonly notSetLabel = input.required<string>();
 
-  readonly questionSelected = output<number>();
+  readonly questionSelected = output<string>();
 
   readonly grades = computed<(string | null)[]>(() => {
     const seen = new Set<string | null>();
@@ -71,8 +71,8 @@ export class MatrixGroupedGridComponent {
     return result;
   });
 
-  selectQuestion(id: number): void {
-    this.questionSelected.emit(id);
+  selectQuestion(slug: string): void {
+    this.questionSelected.emit(slug);
   }
 
   gradeLabel(grade: string | null): string {

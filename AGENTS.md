@@ -103,10 +103,12 @@ Portfolio and articles site with a knowledge database
   `backend/tests/`.
 - UI localisation is backend-bundle driven: user-facing interface strings must come from the
   backend i18n catalog. Database/content localisation is separate from UI i18n: articles, article tags,
-  and competency matrix content use required fixed `*_ru` / `*_en` fields in existing tables, with
-  explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix sheets use
-  a stable language-neutral `sheet_key`/`sheetKey`; localized sheet names, sections, subsections,
-  questions, answers, expected answers, resource names, and attachment contexts are projections.
+  and competency matrix content use required fixed `*_ru` / `*_en` fields in their owning tables, with
+  explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix
+  sheet/section/subsection names live in normalized structure tables, questions store required
+  `subsection_id`, and sheets use a stable language-neutral `key`/`sheetKey`; localized sheet names,
+  sections, subsections, questions, answers, expected answers, resource names, and attachment
+  contexts are projections.
   Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
   resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
   whether the authored text actually matches the selected language.

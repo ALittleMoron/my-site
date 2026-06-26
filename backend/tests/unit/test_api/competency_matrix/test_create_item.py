@@ -110,11 +110,12 @@ class TestCreateItemAPI(ApiTestCase):
         )
         assert response.status_code == codes.CREATED, response.json()
         assert response.json() == {
-            "id": 1,
+            "id": "1",
             "slug": "question-1",
             "question": "question 1",
             "answer": "answer 1",
             "interviewExpectedAnswer": "interview expected answer 1",
+            "subsectionId": 1,
             "sheetKey": "python",
             "sheet": "Python",
             "grade": "Junior",
@@ -127,17 +128,11 @@ class TestCreateItemAPI(ApiTestCase):
                     "question": "вопрос 1",
                     "answer": "ответ 1",
                     "interviewExpectedAnswer": "ожидаемый ответ 1",
-                    "sheet": "Питон",
-                    "section": "Основы",
-                    "subsection": "Функции",
                 },
                 "en": {
                     "question": "question 1",
                     "answer": "answer 1",
                     "interviewExpectedAnswer": "interview expected answer 1",
-                    "sheet": "Python",
-                    "section": "Basics",
-                    "subsection": "Functions",
                 },
             },
             "resources": [
@@ -153,6 +148,49 @@ class TestCreateItemAPI(ApiTestCase):
                 },
             ],
         }
+
+    def test_create_item_uses_subsection_id_structure_reference(self) -> None:
+        self.use_case.create_item.return_value = self.factory.core.competency_matrix_item(
+            item_id=1,
+            question_ru="вопрос 1",
+            question_en="question 1",
+            sheet_key="python",
+            sheet_ru="Питон",
+            sheet_en="Python",
+            section_ru="Основы",
+            section_en="Basics",
+            subsection_ru="Функции",
+            subsection_en="Functions",
+            publish_status=PublishStatusEnum.DRAFT,
+        )
+
+        response = self.api.post_create_item(
+            data={
+                "slug": "question-1",
+                "subsectionId": 3,
+                "grade": "Junior",
+                "interviewFrequency": "often",
+                "publishStatus": "Draft",
+                "translations": {
+                    "ru": {
+                        "question": "вопрос 1",
+                        "answer": "ответ 1",
+                        "interviewExpectedAnswer": "ожидаемый ответ 1",
+                    },
+                    "en": {
+                        "question": "question 1",
+                        "answer": "answer 1",
+                        "interviewExpectedAnswer": "interview expected answer 1",
+                    },
+                },
+                "resources": [],
+            },
+            language="en",
+        )
+
+        assert response.status_code == codes.CREATED, response.json()
+        params = self.use_case.create_item.call_args.kwargs["params"]
+        assert params.subsection_id == self.factory.core.int_id(3)
 
     def test_create_item_rejects_resource_attachment_with_resource_id_and_resource(self) -> None:
         data = self.factory.api.competency_matrix_item_request(
@@ -261,7 +299,7 @@ class TestCreateItemAPI(ApiTestCase):
         assert response.status_code == codes.CREATED, response.content
         self.use_case.create_item.assert_called_once_with(
             params=self.factory.core.competency_matrix_item_create_params(
-                item_id=2,
+                item_id=3,
                 slug="partial-question",
                 sheet_key="python",
                 question_ru="частичный вопрос",

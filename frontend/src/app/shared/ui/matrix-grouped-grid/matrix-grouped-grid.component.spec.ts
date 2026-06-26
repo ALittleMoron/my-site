@@ -16,7 +16,6 @@ const questions: ReadonlyMatrixQuestionList = {
               grade: 'Junior',
               questions: [
                 {
-                  id: 1,
                   slug: 'pep-8',
                   question: 'What is PEP 8?',
                   interviewFrequency: 'often',
@@ -58,12 +57,12 @@ describe('MatrixGroupedGridComponent', () => {
     expect(el.querySelector('.badge')).toBeNull();
   });
 
-  it('emits selected question ids', () => {
-    const emitted: number[] = [];
-    fixture.componentInstance.questionSelected.subscribe((id) => emitted.push(id));
+  it('emits selected question slugs', () => {
+    const emitted: string[] = [];
+    fixture.componentInstance.questionSelected.subscribe((slug) => emitted.push(slug));
 
     el.querySelector<HTMLButtonElement>('button')?.click();
 
-    expect(emitted).toEqual([1]);
+    expect(emitted).toEqual(['pep-8']);
   });
 });

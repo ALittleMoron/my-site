@@ -131,7 +131,6 @@ def matrix_items_payload(*, sheet_key: str) -> dict[str, object]:
                                 "grade": "Junior",
                                 "items": [
                                     {
-                                        "id": 1,
                                         "slug": slug,
                                         "question": "How do you test this?",
                                         "interviewFrequency": "often",
@@ -148,7 +147,6 @@ def matrix_items_payload(*, sheet_key: str) -> dict[str, object]:
 
 def matrix_item_detail_payload(*, slug: str) -> dict[str, object]:
     return {
-        "id": 1,
         "slug": slug,
         "question": "How do you test this?",
         "interviewFrequency": "often",

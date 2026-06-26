@@ -138,19 +138,6 @@ class APIHelper:
             params=params,
         )
 
-    def get_competency_matrix_item(
-        self,
-        pk: int,
-        language: str | None = "ru",
-    ) -> Response:
-        params: dict[str, str] = {}
-        if language is not None:
-            params["language"] = language
-        return self.client.get(
-            f"/api/competency-matrix/items/detail/{pk}",
-            params=params,
-        )
-
     def get_admin_competency_matrix_item(
         self,
         pk: int,

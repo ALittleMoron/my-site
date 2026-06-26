@@ -15,7 +15,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatrixService } from '../../services/matrix.service';
 import {
-  MatrixQuestion,
   MatrixQuestionDetail,
   MatrixQuestionList,
   MatrixSheet,
@@ -215,12 +214,12 @@ export class MatrixListComponent implements OnInit {
     this.search.set(value);
   }
 
-  openDetail(id: number): void {
+  openDetail(slug: string): void {
     this.detailVisible.set(true);
     this.selectedQuestion.set(null);
     this.detailLoading.set(true);
     this.detailError.set(null);
-    this.publicDetailRequest(id)
+    this.publicDetailRequest(slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (detail) => {
@@ -297,7 +296,7 @@ export class MatrixListComponent implements OnInit {
     this.loadSheets();
     const detail = this.selectedQuestion();
     if (detail !== null && this.detailVisible()) {
-      this.openDetail(detail.id);
+      this.openDetail(detail.slug);
     }
   }
 
@@ -309,30 +308,14 @@ export class MatrixListComponent implements OnInit {
     return language;
   }
 
-  private publicDetailRequest(id: number): Observable<MatrixQuestionDetail> {
+  private publicDetailRequest(slug: string): Observable<MatrixQuestionDetail> {
     const language = this.currentLanguage();
-    const question = findQuestionById(this.questions(), id);
-    return question === null
-      ? this.matrixService.getPublicQuestion(id, language)
-      : this.matrixService.getPublicQuestionBySlug(question.slug, language);
+    return this.matrixService.getPublicQuestionBySlug(slug, language);
   }
 
   private storage(): Storage | null {
     return this.document.defaultView?.localStorage ?? null;
   }
-}
-
-function findQuestionById(list: MatrixQuestionList | null, id: number): MatrixQuestion | null {
-  if (list === null) return null;
-  for (const section of list.sections) {
-    for (const subsection of section.subsections) {
-      for (const grade of subsection.grades) {
-        const question = grade.questions.find((item) => item.id === id);
-        if (question !== undefined) return question;
-      }
-    }
-  }
-  return null;
 }
 
 function normalizeSuggestionQuestion(value: string): string {

@@ -17,6 +17,13 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItems,
     CompetencyMatrixItemUpdateParams,
     CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixStructure,
+    CompetencyMatrixStructureSection,
+    CompetencyMatrixStructureSheet,
+    CompetencyMatrixStructureSubsection,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspace,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -46,6 +53,156 @@ class ResourceTranslationSchema(CamelCaseSchema):
 class ResourceTranslationsSchema(CamelCaseSchema):
     ru: Annotated[ResourceTranslationSchema, Field(title="Russian translation")]
     en: Annotated[ResourceTranslationSchema, Field(title="English translation")]
+
+
+class StructureNameTranslationSchema(CamelCaseSchema):
+    name: Annotated[str, Field(title="Name", min_length=1, max_length=255)]
+
+
+class StructureNameTranslationsSchema(CamelCaseSchema):
+    ru: Annotated[StructureNameTranslationSchema, Field(title="Russian translation")]
+    en: Annotated[StructureNameTranslationSchema, Field(title="English translation")]
+
+
+class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
+    id: Annotated[int, Field(title="Identifier")]
+    name: Annotated[str, Field(title="Name")]
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: CompetencyMatrixStructureSubsection,
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.localized_name(language=language),
+            translations=StructureNameTranslationsSchema(
+                ru=StructureNameTranslationSchema(name=schema.name_ru),
+                en=StructureNameTranslationSchema(name=schema.name_en),
+            ),
+        )
+
+
+class MatrixStructureSectionResponseSchema(CamelCaseSchema):
+    id: Annotated[int, Field(title="Identifier")]
+    name: Annotated[str, Field(title="Name")]
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+    subsections: Annotated[
+        list[MatrixStructureSubsectionResponseSchema], Field(title="Subsections")
+    ]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: CompetencyMatrixStructureSection,
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            id=schema.id,
+            name=schema.localized_name(language=language),
+            translations=StructureNameTranslationsSchema(
+                ru=StructureNameTranslationSchema(name=schema.name_ru),
+                en=StructureNameTranslationSchema(name=schema.name_en),
+            ),
+            subsections=[
+                MatrixStructureSubsectionResponseSchema.from_domain_schema(
+                    schema=subsection,
+                    language=language,
+                )
+                for subsection in schema.subsections
+            ],
+        )
+
+
+class MatrixStructureSheetResponseSchema(CamelCaseSchema):
+    id: Annotated[int, Field(title="Identifier")]
+    key: Annotated[str, Field(title="Key")]
+    name: Annotated[str, Field(title="Name")]
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+    sections: Annotated[list[MatrixStructureSectionResponseSchema], Field(title="Sections")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: CompetencyMatrixStructureSheet,
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            id=schema.id,
+            key=schema.key,
+            name=schema.localized_name(language=language),
+            translations=StructureNameTranslationsSchema(
+                ru=StructureNameTranslationSchema(name=schema.name_ru),
+                en=StructureNameTranslationSchema(name=schema.name_en),
+            ),
+            sections=[
+                MatrixStructureSectionResponseSchema.from_domain_schema(
+                    schema=section,
+                    language=language,
+                )
+                for section in schema.sections
+            ],
+        )
+
+
+class MatrixStructureResponseSchema(CamelCaseSchema):
+    sheets: Annotated[list[MatrixStructureSheetResponseSchema], Field(title="Sheets")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: CompetencyMatrixStructure,
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            sheets=[
+                MatrixStructureSheetResponseSchema.from_domain_schema(
+                    schema=sheet,
+                    language=language,
+                )
+                for sheet in schema.sheets
+            ],
+        )
+
+
+class MatrixSheetCreateRequestSchema(CamelCaseSchema):
+    key: Annotated[str, Field(title="Key", min_length=1, max_length=255)]
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+
+    def to_schema(self) -> CompetencyMatrixSheetCreateParams:
+        return CompetencyMatrixSheetCreateParams(
+            key=self.key,
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+        )
+
+
+class MatrixSectionCreateRequestSchema(CamelCaseSchema):
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+
+    def to_schema(self, *, sheet_id: IntId) -> CompetencyMatrixSectionCreateParams:
+        return CompetencyMatrixSectionCreateParams(
+            sheet_id=sheet_id,
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+        )
+
+
+class MatrixSubsectionCreateRequestSchema(CamelCaseSchema):
+    translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
+
+    def to_schema(self, *, section_id: IntId) -> CompetencyMatrixSubsectionCreateParams:
+        return CompetencyMatrixSubsectionCreateParams(
+            section_id=section_id,
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+        )
 
 
 class QuestionSuggestionRequestSchema(CamelCaseSchema):
@@ -222,9 +379,6 @@ class CompetencyMatrixItemTranslationSchema(CamelCaseSchema):
     question: Annotated[str, Field(title="Question", min_length=1, max_length=255)]
     answer: Annotated[str, Field(title="Answer")]
     interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
-    sheet: Annotated[str, Field(title="Sheet", max_length=255)]
-    section: Annotated[str, Field(title="Section", max_length=255)]
-    subsection: Annotated[str, Field(title="Subsection", max_length=255)]
 
 
 class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
@@ -238,23 +392,16 @@ class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
                 question=schema.question_ru,
                 answer=schema.answer_ru,
                 interview_expected_answer=schema.interview_expected_answer_ru,
-                sheet=schema.sheet_ru,
-                section=schema.section_ru,
-                subsection=schema.subsection_ru,
             ),
             en=CompetencyMatrixItemTranslationSchema(
                 question=schema.question_en,
                 answer=schema.answer_en,
                 interview_expected_answer=schema.interview_expected_answer_en,
-                sheet=schema.sheet_en,
-                section=schema.section_en,
-                subsection=schema.subsection_en,
             ),
         )
 
 
-class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+class PublicCompetencyMatrixItemResponseSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug")]
     question: Annotated[str, Field(title="Question")]
     interview_frequency: Annotated[
@@ -265,14 +412,28 @@ class CompetencyMatrixItemResponseSchema(CamelCaseSchema):
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixItem, language: LanguageEnum) -> Self:
         return cls(
-            id=schema.id,
             slug=schema.slug,
             question=schema.localized_question(language=language),
             interview_frequency=schema.interview_frequency,
         )
 
 
-class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
+class CompetencyMatrixItemResponseSchema(PublicCompetencyMatrixItemResponseSchema):
+    id: Annotated[str, Field(title="Identifier")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixItem, language: LanguageEnum) -> Self:
+        summary = PublicCompetencyMatrixItemResponseSchema.from_domain_schema(
+            schema=schema,
+            language=language,
+        )
+        return cls(
+            **summary.model_dump(),
+            id=str(schema.id),
+        )
+
+
+class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemResponseSchema):
     answer: Annotated[str, Field(title="Answer")]
     interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
     sheet_key: Annotated[str, Field(title="Sheet key")]
@@ -291,7 +452,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         schema: CompetencyMatrixItem,
         language: LanguageEnum,
     ) -> Self:
-        summary = CompetencyMatrixItemResponseSchema.from_domain_schema(
+        summary = PublicCompetencyMatrixItemResponseSchema.from_domain_schema(
             schema=schema,
             language=language,
         )
@@ -318,9 +479,57 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         )
 
 
+class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
+    answer: Annotated[str, Field(title="Answer")]
+    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    subsection_id: Annotated[int, Field(title="Subsection identifier")]
+    sheet_key: Annotated[str, Field(title="Sheet key")]
+    sheet: Annotated[str, Field(title="Sheet")]
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
+    section: Annotated[str, Field(title="Section")]
+    subsection: Annotated[str, Field(title="Subsection")]
+    publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
+    resources: Annotated[list[AttachedResourceResponseSchema], Field(title="Resources")]
+    translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Translations")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: CompetencyMatrixItem,
+        language: LanguageEnum,
+    ) -> Self:
+        summary = CompetencyMatrixItemResponseSchema.from_domain_schema(
+            schema=schema,
+            language=language,
+        )
+        return cls(
+            **summary.model_dump(),
+            answer=schema.localized_answer(language=language),
+            interview_expected_answer=schema.localized_interview_expected_answer(
+                language=language,
+            ),
+            subsection_id=schema.subsection_id,
+            sheet_key=schema.sheet_key,
+            sheet=schema.localized_sheet(language=language),
+            grade=schema.grade,
+            section=schema.localized_section(language=language),
+            subsection=schema.localized_subsection(language=language),
+            publish_status=schema.publish_status,
+            resources=[
+                AttachedResourceResponseSchema.from_domain_schema(
+                    schema=resource,
+                    language=language,
+                )
+                for resource in schema.resources
+            ],
+            translations=CompetencyMatrixItemTranslationsSchema.from_domain_schema(schema=schema),
+        )
+
+
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     slug: Annotated[str, Field(title="Slug", min_length=1, max_length=255)]
-    sheet_key: Annotated[str, Field(title="Sheet key", min_length=1, max_length=255)]
+    subsection_id: Annotated[int, Field(title="Subsection identifier", ge=1)]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
     interview_frequency: Annotated[
         InterviewFrequencyEnum | None,
@@ -347,15 +556,9 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             answer_en=self.translations.en.answer,
             interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
             interview_expected_answer_en=self.translations.en.interview_expected_answer,
-            sheet_key=self.sheet_key,
-            sheet_ru=self.translations.ru.sheet,
-            sheet_en=self.translations.en.sheet,
+            subsection_id=IntId(self.subsection_id),
             grade=self.grade,
             interview_frequency=self.interview_frequency,
-            section_ru=self.translations.ru.section,
-            section_en=self.translations.en.section,
-            subsection_ru=self.translations.ru.subsection,
-            subsection_en=self.translations.en.subsection,
             publish_status=self.publish_status,
             resources=self._to_resource_attachments(resource_id_generator=resource_id_generator),
         )
@@ -388,15 +591,9 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             answer_en=self.translations.en.answer,
             interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
             interview_expected_answer_en=self.translations.en.interview_expected_answer,
-            sheet_key=self.sheet_key,
-            sheet_ru=self.translations.ru.sheet,
-            sheet_en=self.translations.en.sheet,
+            subsection_id=IntId(self.subsection_id),
             grade=self.grade,
             interview_frequency=self.interview_frequency,
-            section_ru=self.translations.ru.section,
-            section_en=self.translations.en.section,
-            subsection_ru=self.translations.ru.subsection,
-            subsection_en=self.translations.en.subsection,
             publish_status=self.publish_status,
             resources=self._to_resource_attachments(resource_id_generator=resource_id_generator),
         )
@@ -542,6 +739,138 @@ class CompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
         )
 
 
+class PublicCompetencyMatrixGroupedGradesResponseSchema(CamelCaseSchema):
+    grade: Annotated[GradeEnum | None, Field(title="Grade")]
+    items: Annotated[list[PublicCompetencyMatrixItemResponseSchema], Field(title="List")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        grade: GradeEnum | None,
+        items: Iterable[CompetencyMatrixItem],
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            grade=grade,
+            items=[
+                PublicCompetencyMatrixItemResponseSchema.from_domain_schema(
+                    schema=item,
+                    language=language,
+                )
+                for item in items
+            ],
+        )
+
+
+class PublicCompetencyMatrixGroupedSubsectionsResponseSchema(CamelCaseSchema):
+    subsection: Annotated[str, Field(title="Subsection")]
+    grades: Annotated[
+        list[PublicCompetencyMatrixGroupedGradesResponseSchema],
+        Field(title="List"),
+    ]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        subsection: str,
+        items: Iterable[CompetencyMatrixItem],
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            subsection=subsection,
+            grades=[
+                PublicCompetencyMatrixGroupedGradesResponseSchema.from_domain_schema(
+                    grade=grade,
+                    items=list(grade_items),
+                    language=language,
+                )
+                for grade, grade_items in groupby(items, key=lambda item: item.grade)
+            ],
+        )
+
+
+class PublicCompetencyMatrixGroupedSectionsResponseSchema(CamelCaseSchema):
+    section: Annotated[str, Field(title="Section")]
+    subsections: Annotated[
+        list[PublicCompetencyMatrixGroupedSubsectionsResponseSchema],
+        Field(title="List"),
+    ]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        section: str,
+        items: Iterable[CompetencyMatrixItem],
+        language: LanguageEnum,
+    ) -> Self:
+        return cls(
+            section=section,
+            subsections=[
+                PublicCompetencyMatrixGroupedSubsectionsResponseSchema.from_domain_schema(
+                    subsection=subsection,
+                    items=list(subsection_items),
+                    language=language,
+                )
+                for subsection, subsection_items in groupby(
+                    items,
+                    key=lambda item: item.localized_subsection(language=language),
+                )
+            ],
+        )
+
+
+class PublicCompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
+    sheet_key: Annotated[str, Field(title="Sheet key")]
+    sheet: Annotated[str, Field(title="Sheet")]
+    sections: Annotated[
+        list[PublicCompetencyMatrixGroupedSectionsResponseSchema],
+        Field(title="List"),
+    ]
+
+    @classmethod
+    def empty(cls, *, sheet_key: str) -> Self:
+        return cls(sheet_key=sheet_key, sheet="", sections=[])
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        sheet_key: str,
+        schema: CompetencyMatrixItems,
+        language: LanguageEnum,
+    ) -> Self:
+        items = sorted(
+            [item for item in schema.values if item.sheet_key == sheet_key],
+            key=lambda item: (
+                item.localized_section(language=language).lower(),
+                item.localized_subsection(language=language).lower(),
+                item.grade.value if item.grade is not None else "",
+                item.id,
+            ),
+        )
+        if not items:
+            return cls.empty(sheet_key=sheet_key)
+        sections = [
+            PublicCompetencyMatrixGroupedSectionsResponseSchema.from_domain_schema(
+                section=section,
+                items=list(section_items),
+                language=language,
+            )
+            for section, section_items in groupby(
+                items,
+                key=lambda item: item.localized_section(language=language),
+            )
+        ]
+        return cls(
+            sheet_key=sheet_key,
+            sheet=items[0].localized_sheet(language=language),
+            sections=sections,
+        )
+
+
 class SheetResponseSchema(CamelCaseSchema):
     key: Annotated[str, Field(title="Key")]
     name: Annotated[str, Field(title="Name")]
@@ -601,7 +930,7 @@ class CompetencyMatrixWorkspaceSummaryResponseSchema(CamelCaseSchema):
 
 
 class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     slug: Annotated[str, Field(title="Slug")]
     question: Annotated[str, Field(title="Question")]
     sheet_key: Annotated[str, Field(title="Sheet key")]
@@ -623,7 +952,7 @@ class CompetencyMatrixWorkspaceItemResponseSchema(CamelCaseSchema):
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixWorkspaceItem) -> Self:
         return cls(
-            id=schema.id,
+            id=str(schema.id),
             slug=schema.slug,
             question=schema.question,
             sheet_key=schema.sheet_key,

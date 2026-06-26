@@ -18,6 +18,10 @@ from core.competency_matrix.schemas import (
     AttachedExternalResources,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixItemStructure,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspaceFilters,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
@@ -65,6 +69,7 @@ NEW_CONTACT_ID = UUID("10000000-0000-4000-8000-000000000002")
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
 NEW_TAG_ID = IntId(90_000_001)
 NEW_MATRIX_ITEM_ID = IntId(900_001)
+NEW_MATRIX_SHEET_KEY = "query-plan-new-sheet"
 NEW_RESUME_TITLE = "Query plan new resume"
 SHORT_TRIGRAM_ALLOW_REASON = (
     "short search string has too few extractable trigrams for an index-selective search"
@@ -410,6 +415,46 @@ async def run_list_sheets(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).list_sheets()
 
 
+async def run_list_matrix_structure(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).list_structure()
+
+
+async def run_get_item_structure_by_subsection_id(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).get_item_structure_by_subsection_id(
+        subsection_id=IntId(1),
+    )
+
+
+async def run_create_matrix_sheet(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).create_sheet(
+        params=CompetencyMatrixSheetCreateParams(
+            key=NEW_MATRIX_SHEET_KEY,
+            name_ru="Новый лист query plan",
+            name_en="Query plan new sheet",
+        ),
+    )
+
+
+async def run_create_matrix_section(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).create_section(
+        params=CompetencyMatrixSectionCreateParams(
+            sheet_id=IntId(1),
+            name_ru="Новый раздел query plan",
+            name_en="Query plan new section",
+        ),
+    )
+
+
+async def run_create_matrix_subsection(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).create_subsection(
+        params=CompetencyMatrixSubsectionCreateParams(
+            section_id=IntId(1),
+            name_ru="Новый подраздел query plan",
+            name_en="Query plan new subsection",
+        ),
+    )
+
+
 async def run_list_competency_matrix_items(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).list_competency_matrix_items(
         filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=True),
@@ -649,15 +694,20 @@ def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
         answer_en="Through deterministic storage scenarios.",
         interview_expected_answer_ru="Назвать listener, EXPLAIN и thresholds.",
         interview_expected_answer_en="Name listener, EXPLAIN, and thresholds.",
-        sheet_key="python",
-        sheet_ru="Питон",
-        sheet_en="Python",
+        structure=CompetencyMatrixItemStructure(
+            sheet_id=IntId(1),
+            sheet_key="python",
+            sheet_ru="Питон",
+            sheet_en="Python",
+            section_id=IntId(1),
+            section_ru="Основы",
+            section_en="Basics",
+            subsection_id=IntId(1),
+            subsection_ru="Функции",
+            subsection_en="Functions",
+        ),
         grade=GradeEnum.JUNIOR,
         interview_frequency=InterviewFrequencyEnum.OFTEN,
-        section_ru="Основы",
-        section_en="Basics",
-        subsection_ru="Производительность",
-        subsection_en="Performance",
         resources=AttachedExternalResources(
             values=[
                 AttachedExternalResource(
@@ -1055,11 +1105,61 @@ STORAGE_SCENARIOS = (
         run=run_list_sheets,
     ),
     scenario(
+        name="matrix_list_structure",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="list_structure",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_list_matrix_structure,
+    ),
+    scenario(
+        name="matrix_get_item_structure_by_subsection",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="get_item_structure_by_subsection_id",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("competency_matrix__competency_matrix_subsection_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_item_structure_by_subsection_id,
+    ),
+    scenario(
+        name="matrix_create_sheet",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="create_sheet",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_matrix_sheet,
+    ),
+    scenario(
+        name="matrix_create_section",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="create_section",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_matrix_section,
+    ),
+    scenario(
+        name="matrix_create_subsection",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="create_subsection",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_matrix_subsection,
+    ),
+    scenario(
         name="matrix_list_items",
         storage_class="CompetencyMatrixDatabaseStorage",
         method_name="list_competency_matrix_items",
         group=QueryThresholdGroup.HEAVY,
-        expected_index_names=("cmi_sheet_key_status_order_idx",),
+        expected_index_names=(),
         forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
         allow_seq_scan_reason=None,
         run=run_list_competency_matrix_items,

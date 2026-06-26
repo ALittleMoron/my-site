@@ -33,9 +33,10 @@
     - [x] (BACK) CRUD for matrix questions (including nested entities) + guard
       - [x] Create
       - [x] Update
-      - [x] Delete
-      - [x] Publish
-      - [x] Unpublish
+    - [x] Delete
+    - [x] Publish
+    - [x] Unpublish
+    - [x] Normalize sheet/section/subsection structure into database tables and use an inline admin picker for question authoring
     - [x] (BACK) Guard on /api/admin/files/presign-put
     - [x] (FRONT) Delete button on question detail
     - [x] (FRONT) Publish/Unpublish button (depending on status)
@@ -75,7 +76,7 @@
   - [ ] After deployment, log in to internal services over WireGuard and verify auth
     - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
-  - [ ] Migrate competency matrix from Google Docs to a database.
+  - [ ] Load the real competency matrix content from the current Google Docs source into the database before first deployment.
   - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
 ### Security and Infrastructure
@@ -498,7 +499,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Content localisation for competency matrix
   - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
-- [ ] Move sheet, section, subsection to separated tables
+- [x] Move sheet, section, subsection to separated tables
 - [ ] Priority for sections and subsections (drag and drop in admin panel?)
 - [ ] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix

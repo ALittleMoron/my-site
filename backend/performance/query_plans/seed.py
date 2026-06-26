@@ -16,6 +16,7 @@ from sqlalchemy import (
     true,
     union_all,
 )
+from sqlalchemy import and_ as sa_and
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -30,6 +31,9 @@ from infra.postgresql.models import (
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
+    CompetencyMatrixSectionModel,
+    CompetencyMatrixSheetModel,
+    CompetencyMatrixSubsectionModel,
     ContactMeModel,
     ExternalResourceModel,
     QueuedQuestionModel,
@@ -96,6 +100,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await insert_article_reactions(connection=connection, profile=profile)
     await insert_resumes(connection=connection)
     await insert_resources(connection=connection, profile=profile)
+    await insert_competency_matrix_structure(connection=connection)
     await insert_competency_matrix_items(connection=connection, profile=profile)
     await insert_competency_matrix_resource_links(connection=connection)
     await insert_queued_competency_matrix_questions(connection=connection)
@@ -106,6 +111,9 @@ async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
         ResourceToItemSecondaryModel,
         QueuedQuestionModel,
         CompetencyMatrixItemModel,
+        CompetencyMatrixSubsectionModel,
+        CompetencyMatrixSectionModel,
+        CompetencyMatrixSheetModel,
         ExternalResourceModel,
         ArticleReactionModel,
         ArticleDailyAnalyticsModel,
@@ -380,6 +388,115 @@ async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfi
     )
 
 
+async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> None:
+    sheet_series = generate_series_subquery(end=20, name="matrix_sheet_series")
+    sheet_value = sql_cast(sheet_series.c.value, Integer)
+    await connection.execute(
+        insert(CompetencyMatrixSheetModel.__table__).from_select(
+            ["id", "key", "name_ru", "name_en"],
+            select(
+                sheet_value,
+                case(
+                    (sheet_value == PYTHON_ID, literal("python")),
+                    else_=func.concat(literal("sheet-"), sheet_value - 1),
+                ),
+                case(
+                    (sheet_value == PYTHON_ID, literal("Питон")),
+                    else_=func.concat(literal("Лист "), sheet_value - 1),
+                ),
+                case(
+                    (sheet_value == PYTHON_ID, literal("Python")),
+                    else_=func.concat(literal("Sheet "), sheet_value - 1),
+                ),
+            ).select_from(sheet_series),
+        ),
+    )
+
+    section_series = generate_series_subquery(end=20 * 8, name="matrix_section_series")
+    section_value = sql_cast(section_series.c.value, Integer)
+    section_bucket = func.mod(section_value - 1, 8)
+    section_sheet_id = sql_cast(func.floor((section_value - 1) / 8), Integer) + 1
+    await connection.execute(
+        insert(CompetencyMatrixSectionModel.__table__).from_select(
+            ["id", "sheet_id", "name_ru", "name_en"],
+            select(
+                section_value,
+                section_sheet_id,
+                case(
+                    (
+                        sa_and(section_sheet_id == PYTHON_ID, section_bucket == 0),
+                        literal("Основы"),
+                    ),
+                    else_=func.concat(literal("Раздел "), section_bucket),
+                ),
+                case(
+                    (
+                        sa_and(section_sheet_id == PYTHON_ID, section_bucket == 0),
+                        literal("Basics"),
+                    ),
+                    else_=func.concat(literal("Section "), section_bucket),
+                ),
+            ).select_from(section_series),
+        ),
+    )
+
+    subsection_series = generate_series_subquery(end=20 * 8 * 12, name="matrix_subsection_series")
+    subsection_value = sql_cast(subsection_series.c.value, Integer)
+    subsection_bucket = func.mod(subsection_value - 1, 12)
+    subsection_section_id = sql_cast(func.floor((subsection_value - 1) / 12), Integer) + 1
+    subsection_sheet_id = sql_cast(func.floor((subsection_section_id - 1) / 8), Integer) + 1
+    subsection_section_bucket = func.mod(subsection_section_id - 1, 8)
+    python_basics = sa_and(
+        subsection_sheet_id == PYTHON_ID,
+        subsection_section_bucket == 0,
+        subsection_bucket == 0,
+    )
+    await connection.execute(
+        insert(CompetencyMatrixSubsectionModel.__table__).from_select(
+            ["id", "section_id", "name_ru", "name_en"],
+            select(
+                subsection_value,
+                subsection_section_id,
+                case(
+                    (python_basics, literal("Функции")),
+                    else_=func.concat(literal("Подраздел "), subsection_bucket),
+                ),
+                case(
+                    (python_basics, literal("Functions")),
+                    else_=func.concat(literal("Subsection "), subsection_bucket),
+                ),
+            ).select_from(subsection_series),
+        ),
+    )
+    await connection.execute(
+        select(
+            func.setval(
+                func.pg_get_serial_sequence(CompetencyMatrixSheetModel.__tablename__, "id"),
+                20,
+                true(),
+            ),
+        ),
+    )
+    await connection.execute(
+        select(
+            func.setval(
+                func.pg_get_serial_sequence(CompetencyMatrixSectionModel.__tablename__, "id"),
+                20 * 8,
+                true(),
+            ),
+        ),
+    )
+    await connection.execute(
+        select(
+            func.setval(
+                func.pg_get_serial_sequence(CompetencyMatrixSubsectionModel.__tablename__, "id"),
+                20 * 8 * 12,
+                true(),
+            ),
+        ),
+    )
+
+
 async def insert_competency_matrix_items(
     *,
     connection: AsyncConnection,
@@ -388,11 +505,11 @@ async def insert_competency_matrix_items(
     series = generate_series_subquery(end=profile.resource_count, name="matrix_item_series")
     value = sql_cast(series.c.value, Integer)
     sheet_bucket = func.mod(value, 20)
-    python_sheet = sheet_bucket == 0
     draft_item = func.mod(value, 11) == 0
     missing_answer_en = func.mod(value, 13) == 0
     section_bucket = func.mod(value, 8)
     subsection_bucket = func.mod(value, 12)
+    subsection_id = (sheet_bucket * 8 + section_bucket) * 12 + subsection_bucket + 1
     grade_bucket = func.mod(value, 5)
     frequency_bucket = func.mod(value, 5)
     await connection.execute(
@@ -406,13 +523,7 @@ async def insert_competency_matrix_items(
                 "answer_en",
                 "interview_expected_answer_ru",
                 "interview_expected_answer_en",
-                "sheet_key",
-                "sheet_ru",
-                "sheet_en",
-                "section_ru",
-                "section_en",
-                "subsection_ru",
-                "subsection_en",
+                "subsection_id",
                 "grade",
                 "interview_frequency",
                 "published_at",
@@ -430,34 +541,7 @@ async def insert_competency_matrix_items(
                 ),
                 func.concat(literal("Ожидаемый ответ "), value),
                 func.concat(literal("Expected answer "), value),
-                case(
-                    (python_sheet, literal("python")),
-                    else_=func.concat(literal("sheet-"), sheet_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Питон")),
-                    else_=func.concat(literal("Лист "), sheet_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Python")),
-                    else_=func.concat(literal("Sheet "), sheet_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Основы")),
-                    else_=func.concat(literal("Раздел "), section_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Basics")),
-                    else_=func.concat(literal("Section "), section_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Функции")),
-                    else_=func.concat(literal("Подраздел "), subsection_bucket),
-                ),
-                case(
-                    (python_sheet, literal("Functions")),
-                    else_=func.concat(literal("Subsection "), subsection_bucket),
-                ),
+                subsection_id,
                 case(
                     (grade_bucket == 0, literal("JUNIOR")),
                     (grade_bucket == 1, literal("JUNIOR_PLUS")),

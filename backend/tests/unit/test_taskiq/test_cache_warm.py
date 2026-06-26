@@ -11,7 +11,6 @@ from core.articles.use_cases import ArticlesUseCase
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemFilters,
-    CompetencyMatrixItemGetParams,
 )
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.i18n.enums import LanguageEnum
@@ -103,7 +102,6 @@ class FakeCompetencyMatrixUseCase:
     def __init__(self, factory: FactoryHelper) -> None:
         self.factory = factory
         self.list_items_filters: list[CompetencyMatrixItemFilters] = []
-        self.detail_ids: list[int] = []
         self.public_detail_slugs: list[str] = []
         self.items = [
             factory.core.competency_matrix_item(
@@ -126,11 +124,6 @@ class FakeCompetencyMatrixUseCase:
     async def list_items(self, *, filters: CompetencyMatrixItemFilters):
         self.list_items_filters.append(filters)
         return self.factory.core.competency_matrix_items(values=self.items)
-
-    async def get_item(self, *, params: CompetencyMatrixItemGetParams):
-        assert params.only_published is True
-        self.detail_ids.append(params.item_id)
-        return self.items[int(params.item_id) - 1]
 
     async def get_item_by_slug(self, *, params: CompetencyMatrixItemBySlugGetParams):
         assert params.only_published is True
@@ -206,6 +199,12 @@ class TestCacheWarmTargetGeneration(TestCase):
                     ("sheetKey", "python"),
                 ),
             ) in target_paths
+            for slug in ("first-question", "second-question"):
+                assert (
+                    ResponseCacheDomain.COMPETENCY_MATRIX,
+                    f"/api/competency-matrix/items/public/{slug}",
+                    (("language", language.value),),
+                ) in target_paths
 
         assert (
             ResponseCacheDomain.I18N,
@@ -227,6 +226,12 @@ class TestCacheWarmTargetGeneration(TestCase):
                 only_published=True,
                 include_tags=True,
             ),
+        ]
+        assert matrix_use_case.public_detail_slugs == [
+            "first-question",
+            "second-question",
+            "first-question",
+            "second-question",
         ]
 
     async def test_domain_specific_collection_limits_use_case_work(

@@ -9,7 +9,6 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemFilters,
-    CompetencyMatrixItemGetParams,
     CompetencyMatrixItems,
     Sheets,
 )
@@ -282,12 +281,6 @@ class CompetencyMatrixCacheWarmTargetCollector:
         item: CompetencyMatrixItem,
         language: LanguageEnum,
     ) -> list[CacheWarmTarget]:
-        detail = await self.matrix_use_case.get_item(
-            params=CompetencyMatrixItemGetParams(
-                item_id=item.id,
-                only_published=True,
-            ),
-        )
         public_detail = await self.matrix_use_case.get_item_by_slug(
             params=CompetencyMatrixItemBySlugGetParams(
                 slug=item.slug,
@@ -296,7 +289,6 @@ class CompetencyMatrixCacheWarmTargetCollector:
         )
         return [
             self._public_detail_target(item=item, detail=public_detail, language=language),
-            self._admin_detail_target(item=item, detail=detail, language=language),
         ]
 
     def _public_detail_target(
@@ -309,23 +301,6 @@ class CompetencyMatrixCacheWarmTargetCollector:
         return CacheWarmTarget(
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
             path=f"/api/competency-matrix/items/public/{item.slug}",
-            query=self.query_builder.build(("language", language.value)),
-            response=CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
-                schema=detail,
-                language=language,
-            ),
-        )
-
-    def _admin_detail_target(
-        self,
-        *,
-        item: CompetencyMatrixItem,
-        detail: CompetencyMatrixItem,
-        language: LanguageEnum,
-    ) -> CacheWarmTarget:
-        return CacheWarmTarget(
-            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
-            path=f"/api/competency-matrix/items/detail/{int(item.id)}",
             query=self.query_builder.build(("language", language.value)),
             response=CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
                 schema=detail,

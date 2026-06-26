@@ -9,6 +9,13 @@ import {
   AdminMatrixQuestionWorkspaceFilters,
   AdminMatrixResource,
   AdminMatrixResourcesDto,
+  AdminMatrixSectionCreatePayload,
+  AdminMatrixSheetCreatePayload,
+  AdminMatrixStructure,
+  AdminMatrixStructureSection,
+  AdminMatrixStructureSheet,
+  AdminMatrixStructureSubsection,
+  AdminMatrixSubsectionCreatePayload,
   AdminMatrixWorkspaceDto,
   AdminMatrixWorkspaceFilterOptions,
   AdminMatrixWorkspaceFilterOptionsDto,
@@ -44,6 +51,36 @@ export class MatrixQuestionWorkspaceService {
       .pipe(map((dto) => dto));
   }
 
+  getStructure(language: LanguageCode): Observable<AdminMatrixStructure> {
+    return this.api.get<AdminMatrixStructure>('/api/admin/competency-matrix/structure', {
+      language,
+    });
+  }
+
+  createSheet(payload: AdminMatrixSheetCreatePayload): Observable<AdminMatrixStructureSheet> {
+    return this.api.post<AdminMatrixStructureSheet>('/api/admin/competency-matrix/sheets', payload);
+  }
+
+  createSection(
+    sheetId: number,
+    payload: AdminMatrixSectionCreatePayload,
+  ): Observable<AdminMatrixStructureSection> {
+    return this.api.post<AdminMatrixStructureSection>(
+      `/api/admin/competency-matrix/sheets/${sheetId}/sections`,
+      payload,
+    );
+  }
+
+  createSubsection(
+    sectionId: number,
+    payload: AdminMatrixSubsectionCreatePayload,
+  ): Observable<AdminMatrixStructureSubsection> {
+    return this.api.post<AdminMatrixStructureSubsection>(
+      `/api/admin/competency-matrix/sections/${sectionId}/subsections`,
+      payload,
+    );
+  }
+
   listPublicPreviewSheets(language: LanguageCode): Observable<AdminReadonlyMatrixSheet[]> {
     return this.api
       .get<MatrixSheetsDto>('/api/competency-matrix/sheets', { language })
@@ -59,7 +96,7 @@ export class MatrixQuestionWorkspaceService {
       .pipe(map(mapPublicQuestionsDto));
   }
 
-  getQuestion(id: number, language: LanguageCode): Observable<AdminMatrixQuestionDetailDto> {
+  getQuestion(id: string, language: LanguageCode): Observable<AdminMatrixQuestionDetailDto> {
     return this.api.get<AdminMatrixQuestionDetailDto>(
       `/api/admin/competency-matrix/items/detail/${id}`,
       {
@@ -81,7 +118,7 @@ export class MatrixQuestionWorkspaceService {
   }
 
   updateQuestion(
-    id: number,
+    id: string,
     payload: AdminMatrixQuestionPayload,
     language: LanguageCode,
   ): Observable<AdminMatrixQuestionDetailDto> {
@@ -92,15 +129,15 @@ export class MatrixQuestionWorkspaceService {
     );
   }
 
-  publishQuestion(id: number): Observable<void> {
+  publishQuestion(id: string): Observable<void> {
     return this.api.post<void>(`/api/admin/competency-matrix/items/detail/${id}/set-published`, {});
   }
 
-  unpublishQuestion(id: number): Observable<void> {
+  unpublishQuestion(id: string): Observable<void> {
     return this.api.post<void>(`/api/admin/competency-matrix/items/detail/${id}/set-draft`, {});
   }
 
-  deleteQuestion(id: number): Observable<void> {
+  deleteQuestion(id: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/competency-matrix/items/detail/${id}`);
   }
 

@@ -18,6 +18,9 @@ class TestCompetencyMatrixUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
+        self.storage.get_item_structure_by_subsection_id.return_value = (
+            self.factory.core.competency_matrix_item_structure()
+        )
         self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
         self.use_case = CompetencyMatrixUseCase(
             storage=self.storage,
@@ -85,10 +88,7 @@ class TestCompetencyMatrixUseCase(TestCase):
             item_id=2,
             question="2",
             publish_status=PublishStatusEnum.DRAFT,
-            sheet="Python",
             grade=GradeEnum.JUNIOR,
-            section="",
-            subsection="",
             resources=[
                 self.factory.core.existing_external_resource_attachment(
                     resource_id=1,
@@ -115,10 +115,7 @@ class TestCompetencyMatrixUseCase(TestCase):
                 item_id=2,
                 question="2",
                 publish_status=PublishStatusEnum.DRAFT,
-                sheet="Python",
                 grade=GradeEnum.JUNIOR,
-                section="",
-                subsection="",
                 resources=[
                     self.factory.core.attached_external_resource(
                         resource_id=1,

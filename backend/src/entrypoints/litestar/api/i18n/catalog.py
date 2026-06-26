@@ -220,7 +220,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.missingFields": "Пропуски",
         "adminMatrixWorkspace.sort.dangerousPublished": "Опасные публикации",
         "adminMatrixWorkspace.missing.slug": "Slug",
-        "adminMatrixWorkspace.missing.sheetKey": "Ключ листа",
         "adminMatrixWorkspace.missing.grade": "Грейд",
         "adminMatrixWorkspace.missing.questionRu": "Вопрос RU",
         "adminMatrixWorkspace.missing.questionEn": "Вопрос EN",
@@ -228,12 +227,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.answerEn": "Ответ EN",
         "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": "Ожидаемый ответ RU",
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Ожидаемый ответ EN",
-        "adminMatrixWorkspace.missing.sheetRu": "Лист RU",
-        "adminMatrixWorkspace.missing.sheetEn": "Лист EN",
-        "adminMatrixWorkspace.missing.sectionRu": "Раздел RU",
-        "adminMatrixWorkspace.missing.sectionEn": "Раздел EN",
-        "adminMatrixWorkspace.missing.subsectionRu": "Подраздел RU",
-        "adminMatrixWorkspace.missing.subsectionEn": "Подраздел EN",
+        "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
+        "adminMatrixStructure.createError": "Не удалось создать элемент структуры матрицы.",
         "adminMatrixQueue.title": "Очередь вопросов матрицы",
         "adminMatrixQueue.empty": "Очередь пуста.",
         "adminMatrixQueue.createdAt": "Создан",
@@ -416,6 +411,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "RU/EN локализация разделена на UI-каталог и контентные поля, чтобы не "
             "смешивать интерфейс со статьями и матрицей."
         ),
+        "siteBuild.decision.matrixTaxonomy": (
+            "Таксономия матрицы нормализована в листы, разделы и подразделы: автор "
+            "выбирает или создаёт структуру один раз, а публичные API по-прежнему отдают "
+            "стабильные локализованные проекции."
+        ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe аналитика считает просмотры и реакции без cookies, raw IP, "
             "user-agent или сторонних идентификаторов."
@@ -476,6 +476,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.subsection": "Подраздел",
         "matrix.form.subsectionRu": "Подраздел RU",
         "matrix.form.subsectionEn": "Подраздел EN",
+        "matrix.form.subsectionRequired": "Выберите подраздел.",
         "matrix.form.draft": "Черновик",
         "matrix.form.answer": "Ответ",
         "matrix.form.answerRu": "Ответ RU",
@@ -930,7 +931,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.missingFields": "Missing fields",
         "adminMatrixWorkspace.sort.dangerousPublished": "Dangerous published",
         "adminMatrixWorkspace.missing.slug": "Slug",
-        "adminMatrixWorkspace.missing.sheetKey": "Sheet key",
         "adminMatrixWorkspace.missing.grade": "Grade",
         "adminMatrixWorkspace.missing.questionRu": "Question RU",
         "adminMatrixWorkspace.missing.questionEn": "Question EN",
@@ -938,12 +938,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.answerEn": "Answer EN",
         "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": "Expected answer RU",
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Expected answer EN",
-        "adminMatrixWorkspace.missing.sheetRu": "Sheet RU",
-        "adminMatrixWorkspace.missing.sheetEn": "Sheet EN",
-        "adminMatrixWorkspace.missing.sectionRu": "Section RU",
-        "adminMatrixWorkspace.missing.sectionEn": "Section EN",
-        "adminMatrixWorkspace.missing.subsectionRu": "Subsection RU",
-        "adminMatrixWorkspace.missing.subsectionEn": "Subsection EN",
+        "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
+        "adminMatrixStructure.createError": "Failed to create the matrix structure item.",
         "adminMatrixQueue.title": "Matrix question queue",
         "adminMatrixQueue.empty": "The queue is empty.",
         "adminMatrixQueue.createdAt": "Created",
@@ -1122,6 +1118,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "RU/EN localization is split between the UI catalog and content fields, so "
             "interface text is not mixed with articles and matrix content."
         ),
+        "siteBuild.decision.matrixTaxonomy": (
+            "The competency matrix taxonomy is normalized into sheets, sections, and "
+            "subsections, so authors choose or create structure once while public APIs "
+            "still expose stable localized projections."
+        ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe analytics count views and reactions without cookies, raw IPs, "
             "user-agent strings, or third-party identifiers."
@@ -1182,6 +1183,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.subsection": "Subsection",
         "matrix.form.subsectionRu": "Subsection RU",
         "matrix.form.subsectionEn": "Subsection EN",
+        "matrix.form.subsectionRequired": "Select a subsection.",
         "matrix.form.draft": "Draft",
         "matrix.form.answer": "Answer",
         "matrix.form.answerRu": "Answer RU",

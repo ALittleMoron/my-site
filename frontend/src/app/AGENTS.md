@@ -69,9 +69,12 @@ Never violate these boundaries:
   language fallbacks for localized content.
 - Competency matrix content localises through the matrix API, not through the UI i18n bundle. Pass
   the current `I18nService.language()` value as the explicit `language` query parameter for sheets,
-  item lists, item details, resource search, and create/update responses; use stable `sheetKey`
-  values for sheet selection and persistence.
-- Require all RU/EN competency matrix translation fields and resource contexts in frontend forms.
+  structure trees, item lists, item details, resource search, and create/update responses; use stable
+  `sheetKey` values for public sheet selection and required `subsectionId` values for question
+  create/update persistence.
+- Require all RU/EN competency matrix question, answer, expected-answer, structure inline-create,
+  resource-name, and resource-context fields in frontend forms. Do not reintroduce manual
+  sheet/section/subsection text fields on question forms; use the admin structure picker.
   Do not add frontend-only language fallbacks for localized content.
 - Resume workspace content is single-language per resume. Forms must send required `language` plus
   one content shape, must not add resume-specific RU/EN controls, and must not validate whether the

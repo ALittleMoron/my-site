@@ -4,6 +4,14 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixItemStructure,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixStructure,
+    CompetencyMatrixStructureSection,
+    CompetencyMatrixStructureSheet,
+    CompetencyMatrixStructureSubsection,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -23,6 +31,42 @@ from core.types import IntId
 class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def list_sheets(self) -> Sheets:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_structure(self) -> CompetencyMatrixStructure:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_item_structure_by_subsection_id(
+        self,
+        *,
+        subsection_id: IntId,
+    ) -> CompetencyMatrixItemStructure:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_sheet(
+        self,
+        *,
+        params: CompetencyMatrixSheetCreateParams,
+    ) -> CompetencyMatrixStructureSheet:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_section(
+        self,
+        *,
+        params: CompetencyMatrixSectionCreateParams,
+    ) -> CompetencyMatrixStructureSection:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_subsection(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionCreateParams,
+    ) -> CompetencyMatrixStructureSubsection:
         raise NotImplementedError
 
     @abstractmethod

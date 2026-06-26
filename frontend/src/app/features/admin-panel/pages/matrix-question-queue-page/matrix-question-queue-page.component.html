@@ -67,11 +67,13 @@
             <label class="form-label" for="queue-question-slug">{{ 'matrix.form.slug' | t }}</label>
             <input id="queue-question-slug" class="form-control" formControlName="slug" />
           </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-question-sheet-key">
-              {{ 'matrix.form.sheetKey' | t }}
-            </label>
-            <input id="queue-question-sheet-key" class="form-control" formControlName="sheetKey" />
+          <div class="col-12">
+            <app-matrix-structure-picker
+              [language]="currentLanguage()"
+              [selectedSubsectionId]="form.controls.subsectionId.value"
+              [disabled]="submitting()"
+              (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
+            />
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-question-grade">
@@ -94,38 +96,6 @@
               {{ 'matrix.form.questionEn' | t }}
             </label>
             <input id="queue-question-en" class="form-control" formControlName="questionEn" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-sheet-ru">{{ 'matrix.form.sheetRu' | t }}</label>
-            <input id="queue-sheet-ru" class="form-control" formControlName="sheetRu" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-sheet-en">{{ 'matrix.form.sheetEn' | t }}</label>
-            <input id="queue-sheet-en" class="form-control" formControlName="sheetEn" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-section-ru">
-              {{ 'matrix.form.sectionRu' | t }}
-            </label>
-            <input id="queue-section-ru" class="form-control" formControlName="sectionRu" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-section-en">
-              {{ 'matrix.form.sectionEn' | t }}
-            </label>
-            <input id="queue-section-en" class="form-control" formControlName="sectionEn" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-subsection-ru">
-              {{ 'matrix.form.subsectionRu' | t }}
-            </label>
-            <input id="queue-subsection-ru" class="form-control" formControlName="subsectionRu" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label" for="queue-subsection-en">
-              {{ 'matrix.form.subsectionEn' | t }}
-            </label>
-            <input id="queue-subsection-en" class="form-control" formControlName="subsectionEn" />
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-answer-ru">

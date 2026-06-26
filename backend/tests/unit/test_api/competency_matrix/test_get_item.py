@@ -34,12 +34,7 @@ class TestGetItemAPI(ApiTestCase):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.get_item.assert_not_called()
 
-    def test_get_competency_matrix_item_requires_explicit_language(self) -> None:
-        response = self.api.get_competency_matrix_item(pk=1, language=None)
-        assert response.status_code == codes.BAD_REQUEST
-        self.use_case.get_item.assert_not_called()
-
-    def test_get_competency_matrix_item(self) -> None:
+    def test_admin_get_competency_matrix_item(self) -> None:
         self.use_case.get_item.return_value = self.factory.core.competency_matrix_item(
             item_id=1,
             slug="how-to-write-function",
@@ -70,14 +65,19 @@ class TestGetItemAPI(ApiTestCase):
                 ),
             ],
         )
-        response = self.api.get_competency_matrix_item(pk=1, language="en")
+        response = self.api.get_admin_competency_matrix_item(
+            pk=1,
+            only_published=False,
+            language="en",
+        )
         assert response.status_code == codes.OK
         assert response.json() == {
-            "id": 1,
+            "id": "1",
             "slug": "how-to-write-function",
             "question": "How to write a function?",
             "answer": "Just write it.",
             "interviewExpectedAnswer": "Write it!",
+            "subsectionId": 1,
             "grade": "Junior",
             "subsection": "Functions",
             "section": "Basics",
@@ -90,17 +90,11 @@ class TestGetItemAPI(ApiTestCase):
                     "question": "Как написать свою функцию?",
                     "answer": "Просто берёшь и пишешь!",
                     "interviewExpectedAnswer": "Пиши!",
-                    "sheet": "Питон",
-                    "section": "Основы",
-                    "subsection": "Функции",
                 },
                 "en": {
                     "question": "How to write a function?",
                     "answer": "Just write it.",
                     "interviewExpectedAnswer": "Write it!",
-                    "sheet": "Python",
-                    "section": "Basics",
-                    "subsection": "Functions",
                 },
             },
             "resources": [
@@ -119,7 +113,37 @@ class TestGetItemAPI(ApiTestCase):
         self.use_case.get_item.assert_called_once_with(
             params=CompetencyMatrixItemGetParams(
                 item_id=IntId(1),
-                only_published=True,
+                only_published=False,
+            ),
+        )
+
+    def test_get_competency_matrix_item_serializes_large_id_as_string(self) -> None:
+        self.use_case.get_item.return_value = self.factory.core.competency_matrix_item(
+            item_id=1_152_921_504_606_846_975,
+            slug="large-id-question",
+            question_en="Question with large id?",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            answer_en="Answer.",
+            interview_expected_answer_en="Expected answer.",
+            grade=GradeEnum.JUNIOR,
+            subsection_en="Functions",
+            section_en="Basics",
+            sheet_key="python",
+            sheet_en="Python",
+        )
+
+        response = self.api.get_admin_competency_matrix_item(
+            pk=1_152_921_504_606_846_975,
+            only_published=False,
+            language="en",
+        )
+
+        assert response.status_code == codes.OK
+        assert response.json()["id"] == "1152921504606846975"
+        self.use_case.get_item.assert_called_once_with(
+            params=CompetencyMatrixItemGetParams(
+                item_id=IntId(1_152_921_504_606_846_975),
+                only_published=False,
             ),
         )
 
@@ -149,9 +173,11 @@ class TestGetItemAPI(ApiTestCase):
             language="en",
         )
         assert response.status_code == codes.OK
-        assert response.json()["slug"] == "how-to-write-function"
-        assert response.json()["question"] == "How to write a function?"
-        assert response.json()["interviewFrequency"] == "neverSeen"
+        body = response.json()
+        assert "id" not in body
+        assert body["slug"] == "how-to-write-function"
+        assert body["question"] == "How to write a function?"
+        assert body["interviewFrequency"] == "neverSeen"
         self.use_case.get_item_by_slug.assert_called_once_with(
             params=CompetencyMatrixItemBySlugGetParams(
                 slug="how-to-write-function",

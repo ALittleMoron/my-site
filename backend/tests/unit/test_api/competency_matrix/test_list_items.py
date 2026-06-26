@@ -82,7 +82,6 @@ class TestItemsAPI(ApiTestCase):
                                     "grade": "Junior",
                                     "items": [
                                         {
-                                            "id": 1,
                                             "slug": "how-to-write-a-function",
                                             "question": "How to write a function?",
                                             "interviewFrequency": "rarely",

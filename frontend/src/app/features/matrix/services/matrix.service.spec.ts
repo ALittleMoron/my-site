@@ -64,7 +64,6 @@ describe('MatrixService', () => {
                   grade: 'Junior',
                   items: [
                     {
-                      id: 1,
                       slug: 'what-is-pep8',
                       question: 'What is PEP8?',
                       interviewFrequency: 'often',
@@ -82,20 +81,6 @@ describe('MatrixService', () => {
     expect(firstQuestion).toBe('What is PEP8?');
     expect(firstSlug).toBe('what-is-pep8');
     expect(firstFrequency).toBe('often');
-  });
-
-  it('loads localized public question detail from the backend detail endpoint', () => {
-    let frequency: string | null | undefined;
-
-    service.getPublicQuestion(1, 'en').subscribe((question) => {
-      frequency = question.interviewFrequency;
-    });
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items/detail/1'));
-    expect(req.request.params.has('onlyPublished')).toBe(false);
-    expect(req.request.params.get('language')).toBe('en');
-    req.flush(matrixDetailDto());
-    expect(frequency).toBe('often');
   });
 
   it('loads public localized question detail by slug', () => {
@@ -136,7 +121,6 @@ describe('MatrixService', () => {
 
 function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
   return {
-    id: 1,
     slug: 'what-is-pep8',
     question: 'What is PEP8?',
     answer: 'Answer',

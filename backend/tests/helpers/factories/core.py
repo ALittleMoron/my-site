@@ -21,6 +21,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
+    CompetencyMatrixItemStructure,
     CompetencyMatrixItemUpdateParams,
     ExistingExternalResourceAttachment,
     ExternalResource,
@@ -155,6 +156,9 @@ class CoreFactoryHelper:
     def competency_matrix_item(
         cls,
         item_id: int,
+        sheet_id: int = 1,
+        section_id: int = 1,
+        subsection_id: int = 1,
         slug: str | None = None,
         published_at: str | None = None,
         question: str = "QUESTION",
@@ -203,22 +207,57 @@ class CoreFactoryHelper:
                 interview_expected_answer_en,
                 interview_expected_answer,
             ),
-            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
-            sheet_ru=cls._fallback(sheet_ru, sheet),
-            sheet_en=cls._fallback(sheet_en, sheet),
+            structure=cls.competency_matrix_item_structure(
+                sheet_id=sheet_id,
+                section_id=section_id,
+                subsection_id=subsection_id,
+                sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
+                sheet_ru=cls._fallback(sheet_ru, sheet),
+                sheet_en=cls._fallback(sheet_en, sheet),
+                section_ru=cls._fallback(section_ru, section),
+                section_en=cls._fallback(section_en, section),
+                subsection_ru=cls._fallback(subsection_ru, subsection),
+                subsection_en=cls._fallback(subsection_en, subsection),
+            ),
             grade=grade,
             interview_frequency=interview_frequency,
-            section_ru=cls._fallback(section_ru, section),
-            section_en=cls._fallback(section_en, section),
-            subsection_ru=cls._fallback(subsection_ru, subsection),
-            subsection_en=cls._fallback(subsection_en, subsection),
             resources=AttachedExternalResources(values=resources or []),
+        )
+
+    @classmethod
+    def competency_matrix_item_structure(
+        cls,
+        subsection_id: int = 1,
+        sheet_id: int = 1,
+        sheet_key: str = "sheet",
+        sheet_ru: str = "Sheet",
+        sheet_en: str = "Sheet",
+        section_id: int = 1,
+        section_ru: str = "Section",
+        section_en: str = "Section",
+        subsection_ru: str = "Subsection",
+        subsection_en: str = "Subsection",
+    ) -> CompetencyMatrixItemStructure:
+        return CompetencyMatrixItemStructure(
+            sheet_id=cls.int_id(sheet_id),
+            sheet_key=sheet_key,
+            sheet_ru=sheet_ru,
+            sheet_en=sheet_en,
+            section_id=cls.int_id(section_id),
+            section_ru=section_ru,
+            section_en=section_en,
+            subsection_id=cls.int_id(subsection_id),
+            subsection_ru=subsection_ru,
+            subsection_en=subsection_en,
         )
 
     @classmethod
     def competency_matrix_item_create_params(
         cls,
         item_id: int,
+        sheet_id: int = 1,
+        section_id: int = 1,
+        subsection_id: int = 1,
         slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
@@ -246,6 +285,20 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemCreateParams:
+        _ = (
+            sheet_id,
+            section_id,
+            sheet_key,
+            sheet,
+            sheet_ru,
+            sheet_en,
+            section,
+            section_ru,
+            section_en,
+            subsection,
+            subsection_ru,
+            subsection_en,
+        )
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemCreateParams(
             id=cls.int_id(item_id),
@@ -263,15 +316,9 @@ class CoreFactoryHelper:
                 interview_expected_answer_en,
                 interview_expected_answer,
             ),
-            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
-            sheet_ru=cls._fallback(sheet_ru, sheet),
-            sheet_en=cls._fallback(sheet_en, sheet),
+            subsection_id=cls.int_id(subsection_id),
             grade=grade,
             interview_frequency=interview_frequency,
-            section_ru=cls._fallback(section_ru, section),
-            section_en=cls._fallback(section_en, section),
-            subsection_ru=cls._fallback(subsection_ru, subsection),
-            subsection_en=cls._fallback(subsection_en, subsection),
             resources=resources or [],
         )
 
@@ -279,6 +326,9 @@ class CoreFactoryHelper:
     def competency_matrix_item_update_params(
         cls,
         item_id: int,
+        sheet_id: int = 1,
+        section_id: int = 1,
+        subsection_id: int = 1,
         slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
@@ -306,6 +356,20 @@ class CoreFactoryHelper:
             list[ExistingExternalResourceAttachment | NewExternalResourceAttachment] | None
         ) = None,
     ) -> CompetencyMatrixItemUpdateParams:
+        _ = (
+            sheet_id,
+            section_id,
+            sheet_key,
+            sheet,
+            sheet_ru,
+            sheet_en,
+            section,
+            section_ru,
+            section_en,
+            subsection,
+            subsection_ru,
+            subsection_en,
+        )
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemUpdateParams(
             id=cls.int_id(item_id),
@@ -323,15 +387,9 @@ class CoreFactoryHelper:
                 interview_expected_answer_en,
                 interview_expected_answer,
             ),
-            sheet_key=cls._fallback(sheet_key, sheet.lower().replace(" ", "-")),
-            sheet_ru=cls._fallback(sheet_ru, sheet),
-            sheet_en=cls._fallback(sheet_en, sheet),
+            subsection_id=cls.int_id(subsection_id),
             grade=grade,
             interview_frequency=interview_frequency,
-            section_ru=cls._fallback(section_ru, section),
-            section_en=cls._fallback(section_en, section),
-            subsection_ru=cls._fallback(subsection_ru, subsection),
-            subsection_en=cls._fallback(subsection_en, subsection),
             resources=resources or [],
         )
 

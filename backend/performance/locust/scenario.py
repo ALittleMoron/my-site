@@ -7,9 +7,9 @@ from entrypoints.litestar.api.articles.schemas import (
     ArticleTreeResponseSchema,
 )
 from entrypoints.litestar.api.competency_matrix.schemas import (
-    CompetencyMatrixItemDetailResponseSchema,
-    CompetencyMatrixItemsListResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
+    PublicCompetencyMatrixItemDetailResponseSchema,
+    PublicCompetencyMatrixItemsListResponseSchema,
 )
 from entrypoints.litestar.api.i18n.schemas import (
     I18nBundleResponseSchema,
@@ -53,7 +53,7 @@ class PublicSiteDiscovery:
             schema = self.api_client.get_validated(
                 f"/api/competency-matrix/items?sheetKey={sheet_key}&language={self.language.value}",
                 name="GET /api/competency-matrix/items",
-                schema_type=CompetencyMatrixItemsListResponseSchema,
+                schema_type=PublicCompetencyMatrixItemsListResponseSchema,
             )
             if schema is None:
                 continue
@@ -146,7 +146,7 @@ class PublicSiteScenario:
             f"?sheetKey={choice(self.matrix_sheets)}"
             f"&language={self.language.value}",
             name="GET /api/competency-matrix/items",
-            schema_type=CompetencyMatrixItemsListResponseSchema,
+            schema_type=PublicCompetencyMatrixItemsListResponseSchema,
         )
 
     def matrix_item_detail(self) -> None:
@@ -161,7 +161,7 @@ class PublicSiteScenario:
             "/api/competency-matrix/items/public/"
             f"{choice(self.matrix_item_slugs)}?language={self.language.value}",
             name="GET /api/competency-matrix/items/public/:slug",
-            schema_type=CompetencyMatrixItemDetailResponseSchema,
+            schema_type=PublicCompetencyMatrixItemDetailResponseSchema,
         )
 
     def matrix_question_suggestion(self) -> None:

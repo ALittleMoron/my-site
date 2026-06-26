@@ -33,12 +33,6 @@ export class MatrixService {
       .pipe(map(mapMatrixListDto));
   }
 
-  getPublicQuestion(id: number, language: LanguageCode): Observable<MatrixQuestionDetail> {
-    return this.api
-      .get<MatrixItemDetailDto>(`/api/competency-matrix/items/detail/${id}`, { language })
-      .pipe(map(mapMatrixDetailDto));
-  }
-
   getPublicQuestionBySlug(slug: string, language: LanguageCode): Observable<MatrixQuestionDetail> {
     return this.api
       .get<MatrixItemDetailDto>(`/api/competency-matrix/items/public/${slug}`, { language })

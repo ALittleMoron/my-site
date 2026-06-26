@@ -18,20 +18,13 @@ export type AdminMatrixWorkspaceSort =
   | 'dangerousPublished';
 export type AdminMatrixMissingField =
   | 'slug'
-  | 'sheetKey'
   | 'grade'
   | 'questionRu'
   | 'questionEn'
   | 'answerRu'
   | 'answerEn'
   | 'interviewExpectedAnswerRu'
-  | 'interviewExpectedAnswerEn'
-  | 'sheetRu'
-  | 'sheetEn'
-  | 'sectionRu'
-  | 'sectionEn'
-  | 'subsectionRu'
-  | 'subsectionEn';
+  | 'interviewExpectedAnswerEn';
 
 export type AdminReadonlyMatrixSheet = ReadonlyMatrixSheet;
 export type AdminReadonlyMatrixQuestionList = ReadonlyMatrixQuestionList;
@@ -62,7 +55,7 @@ export interface AdminMatrixWorkspaceSummary {
 }
 
 export interface AdminMatrixWorkspaceItem {
-  id: number;
+  id: string;
   slug: string;
   question: string;
   sheetKey: string;
@@ -110,9 +103,6 @@ export interface AdminMatrixQuestionTranslation {
   question: string;
   answer: string;
   interviewExpectedAnswer: string;
-  sheet: string;
-  section: string;
-  subsection: string;
 }
 
 export interface AdminMatrixQuestionTranslations {
@@ -132,11 +122,12 @@ export interface AdminMatrixAttachedResourceDto {
 }
 
 export interface AdminMatrixQuestionDetailDto {
-  id: number;
+  id: string;
   slug: string;
   question: string;
   answer: string;
   interviewExpectedAnswer: string;
+  subsectionId: number;
   sheetKey: string;
   sheet: string;
   grade: AdminMatrixGrade | null;
@@ -195,12 +186,59 @@ export type AdminMatrixResourceAttachmentPayload =
 
 export interface AdminMatrixQuestionPayload {
   slug: string;
-  sheetKey: string;
+  subsectionId: number;
   grade: AdminMatrixGrade | null;
   interviewFrequency: AdminMatrixInterviewFrequency | null;
   publishStatus: AdminMatrixPublishStatus;
   translations: AdminMatrixQuestionTranslations;
   resources: AdminMatrixResourceAttachmentPayload[];
+}
+
+export interface AdminMatrixStructureNameTranslation {
+  name: string;
+}
+
+export interface AdminMatrixStructureNameTranslations {
+  ru: AdminMatrixStructureNameTranslation;
+  en: AdminMatrixStructureNameTranslation;
+}
+
+export interface AdminMatrixStructureSubsection {
+  id: number;
+  name: string;
+  translations: AdminMatrixStructureNameTranslations;
+}
+
+export interface AdminMatrixStructureSection {
+  id: number;
+  name: string;
+  translations: AdminMatrixStructureNameTranslations;
+  subsections: AdminMatrixStructureSubsection[];
+}
+
+export interface AdminMatrixStructureSheet {
+  id: number;
+  key: string;
+  name: string;
+  translations: AdminMatrixStructureNameTranslations;
+  sections: AdminMatrixStructureSection[];
+}
+
+export interface AdminMatrixStructure {
+  sheets: AdminMatrixStructureSheet[];
+}
+
+export interface AdminMatrixSheetCreatePayload {
+  key: string;
+  translations: AdminMatrixStructureNameTranslations;
+}
+
+export interface AdminMatrixSectionCreatePayload {
+  translations: AdminMatrixStructureNameTranslations;
+}
+
+export interface AdminMatrixSubsectionCreatePayload {
+  translations: AdminMatrixStructureNameTranslations;
 }
 
 export interface MatrixSheetDto {
@@ -213,7 +251,6 @@ export interface MatrixSheetsDto {
 }
 
 export interface MatrixItemDto {
-  id: number;
   slug: string;
   question: string;
   interviewFrequency: AdminMatrixInterviewFrequency | null;
@@ -259,7 +296,6 @@ export function mapPublicQuestionsDto(dto: MatrixItemsListDto): AdminReadonlyMat
         grades: subsection.grades.map((grade) => ({
           grade: grade.grade,
           questions: grade.items.map((item) => ({
-            id: item.id,
             slug: item.slug,
             question: item.question,
             interviewFrequency: item.interviewFrequency,

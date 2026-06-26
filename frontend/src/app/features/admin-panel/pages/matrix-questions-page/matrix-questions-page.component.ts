@@ -11,6 +11,7 @@ import { DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
   AbstractControl,
+  FormControl,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   ValidationErrors,
@@ -27,6 +28,7 @@ import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
+import { MatrixStructurePickerComponent } from '../../components/matrix-structure-picker/matrix-structure-picker.component';
 import {
   AdminMatrixGrade,
   AdminMatrixInterviewFrequency,
@@ -68,7 +70,6 @@ const PAGE_SIZES: readonly number[] = [20, 50, 100];
 const RESOURCE_SEARCH_LIMIT = 10;
 const PUBLICATION_FIELDS: readonly AdminMatrixMissingField[] = [
   'slug',
-  'sheetKey',
   'grade',
   'questionRu',
   'questionEn',
@@ -76,16 +77,10 @@ const PUBLICATION_FIELDS: readonly AdminMatrixMissingField[] = [
   'answerEn',
   'interviewExpectedAnswerRu',
   'interviewExpectedAnswerEn',
-  'sheetRu',
-  'sheetEn',
-  'sectionRu',
-  'sectionEn',
-  'subsectionRu',
-  'subsectionEn',
 ];
 
 type WorkspaceTab = 'list' | 'preview';
-type RequiredFormField = 'slug' | 'sheetKey' | 'questionRu' | 'questionEn';
+type RequiredFormField = 'slug' | 'subsectionId' | 'questionRu' | 'questionEn';
 
 interface AdminMatrixAttachedResourceTranslations {
   ru: { name: string; context: string };
@@ -113,6 +108,7 @@ interface AdminMatrixResourceDraft {
     EmptyStateComponent,
     MatrixSheetTabsComponent,
     MatrixGroupedGridComponent,
+    MatrixStructurePickerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-questions-page.component.html',
@@ -188,7 +184,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
 
   readonly questionForm = this.formBuilder.group({
     slug: ['', [trimRequired, Validators.maxLength(255)]],
-    sheetKey: ['', [trimRequired, Validators.maxLength(255)]],
+    subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade | ''>(''),
     interviewFrequency: this.formBuilder.control<AdminMatrixInterviewFrequency | ''>(''),
     publishStatus: this.formBuilder.control<AdminMatrixPublishStatus>('Draft', {
@@ -200,12 +196,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
     answerEn: [''],
     expectedAnswerRu: [''],
     expectedAnswerEn: [''],
-    sheetRu: ['', Validators.maxLength(255)],
-    sheetEn: ['', Validators.maxLength(255)],
-    sectionRu: ['', Validators.maxLength(255)],
-    sectionEn: ['', Validators.maxLength(255)],
-    subsectionRu: ['', Validators.maxLength(255)],
-    subsectionEn: ['', Validators.maxLength(255)],
   });
 
   readonly isEmpty = computed(() => !this.loading() && (this.workspace()?.items.length ?? 0) === 0);
@@ -395,7 +385,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
     this.resetResourceDrafts();
     this.questionForm.reset({
       slug: '',
-      sheetKey: '',
+      subsectionId: null,
       grade: '',
       interviewFrequency: '',
       publishStatus: 'Draft',
@@ -405,12 +395,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
       answerEn: '',
       expectedAnswerRu: '',
       expectedAnswerEn: '',
-      sheetRu: '',
-      sheetEn: '',
-      sectionRu: '',
-      sectionEn: '',
-      subsectionRu: '',
-      subsectionEn: '',
     });
   }
 
@@ -580,6 +564,12 @@ export class MatrixQuestionsPageComponent implements OnInit {
     return control.invalid && (this.formSubmitted() || control.touched);
   }
 
+  selectQuestionSubsection(subsectionId: number | null): void {
+    this.questionForm.controls.subsectionId.setValue(subsectionId);
+    this.questionForm.controls.subsectionId.markAsTouched();
+    this.questionForm.controls.subsectionId.markAsDirty();
+  }
+
   generateSlug(): void {
     const source = this.questionForm.controls.questionEn.value.trim();
     if (!source) return;
@@ -698,7 +688,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
   private populateQuestionForm(detail: AdminMatrixQuestionDetailDto): void {
     this.questionForm.reset({
       slug: detail.slug,
-      sheetKey: detail.sheetKey,
+      subsectionId: detail.subsectionId,
       grade: detail.grade ?? '',
       interviewFrequency: detail.interviewFrequency ?? '',
       publishStatus: detail.publishStatus,
@@ -708,21 +698,18 @@ export class MatrixQuestionsPageComponent implements OnInit {
       answerEn: detail.translations.en.answer,
       expectedAnswerRu: detail.translations.ru.interviewExpectedAnswer,
       expectedAnswerEn: detail.translations.en.interviewExpectedAnswer,
-      sheetRu: detail.translations.ru.sheet,
-      sheetEn: detail.translations.en.sheet,
-      sectionRu: detail.translations.ru.section,
-      sectionEn: detail.translations.en.section,
-      subsectionRu: detail.translations.ru.subsection,
-      subsectionEn: detail.translations.en.subsection,
     });
     this.resourceDrafts.set(detail.resources.map(toResourceDraft));
   }
 
   private buildQuestionPayload(): AdminMatrixQuestionPayload {
     const raw = this.questionForm.getRawValue();
+    if (raw.subsectionId === null) {
+      throw new Error('Matrix question subsection is required');
+    }
     return {
       slug: raw.slug.trim(),
-      sheetKey: raw.sheetKey.trim(),
+      subsectionId: raw.subsectionId,
       grade: raw.grade === '' ? null : raw.grade,
       interviewFrequency: raw.interviewFrequency === '' ? null : raw.interviewFrequency,
       publishStatus: raw.publishStatus,
@@ -731,17 +718,11 @@ export class MatrixQuestionsPageComponent implements OnInit {
           question: raw.questionRu.trim(),
           answer: raw.answerRu,
           interviewExpectedAnswer: raw.expectedAnswerRu,
-          sheet: raw.sheetRu.trim(),
-          section: raw.sectionRu.trim(),
-          subsection: raw.subsectionRu.trim(),
         },
         en: {
           question: raw.questionEn.trim(),
           answer: raw.answerEn,
           interviewExpectedAnswer: raw.expectedAnswerEn,
-          sheet: raw.sheetEn.trim(),
-          section: raw.sectionEn.trim(),
-          subsection: raw.subsectionEn.trim(),
         },
       },
       resources: this.resourceDrafts().map(toResourceAttachmentPayload),
@@ -775,7 +756,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
     }
   }
 
-  private currentLanguage(): 'ru' | 'en' {
+  currentLanguage(): 'ru' | 'en' {
     const language = this.i18n.language();
     if (language === null) {
       throw new Error('I18n language is not initialized');
@@ -842,8 +823,6 @@ function isPayloadFieldMissing(
   switch (field) {
     case 'slug':
       return payload.slug.trim() === '';
-    case 'sheetKey':
-      return payload.sheetKey.trim() === '';
     case 'grade':
       return payload.grade === null;
     case 'questionRu':
@@ -858,17 +837,5 @@ function isPayloadFieldMissing(
       return payload.translations.ru.interviewExpectedAnswer.trim() === '';
     case 'interviewExpectedAnswerEn':
       return payload.translations.en.interviewExpectedAnswer.trim() === '';
-    case 'sheetRu':
-      return payload.translations.ru.sheet.trim() === '';
-    case 'sheetEn':
-      return payload.translations.en.sheet.trim() === '';
-    case 'sectionRu':
-      return payload.translations.ru.section.trim() === '';
-    case 'sectionEn':
-      return payload.translations.en.section.trim() === '';
-    case 'subsectionRu':
-      return payload.translations.ru.subsection.trim() === '';
-    case 'subsectionEn':
-      return payload.translations.en.subsection.trim() === '';
   }
 }

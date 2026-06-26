@@ -46,7 +46,7 @@ my-site/
 
 ## ✨ Features
 
-- Competency matrix with localized sheets and sections, search, a grid/table view, detailed Q&A, public SEO question pages, and linked resources
+- Competency matrix with normalized localized sheets, sections, and subsections, search, a grid/table view, detailed Q&A, public SEO question pages, an admin structure picker, and linked resources
 - Articles with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
 - Protected moderator/admin panel for creating, editing, publishing, and unpublishing articles and matrix questions
 - Privacy-safe article analytics with public view counters, engaged views, source categories, and anonymous reactions

@@ -44,6 +44,7 @@ export class SiteCaseStudyPageComponent implements OnInit {
   readonly decisionKeys: readonly string[] = [
     'siteBuild.decision.cleanArchitecture',
     'siteBuild.decision.localizedContent',
+    'siteBuild.decision.matrixTaxonomy',
     'siteBuild.decision.privacyAnalytics',
     'siteBuild.decision.deployManifest',
   ];

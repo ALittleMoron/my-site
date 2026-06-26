@@ -9,10 +9,17 @@ from core.competency_matrix.enums import (
     GradeEnum,
     InterviewFrequencyEnum,
 )
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixStructureAlreadyExistsError,
+    CompetencyMatrixStructureNotFoundError,
+)
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
     CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceSummary,
 )
@@ -36,8 +43,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
                     grade=GradeEnum.MIDDLE_PLUS,
-                    section="SECTION 1",
-                    subsection="SUBSECTION 1",
+                    section="Basics",
+                    subsection="Functions",
                     resources=[
                         self.factory.core.attached_external_resource(
                             resource_id=1,
@@ -49,13 +56,16 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 ),
                 self.factory.core.competency_matrix_item(
                     item_id=2,
+                    sheet_id=2,
+                    section_id=2,
+                    subsection_id=2,
                     question="2",
                     answer="Answer 2",
                     interview_expected_answer="Expected answer 2",
                     sheet="SQL",
                     grade=GradeEnum.SENIOR,
-                    section="SECTION 2",
-                    subsection="SUBSECTION 2",
+                    section="Basics",
+                    subsection="Async",
                     resources=[
                         self.factory.core.attached_external_resource(
                             resource_id=2,
@@ -72,6 +82,95 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         sheets = await self.storage.list_sheets()
         assert sheets == self.factory.core.sheets(values=["Python", "SQL"])
 
+    async def test_list_structure_includes_unused_nodes(self) -> None:
+        sheet = await self.storage.create_sheet(
+            params=CompetencyMatrixSheetCreateParams(
+                key="go",
+                name_ru="Go",
+                name_en="Go",
+            ),
+        )
+        section = await self.storage.create_section(
+            params=CompetencyMatrixSectionCreateParams(
+                sheet_id=sheet.id,
+                name_ru="Concurrency",
+                name_en="Concurrency",
+            ),
+        )
+        await self.storage.create_subsection(
+            params=CompetencyMatrixSubsectionCreateParams(
+                section_id=section.id,
+                name_ru="Channels",
+                name_en="Channels",
+            ),
+        )
+
+        structure = await self.storage.list_structure()
+
+        sheets_by_key = {structure_sheet.key: structure_sheet for structure_sheet in structure}
+        assert sorted(sheets_by_key) == ["go", "python", "sql"]
+        assert sheets_by_key["go"].sections[0].name_en == "Concurrency"
+        assert sheets_by_key["go"].sections[0].subsections[0].name_en == "Channels"
+        assert sheets_by_key["python"].sections[0].subsections[0].name_en == "Functions"
+
+    async def test_get_item_structure_by_subsection_id(self) -> None:
+        structure = await self.storage.get_item_structure_by_subsection_id(
+            subsection_id=self.factory.core.int_id(1),
+        )
+
+        assert structure.sheet_key == "python"
+        assert structure.sheet_en == "Python"
+        assert structure.section_en == "Basics"
+        assert structure.subsection_en == "Functions"
+
+    async def test_get_item_structure_by_subsection_id_not_found(self) -> None:
+        with pytest.raises(CompetencyMatrixStructureNotFoundError):
+            await self.storage.get_item_structure_by_subsection_id(
+                subsection_id=self.factory.core.int_id(-1),
+            )
+
+    async def test_create_structure_rejects_duplicates_and_missing_parents(self) -> None:
+        with pytest.raises(CompetencyMatrixStructureAlreadyExistsError):
+            await self.storage.create_sheet(
+                params=CompetencyMatrixSheetCreateParams(
+                    key="PYTHON",
+                    name_ru="Python duplicate",
+                    name_en="Python duplicate",
+                ),
+            )
+        with pytest.raises(CompetencyMatrixStructureNotFoundError):
+            await self.storage.create_section(
+                params=CompetencyMatrixSectionCreateParams(
+                    sheet_id=self.factory.core.int_id(-1),
+                    name_ru="Missing",
+                    name_en="Missing",
+                ),
+            )
+        with pytest.raises(CompetencyMatrixStructureAlreadyExistsError):
+            await self.storage.create_section(
+                params=CompetencyMatrixSectionCreateParams(
+                    sheet_id=self.factory.core.int_id(1),
+                    name_ru="Basics duplicate",
+                    name_en="Basics",
+                ),
+            )
+        with pytest.raises(CompetencyMatrixStructureNotFoundError):
+            await self.storage.create_subsection(
+                params=CompetencyMatrixSubsectionCreateParams(
+                    section_id=self.factory.core.int_id(-1),
+                    name_ru="Missing",
+                    name_en="Missing",
+                ),
+            )
+        with pytest.raises(CompetencyMatrixStructureAlreadyExistsError):
+            await self.storage.create_subsection(
+                params=CompetencyMatrixSubsectionCreateParams(
+                    section_id=self.factory.core.int_id(1),
+                    name_ru="Functions duplicate",
+                    name_en="Functions",
+                ),
+            )
+
     async def test_list_items(self) -> None:
         items = await self.storage.list_competency_matrix_items(
             filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=None),
@@ -84,8 +183,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 interview_expected_answer="Expected answer 1",
                 sheet="Python",
                 grade=GradeEnum.MIDDLE_PLUS,
-                section="SECTION 1",
-                subsection="SUBSECTION 1",
+                section="Basics",
+                subsection="Functions",
                 resources=[],
             ),
         ]
@@ -103,8 +202,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             interview_expected_answer="Expected answer 1",
             sheet="Python",
             grade=GradeEnum.MIDDLE_PLUS,
-            section="SECTION 1",
-            subsection="SUBSECTION 1",
+            section="Basics",
+            subsection="Functions",
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=1,
@@ -124,8 +223,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             interview_expected_answer="Expected answer 1",
             sheet="Python",
             grade=GradeEnum.MIDDLE_PLUS,
-            section="SECTION 1",
-            subsection="SUBSECTION 1",
+            section="Basics",
+            subsection="Functions",
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=1,
@@ -156,10 +255,11 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     item_id=4,
                     question="Unavailable question",
                     publish_status=PublishStatusEnum.PUBLISHED,
-                    sheet="",
+                    answer_en="",
+                    sheet="Python",
                     grade=GradeEnum.JUNIOR,
-                    section="",
-                    subsection="",
+                    section="Basics",
+                    subsection="Functions",
                 ),
             ],
         )
@@ -193,6 +293,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     question="Dangerous Python",
                     publish_status=PublishStatusEnum.PUBLISHED,
                     answer_en="",
+                    subsection_id=3,
                     sheet="Python",
                     grade=GradeEnum.SENIOR,
                     section="Basics",
@@ -204,6 +305,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     published_at="2024-03-01T00:00:00",
                     question="Ready Python",
                     publish_status=PublishStatusEnum.PUBLISHED,
+                    subsection_id=3,
                     sheet="Python",
                     grade=GradeEnum.JUNIOR,
                     section="Basics",
@@ -215,6 +317,9 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     published_at="2024-04-01T00:00:00",
                     question="Ready SQL",
                     publish_status=PublishStatusEnum.PUBLISHED,
+                    sheet_id=2,
+                    section_id=2,
+                    subsection_id=2,
                     sheet="SQL",
                     grade=GradeEnum.JUNIOR,
                     section="Basics",
@@ -229,7 +334,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 page_size=2,
                 language=LanguageEnum.EN,
                 sort=CompetencyMatrixWorkspaceSortEnum.DANGEROUS_PUBLISHED,
-                search_query=None,
+                search_query="Python",
                 sheet_keys=("python",),
                 grades=(),
                 sections=("Basics",),
@@ -268,6 +373,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     published_at="2024-02-01T00:00:00",
                     question="Searchable Python Queue",
                     publish_status=PublishStatusEnum.PUBLISHED,
+                    subsection_id=3,
                     sheet="Python",
                     grade=GradeEnum.JUNIOR,
                     section="Basics",
@@ -280,6 +386,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     question="Searchable Python Missing",
                     publish_status=PublishStatusEnum.PUBLISHED,
                     answer_en="",
+                    subsection_id=3,
                     sheet="Python",
                     grade=GradeEnum.MIDDLE,
                     section="Basics",
@@ -371,6 +478,9 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     slug="draft-option-python",
                     question="Draft option",
                     publish_status=PublishStatusEnum.DRAFT,
+                    sheet_id=3,
+                    section_id=3,
+                    subsection_id=4,
                     sheet_key="python-draft",
                     sheet_ru="Питон черновик",
                     sheet_en="Python draft",
@@ -536,14 +646,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 answer_en="",
                 interview_expected_answer_ru="",
                 interview_expected_answer_en="",
-                sheet_key="python",
-                sheet_ru="",
-                sheet_en="",
                 grade=None,
-                section_ru="",
-                section_en="",
-                subsection_ru="",
-                subsection_en="",
             ),
         )
 
@@ -554,12 +657,6 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             CompetencyMatrixMissingFieldEnum.ANSWER_EN,
             CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
             CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
-            CompetencyMatrixMissingFieldEnum.SHEET_RU,
-            CompetencyMatrixMissingFieldEnum.SHEET_EN,
-            CompetencyMatrixMissingFieldEnum.SECTION_RU,
-            CompetencyMatrixMissingFieldEnum.SECTION_EN,
-            CompetencyMatrixMissingFieldEnum.SUBSECTION_RU,
-            CompetencyMatrixMissingFieldEnum.SUBSECTION_EN,
         )
 
     async def test_create_competency_matrix_item(self) -> None:
@@ -573,8 +670,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 interview_expected_answer="Expected answer 1",
                 sheet="Python",
                 grade=GradeEnum.MIDDLE_PLUS,
-                section="SECTION 1",
-                subsection="SUBSECTION 1",
+                section="Basics",
+                subsection="Functions",
                 resources=[
                     self.factory.core.attached_external_resource(
                         resource_id=10,
@@ -594,8 +691,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             interview_expected_answer="Expected answer 1",
             sheet="Python",
             grade=GradeEnum.MIDDLE_PLUS,
-            section="SECTION 1",
-            subsection="SUBSECTION 1",
+            section="Basics",
+            subsection="Functions",
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=10,
@@ -617,8 +714,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
                     grade=GradeEnum.MIDDLE_PLUS,
-                    section="SECTION 1",
-                    subsection="SUBSECTION 1",
+                    section="Basics",
+                    subsection="Functions",
                     resources=[
                         self.factory.core.attached_external_resource(
                             resource_id=10,
@@ -630,9 +727,26 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 ),
             ],
         )
+        await self.storage_helper.create_competency_matrix_structure(
+            structure=self.factory.core.competency_matrix_item_structure(
+                sheet_id=3,
+                sheet_key="python-2",
+                sheet_ru="Python 2",
+                sheet_en="Python 2",
+                section_id=3,
+                section_ru="SECTION 3",
+                section_en="SECTION 3",
+                subsection_id=5,
+                subsection_ru="SUBSECTION 3",
+                subsection_en="SUBSECTION 3",
+            ),
+        )
         item = await self.storage.update_competency_matrix_item(
             item=self.factory.core.competency_matrix_item(
                 item_id=3,
+                sheet_id=3,
+                section_id=3,
+                subsection_id=5,
                 slug="updated-question",
                 published_at="2024-01-02T00:00:00",
                 question="3",
@@ -654,6 +768,9 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         )
         assert item == self.factory.core.competency_matrix_item(
             item_id=3,
+            sheet_id=3,
+            section_id=3,
+            subsection_id=5,
             slug="updated-question",
             published_at="2024-01-02T00:00:00",
             question="3",
@@ -684,8 +801,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
                     grade=GradeEnum.MIDDLE_PLUS,
-                    section="SECTION 1",
-                    subsection="SUBSECTION 1",
+                    section="Basics",
+                    subsection="Functions",
                     resources=[
                         self.factory.core.attached_external_resource(
                             resource_id=10,
@@ -712,8 +829,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 interview_expected_answer="Expected answer 1",
                 sheet="Python",
                 grade=GradeEnum.MIDDLE_PLUS,
-                section="SECTION 1",
-                subsection="SUBSECTION 1",
+                section="Basics",
+                subsection="Functions",
                 resources=[
                     self.factory.core.attached_external_resource(
                         resource_id=12,
@@ -750,8 +867,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
                     grade=GradeEnum.MIDDLE_PLUS,
-                    section="SECTION 1",
-                    subsection="SUBSECTION 1",
+                    section="Basics",
+                    subsection="Functions",
                     publish_status=PublishStatusEnum.PUBLISHED,
                 ),
             ],
@@ -844,8 +961,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                     interview_expected_answer="Expected answer 1",
                     sheet="Python",
                     grade=GradeEnum.MIDDLE_PLUS,
-                    section="SECTION 1",
-                    subsection="SUBSECTION 1",
+                    section="Basics",
+                    subsection="Functions",
                     resources=[
                         self.factory.core.attached_external_resource(
                             resource_id=10,

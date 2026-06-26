@@ -16,6 +16,7 @@ from verbose_http_exceptions import (
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
+    CompetencyMatrixStructureAlreadyExistsError,
     QuestionQueueImportInvalidError,
     QuestionQueueImportIssue,
     QuestionSuggestionQuotaExceededError,
@@ -144,6 +145,7 @@ def test_domain_error_verbose_exception_mapping() -> None:
         InvalidFileDataError: BadRequestHTTPException,
         FileStorageInternalError: InternalServerErrorHTTPException,
         CompetencyMatrixItemNotPublicReadyError: BadRequestHTTPException,
+        CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
         QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
         QuestionQueueImportInvalidError: BadRequestHTTPException,
     }

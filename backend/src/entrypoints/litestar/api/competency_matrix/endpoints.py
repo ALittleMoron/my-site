@@ -43,6 +43,15 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixResourcesResponseSchema,
     CompetencyMatrixSheetsListResponseSchema,
     CompetencyMatrixWorkspaceResponseSchema,
+    MatrixSectionCreateRequestSchema,
+    MatrixSheetCreateRequestSchema,
+    MatrixStructureResponseSchema,
+    MatrixStructureSectionResponseSchema,
+    MatrixStructureSheetResponseSchema,
+    MatrixStructureSubsectionResponseSchema,
+    MatrixSubsectionCreateRequestSchema,
+    PublicCompetencyMatrixItemDetailResponseSchema,
+    PublicCompetencyMatrixItemsListResponseSchema,
     QuestionSuggestionRequestSchema,
     QueuedQuestionResponseSchema,
     QueuedQuestionsResponseSchema,
@@ -97,37 +106,12 @@ class PublicCompetencyMatrixApiController(Controller):
         sheet_key: Annotated[str, QueryParameter(name="sheetKey")],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> CompetencyMatrixItemsListResponseSchema:
+    ) -> PublicCompetencyMatrixItemsListResponseSchema:
         filters = CompetencyMatrixItemFilters(sheet_key=sheet_key, only_published=True)
         items = await use_case.list_items(filters=filters)
-        return CompetencyMatrixItemsListResponseSchema.from_domain_schema(
+        return PublicCompetencyMatrixItemsListResponseSchema.from_domain_schema(
             sheet_key=sheet_key,
             schema=items,
-            language=language,
-        )
-
-    @get(
-        "/items/detail/{pk:int}",
-        description="Get public competency matrix question details by id.",
-        name="public-competency-matrix-item-detail-api-handler",
-        status_code=status_codes.HTTP_200_OK,
-        cache=settings.app.get_cache_duration(constants.response_cache.default_ttl_seconds),
-        cache_key_builder=ResponseCacheDomain.COMPETENCY_MATRIX.cache_key_builder,
-    )
-    async def get_competency_matrix_item(
-        self,
-        pk: FromPath[int],
-        use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> CompetencyMatrixItemDetailResponseSchema:
-        item = await use_case.get_item(
-            params=CompetencyMatrixItemGetParams(
-                item_id=IntId(pk),
-                only_published=True,
-            ),
-        )
-        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
-            schema=item,
             language=language,
         )
 
@@ -150,9 +134,9 @@ class PublicCompetencyMatrixApiController(Controller):
         use_case: FromDishka[CompetencyMatrixUseCase],
         params: NamedDependency[CompetencyMatrixItemBySlugGetParams],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    ) -> CompetencyMatrixItemDetailResponseSchema:
+    ) -> PublicCompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item_by_slug(params=params)
-        return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
+        return PublicCompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
             language=language,
         )
@@ -197,6 +181,83 @@ class AdminCompetencyMatrixApiController(Controller):
         sheets = await use_case.list_sheets()
         return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(
             schema=sheets,
+            language=language,
+        )
+
+    @get(
+        "/structure",
+        description="Get the admin competency matrix structure tree.",
+        name="admin-competency-matrix-structure-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def list_competency_matrix_structure(
+        self,
+        use_case: FromDishka[CompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> MatrixStructureResponseSchema:
+        structure = await use_case.list_structure()
+        return MatrixStructureResponseSchema.from_domain_schema(
+            schema=structure,
+            language=language,
+        )
+
+    @post(
+        "/sheets",
+        description="Create a competency matrix sheet.",
+        name="admin-competency-matrix-sheet-create-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def create_competency_matrix_sheet(
+        self,
+        data: Annotated[MatrixSheetCreateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> MatrixStructureSheetResponseSchema:
+        sheet = await use_case.create_sheet(params=data.to_schema())
+        return MatrixStructureSheetResponseSchema.from_domain_schema(
+            schema=sheet,
+            language=language,
+        )
+
+    @post(
+        "/sheets/{sheet_id:int}/sections",
+        description="Create a competency matrix section.",
+        name="admin-competency-matrix-section-create-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def create_competency_matrix_section(
+        self,
+        sheet_id: FromPath[int],
+        data: Annotated[MatrixSectionCreateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> MatrixStructureSectionResponseSchema:
+        section = await use_case.create_section(
+            params=data.to_schema(sheet_id=IntId(sheet_id)),
+        )
+        return MatrixStructureSectionResponseSchema.from_domain_schema(
+            schema=section,
+            language=language,
+        )
+
+    @post(
+        "/sections/{section_id:int}/subsections",
+        description="Create a competency matrix subsection.",
+        name="admin-competency-matrix-subsection-create-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def create_competency_matrix_subsection(
+        self,
+        section_id: FromPath[int],
+        data: Annotated[MatrixSubsectionCreateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    ) -> MatrixStructureSubsectionResponseSchema:
+        subsection = await use_case.create_subsection(
+            params=data.to_schema(section_id=IntId(section_id)),
+        )
+        return MatrixStructureSubsectionResponseSchema.from_domain_schema(
+            schema=subsection,
             language=language,
         )
 

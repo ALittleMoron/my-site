@@ -27,6 +27,9 @@ class TestQuestionSuggestionsUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
+        self.storage.get_item_structure_by_subsection_id.return_value = (
+            self.factory.core.competency_matrix_item_structure()
+        )
         self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
         self.use_case = CompetencyMatrixUseCase(
             storage=self.storage,

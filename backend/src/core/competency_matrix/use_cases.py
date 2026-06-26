@@ -16,6 +16,13 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemUpdateParams,
     CompetencyMatrixItemWriteParams,
     CompetencyMatrixResourceSearchParams,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixStructure,
+    CompetencyMatrixStructureSection,
+    CompetencyMatrixStructureSheet,
+    CompetencyMatrixStructureSubsection,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspace,
     CompetencyMatrixWorkspaceFilters,
     ExternalResources,
@@ -41,6 +48,30 @@ class CompetencyMatrixUseCase:
 
     async def list_sheets(self) -> Sheets:
         return await self.storage.list_sheets()
+
+    async def list_structure(self) -> CompetencyMatrixStructure:
+        return await self.storage.list_structure()
+
+    async def create_sheet(
+        self,
+        *,
+        params: CompetencyMatrixSheetCreateParams,
+    ) -> CompetencyMatrixStructureSheet:
+        return await self.storage.create_sheet(params=params)
+
+    async def create_section(
+        self,
+        *,
+        params: CompetencyMatrixSectionCreateParams,
+    ) -> CompetencyMatrixStructureSection:
+        return await self.storage.create_section(params=params)
+
+    async def create_subsection(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionCreateParams,
+    ) -> CompetencyMatrixStructureSubsection:
+        return await self.storage.create_subsection(params=params)
 
     async def find_resources(
         self,
@@ -155,7 +186,10 @@ class CompetencyMatrixUseCase:
         )
         if not resources.all_resources_exists_by_ids(ids=set(resource_ids_to_assign)):
             raise CompetencyMatrixItemNotFoundError
-        return params.to_item(resources=resources, published_at=None)
+        structure = await self.storage.get_item_structure_by_subsection_id(
+            subsection_id=params.subsection_id,
+        )
+        return params.to_item(resources=resources, structure=structure, published_at=None)
 
     async def delete_item(self, *, item_id: IntId) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)

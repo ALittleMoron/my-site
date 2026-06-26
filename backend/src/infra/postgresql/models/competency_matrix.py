@@ -11,6 +11,10 @@ from core.competency_matrix.schemas import (
     AttachedExternalResource,
     AttachedExternalResources,
     CompetencyMatrixItem,
+    CompetencyMatrixItemStructure,
+    CompetencyMatrixStructureSection,
+    CompetencyMatrixStructureSheet,
+    CompetencyMatrixStructureSubsection,
     ExternalResource,
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
@@ -77,6 +81,133 @@ class ExternalResourceModel(IntegerIDMixin, BaseModel):
         )
 
 
+class CompetencyMatrixSheetModel(IntegerIDMixin, BaseModel):
+    key: Mapped[str] = mapped_column(
+        String(length=255),
+        unique=True,
+        doc="Stable language-neutral sheet key",
+    )
+    name_ru: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Russian sheet name",
+    )
+    name_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English sheet name",
+    )
+
+    sections: Mapped[list[CompetencyMatrixSectionModel]] = relationship(
+        back_populates="sheet",
+        cascade="all, delete-orphan",
+        order_by="CompetencyMatrixSectionModel.name_en",
+        doc="Sheet sections",
+    )
+
+    __table_args__ = (Index("cm_sheet_key_lower_idx", func.lower(key).label("sheet_key_lower")),)
+
+    def to_domain_schema(self) -> CompetencyMatrixStructureSheet:
+        return CompetencyMatrixStructureSheet(
+            id=IntId(self.id),
+            key=self.key,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            sections=[section.to_domain_schema() for section in self.sections],
+        )
+
+
+class CompetencyMatrixSectionModel(IntegerIDMixin, BaseModel):
+    sheet_id: Mapped[int] = mapped_column(
+        ForeignKey(CompetencyMatrixSheetModel.id, ondelete="CASCADE"),
+        doc="Sheet identifier",
+    )
+    name_ru: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Russian section name",
+    )
+    name_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English section name",
+    )
+
+    sheet: Mapped[CompetencyMatrixSheetModel] = relationship(
+        back_populates="sections",
+        doc="Parent sheet",
+    )
+    subsections: Mapped[list[CompetencyMatrixSubsectionModel]] = relationship(
+        back_populates="section",
+        cascade="all, delete-orphan",
+        order_by="CompetencyMatrixSubsectionModel.name_en",
+        doc="Section subsections",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("sheet_id", "name_ru", name="cm_section_sheet_name_ru_uniq"),
+        UniqueConstraint("sheet_id", "name_en", name="cm_section_sheet_name_en_uniq"),
+        Index("cm_section_sheet_en_idx", sheet_id, name_en, "id"),
+        Index("cm_section_sheet_ru_idx", sheet_id, name_ru, "id"),
+    )
+
+    def to_domain_schema(self) -> CompetencyMatrixStructureSection:
+        return CompetencyMatrixStructureSection(
+            id=IntId(self.id),
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            subsections=[subsection.to_domain_schema() for subsection in self.subsections],
+        )
+
+
+class CompetencyMatrixSubsectionModel(IntegerIDMixin, BaseModel):
+    section_id: Mapped[int] = mapped_column(
+        ForeignKey(CompetencyMatrixSectionModel.id, ondelete="CASCADE"),
+        doc="Section identifier",
+    )
+    name_ru: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Russian subsection name",
+    )
+    name_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English subsection name",
+    )
+
+    section: Mapped[CompetencyMatrixSectionModel] = relationship(
+        back_populates="subsections",
+        doc="Parent section",
+    )
+    items: Mapped[list[CompetencyMatrixItemModel]] = relationship(
+        back_populates="subsection",
+        doc="Competency matrix questions in this subsection",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("section_id", "name_ru", name="cm_subsection_section_name_ru_uniq"),
+        UniqueConstraint("section_id", "name_en", name="cm_subsection_section_name_en_uniq"),
+        Index("cm_subsection_section_en_idx", section_id, name_en, "id"),
+        Index("cm_subsection_section_ru_idx", section_id, name_ru, "id"),
+    )
+
+    def to_domain_schema(self) -> CompetencyMatrixStructureSubsection:
+        return CompetencyMatrixStructureSubsection(
+            id=IntId(self.id),
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+        )
+
+    def to_item_structure(self) -> CompetencyMatrixItemStructure:
+        return CompetencyMatrixItemStructure(
+            sheet_id=IntId(self.section.sheet.id),
+            sheet_key=self.section.sheet.key,
+            sheet_ru=self.section.sheet.name_ru,
+            sheet_en=self.section.sheet.name_en,
+            section_id=IntId(self.section.id),
+            section_ru=self.section.name_ru,
+            section_en=self.section.name_en,
+            subsection_id=IntId(self.id),
+            subsection_ru=self.name_ru,
+            subsection_en=self.name_en,
+        )
+
+
 class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
     slug: Mapped[str] = mapped_column(
         String(length=255),
@@ -108,33 +239,9 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         String(),
         doc="English interview expected answer",
     )
-    sheet_key: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="Stable sheet key",
-    )
-    sheet_ru: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="Russian sheet name",
-    )
-    sheet_en: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="English sheet name",
-    )
-    section_ru: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="Russian section",
-    )
-    section_en: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="English section",
-    )
-    subsection_ru: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="Russian subsection",
-    )
-    subsection_en: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="English subsection",
+    subsection_id: Mapped[int] = mapped_column(
+        ForeignKey(CompetencyMatrixSubsectionModel.id, ondelete="RESTRICT"),
+        doc="Question subsection identifier",
     )
     grade: Mapped[GradeEnum | None] = mapped_column(
         Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
@@ -155,14 +262,16 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         cascade="all, delete-orphan",
         doc="External resource links",
     )
+    subsection: Mapped[CompetencyMatrixSubsectionModel] = relationship(
+        back_populates="items",
+        doc="Question subsection",
+    )
 
     __table_args__ = (
         Index(
-            "cmi_sheet_key_status_order_idx",
-            func.lower(sheet_key).label("sheet_key_lower"),
+            "cmi_subsection_status_grade_idx",
+            subsection_id,
             "publish_status",
-            section_en,
-            subsection_en,
             grade,
             "id",
         ),
@@ -173,47 +282,23 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             "id",
         ),
         Index(
-            "cmi_workspace_sheet_status_grade_idx",
-            sheet_key,
+            "cmi_workspace_subsection_status_grade_idx",
+            subsection_id,
             "publish_status",
             grade,
             "id",
-            postgresql_include=("sheet_key", "sheet_ru", "sheet_en"),
-        ),
-        Index(
-            "cmi_workspace_ru_structure_idx",
-            section_ru,
-            subsection_ru,
-            grade,
-            "id",
-            postgresql_include=("sheet_key", "publish_status"),
-        ),
-        Index(
-            "cmi_workspace_en_structure_idx",
-            section_en,
-            subsection_en,
-            grade,
-            "id",
-            postgresql_include=("sheet_key", "publish_status"),
         ),
         Index(
             "cmi_workspace_missing_fields_idx",
             text(
                 "((length(trim(slug)) = 0) OR "
-                "(length(trim(sheet_key)) = 0) OR "
                 "(grade IS NULL) OR "
                 "(length(trim(question_ru)) = 0) OR "
                 "(length(trim(question_en)) = 0) OR "
                 "(length(trim(answer_ru)) = 0) OR "
                 "(length(trim(answer_en)) = 0) OR "
                 "(length(trim(interview_expected_answer_ru)) = 0) OR "
-                "(length(trim(interview_expected_answer_en)) = 0) OR "
-                "(length(trim(sheet_ru)) = 0) OR "
-                "(length(trim(sheet_en)) = 0) OR "
-                "(length(trim(section_ru)) = 0) OR "
-                "(length(trim(section_en)) = 0) OR "
-                "(length(trim(subsection_ru)) = 0) OR "
-                "(length(trim(subsection_en)) = 0))",
+                "(length(trim(interview_expected_answer_en)) = 0))",
             ),
         ),
         Index(
@@ -237,7 +322,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
     )
 
     def __str__(self) -> str:
-        return f"[{self.section_en} - {self.subsection_en}] {self.question_en}"
+        return f"[{self.subsection.section.name_en} - {self.subsection.name_en}] {self.question_en}"
 
     @classmethod
     def from_domain_schema(
@@ -257,13 +342,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             published_at=item.published_at,
             interview_expected_answer_ru=item.interview_expected_answer_ru,
             interview_expected_answer_en=item.interview_expected_answer_en,
-            sheet_key=item.sheet_key,
-            sheet_ru=item.sheet_ru,
-            sheet_en=item.sheet_en,
-            section_ru=item.section_ru,
-            section_en=item.section_en,
-            subsection_ru=item.subsection_ru,
-            subsection_en=item.subsection_en,
+            subsection_id=item.subsection_id,
             grade=item.grade,
             interview_frequency=item.interview_frequency,
             resource_links=[
@@ -285,13 +364,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             self.published_at = item.published_at
         self.interview_expected_answer_ru = item.interview_expected_answer_ru
         self.interview_expected_answer_en = item.interview_expected_answer_en
-        self.sheet_key = item.sheet_key
-        self.sheet_ru = item.sheet_ru
-        self.sheet_en = item.sheet_en
-        self.section_ru = item.section_ru
-        self.section_en = item.section_en
-        self.subsection_ru = item.subsection_ru
-        self.subsection_en = item.subsection_en
+        self.subsection_id = item.subsection_id
         self.grade = item.grade
         self.interview_frequency = item.interview_frequency
 
@@ -307,13 +380,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
             published_at=self.published_at,
             interview_expected_answer_ru=self.interview_expected_answer_ru,
             interview_expected_answer_en=self.interview_expected_answer_en,
-            sheet_key=self.sheet_key,
-            sheet_ru=self.sheet_ru,
-            sheet_en=self.sheet_en,
-            section_ru=self.section_ru,
-            section_en=self.section_en,
-            subsection_ru=self.subsection_ru,
-            subsection_en=self.subsection_en,
+            structure=self.subsection.to_item_structure(),
             grade=self.grade,
             interview_frequency=self.interview_frequency,
             resources=AttachedExternalResources(

@@ -8,6 +8,14 @@ class CompetencyMatrixItemNotFoundError(EntryNotFoundError):
     message = "Competency matrix item not found"
 
 
+class CompetencyMatrixStructureNotFoundError(EntryNotFoundError):
+    message = "Competency matrix structure entry not found"
+
+
+class CompetencyMatrixStructureAlreadyExistsError(DomainError):
+    message = "Competency matrix structure entry already exists"
+
+
 class CompetencyMatrixItemNotPublicReadyError(DomainError):
     message = "Competency matrix item is not public-ready."
 

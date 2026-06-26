@@ -32,13 +32,11 @@ const mockQuestionList: MatrixQuestionList = {
               grade: 'Junior',
               questions: [
                 {
-                  id: 1,
                   slug: 'what-is-a-closure',
                   question: 'What is a closure?',
                   interviewFrequency: 'often',
                 },
                 {
-                  id: 2,
                   slug: 'what-is-hoisting',
                   question: 'What is hoisting?',
                   interviewFrequency: null,
@@ -66,7 +64,6 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
               grade: 'Junior',
               questions: [
                 {
-                  id: 1,
                   slug: 'how-does-the-event-loop-work',
                   question: 'How does the event loop work?',
                   interviewFrequency: 'rarely',
@@ -87,7 +84,6 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
               grade: 'Junior',
               questions: [
                 {
-                  id: 2,
                   slug: 'what-is-dom-event-delegation',
                   question: 'What is DOM event delegation?',
                   interviewFrequency: 'neverSeen',
@@ -102,7 +98,6 @@ const duplicateSubsectionQuestionList: MatrixQuestionList = {
 };
 
 const mockDetail: MatrixQuestionDetail = {
-  id: 1,
   slug: 'what-is-a-closure',
   question: 'What is a closure?',
   answer: 'A **closure** is a function.',
@@ -151,7 +146,6 @@ describe('MatrixListComponent', () => {
     getAdminSheets: jest.Mock;
     getPublicQuestions: jest.Mock;
     getAdminQuestions: jest.Mock;
-    getPublicQuestion: jest.Mock;
     getPublicQuestionBySlug: jest.Mock;
     getAdminQuestion: jest.Mock;
     searchAdminResources: jest.Mock;
@@ -170,7 +164,6 @@ describe('MatrixListComponent', () => {
       getAdminSheets: jest.fn().mockReturnValue(of(mockSheets)),
       getPublicQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
       getAdminQuestions: jest.fn().mockReturnValue(of(mockQuestionList)),
-      getPublicQuestion: jest.fn().mockReturnValue(of(mockDetail)),
       getPublicQuestionBySlug: jest.fn().mockReturnValue(of(mockDetail)),
       getAdminQuestion: jest.fn().mockReturnValue(of(mockDetail)),
       searchAdminResources: jest.fn().mockReturnValue(of([])),
@@ -422,7 +415,7 @@ describe('MatrixListComponent', () => {
     component.error.set(null);
     component.questions.set(mockQuestionList);
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-matrix-question-detail')).toBeTruthy();
   });
@@ -430,16 +423,15 @@ describe('MatrixListComponent', () => {
   it('opens public detail modals through the slug endpoint used by question pages', () => {
     fixture.detectChanges();
 
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
 
     expect(matrixService.getPublicQuestionBySlug).toHaveBeenCalledWith('what-is-a-closure', 'ru');
-    expect(matrixService.getPublicQuestion).not.toHaveBeenCalled();
     expect(matrixService.getAdminQuestion).not.toHaveBeenCalled();
   });
 
   it('renders the public question page link in the detail modal header', () => {
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
 
     const modal = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
@@ -461,7 +453,7 @@ describe('MatrixListComponent', () => {
     const subject = new Subject();
     matrixService.getPublicQuestionBySlug.mockReturnValue(subject.asObservable());
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
     const modal = fixture.nativeElement.querySelector('[role="dialog"]');
     expect(modal).toBeTruthy();
@@ -470,7 +462,7 @@ describe('MatrixListComponent', () => {
 
   it('should set selectedQuestion after detail loads', () => {
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
     const modal = fixture.nativeElement.querySelector('[role="dialog"]');
     expect(modal).toBeTruthy();
@@ -481,7 +473,7 @@ describe('MatrixListComponent', () => {
   it('should set detailError when detail load fails', () => {
     matrixService.getPublicQuestionBySlug.mockReturnValue(throwError(() => mockError));
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
     const modal = fixture.nativeElement.querySelector('[role="dialog"]');
     expect(modal).toBeTruthy();
@@ -491,7 +483,7 @@ describe('MatrixListComponent', () => {
 
   it('should hide modal and clear question when closeDetail is called', () => {
     fixture.detectChanges();
-    component.openDetail(1);
+    component.openDetail('what-is-a-closure');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeTruthy();
     component.closeDetail();

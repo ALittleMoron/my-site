@@ -6,6 +6,9 @@ from .articles import TagModel as TagModel
 from .auth import UserModel as UserModel
 from .base import BaseModel as BaseModel
 from .competency_matrix import CompetencyMatrixItemModel as CompetencyMatrixItemModel
+from .competency_matrix import CompetencyMatrixSectionModel as CompetencyMatrixSectionModel
+from .competency_matrix import CompetencyMatrixSheetModel as CompetencyMatrixSheetModel
+from .competency_matrix import CompetencyMatrixSubsectionModel as CompetencyMatrixSubsectionModel
 from .competency_matrix import ExternalResourceModel as ExternalResourceModel
 from .competency_matrix import QueuedQuestionModel as QueuedQuestionModel
 from .contacts import ContactMeModel as ContactMeModel

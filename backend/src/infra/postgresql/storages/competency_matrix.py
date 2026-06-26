@@ -13,6 +13,8 @@ from core.competency_matrix.enums import (
 )
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
+    CompetencyMatrixStructureAlreadyExistsError,
+    CompetencyMatrixStructureNotFoundError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
@@ -21,7 +23,15 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixFilterSheetOption,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
+    CompetencyMatrixItemStructure,
     CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixStructure,
+    CompetencyMatrixStructureSection,
+    CompetencyMatrixStructureSheet,
+    CompetencyMatrixStructureSubsection,
+    CompetencyMatrixSubsectionCreateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -38,7 +48,13 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.types import IntId
 from infra.config.constants import constants
-from infra.postgresql.models import CompetencyMatrixItemModel, ExternalResourceModel
+from infra.postgresql.models import (
+    CompetencyMatrixItemModel,
+    CompetencyMatrixSectionModel,
+    CompetencyMatrixSheetModel,
+    CompetencyMatrixSubsectionModel,
+    ExternalResourceModel,
+)
 from infra.postgresql.models.competency_matrix import (
     QueuedQuestionModel,
     ResourceToItemSecondaryModel,
@@ -51,20 +67,108 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def list_sheets(self) -> Sheets:
         stmt = (
-            select(
-                CompetencyMatrixItemModel.sheet_key,
-                CompetencyMatrixItemModel.sheet_ru,
-                CompetencyMatrixItemModel.sheet_en,
-            )
+            select(CompetencyMatrixSheetModel)
+            .join(CompetencyMatrixSheetModel.sections)
+            .join(CompetencyMatrixSectionModel.subsections)
+            .join(CompetencyMatrixSubsectionModel.items)
             .where(CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED)
             .distinct()
-            .order_by(CompetencyMatrixItemModel.sheet_key)
+            .order_by(CompetencyMatrixSheetModel.key)
         )
-        rows = await self.session.execute(stmt)
+        sheets = await self.session.scalars(stmt)
         return Sheets(
             values=[
-                Sheet(key=row.sheet_key, name_ru=row.sheet_ru, name_en=row.sheet_en) for row in rows
+                Sheet(key=sheet.key, name_ru=sheet.name_ru, name_en=sheet.name_en)
+                for sheet in sheets
             ],
+        )
+
+    async def list_structure(self) -> CompetencyMatrixStructure:
+        stmt = (
+            select(CompetencyMatrixSheetModel)
+            .options(
+                selectinload(CompetencyMatrixSheetModel.sections).selectinload(
+                    CompetencyMatrixSectionModel.subsections,
+                ),
+            )
+            .order_by(CompetencyMatrixSheetModel.key)
+        )
+        sheets = await self.session.scalars(stmt)
+        return CompetencyMatrixStructure(
+            sheets=[sheet.to_domain_schema() for sheet in sheets],
+        )
+
+    async def get_item_structure_by_subsection_id(
+        self,
+        *,
+        subsection_id: IntId,
+    ) -> CompetencyMatrixItemStructure:
+        subsection = await self._get_subsection_model(subsection_id=subsection_id)
+        return subsection.to_item_structure()
+
+    async def create_sheet(
+        self,
+        *,
+        params: CompetencyMatrixSheetCreateParams,
+    ) -> CompetencyMatrixStructureSheet:
+        if await self._sheet_exists_by_key(key=params.key):
+            raise CompetencyMatrixStructureAlreadyExistsError
+        sheet = CompetencyMatrixSheetModel(
+            key=params.key,
+            name_ru=params.name_ru,
+            name_en=params.name_en,
+        )
+        self.session.add(sheet)
+        await self.session.flush()
+        return CompetencyMatrixStructureSheet(
+            id=IntId(sheet.id),
+            key=sheet.key,
+            name_ru=sheet.name_ru,
+            name_en=sheet.name_en,
+            sections=[],
+        )
+
+    async def create_section(
+        self,
+        *,
+        params: CompetencyMatrixSectionCreateParams,
+    ) -> CompetencyMatrixStructureSection:
+        await self._get_sheet_model(sheet_id=params.sheet_id)
+        if await self._section_exists_by_name(params=params):
+            raise CompetencyMatrixStructureAlreadyExistsError
+        section = CompetencyMatrixSectionModel(
+            sheet_id=params.sheet_id,
+            name_ru=params.name_ru,
+            name_en=params.name_en,
+        )
+        self.session.add(section)
+        await self.session.flush()
+        return CompetencyMatrixStructureSection(
+            id=IntId(section.id),
+            name_ru=section.name_ru,
+            name_en=section.name_en,
+            subsections=[],
+        )
+
+    async def create_subsection(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionCreateParams,
+    ) -> CompetencyMatrixStructureSubsection:
+        await self._get_section_model(section_id=params.section_id)
+        if await self._subsection_exists_by_name(params=params):
+            raise CompetencyMatrixStructureAlreadyExistsError
+        subsection = CompetencyMatrixSubsectionModel(
+            section_id=params.section_id,
+            name_ru=params.name_ru,
+            name_en=params.name_en,
+        )
+        self.session.add(subsection)
+        await self.session.flush()
+        return CompetencyMatrixStructureSubsection(
+            id=IntId(subsection.id),
+            name_ru=subsection.name_ru,
+            name_en=subsection.name_en,
         )
 
     async def list_competency_matrix_items(
@@ -72,15 +176,15 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         *,
         filters: CompetencyMatrixItemFilters,
     ) -> list[CompetencyMatrixItem]:
-        stmt = select(CompetencyMatrixItemModel).order_by(
-            CompetencyMatrixItemModel.section_en,
-            CompetencyMatrixItemModel.subsection_en,
+        stmt = self._select_items_with_structure().order_by(
+            CompetencyMatrixSectionModel.name_en,
+            CompetencyMatrixSubsectionModel.name_en,
             CompetencyMatrixItemModel.grade,
             CompetencyMatrixItemModel.id,
         )
         if filters.sheet_key is not None:
             stmt = stmt.where(
-                func.lower(CompetencyMatrixItemModel.sheet_key) == filters.sheet_key.lower(),
+                func.lower(CompetencyMatrixSheetModel.key) == filters.sheet_key.lower(),
             )
         if filters.only_published is True:
             stmt = stmt.where(
@@ -99,12 +203,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         CompetencyMatrixWorkspaceSummary,
     ]:
         stmt = self._apply_workspace_filters(
-            select(CompetencyMatrixItemModel),
+            self._select_items_with_structure(),
             filters=filters,
         ).order_by(*self._workspace_ordering(filters=filters))
         items = await self.session.scalars(stmt.offset(filters.offset).limit(filters.limit))
         count_stmt = self._apply_workspace_filters(
-            select(func.count(CompetencyMatrixItemModel.id)),
+            self._join_structure(select(func.count(CompetencyMatrixItemModel.id))),
             filters=filters,
         )
         total_count = (await self.session.scalar(count_stmt)) or 0
@@ -124,16 +228,18 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         section_column = self._section_column(language=language)
         subsection_column = self._subsection_column(language=language)
         sheets_rows = await self.session.execute(
-            select(
-                CompetencyMatrixItemModel.sheet_key,
-                sheet_name_column.label("sheet"),
-                section_column.label("section"),
-                subsection_column.label("subsection"),
+            self._join_structure_nodes_with_items(
+                select(
+                    CompetencyMatrixSheetModel.key.label("sheet_key"),
+                    sheet_name_column.label("sheet"),
+                    section_column.label("section"),
+                    subsection_column.label("subsection"),
+                ),
             )
             .distinct()
             .order_by(
                 sheet_name_column,
-                CompetencyMatrixItemModel.sheet_key,
+                CompetencyMatrixSheetModel.key,
                 section_column,
                 subsection_column,
             ),
@@ -147,10 +253,14 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             select(CompetencyMatrixItemModel.interview_frequency).distinct(),
         )
         sections = await self.session.scalars(
-            select(section_column).distinct().order_by(section_column),
+            self._join_structure_nodes_with_items(select(section_column))
+            .distinct()
+            .order_by(section_column),
         )
         subsections = await self.session.scalars(
-            select(subsection_column).distinct().order_by(subsection_column),
+            self._join_structure_nodes_with_items(select(subsection_column))
+            .distinct()
+            .order_by(subsection_column),
         )
         publish_statuses = await self.session.scalars(
             select(CompetencyMatrixItemModel.publish_status)
@@ -207,6 +317,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.id == item_id)
             .options(
+                *self._item_structure_load_options(),
                 selectinload(CompetencyMatrixItemModel.resource_links).selectinload(
                     ResourceToItemSecondaryModel.resource,
                 ),
@@ -222,6 +333,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.slug == slug)
             .options(
+                *self._item_structure_load_options(),
                 selectinload(CompetencyMatrixItemModel.resource_links).selectinload(
                     ResourceToItemSecondaryModel.resource,
                 ),
@@ -315,6 +427,116 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             links.append(link)
         return links
 
+    def _select_items_with_structure(self) -> Select[tuple[CompetencyMatrixItemModel]]:
+        return self._join_structure(select(CompetencyMatrixItemModel)).options(
+            *self._item_structure_load_options(),
+        )
+
+    def _join_structure(self, stmt: Select[Any]) -> Select[Any]:
+        return (
+            stmt.select_from(CompetencyMatrixItemModel)
+            .join(CompetencyMatrixItemModel.subsection)
+            .join(CompetencyMatrixSubsectionModel.section)
+            .join(CompetencyMatrixSectionModel.sheet)
+        )
+
+    def _join_structure_nodes_with_items(self, stmt: Select[Any]) -> Select[Any]:
+        return (
+            stmt.select_from(CompetencyMatrixSheetModel)
+            .join(CompetencyMatrixSheetModel.sections)
+            .join(CompetencyMatrixSectionModel.subsections)
+            .where(self._subsection_has_items_condition())
+        )
+
+    def _subsection_has_items_condition(self) -> ColumnElement[bool]:
+        return (
+            select(CompetencyMatrixItemModel.id)
+            .where(CompetencyMatrixItemModel.subsection_id == CompetencyMatrixSubsectionModel.id)
+            .exists()
+        )
+
+    def _item_structure_load_options(self) -> tuple[Any, ...]:
+        return (
+            selectinload(CompetencyMatrixItemModel.subsection)
+            .selectinload(CompetencyMatrixSubsectionModel.section)
+            .selectinload(CompetencyMatrixSectionModel.sheet),
+        )
+
+    async def _get_sheet_model(self, *, sheet_id: IntId) -> CompetencyMatrixSheetModel:
+        sheet = await self.session.get(CompetencyMatrixSheetModel, sheet_id)
+        if sheet is None:
+            raise CompetencyMatrixStructureNotFoundError
+        return sheet
+
+    async def _get_section_model(self, *, section_id: IntId) -> CompetencyMatrixSectionModel:
+        section = await self.session.get(CompetencyMatrixSectionModel, section_id)
+        if section is None:
+            raise CompetencyMatrixStructureNotFoundError
+        return section
+
+    async def _get_subsection_model(
+        self,
+        *,
+        subsection_id: IntId,
+    ) -> CompetencyMatrixSubsectionModel:
+        stmt = (
+            select(CompetencyMatrixSubsectionModel)
+            .where(CompetencyMatrixSubsectionModel.id == subsection_id)
+            .options(
+                selectinload(CompetencyMatrixSubsectionModel.section).selectinload(
+                    CompetencyMatrixSectionModel.sheet,
+                ),
+            )
+        )
+        subsection = await self.session.scalar(stmt)
+        if subsection is None:
+            raise CompetencyMatrixStructureNotFoundError
+        return subsection
+
+    async def _sheet_exists_by_key(self, *, key: str) -> bool:
+        exists_stmt = select(
+            select(CompetencyMatrixSheetModel.id)
+            .where(func.lower(CompetencyMatrixSheetModel.key) == key.lower())
+            .exists(),
+        )
+        return bool(await self.session.scalar(exists_stmt))
+
+    async def _section_exists_by_name(
+        self,
+        *,
+        params: CompetencyMatrixSectionCreateParams,
+    ) -> bool:
+        exists_stmt = select(
+            select(CompetencyMatrixSectionModel.id)
+            .where(
+                CompetencyMatrixSectionModel.sheet_id == params.sheet_id,
+                or_(
+                    func.lower(CompetencyMatrixSectionModel.name_ru) == params.name_ru.lower(),
+                    func.lower(CompetencyMatrixSectionModel.name_en) == params.name_en.lower(),
+                ),
+            )
+            .exists(),
+        )
+        return bool(await self.session.scalar(exists_stmt))
+
+    async def _subsection_exists_by_name(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionCreateParams,
+    ) -> bool:
+        exists_stmt = select(
+            select(CompetencyMatrixSubsectionModel.id)
+            .where(
+                CompetencyMatrixSubsectionModel.section_id == params.section_id,
+                or_(
+                    func.lower(CompetencyMatrixSubsectionModel.name_ru) == params.name_ru.lower(),
+                    func.lower(CompetencyMatrixSubsectionModel.name_en) == params.name_en.lower(),
+                ),
+            )
+            .exists(),
+        )
+        return bool(await self.session.scalar(exists_stmt))
+
     def _apply_workspace_filters(
         self,
         stmt: Select[Any],
@@ -341,7 +563,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     ) -> list[ColumnElement[bool]]:
         conditions: list[ColumnElement[bool]] = []
         if filters.sheet_keys:
-            conditions.append(CompetencyMatrixItemModel.sheet_key.in_(filters.sheet_keys))
+            conditions.append(CompetencyMatrixSheetModel.key.in_(filters.sheet_keys))
         if filters.grades:
             conditions.append(CompetencyMatrixItemModel.grade.in_(filters.grades))
         if filters.interview_frequencies:
@@ -405,18 +627,20 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED
         )
         stmt = self._apply_workspace_filters(
-            select(
-                func.count(CompetencyMatrixItemModel.id).label("total"),
-                func.sum(case((draft_condition, 1), else_=0)).label("draft"),
-                func.sum(case((and_(draft_condition, missing_condition), 1), else_=0)).label(
-                    "missing_draft",
+            self._join_structure(
+                select(
+                    func.count(CompetencyMatrixItemModel.id).label("total"),
+                    func.sum(case((draft_condition, 1), else_=0)).label("draft"),
+                    func.sum(case((and_(draft_condition, missing_condition), 1), else_=0)).label(
+                        "missing_draft",
+                    ),
+                    func.sum(
+                        case((and_(published_condition, missing_condition), 1), else_=0),
+                    ).label("dangerous_published"),
+                    func.sum(
+                        case((and_(published_condition, ~missing_condition), 1), else_=0),
+                    ).label("ready_published"),
                 ),
-                func.sum(
-                    case((and_(published_condition, missing_condition), 1), else_=0),
-                ).label("dangerous_published"),
-                func.sum(
-                    case((and_(published_condition, ~missing_condition), 1), else_=0),
-                ).label("ready_published"),
             ),
             filters=filters,
         )
@@ -562,10 +786,6 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 CompetencyMatrixMissingFieldEnum.SLUG,
                 self._blank_text_condition(CompetencyMatrixItemModel.slug),
             ),
-            (
-                CompetencyMatrixMissingFieldEnum.SHEET_KEY,
-                self._blank_text_condition(CompetencyMatrixItemModel.sheet_key),
-            ),
             (CompetencyMatrixMissingFieldEnum.GRADE, CompetencyMatrixItemModel.grade.is_(None)),
             (
                 CompetencyMatrixMissingFieldEnum.QUESTION_RU,
@@ -594,30 +814,6 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 self._blank_text_condition(
                     CompetencyMatrixItemModel.interview_expected_answer_en,
                 ),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SHEET_RU,
-                self._blank_text_condition(CompetencyMatrixItemModel.sheet_ru),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SHEET_EN,
-                self._blank_text_condition(CompetencyMatrixItemModel.sheet_en),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SECTION_RU,
-                self._blank_text_condition(CompetencyMatrixItemModel.section_ru),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SECTION_EN,
-                self._blank_text_condition(CompetencyMatrixItemModel.section_en),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SUBSECTION_RU,
-                self._blank_text_condition(CompetencyMatrixItemModel.subsection_ru),
-            ),
-            (
-                CompetencyMatrixMissingFieldEnum.SUBSECTION_EN,
-                self._blank_text_condition(CompetencyMatrixItemModel.subsection_en),
             ),
         )
 
@@ -808,8 +1004,8 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         language: LanguageEnum,
     ) -> InstrumentedAttribute[str]:
         if language == LanguageEnum.RU:
-            return CompetencyMatrixItemModel.sheet_ru
-        return CompetencyMatrixItemModel.sheet_en
+            return CompetencyMatrixSheetModel.name_ru
+        return CompetencyMatrixSheetModel.name_en
 
     def _section_column(
         self,
@@ -817,8 +1013,8 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         language: LanguageEnum,
     ) -> InstrumentedAttribute[str]:
         if language == LanguageEnum.RU:
-            return CompetencyMatrixItemModel.section_ru
-        return CompetencyMatrixItemModel.section_en
+            return CompetencyMatrixSectionModel.name_ru
+        return CompetencyMatrixSectionModel.name_en
 
     def _subsection_column(
         self,
@@ -826,8 +1022,8 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         language: LanguageEnum,
     ) -> InstrumentedAttribute[str]:
         if language == LanguageEnum.RU:
-            return CompetencyMatrixItemModel.subsection_ru
-        return CompetencyMatrixItemModel.subsection_en
+            return CompetencyMatrixSubsectionModel.name_ru
+        return CompetencyMatrixSubsectionModel.name_en
 
     def _date_start(self, *, value: date) -> datetime:
         return datetime.combine(value, time.min, tzinfo=UTC)

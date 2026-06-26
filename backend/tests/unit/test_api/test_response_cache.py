@@ -339,7 +339,6 @@ class TestResponseCacheRouteConfiguration:
         for handler_name in (
             "list_competency_matrix_sheet",
             "list_competency_matrix_items",
-            "get_competency_matrix_item",
             "get_public_competency_matrix_item",
         ):
             handler = getattr(PublicCompetencyMatrixApiController, handler_name)

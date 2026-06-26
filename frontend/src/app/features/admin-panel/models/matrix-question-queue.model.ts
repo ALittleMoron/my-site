@@ -33,14 +33,11 @@ export interface AdminMatrixItemTranslationPayload {
   question: string;
   answer: string;
   interviewExpectedAnswer: string;
-  sheet: string;
-  section: string;
-  subsection: string;
 }
 
 export interface AdminMatrixItemPayload {
   slug: string;
-  sheetKey: string;
+  subsectionId: number;
   grade: AdminMatrixGrade;
   publishStatus: AdminMatrixPublishStatus;
   translations: Record<LanguageCode, AdminMatrixItemTranslationPayload>;
@@ -48,7 +45,7 @@ export interface AdminMatrixItemPayload {
 }
 
 export interface AdminMatrixItemDetailDto {
-  id: number;
+  id: string;
   slug: string;
   question: string;
 }

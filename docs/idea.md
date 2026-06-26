@@ -31,7 +31,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 ## Core features
 
-1. **Competency matrix** — localized interactive Q&A with topic filtering, detailed answers, and linked resources
+1. **Competency matrix** — localized interactive Q&A with normalized sheet/section/subsection taxonomy, topic filtering, detailed answers, and linked resources
 2. **Articles** — localized content, folders, tags, search/filtering, and publish visibility
 3. **Protected admin content workspace** — content management lives in `/admin-panel`, while public article and matrix pages stay read-only
 4. **Privacy-safe article analytics** — public counters and anonymous reactions
@@ -39,7 +39,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 ## Highlights
 
 - Clean Architecture and best practices
-- Interactive competency matrix
+- Interactive competency matrix with a database-backed taxonomy
 - Angular hybrid SSR/CSR frontend served as an independent Docker image
 - Infrastructure nginx kept as an edge reverse proxy for public routing and TLS
 

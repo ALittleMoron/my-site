@@ -101,7 +101,7 @@ class TestWorkspaceItemsAPI(ApiTestCase):
             },
             "items": [
                 {
-                    "id": 7,
+                    "id": "7",
                     "slug": "python-functions",
                     "question": "How do functions work?",
                     "sheetKey": "python",

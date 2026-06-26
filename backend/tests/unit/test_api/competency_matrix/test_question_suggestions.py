@@ -522,7 +522,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
         body = response.json()
-        assert body["id"] == 10
+        assert body["id"] == "10"
         assert body["question"] == "What is PEP 8?"
         self.use_case.create_item_from_queue.assert_called_once_with(
             params=ANY,

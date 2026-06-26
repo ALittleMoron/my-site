@@ -3,7 +3,9 @@ import { of, throwError } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { AdminMatrixStructure } from '../../models/matrix-question-workspace.model';
 import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
+import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
 import { MatrixQuestionQueuePageComponent } from './matrix-question-queue-page.component';
 
@@ -24,6 +26,31 @@ const importedQuestion: QueuedMatrixQuestion = {
   question: 'What is Black?',
 };
 
+const matrixStructure: AdminMatrixStructure = {
+  sheets: [
+    {
+      id: 1,
+      key: 'python',
+      name: 'Python',
+      translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
+      sections: [
+        {
+          id: 2,
+          name: 'Core',
+          translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
+          subsections: [
+            {
+              id: 3,
+              name: 'Style',
+              translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 describe('MatrixQuestionQueuePageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionQueuePageComponent>;
   let component: MatrixQuestionQueuePageComponent;
@@ -34,6 +61,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     rejectQueuedQuestion: jest.Mock;
     createQuestionFromQueue: jest.Mock;
   };
+  let workspaceService: jest.Mocked<MatrixQuestionWorkspaceService>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
@@ -42,8 +70,14 @@ describe('MatrixQuestionQueuePageComponent', () => {
       createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
       importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
-      createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: 1, slug: 'pep-8' })),
+      createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: '1', slug: 'pep-8' })),
     };
+    workspaceService = {
+      getStructure: jest.fn().mockReturnValue(of(matrixStructure)),
+      createSheet: jest.fn(),
+      createSection: jest.fn(),
+      createSubsection: jest.fn(),
+    } as unknown as jest.Mocked<MatrixQuestionWorkspaceService>;
     notificationService = {
       success: jest.fn(),
       error: jest.fn(),
@@ -53,6 +87,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       imports: [MatrixQuestionQueuePageComponent],
       providers: [
         { provide: MatrixQuestionQueueService, useValue: queueService },
+        { provide: MatrixQuestionWorkspaceService, useValue: workspaceService },
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
       ],
@@ -299,7 +334,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     component.selectQuestion(queuedQuestion);
 
     expect(component.form.getRawValue().questionRu).toBe('What is PEP 8?');
-    expect(component.form.getRawValue().sheetKey).toBe('python');
+    expect(component.form.getRawValue().subsectionId).toBeNull();
   });
 
   it('marks selected queue question with green active styling', () => {
@@ -328,6 +363,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     component.selectQuestion(queuedQuestion);
     component.form.patchValue({
       slug: 'pep-8',
+      subsectionId: 3,
       answerRu: 'Ответ',
       answerEn: 'Answer',
       expectedAnswerRu: 'Ожидаемый ответ',
@@ -340,7 +376,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       7,
       expect.objectContaining({
         slug: 'pep-8',
-        sheetKey: 'python',
+        subsectionId: 3,
         grade: 'Junior',
         publishStatus: 'Draft',
         resources: [],

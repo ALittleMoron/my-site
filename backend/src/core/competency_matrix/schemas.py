@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
@@ -18,7 +19,6 @@ from core.types import IntId, SearchName
 
 class CompetencyMatrixMissingFieldEnum(StrEnum):
     SLUG = "slug"
-    SHEET_KEY = "sheetKey"
     GRADE = "grade"
     QUESTION_RU = "questionRu"
     QUESTION_EN = "questionEn"
@@ -26,12 +26,6 @@ class CompetencyMatrixMissingFieldEnum(StrEnum):
     ANSWER_EN = "answerEn"
     INTERVIEW_EXPECTED_ANSWER_RU = "interviewExpectedAnswerRu"
     INTERVIEW_EXPECTED_ANSWER_EN = "interviewExpectedAnswerEn"
-    SHEET_RU = "sheetRu"
-    SHEET_EN = "sheetEn"
-    SECTION_RU = "sectionRu"
-    SECTION_EN = "sectionEn"
-    SUBSECTION_RU = "subsectionRu"
-    SUBSECTION_EN = "subsectionEn"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -48,6 +42,103 @@ class Sheet:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Sheets(ValuedDataclass[Sheet]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixStructureSubsection:
+    id: IntId
+    name_ru: str
+    name_en: str
+
+    def localized_name(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.name_ru
+        return self.name_en
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixStructureSection:
+    id: IntId
+    name_ru: str
+    name_en: str
+    subsections: list[CompetencyMatrixStructureSubsection]
+
+    def localized_name(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.name_ru
+        return self.name_en
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixStructureSheet:
+    id: IntId
+    key: str
+    name_ru: str
+    name_en: str
+    sections: list[CompetencyMatrixStructureSection]
+
+    def localized_name(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.name_ru
+        return self.name_en
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixStructure:
+    sheets: list[CompetencyMatrixStructureSheet]
+
+    def __iter__(self) -> Iterator[CompetencyMatrixStructureSheet]:
+        return iter(self.sheets)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSheetCreateParams:
+    key: str
+    name_ru: str
+    name_en: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSectionCreateParams:
+    sheet_id: IntId
+    name_ru: str
+    name_en: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSubsectionCreateParams:
+    section_id: IntId
+    name_ru: str
+    name_en: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixItemStructure:
+    sheet_id: IntId
+    sheet_key: str
+    sheet_ru: str
+    sheet_en: str
+    section_id: IntId
+    section_ru: str
+    section_en: str
+    subsection_id: IntId
+    subsection_ru: str
+    subsection_en: str
+
+    def localized_sheet(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.sheet_ru
+        return self.sheet_en
+
+    def localized_section(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.section_ru
+        return self.section_en
+
+    def localized_subsection(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.subsection_ru
+        return self.subsection_en
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -234,15 +325,9 @@ class BaseCompetencyMatrixItem:
     answer_en: str
     interview_expected_answer_ru: str
     interview_expected_answer_en: str
-    sheet_key: str
-    sheet_ru: str
-    sheet_en: str
+    structure: CompetencyMatrixItemStructure
     grade: GradeEnum | None
     interview_frequency: InterviewFrequencyEnum | None
-    section_ru: str
-    section_en: str
-    subsection_ru: str
-    subsection_en: str
 
     def is_available(self) -> bool:
         return (
@@ -256,7 +341,6 @@ class BaseCompetencyMatrixItem:
     def missing_publication_fields(self) -> tuple[CompetencyMatrixMissingFieldEnum, ...]:
         checks = (
             (CompetencyMatrixMissingFieldEnum.SLUG, not self.slug.strip()),
-            (CompetencyMatrixMissingFieldEnum.SHEET_KEY, not self.sheet_key.strip()),
             (CompetencyMatrixMissingFieldEnum.GRADE, self.grade is None),
             (CompetencyMatrixMissingFieldEnum.QUESTION_RU, not self.question_ru.strip()),
             (CompetencyMatrixMissingFieldEnum.QUESTION_EN, not self.question_en.strip()),
@@ -270,14 +354,40 @@ class BaseCompetencyMatrixItem:
                 CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
                 not self.interview_expected_answer_en.strip(),
             ),
-            (CompetencyMatrixMissingFieldEnum.SHEET_RU, not self.sheet_ru.strip()),
-            (CompetencyMatrixMissingFieldEnum.SHEET_EN, not self.sheet_en.strip()),
-            (CompetencyMatrixMissingFieldEnum.SECTION_RU, not self.section_ru.strip()),
-            (CompetencyMatrixMissingFieldEnum.SECTION_EN, not self.section_en.strip()),
-            (CompetencyMatrixMissingFieldEnum.SUBSECTION_RU, not self.subsection_ru.strip()),
-            (CompetencyMatrixMissingFieldEnum.SUBSECTION_EN, not self.subsection_en.strip()),
         )
         return tuple(field for field, is_missing in checks if is_missing)
+
+    @property
+    def sheet_key(self) -> str:
+        return self.structure.sheet_key
+
+    @property
+    def sheet_ru(self) -> str:
+        return self.structure.sheet_ru
+
+    @property
+    def sheet_en(self) -> str:
+        return self.structure.sheet_en
+
+    @property
+    def section_ru(self) -> str:
+        return self.structure.section_ru
+
+    @property
+    def section_en(self) -> str:
+        return self.structure.section_en
+
+    @property
+    def subsection_id(self) -> IntId:
+        return self.structure.subsection_id
+
+    @property
+    def subsection_ru(self) -> str:
+        return self.structure.subsection_ru
+
+    @property
+    def subsection_en(self) -> str:
+        return self.structure.subsection_en
 
     def localized_question(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
@@ -295,19 +405,13 @@ class BaseCompetencyMatrixItem:
         return self.interview_expected_answer_en
 
     def localized_sheet(self, *, language: LanguageEnum) -> str:
-        if language == LanguageEnum.RU:
-            return self.sheet_ru
-        return self.sheet_en
+        return self.structure.localized_sheet(language=language)
 
     def localized_section(self, *, language: LanguageEnum) -> str:
-        if language == LanguageEnum.RU:
-            return self.section_ru
-        return self.section_en
+        return self.structure.localized_section(language=language)
 
     def localized_subsection(self, *, language: LanguageEnum) -> str:
-        if language == LanguageEnum.RU:
-            return self.subsection_ru
-        return self.subsection_en
+        return self.structure.localized_subsection(language=language)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -317,8 +421,19 @@ class CompetencyMatrixItem(BaseCompetencyMatrixItem):
 
 
 @dataclass(slots=True, kw_only=True)
-class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
+class CompetencyMatrixItemWriteParams:
+    id: IntId
+    slug: str
+    question_ru: str
+    question_en: str
+    publish_status: PublishStatusEnum
+    answer_ru: str
+    answer_en: str
+    interview_expected_answer_ru: str
+    interview_expected_answer_en: str
+    subsection_id: IntId
     grade: GradeEnum | None
+    interview_frequency: InterviewFrequencyEnum | None
     resources: list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]
 
     def get_new_resource_attachments(self) -> list[NewExternalResourceAttachment]:
@@ -346,6 +461,7 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
         self,
         *,
         resources: ExternalResources,
+        structure: CompetencyMatrixItemStructure,
         published_at: datetime | None,
     ) -> CompetencyMatrixItem:
         resources_by_id = {resource.id: resource for resource in resources}
@@ -375,15 +491,9 @@ class CompetencyMatrixItemWriteParams(BaseCompetencyMatrixItem):
             answer_en=self.answer_en,
             interview_expected_answer_ru=self.interview_expected_answer_ru,
             interview_expected_answer_en=self.interview_expected_answer_en,
-            sheet_key=self.sheet_key,
-            sheet_ru=self.sheet_ru,
-            sheet_en=self.sheet_en,
+            structure=structure,
             grade=self.grade,
             interview_frequency=self.interview_frequency,
-            section_ru=self.section_ru,
-            section_en=self.section_en,
-            subsection_ru=self.subsection_ru,
-            subsection_en=self.subsection_en,
             resources=AttachedExternalResources(
                 values=[*attached_existing_resources, *attached_new_resources],
             ),

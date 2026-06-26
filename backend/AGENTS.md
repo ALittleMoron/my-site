@@ -134,11 +134,13 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 - The backend i18n catalog is the source of truth for UI interface strings and enum labels.
   Database/content localisation is separate from the UI catalog.
-- Articles, article tags, and competency matrix content localise with required fixed fields in existing tables:
-  `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, `folder_en`, `name_ru`,
-  `name_en`, plus competency matrix `question_*`, `answer_*`, `interview_expected_answer_*`,
-  `sheet_*`, `section_*`, `subsection_*`, resource `name_*`, and attachment `context_*` fields.
-  Competency matrix sheets must use a stable language-neutral `sheet_key`/`sheetKey` identifier.
+- Articles, article tags, and competency matrix content localise with required fixed fields in their
+  owning tables: `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, `folder_en`,
+  `name_ru`, `name_en`, plus competency matrix item `question_*`, `answer_*`,
+  `interview_expected_answer_*`, matrix structure `name_ru`/`name_en` on sheet, section, and
+  subsection tables, resource `name_*`, and attachment `context_*` fields.
+  Competency matrix sheets must use a stable language-neutral `key`/`sheetKey` identifier, and
+  questions must reference the normalized structure through a required `subsection_id`.
   Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
   resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
   whether the authored text actually matches the selected language.

@@ -18,6 +18,9 @@ from infra.postgresql.models import (
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
+    CompetencyMatrixSectionModel,
+    CompetencyMatrixSheetModel,
+    CompetencyMatrixSubsectionModel,
     ExternalResourceModel,
     TagModel,
     UserModel,
@@ -104,6 +107,7 @@ async def seed_performance_data(*, session: AsyncSession) -> None:
     await insert_seed_article_analytics(session=session)
     await insert_seed_article_reactions(session=session)
     await insert_seed_matrix_resources(session=session)
+    await insert_seed_matrix_structure(session=session)
     await insert_seed_matrix_items(session=session)
     await insert_seed_matrix_resource_links(session=session)
 
@@ -137,6 +141,27 @@ async def clear_seeded_data(*, session: AsyncSession) -> None:
     await session.execute(
         delete(CompetencyMatrixItemModel).where(
             CompetencyMatrixItemModel.slug.like("perf-seed-matrix-%"),
+        ),
+    )
+    await session.execute(
+        delete(CompetencyMatrixSubsectionModel).where(
+            CompetencyMatrixSubsectionModel.id.in_(
+                [matrix_subsection_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
+            ),
+        ),
+    )
+    await session.execute(
+        delete(CompetencyMatrixSectionModel).where(
+            CompetencyMatrixSectionModel.id.in_(
+                [matrix_section_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
+            ),
+        ),
+    )
+    await session.execute(
+        delete(CompetencyMatrixSheetModel).where(
+            CompetencyMatrixSheetModel.id.in_(
+                [matrix_sheet_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
+            ),
         ),
     )
     await session.execute(
@@ -244,6 +269,55 @@ async def insert_seed_matrix_items(*, session: AsyncSession) -> None:
     )
 
 
+async def insert_seed_matrix_structure(*, session: AsyncSession) -> None:
+    await session.execute(
+        insert(CompetencyMatrixSheetModel),
+        [
+            {
+                "id": matrix_sheet_id(sheet_index),
+                "key": sheet_key,
+                "name_ru": sheet_ru,
+                "name_en": sheet_en,
+            }
+            for sheet_index, (sheet_key, sheet_ru, sheet_en, _section_ru, _section_en) in enumerate(
+                MATRIX_SHEETS,
+            )
+        ],
+    )
+    await session.execute(
+        insert(CompetencyMatrixSectionModel),
+        [
+            {
+                "id": matrix_section_id(sheet_index),
+                "sheet_id": matrix_sheet_id(sheet_index),
+                "name_ru": section_ru,
+                "name_en": section_en,
+            }
+            for sheet_index, (
+                _sheet_key,
+                _sheet_ru,
+                _sheet_en,
+                section_ru,
+                section_en,
+            ) in enumerate(
+                MATRIX_SHEETS,
+            )
+        ],
+    )
+    await session.execute(
+        insert(CompetencyMatrixSubsectionModel),
+        [
+            {
+                "id": matrix_subsection_id(sheet_index),
+                "section_id": matrix_section_id(sheet_index),
+                "name_ru": "Baseline",
+                "name_en": "Baseline",
+            }
+            for sheet_index in matrix_sheet_indexes()
+        ],
+    )
+
+
 async def insert_seed_matrix_resource_links(*, session: AsyncSession) -> None:
     rows = [
         {
@@ -306,7 +380,7 @@ def article_row(*, article_index: int) -> dict[str, object]:
 
 def matrix_item_row(*, item_index: int) -> dict[str, object]:
     sheet_index = (item_index - 1) // SEED_MATRIX_ITEMS_PER_SHEET
-    sheet_key, sheet_ru, sheet_en, section_ru, section_en = MATRIX_SHEETS[sheet_index]
+    _sheet_key, sheet_ru, sheet_en, _section_ru, _section_en = MATRIX_SHEETS[sheet_index]
     question_number = ((item_index - 1) % SEED_MATRIX_ITEMS_PER_SHEET) + 1
     return {
         "id": matrix_item_id(item_index),
@@ -325,13 +399,7 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
         "interview_expected_answer_en": (
             "Expected answer gives a concrete baseline comparison plan."
         ),
-        "sheet_key": sheet_key,
-        "sheet_ru": sheet_ru,
-        "sheet_en": sheet_en,
-        "section_ru": section_ru,
-        "section_en": section_en,
-        "subsection_ru": "Baseline",
-        "subsection_en": "Baseline",
+        "subsection_id": matrix_subsection_id(sheet_index),
         "grade": grade_for_index(item_index=item_index),
         "interview_frequency": interview_frequency_for_index(item_index=item_index),
         "published_at": SEED_START + timedelta(hours=item_index),
@@ -393,6 +461,10 @@ def matrix_item_range() -> range:
     return range(1, matrix_item_count() + 1)
 
 
+def matrix_sheet_indexes() -> range:
+    return range(len(MATRIX_SHEETS))
+
+
 def resource_range() -> range:
     return range(1, resource_count() + 1)
 
@@ -415,6 +487,18 @@ def matrix_resource_id(resource_index: int) -> int:
 
 def matrix_item_id(item_index: int) -> int:
     return SEED_BASE_ID + 200 + item_index
+
+
+def matrix_sheet_id(sheet_index: int) -> int:
+    return SEED_BASE_ID + 300 + sheet_index
+
+
+def matrix_section_id(sheet_index: int) -> int:
+    return SEED_BASE_ID + 400 + sheet_index
+
+
+def matrix_subsection_id(sheet_index: int) -> int:
+    return SEED_BASE_ID + 500 + sheet_index
 
 
 def main() -> None:

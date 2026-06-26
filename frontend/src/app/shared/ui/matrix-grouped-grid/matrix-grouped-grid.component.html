@@ -23,11 +23,11 @@
           <td class="p-3 fw-medium competency-matrix-subsection-cell">{{ row.subsection }}</td>
           @for (cell of row.cells; track cell.grade) {
             <td class="p-3 align-top competency-matrix-grade-cell">
-              @for (question of cell.questions; track question.id) {
+              @for (question of cell.questions; track question.slug) {
                 <button
                   type="button"
                   class="btn btn-link p-0 text-start text-decoration-none link-active matrix-question-link d-block mb-1"
-                  (click)="selectQuestion(question.id)"
+                  (click)="selectQuestion(question.slug)"
                 >
                   <span class="d-block">{{ question.question }}</span>
                 </button>

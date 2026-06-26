@@ -137,14 +137,14 @@ describe('MatrixQuestionQueueService', () => {
   });
 
   it('creates matrix question from queued question', () => {
-    let createdId: number | undefined;
+    let createdId: string | undefined;
 
     service
       .createQuestionFromQueue(
         7,
         {
           slug: 'pep-8',
-          sheetKey: 'python',
+          subsectionId: 3,
           grade: 'Junior',
           publishStatus: 'Draft',
           translations: {
@@ -152,17 +152,11 @@ describe('MatrixQuestionQueueService', () => {
               question: 'Что такое PEP 8?',
               answer: 'Ответ',
               interviewExpectedAnswer: 'Ожидаемый ответ',
-              sheet: 'Питон',
-              section: 'Основы',
-              subsection: 'Стиль',
             },
             en: {
               question: 'What is PEP 8?',
               answer: 'Answer',
               interviewExpectedAnswer: 'Expected answer',
-              sheet: 'Python',
-              section: 'Core',
-              subsection: 'Style',
             },
           },
           resources: [],
@@ -179,8 +173,11 @@ describe('MatrixQuestionQueueService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.body.slug).toBe('pep-8');
-    req.flush({ id: 10, slug: 'pep-8', question: 'What is PEP 8?' });
+    expect(req.request.body.subsectionId).toBe(3);
+    expect(req.request.body.sheetKey).toBeUndefined();
+    expect(req.request.body.translations.en.section).toBeUndefined();
+    req.flush({ id: '10', slug: 'pep-8', question: 'What is PEP 8?' });
 
-    expect(createdId).toBe(10);
+    expect(createdId).toBe('10');
   });
 });

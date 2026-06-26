@@ -17,6 +17,9 @@ class TestCompetencyMatrixUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=CompetencyMatrixStorage)
+        self.storage.get_item_structure_by_subsection_id.return_value = (
+            self.factory.core.competency_matrix_item_structure()
+        )
         self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
         self.use_case = CompetencyMatrixUseCase(
             storage=self.storage,
@@ -37,6 +40,9 @@ class TestCompetencyMatrixUseCase(TestCase):
         )
         await self.use_case.create_item(params=params)
         self.storage.get_resources_by_ids.assert_not_called()
+        self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
+            subsection_id=self.factory.core.int_id(1),
+        )
         self.storage.create_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(
                 item_id=2,
@@ -61,6 +67,9 @@ class TestCompetencyMatrixUseCase(TestCase):
         with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
             await self.use_case.create_item(params=params)
 
+        self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
+            subsection_id=self.factory.core.int_id(1),
+        )
         self.storage.create_competency_matrix_item.assert_not_called()
 
     async def test_create_item_rejects_missing_existing_resource(self) -> None:
@@ -91,4 +100,5 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
         )
+        self.storage.get_item_structure_by_subsection_id.assert_not_called()
         self.storage.create_competency_matrix_item.assert_not_called()

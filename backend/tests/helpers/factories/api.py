@@ -124,6 +124,7 @@ class ApiFactoryHelper:
     def competency_matrix_item_request(
         cls,
         slug: str = "question-1",
+        subsection_id: int = 1,
         question_ru: str = "вопрос 1",
         question_en: str = "question 1",
         answer_ru: str = "ответ 1",
@@ -142,9 +143,18 @@ class ApiFactoryHelper:
         publish_status: str = "Draft",
         resources: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        _ = (
+            sheet_key,
+            sheet_ru,
+            sheet_en,
+            section_ru,
+            section_en,
+            subsection_ru,
+            subsection_en,
+        )
         return {
             "slug": slug,
-            "sheetKey": sheet_key,
+            "subsectionId": subsection_id,
             "grade": grade,
             "interviewFrequency": interview_frequency,
             "publishStatus": publish_status,
@@ -153,17 +163,11 @@ class ApiFactoryHelper:
                     "question": question_ru,
                     "answer": answer_ru,
                     "interviewExpectedAnswer": interview_expected_answer_ru,
-                    "sheet": sheet_ru,
-                    "section": section_ru,
-                    "subsection": subsection_ru,
                 },
                 "en": {
                     "question": question_en,
                     "answer": answer_en,
                     "interviewExpectedAnswer": interview_expected_answer_en,
-                    "sheet": sheet_en,
-                    "section": section_en,
-                    "subsection": subsection_en,
                 },
             },
             "resources": resources or [],

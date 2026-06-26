@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NonNullableFormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -20,6 +20,7 @@ import {
   flattenNestedErrorMessages,
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { MatrixStructurePickerComponent } from '../../components/matrix-structure-picker/matrix-structure-picker.component';
 import {
   AdminMatrixGrade,
   AdminMatrixItemPayload,
@@ -43,6 +44,7 @@ type QueueAddMode = 'manual' | 'import';
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    MatrixStructurePickerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
@@ -88,7 +90,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   readonly form = this.formBuilder.group({
     slug: ['', [Validators.required, Validators.maxLength(255)]],
-    sheetKey: ['', [Validators.required, Validators.maxLength(255)]],
+    subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade>('Junior', {
       validators: Validators.required,
     }),
@@ -98,12 +100,6 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     answerEn: ['', Validators.required],
     expectedAnswerRu: ['', Validators.required],
     expectedAnswerEn: ['', Validators.required],
-    sheetRu: ['', [Validators.required, Validators.maxLength(255)]],
-    sheetEn: ['', [Validators.required, Validators.maxLength(255)]],
-    sectionRu: ['', [Validators.required, Validators.maxLength(255)]],
-    sectionEn: ['', [Validators.required, Validators.maxLength(255)]],
-    subsectionRu: ['', [Validators.required, Validators.maxLength(255)]],
-    subsectionEn: ['', [Validators.required, Validators.maxLength(255)]],
   });
 
   ngOnInit(): void {
@@ -131,12 +127,9 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   selectQuestion(question: QueuedMatrixQuestion): void {
     this.selectedQuestion.set(question);
-    const sheet = question.sheet ?? '';
-    const section = question.section ?? '';
-    const subsection = question.subsection ?? '';
     this.form.reset({
       slug: `queued-question-${question.id}`,
-      sheetKey: sheet.toLowerCase().replaceAll(' ', '-'),
+      subsectionId: null,
       grade: question.grade ?? 'Junior',
       questionRu: question.question,
       questionEn: question.question,
@@ -144,12 +137,6 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       answerEn: '',
       expectedAnswerRu: '',
       expectedAnswerEn: '',
-      sheetRu: sheet,
-      sheetEn: sheet,
-      sectionRu: section,
-      sectionEn: section,
-      subsectionRu: subsection,
-      subsectionEn: subsection,
     });
   }
 
@@ -319,11 +306,20 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .join(' / ');
   }
 
+  selectQuestionSubsection(subsectionId: number | null): void {
+    this.form.controls.subsectionId.setValue(subsectionId);
+    this.form.controls.subsectionId.markAsTouched();
+    this.form.controls.subsectionId.markAsDirty();
+  }
+
   private toPayload(): AdminMatrixItemPayload {
     const value = this.form.getRawValue();
+    if (value.subsectionId === null) {
+      throw new Error('Matrix question subsection is required');
+    }
     return {
       slug: value.slug,
-      sheetKey: value.sheetKey,
+      subsectionId: value.subsectionId,
       grade: value.grade,
       publishStatus: 'Draft',
       translations: {
@@ -331,24 +327,18 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           question: value.questionRu,
           answer: value.answerRu,
           interviewExpectedAnswer: value.expectedAnswerRu,
-          sheet: value.sheetRu,
-          section: value.sectionRu,
-          subsection: value.subsectionRu,
         },
         en: {
           question: value.questionEn,
           answer: value.answerEn,
           interviewExpectedAnswer: value.expectedAnswerEn,
-          sheet: value.sheetEn,
-          section: value.sectionEn,
-          subsection: value.subsectionEn,
         },
       },
       resources: [],
     };
   }
 
-  private currentLanguage(): 'ru' | 'en' {
+  currentLanguage(): 'ru' | 'en' {
     const language = this.i18n.language();
     if (language === null) {
       throw new Error('I18n language is not initialized');

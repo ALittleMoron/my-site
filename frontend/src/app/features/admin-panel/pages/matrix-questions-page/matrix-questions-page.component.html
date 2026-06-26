@@ -469,17 +469,18 @@
                   </button>
                 </div>
               </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-sheet-key">
-                  {{ 'matrix.form.sheetKey' | t }}
-                  <span class="required-marker" aria-hidden="true">*</span>
-                </label>
-                <input
-                  id="matrix-form-sheet-key"
-                  class="form-control"
-                  [class.is-invalid]="fieldInvalid('sheetKey')"
-                  formControlName="sheetKey"
+              <div class="col-12">
+                <app-matrix-structure-picker
+                  [language]="currentLanguage()"
+                  [selectedSubsectionId]="questionForm.controls.subsectionId.value"
+                  [disabled]="formSubmitting()"
+                  (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
                 />
+                @if (fieldInvalid('subsectionId')) {
+                  <div class="invalid-feedback d-block">
+                    {{ 'matrix.form.subsectionRequired' | t }}
+                  </div>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="matrix-form-grade">{{
@@ -539,58 +540,6 @@
                   class="form-control"
                   [class.is-invalid]="fieldInvalid('questionEn')"
                   formControlName="questionEn"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-sheet-ru">{{
-                  'matrix.form.sheetRu' | t
-                }}</label>
-                <input id="matrix-form-sheet-ru" class="form-control" formControlName="sheetRu" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-sheet-en">{{
-                  'matrix.form.sheetEn' | t
-                }}</label>
-                <input id="matrix-form-sheet-en" class="form-control" formControlName="sheetEn" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-section-ru">
-                  {{ 'matrix.form.sectionRu' | t }}
-                </label>
-                <input
-                  id="matrix-form-section-ru"
-                  class="form-control"
-                  formControlName="sectionRu"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-section-en">
-                  {{ 'matrix.form.sectionEn' | t }}
-                </label>
-                <input
-                  id="matrix-form-section-en"
-                  class="form-control"
-                  formControlName="sectionEn"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-subsection-ru">
-                  {{ 'matrix.form.subsectionRu' | t }}
-                </label>
-                <input
-                  id="matrix-form-subsection-ru"
-                  class="form-control"
-                  formControlName="subsectionRu"
-                />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label" for="matrix-form-subsection-en">
-                  {{ 'matrix.form.subsectionEn' | t }}
-                </label>
-                <input
-                  id="matrix-form-subsection-en"
-                  class="form-control"
-                  formControlName="subsectionEn"
                 />
               </div>
               <div class="col-md-6">
