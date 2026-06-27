@@ -40,7 +40,12 @@ class UserModel(BaseModel):
             func.lower(username).label("username_lower"),
             username,
         ),
-        Index("users_active_admins_idx", role, is_active),
+        Index(
+            "users_single_owner_uniq",
+            role,
+            unique=True,
+            postgresql_where=role == RoleEnum.OWNER,
+        ),
     )
 
     def to_domain_schema(self) -> User:

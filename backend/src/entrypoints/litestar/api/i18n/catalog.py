@@ -85,9 +85,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Войти",
         "auth.login.submitting": "Вход...",
         "auth.login.error": "Не удалось войти. Попробуйте ещё раз.",
-        "auth.login.restrictedAccessWarning.title": "Пока только для модераторов и администраторов",
+        "auth.login.restrictedAccessWarning.title": (
+            "Пока только для владельца, администраторов и модераторов"
+        ),
         "auth.login.restrictedAccessWarning.message": (
-            "На данный момент вход работает только для модераторов и администраторов. "
+            "На данный момент вход работает только для команды управления. "
             "В будущем здесь появится вход для обычных пользователей."
         ),
         "adminPanel.title": "Админ-панель",
@@ -481,8 +483,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.architecture.frontendTitle": "Frontend",
         "siteBuild.architecture.frontendBody": (
             "Angular hybrid SSR/CSR и backend-driven i18n дают SEO для публичных страниц, "
-            "а read-only матрица и статьи отделены от protected admin workspaces для authoring "
-            "и управления командой."
+            "а read-only матрица и статьи отделены от protected workspaces: контентом управляют "
+            "владелец, администраторы и модераторы, а командой — владелец и администраторы."
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
@@ -813,6 +815,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.role.user": "Пользователя",
         "enum.role.moderator": "Модератор",
         "enum.role.admin": "Администратор",
+        "enum.role.owner": "Владелец",
         "enum.articleReaction.heart": "Понравилось",
         "enum.articleReaction.fire": "Хочу ещё",
         "enum.articleReaction.thinking": "Заставило подумать",
@@ -885,10 +888,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "auth.login.submit": "Log in",
         "auth.login.submitting": "Signing in...",
         "auth.login.error": "Login failed. Please try again.",
-        "auth.login.restrictedAccessWarning.title": "Moderators and admins only for now",
+        "auth.login.restrictedAccessWarning.title": "Owner, admins, and moderators only for now",
         "auth.login.restrictedAccessWarning.message": (
-            "At the moment, login works only for moderators and administrators. Regular user "
-            "login will be added in the future."
+            "At the moment, login works only for the management team. Regular user login will be "
+            "added in the future."
         ),
         "adminPanel.title": "Admin panel",
         "adminPanel.header.backToHome": "Home",
@@ -1272,8 +1275,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.architecture.frontendTitle": "Frontend",
         "siteBuild.architecture.frontendBody": (
             "Angular hybrid SSR/CSR and backend-driven i18n provide SEO for public pages, "
-            "while read-only matrix and article surfaces stay separate from protected admin "
-            "authoring and team-management workspaces."
+            "while read-only matrix and article surfaces stay separate from protected workspaces: "
+            "owner, admins, and moderators manage content, while owner and admins govern the team."
         ),
         "siteBuild.architecture.infraTitle": "Infrastructure",
         "siteBuild.architecture.infraBody": (
@@ -1601,6 +1604,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "enum.role.user": "User",
         "enum.role.moderator": "Moderator",
         "enum.role.admin": "Admin",
+        "enum.role.owner": "Owner",
         "enum.articleReaction.heart": "Liked it",
         "enum.articleReaction.fire": "Want more",
         "enum.articleReaction.thinking": "Made me think",

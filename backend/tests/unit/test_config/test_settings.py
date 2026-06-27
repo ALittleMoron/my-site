@@ -73,3 +73,7 @@ class TestSettings:
 
     def test_contact_requests_disabled_by_test_settings(self) -> None:
         assert self.settings.app.contact_requests_enabled is False
+
+    def test_owner_init_credentials_use_owner_environment(self) -> None:
+        assert self.settings.owner.init_login == "owner"
+        assert self.settings.owner.init_password.get_secret_value() == "owner"

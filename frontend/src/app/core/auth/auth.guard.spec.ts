@@ -10,18 +10,14 @@ import {
 } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom, isObservable, of } from 'rxjs';
-import { adminGuard, authGuard } from './auth.guard';
+import { authGuard, teamGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { ApiClient } from '../http/api-client.service';
 
 describe('authGuard', () => {
-  function mockAuthService(
-    canManageContent: boolean,
-    isAdmin = canManageContent,
-  ): Partial<AuthService> {
+  function mockAuthService(canManageContent: boolean): Partial<AuthService> {
     return {
       canManageContent: () => canManageContent,
-      isAdmin: () => isAdmin,
       ensureCurrentUserLoaded: () => of(void 0),
       clearLocalSession: jest.fn(),
     };
@@ -85,21 +81,24 @@ describe('authGuard', () => {
   });
 });
 
-describe('adminGuard', () => {
-  function mockAuthService(isAdmin: boolean): Partial<AuthService> {
+describe('teamGuard', () => {
+  function mockAuthService(canManageTeam: boolean): Partial<AuthService> {
     return {
-      isAdmin: () => isAdmin,
+      canManageTeam: () => canManageTeam,
       ensureCurrentUserLoaded: () => of(void 0),
       clearLocalSession: jest.fn(),
     };
   }
 
-  function runGuard(isAdmin: boolean): MaybeAsync<GuardResult> {
+  function runGuard(canManageTeam: boolean): MaybeAsync<GuardResult> {
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: AuthService, useValue: mockAuthService(isAdmin) }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: mockAuthService(canManageTeam) },
+      ],
     });
     return TestBed.runInInjectionContext(() =>
-      adminGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+      teamGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
     );
   }
 
@@ -110,11 +109,11 @@ describe('adminGuard', () => {
     return Promise.resolve(result);
   }
 
-  it('returns true when user is an admin', async () => {
+  it('returns true when user can manage team', async () => {
     await expect(resolveGuardResult(runGuard(true))).resolves.toBe(true);
   });
 
-  it('redirects non-admin content managers away from admin-only workspaces', async () => {
+  it('redirects non-team content managers away from team workspaces', async () => {
     const result = await resolveGuardResult(runGuard(false));
 
     expect(result instanceof UrlTree).toBe(true);

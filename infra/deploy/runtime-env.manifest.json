@@ -3,7 +3,7 @@
     { "name": "IMAGE_TAG", "allowEmpty": false }
   ],
   "vars": [
-    { "name": "ADMIN_INIT_LOGIN", "allowEmpty": false },
+    { "name": "OWNER_INIT_LOGIN", "allowEmpty": false },
     { "name": "APP_CONTACT_REQUESTS_ENABLED", "allowEmpty": false },
     { "name": "APP_DEBUG", "allowEmpty": false },
     { "name": "APP_DOMAIN", "allowEmpty": false },
@@ -48,7 +48,7 @@
     { "name": "VPN_BIND_ADDRESS", "allowEmpty": false }
   ],
   "secrets": [
-    { "name": "ADMIN_INIT_PASSWORD", "allowEmpty": false },
+    { "name": "OWNER_INIT_PASSWORD", "allowEmpty": false },
     { "name": "APP_SECRET_KEY", "allowEmpty": false },
     { "name": "AUTH_PRIVATE_KEY", "allowEmpty": false },
     { "name": "DB_PASSWORD", "allowEmpty": false },

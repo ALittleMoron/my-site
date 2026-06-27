@@ -16,7 +16,7 @@ from verbose_http_exceptions import (
 from core.account.exceptions import (
     AccountUsernameAlreadyExistsError,
     InvalidManagedAccountRoleError,
-    LastActiveAdminActionForbiddenError,
+    ManagedAccountActionForbiddenError,
     SelfAccountActionForbiddenError,
 )
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
@@ -157,7 +157,7 @@ def test_domain_error_verbose_exception_mapping() -> None:
         AccountUsernameAlreadyExistsError: BadRequestHTTPException,
         InvalidManagedAccountRoleError: BadRequestHTTPException,
         SelfAccountActionForbiddenError: ForbiddenHTTPException,
-        LastActiveAdminActionForbiddenError: ForbiddenHTTPException,
+        ManagedAccountActionForbiddenError: ForbiddenHTTPException,
     }
     assert expected_mapping == exception_handlers.DOMAIN_ERROR_MAPPING
 

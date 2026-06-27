@@ -22,6 +22,7 @@ def upgrade() -> None:
                 "USER",
                 "MODERATOR",
                 "ADMIN",
+                "OWNER",
                 name="role_enum",
                 native_enum=False,
                 length=10,

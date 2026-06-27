@@ -86,6 +86,5 @@ BALANCED_THRESHOLD_POLICY = QueryThresholdPolicy(
         "managed_accounts_deactivate__002": ("users_username_idx",),
         "managed_accounts_delete__001": ("users_username_lower_uniq",),
         "managed_accounts_delete__002": ("users_username_idx",),
-        "managed_accounts_count_active_admins__001": ("users_active_admins_idx",),
     },
 )

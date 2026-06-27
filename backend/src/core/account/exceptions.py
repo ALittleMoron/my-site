@@ -17,5 +17,5 @@ class SelfAccountActionForbiddenError(DomainError):
     message = "Cannot perform this action on your own account"
 
 
-class LastActiveAdminActionForbiddenError(DomainError):
-    message = "Cannot remove the last active admin"
+class ManagedAccountActionForbiddenError(DomainError):
+    message = "Cannot perform this action on this managed account"

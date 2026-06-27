@@ -21,7 +21,7 @@
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
 A personal knowledge site with portfolio and case-study pages, a competency matrix, localized articles,
-and protected admin workspaces.
+and protected owner/admin/moderator workspaces.
 
 ## 📖 Documentation
 
@@ -48,11 +48,11 @@ my-site/
 
 - Competency matrix with normalized localized sheets, sections, and subsections, search, a grid/table view, detailed Q&A, public SEO question pages, an admin structure picker, and linked resources
 - Articles with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
-- Protected moderator/admin panel for creating, editing, publishing, and unpublishing articles and matrix questions, plus an admin-only team workspace for account management
+- Protected owner/admin/moderator panel for creating, editing, publishing, and unpublishing articles and matrix questions, plus owner/admin team governance where admins manage moderators and the single owner has full team access
 - Privacy-safe article analytics with public view counters, engaged views, source categories, and anonymous reactions
 - Public "how this site is built" case-study page covering architecture, quality, and operations
 - Russian/English UI and content localization driven by the backend
-- PASETO-protected moderator/admin authentication with inactive-account enforcement
+- PASETO-protected owner/admin/moderator authentication with inactive-account enforcement
 
 ## 🚀 Quick Start
 

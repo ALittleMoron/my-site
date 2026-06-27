@@ -1,4 +1,5 @@
-export type ManagedAccountRole = 'admin' | 'moderator';
+export type ManagedAccountRole = 'owner' | 'admin' | 'moderator';
+export type EditableManagedAccountRole = 'admin' | 'moderator';
 
 export interface ManagedAccountDto {
   username: string;
@@ -31,13 +32,13 @@ export interface ManagedAccountListParams {
 
 export interface ManagedAccountCreatePayload {
   username: string;
-  role: ManagedAccountRole;
+  role: EditableManagedAccountRole;
   password: string;
   isActive: boolean;
 }
 
 export interface ManagedAccountRoleUpdatePayload {
-  role: ManagedAccountRole;
+  role: EditableManagedAccountRole;
 }
 
 export interface ManagedAccountPasswordUpdatePayload {

@@ -25,7 +25,7 @@
     "@angular/ssr": "^22.0.1",
     "@toast-ui/editor": "^3.2.2",
     "bootstrap": "^5.3.8",
-    "dompurify": "^3.4.8",
+    "dompurify": "^3.4.11",
     "express": "^5.2.1",
     "marked": "^18.0.5",
     "rxjs": "~7.8.0",
@@ -56,6 +56,9 @@
     "@babel/plugin-transform-modules-systemjs": "7.29.7",
     "@angular/cli": {
       "pacote": "21.5.0"
+    },
+    "@toast-ui/editor": {
+      "dompurify": "3.4.11"
     },
     "@tootallnate/once": "2.0.1",
     "ajv": {

@@ -15,7 +15,7 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 - Paid features. All functionality will be free.
 - Complex role/permission system. Keep only guests, regular users, moderators for content
-  authoring, and administrators for future closed functionality.
+  authoring, administrators for moderator management, and a single owner for full team governance.
 - Complex third-party integrations (CRM, ERP, etc.).
 - Complex notification systems (email, SMS, etc.). A subscription to new articles, competency matrix updates, and new course releases is fine — nothing beyond that. No spam, mass mailings, or promo.
 - Mobile app. The site will be responsive and mobile-friendly, but there will be no separate native app.

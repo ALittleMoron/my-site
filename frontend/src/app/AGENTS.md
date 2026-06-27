@@ -25,25 +25,25 @@ Never violate these boundaries:
 
 ## `core/` Contents
 
-| Path                                         | Responsibility                                                          |
-| -------------------------------------------- | ----------------------------------------------------------------------- |
-| `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                               |
-| `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                              |
-| `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                  |
-| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                   |
-| `core/editor/editor-image-upload.service.ts` | Presign + unsigned upload flow for editor images                        |
-| `core/auth/auth.service.ts`                  | Login/logout, `isAdmin()`/`canManageContent()` signals, session state   |
-| `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                     |
-| `core/auth/auth-token.service.ts`            | SSR-safe token read/write from `localStorage`                           |
-| `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                           |
-| `core/auth/auth.guard.ts`                    | `CanActivateFn` guards for content access and stricter admin-only areas |
-| `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`            |
-| `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD   |
-| `core/notifications/notification.service.ts` | App-wide transient success/error notifications                          |
-| `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                        |
-| `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence        |
-| `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                    |
-| `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape   |
+| Path                                         | Responsibility                                                        |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                             |
+| `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                            |
+| `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                |
+| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                 |
+| `core/editor/editor-image-upload.service.ts` | Presign + unsigned upload flow for editor images                      |
+| `core/auth/auth.service.ts`                  | Login/logout, role capability signals, session state                  |
+| `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
+| `core/auth/auth-token.service.ts`            | SSR-safe token read/write from `localStorage`                         |
+| `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                         |
+| `core/auth/auth.guard.ts`                    | `CanActivateFn` guards for content access and stricter team areas     |
+| `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`          |
+| `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD |
+| `core/notifications/notification.service.ts` | App-wide transient success/error notifications                        |
+| `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                      |
+| `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence      |
+| `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
+| `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
 
 ## I18n
 
@@ -113,17 +113,17 @@ features/<name>/
 
 ## Existing Features
 
-| Feature           | Route                                                                                                                              | Description                                                                                                         |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell, moderator/admin article/matrix workspaces, and admin-only resume/team workspaces; no SSR |
-| `about`           | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                                     |
-| `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                                                |
-| `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                    |
-| `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, tags, and statistics exception                      |
-| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public portfolio/case-study page; unprefixed compatibility route remains                                        |
-| `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                     |
-| `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                            |
-| `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                   |
+| Feature           | Route                                                                                                                              | Description                                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell, owner/admin/moderator article/matrix workspaces, and owner/admin resume/team workspaces; no SSR |
+| `about`           | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                                            |
+| `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                                                       |
+| `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                           |
+| `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, tags, and statistics exception                             |
+| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public portfolio/case-study page; unprefixed compatibility route remains                                               |
+| `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                            |
+| `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                   |
+| `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                          |
 
 ## Routing
 
@@ -136,7 +136,7 @@ features/<name>/
 - Feature `routes.ts` — owns all sub-routes for that feature (`''`, `':id'`, etc.).
 - Use `loadChildren` (not `loadComponent`) so adding sub-routes never touches `app.routes.ts`.
 - Apply the broad content-access guard at protected parent route level. Add stricter child guards
-  only for narrower role boundaries, such as admin-only workspaces inside `/admin-panel`.
+  only for narrower role boundaries, such as owner/admin team workspaces inside `/admin-panel`.
 
 ## `app.config.ts`
 

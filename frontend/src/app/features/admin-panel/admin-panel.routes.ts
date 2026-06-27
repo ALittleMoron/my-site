@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../../core/auth/auth.guard';
+import { teamGuard } from '../../core/auth/auth.guard';
 
 export const adminPanelRoutes: Routes = [
   {
@@ -51,13 +51,13 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/team',
-        canActivate: [adminGuard],
+        canActivate: [teamGuard],
         loadComponent: () =>
           import('./pages/team-page/team-page.component').then((m) => m.TeamPageComponent),
       },
       {
         path: 'workspace/team/:username',
-        canActivate: [adminGuard],
+        canActivate: [teamGuard],
         loadComponent: () =>
           import('./pages/team-member-detail-page/team-member-detail-page.component').then(
             (m) => m.TeamMemberDetailPageComponent,
@@ -65,7 +65,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/resumes',
-        canActivate: [adminGuard],
+        canActivate: [teamGuard],
         loadComponent: () =>
           import('./pages/resumes-page/resumes-page.component').then(
             (m) => m.AdminResumesPageComponent,
@@ -73,7 +73,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/resumes/:id',
-        canActivate: [adminGuard],
+        canActivate: [teamGuard],
         loadComponent: () =>
           import('./pages/resume-detail-page/resume-detail-page.component').then(
             (m) => m.AdminResumeDetailPageComponent,

@@ -5,7 +5,6 @@ from core.account.enums import ManagedAccountActionEnum
 from core.account.exceptions import (
     AccountUsernameAlreadyExistsError,
     InvalidManagedAccountRoleError,
-    LastActiveAdminActionForbiddenError,
 )
 from core.account.schemas import (
     ManagedAccount,
@@ -37,9 +36,16 @@ class AccountsUseCase:
     async def get_account(self, *, username: str) -> ManagedAccount:
         return await self.storage.get_managed_account(username=username)
 
-    async def create_account(self, *, params: ManagedAccountCreateParams) -> ManagedAccount:
+    async def create_account(
+        self,
+        *,
+        params: ManagedAccountCreateParams,
+        current_username: str,
+    ) -> ManagedAccount:
         if params.role not in {RoleEnum.ADMIN, RoleEnum.MODERATOR}:
             raise InvalidManagedAccountRoleError
+        current_account = await self.storage.get_managed_account(username=current_username)
+        current_account.ensure_can_create_account_with_role(role=params.role)
         with suppress(UserNotFoundError):
             await self.storage.get_user_by_username(username=params.username)
             raise AccountUsernameAlreadyExistsError
@@ -61,16 +67,7 @@ class AccountsUseCase:
             raise InvalidManagedAccountRoleError
         target_account = await self.storage.get_managed_account(username=username)
         current_account = await self.storage.get_managed_account(username=current_username)
-        current_account.ensure_can_manage_account(
-            target=target_account,
-            action=ManagedAccountActionEnum.UPDATE_ROLE,
-        )
-        if (
-            target_account.is_active_admin
-            and params.role != RoleEnum.ADMIN
-            and await self.storage.count_active_admins() <= 1
-        ):
-            raise LastActiveAdminActionForbiddenError
+        current_account.ensure_can_update_account_role(target=target_account, role=params.role)
         return await self.storage.update_managed_account_role(
             username=username,
             role=params.role,
@@ -110,8 +107,6 @@ class AccountsUseCase:
             target=target_account,
             action=ManagedAccountActionEnum.DEACTIVATE,
         )
-        if target_account.is_active_admin and await self.storage.count_active_admins() <= 1:
-            raise LastActiveAdminActionForbiddenError
         return await self.storage.deactivate_managed_account(username=username)
 
     async def delete_account(self, *, username: str, current_username: str) -> None:
@@ -121,6 +116,4 @@ class AccountsUseCase:
             target=target_account,
             action=ManagedAccountActionEnum.DELETE,
         )
-        if target_account.is_active_admin and await self.storage.count_active_admins() <= 1:
-            raise LastActiveAdminActionForbiddenError
         await self.storage.delete_managed_account(username=username)

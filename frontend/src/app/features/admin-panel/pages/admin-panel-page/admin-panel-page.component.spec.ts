@@ -10,12 +10,14 @@ describe('AdminPanelPageComponent', () => {
   let currentUser: WritableSignal<AccountInfo | null>;
   let isAdmin: WritableSignal<boolean>;
   let canManageContent: WritableSignal<boolean>;
+  let canManageTeam: WritableSignal<boolean>;
   let isLoggedIn: WritableSignal<boolean>;
 
   beforeEach(async () => {
     currentUser = signal({ username: 'admin', role: 'admin' });
     isAdmin = signal(true);
     canManageContent = signal(true);
+    canManageTeam = signal(true);
     isLoggedIn = signal(true);
     await TestBed.configureTestingModule({
       imports: [AdminPanelPageComponent],
@@ -28,6 +30,7 @@ describe('AdminPanelPageComponent', () => {
             currentUser,
             isAdmin,
             canManageContent,
+            canManageTeam,
             isLoggedIn,
           },
         },
@@ -63,14 +66,26 @@ describe('AdminPanelPageComponent', () => {
     ]);
   });
 
-  it('hides admin-only workspace navigation for non-admin content managers', () => {
+  it('hides team workspace navigation from non-team content managers', () => {
     isAdmin.set(false);
+    canManageTeam.set(false);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).not.toContain('Команда');
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
     expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
+  });
+
+  it('shows workspace navigation for owners without exact admin access', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    isAdmin.set(false);
+    canManageTeam.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Рабочая область');
+    expect(fixture.nativeElement.textContent).toContain('Команда');
+    expect(fixture.nativeElement.textContent).toContain('Резюме');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

@@ -34,8 +34,8 @@ jobs:
       APP_CONTACT_REQUESTS_ENABLED: "false"
       I18N_DEFAULT_LANGUAGE: ru
       COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT: 10
-      ADMIN_INIT_LOGIN: admin
-      ADMIN_INIT_PASSWORD: admin
+      OWNER_INIT_LOGIN: owner
+      OWNER_INIT_PASSWORD: owner
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_DRIVER: postgresql+psycopg

@@ -9,8 +9,8 @@ from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from entrypoints.litestar.guards import (
-    admin_user_guard,
     content_manager_guard,
+    team_manager_guard,
 )
 
 
@@ -28,17 +28,23 @@ def make_route_handler() -> BaseRouteHandler:
 
 
 class TestGuards:
-    def test_admin_guard_allows_only_exact_admin(self) -> None:
+    @pytest.mark.parametrize("role", [RoleEnum.OWNER, RoleEnum.ADMIN])
+    def test_team_manager_guard_allows_team_roles(self, role: RoleEnum) -> None:
+        connection = make_connection(JwtUser(username=role.value, role=role))
+
+        team_manager_guard(connection, make_route_handler())
+
+    def test_team_manager_guard_rejects_moderator(self) -> None:
         admin_connection = make_connection(JwtUser(username="admin", role=RoleEnum.ADMIN))
         moderator_connection = make_connection(
             JwtUser(username="moderator", role=RoleEnum.MODERATOR),
         )
 
-        admin_user_guard(admin_connection, make_route_handler())
+        team_manager_guard(admin_connection, make_route_handler())
         with pytest.raises(UnauthorizedError):
-            admin_user_guard(moderator_connection, make_route_handler())
+            team_manager_guard(moderator_connection, make_route_handler())
 
-    @pytest.mark.parametrize("role", [RoleEnum.ADMIN, RoleEnum.MODERATOR])
+    @pytest.mark.parametrize("role", [RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR])
     def test_content_manager_guard_allows_content_roles(self, role: RoleEnum) -> None:
         connection = make_connection(JwtUser(username=role.value, role=role))
 

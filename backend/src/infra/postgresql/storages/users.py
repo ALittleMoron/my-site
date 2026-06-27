@@ -11,7 +11,7 @@ from core.auth.exceptions import UserNotFoundError
 from core.auth.schemas import User
 from infra.postgresql.models import UserModel
 
-MANAGED_ACCOUNT_ROLES = (RoleEnum.ADMIN, RoleEnum.MODERATOR)
+MANAGED_ACCOUNT_ROLES = (RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR)
 
 
 @dataclass(kw_only=True)
@@ -32,13 +32,13 @@ class UserAccountDatabaseStorage(ManagedAccountStorage):
     ) -> tuple[list[ManagedAccount], int]:
         query = (
             select(UserModel)
-            .where(UserModel.role.in_([RoleEnum.ADMIN, RoleEnum.MODERATOR]))
+            .where(UserModel.role.in_(MANAGED_ACCOUNT_ROLES))
             .order_by(func.lower(UserModel.username), UserModel.username)
             .offset(filters.offset)
             .limit(filters.limit)
         )
         count_query = select(func.count(UserModel.username)).where(
-            UserModel.role.in_([RoleEnum.ADMIN, RoleEnum.MODERATOR]),
+            UserModel.role.in_(MANAGED_ACCOUNT_ROLES),
         )
         models = await self.session.scalars(query)
         total_count = (await self.session.scalar(count_query)) or 0
@@ -159,10 +159,3 @@ class UserAccountDatabaseStorage(ManagedAccountStorage):
         deleted_username = await self.session.scalar(statement)
         if deleted_username is None:
             raise ManagedAccountNotFoundError
-
-    async def count_active_admins(self) -> int:
-        query = select(func.count(UserModel.username)).where(
-            UserModel.role == RoleEnum.ADMIN,
-            UserModel.is_active.is_(True),
-        )
-        return (await self.session.scalar(query)) or 0

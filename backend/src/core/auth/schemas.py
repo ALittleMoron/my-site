@@ -21,6 +21,10 @@ class BaseUser:
         return self.role == RoleEnum.ANON
 
     @property
+    def is_owner(self) -> bool:
+        return self.role == RoleEnum.OWNER
+
+    @property
     def is_admin(self) -> bool:
         return self.role == RoleEnum.ADMIN
 
@@ -34,11 +38,17 @@ class BaseUser:
 
     @property
     def can_manage_content(self) -> bool:
-        return self.role in {RoleEnum.ADMIN, RoleEnum.MODERATOR}
+        return self.role in {RoleEnum.OWNER, RoleEnum.ADMIN, RoleEnum.MODERATOR}
+
+    @property
+    def can_manage_team(self) -> bool:
+        return self.role in {RoleEnum.OWNER, RoleEnum.ADMIN}
 
     def has_role(self, role: RoleEnum) -> bool:
-        if self.role == RoleEnum.ADMIN:
+        if self.role == RoleEnum.OWNER:
             return True
+        if self.role == RoleEnum.ADMIN:
+            return role in {RoleEnum.ANON, RoleEnum.USER, RoleEnum.MODERATOR, RoleEnum.ADMIN}
         if self.role == RoleEnum.MODERATOR:
             return role in {RoleEnum.ANON, RoleEnum.USER, RoleEnum.MODERATOR}
         if self.role == RoleEnum.USER:

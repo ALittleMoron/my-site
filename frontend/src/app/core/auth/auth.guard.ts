@@ -15,14 +15,16 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
-export const adminGuard: CanActivateFn = () => {
+export const teamGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return auth.ensureCurrentUserLoaded().pipe(
-    map(() => auth.isAdmin() || router.createUrlTree(['/admin-panel/articles'])),
+    map(() => auth.canManageTeam() || router.createUrlTree(['/admin-panel/articles'])),
     catchError(() => {
       auth.clearLocalSession();
       return of(router.createUrlTree(['/about-me']));
     }),
   );
 };
+
+export const adminGuard = teamGuard;

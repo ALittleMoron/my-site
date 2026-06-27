@@ -26,7 +26,7 @@ Deploy-only secret:
 
 Runtime variables:
 
-- `ADMIN_INIT_LOGIN`
+- `OWNER_INIT_LOGIN`
 - `APP_CONTACT_REQUESTS_ENABLED`
 - `APP_DEBUG`
 - `APP_DOMAIN`
@@ -69,7 +69,7 @@ Runtime variables:
 
 Runtime secrets:
 
-- `ADMIN_INIT_PASSWORD`
+- `OWNER_INIT_PASSWORD`
 - `APP_SECRET_KEY`
 - `AUTH_PRIVATE_KEY`
 - `DB_PASSWORD`

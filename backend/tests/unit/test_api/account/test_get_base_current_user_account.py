@@ -22,3 +22,15 @@ class TestGetBaseCurrentUserAccountAPI(ApiTestCase):
 
         assert response.status_code == codes.OK
         assert response.json() == {"username": "moderator", "role": "moderator"}
+
+    async def test_get_base_current_user_account_returns_owner_role(self) -> None:
+        authentication_use_case = await self.container.get_auth_use_case()
+        authentication_use_case.authenticate.return_value = JwtUser(
+            username="owner",
+            role=RoleEnum.OWNER,
+        )
+
+        response = self.api.get_get_base_current_user_account()
+
+        assert response.status_code == codes.OK
+        assert response.json() == {"username": "owner", "role": "owner"}

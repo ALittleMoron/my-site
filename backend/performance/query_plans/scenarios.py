@@ -208,10 +208,6 @@ async def run_delete_managed_account(session: AsyncSession) -> None:
     )
 
 
-async def run_count_active_admins(session: AsyncSession) -> None:
-    await UserAccountDatabaseStorage(session=session).count_active_admins()
-
-
 async def run_update_user_password_hash(session: AsyncSession) -> None:
     await AuthDatabaseStorage(session=session).update_user_password_hash(
         SEED_USERNAME,
@@ -894,16 +890,6 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("auth__user_model",),
         allow_seq_scan_reason=None,
         run=run_delete_managed_account,
-    ),
-    scenario(
-        name="managed_accounts_count_active_admins",
-        storage_class="UserAccountDatabaseStorage",
-        method_name="count_active_admins",
-        group=QueryThresholdGroup.AGGREGATE,
-        expected_index_names=("users_active_admins_idx",),
-        forbidden_seq_scan_relations=("auth__user_model",),
-        allow_seq_scan_reason=None,
-        run=run_count_active_admins,
     ),
     scenario(
         name="auth_update_user_password_hash",

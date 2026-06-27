@@ -3,7 +3,10 @@ from math import ceil
 from typing import Self
 
 from core.account.enums import ManagedAccountActionEnum
-from core.account.exceptions import SelfAccountActionForbiddenError
+from core.account.exceptions import (
+    ManagedAccountActionForbiddenError,
+    SelfAccountActionForbiddenError,
+)
 from core.auth.enums import RoleEnum
 from core.schemas import Secret, ValuedDataclass
 
@@ -25,6 +28,10 @@ class ManagedAccount:
     def is_active_admin(self) -> bool:
         return self.is_active and self.role == RoleEnum.ADMIN
 
+    @property
+    def is_active_owner(self) -> bool:
+        return self.is_active and self.role == RoleEnum.OWNER
+
     def ensure_can_manage_account(
         self,
         *,
@@ -36,6 +43,30 @@ class ManagedAccount:
             and self.username.casefold() == target.username.casefold()
         ):
             raise SelfAccountActionForbiddenError
+        if self.username.casefold() == target.username.casefold():
+            return
+        if self.role == RoleEnum.OWNER:
+            return
+        if self.role == RoleEnum.ADMIN and target.role == RoleEnum.MODERATOR:
+            return
+        raise ManagedAccountActionForbiddenError
+
+    def ensure_can_create_account_with_role(self, *, role: RoleEnum) -> None:
+        if self.role == RoleEnum.OWNER and role in {RoleEnum.ADMIN, RoleEnum.MODERATOR}:
+            return
+        if self.role == RoleEnum.ADMIN and role == RoleEnum.MODERATOR:
+            return
+        raise ManagedAccountActionForbiddenError
+
+    def ensure_can_update_account_role(self, *, target: Self, role: RoleEnum) -> None:
+        self.ensure_can_manage_account(
+            target=target,
+            action=ManagedAccountActionEnum.UPDATE_ROLE,
+        )
+        if self.role != RoleEnum.OWNER:
+            raise ManagedAccountActionForbiddenError
+        if role not in {RoleEnum.ADMIN, RoleEnum.MODERATOR}:
+            raise ManagedAccountActionForbiddenError
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

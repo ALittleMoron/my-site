@@ -19,17 +19,17 @@ from entrypoints.litestar.api.accounts.schemas import (
     ManagedAccountRoleUpdateRequestSchema,
     ManagedAccountsResponseSchema,
 )
-from entrypoints.litestar.guards import admin_user_guard
+from entrypoints.litestar.guards import team_manager_guard
 
 
 class AdminAccountsApiController(Controller):
     path = "/accounts"
     tags = ["admin accounts"]
-    guards = [admin_user_guard]
+    guards = [team_manager_guard]
 
     @get(
         "",
-        description="Get managed admin and moderator accounts.",
+        description="Get managed owner, admin and moderator accounts.",
         name="admin-accounts-list-api-handler",
         status_code=status_codes.HTTP_200_OK,
         dependencies={"filters": Provide(provide_managed_account_filters, sync_to_thread=False)},
@@ -51,9 +51,13 @@ class AdminAccountsApiController(Controller):
     async def create_account(
         self,
         data: Annotated[ManagedAccountCreateRequestSchema, Body()],
+        request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
-        account = await use_case.create_account(params=data.to_domain_schema())
+        account = await use_case.create_account(
+            params=data.to_domain_schema(),
+            current_username=request.user.username,
+        )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
     @get(

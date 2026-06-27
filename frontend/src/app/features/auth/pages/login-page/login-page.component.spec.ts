@@ -44,7 +44,9 @@ describe('LoginPageComponent', () => {
     const alert = compiled.querySelector('.alert-warning');
 
     expect(alert).not.toBeNull();
-    expect(alert?.textContent).toContain('Пока только для модераторов и администраторов');
+    expect(alert?.textContent).toContain(
+      'Пока только для владельца, администраторов и модераторов',
+    );
     expect(alert?.textContent).toContain('обычных пользователей');
   });
 

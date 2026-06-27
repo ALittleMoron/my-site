@@ -178,7 +178,7 @@
                   formControlName="role"
                 >
                   <option value="">{{ 'shared.notSet' | t }}</option>
-                  @for (role of roleOptions; track role.value) {
+                  @for (role of roleOptions(); track role.value) {
                     <option [value]="role.value">{{ role.labelKey | t }}</option>
                   }
                 </select>
@@ -275,7 +275,7 @@
               data-testid="team-role-role"
               formControlName="role"
             >
-              @for (role of roleOptions; track role.value) {
+              @for (role of roleOptions(); track role.value) {
                 <option [value]="role.value">{{ role.labelKey | t }}</option>
               }
             </select>

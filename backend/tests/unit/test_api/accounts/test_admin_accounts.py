@@ -23,10 +23,11 @@ class TestAdminAccountsAPI(ApiTestCase):
     def test_list_accounts(self) -> None:
         self.use_case.list_accounts.return_value = self.factory.core.managed_accounts(
             values=[
+                ManagedAccount(username="Owner", role=RoleEnum.OWNER, is_active=True),
                 ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
                 ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=False),
             ],
-            total_count=2,
+            total_count=3,
             total_pages=1,
         )
 
@@ -34,9 +35,10 @@ class TestAdminAccountsAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.json() == {
-            "totalCount": 2,
+            "totalCount": 3,
             "totalPages": 1,
             "accounts": [
+                {"username": "Owner", "role": "owner", "isActive": True},
                 {"username": "Admin", "role": "admin", "isActive": True},
                 {"username": "Moderator", "role": "moderator", "isActive": False},
             ],
@@ -74,6 +76,7 @@ class TestAdminAccountsAPI(ApiTestCase):
                 password=Secret("password123"),
                 is_active=True,
             ),
+            current_username="test",
         )
 
     def test_get_account(self) -> None:
@@ -187,6 +190,19 @@ class TestAdminAccountsAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.create_account.assert_not_called()
 
+    def test_create_account_rejects_owner_role_at_api_boundary(self) -> None:
+        response = self.api.post_create_admin_account(
+            data={
+                "username": "SecondOwner",
+                "role": "owner",
+                "password": "password123",
+                "isActive": True,
+            },
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_account.assert_not_called()
+
     def test_list_accounts_requires_pagination_query_params_at_api_boundary(self) -> None:
         response = self.api.get_admin_accounts(page=None, page_size=None)
 
@@ -202,13 +218,33 @@ class TestAdminAccountsAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.update_role.assert_not_called()
 
+    def test_role_update_rejects_owner_role_at_api_boundary(self) -> None:
+        response = self.api.put_admin_account_role(
+            username="Admin",
+            data={"role": "owner"},
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.update_role.assert_not_called()
+
     def test_requires_authentication(self) -> None:
         response = self.no_auth_api.get_admin_accounts()
 
         self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_accounts.assert_not_called()
 
-    def test_requires_admin_role(self) -> None:
+    def test_allows_owner_role(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="owner",
+            role=RoleEnum.OWNER,
+        )
+        self.use_case.list_accounts.return_value = self.factory.core.managed_accounts()
+
+        response = self.api.get_admin_accounts()
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+
+    def test_requires_team_manager_role(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="moderator",
             role=RoleEnum.MODERATOR,

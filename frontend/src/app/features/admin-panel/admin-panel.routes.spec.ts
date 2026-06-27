@@ -1,8 +1,8 @@
-import { adminGuard } from '../../core/auth/auth.guard';
+import { teamGuard } from '../../core/auth/auth.guard';
 import { adminPanelRoutes } from './admin-panel.routes';
 
 describe('adminPanelRoutes', () => {
-  it('loads the shell page and admin-only workspace routes at the feature root', async () => {
+  it('loads the shell page and team-managed workspace routes at the feature root', async () => {
     expect(adminPanelRoutes.map((route) => route.path)).toEqual(['']);
     expect(adminPanelRoutes[0].loadComponent).toBeDefined();
     expect(adminPanelRoutes[0].children?.map((route) => route.path)).toEqual([
@@ -25,11 +25,11 @@ describe('adminPanelRoutes', () => {
       route.path?.startsWith('workspace/resumes'),
     );
     expect(teamRoutes?.length).toBe(2);
-    expect(teamRoutes?.[0].canActivate).toEqual([adminGuard]);
-    expect(teamRoutes?.[1].canActivate).toEqual([adminGuard]);
+    expect(teamRoutes?.[0].canActivate).toEqual([teamGuard]);
+    expect(teamRoutes?.[1].canActivate).toEqual([teamGuard]);
     expect(resumeRoutes?.length).toBe(2);
-    expect(resumeRoutes?.[0].canActivate).toEqual([adminGuard]);
-    expect(resumeRoutes?.[1].canActivate).toEqual([adminGuard]);
+    expect(resumeRoutes?.[0].canActivate).toEqual([teamGuard]);
+    expect(resumeRoutes?.[1].canActivate).toEqual([teamGuard]);
     await expect(
       adminPanelRoutes[0].children
         ?.find((route) => route.path === 'articles/:slug')

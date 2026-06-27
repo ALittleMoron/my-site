@@ -57,7 +57,7 @@ describe('SiteHeaderComponent', () => {
       isLoggedIn: () => currentUserSignal() !== null,
       canManageContent: () => {
         const role = currentUserSignal()?.role;
-        return role === 'admin' || role === 'moderator';
+        return role === 'owner' || role === 'admin' || role === 'moderator';
       },
       logout: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     };
@@ -130,13 +130,19 @@ describe('SiteHeaderComponent', () => {
     expect(el.querySelector('a[aria-label="Админ-панель"]')).toBeNull();
   });
 
-  it('shows admin-panel navigation to moderators and admins', () => {
-    currentUserSignal.set({ username: 'moderator', role: 'moderator' });
+  it('shows admin-panel navigation to owners, admins, and moderators', () => {
+    currentUserSignal.set({ username: 'owner', role: 'owner' });
     fixture.detectChanges();
 
     let adminLink = el.querySelector('a[aria-label="Админ-панель"]') as HTMLAnchorElement;
     expect(adminLink).not.toBeNull();
     expect(adminLink.getAttribute('href')).toBe('/admin-panel');
+
+    currentUserSignal.set({ username: 'moderator', role: 'moderator' });
+    fixture.detectChanges();
+
+    adminLink = el.querySelector('a[aria-label="Админ-панель"]') as HTMLAnchorElement;
+    expect(adminLink).not.toBeNull();
 
     currentUserSignal.set({ username: 'admin', role: 'admin' });
     fixture.detectChanges();

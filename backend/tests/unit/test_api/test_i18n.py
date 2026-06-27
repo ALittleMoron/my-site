@@ -28,7 +28,7 @@ class TestI18nApi(ApiTestCase):
         assert body["messages"]["enum.publishStatus.Draft"] == "Черновик"
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
         assert body["messages"]["auth.login.restrictedAccessWarning.title"] == (
-            "Пока только для модераторов и администраторов"
+            "Пока только для владельца, администраторов и модераторов"
         )
 
     def test_get_english_bundle(self) -> None:
@@ -44,7 +44,7 @@ class TestI18nApi(ApiTestCase):
         assert body["messages"]["enum.grade.JuniorPlus"] == "Junior+"
         assert (
             body["messages"]["auth.login.restrictedAccessWarning.title"]
-            == "Moderators and admins only for now"
+            == "Owner, admins, and moderators only for now"
         )
 
     def test_unknown_bundle_language_is_rejected(self) -> None:

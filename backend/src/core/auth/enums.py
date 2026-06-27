@@ -6,3 +6,4 @@ class RoleEnum(LabeledStrEnum):
     USER = "user", "Пользователя"
     MODERATOR = "moderator", "Модератор"
     ADMIN = "admin", "Администратор"
+    OWNER = "owner", "Владелец"

@@ -20,13 +20,13 @@ from entrypoints.litestar.api.resumes.schemas import (
     ResumeResponseSchema,
     ResumesResponseSchema,
 )
-from entrypoints.litestar.guards import admin_user_guard
+from entrypoints.litestar.guards import team_manager_guard
 
 
 class AdminResumesApiController(Controller):
     path = "/resumes"
     tags = ["admin resumes"]
-    guards = [admin_user_guard]
+    guards = [team_manager_guard]
 
     @get(
         "",

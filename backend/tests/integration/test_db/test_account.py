@@ -23,6 +23,12 @@ class TestUserAccountStorage(StorageTestCase):
         await self.storage_helper.create_users(
             users=[
                 self.factory.core.user(
+                    username="owner",
+                    password_hash="password0",
+                    role=RoleEnum.OWNER,
+                    is_active=True,
+                ),
+                self.factory.core.user(
                     username="user1",
                     password_hash="password1",
                     role=RoleEnum.USER,
@@ -80,9 +86,10 @@ class TestUserAccountStorage(StorageTestCase):
 
         assert accounts == [
             ManagedAccount(username="moderator", role=RoleEnum.MODERATOR, is_active=False),
+            ManagedAccount(username="owner", role=RoleEnum.OWNER, is_active=True),
             ManagedAccount(username="user2", role=RoleEnum.ADMIN, is_active=True),
         ]
-        assert total_count == 2
+        assert total_count == 3
 
     async def test_get_managed_account_rejects_regular_user(self) -> None:
         with pytest.raises(ManagedAccountNotFoundError):
@@ -162,8 +169,14 @@ class TestUserAccountStorage(StorageTestCase):
         with pytest.raises(ManagedAccountNotFoundError):
             await self.storage.get_managed_account(username="moderator")
 
-    async def test_count_active_admins(self) -> None:
-        assert await self.storage.count_active_admins() == 1
+    async def test_single_owner_unique_index_rejects_second_owner(self) -> None:
+        with pytest.raises(IntegrityError):
+            await self.storage.create_managed_account(
+                username="Owner_Two",
+                role=RoleEnum.OWNER,
+                password_hash="password4",
+                is_active=True,
+            )
 
     async def test_user_model_declares_managed_account_indexes(self) -> None:
         user_table = cast("Table", UserModel.__table__)
@@ -171,5 +184,5 @@ class TestUserAccountStorage(StorageTestCase):
         assert {index.name for index in user_table.indexes} >= {
             "users_username_lower_uniq",
             "users_managed_accounts_list_idx",
-            "users_active_admins_idx",
+            "users_single_owner_uniq",
         }

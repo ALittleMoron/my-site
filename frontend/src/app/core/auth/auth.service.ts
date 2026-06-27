@@ -24,7 +24,7 @@ export interface LoginResponse {
   accessToken: string;
 }
 
-export type AccountRole = 'anon' | 'user' | 'moderator' | 'admin';
+export type AccountRole = 'anon' | 'user' | 'moderator' | 'admin' | 'owner';
 
 export interface AccountInfo {
   username: string;
@@ -39,8 +39,10 @@ export class AuthService {
   private currentUserLoad$: Observable<void> | null = null;
 
   readonly currentUser = this.session.currentUser;
+  readonly isOwner = this.session.isOwner;
   readonly isAdmin = this.session.isAdmin;
   readonly canManageContent = this.session.canManageContent;
+  readonly canManageTeam = this.session.canManageTeam;
   readonly isLoggedIn = this.session.isLoggedIn;
 
   constructor() {

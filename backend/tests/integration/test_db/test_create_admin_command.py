@@ -8,7 +8,7 @@ from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from tests.test_cases import StorageTestCase
 
 
-class TestCreateAdminCommand(StorageTestCase):
+class TestCreateSuperuserCommand(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
         self.user_storage = UserAccountDatabaseStorage(session=session)
@@ -28,3 +28,12 @@ class TestCreateAdminCommand(StorageTestCase):
         user = await self.user_storage.get_user_by_username(username="admin")
 
         assert user == existing_user
+
+    async def test_new_superuser_is_created_as_owner(self) -> None:
+        await create_admin_command(username="owner", password="new-password")
+        self.db_session.expire_all()
+
+        user = await self.user_storage.get_user_by_username(username="owner")
+
+        assert user.role == RoleEnum.OWNER
+        assert user.is_active is True

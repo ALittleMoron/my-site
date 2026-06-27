@@ -57,8 +57,8 @@ class _AppSettings(_ProjectBaseSettings):
         return 0
 
 
-class _AdminSettings(_ProjectBaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ADMIN_")
+class _OwnerSettings(_ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="OWNER_")
 
     init_login: str
     init_password: SecretStrExtended
@@ -175,26 +175,26 @@ class _CacheWarmSettings(_ProjectBaseSettings):
 
 class Settings:
     app: _AppSettings
-    admin: _AdminSettings
     auth: _AuthSettings
     cache_warm: _CacheWarmSettings
     competency_matrix: _CompetencyMatrixSettings
     database: _DatabaseSettings
     i18n: _I18nSettings
     minio: _MinioSettings
+    owner: _OwnerSettings
     sentry: _SentrySettings
     taskiq: _TaskiqSettings
     valkey: _ValkeySettings
 
     def __init__(self) -> None:
         self.app = _AppSettings()
-        self.admin = _AdminSettings()
         self.auth = _AuthSettings()
         self.cache_warm = _CacheWarmSettings()
         self.competency_matrix = _CompetencyMatrixSettings()
         self.database = _DatabaseSettings()
         self.i18n = _I18nSettings()
         self.minio = _MinioSettings()
+        self.owner = _OwnerSettings()
         self.sentry = _SentrySettings()
         self.taskiq = _TaskiqSettings()
         self.valkey = _ValkeySettings()

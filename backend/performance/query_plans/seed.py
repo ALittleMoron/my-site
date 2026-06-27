@@ -57,6 +57,7 @@ MATRIX_FREQUENCY_BUCKET_RARELY = 2
 MATRIX_FREQUENCY_BUCKET_NEVER_SEEN = 3
 USER_SEED_COUNT = 10_000
 INACTIVE_MODERATOR_SEED_INDEX = 2
+OWNER_SEED_INDEX = 3
 MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR = 100
 MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER = 50
 ARTICLE_REACTION_SEED_COUNT = 50_000
@@ -145,6 +146,7 @@ async def insert_users(*, connection: AsyncConnection) -> None:
                 case(
                     (value == 1, literal(RoleEnum.ADMIN.name)),
                     (value == INACTIVE_MODERATOR_SEED_INDEX, literal(RoleEnum.MODERATOR.name)),
+                    (value == OWNER_SEED_INDEX, literal(RoleEnum.OWNER.name)),
                     (
                         value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR == 0,
                         literal(RoleEnum.ADMIN.name),

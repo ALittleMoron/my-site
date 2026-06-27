@@ -10,6 +10,12 @@ class AdminUserGuard:
             raise UnauthorizedError
 
 
+class TeamManagerGuard:
+    def __call__(self, connection: ASGIConnection, _: BaseRouteHandler) -> None:
+        if not connection.user.can_manage_team:
+            raise UnauthorizedError
+
+
 class ContentManagerGuard:
     def __call__(self, connection: ASGIConnection, _: BaseRouteHandler) -> None:
         if not connection.user.can_manage_content:
@@ -17,4 +23,5 @@ class ContentManagerGuard:
 
 
 admin_user_guard = AdminUserGuard()
+team_manager_guard = TeamManagerGuard()
 content_manager_guard = ContentManagerGuard()

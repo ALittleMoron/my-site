@@ -74,17 +74,45 @@ describe('TeamPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Активен');
   });
 
+  it('renders owner accounts and owner role labels', () => {
+    service.listAccounts.mockReturnValue(
+      of(accountsList([account({ username: 'OwnerUser', role: 'owner' })])),
+    );
+    fixture.componentInstance.loadAccounts();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('OwnerUser');
+    expect(fixture.nativeElement.textContent).toContain('Владелец');
+  });
+
+  it('shows admin and moderator creation role options for owners', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.detectChanges();
+
+    openCreateDialog();
+
+    expect(selectOptionValues('team-create-role')).toEqual(['', 'admin', 'moderator']);
+  });
+
+  it('shows only moderator creation role options for admins', () => {
+    openCreateDialog();
+
+    expect(selectOptionValues('team-create-role')).toEqual(['', 'moderator']);
+  });
+
   it('creates an active managed account and navigates to detail', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.detectChanges();
     openCreateDialog();
 
     setInputValue('team-create-username', 'NewAdmin');
-    setInputValue('team-create-role', 'admin');
+    setInputValue('team-create-role', 'moderator');
     setInputValue('team-create-password', 'password123');
     submitForm('team-create-form');
 
     expect(service.createAccount).toHaveBeenCalledWith({
       username: 'NewAdmin',
-      role: 'admin',
+      role: 'moderator',
       password: 'password123',
       isActive: true,
     });
@@ -119,6 +147,84 @@ describe('TeamPageComponent', () => {
     expect(elementByTestId<HTMLButtonElement>('team-actions-admin-password').disabled).toBe(false);
   });
 
+  it('makes owner and admin rows read-only for admins', () => {
+    service.listAccounts.mockReturnValue(
+      of(
+        accountsList([
+          account({ username: 'OwnerUser', role: 'owner' }),
+          account({ username: 'OtherAdmin', role: 'admin' }),
+        ]),
+      ),
+    );
+    fixture.componentInstance.loadAccounts();
+    fixture.detectChanges();
+
+    openActions('OwnerUser');
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-role').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-password').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-deactivate').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-delete').disabled).toBe(true);
+
+    openActions('OtherAdmin');
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-role').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-password').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-deactivate').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-delete').disabled).toBe(
+      true,
+    );
+  });
+
+  it('lets admins manage moderator rows except role changes', () => {
+    service.listAccounts.mockReturnValue(
+      of(accountsList([account({ username: 'Moderator1', role: 'moderator' })])),
+    );
+    fixture.componentInstance.loadAccounts();
+    fixture.detectChanges();
+
+    openActions('Moderator1');
+
+    expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-role').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-password').disabled).toBe(
+      false,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-deactivate').disabled).toBe(
+      false,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-delete').disabled).toBe(
+      false,
+    );
+  });
+
+  it('lets owners manage admin rows', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    service.listAccounts.mockReturnValue(
+      of(accountsList([account({ username: 'OtherAdmin', role: 'admin' })])),
+    );
+    fixture.componentInstance.loadAccounts();
+    fixture.detectChanges();
+
+    openActions('OtherAdmin');
+
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-role').disabled).toBe(false);
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-password').disabled).toBe(
+      false,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-deactivate').disabled).toBe(
+      false,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-delete').disabled).toBe(
+      false,
+    );
+  });
+
   it('activates, deactivates, and deletes accounts from row actions with feedback', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     service.listAccounts.mockReturnValue(
@@ -149,7 +255,7 @@ describe('TeamPageComponent', () => {
     openCreateDialog();
 
     setInputValue('team-create-username', 'NewAdmin');
-    setInputValue('team-create-role', 'admin');
+    setInputValue('team-create-role', 'moderator');
     setInputValue('team-create-password', 'password123');
     submitForm('team-create-form');
 
@@ -172,6 +278,11 @@ describe('TeamPageComponent', () => {
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new Event('change'));
     fixture.detectChanges();
+  }
+
+  function selectOptionValues(testId: string): string[] {
+    const select = elementByTestId<HTMLSelectElement>(testId);
+    return Array.from(select.options).map((option) => option.value);
   }
 
   function submitForm(testId: string): void {

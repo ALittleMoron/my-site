@@ -33,12 +33,12 @@ describe('TeamWorkspaceService', () => {
     expect(listReq.request.params.get('page')).toBe('2');
     expect(listReq.request.params.get('pageSize')).toBe('20');
     listReq.flush({
-      totalCount: 1,
+      totalCount: 2,
       totalPages: 1,
-      accounts: [accountDto()],
+      accounts: [{ ...accountDto(), username: 'OwnerUser', role: 'owner' }, accountDto()],
     });
 
-    expect(firstUsername).toBe('AdminUser');
+    expect(firstUsername).toBe('OwnerUser');
     expect(firstStatus).toBe(true);
   });
 
@@ -110,7 +110,7 @@ describe('TeamWorkspaceService', () => {
 
 function accountDto(): {
   username: string;
-  role: 'admin';
+  role: 'owner' | 'admin' | 'moderator';
   isActive: boolean;
 } {
   return {

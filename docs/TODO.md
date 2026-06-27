@@ -374,7 +374,7 @@
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
-- [x] Add admin/moderator content workspace for articles with admin filters, create modal, edit detail route, tag management, and publish/delete dropdown actions.
+- [x] Add owner/admin/moderator content workspace for articles with admin filters, create modal, edit detail route, tag management, and publish/delete dropdown actions.
 - [ ] Add article editorial queues and richer workspace views.
 - [ ] Add content health checks for articles: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
 - [ ] Add article revision history with diff and restore.
@@ -398,14 +398,14 @@
 
 ### Workspace
 
-Workspace is admin-only utils, that live only in admin panel.
+Workspace is protected owner/admin utilities that live only in the admin panel.
 
 - [x] Resume
   - [x] Store private structured ATS-oriented resume documents outside the knowledge database.
   - [x] Store each resume as a single-language document with required saved RU/EN language.
-  - [x] Add admin-only backend CRUD API under `/api/admin/resumes`.
+  - [x] Add owner/admin backend CRUD API under `/api/admin/resumes`.
   - [x] Scope resume CRUD to the authenticated author so users only list and mutate their own resumes.
-  - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
+  - [x] Add owner/admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
   - [x] Add list, create with language selection, detail edit, language badge, selected-language preview, and delete UI.
   - [x] Keep resumes private: no public pages, sitemap entries, SEO, or themes in v1.
   - [x] Fix resume multilines fields: text with \\n to array.
@@ -419,10 +419,10 @@ Workspace is admin-only utils, that live only in admin panel.
     - [x] Step-by-step maximize resume export ATS score.
     - [x] Fix readability of exported resume
 - [x] Team
-  - [x] Add admin-only backend CRUD API under `/api/admin/accounts`.
-  - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/team`.
-  - [x] Manage moderator/admin usernames, roles, passwords, and active status.
-  - [x] Reject self role/deactivation/delete actions and protect the last active admin.
+  - [x] Add owner/admin backend CRUD API under `/api/admin/accounts`.
+  - [x] Add team Workspace navigation and routes under `/admin-panel/workspace/team`.
+  - [x] Manage owner/admin/moderator usernames, roles, passwords, and active status with owner/admin governance.
+  - [x] Enforce a single owner at the database level; reject owner self role/deactivation/delete actions.
 
 ### Knowledge database
 
@@ -437,7 +437,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
       - [ ] Files per category count - badge next to folder name with amount of files.
   - [ ] Calendar (separated page. List of all dates and people birthdays in interactive calendar)
   - [ ] Access
-    - [ ] V1: Admins only, Per admin knowledge items (admins can see only their own items)
+    - [ ] V1: Owner/admin only, per-account knowledge items (users can see only their own items)
     - [ ] V2: Public knowledge items, users access to shared dashboard
     - [ ] V3: All users public and private items, per user dashboard
 - [ ] Knowledge item
@@ -470,7 +470,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] User authentication improvements (possibly via OAuth2)
   - [ ] (FRONT) Register button and form
   - [ ] (BACK) Registration logic
-  - [ ] Remove the moderator/admin-only login warning after regular-user authorization/login is implemented
+  - [ ] Remove the owner/admin/moderator-only login warning after regular-user authorization/login is implemented
   - [ ] (FRONT) Password recovery button and form (simple confirmation email)
   - [ ] (BACK) Password recovery logic
   - [ ] (BACK) Add session cookie (set on login/register, delete on logout)
@@ -511,7 +511,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
-- [x] Add admin/moderator content workspace for matrix questions with richer filters, public preview, edit detail route, and dropdown actions.
+- [x] Add owner/admin/moderator content workspace for matrix questions with richer filters, public preview, edit detail route, and dropdown actions.
 - [ ] Add content health checks for matrix questions: stale translations, wiki-link issues, resource issues, and broken external links.
 - [ ] Add self-assessment / interview mode with expected-answer reveal.
 - [ ] Track weak matrix topics for later study recommendations.

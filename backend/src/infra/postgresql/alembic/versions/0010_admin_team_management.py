@@ -31,14 +31,16 @@ def upgrade() -> None:
         ],
     )
     op.create_index(
-        "users_active_admins_idx",
+        "users_single_owner_uniq",
         USER_TABLE,
-        ["role", "is_active"],
+        ["role"],
+        unique=True,
+        postgresql_where=sa.column("role") == "OWNER",
     )
 
 
 def downgrade() -> None:
-    op.drop_index("users_active_admins_idx", table_name=USER_TABLE)
+    op.drop_index("users_single_owner_uniq", table_name=USER_TABLE)
     op.drop_index("users_managed_accounts_list_idx", table_name=USER_TABLE)
     op.drop_index("users_username_lower_uniq", table_name=USER_TABLE)
     op.drop_column(USER_TABLE, "is_active")

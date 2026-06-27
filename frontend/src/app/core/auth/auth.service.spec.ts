@@ -50,6 +50,7 @@ describe('AuthService', () => {
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
       expect(service.canManageContent()).toBe(true);
+      expect(service.canManageTeam()).toBe(false);
     });
   });
 
@@ -110,6 +111,7 @@ describe('AuthService', () => {
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
       expect(service.canManageContent()).toBe(true);
+      expect(service.canManageTeam()).toBe(false);
     });
   });
 
@@ -128,7 +130,7 @@ describe('AuthService', () => {
     });
 
     it('restores current user when a token is already stored', () => {
-      const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
+      const mockAccount: AccountInfo = { username: 'owner', role: 'owner' };
       setup(true);
       let completed = false;
 
@@ -142,6 +144,7 @@ describe('AuthService', () => {
       expect(completed).toBe(true);
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.canManageContent()).toBe(true);
+      expect(service.canManageTeam()).toBe(true);
     });
 
     it('shares the in-flight account restore request', () => {
@@ -186,11 +189,12 @@ describe('AuthService', () => {
       setup(true);
 
       const req = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
-      req.flush({ username: 'admin', role: 'admin' });
+      req.flush({ username: 'owner', role: 'owner' });
 
-      expect(service.currentUser()?.username).toBe('admin');
-      expect(service.isAdmin()).toBe(true);
+      expect(service.currentUser()?.username).toBe('owner');
+      expect(service.isAdmin()).toBe(false);
       expect(service.canManageContent()).toBe(true);
+      expect(service.canManageTeam()).toBe(true);
     });
   });
 });

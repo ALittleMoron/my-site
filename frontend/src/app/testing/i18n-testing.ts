@@ -7,9 +7,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'app.siteName': 'Мой сайт',
   'shared.back': 'Назад',
   'shared.next': 'Вперёд',
-  'auth.login.restrictedAccessWarning.title': 'Пока только для модераторов и администраторов',
+  'auth.login.restrictedAccessWarning.title':
+    'Пока только для владельца, администраторов и модераторов',
   'auth.login.restrictedAccessWarning.message':
-    'На данный момент вход работает только для модераторов и администраторов. В будущем здесь появится вход для обычных пользователей.',
+    'На данный момент вход работает только для команды управления. В будущем здесь появится вход для обычных пользователей.',
   'shared.edit': 'Редактировать',
   'shared.delete': 'Удалить',
   'shared.publish': 'Опубликовать',
@@ -37,6 +38,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'enum.role.user': 'Пользователь',
   'enum.role.moderator': 'Модератор',
   'enum.role.admin': 'Администратор',
+  'enum.role.owner': 'Владелец',
   'shell.footer.sourceCode': 'Исходный код',
   'shell.footer.siteBuild': 'Как устроен сайт',
   'shell.footer.githubProfile': 'Профиль GitHub',

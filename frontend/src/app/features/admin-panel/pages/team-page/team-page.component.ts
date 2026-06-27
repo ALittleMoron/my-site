@@ -25,6 +25,7 @@ import {
 } from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
+  EditableManagedAccountRole,
   ManagedAccount,
   ManagedAccountRole,
   ManagedAccounts,
@@ -45,7 +46,7 @@ type TeamRoleField = 'role';
 type TeamPasswordField = 'password';
 
 interface ManagedAccountRoleOption {
-  value: ManagedAccountRole;
+  value: EditableManagedAccountRole;
   labelKey: string;
 }
 
@@ -97,10 +98,15 @@ export class TeamPageComponent implements OnInit {
   readonly passwordFormSubmitted = signal(false);
   readonly passwordError = signal<ApiError | null>(null);
   readonly selectedAccount = signal<ManagedAccount | null>(null);
-  readonly roleOptions = MANAGED_ACCOUNT_ROLE_OPTIONS;
+  readonly roleOptions = computed<readonly ManagedAccountRoleOption[]>(() =>
+    this.currentUserRole() === 'owner'
+      ? MANAGED_ACCOUNT_ROLE_OPTIONS
+      : MANAGED_ACCOUNT_ROLE_OPTIONS.filter((role) => role.value === 'moderator'),
+  );
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
   readonly usernamePattern = ADMIN_ACCOUNT_USERNAME_PATTERN_ATTRIBUTE;
   readonly currentUsername = computed(() => this.auth.currentUser()?.username ?? '');
+  readonly currentUserRole = computed(() => this.auth.currentUser()?.role ?? 'anon');
 
   readonly createForm = this.formBuilder.group({
     username: [
@@ -226,19 +232,18 @@ export class TeamPageComponent implements OnInit {
   }
 
   accountActions(account: ManagedAccount): AdminAction[] {
-    const isSelf = this.isSelfAccount(account);
     const statusAction: AdminAction = account.isActive
       ? {
           id: 'deactivate',
           label: this.i18n.translate('adminTeamWorkspace.action.deactivate'),
           destructive: true,
-          disabled: isSelf,
+          disabled: !this.canDeactivateAccount(account),
         }
       : {
           id: 'activate',
           label: this.i18n.translate('adminTeamWorkspace.action.activate'),
           destructive: false,
-          disabled: false,
+          disabled: !this.canActivateAccount(account),
         };
     return [
       {
@@ -251,20 +256,20 @@ export class TeamPageComponent implements OnInit {
         id: 'role',
         label: this.i18n.translate('adminTeamWorkspace.action.changeRole'),
         destructive: false,
-        disabled: isSelf,
+        disabled: !this.canUpdateAccountRole(account),
       },
       {
         id: 'password',
         label: this.i18n.translate('adminTeamWorkspace.action.changePassword'),
         destructive: false,
-        disabled: false,
+        disabled: !this.canUpdateAccountPassword(account),
       },
       statusAction,
       {
         id: 'delete',
         label: this.i18n.translate('shared.delete'),
         destructive: true,
-        disabled: isSelf,
+        disabled: !this.canDeleteAccount(account),
       },
     ];
   }
@@ -295,7 +300,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   openRoleDialog(account: ManagedAccount): void {
-    if (this.isSelfAccount(account)) return;
+    if (!this.canUpdateAccountRole(account)) return;
     this.selectedAccount.set(account);
     this.roleForm.reset({ role: account.role });
     this.roleError.set(null);
@@ -342,6 +347,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   openPasswordDialog(account: ManagedAccount): void {
+    if (!this.canUpdateAccountPassword(account)) return;
     this.selectedAccount.set(account);
     this.passwordForm.reset({ password: '' });
     this.passwordError.set(null);
@@ -387,6 +393,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   activateAccount(account: ManagedAccount): void {
+    if (!this.canActivateAccount(account)) return;
     this.teamWorkspace
       .activateAccount(account.username)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -401,6 +408,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   deactivateAccount(account: ManagedAccount): void {
+    if (!this.canDeactivateAccount(account)) return;
     if (
       this.document.defaultView?.confirm(
         this.i18n.translate('adminTeamWorkspace.confirmDeactivate'),
@@ -422,6 +430,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   deleteAccount(account: ManagedAccount): void {
+    if (!this.canDeleteAccount(account)) return;
     if (
       this.document.defaultView?.confirm(
         this.i18n.translate('adminTeamWorkspace.confirmDelete'),
@@ -446,6 +455,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   roleLabelKey(role: ManagedAccountRole): string {
+    if (role === 'owner') return 'enum.role.owner';
     return role === 'admin' ? 'enum.role.admin' : 'enum.role.moderator';
   }
 
@@ -461,6 +471,28 @@ export class TeamPageComponent implements OnInit {
       currentUsername.trim() !== '' &&
       account.username.toLocaleLowerCase() === currentUsername.toLocaleLowerCase()
     );
+  }
+
+  canUpdateAccountRole(account: ManagedAccount): boolean {
+    return (
+      this.currentUserRole() === 'owner' && !this.isSelfAccount(account) && account.role !== 'owner'
+    );
+  }
+
+  canUpdateAccountPassword(account: ManagedAccount): boolean {
+    return this.isSelfAccount(account) || this.canManageAccount(account);
+  }
+
+  canActivateAccount(account: ManagedAccount): boolean {
+    return this.canManageAccount(account);
+  }
+
+  canDeactivateAccount(account: ManagedAccount): boolean {
+    return this.canManageAccount(account);
+  }
+
+  canDeleteAccount(account: ManagedAccount): boolean {
+    return this.canManageAccount(account);
   }
 
   createFieldInvalid(field: TeamCreateField): boolean {
@@ -498,9 +530,16 @@ export class TeamPageComponent implements OnInit {
       };
     });
   }
+
+  private canManageAccount(account: ManagedAccount): boolean {
+    if (this.isSelfAccount(account)) return false;
+    const actorRole = this.currentUserRole();
+    if (actorRole === 'owner') return true;
+    return actorRole === 'admin' && account.role === 'moderator';
+  }
 }
 
-function toManagedAccountRole(value: string): ManagedAccountRole {
+function toManagedAccountRole(value: string): EditableManagedAccountRole {
   if (value === 'admin' || value === 'moderator') return value;
   throw new Error(`Unsupported managed account role: ${value}`);
 }

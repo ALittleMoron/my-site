@@ -81,7 +81,18 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(elementByTestId<HTMLButtonElement>('team-detail-actions-toggle')).not.toBeNull();
   });
 
+  it('renders owner account role labels', () => {
+    service.getAccount.mockReturnValue(of(account({ username: 'OwnerUser', role: 'owner' })));
+    fixture.componentInstance.loadAccount();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('OwnerUser');
+    expect(fixture.nativeElement.textContent).toContain('Владелец');
+  });
+
   it('updates role and password through modal forms', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.detectChanges();
     openActions();
     elementByTestId<HTMLButtonElement>('team-detail-actions-role').click();
     fixture.detectChanges();
@@ -101,6 +112,8 @@ describe('TeamMemberDetailPageComponent', () => {
   });
 
   it('deactivates and deletes the current detail account with confirmation', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.detectChanges();
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     fixture.componentInstance.deactivateAccount();
@@ -127,6 +140,52 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(false);
   });
 
+  it('makes owner and admin detail actions read-only for admins', () => {
+    service.getAccount.mockReturnValue(of(account({ username: 'OwnerUser', role: 'owner' })));
+    fixture.componentInstance.loadAccount();
+    fixture.detectChanges();
+
+    openActions();
+
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(true);
+
+    service.getAccount.mockReturnValue(of(account({ username: 'OtherAdmin', role: 'admin' })));
+    fixture.componentInstance.loadAccount();
+    fixture.detectChanges();
+    openActions();
+
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
+      true,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(true);
+  });
+
+  it('lets owners manage admin details with admin and moderator role options', () => {
+    currentUser.set({ username: 'owner', role: 'owner' });
+    service.getAccount.mockReturnValue(of(account({ username: 'OtherAdmin', role: 'admin' })));
+    fixture.componentInstance.loadAccount();
+    fixture.detectChanges();
+
+    openActions();
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(false);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(false);
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
+      false,
+    );
+    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(false);
+
+    elementByTestId<HTMLButtonElement>('team-detail-actions-role').click();
+    fixture.detectChanges();
+    expect(selectOptionValues('team-role-role')).toEqual(['admin', 'moderator']);
+  });
+
   function openActions(): void {
     elementByTestId<HTMLButtonElement>('team-detail-actions-toggle').click();
     fixture.detectChanges();
@@ -138,6 +197,11 @@ describe('TeamMemberDetailPageComponent', () => {
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new Event('change'));
     fixture.detectChanges();
+  }
+
+  function selectOptionValues(testId: string): string[] {
+    const select = elementByTestId<HTMLSelectElement>(testId);
+    return Array.from(select.options).map((option) => option.value);
   }
 
   function submitForm(testId: string): void {

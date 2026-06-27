@@ -68,7 +68,3 @@ class ManagedAccountStorage(UserAccountStorage, ABC):
     @abstractmethod
     async def delete_managed_account(self, *, username: str) -> None:
         raise NotImplementedError
-
-    @abstractmethod
-    async def count_active_admins(self) -> int:
-        raise NotImplementedError

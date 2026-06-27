@@ -5,8 +5,8 @@ import {
   ManagedAccount,
   ManagedAccountCreatePayload,
   ManagedAccountDto,
+  EditableManagedAccountRole,
   ManagedAccountListParams,
-  ManagedAccountRole,
   ManagedAccounts,
   ManagedAccountsDto,
   mapManagedAccountDto,
@@ -38,7 +38,10 @@ export class TeamWorkspaceService {
       .pipe(map(mapManagedAccountDto));
   }
 
-  updateAccountRole(username: string, role: ManagedAccountRole): Observable<ManagedAccount> {
+  updateAccountRole(
+    username: string,
+    role: EditableManagedAccountRole,
+  ): Observable<ManagedAccount> {
     return this.api
       .put<ManagedAccountDto>(`/api/admin/accounts/${encodeURIComponent(username)}/role`, {
         role,

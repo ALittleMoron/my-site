@@ -20,7 +20,8 @@ async def create_admin_command(username: str, password: str) -> None:
                 .values(
                     username=username,
                     password_hash=hashed_password,
-                    role=RoleEnum.ADMIN,
+                    role=RoleEnum.OWNER,
+                    is_active=True,
                 )
                 .on_conflict_do_nothing(index_elements=["username"])
             )
@@ -34,5 +35,5 @@ async def create_admin_command(username: str, password: str) -> None:
             msg = f"Internal error: {exc!s}"
             logger.exception(msg)
         else:
-            msg = "Administrator created successfully."
+            msg = "Owner created successfully."
             logger.info(msg)

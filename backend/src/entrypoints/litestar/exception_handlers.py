@@ -20,7 +20,7 @@ from verbose_http_exceptions.ext.litestar.types import LitestarExceptionHandlers
 from core.account.exceptions import (
     AccountUsernameAlreadyExistsError,
     InvalidManagedAccountRoleError,
-    LastActiveAdminActionForbiddenError,
+    ManagedAccountActionForbiddenError,
     SelfAccountActionForbiddenError,
 )
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
@@ -47,7 +47,7 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     AccountUsernameAlreadyExistsError: BadRequestHTTPException,
     InvalidManagedAccountRoleError: BadRequestHTTPException,
     SelfAccountActionForbiddenError: ForbiddenHTTPException,
-    LastActiveAdminActionForbiddenError: ForbiddenHTTPException,
+    ManagedAccountActionForbiddenError: ForbiddenHTTPException,
 }
 
 
