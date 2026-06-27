@@ -9,6 +9,37 @@ import { Resume, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import { AdminResumeDetailPageComponent } from './resume-detail-page.component';
 
+type ResumeValidationCaseSetup =
+  | 'education'
+  | 'language'
+  | 'certification'
+  | 'additionalSection'
+  | 'additionalItem';
+
+type ResumeEditorTab =
+  | 'profile'
+  | 'summary'
+  | 'skills'
+  | 'experience'
+  | 'education'
+  | 'languages'
+  | 'certifications'
+  | 'additional';
+
+interface ResumeFieldValidationCase {
+  description: string;
+  tab: ResumeEditorTab;
+  elementId: string;
+  invalidValue: string;
+  expectedIssue: string;
+  setup?: ResumeValidationCaseSetup;
+}
+
+const INVALID_SHORT_TEXT = 'x'.repeat(256);
+const INVALID_LONG_TEXT = 'x'.repeat(10001);
+const INVALID_DATE_TEXT = 'x'.repeat(33);
+const INVALID_URL = 'ftp://example.com';
+
 describe('AdminResumeDetailPageComponent', () => {
   let fixture: ComponentFixture<AdminResumeDetailPageComponent>;
   let service: {
@@ -397,6 +428,439 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(service.exportResume).not.toHaveBeenCalled();
   });
 
+  it.each<ResumeFieldValidationCase>([
+    {
+      description: 'title',
+      tab: 'profile',
+      elementId: 'resume-title',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Название — Максимум 255 символов.',
+    },
+    {
+      description: 'language',
+      tab: 'profile',
+      elementId: 'resume-language',
+      invalidValue: '',
+      expectedIssue: 'Язык резюме — Заполните поле.',
+    },
+    {
+      description: 'profile full name',
+      tab: 'profile',
+      elementId: 'resume-profile-full-name',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Профиль / Имя — Максимум 255 символов.',
+    },
+    {
+      description: 'profile email',
+      tab: 'profile',
+      elementId: 'resume-profile-email',
+      invalidValue: 'not-an-email',
+      expectedIssue: 'Профиль / Email — Укажите корректный email.',
+    },
+    {
+      description: 'profile role',
+      tab: 'profile',
+      elementId: 'resume-profile-role',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Профиль / Роль — Максимум 255 символов.',
+    },
+    {
+      description: 'profile location',
+      tab: 'profile',
+      elementId: 'resume-profile-location',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Профиль / Локация — Максимум 255 символов.',
+    },
+    {
+      description: 'profile phone',
+      tab: 'profile',
+      elementId: 'resume-profile-phone',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Профиль / Телефон — Максимум 255 символов.',
+    },
+    {
+      description: 'profile website URL',
+      tab: 'profile',
+      elementId: 'resume-profile-website',
+      invalidValue: INVALID_URL,
+      expectedIssue: 'Профиль / Сайт — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'profile LinkedIn URL',
+      tab: 'profile',
+      elementId: 'resume-profile-linkedin',
+      invalidValue: INVALID_URL,
+      expectedIssue: 'Профиль / LinkedIn — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'profile GitHub URL',
+      tab: 'profile',
+      elementId: 'resume-profile-github',
+      invalidValue: INVALID_URL,
+      expectedIssue: 'Профиль / GitHub — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'profile Telegram',
+      tab: 'profile',
+      elementId: 'resume-profile-telegram',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Профиль / Telegram — Максимум 255 символов.',
+    },
+    {
+      description: 'summary text',
+      tab: 'summary',
+      elementId: 'resume-summary',
+      invalidValue: INVALID_LONG_TEXT,
+      expectedIssue: 'Саммари / Саммари — Максимум 10000 символов.',
+    },
+    {
+      description: 'skill category',
+      tab: 'skills',
+      elementId: 'resume-skill-0-category',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Навыки / Группа навыков 1 / Категория — Максимум 255 символов.',
+    },
+    {
+      description: 'skill item',
+      tab: 'skills',
+      elementId: 'resume-skill-0-item-0',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Навыки / Группа навыков 1 / Пункт 1 — Максимум 255 символов.',
+    },
+    {
+      description: 'experience company',
+      tab: 'experience',
+      elementId: 'resume-experience-0-company',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Компания — Максимум 255 символов.',
+    },
+    {
+      description: 'experience position',
+      tab: 'experience',
+      elementId: 'resume-experience-0-position',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Позиция — Максимум 255 символов.',
+    },
+    {
+      description: 'experience location',
+      tab: 'experience',
+      elementId: 'resume-experience-0-location',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Локация — Максимум 255 символов.',
+    },
+    {
+      description: 'experience start date',
+      tab: 'experience',
+      elementId: 'resume-experience-0-start-date',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Начало — Максимум 32 символов.',
+    },
+    {
+      description: 'experience end date',
+      tab: 'experience',
+      elementId: 'resume-experience-0-end-date',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Окончание — Максимум 32 символов.',
+    },
+    {
+      description: 'experience summary',
+      tab: 'experience',
+      elementId: 'resume-experience-0-summary',
+      invalidValue: INVALID_LONG_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Саммари — Максимум 10000 символов.',
+    },
+    {
+      description: 'experience highlight',
+      tab: 'experience',
+      elementId: 'resume-experience-0-highlight-0',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Достижения / Пункт 1 — Максимум 255 символов.',
+    },
+    {
+      description: 'experience technology',
+      tab: 'experience',
+      elementId: 'resume-experience-0-technology-0',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Технологии / Пункт 1 — Максимум 255 символов.',
+    },
+    {
+      description: 'project name',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-name',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Проект — Максимум 255 символов.',
+    },
+    {
+      description: 'project role',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-role',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Роль — Максимум 255 символов.',
+    },
+    {
+      description: 'project description',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-description',
+      invalidValue: INVALID_LONG_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Описание — Максимум 10000 символов.',
+    },
+    {
+      description: 'project highlight',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-highlight-0',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Достижения / Пункт 1 — Максимум 255 символов.',
+    },
+    {
+      description: 'project technology',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-technology-0',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Технологии / Пункт 1 — Максимум 255 символов.',
+    },
+    {
+      description: 'project URL',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-url',
+      invalidValue: INVALID_URL,
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Ссылка — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'education institution',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-institution',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Учебное заведение — Максимум 255 символов.',
+    },
+    {
+      description: 'education degree',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-degree',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Степень — Максимум 255 символов.',
+    },
+    {
+      description: 'education field',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-field',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Направление — Максимум 255 символов.',
+    },
+    {
+      description: 'education location',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-location',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Локация — Максимум 255 символов.',
+    },
+    {
+      description: 'education start date',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-start-date',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Начало — Максимум 32 символов.',
+    },
+    {
+      description: 'education end date',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-end-date',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Окончание — Максимум 32 символов.',
+    },
+    {
+      description: 'education description',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-description',
+      invalidValue: INVALID_LONG_TEXT,
+      expectedIssue: 'Образование / Образование 1 / Описание — Максимум 10000 символов.',
+    },
+    {
+      description: 'language name',
+      tab: 'languages',
+      setup: 'language',
+      elementId: 'resume-language-0-name',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Языки / Язык 1 / Язык — Максимум 255 символов.',
+    },
+    {
+      description: 'language proficiency',
+      tab: 'languages',
+      setup: 'language',
+      elementId: 'resume-language-0-proficiency',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Языки / Язык 1 / Уровень — Максимум 255 символов.',
+    },
+    {
+      description: 'certification name',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-name',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Сертификаты / Сертификат 1 / Сертификат — Максимум 255 символов.',
+    },
+    {
+      description: 'certification issuer',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-issuer',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Сертификаты / Сертификат 1 / Организация — Максимум 255 символов.',
+    },
+    {
+      description: 'certification issued date',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-issued-on',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Сертификаты / Сертификат 1 / Выдан — Максимум 32 символов.',
+    },
+    {
+      description: 'certification expiration date',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-expires-on',
+      invalidValue: INVALID_DATE_TEXT,
+      expectedIssue: 'Сертификаты / Сертификат 1 / Истекает — Максимум 32 символов.',
+    },
+    {
+      description: 'certification credential URL',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-credential-url',
+      invalidValue: INVALID_URL,
+      expectedIssue:
+        'Сертификаты / Сертификат 1 / Ссылка на сертификат — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'additional section title',
+      tab: 'additional',
+      setup: 'additionalSection',
+      elementId: 'resume-additional-section-0-title',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue: 'Дополнительно / Раздел 1 / Название раздела — Максимум 255 символов.',
+    },
+    {
+      description: 'additional item title',
+      tab: 'additional',
+      setup: 'additionalItem',
+      elementId: 'resume-additional-section-0-item-0-title',
+      invalidValue: INVALID_SHORT_TEXT,
+      expectedIssue:
+        'Дополнительно / Раздел 1 / Пункт 1 / Название пункта — Максимум 255 символов.',
+    },
+    {
+      description: 'additional item URL',
+      tab: 'additional',
+      setup: 'additionalItem',
+      elementId: 'resume-additional-section-0-item-0-url',
+      invalidValue: INVALID_URL,
+      expectedIssue:
+        'Дополнительно / Раздел 1 / Пункт 1 / Ссылка — Укажите ссылку с http или https.',
+    },
+    {
+      description: 'additional item description',
+      tab: 'additional',
+      setup: 'additionalItem',
+      elementId: 'resume-additional-section-0-item-0-description',
+      invalidValue: INVALID_LONG_TEXT,
+      expectedIssue: 'Дополнительно / Раздел 1 / Пункт 1 / Описание — Максимум 10000 символов.',
+    },
+  ])('highlights and summarizes invalid resume field: $description', (field) => {
+    fixture.componentInstance.setActiveTab(field.tab);
+    prepareResumeFieldValidationCase(field.setup);
+    fixture.detectChanges();
+    setInvalidResumeField(field.elementId, field.invalidValue);
+
+    fixture.componentInstance.saveResume();
+    fixture.detectChanges();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+    expect(elementByTestId<HTMLElement>('resume-validation-summary').textContent).toContain(
+      field.expectedIssue,
+    );
+    expect(elementById<HTMLInputElement>(field.elementId).classList).toContain('is-invalid');
+  });
+
+  it('shows validation feedback and opens the invalid tab when save is blocked', () => {
+    setElementValueById('resume-profile-email', 'not-an-email');
+    fixture.componentInstance.setActiveTab('summary');
+    fixture.detectChanges();
+
+    fixture.componentInstance.saveResume();
+    fixture.detectChanges();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(
+      'Не сохранено. Первая ошибка: Профиль / Email — Укажите корректный email.',
+    );
+    expect(elementById<HTMLInputElement>('resume-profile-email').classList).toContain('is-invalid');
+  });
+
+  it('shows the exact hidden-tab field that blocks resume save', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+    setElementValueById('resume-experience-0-project-0-url', 'ftp://example.com');
+    fixture.componentInstance.setActiveTab('profile');
+    fixture.detectChanges();
+
+    fixture.componentInstance.saveResume();
+    fixture.detectChanges();
+
+    expect(service.updateResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(
+      'Не сохранено. Первая ошибка: Опыт / Компания 1 / Проект 1 / Ссылка — Укажите ссылку с http или https.',
+    );
+    expect(elementByTestId<HTMLElement>('resume-validation-summary').textContent).toContain(
+      'Опыт / Компания 1 / Проект 1 / Ссылка — Укажите ссылку с http или https.',
+    );
+    expect(elementById<HTMLInputElement>('resume-experience-0-project-0-url').classList).toContain(
+      'is-invalid',
+    );
+  });
+
+  it('highlights invalid additional section links when save is blocked', () => {
+    fixture.componentInstance.setActiveTab('additional');
+    fixture.componentInstance.addAdditionalSection();
+    fixture.componentInstance.addAdditionalItem(0);
+    fixture.detectChanges();
+    setElementValueById('resume-additional-section-0-item-0-url', 'ftp://example.com');
+    fixture.componentInstance.setActiveTab('profile');
+    fixture.detectChanges();
+
+    fixture.componentInstance.saveResume();
+    fixture.detectChanges();
+
+    const issue = 'Дополнительно / Раздел 1 / Пункт 1 / Ссылка — Укажите ссылку с http или https.';
+    expect(service.updateResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(`Не сохранено. Первая ошибка: ${issue}`);
+    expect(elementByTestId<HTMLElement>('resume-validation-summary').textContent).toContain(issue);
+    expect(
+      elementById<HTMLInputElement>('resume-additional-section-0-item-0-url').classList,
+    ).toContain('is-invalid');
+  });
+
+  it('shows validation feedback when export is blocked by invalid form data', () => {
+    setInputValue('resume-title', '');
+
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+    setInputValue('resume-export-format', 'pdf');
+    elementByTestId<HTMLButtonElement>('resume-export-submit').click();
+    fixture.detectChanges();
+
+    expect(service.exportResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(
+      'Не сохранено. Первая ошибка: Название — Заполните поле.',
+    );
+  });
+
   it('blocks invalid title, email, URL, and long text before saving', () => {
     setInputValue('resume-title', '   ');
 
@@ -681,6 +1145,78 @@ describe('AdminResumeDetailPageComponent', () => {
     ) as TElement | null;
     expect(element).not.toBeNull();
     return element as TElement;
+  }
+
+  function prepareResumeFieldValidationCase(setup: ResumeValidationCaseSetup | undefined): void {
+    switch (setup) {
+      case 'education':
+        fixture.componentInstance.addEducationItem();
+        break;
+      case 'language':
+        fixture.componentInstance.addLanguageItem();
+        break;
+      case 'certification':
+        fixture.componentInstance.addCertificationItem();
+        break;
+      case 'additionalSection':
+        fixture.componentInstance.addAdditionalSection();
+        break;
+      case 'additionalItem':
+        fixture.componentInstance.addAdditionalSection();
+        fixture.componentInstance.addAdditionalItem(0);
+        break;
+      case undefined:
+        break;
+    }
+  }
+
+  function setInvalidResumeField(elementId: string, invalidValue: string): void {
+    switch (elementId) {
+      case 'resume-experience-0-start-date':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.experience.controls[0].controls.startDate,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      case 'resume-experience-0-end-date':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.experience.controls[0].controls.endDate,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      case 'resume-education-0-start-date':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.education.controls[0].controls.startDate,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      case 'resume-education-0-end-date':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.education.controls[0].controls.endDate,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      case 'resume-certification-0-issued-on':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.certifications.controls[0].controls.issuedOn,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      case 'resume-certification-0-expires-on':
+        fixture.componentInstance.updateDate(
+          fixture.componentInstance.certifications.controls[0].controls.expiresOn,
+          invalidValue,
+        );
+        fixture.detectChanges();
+        return;
+      default:
+        setElementValueById(elementId, invalidValue);
+    }
   }
 
   function textNodeContent(button: HTMLButtonElement): string {

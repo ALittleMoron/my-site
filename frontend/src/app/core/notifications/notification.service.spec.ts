@@ -50,11 +50,18 @@ describe('NotificationService', () => {
     expect(service.notifications()).toEqual([]);
   }));
 
-  it('keeps error notifications until manual dismissal', fakeAsync(() => {
+  it('auto-dismisses error notifications after five seconds', fakeAsync(() => {
     service.error('Failed');
 
-    tick(5200);
-
+    tick(4999);
     expect(service.notifications()).toEqual([{ id: 1, type: 'danger', message: 'Failed' }]);
+
+    tick(1);
+    expect(service.notifications()).toEqual([
+      { id: 1, type: 'danger', message: 'Failed', dismissing: true },
+    ]);
+
+    tick(200);
+    expect(service.notifications()).toEqual([]);
   }));
 });

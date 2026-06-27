@@ -54,6 +54,12 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 | `toSignal()` | Converting `Observable` to signal for template consumption |
 | Service state | Only when state is shared across multiple routed components |
 
+## Notifications
+
+- Transient app notifications must auto-dismiss within 5 seconds. Do not let success, error,
+  validation, save, import/export, or other feedback toasts accumulate until the user manually
+  closes them; persistent problems belong in inline/page-level error UI instead.
+
 ## HTTP
 
 - Feature services inject `ApiClient` — never raw `HttpClient`
@@ -81,6 +87,14 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - `FormControl<T>` and `FormGroup<T>` — always typed
 - No `any` in form types
 - Single field -> `FormControl<T>`. Multiple related fields -> `FormGroup`
+- User-triggered saves, creates, updates, deletes, imports, exports, validation checks, and other
+  state-changing or validation-gated actions must always produce explicit user feedback on every
+  blocked, failed, and successful path. Do not silently return from invalid forms or skipped
+  actions: show localized inline errors, notifications, visible disabled/loading states, route/tab
+  focus, or another concrete cue that tells the user what happened and what to fix next.
+- Admin forms with `formControlName` fields must apply the shared validation-state mechanism
+  (`AdminControlValidationStateDirective` or the feature's equivalent) so every invalid touched
+  `input`, `textarea`, and `select` receives visible invalid styling without one-off template gaps.
 
 ## Comments
 

@@ -416,8 +416,8 @@ Workspace is admin-only utils, that live only in admin panel.
   - [x] Resume export
     - [x] To PDF
     - [x] To DOCX
-    - [ ] Step-by-step maximize resume export ATS score.
-    - [ ] Fix readability of exported resume
+    - [x] Step-by-step maximize resume export ATS score.
+    - [x] Fix readability of exported resume
 
 ### Knowledge database
 

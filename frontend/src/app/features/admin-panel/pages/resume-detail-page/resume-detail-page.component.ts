@@ -28,6 +28,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LocalizedDatePickerComponent } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
   Resume,
   ResumeAdditionalSection,
@@ -90,6 +91,11 @@ interface ResumeLanguageOption {
 interface ResumeExportFormatOption {
   value: ResumeExportFormat;
   labelKey: string;
+}
+
+interface ResumeValidationIssue {
+  tab: ResumeEditorTab | null;
+  message: string;
 }
 
 interface ResumeProfileForm {
@@ -223,6 +229,7 @@ const INLINE_LIST_INPUT_ACTION_WIDTH_REM = 3;
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     LocalizedDatePickerComponent,
+    AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './resume-detail-page.component.html',
@@ -287,6 +294,13 @@ export class AdminResumeDetailPageComponent implements OnInit {
   readonly formError = signal<ApiError | null>(null);
   readonly exportError = signal<ApiError | null>(null);
   readonly formVersion = signal(0);
+  readonly validationSubmitted = signal(false);
+  readonly validationIssues = computed<readonly ResumeValidationIssue[]>(() => {
+    this.formVersion();
+    this.i18n.language();
+    if (!this.validationSubmitted()) return [];
+    return this.collectValidationIssues();
+  });
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly resumeForm = new FormGroup<ResumeEditorForm>({
@@ -397,11 +411,12 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   saveResume(): void {
     if (this.resumeForm.invalid) {
-      this.resumeForm.markAllAsTouched();
+      this.handleInvalidResumeForm();
       return;
     }
     const payload = this.buildPayload();
     this.saving.set(true);
+    this.validationSubmitted.set(false);
     this.formError.set(null);
     this.resumeWorkspace
       .updateResume(this.resumeId, payload)
@@ -460,11 +475,13 @@ export class AdminResumeDetailPageComponent implements OnInit {
     const format = this.selectedExportFormat();
     if (!isResumeExportFormat(format)) return;
     if (this.resumeForm.invalid) {
-      this.resumeForm.markAllAsTouched();
+      this.exportModalOpen.set(false);
+      this.handleInvalidResumeForm();
       return;
     }
     const payload = this.buildPayload();
     this.exporting.set(true);
+    this.validationSubmitted.set(false);
     this.exportError.set(null);
     this.resumeWorkspace
       .exportResume(this.resumeId, format, payload)
@@ -659,6 +676,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return validationMessage(control, this.i18n);
   }
 
+  tabValidationIssueCount(tab: ResumeEditorTab): number {
+    return this.validationIssues().filter((issue) => issue.tab === tab).length;
+  }
+
   inlineListInputWidth(control: TextControl): string {
     const textWidth =
       cleanText(control.getRawValue()).length + INLINE_LIST_INPUT_EXTRA_TEXT_WIDTH_CH;
@@ -696,6 +717,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   private populateForm(resume: Resume): void {
+    this.validationSubmitted.set(false);
     this.resumeForm.controls.title.setValue(resume.title, { emitEvent: false });
     this.resumeForm.controls.language.setValue(resume.language, { emitEvent: false });
     this.resumeForm.setControl('profile', this.createProfileForm(resume.content.profile), {
@@ -730,6 +752,432 @@ export class AdminResumeDetailPageComponent implements OnInit {
     );
     this.ensurePreviewLanguageBundle(resume.language);
     this.formVersion.update((version) => version + 1);
+  }
+
+  private handleInvalidResumeForm(): void {
+    this.resumeForm.markAllAsTouched();
+    const issues = this.collectValidationIssues();
+    this.validationSubmitted.set(true);
+    this.mode.set('edit');
+    const firstIssue = issues.at(0) ?? null;
+    if (firstIssue?.tab !== null && firstIssue?.tab !== undefined) {
+      this.activeTab.set(firstIssue.tab);
+    }
+    this.notifications.error(this.validationNotificationMessage(firstIssue));
+  }
+
+  private validationNotificationMessage(firstIssue: ResumeValidationIssue | null): string {
+    if (firstIssue === null) {
+      return this.i18n.translate('adminResumeWorkspace.validationError');
+    }
+    return this.i18n.translate('adminResumeWorkspace.validationErrorWithFirstIssue', {
+      issue: firstIssue.message,
+    });
+  }
+
+  private collectValidationIssues(): ResumeValidationIssue[] {
+    const issues: ResumeValidationIssue[] = [];
+    this.addControlValidationIssue(
+      issues,
+      null,
+      [this.fieldLabel('title')],
+      this.resumeForm.controls.title,
+    );
+    this.addControlValidationIssue(
+      issues,
+      null,
+      [this.fieldLabel('language')],
+      this.resumeForm.controls.language,
+    );
+    this.collectProfileValidationIssues(issues);
+    this.collectSummaryValidationIssues(issues);
+    this.collectSkillsValidationIssues(issues);
+    this.collectExperienceValidationIssues(issues);
+    this.collectEducationValidationIssues(issues);
+    this.collectLanguagesValidationIssues(issues);
+    this.collectCertificationsValidationIssues(issues);
+    this.collectAdditionalSectionsValidationIssues(issues);
+    return issues;
+  }
+
+  private collectProfileValidationIssues(issues: ResumeValidationIssue[]): void {
+    const controls = this.resumeForm.controls.profile.controls;
+    const path = [this.tabLabel('profile')];
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('fullName')],
+      controls.fullName,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('email')],
+      controls.email,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('role')],
+      controls.role,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('location')],
+      controls.location,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('phone')],
+      controls.phone,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('websiteUrl')],
+      controls.websiteUrl,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('linkedinUrl')],
+      controls.linkedinUrl,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('githubUrl')],
+      controls.githubUrl,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'profile',
+      [...path, this.fieldLabel('telegram')],
+      controls.telegram,
+    );
+  }
+
+  private collectSummaryValidationIssues(issues: ResumeValidationIssue[]): void {
+    this.addControlValidationIssue(
+      issues,
+      'summary',
+      [this.tabLabel('summary'), this.fieldLabel('summary')],
+      this.resumeForm.controls.summary.controls.text,
+    );
+  }
+
+  private collectSkillsValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('skills')];
+    this.skills.controls.forEach((skillGroup, skillIndex) => {
+      const skillPath = [...tabPath, this.entryLabel('skillGroup', skillIndex)];
+      this.addControlValidationIssue(
+        issues,
+        'skills',
+        [...skillPath, this.fieldLabel('category')],
+        skillGroup.controls.category,
+      );
+      skillGroup.controls.items.controls.forEach((itemControl, itemIndex) => {
+        this.addControlValidationIssue(
+          issues,
+          'skills',
+          [...skillPath, this.listItemLabel(itemIndex)],
+          itemControl,
+        );
+      });
+    });
+  }
+
+  private collectExperienceValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('experience')];
+    this.experience.controls.forEach((experienceItem, experienceIndex) => {
+      const experiencePath = [...tabPath, this.entryLabel('company', experienceIndex)];
+      const controls = experienceItem.controls;
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('company')],
+        controls.company,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('position')],
+        controls.position,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('location')],
+        controls.location,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('startDate')],
+        controls.startDate,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('endDate')],
+        controls.endDate,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...experiencePath, this.fieldLabel('summary')],
+        controls.summary,
+      );
+      controls.highlights.controls.forEach((highlightControl, itemIndex) => {
+        this.addControlValidationIssue(
+          issues,
+          'experience',
+          [...experiencePath, this.fieldLabel('highlights'), this.listItemLabel(itemIndex)],
+          highlightControl,
+        );
+      });
+      controls.technologies.controls.forEach((technologyControl, itemIndex) => {
+        this.addControlValidationIssue(
+          issues,
+          'experience',
+          [...experiencePath, this.fieldLabel('technologies'), this.listItemLabel(itemIndex)],
+          technologyControl,
+        );
+      });
+      controls.projects.controls.forEach((projectControl, projectIndex) => {
+        this.collectProjectValidationIssues(issues, experiencePath, projectControl, projectIndex);
+      });
+    });
+  }
+
+  private collectProjectValidationIssues(
+    issues: ResumeValidationIssue[],
+    experiencePath: string[],
+    projectControl: FormGroup<ResumeProjectItemForm>,
+    projectIndex: number,
+  ): void {
+    const projectPath = [...experiencePath, this.entryLabel('project', projectIndex)];
+    const controls = projectControl.controls;
+    this.addControlValidationIssue(
+      issues,
+      'experience',
+      [...projectPath, this.fieldLabel('projectName')],
+      controls.name,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'experience',
+      [...projectPath, this.fieldLabel('role')],
+      controls.role,
+    );
+    this.addControlValidationIssue(
+      issues,
+      'experience',
+      [...projectPath, this.fieldLabel('description')],
+      controls.description,
+    );
+    controls.highlights.controls.forEach((highlightControl, itemIndex) => {
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...projectPath, this.fieldLabel('highlights'), this.listItemLabel(itemIndex)],
+        highlightControl,
+      );
+    });
+    controls.technologies.controls.forEach((technologyControl, itemIndex) => {
+      this.addControlValidationIssue(
+        issues,
+        'experience',
+        [...projectPath, this.fieldLabel('technologies'), this.listItemLabel(itemIndex)],
+        technologyControl,
+      );
+    });
+    this.addControlValidationIssue(
+      issues,
+      'experience',
+      [...projectPath, this.fieldLabel('url')],
+      controls.url,
+    );
+  }
+
+  private collectEducationValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('education')];
+    this.education.controls.forEach((educationItem, educationIndex) => {
+      const educationPath = [...tabPath, this.entryLabel('education', educationIndex)];
+      const controls = educationItem.controls;
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('institution')],
+        controls.institution,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('degree')],
+        controls.degree,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('field')],
+        controls.field,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('location')],
+        controls.location,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('startDate')],
+        controls.startDate,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('endDate')],
+        controls.endDate,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'education',
+        [...educationPath, this.fieldLabel('description')],
+        controls.description,
+      );
+    });
+  }
+
+  private collectLanguagesValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('languages')];
+    this.languages.controls.forEach((languageItem, languageIndex) => {
+      const languagePath = [...tabPath, this.entryLabel('language', languageIndex)];
+      this.addControlValidationIssue(
+        issues,
+        'languages',
+        [...languagePath, this.fieldLabel('languageName')],
+        languageItem.controls.name,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'languages',
+        [...languagePath, this.fieldLabel('proficiency')],
+        languageItem.controls.proficiency,
+      );
+    });
+  }
+
+  private collectCertificationsValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('certifications')];
+    this.certifications.controls.forEach((certification, certificationIndex) => {
+      const certificationPath = [...tabPath, this.entryLabel('certification', certificationIndex)];
+      const controls = certification.controls;
+      this.addControlValidationIssue(
+        issues,
+        'certifications',
+        [...certificationPath, this.fieldLabel('certificationName')],
+        controls.name,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'certifications',
+        [...certificationPath, this.fieldLabel('issuer')],
+        controls.issuer,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'certifications',
+        [...certificationPath, this.fieldLabel('issuedOn')],
+        controls.issuedOn,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'certifications',
+        [...certificationPath, this.fieldLabel('expiresOn')],
+        controls.expiresOn,
+      );
+      this.addControlValidationIssue(
+        issues,
+        'certifications',
+        [...certificationPath, this.fieldLabel('credentialUrl')],
+        controls.credentialUrl,
+      );
+    });
+  }
+
+  private collectAdditionalSectionsValidationIssues(issues: ResumeValidationIssue[]): void {
+    const tabPath = [this.tabLabel('additional')];
+    this.additionalSections.controls.forEach((section, sectionIndex) => {
+      const sectionPath = [...tabPath, this.entryLabel('additionalSection', sectionIndex)];
+      this.addControlValidationIssue(
+        issues,
+        'additional',
+        [...sectionPath, this.fieldLabel('sectionTitle')],
+        section.controls.title,
+      );
+      section.controls.items.controls.forEach((item, itemIndex) => {
+        const itemPath = [...sectionPath, this.entryLabel('additionalItem', itemIndex)];
+        this.addControlValidationIssue(
+          issues,
+          'additional',
+          [...itemPath, this.fieldLabel('itemTitle')],
+          item.controls.title,
+        );
+        this.addControlValidationIssue(
+          issues,
+          'additional',
+          [...itemPath, this.fieldLabel('url')],
+          item.controls.url,
+        );
+        this.addControlValidationIssue(
+          issues,
+          'additional',
+          [...itemPath, this.fieldLabel('description')],
+          item.controls.description,
+        );
+      });
+    });
+  }
+
+  private addControlValidationIssue(
+    issues: ResumeValidationIssue[],
+    tab: ResumeEditorTab | null,
+    path: string[],
+    control: AbstractControl<unknown>,
+  ): void {
+    if (control.valid) return;
+    const message = this.fieldMessage(control) ?? this.i18n.translate('validation.invalid');
+    issues.push({
+      tab,
+      message: this.i18n.translate('adminResumeWorkspace.validationIssue', {
+        field: path.join(this.i18n.translate('adminResumeWorkspace.validationPathSeparator')),
+        message,
+      }),
+    });
+  }
+
+  private tabLabel(tab: ResumeEditorTab): string {
+    const tabDefinition = RESUME_EDITOR_TABS.find((item) => item.key === tab);
+    if (tabDefinition === undefined) {
+      throw new Error(`Unsupported resume editor tab: ${tab}`);
+    }
+    return this.i18n.translate(tabDefinition.labelKey);
+  }
+
+  private fieldLabel(key: string): string {
+    return this.i18n.translate(`adminResumeWorkspace.field.${key}`);
+  }
+
+  private entryLabel(key: string, index: number): string {
+    return this.i18n.translate(`adminResumeWorkspace.entry.${key}`, { index: index + 1 });
+  }
+
+  private listItemLabel(index: number): string {
+    return this.i18n.translate('adminResumeWorkspace.validationListItem', { index: index + 1 });
   }
 
   private replaceFormArray<TControl extends AbstractControl>(

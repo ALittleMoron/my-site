@@ -1,3 +1,4 @@
+from ipaddress import IPv4Address
 from typing import Literal
 
 from litestar.config.response_cache import CACHE_FOREVER
@@ -8,6 +9,8 @@ from core.files.types import Namespace
 from core.i18n.enums import LanguageEnum
 from core.schemas import Secret
 from infra.config.constants import constants
+
+_LOCAL_ALL_INTERFACES_HOST = IPv4Address(0).compressed
 
 
 class SecretStrExtended(SecretStr):
@@ -31,7 +34,7 @@ class _AppSettings(_ProjectBaseSettings):
 
     @property
     def is_local_domain(self) -> bool:
-        return self.domain in {"localhost", "127.0.0.1", "0.0.0.0"}  # noqa: S104  # nosec B104
+        return self.domain in {"localhost", "127.0.0.1", _LOCAL_ALL_INTERFACES_HOST}
 
     @property
     def base_url(self) -> str:

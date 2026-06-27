@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 
-const SUCCESS_NOTIFICATION_AUTO_DISMISS_MS = 5000;
+const NOTIFICATION_AUTO_DISMISS_MS = 5000;
 const NOTIFICATION_DISMISS_ANIMATION_MS = 200;
 
 export interface AppNotification {
@@ -24,7 +24,8 @@ export class NotificationService {
   }
 
   error(message: string): void {
-    this.add('danger', message);
+    const id = this.add('danger', message);
+    this.scheduleAutoDismiss(id);
   }
 
   dismiss(id: number): void {
@@ -58,10 +59,7 @@ export class NotificationService {
   private scheduleAutoDismiss(id: number): void {
     const timerWindow = this.document.defaultView;
     if (timerWindow === null) return;
-    const timeoutId = timerWindow.setTimeout(
-      () => this.dismiss(id),
-      SUCCESS_NOTIFICATION_AUTO_DISMISS_MS,
-    );
+    const timeoutId = timerWindow.setTimeout(() => this.dismiss(id), NOTIFICATION_AUTO_DISMISS_MS);
     this.autoDismissTimeoutIds.set(id, timeoutId);
   }
 

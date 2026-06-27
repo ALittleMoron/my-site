@@ -279,13 +279,37 @@
                 type="button"
                 class="nav-link"
                 [class.active]="activeTab() === tab.key"
+                [class.text-danger]="tabValidationIssueCount(tab.key) > 0"
+                [attr.aria-invalid]="tabValidationIssueCount(tab.key) > 0 ? 'true' : null"
                 (click)="setActiveTab(tab.key)"
               >
                 {{ tab.labelKey | t }}
+                @if (tabValidationIssueCount(tab.key) > 0) {
+                  <span class="badge text-bg-danger ms-1">
+                    {{ tabValidationIssueCount(tab.key) }}
+                  </span>
+                }
               </button>
             </li>
           }
         </ul>
+
+        @if (validationIssues().length > 0) {
+          <section
+            class="alert alert-danger"
+            aria-live="assertive"
+            data-testid="resume-validation-summary"
+          >
+            <p class="fw-semibold mb-2">
+              {{ 'adminResumeWorkspace.validationSummaryTitle' | t }}
+            </p>
+            <ul class="mb-0 ps-3">
+              @for (issue of validationIssues(); track issue.message) {
+                <li>{{ issue.message }}</li>
+              }
+            </ul>
+          </section>
+        }
 
         <div class="resume-editor-panel">
           @switch (activeTab()) {
@@ -361,7 +385,7 @@
                   <input
                     id="resume-profile-phone"
                     class="form-control"
-                    maxlength="64"
+                    [attr.maxlength]="validationLimits.shortText"
                     formControlName="phone"
                   />
                 </div>
@@ -1170,6 +1194,7 @@
                                     </label>
                                     <input
                                       class="form-control"
+                                      [class.is-invalid]="fieldInvalid(project.controls.url)"
                                       [id]="
                                         'resume-experience-' +
                                         index +
@@ -1177,8 +1202,18 @@
                                         projectIndex +
                                         '-url'
                                       "
+                                      [attr.maxlength]="validationLimits.url"
                                       formControlName="url"
                                     />
+                                    @if (
+                                      fieldInvalid(project.controls.url) &&
+                                        fieldMessage(project.controls.url);
+                                      as message
+                                    ) {
+                                      <div class="invalid-feedback d-block">
+                                        {{ message }}
+                                      </div>
+                                    }
                                   </div>
                                 </div>
                               </section>
@@ -1651,6 +1686,7 @@
                                     </label>
                                     <input
                                       class="form-control"
+                                      [class.is-invalid]="fieldInvalid(additionalItem.controls.url)"
                                       [id]="
                                         'resume-additional-section-' +
                                         sectionIndex +
@@ -1658,8 +1694,18 @@
                                         itemIndex +
                                         '-url'
                                       "
+                                      [attr.maxlength]="validationLimits.url"
                                       formControlName="url"
                                     />
+                                    @if (
+                                      fieldInvalid(additionalItem.controls.url) &&
+                                        fieldMessage(additionalItem.controls.url);
+                                      as message
+                                    ) {
+                                      <div class="invalid-feedback d-block">
+                                        {{ message }}
+                                      </div>
+                                    }
                                   </div>
                                   <div class="col-12">
                                     <label
