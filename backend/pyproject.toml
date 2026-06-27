@@ -14,7 +14,7 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "sqlalchemy[asyncio,mypy]>=2.0.50",
     "sqlalchemy-dev-utils>=1.4.0",
-    "alembic>=1.18.4",
+    "alembic>=1.18.5",
     "pyseto>=1.9.3",
     "itsdangerous>=2.2.0",
     "structlog>=26.1.0",
@@ -31,7 +31,7 @@ dependencies = [
     "reportlab>=4.4.5",
     "defusedxml>=0.7.1",
     "taskiq>=0.12.4",
-    "taskiq-redis>=1.2.2",
+    "taskiq-redis>=1.2.3",
     "types-aiobotocore-s3>=3.7.0",
     "msgpack>=1.2.1",
 ]
@@ -39,22 +39,22 @@ dependencies = [
 [dependency-groups]
 dev = [
     "bandit>=1.9.4",
-    "coverage>=7.14.1",
+    "coverage>=7.14.3",
     "httpx>=0.28.1",
     "mypy>=2.1.0",
     "pip-audit>=2.10.1",
     "pypdf>=6.14.2",
-    "pytest==9.1.0",
+    "pytest==9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.15.17",
+    "ruff>=0.15.20",
     "vulture>=2.16",
 ]
 local = [
-    "ipython>=9.14.1",
+    "ipython>=9.15.0",
     "pre-commit>=4.6.0",
 ]
 performance = [
-    "locust==2.44.3",
+    "locust==2.44.4",
 ]
 
 [tool.uv]
