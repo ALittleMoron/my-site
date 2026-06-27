@@ -93,6 +93,28 @@ class TestLoginUseCase(ContainerTestCase):
             required_role=RoleEnum.ADMIN,
         )
 
+    async def test_authenticate_inactive_user(self) -> None:
+        self.user_storage.get_user_by_username.return_value = self.factory.core.user(
+            username="test",
+            password_hash="test",
+            role=RoleEnum.ADMIN,
+            is_active=False,
+        )
+        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
+            username="test",
+            role=RoleEnum.ADMIN,
+        )
+
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.authenticate(
+                token=Token(b"valid_token"),
+                required_role=RoleEnum.ADMIN,
+            )
+
+        self.auth_event_reporter.report_authentication_inactive_user.assert_called_once_with(
+            username="test",
+        )
+
     async def test_authenticate(self) -> None:
         self.user_storage.get_user_by_username.return_value = self.factory.core.user(
             username="test",

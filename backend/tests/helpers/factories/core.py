@@ -3,6 +3,7 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Any
 
+from core.account.schemas import ManagedAccount, ManagedAccounts
 from core.articles.schemas import (
     Article,
     ArticleMetadata,
@@ -457,8 +458,27 @@ class CoreFactoryHelper:
         username: str = "",
         password_hash: str = "",
         role: RoleEnum = RoleEnum.USER,
+        is_active: bool = True,
     ) -> User:
-        return User(username=username, password_hash=Secret(password_hash), role=role)
+        return User(
+            username=username,
+            password_hash=Secret(password_hash),
+            role=role,
+            is_active=is_active,
+        )
+
+    @classmethod
+    def managed_accounts(
+        cls,
+        values: list[ManagedAccount] | None = None,
+        total_count: int = 0,
+        total_pages: int = 0,
+    ) -> ManagedAccounts:
+        return ManagedAccounts(
+            values=values or [],
+            total_count=total_count,
+            total_pages=total_pages,
+        )
 
     @classmethod
     def competency_matrix_items(

@@ -1,6 +1,7 @@
 from litestar import Router
 
 from entrypoints.litestar.api.account.endpoints import api_router as account_router
+from entrypoints.litestar.api.accounts.endpoints import admin_router as accounts_admin_router
 from entrypoints.litestar.api.articles.endpoints import admin_router as articles_admin_router
 from entrypoints.litestar.api.articles.endpoints import api_router as articles_router
 from entrypoints.litestar.api.auth.endpoints import api_router as auth_router
@@ -20,6 +21,7 @@ from entrypoints.litestar.api.wiki_links.endpoints import admin_router as wiki_l
 admin_api_router = Router(
     "/admin",
     route_handlers=[
+        accounts_admin_router,
         competency_matrix_admin_router,
         files_admin_router,
         articles_admin_router,

@@ -2,6 +2,8 @@ import { AbstractControl, FormControl, ValidationErrors, Validators } from '@ang
 import { I18nService } from '../../../core/i18n/i18n.service';
 
 export const ADMIN_VALIDATION_LIMITS = {
+  accountUsernameMin: 3,
+  accountPasswordMin: 8,
   shortText: 255,
   url: 2048,
   email: 254,
@@ -13,6 +15,8 @@ export const ADMIN_VALIDATION_LIMITS = {
 
 export const ADMIN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ADMIN_SLUG_PATTERN_ATTRIBUTE = '^[a-z0-9]+(?:-[a-z0-9]+)*$';
+export const ADMIN_ACCOUNT_USERNAME_PATTERN = /^[A-Za-z0-9._]+$/;
+export const ADMIN_ACCOUNT_USERNAME_PATTERN_ATTRIBUTE = '^[A-Za-z0-9._]+$';
 
 export function trimRequired(control: AbstractControl<string>): ValidationErrors | null {
   return control.value.trim() === '' ? { required: true } : null;
@@ -22,6 +26,14 @@ export function slugValidator(control: AbstractControl<string>): ValidationError
   const value = control.value.trim();
   if (value === '') return null;
   return ADMIN_SLUG_PATTERN.test(value) ? null : { pattern: true };
+}
+
+export function accountUsernameValidator(
+  control: AbstractControl<string>,
+): ValidationErrors | null {
+  const value = control.value.trim();
+  if (value === '') return null;
+  return ADMIN_ACCOUNT_USERNAME_PATTERN.test(value) ? null : { accountUsername: true };
 }
 
 export function httpUrlValidator(control: AbstractControl<string>): ValidationErrors | null {
@@ -48,11 +60,17 @@ export function validationMessage(
   const errors = control.errors;
   if (errors === null) return null;
   if (errors['required'] !== undefined) return i18n.translate('validation.required');
+  if (errors['minlength'] !== undefined) {
+    return i18n.translate('validation.minLength', {
+      min: minLengthFromError(errors['minlength']),
+    });
+  }
   if (errors['maxlength'] !== undefined) {
     return i18n.translate('validation.maxLength', {
       max: maxLengthFromError(errors['maxlength']),
     });
   }
+  if (errors['accountUsername'] !== undefined) return i18n.translate('validation.accountUsername');
   if (errors['pattern'] !== undefined) return i18n.translate('validation.slug');
   if (errors['url'] !== undefined) return i18n.translate('validation.url');
   if (errors['email'] !== undefined) return i18n.translate('validation.email');
@@ -80,6 +98,14 @@ export function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function minLengthFromError(error: unknown): string {
+  if (typeof error !== 'object' || error === null || !('requiredLength' in error)) {
+    return '';
+  }
+  const requiredLength = error.requiredLength;
+  return typeof requiredLength === 'number' ? String(requiredLength) : '';
 }
 
 function maxLengthFromError(error: unknown): string {

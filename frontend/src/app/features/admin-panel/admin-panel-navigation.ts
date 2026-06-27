@@ -6,6 +6,13 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
     labelKey: 'adminPanel.section.workspace',
     pages: [
       {
+        key: 'team',
+        labelKey: 'adminPanel.section.team',
+        route: '/admin-panel/workspace/team',
+        badgeTextKey: null,
+        adminOnly: true,
+      },
+      {
         key: 'resumes',
         labelKey: 'adminPanel.section.resumes',
         route: '/admin-panel/workspace/resumes',

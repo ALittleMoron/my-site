@@ -49,6 +49,7 @@ class BaseUser:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class User(BaseUser):
     password_hash: Secret[str]
+    is_active: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

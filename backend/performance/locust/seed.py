@@ -178,6 +178,7 @@ async def insert_seed_user(*, session: AsyncSession) -> None:
             username=SEED_AUTHOR_USERNAME,
             password_hash=SEED_PASSWORD_HASH,
             role=RoleEnum.ADMIN,
+            is_active=True,
         ),
     )
 

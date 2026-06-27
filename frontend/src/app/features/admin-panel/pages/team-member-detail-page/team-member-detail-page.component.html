@@ -1,0 +1,215 @@
+<section class="admin-team-detail-page">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div>
+      <button
+        type="button"
+        class="btn btn-link btn-sm px-0 mb-2"
+        data-testid="team-detail-back"
+        (click)="goBack()"
+      >
+        {{ 'shared.back' | t }}
+      </button>
+      <h1 class="h3 mb-0">{{ 'adminTeamWorkspace.detailTitle' | t }}</h1>
+    </div>
+    @if (account(); as accountValue) {
+      <app-admin-actions-dropdown
+        [actions]="accountActions(accountValue)"
+        [buttonLabel]="'shared.actions' | t"
+        [ariaLabel]="'shared.actions' | t"
+        [destructiveActionLabel]="'shared.destructiveAction' | t"
+        testId="team-detail-actions"
+        (actionSelected)="handleAccountAction($event)"
+      />
+    }
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+  } @else if (error()) {
+    <app-error-message
+      [error]="error()!"
+      [retryLabel]="'shared.retry' | t"
+      (retry)="loadAccount()"
+    />
+  } @else if (account(); as accountValue) {
+    <dl class="row g-3">
+      <div class="col-12 col-md-4">
+        <dt class="small text-body-secondary">{{ 'adminTeamWorkspace.field.username' | t }}</dt>
+        <dd class="fs-5 mb-0">{{ accountValue.username }}</dd>
+      </div>
+      <div class="col-12 col-md-4">
+        <dt class="small text-body-secondary">{{ 'adminTeamWorkspace.field.role' | t }}</dt>
+        <dd class="mb-0">{{ roleLabelKey(accountValue.role) | t }}</dd>
+      </div>
+      <div class="col-12 col-md-4">
+        <dt class="small text-body-secondary">{{ 'adminTeamWorkspace.field.status' | t }}</dt>
+        <dd class="mb-0">
+          <span
+            class="badge"
+            [class.text-bg-success]="accountValue.isActive"
+            [class.text-bg-secondary]="!accountValue.isActive"
+          >
+            {{ statusLabelKey(accountValue) | t }}
+          </span>
+          @if (isSelfAccount(accountValue)) {
+            <span class="badge text-bg-info ms-2">
+              {{ 'adminTeamWorkspace.currentUser' | t }}
+            </span>
+          }
+        </dd>
+      </div>
+    </dl>
+  }
+
+  @if (roleDialogOpen()) {
+    <div
+      class="modal d-block bg-dark bg-opacity-50"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'adminTeamWorkspace.roleTitle' | t"
+      (click)="closeRoleDialog()"
+      (keyup.escape)="closeRoleDialog()"
+      tabindex="0"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered"
+        role="document"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <form
+          class="modal-content"
+          data-testid="team-role-form"
+          [formGroup]="roleForm"
+          (ngSubmit)="updateRole()"
+        >
+          <div class="modal-header">
+            <h2 class="h5 modal-title">{{ 'adminTeamWorkspace.roleTitle' | t }}</h2>
+            <button
+              type="button"
+              class="btn-close"
+              [disabled]="roleSubmitting()"
+              [attr.aria-label]="'shared.close' | t"
+              (click)="closeRoleDialog()"
+            ></button>
+          </div>
+          <div class="modal-body">
+            @if (roleError()) {
+              <app-error-message
+                [error]="roleError()!"
+                [retryLabel]="'shared.retry' | t"
+                (retry)="updateRole()"
+              />
+            }
+            <label class="form-label" for="team-role-role">
+              {{ 'adminTeamWorkspace.field.role' | t }}
+            </label>
+            <select
+              id="team-role-role"
+              class="form-select"
+              data-testid="team-role-role"
+              formControlName="role"
+            >
+              @for (role of roleOptions; track role.value) {
+                <option [value]="role.value">{{ role.labelKey | t }}</option>
+              }
+            </select>
+            @if (roleFieldInvalid('role') && roleFieldMessage('role'); as message) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [disabled]="roleSubmitting()"
+              (click)="closeRoleDialog()"
+            >
+              {{ 'shared.cancel' | t }}
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="roleSubmitting()">
+              {{ 'shared.save' | t }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (passwordDialogOpen()) {
+    <div
+      class="modal d-block bg-dark bg-opacity-50"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'adminTeamWorkspace.passwordTitle' | t"
+      (click)="closePasswordDialog()"
+      (keyup.escape)="closePasswordDialog()"
+      tabindex="0"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered"
+        role="document"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <form
+          class="modal-content"
+          data-testid="team-password-form"
+          [formGroup]="passwordForm"
+          (ngSubmit)="updatePassword()"
+        >
+          <div class="modal-header">
+            <h2 class="h5 modal-title">{{ 'adminTeamWorkspace.passwordTitle' | t }}</h2>
+            <button
+              type="button"
+              class="btn-close"
+              [disabled]="passwordSubmitting()"
+              [attr.aria-label]="'shared.close' | t"
+              (click)="closePasswordDialog()"
+            ></button>
+          </div>
+          <div class="modal-body">
+            @if (passwordError()) {
+              <app-error-message
+                [error]="passwordError()!"
+                [retryLabel]="'shared.retry' | t"
+                (retry)="updatePassword()"
+              />
+            }
+            <label class="form-label" for="team-password-password">
+              {{ 'adminTeamWorkspace.field.password' | t }}
+            </label>
+            <input
+              id="team-password-password"
+              class="form-control"
+              type="password"
+              autocomplete="new-password"
+              data-testid="team-password-password"
+              [attr.minlength]="validationLimits.accountPasswordMin"
+              [attr.maxlength]="validationLimits.shortText"
+              formControlName="password"
+            />
+            @if (passwordFieldInvalid('password') && passwordFieldMessage('password'); as message) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              [disabled]="passwordSubmitting()"
+              (click)="closePasswordDialog()"
+            >
+              {{ 'shared.cancel' | t }}
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="passwordSubmitting()">
+              {{ 'shared.save' | t }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

@@ -45,6 +45,7 @@ describe('AdminPanelPageComponent', () => {
     ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Разделы');
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
+    expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
     expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
     expect(fixture.nativeElement.textContent).toContain('Очередь вопросов матрицы');
@@ -56,17 +57,18 @@ describe('AdminPanelPageComponent', () => {
     ) as HTMLButtonElement[];
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
-      'Рабочая область1',
+      'Рабочая область2',
       'Статьи1',
       'Матрица2',
     ]);
   });
 
-  it('hides resume workspace navigation for non-admin content managers', () => {
+  it('hides admin-only workspace navigation for non-admin content managers', () => {
     isAdmin.set(false);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
+    expect(fixture.nativeElement.textContent).not.toContain('Команда');
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
     expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
   });

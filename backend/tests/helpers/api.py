@@ -403,6 +403,35 @@ class APIHelper:
         }
         return self.client.get("/api/admin/resumes", params=params)
 
+    def get_admin_accounts(self, page: int | None = 1, page_size: int | None = 20) -> Response:
+        params: dict[str, int] = {
+            key: value
+            for key, value in (("page", page), ("pageSize", page_size))
+            if value is not None
+        }
+        return self.client.get("/api/admin/accounts", params=params)
+
+    def post_create_admin_account(self, data: dict[str, Any]) -> Response:
+        return self.client.post("/api/admin/accounts", json=data)
+
+    def get_admin_account(self, username: str) -> Response:
+        return self.client.get(f"/api/admin/accounts/{username}")
+
+    def put_admin_account_role(self, username: str, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/admin/accounts/{username}/role", json=data)
+
+    def put_admin_account_password(self, username: str, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/admin/accounts/{username}/password", json=data)
+
+    def post_activate_admin_account(self, username: str) -> Response:
+        return self.client.post(f"/api/admin/accounts/{username}/activate")
+
+    def post_deactivate_admin_account(self, username: str) -> Response:
+        return self.client.post(f"/api/admin/accounts/{username}/deactivate")
+
+    def delete_admin_account(self, username: str) -> Response:
+        return self.client.delete(f"/api/admin/accounts/{username}")
+
     def post_create_resume(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/admin/resumes", json=data)
 

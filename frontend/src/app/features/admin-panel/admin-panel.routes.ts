@@ -50,6 +50,20 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'workspace/team',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/team-page/team-page.component').then((m) => m.TeamPageComponent),
+      },
+      {
+        path: 'workspace/team/:username',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/team-member-detail-page/team-member-detail-page.component').then(
+            (m) => m.TeamMemberDetailPageComponent,
+          ),
+      },
+      {
         path: 'workspace/resumes',
         canActivate: [adminGuard],
         loadComponent: () =>

@@ -119,6 +119,9 @@ class _QuestionQueueImportConstants:
 
 class _AdminValidationConstants:
     slug_pattern: str = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    account_username_pattern: str = r"^[A-Za-z0-9._]+$"
+    account_username_min_length: int = 3
+    account_password_min_length: int = 8
     short_text_max_length: int = 255
     url_max_length: int = 2_048
     seo_description_max_length: int = 320

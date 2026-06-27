@@ -32,6 +32,9 @@ class AuthUseCase:
                 required_role=required_role,
             )
             raise ForbiddenError
+        if not user.is_active:
+            self.event_reporter.report_login_inactive_user(username=user.username)
+            raise UnauthorizedError
         verified, need_rehash = self.hasher.verify_password(
             plain_password=password,
             hashed_password=user.password_hash.get_secret_value(),
@@ -62,6 +65,9 @@ class AuthUseCase:
                 required_role=required_role,
             )
             raise ForbiddenError
+        if not user.is_active:
+            self.event_reporter.report_authentication_inactive_user(username=user.username)
+            raise UnauthorizedError
         return user
 
     async def logout(self, token: Token) -> None:

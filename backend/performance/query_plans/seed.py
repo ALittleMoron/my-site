@@ -56,6 +56,9 @@ MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 MATRIX_FREQUENCY_BUCKET_RARELY = 2
 MATRIX_FREQUENCY_BUCKET_NEVER_SEEN = 3
 USER_SEED_COUNT = 10_000
+INACTIVE_MODERATOR_SEED_INDEX = 2
+MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR = 100
+MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER = 50
 ARTICLE_REACTION_SEED_COUNT = 50_000
 QUEUED_QUESTION_SEED_COUNT = 50_000
 RESUME_SEED_COUNT = 50_000
@@ -132,14 +135,31 @@ async def insert_users(*, connection: AsyncConnection) -> None:
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(UserModel.__table__).from_select(
-            ["username", "password_hash", "role"],
+            ["username", "password_hash", "role", "is_active"],
             select(
                 case(
                     (value == 1, literal(SEED_USERNAME)),
                     else_=func.concat(literal("benchmark-user-"), value),
                 ),
                 func.concat(literal("query-plan-seed-password-hash-"), value),
-                literal(RoleEnum.ADMIN.name),
+                case(
+                    (value == 1, literal(RoleEnum.ADMIN.name)),
+                    (value == INACTIVE_MODERATOR_SEED_INDEX, literal(RoleEnum.MODERATOR.name)),
+                    (
+                        value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR == 0,
+                        literal(RoleEnum.ADMIN.name),
+                    ),
+                    (
+                        value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR
+                        == MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER,
+                        literal(RoleEnum.MODERATOR.name),
+                    ),
+                    else_=literal(RoleEnum.USER.name),
+                ),
+                case(
+                    (value == INACTIVE_MODERATOR_SEED_INDEX, literal(value=False)),
+                    else_=literal(value=True),
+                ),
             ).select_from(series),
         ),
     )

@@ -13,6 +13,9 @@ class StructlogAuthEventReporter(AuthEventReporter):
     def report_login_role_forbidden(self, *, username: str, required_role: RoleEnum) -> None:
         logger.warning(f"User has no role {required_role.value}", username=username)
 
+    def report_login_inactive_user(self, *, username: str) -> None:
+        logger.warning(event="Inactive user requested login", username=username)
+
     def report_login_password_verification_failed(self, *, username: str) -> None:
         logger.warning(
             "incorrect credentials (passwords not suit)",
@@ -32,6 +35,9 @@ class StructlogAuthEventReporter(AuthEventReporter):
         required_role: RoleEnum,
     ) -> None:
         logger.warning(f"User has no role {required_role.value}", username=username)
+
+    def report_authentication_inactive_user(self, *, username: str) -> None:
+        logger.warning(event="Inactive user used token for authentication", username=username)
 
     def report_logout_invalid_token(self) -> None:
         logger.warning(event="Logout requested with invalid token")

@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from dishka import AsyncContainer
 
 from core.account.storages import UserAccountStorage
+from core.account.use_cases import AccountsUseCase
 from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthStorage
@@ -83,6 +84,10 @@ class IocContainerHelper:
     async def get_user_storage(self) -> Mock:
         storage = await self.container.get(UserAccountStorage)
         return cast("Mock", storage)
+
+    async def get_accounts_use_case(self) -> Mock:
+        use_case = await self.container.get(AccountsUseCase)
+        return cast("Mock", use_case)
 
     # FILES
     async def get_file_name_generator(self) -> Mock:

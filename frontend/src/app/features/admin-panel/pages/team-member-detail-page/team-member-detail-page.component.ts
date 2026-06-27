@@ -1,0 +1,391 @@
+import { DOCUMENT } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ApiError } from '../../../../core/models/api-error.model';
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
+import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import {
+  AdminAction,
+  AdminActionsDropdownComponent,
+} from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
+import { ManagedAccount, ManagedAccountRole } from '../../models/team-workspace.model';
+import { TeamWorkspaceService } from '../../services/team-workspace.service';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
+
+type TeamRoleField = 'role';
+type TeamPasswordField = 'password';
+
+interface ManagedAccountRoleOption {
+  value: ManagedAccountRole;
+  labelKey: string;
+}
+
+const MANAGED_ACCOUNT_ROLE_OPTIONS: readonly ManagedAccountRoleOption[] = [
+  { value: 'admin', labelKey: 'enum.role.admin' },
+  { value: 'moderator', labelKey: 'enum.role.moderator' },
+];
+
+@Component({
+  selector: 'app-team-member-detail-page',
+  standalone: true,
+  imports: [
+    ReactiveFormsModule,
+    TranslatePipe,
+    LoadingSpinnerComponent,
+    ErrorMessageComponent,
+    AdminActionsDropdownComponent,
+    AdminControlValidationStateDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './team-member-detail-page.component.html',
+})
+export class TeamMemberDetailPageComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly teamWorkspace = inject(TeamWorkspaceService);
+  private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
+  private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly auth = inject(AuthService);
+  private readonly username = this.resolveUsername();
+
+  readonly account = signal<ManagedAccount | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal<ApiError | null>(null);
+  readonly roleDialogOpen = signal(false);
+  readonly roleSubmitting = signal(false);
+  readonly roleFormSubmitted = signal(false);
+  readonly roleError = signal<ApiError | null>(null);
+  readonly passwordDialogOpen = signal(false);
+  readonly passwordSubmitting = signal(false);
+  readonly passwordFormSubmitted = signal(false);
+  readonly passwordError = signal<ApiError | null>(null);
+  readonly roleOptions = MANAGED_ACCOUNT_ROLE_OPTIONS;
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
+  readonly currentUsername = computed(() => this.auth.currentUser()?.username ?? '');
+
+  readonly roleForm = this.formBuilder.group({
+    role: ['', trimRequired],
+  });
+
+  readonly passwordForm = this.formBuilder.group({
+    password: [
+      '',
+      [
+        trimRequired,
+        Validators.minLength(ADMIN_VALIDATION_LIMITS.accountPasswordMin),
+        Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
+      ],
+    ],
+  });
+
+  ngOnInit(): void {
+    this.loadAccount();
+  }
+
+  loadAccount(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.teamWorkspace
+      .getAccount(this.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (account) => {
+          this.account.set(account);
+          this.loading.set(false);
+        },
+        error: (err: ApiError) => {
+          this.error.set(err);
+          this.loading.set(false);
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.loadDetailError'));
+        },
+      });
+  }
+
+  goBack(): void {
+    this.router.navigateByUrl('/admin-panel/workspace/team');
+  }
+
+  accountActions(account: ManagedAccount): AdminAction[] {
+    const isSelf = this.isSelfAccount(account);
+    const statusAction: AdminAction = account.isActive
+      ? {
+          id: 'deactivate',
+          label: this.i18n.translate('adminTeamWorkspace.action.deactivate'),
+          destructive: true,
+          disabled: isSelf,
+        }
+      : {
+          id: 'activate',
+          label: this.i18n.translate('adminTeamWorkspace.action.activate'),
+          destructive: false,
+          disabled: false,
+        };
+    return [
+      {
+        id: 'role',
+        label: this.i18n.translate('adminTeamWorkspace.action.changeRole'),
+        destructive: false,
+        disabled: isSelf,
+      },
+      {
+        id: 'password',
+        label: this.i18n.translate('adminTeamWorkspace.action.changePassword'),
+        destructive: false,
+        disabled: false,
+      },
+      statusAction,
+      {
+        id: 'delete',
+        label: this.i18n.translate('shared.delete'),
+        destructive: true,
+        disabled: isSelf,
+      },
+    ];
+  }
+
+  handleAccountAction(actionId: string): void {
+    switch (actionId) {
+      case 'role':
+        this.openRoleDialog();
+        return;
+      case 'password':
+        this.openPasswordDialog();
+        return;
+      case 'activate':
+        this.activateAccount();
+        return;
+      case 'deactivate':
+        this.deactivateAccount();
+        return;
+      case 'delete':
+        this.deleteAccount();
+        return;
+      default:
+        throw new Error(`Unsupported team account detail action: ${actionId}`);
+    }
+  }
+
+  openRoleDialog(): void {
+    const account = this.account();
+    if (account === null || this.isSelfAccount(account)) return;
+    this.roleForm.reset({ role: account.role });
+    this.roleError.set(null);
+    this.roleSubmitting.set(false);
+    this.roleFormSubmitted.set(false);
+    this.roleDialogOpen.set(true);
+  }
+
+  closeRoleDialog(): void {
+    if (this.roleSubmitting()) return;
+    this.roleDialogOpen.set(false);
+    this.roleError.set(null);
+    this.roleFormSubmitted.set(false);
+  }
+
+  updateRole(): void {
+    const account = this.account();
+    if (account === null) return;
+    this.roleFormSubmitted.set(true);
+    if (this.roleForm.invalid) {
+      this.roleForm.markAllAsTouched();
+      this.notifications.error(this.i18n.translate('adminTeamWorkspace.validationError'));
+      return;
+    }
+    this.roleSubmitting.set(true);
+    this.roleError.set(null);
+    const value = this.roleForm.getRawValue();
+    this.teamWorkspace
+      .updateAccountRole(account.username, toManagedAccountRole(value.role))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedAccount) => {
+          this.account.set(updatedAccount);
+          this.roleSubmitting.set(false);
+          this.roleDialogOpen.set(false);
+          this.notifications.success(this.i18n.translate('adminTeamWorkspace.roleUpdated'));
+        },
+        error: (err: ApiError) => {
+          this.roleError.set(err);
+          this.roleSubmitting.set(false);
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.roleUpdateError'));
+        },
+      });
+  }
+
+  openPasswordDialog(): void {
+    if (this.account() === null) return;
+    this.passwordForm.reset({ password: '' });
+    this.passwordError.set(null);
+    this.passwordSubmitting.set(false);
+    this.passwordFormSubmitted.set(false);
+    this.passwordDialogOpen.set(true);
+  }
+
+  closePasswordDialog(): void {
+    if (this.passwordSubmitting()) return;
+    this.passwordDialogOpen.set(false);
+    this.passwordError.set(null);
+    this.passwordFormSubmitted.set(false);
+  }
+
+  updatePassword(): void {
+    const account = this.account();
+    if (account === null) return;
+    this.passwordFormSubmitted.set(true);
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      this.notifications.error(this.i18n.translate('adminTeamWorkspace.validationError'));
+      return;
+    }
+    this.passwordSubmitting.set(true);
+    this.passwordError.set(null);
+    const value = this.passwordForm.getRawValue();
+    this.teamWorkspace
+      .updateAccountPassword(account.username, value.password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.passwordSubmitting.set(false);
+          this.passwordDialogOpen.set(false);
+          this.notifications.success(this.i18n.translate('adminTeamWorkspace.passwordUpdated'));
+        },
+        error: (err: ApiError) => {
+          this.passwordError.set(err);
+          this.passwordSubmitting.set(false);
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.passwordUpdateError'));
+        },
+      });
+  }
+
+  activateAccount(): void {
+    const account = this.account();
+    if (account === null) return;
+    this.teamWorkspace
+      .activateAccount(account.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedAccount) => {
+          this.account.set(updatedAccount);
+          this.notifications.success(this.i18n.translate('adminTeamWorkspace.activated'));
+        },
+        error: () =>
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.activateError')),
+      });
+  }
+
+  deactivateAccount(): void {
+    const account = this.account();
+    if (account === null) return;
+    if (
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminTeamWorkspace.confirmDeactivate'),
+      ) !== true
+    ) {
+      return;
+    }
+    this.teamWorkspace
+      .deactivateAccount(account.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updatedAccount) => {
+          this.account.set(updatedAccount);
+          this.notifications.success(this.i18n.translate('adminTeamWorkspace.deactivated'));
+        },
+        error: () =>
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.deactivateError')),
+      });
+  }
+
+  deleteAccount(): void {
+    const account = this.account();
+    if (account === null) return;
+    if (
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminTeamWorkspace.confirmDelete'),
+      ) !== true
+    ) {
+      return;
+    }
+    this.teamWorkspace
+      .deleteAccount(account.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.notifications.success(this.i18n.translate('adminTeamWorkspace.deleted'));
+          this.router.navigateByUrl('/admin-panel/workspace/team');
+        },
+        error: () =>
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.deleteError')),
+      });
+  }
+
+  roleLabelKey(role: ManagedAccountRole): string {
+    return role === 'admin' ? 'enum.role.admin' : 'enum.role.moderator';
+  }
+
+  statusLabelKey(account: ManagedAccount): string {
+    return account.isActive
+      ? 'adminTeamWorkspace.status.active'
+      : 'adminTeamWorkspace.status.inactive';
+  }
+
+  isSelfAccount(account: ManagedAccount): boolean {
+    const currentUsername = this.currentUsername();
+    return (
+      currentUsername.trim() !== '' &&
+      account.username.toLocaleLowerCase() === currentUsername.toLocaleLowerCase()
+    );
+  }
+
+  roleFieldInvalid(field: TeamRoleField): boolean {
+    return controlInvalid(this.roleForm.controls[field], this.roleFormSubmitted());
+  }
+
+  roleFieldMessage(field: TeamRoleField): string | null {
+    return validationMessage(this.roleForm.controls[field], this.i18n);
+  }
+
+  passwordFieldInvalid(field: TeamPasswordField): boolean {
+    return controlInvalid(this.passwordForm.controls[field], this.passwordFormSubmitted());
+  }
+
+  passwordFieldMessage(field: TeamPasswordField): string | null {
+    return validationMessage(this.passwordForm.controls[field], this.i18n);
+  }
+
+  private resolveUsername(): string {
+    const username = this.route.snapshot.paramMap.get('username');
+    if (username === null) {
+      throw new Error('Team member detail route requires username');
+    }
+    return username;
+  }
+}
+
+function toManagedAccountRole(value: string): ManagedAccountRole {
+  if (value === 'admin' || value === 'moderator') return value;
+  throw new Error(`Unsupported managed account role: ${value}`);
+}

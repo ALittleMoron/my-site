@@ -418,6 +418,11 @@ Workspace is admin-only utils, that live only in admin panel.
     - [x] To DOCX
     - [x] Step-by-step maximize resume export ATS score.
     - [x] Fix readability of exported resume
+- [x] Team
+  - [x] Add admin-only backend CRUD API under `/api/admin/accounts`.
+  - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/team`.
+  - [x] Manage moderator/admin usernames, roles, passwords, and active status.
+  - [x] Reject self role/deactivation/delete actions and protect the last active admin.
 
 ### Knowledge database
 

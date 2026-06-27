@@ -54,6 +54,15 @@ event_dispatchers.py    # Domain event dispatchers - kafka or rest event publish
 - New core code must be domain dataclasses, value objects, use cases, services, interfaces, exceptions, or generators.
 - Use cases must be concrete standalone classes. Do not add abstract use-case interfaces,
   `Protocol` contracts, base use-case classes, or inheritance between use cases.
+- Use cases must not define private helper methods. Keep straightforward field checks directly in
+  the public use-case method, move domain-entity checks onto the relevant domain schema/value
+  object, and perform storage reads plus DB-derived decisions directly inside the public use-case
+  method. The only exception is small non-complex logic that is repeated across multiple methods in
+  the same use case.
+- When an operation has both a target entity identifier and a current actor identifier, the public
+  use-case method must read both domain entities when actor permissions are relevant, then call a
+  public permission/check method on the actor or target domain schema. Do not encode actor-vs-target
+  authorization rules as raw string comparisons in the use case.
 - Use cases must not depend on or call other use cases. When the logic belongs to only one
   use case, keep it in that use case and inject storage abstractions directly. Put shared
   cross-use-case business logic in the relevant domain `services.py` as a concrete service.

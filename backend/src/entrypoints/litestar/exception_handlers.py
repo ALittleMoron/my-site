@@ -17,6 +17,12 @@ from verbose_http_exceptions.ext.litestar import (
 )
 from verbose_http_exceptions.ext.litestar.types import LitestarExceptionHandlersMap
 
+from core.account.exceptions import (
+    AccountUsernameAlreadyExistsError,
+    InvalidManagedAccountRoleError,
+    LastActiveAdminActionForbiddenError,
+    SelfAccountActionForbiddenError,
+)
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
@@ -38,6 +44,10 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
     QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
     QuestionQueueImportInvalidError: BadRequestHTTPException,
+    AccountUsernameAlreadyExistsError: BadRequestHTTPException,
+    InvalidManagedAccountRoleError: BadRequestHTTPException,
+    SelfAccountActionForbiddenError: ForbiddenHTTPException,
+    LastActiveAdminActionForbiddenError: ForbiddenHTTPException,
 }
 
 

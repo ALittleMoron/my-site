@@ -13,6 +13,12 @@ from verbose_http_exceptions import (
     UnauthorizedHTTPException,
 )
 
+from core.account.exceptions import (
+    AccountUsernameAlreadyExistsError,
+    InvalidManagedAccountRoleError,
+    LastActiveAdminActionForbiddenError,
+    SelfAccountActionForbiddenError,
+)
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
@@ -148,6 +154,10 @@ def test_domain_error_verbose_exception_mapping() -> None:
         CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
         QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
         QuestionQueueImportInvalidError: BadRequestHTTPException,
+        AccountUsernameAlreadyExistsError: BadRequestHTTPException,
+        InvalidManagedAccountRoleError: BadRequestHTTPException,
+        SelfAccountActionForbiddenError: ForbiddenHTTPException,
+        LastActiveAdminActionForbiddenError: ForbiddenHTTPException,
     }
     assert expected_mapping == exception_handlers.DOMAIN_ERROR_MAPPING
 

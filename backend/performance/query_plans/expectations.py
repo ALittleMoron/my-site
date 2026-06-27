@@ -9,6 +9,7 @@ class QueryThresholdPolicy:
     group_max_execution_ms: Mapping[QueryThresholdGroup, float]
     scenario_max_execution_ms: Mapping[str, float]
     query_max_execution_ms: Mapping[str, float]
+    query_expected_index_names: Mapping[str, tuple[str, ...]]
 
 
 def scenario_plan_expectation(  # noqa: PLR0913
@@ -21,13 +22,18 @@ def scenario_plan_expectation(  # noqa: PLR0913
     forbidden_seq_scan_relations: tuple[str, ...],
     allow_seq_scan_reason: str | None,
 ) -> PlanExpectation:
+    effective_expected_index_names = (
+        expected_index_names
+        if query_name is None
+        else policy.query_expected_index_names.get(query_name, expected_index_names)
+    )
     if query_name is not None:
         query_override = policy.query_max_execution_ms.get(query_name)
         if query_override is not None:
             return PlanExpectation(
                 max_execution_ms=query_override,
                 threshold_source=f"override:{query_name}",
-                expected_index_names=expected_index_names,
+                expected_index_names=effective_expected_index_names,
                 forbidden_seq_scan_relations=forbidden_seq_scan_relations,
                 allow_seq_scan_reason=allow_seq_scan_reason,
             )
@@ -36,14 +42,14 @@ def scenario_plan_expectation(  # noqa: PLR0913
         return PlanExpectation(
             max_execution_ms=scenario_override,
             threshold_source=f"override:{scenario_name}",
-            expected_index_names=expected_index_names,
+            expected_index_names=effective_expected_index_names,
             forbidden_seq_scan_relations=forbidden_seq_scan_relations,
             allow_seq_scan_reason=allow_seq_scan_reason,
         )
     return PlanExpectation(
         max_execution_ms=policy.group_max_execution_ms[group],
         threshold_source=f"group:{group.value}",
-        expected_index_names=expected_index_names,
+        expected_index_names=effective_expected_index_names,
         forbidden_seq_scan_relations=forbidden_seq_scan_relations,
         allow_seq_scan_reason=allow_seq_scan_reason,
     )
@@ -66,5 +72,20 @@ BALANCED_THRESHOLD_POLICY = QueryThresholdPolicy(
     query_max_execution_ms={
         "articles_list_en_full_text_tag_date__002": 250.0,
         "articles_list_ru_full_text__002": 250.0,
+    },
+    query_expected_index_names={
+        "managed_accounts_list__001": ("users_username_lower_uniq",),
+        "managed_accounts_list__002": ("users_managed_accounts_list_idx",),
+        "managed_accounts_update_role__001": ("users_username_lower_uniq",),
+        "managed_accounts_update_role__002": ("users_username_idx",),
+        "managed_accounts_update_password__001": ("users_username_lower_uniq",),
+        "managed_accounts_update_password__002": ("users_username_idx",),
+        "managed_accounts_activate__001": ("users_username_lower_uniq",),
+        "managed_accounts_activate__002": ("users_username_idx",),
+        "managed_accounts_deactivate__001": ("users_username_lower_uniq",),
+        "managed_accounts_deactivate__002": ("users_username_idx",),
+        "managed_accounts_delete__001": ("users_username_lower_uniq",),
+        "managed_accounts_delete__002": ("users_username_idx",),
+        "managed_accounts_count_active_admins__001": ("users_active_admins_idx",),
     },
 )

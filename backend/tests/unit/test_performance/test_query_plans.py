@@ -359,6 +359,9 @@ class TestQueryCapture:
             },
             scenario_max_execution_ms={"tags_short_en": 250.0},
             query_max_execution_ms={"tags_short_en__001": 300.0},
+            query_expected_index_names={
+                "tags_short_en__001": ("articles_tag_slug_trgm_idx",),
+            },
         )
 
         search_expectation = scenario_plan_expectation(
@@ -395,6 +398,9 @@ class TestQueryCapture:
         assert override_expectation.threshold_source == "override:tags_short_en"
         assert statement_override_expectation.max_execution_ms == 300.0
         assert statement_override_expectation.threshold_source == "override:tags_short_en__001"
+        assert statement_override_expectation.expected_index_names == (
+            "articles_tag_slug_trgm_idx",
+        )
 
     def test_runner_applies_statement_threshold_overrides_to_captured_queries(self) -> None:
         query = make_captured_query(

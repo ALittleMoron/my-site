@@ -13,6 +13,10 @@ class AuthEventReporter(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def report_login_inactive_user(self, *, username: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def report_login_password_verification_failed(self, *, username: str) -> None:
         raise NotImplementedError
 
@@ -31,6 +35,10 @@ class AuthEventReporter(ABC):
         username: str,
         required_role: RoleEnum,
     ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def report_authentication_inactive_user(self, *, username: str) -> None:
         raise NotImplementedError
 
     @abstractmethod

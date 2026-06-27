@@ -1,9 +1,14 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from pydantic import ValidationError
+from sqlalchemy.dialects import postgresql
 
+from core.auth.enums import RoleEnum
 from performance.locust.seed import (
     article_range,
     article_tag_indexes,
+    insert_seed_user,
     validate_seed_config,
 )
 from performance.locust.settings import (
@@ -132,3 +137,14 @@ class TestLocustPerformanceSeed:
         for article_index in article_range():
             indexes = article_tag_indexes(article_index=article_index)
             assert len(indexes) == len(set(indexes))
+
+    async def test_seed_user_is_created_as_active_admin(self) -> None:
+        session = AsyncMock()
+
+        await insert_seed_user(session=session)
+
+        statement = session.execute.await_args.args[0]
+        compiled = statement.compile(dialect=postgresql.dialect())
+        assert compiled.params["username"] == "performance-seed-admin"
+        assert compiled.params["role"] == RoleEnum.ADMIN
+        assert compiled.params["is_active"] is True

@@ -6,8 +6,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.account.schemas import ManagedAccountFilters
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFilters, ArticleMetadata, Tag, Tags
+from core.auth.enums import RoleEnum
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
     GradeEnum,
@@ -64,6 +66,7 @@ ScenarioRunner = Callable[[AsyncSession], Awaitable[None]]
 SEED_NOW = datetime(2026, 1, 15, 12, 0, tzinfo=UTC)
 SEED_USERNAME = "benchmark"
 NEW_AUTH_HASH = "query-plan-auth-hash"
+NEW_MANAGED_ACCOUNT_USERNAME = "query-plan-admin"
 NEW_ARTICLE_ID = UUID("10000000-0000-4000-8000-000000000001")
 NEW_CONTACT_ID = UUID("10000000-0000-4000-8000-000000000002")
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
@@ -152,6 +155,61 @@ def coverage_findings(*, coverage: CoverageReport) -> tuple[str, ...]:
 
 async def run_user_get_by_username(session: AsyncSession) -> None:
     await UserAccountDatabaseStorage(session=session).get_user_by_username(SEED_USERNAME)
+
+
+async def run_list_managed_accounts(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).list_managed_accounts(
+        filters=ManagedAccountFilters(page=1, page_size=20),
+    )
+
+
+async def run_get_managed_account(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).get_managed_account(username=SEED_USERNAME)
+
+
+async def run_create_managed_account(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).create_managed_account(
+        username=NEW_MANAGED_ACCOUNT_USERNAME,
+        role=RoleEnum.ADMIN,
+        password_hash=NEW_AUTH_HASH,
+        is_active=True,
+    )
+
+
+async def run_update_managed_account_role(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).update_managed_account_role(
+        username=SEED_USERNAME,
+        role=RoleEnum.MODERATOR,
+    )
+
+
+async def run_update_managed_account_password(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).update_managed_account_password(
+        username=SEED_USERNAME,
+        password_hash=NEW_AUTH_HASH,
+    )
+
+
+async def run_activate_managed_account(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).activate_managed_account(
+        username="benchmark-user-2",
+    )
+
+
+async def run_deactivate_managed_account(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).deactivate_managed_account(
+        username=SEED_USERNAME,
+    )
+
+
+async def run_delete_managed_account(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).delete_managed_account(
+        username="benchmark-user-100",
+    )
+
+
+async def run_count_active_admins(session: AsyncSession) -> None:
+    await UserAccountDatabaseStorage(session=session).count_active_admins()
 
 
 async def run_update_user_password_hash(session: AsyncSession) -> None:
@@ -752,17 +810,107 @@ STORAGE_SCENARIOS = (
         storage_class="UserAccountDatabaseStorage",
         method_name="get_user_by_username",
         group=QueryThresholdGroup.POINT_READ,
-        expected_index_names=("users_username_idx",),
+        expected_index_names=("users_username_lower_uniq",),
         forbidden_seq_scan_relations=("auth__user_model",),
         allow_seq_scan_reason=None,
         run=run_user_get_by_username,
+    ),
+    scenario(
+        name="managed_accounts_list",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="list_managed_accounts",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_list_managed_accounts,
+    ),
+    scenario(
+        name="managed_accounts_detail",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="get_managed_account",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("users_username_lower_uniq",),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_managed_account,
+    ),
+    scenario(
+        name="managed_accounts_create",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="create_managed_account",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_managed_account,
+    ),
+    scenario(
+        name="managed_accounts_update_role",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="update_managed_account_role",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_update_managed_account_role,
+    ),
+    scenario(
+        name="managed_accounts_update_password",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="update_managed_account_password",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_update_managed_account_password,
+    ),
+    scenario(
+        name="managed_accounts_activate",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="activate_managed_account",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_activate_managed_account,
+    ),
+    scenario(
+        name="managed_accounts_deactivate",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="deactivate_managed_account",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_deactivate_managed_account,
+    ),
+    scenario(
+        name="managed_accounts_delete",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="delete_managed_account",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_delete_managed_account,
+    ),
+    scenario(
+        name="managed_accounts_count_active_admins",
+        storage_class="UserAccountDatabaseStorage",
+        method_name="count_active_admins",
+        group=QueryThresholdGroup.AGGREGATE,
+        expected_index_names=("users_active_admins_idx",),
+        forbidden_seq_scan_relations=("auth__user_model",),
+        allow_seq_scan_reason=None,
+        run=run_count_active_admins,
     ),
     scenario(
         name="auth_update_user_password_hash",
         storage_class="AuthDatabaseStorage",
         method_name="update_user_password_hash",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("users_username_idx",),
+        expected_index_names=("users_username_lower_uniq",),
         forbidden_seq_scan_relations=("auth__user_model",),
         allow_seq_scan_reason=None,
         run=run_update_user_password_hash,

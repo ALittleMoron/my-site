@@ -6,9 +6,21 @@ These rules apply to SQLAlchemy models, PostgreSQL storages, and Alembic migrati
 
 - Any changes under `backend/src/infra/postgresql/` must also be reflected in `backend/performance/query_plans/` by updating the relevant query capture, seed data, expectations, docs, or tests so the query-plan harness continues to exercise the changed PostgreSQL behavior.
 
+## Storages
+
+- Storage mutation methods must not hide preliminary read/get operations. Public use cases should
+  perform reads needed for domain decisions, while storage create/update/delete methods should
+  execute the named write operation directly. Use `RETURNING` when a mutation needs to return the
+  changed row.
+
 ## Migrations
 
+- Do not hand-write new Alembic revision files from scratch. Generate new migrations with the
+  project's Alembic autogeneration Make target first, then edit the generated revision only for
+  intentional data updates, naming cleanup, operation ordering, or other explicit refinements.
 - Do not write raw SQL in Alembic migrations when SQLAlchemy can express the operation.
-- Schema changes must be represented in SQLAlchemy ORM models, and matching migrations must use Alembic operations plus SQLAlchemy expressions.
+- Schema changes, including indexes and constraints, must be represented in SQLAlchemy ORM models,
+  and matching migrations must use Alembic operations plus SQLAlchemy expressions. Do not leave an
+  index, constraint, or column in a migration without the corresponding ORM model metadata.
 - Data reads or writes inside migrations must be built with SQLAlchemy Core query builder constructs (`sa.select`, `sa.update`, `sa.insert`, `sa.delete`, expressions, functions, and bind parameters).
 - Raw SQL is allowed only for database features that cannot reasonably be represented through Alembic operations, SQLAlchemy Core, or SQLAlchemy ORM model metadata.

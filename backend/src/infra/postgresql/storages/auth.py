@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import update
+from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.exceptions import UserNotFoundError
@@ -16,7 +16,7 @@ class AuthDatabaseStorage(AuthStorage):
         stmt = (
             update(UserModel)
             .values(password_hash=password_hash)
-            .where(UserModel.username == username)
+            .where(func.lower(UserModel.username) == username.lower())
             .returning(UserModel.username)
         )
         db_username = await self.session.scalar(stmt)
