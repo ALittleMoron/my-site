@@ -10,6 +10,18 @@ import { ArticleWorkspaceService } from '../../../../services/article-workspace.
 import { ArticleDetail } from '../../../../models/article-workspace.model';
 import { ArticleFormComponent } from './article-form.component';
 
+const INVALID_SHORT_TEXT = 'x'.repeat(256);
+const INVALID_SEO_DESCRIPTION = 'x'.repeat(321);
+const INVALID_ARTICLE_CONTENT = 'x'.repeat(100_001);
+
+interface ArticleValidationCase {
+  description: string;
+  selector: string;
+  expectedMessage: string;
+  setInvalidValue: () => void;
+  invalidClass?: string;
+}
+
 describe('ArticleFormComponent', () => {
   let fixture: ComponentFixture<ArticleFormComponent>;
   let articlesService: {
@@ -226,6 +238,124 @@ describe('ArticleFormComponent', () => {
     expect(slug.classList).not.toContain('is-invalid');
   });
 
+  it.each<ArticleValidationCase>([
+    {
+      description: 'article slug pattern',
+      selector: '#articleSlug',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      setInvalidValue: () => setInput('#articleSlug', 'Invalid Slug'),
+    },
+    {
+      description: 'RU title required text',
+      selector: '#articleTitleRu',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#articleTitleRu', '   '),
+    },
+    {
+      description: 'RU folder max length',
+      selector: '#articleFolderRu',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleFolderRu', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'RU content required text',
+      selector: '[data-testid="article-content-ru-editor"]',
+      expectedMessage: 'Заполните поле.',
+      invalidClass: 'is-invalid',
+      setInvalidValue: () => setArticleContent('ru', '   '),
+    },
+    {
+      description: 'EN title required text',
+      selector: '#articleTitleEn',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#articleTitleEn', '   '),
+    },
+    {
+      description: 'EN folder max length',
+      selector: '#articleFolderEn',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleFolderEn', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'EN content max length',
+      selector: '[data-testid="article-content-en-editor"]',
+      expectedMessage: 'Максимум 100000 символов.',
+      invalidClass: 'is-invalid',
+      setInvalidValue: () => setArticleContent('en', INVALID_ARTICLE_CONTENT),
+    },
+    {
+      description: 'RU SEO title max length',
+      selector: '#articleSeoTitleRu',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleSeoTitleRu', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'EN SEO title max length',
+      selector: '#articleSeoTitleEn',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleSeoTitleEn', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'RU SEO description max length',
+      selector: '#articleSeoDescriptionRu',
+      expectedMessage: 'Максимум 320 символов.',
+      setInvalidValue: () => setInput('#articleSeoDescriptionRu', INVALID_SEO_DESCRIPTION),
+    },
+    {
+      description: 'EN SEO description max length',
+      selector: '#articleSeoDescriptionEn',
+      expectedMessage: 'Максимум 320 символов.',
+      setInvalidValue: () => setInput('#articleSeoDescriptionEn', INVALID_SEO_DESCRIPTION),
+    },
+    {
+      description: 'cover image URL scheme',
+      selector: '#articleCoverImageUrl',
+      expectedMessage: 'Укажите ссылку с http или https.',
+      setInvalidValue: () => setInput('#articleCoverImageUrl', 'ftp://example.com/cover.jpg'),
+    },
+    {
+      description: 'RU cover alt max length',
+      selector: '#articleCoverImageAltRu',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleCoverImageAltRu', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'EN cover alt max length',
+      selector: '#articleCoverImageAltEn',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#articleCoverImageAltEn', INVALID_SHORT_TEXT),
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    fillValidArticleMinimum();
+    validationCase.setInvalidValue();
+
+    submitArticleForm();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expectInvalidControl(
+      validationCase.selector,
+      validationCase.expectedMessage,
+      validationCase.invalidClass,
+    );
+  });
+
+  it('marks the hidden language tab that contains an invalid article field', () => {
+    fillValidArticleMinimum();
+    setInput('#articleTitleEn', '   ');
+    fixture.componentInstance.setActiveLanguageTab('ru');
+    fixture.detectChanges();
+
+    submitArticleForm();
+
+    const englishTab = buttonByText('Английский');
+    expect(englishTab.classList).toContain('text-danger');
+    expect(englishTab.getAttribute('aria-invalid')).toBe('true');
+    expect(englishTab.textContent).toContain('!');
+    expectInvalidControl('#articleTitleEn', 'Заполните поле.');
+  });
+
   it('keeps whitespace-only required article fields invalid', () => {
     const saveSpy = jest.fn();
     fixture.componentInstance.articleSave.subscribe(saveSpy);
@@ -290,6 +420,77 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
 
     expect(nameRu.classList).not.toContain('is-invalid');
+  });
+
+  it.each<ArticleValidationCase>([
+    {
+      description: 'new tag RU name required text',
+      selector: '#newTagNameRu',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => {
+        setInput('#newTagNameEn', 'Backend');
+        setInput('#newTagSlug', 'backend');
+      },
+    },
+    {
+      description: 'new tag EN name max length',
+      selector: '#newTagNameEn',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => {
+        setInput('#newTagNameRu', 'Бэкенд');
+        setInput('#newTagNameEn', INVALID_SHORT_TEXT);
+        setInput('#newTagSlug', 'backend');
+      },
+    },
+    {
+      description: 'new tag slug pattern',
+      selector: '#newTagSlug',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      setInvalidValue: () => {
+        setInput('#newTagNameRu', 'Бэкенд');
+        setInput('#newTagNameEn', 'Backend');
+        setInput('#newTagSlug', 'Backend Tag');
+      },
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    validationCase.setInvalidValue();
+
+    fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]')).nativeElement.click();
+    fixture.detectChanges();
+
+    expect(articlesService.createTag).not.toHaveBeenCalled();
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
+  it.each<ArticleValidationCase>([
+    {
+      description: 'inline tag RU name required text',
+      selector: '[data-testid="article-tag-1-name-ru"]',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('[data-testid="article-tag-1-name-ru"]', '   '),
+    },
+    {
+      description: 'inline tag EN name max length',
+      selector: '[data-testid="article-tag-1-name-en"]',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('[data-testid="article-tag-1-name-en"]', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'inline tag slug pattern',
+      selector: '[data-testid="article-tag-1-slug"]',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      setInvalidValue: () => setInput('[data-testid="article-tag-1-slug"]', 'Python Tag'),
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    validationCase.setInvalidValue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="article-tag-1-save"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(articlesService.updateTag).not.toHaveBeenCalled();
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
   });
 
   it('blocks invalid new and inline tag edits', () => {
@@ -416,6 +617,35 @@ describe('ArticleFormComponent', () => {
     contentEditors[0].componentInstance.valueChange.emit('Содержимое');
     contentEditors[1].componentInstance.valueChange.emit('Content');
     fixture.detectChanges();
+  }
+
+  function setArticleContent(language: 'ru' | 'en', value: string): void {
+    const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+    const index = language === 'ru' ? 0 : 1;
+    contentEditors[index].componentInstance.valueChange.emit(value);
+    fixture.detectChanges();
+  }
+
+  function expectInvalidControl(
+    selector: string,
+    expectedMessage: string,
+    invalidClass = 'is-invalid',
+  ): void {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    expect(element).not.toBeNull();
+    expect(element?.classList).toContain(invalidClass);
+    expect(element?.getAttribute('aria-invalid')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain(expectedMessage);
+  }
+
+  function buttonByText(text: string): HTMLButtonElement {
+    const button = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
+    ).find((candidate) => candidate.textContent?.includes(text));
+    if (button === undefined) {
+      throw new Error(`Button not found: ${text}`);
+    }
+    return button;
   }
 
   function submitArticleForm(): void {

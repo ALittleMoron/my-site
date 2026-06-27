@@ -30,6 +30,7 @@ import {
   AdminMatrixStructureSubsection,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
   ADMIN_VALIDATION_LIMITS,
   slugValidator,
@@ -45,7 +46,7 @@ interface MatrixStructureCreateFormValue {
 @Component({
   selector: 'app-matrix-structure-picker',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe],
+  imports: [ReactiveFormsModule, TranslatePipe, AdminControlValidationStateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-structure-picker.component.html',
 })
@@ -58,6 +59,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   @Input({ required: true }) language!: LanguageCode;
   @Input({ required: true }) selectedSubsectionId!: number | null;
   @Input() disabled = false;
+  @Input() invalid = false;
 
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<number | null>();
 

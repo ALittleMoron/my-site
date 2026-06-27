@@ -57,6 +57,8 @@
     <select
       id="matrix-structure-subsection"
       class="form-select"
+      [class.is-invalid]="invalid"
+      [attr.aria-invalid]="invalid ? 'true' : null"
       data-testid="matrix-structure-subsection"
       [disabled]="disabled || loading() || selectedSectionId() === null"
       [value]="selectedSubsectionId ?? ''"
@@ -109,7 +111,7 @@
         type="button"
         class="btn btn-outline-success"
         data-testid="matrix-structure-add-sheet"
-        [disabled]="disabled || creating() || sheetForm.invalid"
+        [disabled]="disabled || creating()"
         (click)="createSheet()"
       >
         {{ 'shared.add' | t }}
@@ -159,7 +161,7 @@
         type="button"
         class="btn btn-outline-success"
         data-testid="matrix-structure-add-section"
-        [disabled]="disabled || creating() || selectedSheetId() === null || sectionForm.invalid"
+        [disabled]="disabled || creating() || selectedSheetId() === null"
         (click)="createSection()"
       >
         {{ 'shared.add' | t }}
@@ -204,9 +206,7 @@
         type="button"
         class="btn btn-outline-success"
         data-testid="matrix-structure-add-subsection"
-        [disabled]="
-          disabled || creating() || selectedSectionId() === null || subsectionForm.invalid
-        "
+        [disabled]="disabled || creating() || selectedSectionId() === null"
         (click)="createSubsection()"
       >
         {{ 'shared.add' | t }}

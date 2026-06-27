@@ -33,6 +33,7 @@ import {
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -81,7 +82,12 @@ interface AdminMatrixResourceDraft {
 @Component({
   selector: 'app-admin-matrix-question-form',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, MatrixStructurePickerComponent],
+  imports: [
+    ReactiveFormsModule,
+    TranslatePipe,
+    MatrixStructurePickerComponent,
+    AdminControlValidationStateDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-form.component.html',
   styles: [

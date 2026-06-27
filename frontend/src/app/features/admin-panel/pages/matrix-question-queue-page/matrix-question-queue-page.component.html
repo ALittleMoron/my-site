@@ -84,18 +84,36 @@
               [language]="currentLanguage()"
               [selectedSubsectionId]="form.controls.subsectionId.value"
               [disabled]="submitting()"
+              [invalid]="queueFieldInvalid(form.controls.subsectionId)"
               (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
             />
+            @if (queueFieldInvalid(form.controls.subsectionId)) {
+              <div class="invalid-feedback d-block">
+                {{ 'matrix.form.subsectionRequired' | t }}
+              </div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-question-grade">
               {{ 'matrix.form.grade' | t }}
             </label>
-            <select id="queue-question-grade" class="form-select" formControlName="grade">
+            <select
+              id="queue-question-grade"
+              class="form-select"
+              [class.is-invalid]="queueFieldInvalid(form.controls.grade)"
+              [attr.aria-invalid]="queueFieldInvalid(form.controls.grade) ? 'true' : null"
+              formControlName="grade"
+            >
               @for (grade of grades; track grade) {
                 <option [ngValue]="grade">{{ i18n.enumGradeKey(grade) | t }}</option>
               }
             </select>
+            @if (
+              queueFieldInvalid(form.controls.grade) && queueFieldMessage(form.controls.grade);
+              as message
+            ) {
+              <div class="invalid-feedback d-block">{{ message }}</div>
+            }
           </div>
           <div class="col-md-6">
             <label class="form-label" for="queue-question-ru">
@@ -298,6 +316,7 @@
               class="form-control"
               maxlength="255"
               [class.is-invalid]="manualAddErrorMessage() !== null"
+              [attr.aria-invalid]="manualAddErrorMessage() !== null ? 'true' : null"
               [placeholder]="'adminMatrixQueue.addManualPlaceholder' | t"
               [value]="manualAddQuestion()"
               [disabled]="manualAddSubmitting()"
@@ -371,7 +390,7 @@
               type="submit"
               class="btn btn-success"
               data-testid="matrix-queue-manual-submit"
-              [disabled]="!canSubmitManualAdd() || manualAddSubmitting()"
+              [disabled]="manualAddSubmitting()"
             >
               @if (manualAddSubmitting()) {
                 {{ 'adminMatrixQueue.addManualSubmitting' | t }}
@@ -384,7 +403,7 @@
               type="submit"
               class="btn btn-success"
               data-testid="matrix-queue-import-submit"
-              [disabled]="!canSubmitImport()"
+              [disabled]="importSubmitting()"
             >
               @if (importSubmitting()) {
                 {{ 'adminMatrixQueue.importSubmitting' | t }}

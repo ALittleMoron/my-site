@@ -22,6 +22,17 @@ const resource: AdminMatrixResource = {
   },
 };
 
+const INVALID_SHORT_TEXT = 'x'.repeat(256);
+const INVALID_MATRIX_TEXT = 'x'.repeat(20_001);
+const VALID_RESOURCE_URL = 'https://example.com/docs';
+
+interface MatrixQuestionControlValidationCase {
+  description: string;
+  selector: string;
+  expectedMessage: string;
+  setInvalidValue: () => void;
+}
+
 describe('MatrixQuestionFormComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionFormComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
@@ -67,6 +78,71 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(slug.classList).not.toContain('is-invalid');
+  });
+
+  it.each<MatrixQuestionControlValidationCase>([
+    {
+      description: 'slug pattern',
+      selector: '#matrix-form-slug',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      setInvalidValue: () => setInput('#matrix-form-slug', 'Invalid Slug'),
+    },
+    {
+      description: 'question RU required text',
+      selector: '#matrix-form-question-ru',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#matrix-form-question-ru', '   '),
+    },
+    {
+      description: 'question EN max length',
+      selector: '#matrix-form-question-en',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#matrix-form-question-en', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'answer RU max length',
+      selector: '#matrix-form-answer-ru',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrix-form-answer-ru', INVALID_MATRIX_TEXT),
+    },
+    {
+      description: 'answer EN max length',
+      selector: '#matrix-form-answer-en',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrix-form-answer-en', INVALID_MATRIX_TEXT),
+    },
+    {
+      description: 'expected answer RU max length',
+      selector: '#matrix-form-expected-ru',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrix-form-expected-ru', INVALID_MATRIX_TEXT),
+    },
+    {
+      description: 'expected answer EN max length',
+      selector: '#matrix-form-expected-en',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrix-form-expected-en', INVALID_MATRIX_TEXT),
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    fillValidQuestionMinimum();
+    validationCase.setInvalidValue();
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
+  it('shows invalid styling and localized feedback for the required subsection picker', () => {
+    setInput('#matrix-form-slug', 'draft-question');
+    setInput('#matrix-form-question-ru', 'Вопрос?');
+    setInput('#matrix-form-question-en', 'Question?');
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Выберите подраздел.');
+    expectInvalidControl('[data-testid="matrix-structure-subsection"]', 'Выберите подраздел.');
   });
 
   it('emits an incomplete draft payload with only minimum required fields', () => {
@@ -192,6 +268,73 @@ describe('MatrixQuestionFormComponent', () => {
     expect(emittedPayloads).toEqual([]);
   });
 
+  it.each<MatrixQuestionControlValidationCase>([
+    {
+      description: 'new resource RU name',
+      selector: '[data-testid="matrix-resource-new-name-ru"]',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => {
+        setInput('[data-testid="matrix-resource-new-name-en"]', 'Documentation');
+        setInput('[data-testid="matrix-resource-new-url"]', VALID_RESOURCE_URL);
+      },
+    },
+    {
+      description: 'new resource EN name',
+      selector: '[data-testid="matrix-resource-new-name-en"]',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => {
+        setInput('[data-testid="matrix-resource-new-name-ru"]', 'Документация');
+        setInput('[data-testid="matrix-resource-new-name-en"]', INVALID_SHORT_TEXT);
+        setInput('[data-testid="matrix-resource-new-url"]', VALID_RESOURCE_URL);
+      },
+    },
+    {
+      description: 'new resource URL',
+      selector: '[data-testid="matrix-resource-new-url"]',
+      expectedMessage: 'Укажите ссылку с http или https.',
+      setInvalidValue: () => {
+        setInput('[data-testid="matrix-resource-new-name-ru"]', 'Документация');
+        setInput('[data-testid="matrix-resource-new-name-en"]', 'Documentation');
+        setInput('[data-testid="matrix-resource-new-url"]', 'ftp://example.com/docs');
+      },
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    validationCase.setInvalidValue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-resource-add-new"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain(VALID_RESOURCE_URL);
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
+  it.each<MatrixQuestionControlValidationCase>([
+    {
+      description: 'resource RU context',
+      selector: '#matrixResourceContextRu0',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrixResourceContextRu0', INVALID_MATRIX_TEXT),
+    },
+    {
+      description: 'resource EN context',
+      selector: '#matrixResourceContextEn0',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setTextarea('#matrixResourceContextEn0', INVALID_MATRIX_TEXT),
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    fixture.componentInstance.attachResource(resource);
+    fixture.detectChanges();
+    fillValidQuestionMinimum();
+    validationCase.setInvalidValue();
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
   it('adds, searches, edits context, and removes resources in the form payload', () => {
     setInput('[data-testid="matrix-resource-search"]', 'python');
     fixture.detectChanges();
@@ -260,6 +403,21 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
   }
 
+  function fillValidQuestionMinimum(): void {
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(3);
+    setInput('#matrix-form-question-ru', 'Вопрос?');
+    setInput('#matrix-form-question-en', 'Question?');
+  }
+
+  function expectInvalidControl(selector: string, expectedMessage: string): void {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    expect(element).not.toBeNull();
+    expect(element?.classList).toContain('is-invalid');
+    expect(element?.getAttribute('aria-invalid')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain(expectedMessage);
+  }
+
   function inputValue(selector: string): string {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     return input.value;
@@ -278,12 +436,14 @@ describe('MatrixQuestionFormComponent', () => {
 @Component({
   selector: 'app-matrix-structure-picker',
   standalone: true,
-  template: '',
+  template:
+    '<select data-testid="matrix-structure-subsection" [class.is-invalid]="invalid" [attr.aria-invalid]="invalid ? \'true\' : null"></select>',
 })
 class MatrixStructurePickerStubComponent {
   @Input({ required: true }) language!: 'ru' | 'en';
   @Input({ required: true }) selectedSubsectionId!: number | null;
   @Input() disabled = false;
+  @Input() invalid = false;
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<number | null>();
 }
 

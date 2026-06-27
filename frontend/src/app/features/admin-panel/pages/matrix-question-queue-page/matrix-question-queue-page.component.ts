@@ -21,6 +21,7 @@ import {
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixStructurePickerComponent } from '../../components/matrix-structure-picker/matrix-structure-picker.component';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
   AdminMatrixGrade,
   AdminMatrixItemPayload,
@@ -52,6 +53,7 @@ type QueueAddMode = 'manual' | 'import';
     ErrorMessageComponent,
     EmptyStateComponent,
     MatrixStructurePickerComponent,
+    AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
@@ -87,10 +89,6 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (question.length > ADMIN_VALIDATION_LIMITS.shortText) return 'validation.maxLength';
     return null;
   });
-  readonly canSubmitManualAdd = computed(() => this.manualAddQuestionError() === null);
-  readonly canSubmitImport = computed(
-    () => this.selectedImportFile() !== null && !this.importSubmitting(),
-  );
   readonly selectedImportFileLabel = computed(() => {
     const file = this.selectedImportFile();
     if (file === null) return null;
@@ -255,7 +253,10 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   importQueuedQuestions(): void {
     const file = this.selectedImportFile();
-    if (file === null) return;
+    if (file === null) {
+      this.importFileSelectionErrorKey.set('adminMatrixQueue.importOneFileOnly');
+      return;
+    }
     this.importSubmitting.set(true);
     this.importError.set(null);
     this.importFileSelectionErrorKey.set(null);

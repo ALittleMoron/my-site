@@ -51,6 +51,16 @@ const matrixStructure: AdminMatrixStructure = {
   ],
 };
 
+const INVALID_SHORT_TEXT = 'x'.repeat(256);
+const INVALID_MATRIX_TEXT = 'x'.repeat(20_001);
+
+interface QueueCreateValidationCase {
+  description: string;
+  selector: string;
+  expectedMessage: string;
+  setInvalidValue: () => void;
+}
+
 describe('MatrixQuestionQueuePageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionQueuePageComponent>;
   let component: MatrixQuestionQueuePageComponent;
@@ -155,14 +165,19 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
   });
 
-  it('disables manual queue submit for blank input', () => {
+  it('keeps manual queue submit available and shows feedback for blank input', () => {
     openAddModal();
 
     const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
       '[data-testid="matrix-queue-manual-submit"]',
     );
 
-    expect(submitButton?.disabled).toBe(true);
+    expect(submitButton?.disabled).toBe(false);
+    submitButton?.click();
+    fixture.detectChanges();
+
+    expect(queueService.createQueuedQuestion).not.toHaveBeenCalled();
+    expectInvalidControl('#matrix-queue-manual-question', 'Заполните поле.');
   });
 
   it('normalizes multiline manual question text before adding it to the queue', () => {
@@ -191,18 +206,14 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
   it('blocks too-long manual queue questions', () => {
     openAddModal();
-    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
-      '#matrix-queue-manual-question',
-    )!;
-    input.value = 'x'.repeat(256);
-    input.dispatchEvent(new Event('input'));
+    component.setManualAddQuestion(INVALID_SHORT_TEXT);
     fixture.detectChanges();
 
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-submit"]')!
-      .click();
+    component.createQueuedQuestion();
+    fixture.detectChanges();
 
     expect(queueService.createQueuedQuestion).not.toHaveBeenCalled();
+    expectInvalidControl('#matrix-queue-manual-question', 'Максимум 255 символов.');
   });
 
   it('closes manual queue modal and reloads queue after successful add', () => {
@@ -251,14 +262,19 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
   });
 
-  it('disables import submit until a file is selected', () => {
+  it('keeps import submit available and shows feedback until a file is selected', () => {
     openImportMode();
 
     const submitButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
       '[data-testid="matrix-queue-import-submit"]',
     );
 
-    expect(submitButton?.disabled).toBe(true);
+    expect(submitButton?.disabled).toBe(false);
+    submitButton?.click();
+    fixture.detectChanges();
+
+    expect(queueService.importQueuedQuestions).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Выберите один файл.');
   });
 
   it('selects one import file from file input', () => {
@@ -275,7 +291,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Выбран файл: questions.csv');
   });
 
-  it('keeps import submit disabled when more than one file is dropped', () => {
+  it('shows feedback and keeps import submit retryable when more than one file is dropped', () => {
     openImportMode();
     dropImportFiles([
       new File(['first'], 'first.txt', { type: 'text/plain' }),
@@ -287,7 +303,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     );
 
     expect(fixture.nativeElement.textContent).toContain('Выберите один файл.');
-    expect(submitButton?.disabled).toBe(true);
+    expect(submitButton?.disabled).toBe(false);
   });
 
   it('closes import modal, reloads queue, and shows imported count after success', () => {
@@ -417,6 +433,73 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
   });
 
+  it.each<QueueCreateValidationCase>([
+    {
+      description: 'slug pattern',
+      selector: '#queue-question-slug',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      setInvalidValue: () => setInput('#queue-question-slug', 'Invalid Slug'),
+    },
+    {
+      description: 'subsection required',
+      selector: '[data-testid="matrix-structure-subsection"]',
+      expectedMessage: 'Выберите подраздел.',
+      setInvalidValue: () => component.form.controls.subsectionId.setValue(null),
+    },
+    {
+      description: 'grade required',
+      selector: '#queue-question-grade',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => component.form.controls.grade.setValue('' as AdminMatrixGrade),
+    },
+    {
+      description: 'question RU required text',
+      selector: '#queue-question-ru',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#queue-question-ru', '   '),
+    },
+    {
+      description: 'question EN max length',
+      selector: '#queue-question-en',
+      expectedMessage: 'Максимум 255 символов.',
+      setInvalidValue: () => setInput('#queue-question-en', INVALID_SHORT_TEXT),
+    },
+    {
+      description: 'answer RU required text',
+      selector: '#queue-answer-ru',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#queue-answer-ru', '   '),
+    },
+    {
+      description: 'answer EN max length',
+      selector: '#queue-answer-en',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setInput('#queue-answer-en', INVALID_MATRIX_TEXT),
+    },
+    {
+      description: 'expected answer RU required text',
+      selector: '#queue-expected-answer-ru',
+      expectedMessage: 'Заполните поле.',
+      setInvalidValue: () => setInput('#queue-expected-answer-ru', '   '),
+    },
+    {
+      description: 'expected answer EN max length',
+      selector: '#queue-expected-answer-en',
+      expectedMessage: 'Максимум 20000 символов.',
+      setInvalidValue: () => setInput('#queue-expected-answer-en', INVALID_MATRIX_TEXT),
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    fillValidQueueCreateForm();
+    validationCase.setInvalidValue();
+    fixture.detectChanges();
+
+    component.createQuestion();
+    fixture.detectChanges();
+
+    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
   function openAddModal(): void {
     fixture.nativeElement
       .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-open-manual-add"]')!
@@ -454,5 +537,39 @@ describe('MatrixQuestionQueuePageComponent', () => {
     });
     dropZone.dispatchEvent(event);
     fixture.detectChanges();
+  }
+
+  function fillValidQueueCreateForm(): void {
+    component.selectQuestion(queuedQuestion);
+    fixture.detectChanges();
+    component.form.patchValue({
+      slug: 'pep-8',
+      subsectionId: 3,
+      grade: 'Junior',
+      questionRu: 'Что такое PEP 8?',
+      questionEn: 'What is PEP 8?',
+      answerRu: 'Ответ',
+      answerEn: 'Answer',
+      expectedAnswerRu: 'Ожидаемый ответ',
+      expectedAnswerEn: 'Expected answer',
+    });
+    fixture.detectChanges();
+  }
+
+  function setInput(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as
+      | HTMLInputElement
+      | HTMLTextAreaElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function expectInvalidControl(selector: string, expectedMessage: string): void {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    expect(element).not.toBeNull();
+    expect(element?.classList).toContain('is-invalid');
+    expect(element?.getAttribute('aria-invalid')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain(expectedMessage);
   }
 });

@@ -36,6 +36,7 @@ import { ArticleWorkspaceService } from '../../../../services/article-workspace.
 import { slugify } from '../../../../../../shared/utils/slugify';
 import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/article-authoring-preview.component';
 import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
+import { AdminControlValidationStateDirective } from '../../../../directives/admin-control-validation-state.directive';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -111,6 +112,7 @@ type TagDraftField = 'nameRu' | 'nameEn' | 'slug';
     TranslatePipe,
     ArticleAuthoringPreviewComponent,
     ArticleSeoPanelComponent,
+    AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-form.component.html',
@@ -530,6 +532,28 @@ export class ArticleFormComponent implements OnInit {
       this.tagDraftFieldInvalid(tag, 'nameEn') ||
       this.tagDraftFieldInvalid(tag, 'slug')
     );
+  }
+
+  languageTabInvalid(language: LanguageCode): boolean {
+    const fields =
+      language === 'ru'
+        ? ([
+            'titleRu',
+            'folderRu',
+            'seoTitleRu',
+            'seoDescriptionRu',
+            'coverImageAltRu',
+            'contentRu',
+          ] satisfies ArticleField[])
+        : ([
+            'titleEn',
+            'folderEn',
+            'seoTitleEn',
+            'seoDescriptionEn',
+            'coverImageAltEn',
+            'contentEn',
+          ] satisfies ArticleField[]);
+    return fields.some((field) => this.articleFieldInvalid(field));
   }
 
   private loadTags(): void {

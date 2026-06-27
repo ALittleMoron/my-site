@@ -36,6 +36,7 @@
         [language]="currentLanguage()"
         [selectedSubsectionId]="questionForm.controls.subsectionId.value"
         [disabled]="submitting"
+        [invalid]="fieldInvalid('subsectionId')"
         (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
       />
       @if (fieldInvalid('subsectionId')) {
@@ -208,6 +209,7 @@
             type="text"
             class="form-control form-control-sm"
             [class.is-invalid]="newResourceFieldInvalid('nameRu')"
+            [attr.aria-invalid]="newResourceFieldInvalid('nameRu') ? 'true' : null"
             data-testid="matrix-resource-new-name-ru"
             [attr.maxlength]="validationLimits.shortText"
             [placeholder]="'matrix.resources.newNameRuPlaceholder' | t"
@@ -223,6 +225,7 @@
             type="text"
             class="form-control form-control-sm"
             [class.is-invalid]="newResourceFieldInvalid('nameEn')"
+            [attr.aria-invalid]="newResourceFieldInvalid('nameEn') ? 'true' : null"
             data-testid="matrix-resource-new-name-en"
             [attr.maxlength]="validationLimits.shortText"
             [placeholder]="'matrix.resources.newNameEnPlaceholder' | t"
@@ -238,6 +241,7 @@
             type="url"
             class="form-control form-control-sm"
             [class.is-invalid]="newResourceFieldInvalid('url')"
+            [attr.aria-invalid]="newResourceFieldInvalid('url') ? 'true' : null"
             data-testid="matrix-resource-new-url"
             [attr.maxlength]="validationLimits.url"
             [placeholder]="'matrix.resources.urlPlaceholder' | t"

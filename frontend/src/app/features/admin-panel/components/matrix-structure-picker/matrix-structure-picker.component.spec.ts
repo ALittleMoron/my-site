@@ -30,6 +30,16 @@ const initialStructure: AdminMatrixStructure = {
   ],
 };
 
+const INVALID_SHORT_TEXT = 'x'.repeat(256);
+
+interface MatrixStructureValidationCase {
+  description: string;
+  selector: string;
+  addButtonSelector: string;
+  expectedMessage: string;
+  prepare: () => void;
+}
+
 describe('MatrixStructurePickerComponent', () => {
   let fixture: ComponentFixture<MatrixStructurePickerComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
@@ -157,6 +167,102 @@ describe('MatrixStructurePickerComponent', () => {
     expect(service.createSheet).not.toHaveBeenCalled();
   });
 
+  it.each<MatrixStructureValidationCase>([
+    {
+      description: 'sheet key pattern',
+      selector: '[data-testid="matrix-structure-sheet-key"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-sheet"]',
+      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
+      prepare: () => {
+        setInput('[data-testid="matrix-structure-sheet-key"]', 'Python Core');
+        setInput('[data-testid="matrix-structure-sheet-ru"]', 'Питон');
+        setInput('[data-testid="matrix-structure-sheet-en"]', 'Python');
+      },
+    },
+    {
+      description: 'sheet RU name required',
+      selector: '[data-testid="matrix-structure-sheet-ru"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-sheet"]',
+      expectedMessage: 'Заполните поле.',
+      prepare: () => {
+        setInput('[data-testid="matrix-structure-sheet-key"]', 'python-core');
+        setInput('[data-testid="matrix-structure-sheet-ru"]', '   ');
+        setInput('[data-testid="matrix-structure-sheet-en"]', 'Python');
+      },
+    },
+    {
+      description: 'sheet EN name max length',
+      selector: '[data-testid="matrix-structure-sheet-en"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-sheet"]',
+      expectedMessage: 'Максимум 255 символов.',
+      prepare: () => {
+        setInput('[data-testid="matrix-structure-sheet-key"]', 'python-core');
+        setInput('[data-testid="matrix-structure-sheet-ru"]', 'Питон');
+        setInput('[data-testid="matrix-structure-sheet-en"]', INVALID_SHORT_TEXT);
+      },
+    },
+    {
+      description: 'section RU name required',
+      selector: '[data-testid="matrix-structure-section-ru"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-section"]',
+      expectedMessage: 'Заполните поле.',
+      prepare: () => {
+        choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+        fixture.detectChanges();
+        setInput('[data-testid="matrix-structure-section-ru"]', '   ');
+        setInput('[data-testid="matrix-structure-section-en"]', 'Core');
+      },
+    },
+    {
+      description: 'section EN name max length',
+      selector: '[data-testid="matrix-structure-section-en"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-section"]',
+      expectedMessage: 'Максимум 255 символов.',
+      prepare: () => {
+        choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+        fixture.detectChanges();
+        setInput('[data-testid="matrix-structure-section-ru"]', 'Основы');
+        setInput('[data-testid="matrix-structure-section-en"]', INVALID_SHORT_TEXT);
+      },
+    },
+    {
+      description: 'subsection RU name required',
+      selector: '[data-testid="matrix-structure-subsection-ru"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-subsection"]',
+      expectedMessage: 'Заполните поле.',
+      prepare: () => {
+        selectExistingSection();
+        setInput('[data-testid="matrix-structure-subsection-ru"]', '   ');
+        setInput('[data-testid="matrix-structure-subsection-en"]', 'Typing');
+      },
+    },
+    {
+      description: 'subsection EN name max length',
+      selector: '[data-testid="matrix-structure-subsection-en"]',
+      addButtonSelector: '[data-testid="matrix-structure-add-subsection"]',
+      expectedMessage: 'Максимум 255 символов.',
+      prepare: () => {
+        selectExistingSection();
+        setInput('[data-testid="matrix-structure-subsection-ru"]', 'Типизация');
+        setInput('[data-testid="matrix-structure-subsection-en"]', INVALID_SHORT_TEXT);
+      },
+    },
+  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    validationCase.prepare();
+    const addButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      validationCase.addButtonSelector,
+    );
+
+    expect(addButton?.disabled).toBe(false);
+    addButton?.click();
+    fixture.detectChanges();
+
+    expect(service.createSheet).not.toHaveBeenCalled();
+    expect(service.createSection).not.toHaveBeenCalled();
+    expect(service.createSubsection).not.toHaveBeenCalled();
+    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+  });
+
   it('reloads structure and emits newly created subsection', () => {
     const updatedStructure: AdminMatrixStructure = {
       sheets: [
@@ -228,5 +334,21 @@ describe('MatrixStructurePickerComponent', () => {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     input.value = value;
     input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function selectExistingSection(): void {
+    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    fixture.detectChanges();
+    choose(select('[data-testid="matrix-structure-section"]'), '2');
+    fixture.detectChanges();
+  }
+
+  function expectInvalidControl(selector: string, expectedMessage: string): void {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    expect(element).not.toBeNull();
+    expect(element?.classList).toContain('is-invalid');
+    expect(element?.getAttribute('aria-invalid')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain(expectedMessage);
   }
 });

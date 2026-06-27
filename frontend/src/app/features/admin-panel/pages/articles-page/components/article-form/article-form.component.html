@@ -61,9 +61,16 @@
         type="button"
         class="nav-link"
         [class.active]="activeLanguageTab() === 'ru'"
+        [class.text-danger]="languageTabInvalid('ru')"
+        [attr.aria-invalid]="languageTabInvalid('ru') ? 'true' : null"
+        [attr.title]="languageTabInvalid('ru') ? ('validation.invalid' | t) : null"
         (click)="setActiveLanguageTab('ru')"
       >
         {{ 'articles.form.languageRu' | t }}
+        @if (languageTabInvalid('ru')) {
+          <span class="badge text-bg-danger ms-1" aria-hidden="true">!</span>
+          <span class="visually-hidden">{{ 'validation.invalid' | t }}</span>
+        }
       </button>
     </li>
     <li class="nav-item" role="presentation">
@@ -71,9 +78,16 @@
         type="button"
         class="nav-link"
         [class.active]="activeLanguageTab() === 'en'"
+        [class.text-danger]="languageTabInvalid('en')"
+        [attr.aria-invalid]="languageTabInvalid('en') ? 'true' : null"
+        [attr.title]="languageTabInvalid('en') ? ('validation.invalid' | t) : null"
         (click)="setActiveLanguageTab('en')"
       >
         {{ 'articles.form.languageEn' | t }}
+        @if (languageTabInvalid('en')) {
+          <span class="badge text-bg-danger ms-1" aria-hidden="true">!</span>
+          <span class="visually-hidden">{{ 'validation.invalid' | t }}</span>
+        }
       </button>
     </li>
   </ul>
@@ -187,6 +201,7 @@
             aria-labelledby="articleContentRuLabel"
             aria-required="true"
             [attr.aria-invalid]="articleFieldInvalid('contentRu') ? 'true' : null"
+            [class.is-invalid]="articleFieldInvalid('contentRu')"
             [class.article-markdown-editor-invalid]="articleFieldInvalid('contentRu')"
           >
             <app-markdown-editor
@@ -310,6 +325,7 @@
             aria-labelledby="articleContentEnLabel"
             aria-required="true"
             [attr.aria-invalid]="articleFieldInvalid('contentEn') ? 'true' : null"
+            [class.is-invalid]="articleFieldInvalid('contentEn')"
             [class.article-markdown-editor-invalid]="articleFieldInvalid('contentEn')"
           >
             <app-markdown-editor
@@ -447,6 +463,7 @@
               class="form-control form-control-sm"
               [attr.data-testid]="'article-tag-' + tag.id + '-name-ru'"
               [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameRu')"
+              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'nameRu') ? 'true' : null"
               [value]="tag.draftNameRu"
               [disabled]="isTagDeleted(tag)"
               [attr.maxlength]="validationLimits.shortText"
@@ -465,6 +482,7 @@
               class="form-control form-control-sm"
               [attr.data-testid]="'article-tag-' + tag.id + '-name-en'"
               [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameEn')"
+              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'nameEn') ? 'true' : null"
               [value]="tag.draftNameEn"
               [disabled]="isTagDeleted(tag)"
               [attr.maxlength]="validationLimits.shortText"
@@ -483,6 +501,7 @@
               class="form-control form-control-sm"
               [attr.data-testid]="'article-tag-' + tag.id + '-slug'"
               [class.is-invalid]="tagDraftFieldInvalid(tag, 'slug')"
+              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'slug') ? 'true' : null"
               [value]="tag.draftSlug"
               [disabled]="isTagDeleted(tag)"
               [attr.maxlength]="validationLimits.shortText"
