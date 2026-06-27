@@ -291,14 +291,14 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         Index(
             "cmi_workspace_missing_fields_idx",
             text(
-                "((length(trim(slug)) = 0) OR "
-                "(grade IS NULL) OR "
-                "(length(trim(question_ru)) = 0) OR "
-                "(length(trim(question_en)) = 0) OR "
-                "(length(trim(answer_ru)) = 0) OR "
-                "(length(trim(answer_en)) = 0) OR "
-                "(length(trim(interview_expected_answer_ru)) = 0) OR "
-                "(length(trim(interview_expected_answer_en)) = 0))",
+                "(length(TRIM(BOTH FROM slug)) = 0 OR "
+                "grade IS NULL OR "
+                "length(TRIM(BOTH FROM question_ru)) = 0 OR "
+                "length(TRIM(BOTH FROM question_en)) = 0 OR "
+                "length(TRIM(BOTH FROM answer_ru)) = 0 OR "
+                "length(TRIM(BOTH FROM answer_en)) = 0 OR "
+                "length(TRIM(BOTH FROM interview_expected_answer_ru)) = 0 OR "
+                "length(TRIM(BOTH FROM interview_expected_answer_en)) = 0)",
             ),
         ),
         Index(

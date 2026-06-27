@@ -6,6 +6,7 @@ test_services_repo_dir="$(cd -- "${test_services_script_dir}/../.." && pwd)"
 TEST_DB_OWNED="${TEST_DB_OWNED:-0}"
 TEST_DB_ENV_FILE=""
 TEST_DB_COMPOSE_FILE=""
+TEST_DB_COMPOSE_PROJECT_NAME="${TEST_DB_COMPOSE_PROJECT_NAME:-my-site-test}"
 
 resolve_path_from() {
     local base_dir="$1"
@@ -77,7 +78,11 @@ ensure_test_db() {
 
     (
         cd "$test_services_repo_dir"
-        docker compose --env-file "$TEST_DB_ENV_FILE" -f "$TEST_DB_COMPOSE_FILE" up -d --wait postgres-test
+        docker compose \
+            --project-name "$TEST_DB_COMPOSE_PROJECT_NAME" \
+            --env-file "$TEST_DB_ENV_FILE" \
+            -f "$TEST_DB_COMPOSE_FILE" \
+            up -d --wait postgres-test
     )
     TEST_DB_OWNED=1
 }
@@ -89,7 +94,11 @@ cleanup_owned_test_db() {
 
     (
         cd "$test_services_repo_dir"
-        docker compose --env-file "$TEST_DB_ENV_FILE" -f "$TEST_DB_COMPOSE_FILE" down -v --remove-orphans
+        docker compose \
+            --project-name "$TEST_DB_COMPOSE_PROJECT_NAME" \
+            --env-file "$TEST_DB_ENV_FILE" \
+            -f "$TEST_DB_COMPOSE_FILE" \
+            down -v --remove-orphans
     ) || true
     TEST_DB_OWNED=0
 }
