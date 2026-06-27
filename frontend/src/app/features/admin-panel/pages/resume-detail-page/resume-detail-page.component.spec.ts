@@ -218,27 +218,112 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Компания 1');
   });
 
-  it('renders free-text multiline fields full-width without changing newline-list fields', () => {
+  it('loads list values into individual controls instead of newline textareas', () => {
+    fixture.componentInstance.setActiveTab('skills');
+    fixture.detectChanges();
+
+    expect(inputValue('resume-skill-0-item-0')).toBe('Python');
+    expect(inputValue('resume-skill-0-item-1')).toBe('SQLAlchemy');
+    expect(fixture.nativeElement.querySelector('#resume-skill-0-items')).toBeNull();
+
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+
+    expect(elementValueById('resume-experience-0-highlight-0')).toBe('Ускорил сервис');
+    expect(elementValueById('resume-experience-0-technology-0')).toBe('Python');
+    expect(elementValueById('resume-experience-0-project-0-highlight-0')).toBe('Гибридный SSR/CSR');
+    expect(elementValueById('resume-experience-0-project-0-technology-0')).toBe('Litestar');
+    expect(fixture.nativeElement.querySelector('#resume-experience-0-highlights')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('#resume-experience-0-project-0-technologies'),
+    ).toBeNull();
+  });
+
+  it('renders free-text multiline fields full-width while list fields use inputs', () => {
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
 
     const companySummary = elementById<HTMLTextAreaElement>('resume-experience-0-summary');
-    const companyHighlights = elementById<HTMLTextAreaElement>('resume-experience-0-highlights');
+    const companyHighlights = elementById<HTMLInputElement>('resume-experience-0-highlight-0');
+    const companyTechnologies = elementById<HTMLInputElement>('resume-experience-0-technology-0');
     const projectName = elementById<HTMLInputElement>('resume-experience-0-project-0-name');
     const projectRole = elementById<HTMLInputElement>('resume-experience-0-project-0-role');
     const projectDescription = elementById<HTMLTextAreaElement>(
       'resume-experience-0-project-0-description',
     );
-    const projectHighlights = elementById<HTMLTextAreaElement>(
-      'resume-experience-0-project-0-highlights',
+    const projectHighlights = elementById<HTMLInputElement>(
+      'resume-experience-0-project-0-highlight-0',
+    );
+    const projectTechnologies = elementById<HTMLInputElement>(
+      'resume-experience-0-project-0-technology-0',
     );
 
     expect(fieldColumn(companySummary).classList.contains('col-12')).toBe(true);
+    expect(fieldColumn(companyHighlights).classList.contains('col-12')).toBe(true);
+    expect(fieldColumn(companyTechnologies).classList.contains('col-12')).toBe(true);
     expect(fieldColumn(projectDescription).classList.contains('col-12')).toBe(true);
-    expect(fieldColumn(companyHighlights).classList.contains('col-md-6')).toBe(true);
+    expect(fieldColumn(projectHighlights).classList.contains('col-12')).toBe(true);
+    expect(fieldColumn(projectTechnologies).classList.contains('col-12')).toBe(true);
+    expect(companyHighlights.tagName).toBe('INPUT');
     expect(fieldColumn(projectName).classList.contains('col-md-6')).toBe(true);
     expect(fieldColumn(projectRole).classList.contains('col-md-6')).toBe(true);
-    expect(fieldColumn(projectHighlights).classList.contains('col-md-6')).toBe(true);
+    expect(projectHighlights.tagName).toBe('INPUT');
+  });
+
+  it('renders skills and technologies as inline list inputs', () => {
+    fixture.componentInstance.setActiveTab('skills');
+    fixture.detectChanges();
+
+    const skillItem = elementById<HTMLInputElement>('resume-skill-0-item-0');
+    const skillAddButton = elementByTestId<HTMLButtonElement>('resume-skill-0-add-item');
+    const skillRemoveButton = elementByTestId<HTMLButtonElement>('resume-skill-0-remove-item-0');
+
+    expect(skillItem.closest('.resume-inline-list')).not.toBeNull();
+    expect(skillAddButton.closest('.resume-inline-list')).not.toBeNull();
+    expect(skillRemoveButton.closest('.resume-inline-list-item')).toBe(skillItem.parentElement);
+
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+
+    const experienceTechnology = elementById<HTMLInputElement>('resume-experience-0-technology-0');
+    const experienceTechnologyAddButton = elementByTestId<HTMLButtonElement>(
+      'resume-experience-0-add-technology',
+    );
+    const projectTechnology = elementById<HTMLInputElement>(
+      'resume-experience-0-project-0-technology-0',
+    );
+    const projectTechnologyRemoveButton = elementByTestId<HTMLButtonElement>(
+      'resume-experience-0-project-0-remove-technology-0',
+    );
+
+    expect(experienceTechnology.closest('.resume-inline-list')).not.toBeNull();
+    expect(experienceTechnologyAddButton.closest('.resume-inline-list')).not.toBeNull();
+    expect(projectTechnology.closest('.resume-inline-list')).not.toBeNull();
+    expect(projectTechnologyRemoveButton.closest('.resume-inline-list-item')).toBe(
+      projectTechnology.parentElement,
+    );
+  });
+
+  it('sizes inline inputs compactly while reserving space for the embedded remove action', () => {
+    fixture.componentInstance.setActiveTab('skills');
+    fixture.detectChanges();
+    setInputValue('resume-skill-0-item-0', 'gRPC');
+
+    const skillItem = elementById<HTMLInputElement>('resume-skill-0-item-0');
+    const skillItemShell = skillItem.closest('.resume-inline-list-item') as HTMLElement | null;
+
+    expect(skillItemShell).not.toBeNull();
+    expect(skillItemShell?.style.width).toBe('calc(5ch + 3rem)');
+
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+    setElementValueById('resume-experience-0-technology-0', 'event-driven architecture');
+
+    const technology = elementById<HTMLInputElement>('resume-experience-0-technology-0');
+    const technologyShell = technology.closest('.resume-inline-list-item') as HTMLElement | null;
+
+    expect(technologyShell).not.toBeNull();
+    expect(technologyShell?.style.width).toBe('calc(26ch + 3rem)');
   });
 
   it('renders additional item add action after the section fields', () => {
@@ -373,12 +458,22 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes');
   });
 
-  it('updates payload when a repeatable skill section is added and removed', () => {
+  it('updates payload when skill list inputs are added and removed', () => {
     fixture.componentInstance.setActiveTab('skills');
     fixture.componentInstance.addSkillGroup();
     fixture.detectChanges();
     setInputValue('resume-skill-1-category', 'Платформа');
-    setInputValue('resume-skill-1-items', 'Kubernetes\nPostgreSQL');
+    elementByTestId<HTMLButtonElement>('resume-skill-1-add-item').click();
+    fixture.detectChanges();
+    setInputValue('resume-skill-1-item-0', ' Kubernetes ');
+    elementByTestId<HTMLButtonElement>('resume-skill-1-add-item').click();
+    fixture.detectChanges();
+    setInputValue('resume-skill-1-item-1', '  ');
+    elementByTestId<HTMLButtonElement>('resume-skill-1-remove-item-1').click();
+    fixture.detectChanges();
+    elementByTestId<HTMLButtonElement>('resume-skill-1-add-item').click();
+    fixture.detectChanges();
+    setInputValue('resume-skill-1-item-1', 'PostgreSQL');
 
     fixture.componentInstance.removeSkillGroup(0);
     fixture.componentInstance.saveResume();
@@ -405,7 +500,13 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(elementValueById('resume-experience-0-project-0-name')).toBe('Портфолио');
 
     setElementValueById('resume-experience-0-project-0-name', 'Платформа');
-    setElementValueById('resume-experience-0-project-0-technologies', 'Litestar\nAngular');
+    setElementValueById('resume-experience-0-project-0-technology-0', ' Litestar ');
+    elementByTestId<HTMLButtonElement>('resume-experience-0-project-0-add-technology').click();
+    fixture.detectChanges();
+    setInputValue('resume-experience-0-project-0-technology-1', '   ');
+    elementByTestId<HTMLButtonElement>('resume-experience-0-project-0-add-technology').click();
+    fixture.detectChanges();
+    setInputValue('resume-experience-0-project-0-technology-2', 'Angular');
 
     fixture.componentInstance.saveResume();
 
@@ -426,6 +527,21 @@ describe('AdminResumeDetailPageComponent', () => {
         }),
       }),
     );
+  });
+
+  it('renders unsaved list input edits in the preview', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+    setElementValueById('resume-experience-0-highlight-0', 'Новый измеримый результат');
+    elementByTestId<HTMLButtonElement>('resume-experience-0-add-technology').click();
+    fixture.detectChanges();
+    setInputValue('resume-experience-0-technology-1', 'Angular');
+
+    fixture.componentInstance.showPreview();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Новый измеримый результат');
+    expect(fixture.nativeElement.textContent).toContain('Python, Angular');
   });
 
   it('renders experience projects in the preview', () => {
@@ -546,7 +662,7 @@ describe('AdminResumeDetailPageComponent', () => {
   }
 
   function fieldColumn(element: HTMLElement): HTMLElement {
-    const column = element.closest('div');
+    const column = element.closest('.col-12, .col-md-6');
     expect(column).not.toBeNull();
     return column as HTMLElement;
   }

@@ -110,7 +110,7 @@ interface ResumeSummaryForm {
 
 interface ResumeSkillGroupForm {
   category: TextControl;
-  itemsText: TextControl;
+  items: FormArray<TextControl>;
 }
 
 interface ResumeExperienceItemForm {
@@ -121,8 +121,8 @@ interface ResumeExperienceItemForm {
   endDate: NullableTextControl;
   currentStatus: CurrentStatusControl;
   summary: TextControl;
-  highlightsText: TextControl;
-  technologiesText: TextControl;
+  highlights: FormArray<TextControl>;
+  technologies: FormArray<TextControl>;
   projects: FormArray<FormGroup<ResumeProjectItemForm>>;
 }
 
@@ -130,8 +130,8 @@ interface ResumeProjectItemForm {
   name: TextControl;
   role: TextControl;
   description: TextControl;
-  highlightsText: TextControl;
-  technologiesText: TextControl;
+  highlights: FormArray<TextControl>;
+  technologies: FormArray<TextControl>;
   url: TextControl;
 }
 
@@ -208,6 +208,11 @@ const RESUME_EXPORT_FORMAT_OPTIONS: readonly ResumeExportFormatOption[] = [
   { value: 'pdf', labelKey: 'adminResumeWorkspace.exportFormatPdf' },
   { value: 'docx', labelKey: 'adminResumeWorkspace.exportFormatDocx' },
 ];
+
+const INLINE_LIST_INPUT_MIN_TEXT_WIDTH_CH = 5;
+const INLINE_LIST_INPUT_MAX_TEXT_WIDTH_CH = 32;
+const INLINE_LIST_INPUT_EXTRA_TEXT_WIDTH_CH = 1;
+const INLINE_LIST_INPUT_ACTION_WIDTH_REM = 3;
 
 @Component({
   selector: 'app-admin-resume-detail-page',
@@ -487,12 +492,36 @@ export class AdminResumeDetailPageComponent implements OnInit {
     this.skills.removeAt(index);
   }
 
+  addSkillItem(skillIndex: number): void {
+    this.addTextListItem(this.skillItems(skillIndex));
+  }
+
+  removeSkillItem(skillIndex: number, itemIndex: number): void {
+    this.removeTextListItem(this.skillItems(skillIndex), itemIndex);
+  }
+
   addExperienceItem(): void {
     this.experience.push(this.createExperienceItemForm(createEmptyResumeExperienceItem()));
   }
 
   removeExperienceItem(index: number): void {
     this.experience.removeAt(index);
+  }
+
+  addExperienceHighlight(experienceIndex: number): void {
+    this.addTextListItem(this.experienceHighlights(experienceIndex));
+  }
+
+  removeExperienceHighlight(experienceIndex: number, itemIndex: number): void {
+    this.removeTextListItem(this.experienceHighlights(experienceIndex), itemIndex);
+  }
+
+  addExperienceTechnology(experienceIndex: number): void {
+    this.addTextListItem(this.experienceTechnologies(experienceIndex));
+  }
+
+  removeExperienceTechnology(experienceIndex: number, itemIndex: number): void {
+    this.removeTextListItem(this.experienceTechnologies(experienceIndex), itemIndex);
   }
 
   addExperienceProject(experienceIndex: number): void {
@@ -503,6 +532,22 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   removeExperienceProject(experienceIndex: number, projectIndex: number): void {
     this.experienceProjects(experienceIndex).removeAt(projectIndex);
+  }
+
+  addProjectHighlight(experienceIndex: number, projectIndex: number): void {
+    this.addTextListItem(this.projectHighlights(experienceIndex, projectIndex));
+  }
+
+  removeProjectHighlight(experienceIndex: number, projectIndex: number, itemIndex: number): void {
+    this.removeTextListItem(this.projectHighlights(experienceIndex, projectIndex), itemIndex);
+  }
+
+  addProjectTechnology(experienceIndex: number, projectIndex: number): void {
+    this.addTextListItem(this.projectTechnologies(experienceIndex, projectIndex));
+  }
+
+  removeProjectTechnology(experienceIndex: number, projectIndex: number, itemIndex: number): void {
+    this.removeTextListItem(this.projectTechnologies(experienceIndex, projectIndex), itemIndex);
   }
 
   addEducationItem(): void {
@@ -551,12 +596,32 @@ export class AdminResumeDetailPageComponent implements OnInit {
     this.additionalItems(sectionIndex).removeAt(itemIndex);
   }
 
+  skillItems(skillIndex: number): FormArray<TextControl> {
+    return this.skills.at(skillIndex).controls.items;
+  }
+
+  experienceHighlights(experienceIndex: number): FormArray<TextControl> {
+    return this.experience.at(experienceIndex).controls.highlights;
+  }
+
+  experienceTechnologies(experienceIndex: number): FormArray<TextControl> {
+    return this.experience.at(experienceIndex).controls.technologies;
+  }
+
   additionalItems(sectionIndex: number): FormArray<FormGroup<ResumeAdditionalSectionItemForm>> {
     return this.additionalSections.at(sectionIndex).controls.items;
   }
 
   experienceProjects(experienceIndex: number): FormArray<FormGroup<ResumeProjectItemForm>> {
     return this.experience.at(experienceIndex).controls.projects;
+  }
+
+  projectHighlights(experienceIndex: number, projectIndex: number): FormArray<TextControl> {
+    return this.experienceProjects(experienceIndex).at(projectIndex).controls.highlights;
+  }
+
+  projectTechnologies(experienceIndex: number, projectIndex: number): FormArray<TextControl> {
+    return this.experienceProjects(experienceIndex).at(projectIndex).controls.technologies;
   }
 
   previewMessage(key: string): string {
@@ -592,6 +657,16 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   fieldMessage(control: AbstractControl<unknown>): string | null {
     return validationMessage(control, this.i18n);
+  }
+
+  inlineListInputWidth(control: TextControl): string {
+    const textWidth =
+      cleanText(control.getRawValue()).length + INLINE_LIST_INPUT_EXTRA_TEXT_WIDTH_CH;
+    const width = Math.min(
+      Math.max(textWidth, INLINE_LIST_INPUT_MIN_TEXT_WIDTH_CH),
+      INLINE_LIST_INPUT_MAX_TEXT_WIDTH_CH,
+    );
+    return `calc(${width}ch + ${INLINE_LIST_INPUT_ACTION_WIDTH_REM}rem)`;
   }
 
   hasSummary(content: ResumeContent): boolean {
@@ -694,7 +769,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private createSkillGroupForm(skill: ResumeSkillGroup): FormGroup<ResumeSkillGroupForm> {
     return new FormGroup<ResumeSkillGroupForm>({
       category: this.text(skill.category, ADMIN_VALIDATION_LIMITS.shortText),
-      itemsText: this.text(linesToText(skill.items), ADMIN_VALIDATION_LIMITS.resumeLongText),
+      items: this.createTextListForm(skill.items),
     });
   }
 
@@ -709,14 +784,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
       endDate: this.nullableText(item.endDate, 32),
       currentStatus: this.currentStatus(item.currentStatus),
       summary: this.text(item.summary, ADMIN_VALIDATION_LIMITS.resumeLongText),
-      highlightsText: this.text(
-        linesToText(item.highlights),
-        ADMIN_VALIDATION_LIMITS.resumeLongText,
-      ),
-      technologiesText: this.text(
-        linesToText(item.technologies),
-        ADMIN_VALIDATION_LIMITS.resumeLongText,
-      ),
+      highlights: this.createTextListForm(item.highlights),
+      technologies: this.createTextListForm(item.technologies),
       projects: new FormArray<FormGroup<ResumeProjectItemForm>>(
         item.projects.map((project) => this.createProjectItemForm(project)),
       ),
@@ -728,14 +797,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
       name: this.text(item.name, ADMIN_VALIDATION_LIMITS.shortText),
       role: this.text(item.role, ADMIN_VALIDATION_LIMITS.shortText),
       description: this.text(item.description, ADMIN_VALIDATION_LIMITS.resumeLongText),
-      highlightsText: this.text(
-        linesToText(item.highlights),
-        ADMIN_VALIDATION_LIMITS.resumeLongText,
-      ),
-      technologiesText: this.text(
-        linesToText(item.technologies),
-        ADMIN_VALIDATION_LIMITS.resumeLongText,
-      ),
+      highlights: this.createTextListForm(item.highlights),
+      technologies: this.createTextListForm(item.technologies),
       url: this.urlText(item.url),
     });
   }
@@ -820,6 +883,22 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return this.formBuilder.control(value);
   }
 
+  private createTextListForm(values: string[]): FormArray<TextControl> {
+    return new FormArray<TextControl>(values.map((value) => this.listText(value)));
+  }
+
+  private listText(value: string): TextControl {
+    return this.text(value, ADMIN_VALIDATION_LIMITS.shortText);
+  }
+
+  private addTextListItem(list: FormArray<TextControl>): void {
+    list.push(this.listText(''));
+  }
+
+  private removeTextListItem(list: FormArray<TextControl>, index: number): void {
+    list.removeAt(index);
+  }
+
   private buildProfile(): ResumeProfile {
     const value = this.resumeForm.controls.profile.getRawValue();
     return {
@@ -846,7 +925,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
     const value = control.getRawValue();
     return {
       category: cleanText(value.category),
-      items: textToLines(value.itemsText),
+      items: this.buildTextList(control.controls.items),
     };
   }
 
@@ -860,8 +939,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
       endDate: cleanNullableDateString(value.endDate),
       currentStatus: value.currentStatus,
       summary: cleanText(value.summary),
-      highlights: textToLines(value.highlightsText),
-      technologies: textToLines(value.technologiesText),
+      highlights: this.buildTextList(control.controls.highlights),
+      technologies: this.buildTextList(control.controls.technologies),
       projects: control.controls.projects.controls.map((projectControl) =>
         this.buildProjectItem(projectControl),
       ),
@@ -874,10 +953,17 @@ export class AdminResumeDetailPageComponent implements OnInit {
       name: cleanText(value.name),
       role: cleanText(value.role),
       description: cleanText(value.description),
-      highlights: textToLines(value.highlightsText),
-      technologies: textToLines(value.technologiesText),
+      highlights: this.buildTextList(control.controls.highlights),
+      technologies: this.buildTextList(control.controls.technologies),
       url: cleanText(value.url),
     };
+  }
+
+  private buildTextList(control: FormArray<TextControl>): string[] {
+    return control
+      .getRawValue()
+      .map((line) => cleanText(line))
+      .filter((line) => line.length > 0);
   }
 
   private buildEducationItem(control: FormGroup<ResumeEducationItemForm>): ResumeEducationItem {
@@ -985,17 +1071,6 @@ function cleanPreviewText(value: string): string | null {
 function cleanNullableDateString(value: string | null): string | null {
   const trimmed = value?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
-}
-
-function textToLines(value: string): string[] {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-}
-
-function linesToText(values: string[]): string {
-  return values.join('\n');
 }
 
 function isResumeLanguage(value: string): value is ResumeLanguage {

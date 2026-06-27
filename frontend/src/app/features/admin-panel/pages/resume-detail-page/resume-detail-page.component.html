@@ -502,16 +502,61 @@
                         />
                       </div>
                       <div class="col-12">
-                        <label class="form-label" [for]="'resume-skill-' + index + '-items'">
+                        <label class="form-label" [for]="'resume-skill-' + index + '-item-0'">
                           {{ 'adminResumeWorkspace.field.items' | t }}
                         </label>
-                        <textarea
-                          class="form-control"
-                          rows="4"
-                          [id]="'resume-skill-' + index + '-items'"
-                          [attr.data-testid]="'resume-skill-' + index + '-items'"
-                          formControlName="itemsText"
-                        ></textarea>
+                        <div
+                          class="resume-inline-list d-flex flex-wrap align-items-start gap-2"
+                          formArrayName="items"
+                        >
+                          @for (
+                            itemControl of skillItems(index).controls;
+                            track $index;
+                            let itemIndex = $index
+                          ) {
+                            <div
+                              class="resume-inline-list-item mw-100 position-relative"
+                              [style.width]="inlineListInputWidth(itemControl)"
+                            >
+                              <input
+                                class="form-control resume-inline-list-input pe-5"
+                                [class.is-invalid]="fieldInvalid(itemControl)"
+                                [id]="'resume-skill-' + index + '-item-' + itemIndex"
+                                [attr.data-testid]="'resume-skill-' + index + '-item-' + itemIndex"
+                                [attr.maxlength]="validationLimits.shortText"
+                                [formControlName]="itemIndex"
+                              />
+                              <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm resume-inline-list-remove position-absolute top-0 end-0 d-inline-flex align-items-center justify-content-center fw-bold lh-1 p-0 mt-1 me-1"
+                                [attr.aria-label]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.title]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.data-testid]="
+                                  'resume-skill-' + index + '-remove-item-' + itemIndex
+                                "
+                                (click)="removeSkillItem(index, itemIndex)"
+                              >
+                                −
+                              </button>
+                              @if (
+                                fieldInvalid(itemControl) && fieldMessage(itemControl);
+                                as message
+                              ) {
+                                <div class="invalid-feedback d-block">{{ message }}</div>
+                              }
+                            </div>
+                          }
+                          <button
+                            type="button"
+                            class="btn btn-outline-success btn-sm resume-icon-action resume-inline-list-add flex-shrink-0"
+                            [attr.aria-label]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.title]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.data-testid]="'resume-skill-' + index + '-add-item'"
+                            (click)="addSkillItem(index)"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </section>
@@ -662,33 +707,127 @@
                           formControlName="summary"
                         ></textarea>
                       </div>
-                      <div class="col-md-6">
+                      <div class="col-12">
                         <label
                           class="form-label"
-                          [for]="'resume-experience-' + index + '-highlights'"
+                          [for]="'resume-experience-' + index + '-highlight-0'"
                         >
                           {{ 'adminResumeWorkspace.field.highlights' | t }}
                         </label>
-                        <textarea
-                          class="form-control"
-                          [id]="'resume-experience-' + index + '-highlights'"
-                          rows="4"
-                          formControlName="highlightsText"
-                        ></textarea>
+                        <div class="resume-list-inputs" formArrayName="highlights">
+                          @for (
+                            highlightControl of experienceHighlights(index).controls;
+                            track $index;
+                            let itemIndex = $index
+                          ) {
+                            <div class="resume-list-input-row">
+                              <div class="flex-grow-1">
+                                <input
+                                  class="form-control"
+                                  [class.is-invalid]="fieldInvalid(highlightControl)"
+                                  [id]="'resume-experience-' + index + '-highlight-' + itemIndex"
+                                  [attr.data-testid]="
+                                    'resume-experience-' + index + '-highlight-' + itemIndex
+                                  "
+                                  [attr.maxlength]="validationLimits.shortText"
+                                  [formControlName]="itemIndex"
+                                />
+                                @if (
+                                  fieldInvalid(highlightControl) && fieldMessage(highlightControl);
+                                  as message
+                                ) {
+                                  <div class="invalid-feedback d-block">{{ message }}</div>
+                                }
+                              </div>
+                              <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm resume-icon-action"
+                                [attr.aria-label]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.title]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.data-testid]="
+                                  'resume-experience-' + index + '-remove-highlight-' + itemIndex
+                                "
+                                (click)="removeExperienceHighlight(index, itemIndex)"
+                              >
+                                −
+                              </button>
+                            </div>
+                          }
+                        </div>
+                        <div class="resume-list-input-toolbar">
+                          <button
+                            type="button"
+                            class="btn btn-outline-success btn-sm resume-icon-action"
+                            [attr.aria-label]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.title]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.data-testid]="'resume-experience-' + index + '-add-highlight'"
+                            (click)="addExperienceHighlight(index)"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <div class="col-12">
                         <label
                           class="form-label"
-                          [for]="'resume-experience-' + index + '-technologies'"
+                          [for]="'resume-experience-' + index + '-technology-0'"
                         >
                           {{ 'adminResumeWorkspace.field.technologies' | t }}
                         </label>
-                        <textarea
-                          class="form-control"
-                          [id]="'resume-experience-' + index + '-technologies'"
-                          rows="3"
-                          formControlName="technologiesText"
-                        ></textarea>
+                        <div
+                          class="resume-inline-list d-flex flex-wrap align-items-start gap-2"
+                          formArrayName="technologies"
+                        >
+                          @for (
+                            technologyControl of experienceTechnologies(index).controls;
+                            track $index;
+                            let itemIndex = $index
+                          ) {
+                            <div
+                              class="resume-inline-list-item mw-100 position-relative"
+                              [style.width]="inlineListInputWidth(technologyControl)"
+                            >
+                              <input
+                                class="form-control resume-inline-list-input pe-5"
+                                [class.is-invalid]="fieldInvalid(technologyControl)"
+                                [id]="'resume-experience-' + index + '-technology-' + itemIndex"
+                                [attr.data-testid]="
+                                  'resume-experience-' + index + '-technology-' + itemIndex
+                                "
+                                [attr.maxlength]="validationLimits.shortText"
+                                [formControlName]="itemIndex"
+                              />
+                              <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm resume-inline-list-remove position-absolute top-0 end-0 d-inline-flex align-items-center justify-content-center fw-bold lh-1 p-0 mt-1 me-1"
+                                [attr.aria-label]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.title]="'adminResumeWorkspace.action.removeListItem' | t"
+                                [attr.data-testid]="
+                                  'resume-experience-' + index + '-remove-technology-' + itemIndex
+                                "
+                                (click)="removeExperienceTechnology(index, itemIndex)"
+                              >
+                                −
+                              </button>
+                              @if (
+                                fieldInvalid(technologyControl) && fieldMessage(technologyControl);
+                                as message
+                              ) {
+                                <div class="invalid-feedback d-block">{{ message }}</div>
+                              }
+                            </div>
+                          }
+                          <button
+                            type="button"
+                            class="btn btn-outline-success btn-sm resume-icon-action resume-inline-list-add flex-shrink-0"
+                            [attr.aria-label]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.title]="'adminResumeWorkspace.action.addListItem' | t"
+                            [attr.data-testid]="'resume-experience-' + index + '-add-technology'"
+                            (click)="addExperienceTechnology(index)"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <div class="col-12">
                         <section class="resume-subsection">
@@ -806,7 +945,7 @@
                                       formControlName="description"
                                     ></textarea>
                                   </div>
-                                  <div class="col-md-6">
+                                  <div class="col-12">
                                     <label
                                       class="form-label"
                                       [for]="
@@ -814,25 +953,100 @@
                                         index +
                                         '-project-' +
                                         projectIndex +
-                                        '-highlights'
+                                        '-highlight-0'
                                       "
                                     >
                                       {{ 'adminResumeWorkspace.field.highlights' | t }}
                                     </label>
-                                    <textarea
-                                      class="form-control"
-                                      [id]="
-                                        'resume-experience-' +
-                                        index +
-                                        '-project-' +
-                                        projectIndex +
-                                        '-highlights'
-                                      "
-                                      rows="4"
-                                      formControlName="highlightsText"
-                                    ></textarea>
+                                    <div class="resume-list-inputs" formArrayName="highlights">
+                                      @for (
+                                        highlightControl of projectHighlights(index, projectIndex)
+                                          .controls;
+                                        track $index;
+                                        let itemIndex = $index
+                                      ) {
+                                        <div class="resume-list-input-row">
+                                          <div class="flex-grow-1">
+                                            <input
+                                              class="form-control"
+                                              [class.is-invalid]="fieldInvalid(highlightControl)"
+                                              [id]="
+                                                'resume-experience-' +
+                                                index +
+                                                '-project-' +
+                                                projectIndex +
+                                                '-highlight-' +
+                                                itemIndex
+                                              "
+                                              [attr.data-testid]="
+                                                'resume-experience-' +
+                                                index +
+                                                '-project-' +
+                                                projectIndex +
+                                                '-highlight-' +
+                                                itemIndex
+                                              "
+                                              [attr.maxlength]="validationLimits.shortText"
+                                              [formControlName]="itemIndex"
+                                            />
+                                            @if (
+                                              fieldInvalid(highlightControl) &&
+                                                fieldMessage(highlightControl);
+                                              as message
+                                            ) {
+                                              <div class="invalid-feedback d-block">
+                                                {{ message }}
+                                              </div>
+                                            }
+                                          </div>
+                                          <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm resume-icon-action"
+                                            [attr.aria-label]="
+                                              'adminResumeWorkspace.action.removeListItem' | t
+                                            "
+                                            [attr.title]="
+                                              'adminResumeWorkspace.action.removeListItem' | t
+                                            "
+                                            [attr.data-testid]="
+                                              'resume-experience-' +
+                                              index +
+                                              '-project-' +
+                                              projectIndex +
+                                              '-remove-highlight-' +
+                                              itemIndex
+                                            "
+                                            (click)="
+                                              removeProjectHighlight(index, projectIndex, itemIndex)
+                                            "
+                                          >
+                                            −
+                                          </button>
+                                        </div>
+                                      }
+                                    </div>
+                                    <div class="resume-list-input-toolbar">
+                                      <button
+                                        type="button"
+                                        class="btn btn-outline-success btn-sm resume-icon-action"
+                                        [attr.aria-label]="
+                                          'adminResumeWorkspace.action.addListItem' | t
+                                        "
+                                        [attr.title]="'adminResumeWorkspace.action.addListItem' | t"
+                                        [attr.data-testid]="
+                                          'resume-experience-' +
+                                          index +
+                                          '-project-' +
+                                          projectIndex +
+                                          '-add-highlight'
+                                        "
+                                        (click)="addProjectHighlight(index, projectIndex)"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
                                   </div>
-                                  <div class="col-md-6">
+                                  <div class="col-12">
                                     <label
                                       class="form-label"
                                       [for]="
@@ -840,23 +1054,106 @@
                                         index +
                                         '-project-' +
                                         projectIndex +
-                                        '-technologies'
+                                        '-technology-0'
                                       "
                                     >
                                       {{ 'adminResumeWorkspace.field.technologies' | t }}
                                     </label>
-                                    <textarea
-                                      class="form-control"
-                                      [id]="
-                                        'resume-experience-' +
-                                        index +
-                                        '-project-' +
-                                        projectIndex +
-                                        '-technologies'
-                                      "
-                                      rows="4"
-                                      formControlName="technologiesText"
-                                    ></textarea>
+                                    <div
+                                      class="resume-inline-list d-flex flex-wrap align-items-start gap-2"
+                                      formArrayName="technologies"
+                                    >
+                                      @for (
+                                        technologyControl of projectTechnologies(
+                                          index,
+                                          projectIndex
+                                        ).controls;
+                                        track $index;
+                                        let itemIndex = $index
+                                      ) {
+                                        <div
+                                          class="resume-inline-list-item mw-100 position-relative"
+                                          [style.width]="inlineListInputWidth(technologyControl)"
+                                        >
+                                          <input
+                                            class="form-control resume-inline-list-input pe-5"
+                                            [class.is-invalid]="fieldInvalid(technologyControl)"
+                                            [id]="
+                                              'resume-experience-' +
+                                              index +
+                                              '-project-' +
+                                              projectIndex +
+                                              '-technology-' +
+                                              itemIndex
+                                            "
+                                            [attr.data-testid]="
+                                              'resume-experience-' +
+                                              index +
+                                              '-project-' +
+                                              projectIndex +
+                                              '-technology-' +
+                                              itemIndex
+                                            "
+                                            [attr.maxlength]="validationLimits.shortText"
+                                            [formControlName]="itemIndex"
+                                          />
+                                          <button
+                                            type="button"
+                                            class="btn btn-outline-danger btn-sm resume-inline-list-remove position-absolute top-0 end-0 d-inline-flex align-items-center justify-content-center fw-bold lh-1 p-0 mt-1 me-1"
+                                            [attr.aria-label]="
+                                              'adminResumeWorkspace.action.removeListItem' | t
+                                            "
+                                            [attr.title]="
+                                              'adminResumeWorkspace.action.removeListItem' | t
+                                            "
+                                            [attr.data-testid]="
+                                              'resume-experience-' +
+                                              index +
+                                              '-project-' +
+                                              projectIndex +
+                                              '-remove-technology-' +
+                                              itemIndex
+                                            "
+                                            (click)="
+                                              removeProjectTechnology(
+                                                index,
+                                                projectIndex,
+                                                itemIndex
+                                              )
+                                            "
+                                          >
+                                            −
+                                          </button>
+                                          @if (
+                                            fieldInvalid(technologyControl) &&
+                                              fieldMessage(technologyControl);
+                                            as message
+                                          ) {
+                                            <div class="invalid-feedback d-block">
+                                              {{ message }}
+                                            </div>
+                                          }
+                                        </div>
+                                      }
+                                      <button
+                                        type="button"
+                                        class="btn btn-outline-success btn-sm resume-icon-action resume-inline-list-add flex-shrink-0"
+                                        [attr.aria-label]="
+                                          'adminResumeWorkspace.action.addListItem' | t
+                                        "
+                                        [attr.title]="'adminResumeWorkspace.action.addListItem' | t"
+                                        [attr.data-testid]="
+                                          'resume-experience-' +
+                                          index +
+                                          '-project-' +
+                                          projectIndex +
+                                          '-add-technology'
+                                        "
+                                        (click)="addProjectTechnology(index, projectIndex)"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
                                   </div>
                                   <div class="col-md-6">
                                     <label

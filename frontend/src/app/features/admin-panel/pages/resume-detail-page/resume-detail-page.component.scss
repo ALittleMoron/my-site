@@ -168,6 +168,32 @@
   margin-block-start: 0.875rem;
 }
 
+.resume-list-inputs {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.resume-list-input-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.resume-list-input-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: 0.5rem;
+}
+
+.resume-inline-list-input.is-invalid {
+  background-position: right 2rem center;
+}
+
+.resume-inline-list-remove {
+  height: 1.35rem;
+  width: 1.35rem;
+}
+
 .resume-icon-action {
   align-items: center;
   display: inline-flex;

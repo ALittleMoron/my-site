@@ -408,7 +408,7 @@ Workspace is admin-only utils, that live only in admin panel.
   - [x] Add admin Workspace navigation and routes under `/admin-panel/workspace/resumes`.
   - [x] Add list, create with language selection, detail edit, language badge, selected-language preview, and delete UI.
   - [x] Keep resumes private: no public pages, sitemap entries, SEO, or themes in v1.
-  - [ ] Fix resume multilines fields: text with \\n to array.
+  - [x] Fix resume multilines fields: text with \\n to array.
   - [ ] Resume customization
     - [ ] Blocks order (Title, Photo, Summary, Experience, etc.)
     - [ ] Blocks visibility
