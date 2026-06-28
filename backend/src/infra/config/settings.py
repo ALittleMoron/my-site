@@ -60,6 +60,7 @@ class _AppSettings(_ProjectBaseSettings):
 class _OwnerSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="OWNER_")
 
+    init_enabled: bool
     init_login: str
     init_password: SecretStrExtended
 
