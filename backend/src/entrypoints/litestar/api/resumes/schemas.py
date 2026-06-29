@@ -34,8 +34,8 @@ from entrypoints.litestar.api.validation import (
 
 
 class ResumeProfileSchema(CamelCaseSchema):
-    full_name: Annotated[ShortText, Field(title="Full name")]
-    role: Annotated[ShortText, Field(title="Role")]
+    full_name: Annotated[RequiredShortText, Field(title="Full name")]
+    role: Annotated[RequiredShortText, Field(title="Role")]
     location: Annotated[ShortText, Field(title="Location")]
     email: Annotated[BlankableEmailString, Field(title="Email")]
     phone: Annotated[str, Field(title="Phone", max_length=64)]
@@ -87,8 +87,8 @@ class ResumeSummarySchema(CamelCaseSchema):
 
 
 class ResumeSkillGroupSchema(CamelCaseSchema):
-    category: Annotated[ShortText, Field(title="Skill category")]
-    items: Annotated[list[ShortText], Field(title="Skill items")]
+    category: Annotated[RequiredShortText, Field(title="Skill category")]
+    items: Annotated[list[RequiredShortText], Field(title="Skill items")]
 
     def to_domain_schema(self) -> ResumeSkillGroup:
         return ResumeSkillGroup(
@@ -108,11 +108,11 @@ class ResumeSkillGroupSchema(CamelCaseSchema):
 
 
 class ResumeProjectItemSchema(CamelCaseSchema):
-    name: Annotated[ShortText, Field(title="Project name")]
-    role: Annotated[ShortText, Field(title="Project role")]
+    name: Annotated[RequiredShortText, Field(title="Project name")]
+    role: Annotated[RequiredShortText, Field(title="Project role")]
     description: Annotated[ResumeLongText, Field(title="Project description")]
-    highlights: Annotated[list[ShortText], Field(title="Highlights")]
-    technologies: Annotated[list[ShortText], Field(title="Technologies")]
+    highlights: Annotated[list[RequiredShortText], Field(title="Highlights")]
+    technologies: Annotated[list[RequiredShortText], Field(title="Technologies")]
     url: Annotated[BlankableHttpUrlString, Field(title="Project URL")]
 
     def to_domain_schema(self) -> ResumeProjectItem:
@@ -141,15 +141,15 @@ class ResumeProjectItemSchema(CamelCaseSchema):
 
 
 class ResumeExperienceItemSchema(CamelCaseSchema):
-    company: Annotated[ShortText, Field(title="Company")]
-    position: Annotated[ShortText, Field(title="Position")]
+    company: Annotated[RequiredShortText, Field(title="Company")]
+    position: Annotated[RequiredShortText, Field(title="Position")]
     location: Annotated[ShortText, Field(title="Location")]
-    start_date: Annotated[date | None, Field(title="Start date")]
+    start_date: Annotated[date, Field(title="Start date")]
     end_date: Annotated[date | None, Field(title="End date")]
     current_status: Annotated[ResumeCurrentStatusEnum, Field(title="Current status")]
     summary: Annotated[ResumeLongText, Field(title="Experience summary")]
-    highlights: Annotated[list[ShortText], Field(title="Highlights")]
-    technologies: Annotated[list[ShortText], Field(title="Technologies")]
+    highlights: Annotated[list[RequiredShortText], Field(title="Highlights")]
+    technologies: Annotated[list[RequiredShortText], Field(title="Technologies")]
     projects: Annotated[list[ResumeProjectItemSchema], Field(title="Experience projects")]
 
     def to_domain_schema(self) -> ResumeExperienceItem:
@@ -174,7 +174,7 @@ class ResumeExperienceItemSchema(CamelCaseSchema):
                 company=schema.company,
                 position=schema.position,
                 location=schema.location,
-                start_date=schema.start_date,
+                start_date=cast("date", schema.start_date),
                 end_date=schema.end_date,
                 current_status=schema.current_status,
                 summary=schema.summary,
@@ -189,12 +189,12 @@ class ResumeExperienceItemSchema(CamelCaseSchema):
 
 
 class ResumeEducationItemSchema(CamelCaseSchema):
-    institution: Annotated[ShortText, Field(title="Institution")]
-    degree: Annotated[ShortText, Field(title="Degree")]
-    field: Annotated[ShortText, Field(title="Field")]
-    location: Annotated[ShortText, Field(title="Location")]
-    start_date: Annotated[date | None, Field(title="Start date")]
-    end_date: Annotated[date | None, Field(title="End date")]
+    institution: Annotated[RequiredShortText, Field(title="Institution")]
+    degree: Annotated[RequiredShortText, Field(title="Degree")]
+    field: Annotated[RequiredShortText, Field(title="Field")]
+    location: Annotated[RequiredShortText, Field(title="Location")]
+    start_date: Annotated[date, Field(title="Start date")]
+    end_date: Annotated[date, Field(title="End date")]
     description: Annotated[ResumeLongText, Field(title="Description")]
 
     def to_domain_schema(self) -> ResumeEducationItem:
@@ -217,16 +217,16 @@ class ResumeEducationItemSchema(CamelCaseSchema):
                 degree=schema.degree,
                 field=schema.field,
                 location=schema.location,
-                start_date=schema.start_date,
-                end_date=schema.end_date,
+                start_date=cast("date", schema.start_date),
+                end_date=cast("date", schema.end_date),
                 description=schema.description,
             ),
         )
 
 
 class ResumeLanguageItemSchema(CamelCaseSchema):
-    name: Annotated[ShortText, Field(title="Language")]
-    proficiency: Annotated[ShortText, Field(title="Proficiency")]
+    name: Annotated[RequiredShortText, Field(title="Language")]
+    proficiency: Annotated[RequiredShortText, Field(title="Proficiency")]
 
     def to_domain_schema(self) -> ResumeLanguageItem:
         return ResumeLanguageItem(
@@ -246,7 +246,7 @@ class ResumeLanguageItemSchema(CamelCaseSchema):
 
 
 class ResumeCertificationItemSchema(CamelCaseSchema):
-    name: Annotated[ShortText, Field(title="Certification")]
+    name: Annotated[RequiredShortText, Field(title="Certification")]
     issuer: Annotated[ShortText, Field(title="Issuer")]
     issued_on: Annotated[date | None, Field(title="Issued on")]
     expires_on: Annotated[date | None, Field(title="Expires on")]
@@ -276,7 +276,7 @@ class ResumeCertificationItemSchema(CamelCaseSchema):
 
 
 class ResumeAdditionalSectionItemSchema(CamelCaseSchema):
-    title: Annotated[ShortText, Field(title="Title")]
+    title: Annotated[RequiredShortText, Field(title="Title")]
     description: Annotated[ResumeLongText, Field(title="Description")]
     url: Annotated[BlankableHttpUrlString, Field(title="URL")]
 
@@ -300,8 +300,11 @@ class ResumeAdditionalSectionItemSchema(CamelCaseSchema):
 
 
 class ResumeAdditionalSectionSchema(CamelCaseSchema):
-    title: Annotated[ShortText, Field(title="Section title")]
-    items: Annotated[list[ResumeAdditionalSectionItemSchema], Field(title="Section items")]
+    title: Annotated[RequiredShortText, Field(title="Section title")]
+    items: Annotated[
+        list[ResumeAdditionalSectionItemSchema],
+        Field(title="Section items", min_length=1),
+    ]
 
     def to_domain_schema(self) -> ResumeAdditionalSection:
         return ResumeAdditionalSection(

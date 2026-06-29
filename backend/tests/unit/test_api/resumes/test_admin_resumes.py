@@ -1,5 +1,8 @@
 from dataclasses import replace
+from datetime import date
+from typing import cast
 
+import pytest
 import pytest_asyncio
 from httpx import codes
 
@@ -96,7 +99,7 @@ class TestAdminResumesAPI(ApiTestCase):
                 company="Company",
                 position="Engineer",
                 location="",
-                start_date=None,
+                start_date=date(2024, 1, 1),
                 end_date=None,
                 current_status=ResumeCurrentStatusEnum.CURRENT,
                 summary="Built a platform.",
@@ -119,7 +122,7 @@ class TestAdminResumesAPI(ApiTestCase):
                 "company": "Company",
                 "position": "Engineer",
                 "location": "",
-                "startDate": None,
+                "startDate": "2024-01-01",
                 "endDate": None,
                 "currentStatus": "current",
                 "summary": "Built a platform.",
@@ -238,6 +241,34 @@ class TestAdminResumesAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.create_resume.assert_not_called()
 
+    def test_create_resume_allows_empty_repeatable_sections(self) -> None:
+        content = self.factory.api.resume_content()
+        content["skills"] = []
+        content["experience"] = []
+        content["education"] = []
+        content["languages"] = []
+        content["certifications"] = []
+        content["additionalSections"] = []
+        domain_content = self.factory.core.resume_content(skills=[], experience=[])
+        self.use_case.create_resume.return_value = self.factory.core.resume(
+            resume_id=2,
+            content=domain_content,
+        )
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content),
+        )
+
+        self.asserts.status(response=response, expected_status=codes.CREATED)
+        self.use_case.create_resume.assert_called_once_with(
+            params=ResumeCreateParams(
+                title="Backend resume",
+                language=LanguageEnum.RU,
+                content=domain_content,
+                author_username="test",
+            ),
+        )
+
     def test_create_resume_rejects_invalid_email(self) -> None:
         content = self.factory.api.resume_content()
         content["profile"]["email"] = "not-an-email"
@@ -259,6 +290,200 @@ class TestAdminResumesAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize("field", ["fullName", "role"])
+    def test_create_resume_rejects_blank_required_profile_fields(self, field: str) -> None:
+        content = self.factory.api.resume_content()
+        content["profile"][field] = "   "
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("category", "   "),
+            ("items", ["Python", "   "]),
+        ],
+    )
+    def test_create_resume_rejects_blank_required_skill_fields(
+        self,
+        field: str,
+        value: object,
+    ) -> None:
+        content = self.factory.api.resume_content()
+        content["skills"][0][field] = value
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("company", "   "),
+            ("position", "   "),
+            ("startDate", None),
+            ("highlights", ["Reduced latency", "   "]),
+            ("technologies", ["Python", "   "]),
+        ],
+    )
+    def test_create_resume_rejects_invalid_required_experience_fields(
+        self,
+        field: str,
+        value: object,
+    ) -> None:
+        experience = valid_resume_experience_payload()
+        experience[field] = value
+        content = self.factory.api.resume_content(experience=[experience])
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("name", "   "),
+            ("role", "   "),
+            ("highlights", ["Hybrid SSR/CSR", "   "]),
+            ("technologies", ["Litestar", "   "]),
+        ],
+    )
+    def test_create_resume_rejects_invalid_required_project_fields(
+        self,
+        field: str,
+        value: object,
+    ) -> None:
+        experience = valid_resume_experience_payload()
+        projects = cast("list[dict[str, object]]", experience["projects"])
+        projects[0][field] = value
+        content = self.factory.api.resume_content(experience=[experience])
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("institution", "   "),
+            ("degree", "   "),
+            ("field", "   "),
+            ("location", "   "),
+            ("startDate", None),
+            ("endDate", None),
+        ],
+    )
+    def test_create_resume_rejects_invalid_required_education_fields(
+        self,
+        field: str,
+        value: object,
+    ) -> None:
+        content = self.factory.api.resume_content()
+        content["education"] = [valid_resume_education_payload()]
+        content["education"][0][field] = value
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize("field", ["name", "proficiency"])
+    def test_create_resume_rejects_blank_required_language_fields(self, field: str) -> None:
+        content = self.factory.api.resume_content()
+        content["languages"] = [{"name": "English", "proficiency": "C1"}]
+        content["languages"][0][field] = "   "
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_create_resume_rejects_blank_required_certification_name(self) -> None:
+        content = self.factory.api.resume_content()
+        content["certifications"] = [
+            {
+                "name": "   ",
+                "issuer": "",
+                "issuedOn": None,
+                "expiresOn": None,
+                "credentialUrl": "",
+            },
+        ]
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "case",
+        [
+            "blank_section_title",
+            "empty_items",
+            "blank_item_title",
+        ],
+    )
+    def test_create_resume_rejects_invalid_required_additional_section_fields(
+        self,
+        case: str,
+    ) -> None:
+        content = self.factory.api.resume_content()
+        content["additionalSections"] = [invalid_resume_additional_section_payload(case=case)]
+        self.use_case.create_resume.return_value = self.factory.core.resume()
+
+        response = self.api.post_create_resume(
+            data=self.factory.api.resume_request(content=content)
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.create_resume.assert_not_called()
+
+    def test_export_resume_rejects_blank_required_profile_field(self) -> None:
+        content = self.factory.api.resume_content()
+        content["profile"]["fullName"] = "   "
+        self.use_case.export_resume.return_value = ResumeExport(
+            format=ResumeExportFormatEnum.PDF,
+            content=b"%PDF-1.4",
+        )
+
+        response = self.api.post_export_resume(
+            resume_id=3,
+            data={
+                "format": "pdf",
+                **self.factory.api.resume_request(content=content),
+            },
+        )
+
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.export_resume.assert_not_called()
 
     def test_create_resume_rejects_too_long_summary(self) -> None:
         content = self.factory.api.resume_content(summary="x" * 10_001)
@@ -464,3 +689,67 @@ class TestAdminResumesAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.export_resume.assert_not_called()
+
+
+def valid_resume_experience_payload() -> dict[str, object]:
+    return {
+        "company": "Company",
+        "position": "Engineer",
+        "location": "",
+        "startDate": "2024-01-01",
+        "endDate": None,
+        "currentStatus": "current",
+        "summary": "Built a platform.",
+        "highlights": ["Reduced latency"],
+        "technologies": ["Python"],
+        "projects": [
+            {
+                "name": "Portfolio",
+                "role": "Creator",
+                "description": "Site and knowledge base",
+                "highlights": ["Hybrid SSR/CSR"],
+                "technologies": ["Litestar"],
+                "url": "https://example.com",
+            },
+        ],
+    }
+
+
+def valid_resume_education_payload() -> dict[str, object]:
+    return {
+        "institution": "University",
+        "degree": "Bachelor",
+        "field": "Computer science",
+        "location": "Moscow",
+        "startDate": "2014-09-01",
+        "endDate": "2018-06-30",
+        "description": "",
+    }
+
+
+def valid_resume_additional_item_payload(*, title: str = "Article") -> dict[str, object]:
+    return {
+        "title": title,
+        "description": "",
+        "url": "",
+    }
+
+
+def invalid_resume_additional_section_payload(*, case: str) -> dict[str, object]:
+    if case == "blank_section_title":
+        return {
+            "title": "   ",
+            "items": [valid_resume_additional_item_payload()],
+        }
+    if case == "empty_items":
+        return {
+            "title": "Publications",
+            "items": [],
+        }
+    if case == "blank_item_title":
+        return {
+            "title": "Publications",
+            "items": [valid_resume_additional_item_payload(title="   ")],
+        }
+    message = f"Unsupported additional section validation case: {case}"
+    raise ValueError(message)

@@ -16,6 +16,7 @@ import {
   FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
+  ValidationErrors,
   ValidatorFn,
   Validators,
 } from '@angular/forms';
@@ -594,8 +595,12 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   addAdditionalSection(): void {
+    const section = createEmptyResumeAdditionalSection();
     this.additionalSections.push(
-      this.createAdditionalSectionForm(createEmptyResumeAdditionalSection()),
+      this.createAdditionalSectionForm({
+        ...section,
+        items: [createEmptyResumeAdditionalSectionItem()],
+      }),
     );
   }
 
@@ -1119,6 +1124,14 @@ export class AdminResumeDetailPageComponent implements OnInit {
         [...sectionPath, this.fieldLabel('sectionTitle')],
         section.controls.title,
       );
+      if (section.controls.items.errors !== null) {
+        this.addControlValidationIssue(
+          issues,
+          'additional',
+          [...sectionPath, this.fieldLabel('items')],
+          section.controls.items,
+        );
+      }
       section.controls.items.controls.forEach((item, itemIndex) => {
         const itemPath = [...sectionPath, this.entryLabel('additionalItem', itemIndex)];
         this.addControlValidationIssue(
@@ -1194,8 +1207,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createProfileForm(profile: ResumeProfile): FormGroup<ResumeProfileForm> {
     return new FormGroup<ResumeProfileForm>({
-      fullName: this.text(profile.fullName, ADMIN_VALIDATION_LIMITS.shortText),
-      role: this.text(profile.role, ADMIN_VALIDATION_LIMITS.shortText),
+      fullName: this.requiredText(profile.fullName, ADMIN_VALIDATION_LIMITS.shortText),
+      role: this.requiredText(profile.role, ADMIN_VALIDATION_LIMITS.shortText),
       location: this.text(profile.location, ADMIN_VALIDATION_LIMITS.shortText),
       email: this.textWithValidators(profile.email, ADMIN_VALIDATION_LIMITS.email, [
         emailValidator,
@@ -1216,7 +1229,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createSkillGroupForm(skill: ResumeSkillGroup): FormGroup<ResumeSkillGroupForm> {
     return new FormGroup<ResumeSkillGroupForm>({
-      category: this.text(skill.category, ADMIN_VALIDATION_LIMITS.shortText),
+      category: this.requiredText(skill.category, ADMIN_VALIDATION_LIMITS.shortText),
       items: this.createTextListForm(skill.items),
     });
   }
@@ -1225,10 +1238,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeExperienceItem,
   ): FormGroup<ResumeExperienceItemForm> {
     return new FormGroup<ResumeExperienceItemForm>({
-      company: this.text(item.company, ADMIN_VALIDATION_LIMITS.shortText),
-      position: this.text(item.position, ADMIN_VALIDATION_LIMITS.shortText),
+      company: this.requiredText(item.company, ADMIN_VALIDATION_LIMITS.shortText),
+      position: this.requiredText(item.position, ADMIN_VALIDATION_LIMITS.shortText),
       location: this.text(item.location, ADMIN_VALIDATION_LIMITS.shortText),
-      startDate: this.nullableText(item.startDate, 32),
+      startDate: this.requiredNullableText(item.startDate, 32),
       endDate: this.nullableText(item.endDate, 32),
       currentStatus: this.currentStatus(item.currentStatus),
       summary: this.text(item.summary, ADMIN_VALIDATION_LIMITS.resumeLongText),
@@ -1242,8 +1255,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createProjectItemForm(item: ResumeProjectItem): FormGroup<ResumeProjectItemForm> {
     return new FormGroup<ResumeProjectItemForm>({
-      name: this.text(item.name, ADMIN_VALIDATION_LIMITS.shortText),
-      role: this.text(item.role, ADMIN_VALIDATION_LIMITS.shortText),
+      name: this.requiredText(item.name, ADMIN_VALIDATION_LIMITS.shortText),
+      role: this.requiredText(item.role, ADMIN_VALIDATION_LIMITS.shortText),
       description: this.text(item.description, ADMIN_VALIDATION_LIMITS.resumeLongText),
       highlights: this.createTextListForm(item.highlights),
       technologies: this.createTextListForm(item.technologies),
@@ -1253,20 +1266,20 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   private createEducationItemForm(item: ResumeEducationItem): FormGroup<ResumeEducationItemForm> {
     return new FormGroup<ResumeEducationItemForm>({
-      institution: this.text(item.institution, ADMIN_VALIDATION_LIMITS.shortText),
-      degree: this.text(item.degree, ADMIN_VALIDATION_LIMITS.shortText),
-      field: this.text(item.field, ADMIN_VALIDATION_LIMITS.shortText),
-      location: this.text(item.location, ADMIN_VALIDATION_LIMITS.shortText),
-      startDate: this.nullableText(item.startDate, 32),
-      endDate: this.nullableText(item.endDate, 32),
+      institution: this.requiredText(item.institution, ADMIN_VALIDATION_LIMITS.shortText),
+      degree: this.requiredText(item.degree, ADMIN_VALIDATION_LIMITS.shortText),
+      field: this.requiredText(item.field, ADMIN_VALIDATION_LIMITS.shortText),
+      location: this.requiredText(item.location, ADMIN_VALIDATION_LIMITS.shortText),
+      startDate: this.requiredNullableText(item.startDate, 32),
+      endDate: this.requiredNullableText(item.endDate, 32),
       description: this.text(item.description, ADMIN_VALIDATION_LIMITS.resumeLongText),
     });
   }
 
   private createLanguageItemForm(item: ResumeLanguageItem): FormGroup<ResumeLanguageItemForm> {
     return new FormGroup<ResumeLanguageItemForm>({
-      name: this.text(item.name, ADMIN_VALIDATION_LIMITS.shortText),
-      proficiency: this.text(item.proficiency, ADMIN_VALIDATION_LIMITS.shortText),
+      name: this.requiredText(item.name, ADMIN_VALIDATION_LIMITS.shortText),
+      proficiency: this.requiredText(item.proficiency, ADMIN_VALIDATION_LIMITS.shortText),
     });
   }
 
@@ -1274,7 +1287,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeCertificationItem,
   ): FormGroup<ResumeCertificationItemForm> {
     return new FormGroup<ResumeCertificationItemForm>({
-      name: this.text(item.name, ADMIN_VALIDATION_LIMITS.shortText),
+      name: this.requiredText(item.name, ADMIN_VALIDATION_LIMITS.shortText),
       issuer: this.text(item.issuer, ADMIN_VALIDATION_LIMITS.shortText),
       issuedOn: this.nullableText(item.issuedOn, 32),
       expiresOn: this.nullableText(item.expiresOn, 32),
@@ -1286,9 +1299,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
     section: ResumeAdditionalSection,
   ): FormGroup<ResumeAdditionalSectionForm> {
     return new FormGroup<ResumeAdditionalSectionForm>({
-      title: this.text(section.title, ADMIN_VALIDATION_LIMITS.shortText),
+      title: this.requiredText(section.title, ADMIN_VALIDATION_LIMITS.shortText),
       items: new FormArray<FormGroup<ResumeAdditionalSectionItemForm>>(
         section.items.map((item) => this.createAdditionalSectionItemForm(item)),
+        { validators: nonEmptyFormArray },
       ),
     });
   }
@@ -1297,7 +1311,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
     item: ResumeAdditionalSectionItem,
   ): FormGroup<ResumeAdditionalSectionItemForm> {
     return new FormGroup<ResumeAdditionalSectionItemForm>({
-      title: this.text(item.title, ADMIN_VALIDATION_LIMITS.shortText),
+      title: this.requiredText(item.title, ADMIN_VALIDATION_LIMITS.shortText),
       description: this.text(item.description, ADMIN_VALIDATION_LIMITS.resumeLongText),
       url: this.urlText(item.url),
     });
@@ -1306,6 +1320,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private text(value: string, maxLength: number | null): TextControl {
     if (maxLength === null) return this.formBuilder.control(value);
     return this.formBuilder.control(value, { validators: Validators.maxLength(maxLength) });
+  }
+
+  private requiredText(value: string, maxLength: number): TextControl {
+    return this.textWithValidators(value, maxLength, [trimRequired]);
   }
 
   private textWithValidators(
@@ -1327,6 +1345,12 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return new FormControl<string | null>(value, { validators: Validators.maxLength(maxLength) });
   }
 
+  private requiredNullableText(value: string | null, maxLength: number): NullableTextControl {
+    return new FormControl<string | null>(value, {
+      validators: [nullableTrimRequired, Validators.maxLength(maxLength)],
+    });
+  }
+
   private currentStatus(value: ResumeCurrentStatus): CurrentStatusControl {
     return this.formBuilder.control(value);
   }
@@ -1336,7 +1360,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   private listText(value: string): TextControl {
-    return this.text(value, ADMIN_VALIDATION_LIMITS.shortText);
+    return this.requiredText(value, ADMIN_VALIDATION_LIMITS.shortText);
   }
 
   private addTextListItem(list: FormArray<TextControl>): void {
@@ -1519,6 +1543,14 @@ function cleanPreviewText(value: string): string | null {
 function cleanNullableDateString(value: string | null): string | null {
   const trimmed = value?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function nullableTrimRequired(control: AbstractControl<string | null>): ValidationErrors | null {
+  return (control.value ?? '').trim() === '' ? { required: true } : null;
+}
+
+function nonEmptyFormArray(control: AbstractControl<unknown>): ValidationErrors | null {
+  return Array.isArray(control.value) && control.value.length > 0 ? null : { required: true };
 }
 
 function isResumeLanguage(value: string): value is ResumeLanguage {

@@ -369,6 +369,29 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
+  it('adds the first additional item when a section is added', () => {
+    fixture.componentInstance.setActiveTab('additional');
+    fixture.componentInstance.addAdditionalSection();
+    fixture.detectChanges();
+
+    expect(
+      elementById<HTMLInputElement>('resume-additional-section-0-item-0-title'),
+    ).not.toBeNull();
+  });
+
+  it('renders required field markers with the danger text color', () => {
+    fixture.detectChanges();
+
+    const markers = Array.from(
+      fixture.nativeElement.querySelectorAll('.required-marker'),
+    ) as HTMLElement[];
+
+    expect(markers.length).toBeGreaterThan(0);
+    for (const marker of markers) {
+      expect(marker.classList).toContain('text-danger');
+    }
+  });
+
   it('opens and closes the export modal', () => {
     buttonByLabel('Экспорт').click();
     fixture.detectChanges();
@@ -443,6 +466,13 @@ describe('AdminResumeDetailPageComponent', () => {
       description: 'profile full name',
       tab: 'profile',
       elementId: 'resume-profile-full-name',
+      invalidValue: '   ',
+      expectedIssue: 'Профиль / Имя — Заполните поле.',
+    },
+    {
+      description: 'profile full name length',
+      tab: 'profile',
+      elementId: 'resume-profile-full-name',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Профиль / Имя — Максимум 255 символов.',
     },
@@ -455,6 +485,13 @@ describe('AdminResumeDetailPageComponent', () => {
     },
     {
       description: 'profile role',
+      tab: 'profile',
+      elementId: 'resume-profile-role',
+      invalidValue: '   ',
+      expectedIssue: 'Профиль / Роль — Заполните поле.',
+    },
+    {
+      description: 'profile role length',
       tab: 'profile',
       elementId: 'resume-profile-role',
       invalidValue: INVALID_SHORT_TEXT,
@@ -513,11 +550,25 @@ describe('AdminResumeDetailPageComponent', () => {
       description: 'skill category',
       tab: 'skills',
       elementId: 'resume-skill-0-category',
+      invalidValue: '   ',
+      expectedIssue: 'Навыки / Группа навыков 1 / Категория — Заполните поле.',
+    },
+    {
+      description: 'skill category length',
+      tab: 'skills',
+      elementId: 'resume-skill-0-category',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Навыки / Группа навыков 1 / Категория — Максимум 255 символов.',
     },
     {
       description: 'skill item',
+      tab: 'skills',
+      elementId: 'resume-skill-0-item-0',
+      invalidValue: '   ',
+      expectedIssue: 'Навыки / Группа навыков 1 / Пункт 1 — Заполните поле.',
+    },
+    {
+      description: 'skill item length',
       tab: 'skills',
       elementId: 'resume-skill-0-item-0',
       invalidValue: INVALID_SHORT_TEXT,
@@ -527,11 +578,25 @@ describe('AdminResumeDetailPageComponent', () => {
       description: 'experience company',
       tab: 'experience',
       elementId: 'resume-experience-0-company',
+      invalidValue: '   ',
+      expectedIssue: 'Опыт / Компания 1 / Компания — Заполните поле.',
+    },
+    {
+      description: 'experience company length',
+      tab: 'experience',
+      elementId: 'resume-experience-0-company',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Опыт / Компания 1 / Компания — Максимум 255 символов.',
     },
     {
       description: 'experience position',
+      tab: 'experience',
+      elementId: 'resume-experience-0-position',
+      invalidValue: '   ',
+      expectedIssue: 'Опыт / Компания 1 / Позиция — Заполните поле.',
+    },
+    {
+      description: 'experience position length',
       tab: 'experience',
       elementId: 'resume-experience-0-position',
       invalidValue: INVALID_SHORT_TEXT,
@@ -546,6 +611,13 @@ describe('AdminResumeDetailPageComponent', () => {
     },
     {
       description: 'experience start date',
+      tab: 'experience',
+      elementId: 'resume-experience-0-start-date',
+      invalidValue: '',
+      expectedIssue: 'Опыт / Компания 1 / Начало — Заполните поле.',
+    },
+    {
+      description: 'experience start date length',
       tab: 'experience',
       elementId: 'resume-experience-0-start-date',
       invalidValue: INVALID_DATE_TEXT,
@@ -583,11 +655,25 @@ describe('AdminResumeDetailPageComponent', () => {
       description: 'project name',
       tab: 'experience',
       elementId: 'resume-experience-0-project-0-name',
+      invalidValue: '   ',
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Проект — Заполните поле.',
+    },
+    {
+      description: 'project name length',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-name',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Опыт / Компания 1 / Проект 1 / Проект — Максимум 255 символов.',
     },
     {
       description: 'project role',
+      tab: 'experience',
+      elementId: 'resume-experience-0-project-0-role',
+      invalidValue: '   ',
+      expectedIssue: 'Опыт / Компания 1 / Проект 1 / Роль — Заполните поле.',
+    },
+    {
+      description: 'project role length',
       tab: 'experience',
       elementId: 'resume-experience-0-project-0-role',
       invalidValue: INVALID_SHORT_TEXT,
@@ -626,11 +712,27 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-institution',
+      invalidValue: '   ',
+      expectedIssue: 'Образование / Образование 1 / Учебное заведение — Заполните поле.',
+    },
+    {
+      description: 'education institution length',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-institution',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Образование / Образование 1 / Учебное заведение — Максимум 255 символов.',
     },
     {
       description: 'education degree',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-degree',
+      invalidValue: '   ',
+      expectedIssue: 'Образование / Образование 1 / Степень — Заполните поле.',
+    },
+    {
+      description: 'education degree length',
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-degree',
@@ -642,11 +744,27 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-field',
+      invalidValue: '   ',
+      expectedIssue: 'Образование / Образование 1 / Направление — Заполните поле.',
+    },
+    {
+      description: 'education field length',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-field',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Образование / Образование 1 / Направление — Максимум 255 символов.',
     },
     {
       description: 'education location',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-location',
+      invalidValue: '   ',
+      expectedIssue: 'Образование / Образование 1 / Локация — Заполните поле.',
+    },
+    {
+      description: 'education location length',
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-location',
@@ -658,11 +776,27 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-start-date',
+      invalidValue: '',
+      expectedIssue: 'Образование / Образование 1 / Начало — Заполните поле.',
+    },
+    {
+      description: 'education start date length',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-start-date',
       invalidValue: INVALID_DATE_TEXT,
       expectedIssue: 'Образование / Образование 1 / Начало — Максимум 32 символов.',
     },
     {
       description: 'education end date',
+      tab: 'education',
+      setup: 'education',
+      elementId: 'resume-education-0-end-date',
+      invalidValue: '',
+      expectedIssue: 'Образование / Образование 1 / Окончание — Заполните поле.',
+    },
+    {
+      description: 'education end date length',
       tab: 'education',
       setup: 'education',
       elementId: 'resume-education-0-end-date',
@@ -682,6 +816,14 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'languages',
       setup: 'language',
       elementId: 'resume-language-0-name',
+      invalidValue: '   ',
+      expectedIssue: 'Языки / Язык 1 / Язык — Заполните поле.',
+    },
+    {
+      description: 'language name length',
+      tab: 'languages',
+      setup: 'language',
+      elementId: 'resume-language-0-name',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Языки / Язык 1 / Язык — Максимум 255 символов.',
     },
@@ -690,11 +832,27 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'languages',
       setup: 'language',
       elementId: 'resume-language-0-proficiency',
+      invalidValue: '   ',
+      expectedIssue: 'Языки / Язык 1 / Уровень — Заполните поле.',
+    },
+    {
+      description: 'language proficiency length',
+      tab: 'languages',
+      setup: 'language',
+      elementId: 'resume-language-0-proficiency',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Языки / Язык 1 / Уровень — Максимум 255 символов.',
     },
     {
       description: 'certification name',
+      tab: 'certifications',
+      setup: 'certification',
+      elementId: 'resume-certification-0-name',
+      invalidValue: '   ',
+      expectedIssue: 'Сертификаты / Сертификат 1 / Сертификат — Заполните поле.',
+    },
+    {
+      description: 'certification name length',
       tab: 'certifications',
       setup: 'certification',
       elementId: 'resume-certification-0-name',
@@ -739,11 +897,27 @@ describe('AdminResumeDetailPageComponent', () => {
       tab: 'additional',
       setup: 'additionalSection',
       elementId: 'resume-additional-section-0-title',
+      invalidValue: '   ',
+      expectedIssue: 'Дополнительно / Раздел 1 / Название раздела — Заполните поле.',
+    },
+    {
+      description: 'additional section title length',
+      tab: 'additional',
+      setup: 'additionalSection',
+      elementId: 'resume-additional-section-0-title',
       invalidValue: INVALID_SHORT_TEXT,
       expectedIssue: 'Дополнительно / Раздел 1 / Название раздела — Максимум 255 символов.',
     },
     {
       description: 'additional item title',
+      tab: 'additional',
+      setup: 'additionalItem',
+      elementId: 'resume-additional-section-0-item-0-title',
+      invalidValue: '   ',
+      expectedIssue: 'Дополнительно / Раздел 1 / Пункт 1 / Название пункта — Заполните поле.',
+    },
+    {
+      description: 'additional item title length',
       tab: 'additional',
       setup: 'additionalItem',
       elementId: 'resume-additional-section-0-item-0-title',
@@ -824,8 +998,9 @@ describe('AdminResumeDetailPageComponent', () => {
   it('highlights invalid additional section links when save is blocked', () => {
     fixture.componentInstance.setActiveTab('additional');
     fixture.componentInstance.addAdditionalSection();
-    fixture.componentInstance.addAdditionalItem(0);
     fixture.detectChanges();
+    setElementValueById('resume-additional-section-0-title', 'Публикации');
+    setElementValueById('resume-additional-section-0-item-0-title', 'Доклад');
     setElementValueById('resume-additional-section-0-item-0-url', 'ftp://example.com');
     fixture.componentInstance.setActiveTab('profile');
     fixture.detectChanges();
@@ -953,6 +1128,20 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
+  it('blocks blank inline list items before saving', () => {
+    fixture.componentInstance.setActiveTab('skills');
+    fixture.detectChanges();
+    setInputValue('resume-skill-0-item-0', '   ');
+
+    fixture.componentInstance.saveResume();
+    fixture.detectChanges();
+
+    const issue = 'Навыки / Группа навыков 1 / Пункт 1 — Заполните поле.';
+    expect(service.updateResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(`Не сохранено. Первая ошибка: ${issue}`);
+    expect(elementByTestId<HTMLElement>('resume-validation-summary').textContent).toContain(issue);
+  });
+
   it('updates payload when an experience project is edited', () => {
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
@@ -963,10 +1152,7 @@ describe('AdminResumeDetailPageComponent', () => {
     setElementValueById('resume-experience-0-project-0-technology-0', ' Litestar ');
     elementByTestId<HTMLButtonElement>('resume-experience-0-project-0-add-technology').click();
     fixture.detectChanges();
-    setInputValue('resume-experience-0-project-0-technology-1', '   ');
-    elementByTestId<HTMLButtonElement>('resume-experience-0-project-0-add-technology').click();
-    fixture.detectChanges();
-    setInputValue('resume-experience-0-project-0-technology-2', 'Angular');
+    setInputValue('resume-experience-0-project-0-technology-1', ' Angular ');
 
     fixture.componentInstance.saveResume();
 
@@ -987,6 +1173,29 @@ describe('AdminResumeDetailPageComponent', () => {
         }),
       }),
     );
+  });
+
+  it('shows validation feedback when export is blocked by a hidden required resume field', () => {
+    fixture.componentInstance.setActiveTab('experience');
+    fixture.detectChanges();
+    fixture.componentInstance.updateDate(
+      fixture.componentInstance.experience.controls[0].controls.startDate,
+      '',
+    );
+    fixture.componentInstance.setActiveTab('profile');
+    fixture.detectChanges();
+
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+    setInputValue('resume-export-format', 'pdf');
+    elementByTestId<HTMLButtonElement>('resume-export-submit').click();
+    fixture.detectChanges();
+
+    const issue = 'Опыт / Компания 1 / Начало — Заполните поле.';
+    expect(service.exportResume).not.toHaveBeenCalled();
+    expect(notifications.error).toHaveBeenCalledWith(`Не сохранено. Первая ошибка: ${issue}`);
+    expect(elementByTestId<HTMLElement>('resume-validation-summary').textContent).toContain(issue);
+    expect(fixture.componentInstance.activeTab()).toBe('experience');
   });
 
   it('renders unsaved list input edits in the preview', () => {
@@ -1040,14 +1249,14 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
-  it('saves blank resume text as empty strings, dates as null, and current status as enum', () => {
+  it('saves blank optional resume text and dates as empty values with current status enum', () => {
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
     setInputValue('resume-summary', '   ');
 
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
-    setElementValueById('resume-experience-0-start-date', '');
+    setElementValueById('resume-experience-0-end-date', '');
     setElementValueById('resume-experience-current-0', 'notSet');
 
     fixture.componentInstance.saveResume();
@@ -1061,7 +1270,7 @@ describe('AdminResumeDetailPageComponent', () => {
           }),
           experience: [
             expect.objectContaining({
-              startDate: null,
+              endDate: null,
               currentStatus: 'notSet',
             }),
           ],

@@ -230,6 +230,7 @@
           <div class="col-12 col-md">
             <label class="form-label" for="resume-title">
               {{ 'adminResumeWorkspace.field.title' | t }}
+              <span class="required-marker text-danger" aria-hidden="true">*</span>
             </label>
             <input
               id="resume-title"
@@ -237,6 +238,7 @@
               [class.is-invalid]="fieldInvalid(resumeForm.controls.title)"
               data-testid="resume-title"
               [attr.maxlength]="validationLimits.shortText"
+              required
               formControlName="title"
             />
             @if (
@@ -318,6 +320,7 @@
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-full-name">
                     {{ 'adminResumeWorkspace.field.fullName' | t }}
+                    <span class="required-marker text-danger" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="resume-profile-full-name"
@@ -325,6 +328,7 @@
                     [class.is-invalid]="fieldInvalid(resumeForm.controls.profile.controls.fullName)"
                     data-testid="resume-profile-full-name"
                     [attr.maxlength]="validationLimits.shortText"
+                    required
                     formControlName="fullName"
                   />
                   @if (
@@ -358,12 +362,14 @@
                 <div class="col-12 col-md-6">
                   <label class="form-label" for="resume-profile-role">
                     {{ 'adminResumeWorkspace.field.role' | t }}
+                    <span class="required-marker text-danger" aria-hidden="true">*</span>
                   </label>
                   <input
                     id="resume-profile-role"
                     class="form-control"
                     [class.is-invalid]="fieldInvalid(resumeForm.controls.profile.controls.role)"
                     [attr.maxlength]="validationLimits.shortText"
+                    required
                     formControlName="role"
                   />
                 </div>
@@ -517,11 +523,13 @@
                       <div class="col-12 col-md-6">
                         <label class="form-label" [for]="'resume-skill-' + index + '-category'">
                           {{ 'adminResumeWorkspace.field.category' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-skill-' + index + '-category'"
                           [attr.data-testid]="'resume-skill-' + index + '-category'"
+                          required
                           formControlName="category"
                         />
                       </div>
@@ -548,6 +556,7 @@
                                 [id]="'resume-skill-' + index + '-item-' + itemIndex"
                                 [attr.data-testid]="'resume-skill-' + index + '-item-' + itemIndex"
                                 [attr.maxlength]="validationLimits.shortText"
+                                required
                                 [formControlName]="itemIndex"
                               />
                               <button
@@ -621,10 +630,12 @@
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-experience-' + index + '-company'">
                           {{ 'adminResumeWorkspace.field.company' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-experience-' + index + '-company'"
+                          required
                           formControlName="company"
                         />
                       </div>
@@ -634,10 +645,12 @@
                           [for]="'resume-experience-' + index + '-position'"
                         >
                           {{ 'adminResumeWorkspace.field.position' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-experience-' + index + '-position'"
+                          required
                           formControlName="position"
                         />
                       </div>
@@ -674,13 +687,14 @@
                           [for]="'resume-experience-' + index + '-start-date'"
                         >
                           {{ 'adminResumeWorkspace.field.startDate' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-experience-' + index + '-start-date'"
                           [value]="experienceItem.controls.startDate.value ?? ''"
                           [dateLocale]="dateLocale()"
                           [placeholder]="datePlaceholder()"
-                          [required]="false"
+                          [required]="true"
                           [invalid]="
                             experienceItem.controls.startDate.invalid &&
                             experienceItem.controls.startDate.touched
@@ -754,6 +768,7 @@
                                     'resume-experience-' + index + '-highlight-' + itemIndex
                                   "
                                   [attr.maxlength]="validationLimits.shortText"
+                                  required
                                   [formControlName]="itemIndex"
                                 />
                                 @if (
@@ -819,6 +834,7 @@
                                   'resume-experience-' + index + '-technology-' + itemIndex
                                 "
                                 [attr.maxlength]="validationLimits.shortText"
+                                required
                                 [formControlName]="itemIndex"
                               />
                               <button
@@ -905,6 +921,9 @@
                                       "
                                     >
                                       {{ 'adminResumeWorkspace.field.projectName' | t }}
+                                      <span class="required-marker text-danger" aria-hidden="true"
+                                        >*</span
+                                      >
                                     </label>
                                     <input
                                       class="form-control"
@@ -915,6 +934,7 @@
                                         projectIndex +
                                         '-name'
                                       "
+                                      required
                                       formControlName="name"
                                     />
                                   </div>
@@ -930,6 +950,9 @@
                                       "
                                     >
                                       {{ 'adminResumeWorkspace.field.role' | t }}
+                                      <span class="required-marker text-danger" aria-hidden="true"
+                                        >*</span
+                                      >
                                     </label>
                                     <input
                                       class="form-control"
@@ -940,6 +963,7 @@
                                         projectIndex +
                                         '-role'
                                       "
+                                      required
                                       formControlName="role"
                                     />
                                   </div>
@@ -1011,6 +1035,7 @@
                                                 itemIndex
                                               "
                                               [attr.maxlength]="validationLimits.shortText"
+                                              required
                                               [formControlName]="itemIndex"
                                             />
                                             @if (
@@ -1119,6 +1144,7 @@
                                               itemIndex
                                             "
                                             [attr.maxlength]="validationLimits.shortText"
+                                            required
                                             [formControlName]="itemIndex"
                                           />
                                           <button
@@ -1274,40 +1300,48 @@
                           [for]="'resume-education-' + index + '-institution'"
                         >
                           {{ 'adminResumeWorkspace.field.institution' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-education-' + index + '-institution'"
+                          required
                           formControlName="institution"
                         />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-education-' + index + '-degree'">
                           {{ 'adminResumeWorkspace.field.degree' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-education-' + index + '-degree'"
+                          required
                           formControlName="degree"
                         />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-education-' + index + '-field'">
                           {{ 'adminResumeWorkspace.field.field' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-education-' + index + '-field'"
+                          required
                           formControlName="field"
                         />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-education-' + index + '-location'">
                           {{ 'adminResumeWorkspace.field.location' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-education-' + index + '-location'"
+                          required
                           formControlName="location"
                         />
                       </div>
@@ -1317,13 +1351,14 @@
                           [for]="'resume-education-' + index + '-start-date'"
                         >
                           {{ 'adminResumeWorkspace.field.startDate' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-education-' + index + '-start-date'"
                           [value]="educationItem.controls.startDate.value ?? ''"
                           [dateLocale]="dateLocale()"
                           [placeholder]="datePlaceholder()"
-                          [required]="false"
+                          [required]="true"
                           [invalid]="
                             educationItem.controls.startDate.invalid &&
                             educationItem.controls.startDate.touched
@@ -1340,13 +1375,14 @@
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-education-' + index + '-end-date'">
                           {{ 'adminResumeWorkspace.field.endDate' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-education-' + index + '-end-date'"
                           [value]="educationItem.controls.endDate.value ?? ''"
                           [dateLocale]="dateLocale()"
                           [placeholder]="datePlaceholder()"
-                          [required]="false"
+                          [required]="true"
                           [invalid]="
                             educationItem.controls.endDate.invalid &&
                             educationItem.controls.endDate.touched
@@ -1413,10 +1449,12 @@
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-language-' + index + '-name'">
                           {{ 'adminResumeWorkspace.field.languageName' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-language-' + index + '-name'"
+                          required
                           formControlName="name"
                         />
                       </div>
@@ -1426,10 +1464,12 @@
                           [for]="'resume-language-' + index + '-proficiency'"
                         >
                           {{ 'adminResumeWorkspace.field.proficiency' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-language-' + index + '-proficiency'"
+                          required
                           formControlName="proficiency"
                         />
                       </div>
@@ -1472,10 +1512,12 @@
                       <div class="col-md-6">
                         <label class="form-label" [for]="'resume-certification-' + index + '-name'">
                           {{ 'adminResumeWorkspace.field.certificationName' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-certification-' + index + '-name'"
+                          required
                           formControlName="name"
                         />
                       </div>
@@ -1608,10 +1650,12 @@
                           [for]="'resume-additional-section-' + sectionIndex + '-title'"
                         >
                           {{ 'adminResumeWorkspace.field.sectionTitle' | t }}
+                          <span class="required-marker text-danger" aria-hidden="true">*</span>
                         </label>
                         <input
                           class="form-control"
                           [id]="'resume-additional-section-' + sectionIndex + '-title'"
+                          required
                           formControlName="title"
                         />
                       </div>
@@ -1658,6 +1702,9 @@
                                       "
                                     >
                                       {{ 'adminResumeWorkspace.field.itemTitle' | t }}
+                                      <span class="required-marker text-danger" aria-hidden="true"
+                                        >*</span
+                                      >
                                     </label>
                                     <input
                                       class="form-control"
@@ -1668,6 +1715,7 @@
                                         itemIndex +
                                         '-title'
                                       "
+                                      required
                                       formControlName="title"
                                     />
                                   </div>
