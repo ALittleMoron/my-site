@@ -3,12 +3,7 @@ import { LanguageCode } from '../../../core/i18n/i18n.model';
 export type ArticlePublishStatus = 'Draft' | 'Published';
 export type ArticleReactionKind = 'heart' | 'fire' | 'thinking' | 'neutral' | 'poop';
 export type ArticleViewSourceCategory =
-  | 'Direct'
-  | 'Internal'
-  | 'Search'
-  | 'Social'
-  | 'External'
-  | 'Unknown';
+  'Direct' | 'Internal' | 'Search' | 'Social' | 'External' | 'Unknown';
 
 export interface ArticleReactionCountsDto {
   heart: number;

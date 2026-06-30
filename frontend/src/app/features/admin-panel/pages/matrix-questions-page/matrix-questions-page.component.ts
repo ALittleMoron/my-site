@@ -496,8 +496,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       sheetKeys: singleValueArray(raw.sheetKey),
       grades: singleValueArray(raw.grade) as AdminMatrixGrade[],
       interviewFrequencies: singleValueArray(raw.interviewFrequency) as
-        | AdminMatrixInterviewFrequency[]
-        | undefined,
+        AdminMatrixInterviewFrequency[] | undefined,
       sections: singleValueArray(raw.section),
       subsections: singleValueArray(raw.subsection),
       publishStatuses: singleValueArray(raw.publishStatus) as AdminMatrixPublishStatus[],

@@ -5,6 +5,7 @@ import {
   normalizeOrigin,
   parsePublicSeoPath,
 } from './server-seo';
+import type { PublicSeoRoute } from './server-seo';
 
 export interface AngularSsrEngine {
   handle(req: express.Request): Promise<Response | null>;
@@ -33,7 +34,7 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
     }),
   );
 
-  app.use(async (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       next();
       return;
@@ -45,30 +46,7 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
       return;
     }
 
-    try {
-      const apiUrl = buildPublicSeoApiUrl(readRequiredOrigin('SSR_API_ORIGIN'), route);
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-      await response.body?.cancel();
-
-      if (response.status === 404 || response.status === 403) {
-        res.status(404).type('html').send(buildPublicNotFoundHtml(readPublicOrigin(), route));
-        return;
-      }
-
-      if (!response.ok) {
-        next(new Error(`Public SEO preflight failed with HTTP ${response.status}.`));
-        return;
-      }
-
-      next();
-    } catch (error) {
-      next(error);
-    }
+    void runPublicSeoPreflight(route, res, next);
   });
 
   app.use((req, res, next) => {
@@ -79,6 +57,37 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
   });
 
   return app;
+}
+
+async function runPublicSeoPreflight(
+  route: PublicSeoRoute,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> {
+  try {
+    const apiUrl = buildPublicSeoApiUrl(readRequiredOrigin('SSR_API_ORIGIN'), route);
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+    await response.body?.cancel();
+
+    if (response.status === 404 || response.status === 403) {
+      res.status(404).type('html').send(buildPublicNotFoundHtml(readPublicOrigin(), route));
+      return;
+    }
+
+    if (!response.ok) {
+      next(new Error(`Public SEO preflight failed with HTTP ${response.status}.`));
+      return;
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 export function readRequiredPort(): number {

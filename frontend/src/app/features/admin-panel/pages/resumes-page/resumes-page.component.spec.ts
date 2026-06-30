@@ -198,9 +198,7 @@ describe('AdminResumesPageComponent', () => {
 
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input'));
     input.dispatchEvent(new Event('change'));

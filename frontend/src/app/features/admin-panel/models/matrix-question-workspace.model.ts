@@ -192,8 +192,7 @@ export interface AdminMatrixNewResourceAttachmentPayload {
 }
 
 export type AdminMatrixResourceAttachmentPayload =
-  | AdminMatrixExistingResourceAttachmentPayload
-  | AdminMatrixNewResourceAttachmentPayload;
+  AdminMatrixExistingResourceAttachmentPayload | AdminMatrixNewResourceAttachmentPayload;
 
 export interface AdminMatrixQuestionPayload {
   slug: string;

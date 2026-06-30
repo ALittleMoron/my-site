@@ -558,8 +558,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
   function setInput(selector: string, value: string): void {
     const input = fixture.nativeElement.querySelector(selector) as
-      | HTMLInputElement
-      | HTMLTextAreaElement;
+      HTMLInputElement | HTMLTextAreaElement;
     input.value = value;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
