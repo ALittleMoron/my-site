@@ -55,8 +55,6 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
 
   const pathname = readPathname(req.url);
   return (
-    pathname === '/api/i18n/languages' ||
-    pathname.startsWith('/api/i18n/bundles/') ||
     pathname.startsWith('/api/articles/detail/') ||
     pathname.startsWith('/api/competency-matrix/items/public/') ||
     pathname === '/api/articles/tags' ||

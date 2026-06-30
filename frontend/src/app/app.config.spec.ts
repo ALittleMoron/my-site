@@ -22,8 +22,6 @@ describe('appConfig router scrolling', () => {
 
 describe('appConfig HTTP transfer cache filter', () => {
   it('allows safe public GET requests used by SSR pages', () => {
-    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/languages'))).toBe(true);
-    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/bundles/ru'))).toBe(true);
     expect(
       shouldTransferCacheRequest(
         new HttpRequest(
@@ -45,6 +43,8 @@ describe('appConfig HTTP transfer cache filter', () => {
   });
 
   it('excludes auth, private, analytics, and reaction requests', () => {
+    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/languages'))).toBe(false);
+    expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/i18n/bundles/ru'))).toBe(false);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/auth/me'))).toBe(false);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/admin/articles/stats'))).toBe(
       false,

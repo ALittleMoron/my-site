@@ -1,5 +1,13 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, Injector, inject, signal } from '@angular/core';
+import {
+  Injectable,
+  Injector,
+  StateKey,
+  TransferState,
+  inject,
+  makeStateKey,
+  signal,
+} from '@angular/core';
 import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 import { ApiClient } from '../http/api-client.service';
 import {
@@ -12,6 +20,7 @@ import {
 } from './i18n.model';
 
 const STORAGE_KEY = 'chosenLanguage';
+const I18N_LANGUAGES_STATE_KEY = makeStateKey<I18nLanguagesDto | null>('i18n.languages');
 const STARTUP_ERROR_MESSAGES: Record<string, string> = {
   'i18n.startupError.title': 'Failed to load localization',
   'i18n.startupError.message': 'Check the API connection and try again.',
@@ -22,6 +31,7 @@ const STARTUP_ERROR_MESSAGES: Record<string, string> = {
 export class I18nService {
   private readonly injector = inject(Injector);
   private readonly document = inject(DOCUMENT);
+  private readonly transferState = inject(TransferState);
   private readonly bundleCache = new Map<LanguageCode, Record<string, string>>();
   private readonly messages = signal<Record<string, string> | null>(null);
 
@@ -31,10 +41,17 @@ export class I18nService {
 
   initialize(): Observable<void> {
     this.startupError.set(false);
+    const transferredLanguages = this.consumeTransferredLanguages();
+    if (transferredLanguages) {
+      this.languages.set(transferredLanguages.languages);
+      return this.loadLanguage(this.resolveInitialLanguage(transferredLanguages), true);
+    }
+
     return this.api()
       .get<I18nLanguagesDto>('/api/i18n/languages')
       .pipe(
         switchMap((response) => {
+          this.transferState.set(I18N_LANGUAGES_STATE_KEY, response);
           this.languages.set(response.languages);
           return this.loadLanguage(this.resolveInitialLanguage(response), true);
         }),
@@ -94,14 +111,36 @@ export class I18nService {
   }
 
   private fetchLanguageBundle(language: LanguageCode): Observable<void> {
+    const transferredBundle = this.consumeTransferredBundle(language);
+    if (transferredBundle) {
+      this.bundleCache.set(transferredBundle.language, transferredBundle.messages);
+      return of(void 0);
+    }
+
     return this.api()
       .get<I18nBundleDto>(`/api/i18n/bundles/${language}`)
       .pipe(
         tap((bundle) => {
+          this.transferState.set(i18nBundleStateKey(bundle.language), bundle);
           this.bundleCache.set(bundle.language, bundle.messages);
         }),
         map(() => void 0),
       );
+  }
+
+  private consumeTransferredLanguages(): I18nLanguagesDto | null {
+    if (!this.transferState.hasKey(I18N_LANGUAGES_STATE_KEY)) return null;
+    const languages = this.transferState.get(I18N_LANGUAGES_STATE_KEY, null);
+    this.transferState.remove(I18N_LANGUAGES_STATE_KEY);
+    return languages;
+  }
+
+  private consumeTransferredBundle(language: LanguageCode): I18nBundleDto | null {
+    const stateKey = i18nBundleStateKey(language);
+    if (!this.transferState.hasKey(stateKey)) return null;
+    const bundle = this.transferState.get(stateKey, null);
+    this.transferState.remove(stateKey);
+    return bundle;
   }
 
   private resolveInitialLanguage(response: I18nLanguagesDto): LanguageCode {
@@ -180,4 +219,8 @@ function interpolate(template: string, params?: I18nParams): string {
     (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
     template,
   );
+}
+
+function i18nBundleStateKey(language: LanguageCode): StateKey<I18nBundleDto | null> {
+  return makeStateKey<I18nBundleDto | null>(`i18n.bundle.${language}`);
 }

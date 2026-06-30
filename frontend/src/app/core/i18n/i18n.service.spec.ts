@@ -1,15 +1,17 @@
-import { DOCUMENT } from '@angular/core';
+import { DOCUMENT, TransferState, makeStateKey } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApiClient } from '../http/api-client.service';
+import { I18nBundleDto, I18nLanguagesDto } from './i18n.model';
 import { I18nService } from './i18n.service';
 
 describe('I18nService', () => {
   let service: I18nService;
   let httpMock: HttpTestingController;
   let document: Document;
+  let transferState: TransferState;
 
   beforeEach(() => {
     localStorage.clear();
@@ -19,6 +21,7 @@ describe('I18nService', () => {
     service = TestBed.inject(I18nService);
     httpMock = TestBed.inject(HttpTestingController);
     document = TestBed.inject(DOCUMENT);
+    transferState = TestBed.inject(TransferState);
   });
 
   afterEach(() => httpMock.verify());
@@ -53,6 +56,37 @@ describe('I18nService', () => {
     expect(service.translate('shell.nav.about')).toBe('Обо мне');
     expect(service.translate('greeting', { name: 'Дима' })).toBe('Привет, Дима');
     expect(document.documentElement.lang).toBe('ru');
+  });
+
+  it('uses transferred startup i18n state without HTTP requests', () => {
+    const languagesKey = makeStateKey<I18nLanguagesDto | null>('i18n.languages');
+    const bundleKey = makeStateKey<I18nBundleDto | null>('i18n.bundle.ru');
+    transferState.set(languagesKey, {
+      defaultLanguage: 'ru',
+      languages: [
+        { code: 'ru', label: 'Русский' },
+        { code: 'en', label: 'English' },
+      ],
+    });
+    transferState.set(bundleKey, {
+      language: 'ru',
+      messages: {
+        'shell.nav.about': 'Обо мне',
+      },
+    });
+
+    service.initialize().subscribe();
+
+    httpMock.expectNone((req) => req.url.includes('/api/i18n/'));
+    expect(service.language()).toBe('ru');
+    expect(service.languages()).toEqual([
+      { code: 'ru', label: 'Русский' },
+      { code: 'en', label: 'English' },
+    ]);
+    expect(service.translate('shell.nav.about')).toBe('Обо мне');
+    expect(document.documentElement.lang).toBe('ru');
+    expect(transferState.hasKey(languagesKey)).toBe(false);
+    expect(transferState.hasKey(bundleKey)).toBe(false);
   });
 
   it('uses the stored language when it is still available', () => {
