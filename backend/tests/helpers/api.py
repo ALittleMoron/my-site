@@ -223,6 +223,34 @@ class APIHelper:
             json=data,
         )
 
+    def put_update_matrix_sheet_priorities(self, ordered_ids: list[int]) -> Response:
+        return self.client.put(
+            "/api/admin/competency-matrix/sheets/priorities",
+            json={"orderedIds": ordered_ids},
+        )
+
+    def put_update_matrix_section_priorities(
+        self,
+        *,
+        sheet_id: int,
+        ordered_ids: list[int],
+    ) -> Response:
+        return self.client.put(
+            f"/api/admin/competency-matrix/sheets/{sheet_id}/sections/priorities",
+            json={"orderedIds": ordered_ids},
+        )
+
+    def put_update_matrix_subsection_priorities(
+        self,
+        *,
+        section_id: int,
+        ordered_ids: list[int],
+    ) -> Response:
+        return self.client.put(
+            f"/api/admin/competency-matrix/sections/{section_id}/subsections/priorities",
+            json={"orderedIds": ordered_ids},
+        )
+
     def put_update_item(
         self,
         pk: int,

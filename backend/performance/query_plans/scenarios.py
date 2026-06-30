@@ -22,8 +22,11 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspaceFilters,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
@@ -505,6 +508,32 @@ async def run_create_matrix_subsection(session: AsyncSession) -> None:
             section_id=IntId(1),
             name_ru="Новый подраздел query plan",
             name_en="Query plan new subsection",
+        ),
+    )
+
+
+async def run_update_matrix_sheet_priorities(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).update_sheet_priorities(
+        params=CompetencyMatrixSheetPriorityUpdateParams(
+            ordered_ids=(IntId(2), IntId(1), IntId(3)),
+        ),
+    )
+
+
+async def run_update_matrix_section_priorities(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).update_section_priorities(
+        params=CompetencyMatrixSectionPriorityUpdateParams(
+            sheet_id=IntId(1),
+            ordered_ids=(IntId(2), IntId(1), IntId(3)),
+        ),
+    )
+
+
+async def run_update_matrix_subsection_priorities(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).update_subsection_priorities(
+        params=CompetencyMatrixSubsectionPriorityUpdateParams(
+            section_id=IntId(1),
+            ordered_ids=(IntId(2), IntId(1), IntId(3)),
         ),
     )
 
@@ -1287,6 +1316,36 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason=None,
         run=run_create_matrix_subsection,
+    ),
+    scenario(
+        name="matrix_update_sheet_priorities",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="update_sheet_priorities",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_update_matrix_sheet_priorities,
+    ),
+    scenario(
+        name="matrix_update_section_priorities",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="update_section_priorities",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_update_matrix_section_priorities,
+    ),
+    scenario(
+        name="matrix_update_subsection_priorities",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="update_subsection_priorities",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("competency_matrix__competency_matrix_subsection_model_pkey",),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_update_matrix_subsection_priorities,
     ),
     scenario(
         name="matrix_list_items",

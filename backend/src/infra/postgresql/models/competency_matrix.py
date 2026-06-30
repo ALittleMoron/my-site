@@ -22,6 +22,7 @@ from core.competency_matrix.schemas import (
 from core.enums import PublishStatusEnum
 from core.types import IntId
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.priority import PriorityMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
 
 
@@ -81,7 +82,7 @@ class ExternalResourceModel(IntegerIDMixin, BaseModel):
         )
 
 
-class CompetencyMatrixSheetModel(IntegerIDMixin, BaseModel):
+class CompetencyMatrixSheetModel(PriorityMixin, IntegerIDMixin, BaseModel):
     key: Mapped[str] = mapped_column(
         String(length=255),
         unique=True,
@@ -99,11 +100,14 @@ class CompetencyMatrixSheetModel(IntegerIDMixin, BaseModel):
     sections: Mapped[list[CompetencyMatrixSectionModel]] = relationship(
         back_populates="sheet",
         cascade="all, delete-orphan",
-        order_by="CompetencyMatrixSectionModel.name_en",
+        order_by=lambda: (CompetencyMatrixSectionModel.priority, CompetencyMatrixSectionModel.id),
         doc="Sheet sections",
     )
 
-    __table_args__ = (Index("cm_sheet_key_lower_idx", func.lower(key).label("sheet_key_lower")),)
+    __table_args__ = (
+        Index("cm_sheet_key_lower_idx", func.lower(key).label("sheet_key_lower")),
+        Index("cm_sheet_priority_idx", "priority", "id"),
+    )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSheet:
         return CompetencyMatrixStructureSheet(
@@ -111,11 +115,12 @@ class CompetencyMatrixSheetModel(IntegerIDMixin, BaseModel):
             key=self.key,
             name_ru=self.name_ru,
             name_en=self.name_en,
+            priority=self.priority,
             sections=[section.to_domain_schema() for section in self.sections],
         )
 
 
-class CompetencyMatrixSectionModel(IntegerIDMixin, BaseModel):
+class CompetencyMatrixSectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
     sheet_id: Mapped[int] = mapped_column(
         ForeignKey(CompetencyMatrixSheetModel.id, ondelete="CASCADE"),
         doc="Sheet identifier",
@@ -136,7 +141,10 @@ class CompetencyMatrixSectionModel(IntegerIDMixin, BaseModel):
     subsections: Mapped[list[CompetencyMatrixSubsectionModel]] = relationship(
         back_populates="section",
         cascade="all, delete-orphan",
-        order_by="CompetencyMatrixSubsectionModel.name_en",
+        order_by=lambda: (
+            CompetencyMatrixSubsectionModel.priority,
+            CompetencyMatrixSubsectionModel.id,
+        ),
         doc="Section subsections",
     )
 
@@ -145,6 +153,7 @@ class CompetencyMatrixSectionModel(IntegerIDMixin, BaseModel):
         UniqueConstraint("sheet_id", "name_en", name="cm_section_sheet_name_en_uniq"),
         Index("cm_section_sheet_en_idx", sheet_id, name_en, "id"),
         Index("cm_section_sheet_ru_idx", sheet_id, name_ru, "id"),
+        Index("cm_section_sheet_priority_idx", "sheet_id", "priority", "id"),
     )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSection:
@@ -152,11 +161,12 @@ class CompetencyMatrixSectionModel(IntegerIDMixin, BaseModel):
             id=IntId(self.id),
             name_ru=self.name_ru,
             name_en=self.name_en,
+            priority=self.priority,
             subsections=[subsection.to_domain_schema() for subsection in self.subsections],
         )
 
 
-class CompetencyMatrixSubsectionModel(IntegerIDMixin, BaseModel):
+class CompetencyMatrixSubsectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
     section_id: Mapped[int] = mapped_column(
         ForeignKey(CompetencyMatrixSectionModel.id, ondelete="CASCADE"),
         doc="Section identifier",
@@ -184,6 +194,7 @@ class CompetencyMatrixSubsectionModel(IntegerIDMixin, BaseModel):
         UniqueConstraint("section_id", "name_en", name="cm_subsection_section_name_en_uniq"),
         Index("cm_subsection_section_en_idx", section_id, name_en, "id"),
         Index("cm_subsection_section_ru_idx", section_id, name_ru, "id"),
+        Index("cm_subsection_section_priority_idx", "section_id", "priority", "id"),
     )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSubsection:
@@ -191,6 +202,7 @@ class CompetencyMatrixSubsectionModel(IntegerIDMixin, BaseModel):
             id=IntId(self.id),
             name_ru=self.name_ru,
             name_en=self.name_en,
+            priority=self.priority,
         )
 
     def to_item_structure(self) -> CompetencyMatrixItemStructure:

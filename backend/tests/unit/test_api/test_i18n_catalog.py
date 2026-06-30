@@ -74,5 +74,7 @@ class TestI18nCatalog:
         assert "Lighthouse CI" in english_messages["siteBuild.quality.body"]
         assert "гейтами качества и производительности" in russian_messages["siteBuild.quality.body"]
         assert "quality and performance gates" in english_messages["siteBuild.quality.body"]
+        assert "приоритетом" in russian_messages["siteBuild.decision.matrixTaxonomy"]
+        assert "priority" in english_messages["siteBuild.decision.matrixTaxonomy"]
         assert "performance budgets" not in english_messages["siteBuild.quality.body"]
         assert "performance budgets" not in english_messages["siteBuild.next.body"]

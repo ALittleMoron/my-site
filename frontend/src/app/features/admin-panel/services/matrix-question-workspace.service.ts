@@ -81,6 +81,26 @@ export class MatrixQuestionWorkspaceService {
     );
   }
 
+  updateSheetPriorities(orderedIds: readonly number[]): Observable<void> {
+    return this.api.put<void>('/api/admin/competency-matrix/sheets/priorities', {
+      orderedIds,
+    });
+  }
+
+  updateSectionPriorities(sheetId: number, orderedIds: readonly number[]): Observable<void> {
+    return this.api.put<void>(
+      `/api/admin/competency-matrix/sheets/${sheetId}/sections/priorities`,
+      { orderedIds },
+    );
+  }
+
+  updateSubsectionPriorities(sectionId: number, orderedIds: readonly number[]): Observable<void> {
+    return this.api.put<void>(
+      `/api/admin/competency-matrix/sections/${sectionId}/subsections/priorities`,
+      { orderedIds },
+    );
+  }
+
   listPublicPreviewSheets(language: LanguageCode): Observable<AdminReadonlyMatrixSheet[]> {
     return this.api
       .get<MatrixSheetsDto>('/api/competency-matrix/sheets', { language })

@@ -83,11 +83,17 @@ class StorageHelper:
                     key=structure.sheet_key,
                     name_ru=structure.sheet_ru,
                     name_en=structure.sheet_en,
+                    priority=int(structure.sheet_id),
                 ),
             )
             return
-        expected = (structure.sheet_key, structure.sheet_ru, structure.sheet_en)
-        actual = (sheet.key, sheet.name_ru, sheet.name_en)
+        expected = (
+            structure.sheet_key,
+            structure.sheet_ru,
+            structure.sheet_en,
+            int(structure.sheet_id),
+        )
+        actual = (sheet.key, sheet.name_ru, sheet.name_en, sheet.priority)
         if actual != expected:
             msg = (
                 f"Conflicting matrix sheet fixture id {structure.sheet_id}: {actual} != {expected}"
@@ -103,11 +109,17 @@ class StorageHelper:
                     sheet_id=structure.sheet_id,
                     name_ru=structure.section_ru,
                     name_en=structure.section_en,
+                    priority=int(structure.section_id),
                 ),
             )
             return
-        expected = (structure.sheet_id, structure.section_ru, structure.section_en)
-        actual = (section.sheet_id, section.name_ru, section.name_en)
+        expected = (
+            structure.sheet_id,
+            structure.section_ru,
+            structure.section_en,
+            int(structure.section_id),
+        )
+        actual = (section.sheet_id, section.name_ru, section.name_en, section.priority)
         if actual != expected:
             msg = (
                 f"Conflicting matrix section fixture id {structure.section_id}: "
@@ -127,11 +139,22 @@ class StorageHelper:
                     section_id=structure.section_id,
                     name_ru=structure.subsection_ru,
                     name_en=structure.subsection_en,
+                    priority=int(structure.subsection_id),
                 ),
             )
             return
-        expected = (structure.section_id, structure.subsection_ru, structure.subsection_en)
-        actual = (subsection.section_id, subsection.name_ru, subsection.name_en)
+        expected = (
+            structure.section_id,
+            structure.subsection_ru,
+            structure.subsection_en,
+            int(structure.subsection_id),
+        )
+        actual = (
+            subsection.section_id,
+            subsection.name_ru,
+            subsection.name_en,
+            subsection.priority,
+        )
         if actual != expected:
             msg = (
                 f"Conflicting matrix subsection fixture id {structure.subsection_id}: "

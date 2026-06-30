@@ -50,11 +50,11 @@ REACTION_KINDS = (
     ArticleReactionKind.NEUTRAL,
 )
 MATRIX_SHEETS = (
-    ("python", "Питон", "Python", "Язык", "Language"),
-    ("backend", "Бэкенд", "Backend", "API", "API"),
-    ("databases", "Базы данных", "Databases", "PostgreSQL", "PostgreSQL"),
-    ("frontend", "Фронтенд", "Frontend", "SSR", "SSR"),
-    ("quality", "Качество", "Quality", "Performance", "Performance"),
+    ("perf-seed-python", "Питон", "Python", "Язык", "Language"),
+    ("perf-seed-backend", "Бэкенд", "Backend", "API", "API"),
+    ("perf-seed-databases", "Базы данных", "Databases", "PostgreSQL", "PostgreSQL"),
+    ("perf-seed-frontend", "Фронтенд", "Frontend", "SSR", "SSR"),
+    ("perf-seed-quality", "Качество", "Quality", "Performance", "Performance"),
 )
 TAG_SPECS = (
     ("performance", "Производительность", "Performance"),
@@ -279,6 +279,7 @@ async def insert_seed_matrix_structure(*, session: AsyncSession) -> None:
                 "key": sheet_key,
                 "name_ru": sheet_ru,
                 "name_en": sheet_en,
+                "priority": sheet_index + 1,
             }
             for sheet_index, (sheet_key, sheet_ru, sheet_en, _section_ru, _section_en) in enumerate(
                 MATRIX_SHEETS,
@@ -293,6 +294,7 @@ async def insert_seed_matrix_structure(*, session: AsyncSession) -> None:
                 "sheet_id": matrix_sheet_id(sheet_index),
                 "name_ru": section_ru,
                 "name_en": section_en,
+                "priority": 1,
             }
             for sheet_index, (
                 _sheet_key,
@@ -313,6 +315,7 @@ async def insert_seed_matrix_structure(*, session: AsyncSession) -> None:
                 "section_id": matrix_section_id(sheet_index),
                 "name_ru": "Baseline",
                 "name_en": "Baseline",
+                "priority": 1,
             }
             for sheet_index in matrix_sheet_indexes()
         ],

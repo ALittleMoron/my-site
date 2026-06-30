@@ -11,6 +11,11 @@ from core.competency_matrix.enums import (
     GradeEnum,
     InterviewFrequencyEnum,
 )
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotPublicReadyError,
+    CompetencyMatrixStructureNotFoundError,
+    CompetencyMatrixStructurePriorityInvalidError,
+)
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
@@ -49,6 +54,7 @@ class CompetencyMatrixStructureSubsection:
     id: IntId
     name_ru: str
     name_en: str
+    priority: int
 
     def localized_name(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
@@ -61,12 +67,18 @@ class CompetencyMatrixStructureSection:
     id: IntId
     name_ru: str
     name_en: str
+    priority: int
     subsections: list[CompetencyMatrixStructureSubsection]
 
     def localized_name(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
             return self.name_ru
         return self.name_en
+
+    def ensure_subsection_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+        existing_ids = tuple(subsection.id for subsection in self.subsections)
+        if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
+            raise CompetencyMatrixStructurePriorityInvalidError
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -75,12 +87,18 @@ class CompetencyMatrixStructureSheet:
     key: str
     name_ru: str
     name_en: str
+    priority: int
     sections: list[CompetencyMatrixStructureSection]
 
     def localized_name(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
             return self.name_ru
         return self.name_en
+
+    def ensure_section_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+        existing_ids = tuple(section.id for section in self.sections)
+        if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
+            raise CompetencyMatrixStructurePriorityInvalidError
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -89,6 +107,31 @@ class CompetencyMatrixStructure:
 
     def __iter__(self) -> Iterator[CompetencyMatrixStructureSheet]:
         return iter(self.sheets)
+
+    def require_sheet(self, *, sheet_id: IntId) -> CompetencyMatrixStructureSheet:
+        sheet = next((item for item in self.sheets if item.id == sheet_id), None)
+        if sheet is None:
+            raise CompetencyMatrixStructureNotFoundError
+        return sheet
+
+    def require_section(self, *, section_id: IntId) -> CompetencyMatrixStructureSection:
+        section = next(
+            (
+                candidate
+                for sheet in self.sheets
+                for candidate in sheet.sections
+                if candidate.id == section_id
+            ),
+            None,
+        )
+        if section is None:
+            raise CompetencyMatrixStructureNotFoundError
+        return section
+
+    def ensure_sheet_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+        existing_ids = tuple(sheet.id for sheet in self.sheets)
+        if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
+            raise CompetencyMatrixStructurePriorityInvalidError
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -110,6 +153,23 @@ class CompetencyMatrixSubsectionCreateParams:
     section_id: IntId
     name_ru: str
     name_en: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSheetPriorityUpdateParams:
+    ordered_ids: tuple[IntId, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSectionPriorityUpdateParams:
+    sheet_id: IntId
+    ordered_ids: tuple[IntId, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixSubsectionPriorityUpdateParams:
+    section_id: IntId
+    ordered_ids: tuple[IntId, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -356,6 +416,11 @@ class BaseCompetencyMatrixItem:
             ),
         )
         return tuple(field for field, is_missing in checks if is_missing)
+
+    def ensure_public_ready(self) -> None:
+        missing_fields = self.missing_publication_fields()
+        if missing_fields:
+            raise CompetencyMatrixItemNotPublicReadyError(missing_fields=missing_fields)
 
     @property
     def sheet_key(self) -> str:

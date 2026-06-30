@@ -18,8 +18,11 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
     CompetencyMatrixMissingFieldEnum,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceSummary,
 )
@@ -108,10 +111,127 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         structure = await self.storage.list_structure()
 
         sheets_by_key = {structure_sheet.key: structure_sheet for structure_sheet in structure}
-        assert sorted(sheets_by_key) == ["go", "python", "sql"]
+        assert [structure_sheet.key for structure_sheet in structure] == ["python", "sql", "go"]
+        assert sheets_by_key["go"].priority == 3
+        assert sheets_by_key["go"].sections[0].priority == 1
+        assert sheets_by_key["go"].sections[0].subsections[0].priority == 1
         assert sheets_by_key["go"].sections[0].name_en == "Concurrency"
         assert sheets_by_key["go"].sections[0].subsections[0].name_en == "Channels"
         assert sheets_by_key["python"].sections[0].subsections[0].name_en == "Functions"
+
+    async def test_create_structure_nodes_append_priority_to_sibling_end(self) -> None:
+        sheet = await self.storage.create_sheet(
+            params=CompetencyMatrixSheetCreateParams(
+                key="go",
+                name_ru="Go",
+                name_en="Go",
+            ),
+        )
+        section = await self.storage.create_section(
+            params=CompetencyMatrixSectionCreateParams(
+                sheet_id=self.factory.core.int_id(1),
+                name_ru="Расширенно",
+                name_en="Advanced",
+            ),
+        )
+        subsection = await self.storage.create_subsection(
+            params=CompetencyMatrixSubsectionCreateParams(
+                section_id=self.factory.core.int_id(1),
+                name_ru="Асинхронность",
+                name_en="Async",
+            ),
+        )
+
+        assert sheet.priority == 3
+        assert section.priority == 2
+        assert subsection.priority == 2
+
+    async def test_update_structure_priorities_persists_order(self) -> None:
+        section = await self.storage.create_section(
+            params=CompetencyMatrixSectionCreateParams(
+                sheet_id=self.factory.core.int_id(1),
+                name_ru="Расширенно",
+                name_en="Advanced",
+            ),
+        )
+        subsection = await self.storage.create_subsection(
+            params=CompetencyMatrixSubsectionCreateParams(
+                section_id=self.factory.core.int_id(1),
+                name_ru="Асинхронность",
+                name_en="Async",
+            ),
+        )
+
+        await self.storage.update_sheet_priorities(
+            params=CompetencyMatrixSheetPriorityUpdateParams(
+                ordered_ids=(self.factory.core.int_id(2), self.factory.core.int_id(1)),
+            ),
+        )
+        await self.storage.update_section_priorities(
+            params=CompetencyMatrixSectionPriorityUpdateParams(
+                sheet_id=self.factory.core.int_id(1),
+                ordered_ids=(section.id, self.factory.core.int_id(1)),
+            ),
+        )
+        await self.storage.update_subsection_priorities(
+            params=CompetencyMatrixSubsectionPriorityUpdateParams(
+                section_id=self.factory.core.int_id(1),
+                ordered_ids=(subsection.id, self.factory.core.int_id(1)),
+            ),
+        )
+
+        sheets = await self.storage.list_sheets()
+        structure = await self.storage.list_structure()
+
+        python_sheet = next(sheet for sheet in structure if sheet.key == "python")
+        basics_section = next(section for section in python_sheet.sections if section.id == 1)
+        assert sheets == self.factory.core.sheets(values=["SQL", "Python"])
+        assert [sheet.key for sheet in structure] == ["sql", "python"]
+        assert [section.name_en for section in python_sheet.sections] == ["Advanced", "Basics"]
+        assert [subsection.name_en for subsection in basics_section.subsections] == [
+            "Async",
+            "Functions",
+        ]
+
+    async def test_list_items_uses_structure_priority_order(self) -> None:
+        section = await self.storage.create_section(
+            params=CompetencyMatrixSectionCreateParams(
+                sheet_id=self.factory.core.int_id(1),
+                name_ru="Расширенно",
+                name_en="Advanced",
+            ),
+        )
+        subsection = await self.storage.create_subsection(
+            params=CompetencyMatrixSubsectionCreateParams(
+                section_id=section.id,
+                name_ru="Асинхронность",
+                name_en="Async",
+            ),
+        )
+        await self.storage.create_competency_matrix_item(
+            item=self.factory.core.competency_matrix_item(
+                item_id=3,
+                sheet="Python",
+                section_id=section.id,
+                section="Advanced",
+                subsection_id=subsection.id,
+                subsection="Async",
+                question="Advanced question",
+                grade=GradeEnum.JUNIOR,
+            ),
+        )
+        await self.storage.update_section_priorities(
+            params=CompetencyMatrixSectionPriorityUpdateParams(
+                sheet_id=self.factory.core.int_id(1),
+                ordered_ids=(section.id, self.factory.core.int_id(1)),
+            ),
+        )
+
+        items = await self.storage.list_competency_matrix_items(
+            filters=CompetencyMatrixItemFilters(sheet_key="python", only_published=None),
+        )
+
+        assert self.collections.slugs(items) == ["advanced-question", "1"]
 
     async def test_get_item_structure_by_subsection_id(self) -> None:
         structure = await self.storage.get_item_structure_by_subsection_id(
@@ -497,11 +617,11 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             language=LanguageEnum.EN,
         )
 
-        assert self.collections.sheet_keys(options.sheets) == ["python", "python-draft", "sql"]
+        assert self.collections.sheet_keys(options.sheets) == ["python", "sql", "python-draft"]
         assert self.collections.pluck(
             items=options.sheets,
             attr="label",
-        ) == ["Python", "Python draft", "SQL"]
+        ) == ["Python", "SQL", "Python draft"]
         python_draft = next(sheet for sheet in options.sheets if sheet.key == "python-draft")
         assert [(section.label, section.subsections) for section in python_draft.sections] == [
             ("Drafts", ["Queue"]),

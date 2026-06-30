@@ -134,16 +134,19 @@ describe('MatrixQuestionWorkspaceService', () => {
           id: 1,
           key: 'python',
           name: 'Python',
+          priority: 1,
           translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
           sections: [
             {
               id: 2,
               name: 'Core',
+              priority: 1,
               translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
               subsections: [
                 {
                   id: 3,
                   name: 'Style',
+                  priority: 1,
                   translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
                 },
               ],
@@ -205,6 +208,7 @@ describe('MatrixQuestionWorkspaceService', () => {
       id: 1,
       key: 'python',
       name: 'Python',
+      priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [],
     });
@@ -222,6 +226,7 @@ describe('MatrixQuestionWorkspaceService', () => {
     sectionReq.flush({
       id: 2,
       name: 'Core',
+      priority: 1,
       translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
       subsections: [],
     });
@@ -239,8 +244,35 @@ describe('MatrixQuestionWorkspaceService', () => {
     subsectionReq.flush({
       id: 3,
       name: 'Style',
+      priority: 1,
       translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
     });
+  });
+
+  it('updates matrix structure priorities through admin endpoints', () => {
+    service.updateSheetPriorities([2, 1]).subscribe();
+    const sheetReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/sheets/priorities'),
+    );
+    expect(sheetReq.request.method).toBe('PUT');
+    expect(sheetReq.request.body).toEqual({ orderedIds: [2, 1] });
+    sheetReq.flush(null);
+
+    service.updateSectionPriorities(1, [3, 2]).subscribe();
+    const sectionReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/sheets/1/sections/priorities'),
+    );
+    expect(sectionReq.request.method).toBe('PUT');
+    expect(sectionReq.request.body).toEqual({ orderedIds: [3, 2] });
+    sectionReq.flush(null);
+
+    service.updateSubsectionPriorities(2, [5, 4]).subscribe();
+    const subsectionReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/sections/2/subsections/priorities'),
+    );
+    expect(subsectionReq.request.method).toBe('PUT');
+    expect(subsectionReq.request.body).toEqual({ orderedIds: [5, 4] });
+    subsectionReq.flush(null);
   });
 
   it('searches resources through the admin endpoint', () => {

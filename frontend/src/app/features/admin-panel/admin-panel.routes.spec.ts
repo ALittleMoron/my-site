@@ -10,6 +10,7 @@ describe('adminPanelRoutes', () => {
       'articles',
       'articles/:slug',
       'matrix-questions',
+      'matrix-structure',
       'matrix-questions/:id',
       'matrix-question-queue',
       'workspace/team',

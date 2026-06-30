@@ -233,6 +233,7 @@ def upgrade() -> None:
         sa.Column("key", sa.String(length=255), nullable=False),
         sa.Column("name_ru", sa.String(length=255), nullable=False),
         sa.Column("name_en", sa.String(length=255), nullable=False),
+        sa.Column("priority", sa.Integer(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -246,6 +247,12 @@ def upgrade() -> None:
         "cm_sheet_key_lower_idx",
         "competency_matrix__competency_matrix_sheet_model",
         [sa.literal_column("lower(key)").label("sheet_key_lower")],
+        unique=False,
+    )
+    op.create_index(
+        "cm_sheet_priority_idx",
+        "competency_matrix__competency_matrix_sheet_model",
+        ["priority", "id"],
         unique=False,
     )
     op.create_table(
@@ -426,6 +433,7 @@ def upgrade() -> None:
         sa.Column("sheet_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
         sa.Column("name_ru", sa.String(length=255), nullable=False),
         sa.Column("name_en", sa.String(length=255), nullable=False),
+        sa.Column("priority", sa.Integer(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -451,6 +459,12 @@ def upgrade() -> None:
         "cm_section_sheet_ru_idx",
         "competency_matrix__competency_matrix_section_model",
         ["sheet_id", "name_ru", "id"],
+        unique=False,
+    )
+    op.create_index(
+        "cm_section_sheet_priority_idx",
+        "competency_matrix__competency_matrix_section_model",
+        ["sheet_id", "priority", "id"],
         unique=False,
     )
     op.create_table(
@@ -508,6 +522,7 @@ def upgrade() -> None:
         ),
         sa.Column("name_ru", sa.String(length=255), nullable=False),
         sa.Column("name_en", sa.String(length=255), nullable=False),
+        sa.Column("priority", sa.Integer(), nullable=False),
         sa.Column(
             "id",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
@@ -533,6 +548,12 @@ def upgrade() -> None:
         "cm_subsection_section_ru_idx",
         "competency_matrix__competency_matrix_subsection_model",
         ["section_id", "name_ru", "id"],
+        unique=False,
+    )
+    op.create_index(
+        "cm_subsection_section_priority_idx",
+        "competency_matrix__competency_matrix_subsection_model",
+        ["section_id", "priority", "id"],
         unique=False,
     )
     op.create_table(
@@ -728,6 +749,10 @@ def downgrade() -> None:
     )
     op.drop_table("competency_matrix__competency_matrix_item_model")
     op.drop_index(
+        "cm_subsection_section_priority_idx",
+        table_name="competency_matrix__competency_matrix_subsection_model",
+    )
+    op.drop_index(
         "cm_subsection_section_ru_idx",
         table_name="competency_matrix__competency_matrix_subsection_model",
     )
@@ -743,6 +768,10 @@ def downgrade() -> None:
         "cm_queued_question_fifo_idx", table_name="competency_matrix__queued_question_model"
     )
     op.drop_table("competency_matrix__queued_question_model")
+    op.drop_index(
+        "cm_section_sheet_priority_idx",
+        table_name="competency_matrix__competency_matrix_section_model",
+    )
     op.drop_index(
         "cm_section_sheet_ru_idx", table_name="competency_matrix__competency_matrix_section_model"
     )
@@ -775,6 +804,9 @@ def downgrade() -> None:
         postgresql_ops={"name_en_lower": "gin_trgm_ops"},
     )
     op.drop_table("competency_matrix__external_resource_model")
+    op.drop_index(
+        "cm_sheet_priority_idx", table_name="competency_matrix__competency_matrix_sheet_model"
+    )
     op.drop_index(
         "cm_sheet_key_lower_idx", table_name="competency_matrix__competency_matrix_sheet_model"
     )

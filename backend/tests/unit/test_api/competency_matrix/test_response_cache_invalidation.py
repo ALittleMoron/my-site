@@ -2,6 +2,7 @@ import pytest
 import pytest_asyncio
 from httpx import codes
 
+from core.competency_matrix.exceptions import CompetencyMatrixStructurePriorityInvalidError
 from core.enums import PublishStatusEnum
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.test_cases import ApiTestCase
@@ -12,7 +13,7 @@ class TestCompetencyMatrixResponseCacheInvalidation(ApiTestCase):
     async def setup(self) -> None:
         self.use_case = await self.container.get_competency_matrix_use_case()
 
-    def test_successful_item_mutations_enqueue_matrix_response_cache_warm(
+    def test_successful_matrix_mutations_enqueue_matrix_response_cache_warm(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -56,6 +57,9 @@ class TestCompetencyMatrixResponseCacheInvalidation(ApiTestCase):
             self.api.delete_item(pk=1),
             self.api.post_set_published_status_to_item(pk=1),
             self.api.post_set_draft_status_to_item(pk=1),
+            self.api.put_update_matrix_sheet_priorities(ordered_ids=[2, 1]),
+            self.api.put_update_matrix_section_priorities(sheet_id=1, ordered_ids=[2, 1]),
+            self.api.put_update_matrix_subsection_priorities(section_id=1, ordered_ids=[2, 1]),
         ]
 
         assert [response.status_code for response in responses] == [
@@ -65,8 +69,11 @@ class TestCompetencyMatrixResponseCacheInvalidation(ApiTestCase):
             codes.NO_CONTENT,
             codes.NO_CONTENT,
             codes.NO_CONTENT,
+            codes.NO_CONTENT,
+            codes.NO_CONTENT,
+            codes.NO_CONTENT,
         ]
-        assert warmed_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 6
+        assert warmed_domains == [ResponseCacheDomain.COMPETENCY_MATRIX] * 9
 
     def test_item_validation_error_does_not_enqueue_matrix_response_cache_warm(
         self,
@@ -92,6 +99,34 @@ class TestCompetencyMatrixResponseCacheInvalidation(ApiTestCase):
             data=self.factory.api.competency_matrix_item_request(),
             language=None,
         )
+
+        assert response.status_code == codes.BAD_REQUEST
+        assert warmed_domains == []
+
+    def test_structure_priority_error_does_not_enqueue_matrix_response_cache_warm(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        warmed_domains: list[ResponseCacheDomain] = []
+
+        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
+            *,
+            request: object,
+            domain: ResponseCacheDomain,
+        ) -> None:
+            _ = request
+            warmed_domains.append(domain)
+
+        monkeypatch.setattr(
+            "entrypoints.litestar.api.competency_matrix.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
+            fake_invalidate_and_enqueue_response_cache_warm_domain,
+            raising=False,
+        )
+        self.use_case.update_sheet_priorities.side_effect = (
+            CompetencyMatrixStructurePriorityInvalidError
+        )
+
+        response = self.api.put_update_matrix_sheet_priorities(ordered_ids=[2, 1])
 
         assert response.status_code == codes.BAD_REQUEST
         assert warmed_domains == []

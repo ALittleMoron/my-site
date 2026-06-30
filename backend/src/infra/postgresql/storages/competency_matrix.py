@@ -2,7 +2,19 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any
 
-from sqlalchemy import ARRAY, Integer, Select, String, and_, bindparam, case, func, or_, select
+from sqlalchemy import (
+    ARRAY,
+    Integer,
+    Select,
+    String,
+    and_,
+    bindparam,
+    case,
+    func,
+    or_,
+    select,
+    update,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 from sqlalchemy.sql.elements import ColumnElement
@@ -26,12 +38,15 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemStructure,
     CompetencyMatrixMissingFieldEnum,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixStructure,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -60,6 +75,10 @@ from infra.postgresql.models.competency_matrix import (
     ResourceToItemSecondaryModel,
 )
 
+type PriorityStructureModel = type[
+    CompetencyMatrixSheetModel | CompetencyMatrixSectionModel | CompetencyMatrixSubsectionModel
+]
+
 
 @dataclass(kw_only=True)
 class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
@@ -73,7 +92,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             .join(CompetencyMatrixSubsectionModel.items)
             .where(CompetencyMatrixItemModel.publish_status == PublishStatusEnum.PUBLISHED)
             .distinct()
-            .order_by(CompetencyMatrixSheetModel.key)
+            .order_by(CompetencyMatrixSheetModel.priority, CompetencyMatrixSheetModel.id)
         )
         sheets = await self.session.scalars(stmt)
         return Sheets(
@@ -91,7 +110,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                     CompetencyMatrixSectionModel.subsections,
                 ),
             )
-            .order_by(CompetencyMatrixSheetModel.key)
+            .order_by(CompetencyMatrixSheetModel.priority, CompetencyMatrixSheetModel.id)
         )
         sheets = await self.session.scalars(stmt)
         return CompetencyMatrixStructure(
@@ -117,6 +136,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             key=params.key,
             name_ru=params.name_ru,
             name_en=params.name_en,
+            priority=await self._next_sheet_priority(),
         )
         self.session.add(sheet)
         await self.session.flush()
@@ -125,6 +145,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             key=sheet.key,
             name_ru=sheet.name_ru,
             name_en=sheet.name_en,
+            priority=sheet.priority,
             sections=[],
         )
 
@@ -140,6 +161,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             sheet_id=params.sheet_id,
             name_ru=params.name_ru,
             name_en=params.name_en,
+            priority=await self._next_section_priority(sheet_id=params.sheet_id),
         )
         self.session.add(section)
         await self.session.flush()
@@ -147,6 +169,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             id=IntId(section.id),
             name_ru=section.name_ru,
             name_en=section.name_en,
+            priority=section.priority,
             subsections=[],
         )
 
@@ -162,6 +185,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             section_id=params.section_id,
             name_ru=params.name_ru,
             name_en=params.name_en,
+            priority=await self._next_subsection_priority(section_id=params.section_id),
         )
         self.session.add(subsection)
         await self.session.flush()
@@ -169,6 +193,37 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             id=IntId(subsection.id),
             name_ru=subsection.name_ru,
             name_en=subsection.name_en,
+            priority=subsection.priority,
+        )
+
+    async def update_sheet_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSheetPriorityUpdateParams,
+    ) -> None:
+        await self._update_priorities(
+            model=CompetencyMatrixSheetModel,
+            ordered_ids=params.ordered_ids,
+        )
+
+    async def update_section_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSectionPriorityUpdateParams,
+    ) -> None:
+        await self._update_priorities(
+            model=CompetencyMatrixSectionModel,
+            ordered_ids=params.ordered_ids,
+        )
+
+    async def update_subsection_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionPriorityUpdateParams,
+    ) -> None:
+        await self._update_priorities(
+            model=CompetencyMatrixSubsectionModel,
+            ordered_ids=params.ordered_ids,
         )
 
     async def list_competency_matrix_items(
@@ -177,8 +232,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         filters: CompetencyMatrixItemFilters,
     ) -> list[CompetencyMatrixItem]:
         stmt = self._select_items_with_structure().order_by(
-            CompetencyMatrixSectionModel.name_en,
-            CompetencyMatrixSubsectionModel.name_en,
+            CompetencyMatrixSheetModel.priority,
+            CompetencyMatrixSheetModel.id,
+            CompetencyMatrixSectionModel.priority,
+            CompetencyMatrixSectionModel.id,
+            CompetencyMatrixSubsectionModel.priority,
+            CompetencyMatrixSubsectionModel.id,
             CompetencyMatrixItemModel.grade,
             CompetencyMatrixItemModel.id,
         )
@@ -234,14 +293,22 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                     sheet_name_column.label("sheet"),
                     section_column.label("section"),
                     subsection_column.label("subsection"),
+                    CompetencyMatrixSheetModel.priority.label("sheet_priority"),
+                    CompetencyMatrixSheetModel.id.label("sheet_id"),
+                    CompetencyMatrixSectionModel.priority.label("section_priority"),
+                    CompetencyMatrixSectionModel.id.label("section_id"),
+                    CompetencyMatrixSubsectionModel.priority.label("subsection_priority"),
+                    CompetencyMatrixSubsectionModel.id.label("subsection_id"),
                 ),
             )
             .distinct()
             .order_by(
-                sheet_name_column,
-                CompetencyMatrixSheetModel.key,
-                section_column,
-                subsection_column,
+                CompetencyMatrixSheetModel.priority,
+                CompetencyMatrixSheetModel.id,
+                CompetencyMatrixSectionModel.priority,
+                CompetencyMatrixSectionModel.id,
+                CompetencyMatrixSubsectionModel.priority,
+                CompetencyMatrixSubsectionModel.id,
             ),
         )
         grades = await self.session.scalars(
@@ -294,9 +361,9 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             )
             if not row.section:
                 continue
-            subsections = sheet["sections"].setdefault(row.section, set())
+            subsections = sheet["sections"].setdefault(row.section, {})
             if row.subsection:
-                subsections.add(row.subsection)
+                subsections.setdefault(row.subsection, None)
         return [
             CompetencyMatrixFilterSheetOption(
                 key=sheet_key,
@@ -304,7 +371,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 sections=[
                     CompetencyMatrixFilterSectionOption(
                         label=section,
-                        subsections=sorted(subsections),
+                        subsections=list(subsections),
                     )
                     for section, subsections in sheet["sections"].items()
                 ],
@@ -460,6 +527,57 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             selectinload(CompetencyMatrixItemModel.subsection)
             .selectinload(CompetencyMatrixSubsectionModel.section)
             .selectinload(CompetencyMatrixSectionModel.sheet),
+        )
+
+    async def _next_sheet_priority(self) -> int:
+        return await self._next_priority(model=CompetencyMatrixSheetModel, conditions=())
+
+    async def _next_section_priority(self, *, sheet_id: IntId) -> int:
+        return await self._next_priority(
+            model=CompetencyMatrixSectionModel,
+            conditions=(CompetencyMatrixSectionModel.sheet_id == sheet_id,),
+        )
+
+    async def _next_subsection_priority(self, *, section_id: IntId) -> int:
+        return await self._next_priority(
+            model=CompetencyMatrixSubsectionModel,
+            conditions=(CompetencyMatrixSubsectionModel.section_id == section_id,),
+        )
+
+    async def _next_priority(
+        self,
+        *,
+        model: PriorityStructureModel,
+        conditions: tuple[ColumnElement[bool], ...],
+    ) -> int:
+        stmt = select(func.coalesce(func.max(model.priority), 0) + 1)
+        for condition in conditions:
+            stmt = stmt.where(condition)
+        return int((await self.session.scalar(stmt)) or 1)
+
+    async def _update_priorities(
+        self,
+        *,
+        model: PriorityStructureModel,
+        ordered_ids: tuple[IntId, ...],
+    ) -> None:
+        if not ordered_ids:
+            return
+        priority_by_id = {
+            int(ordered_id): priority for priority, ordered_id in enumerate(ordered_ids, start=1)
+        }
+        priority_cases = tuple(
+            (model.id == ordered_id, priority) for ordered_id, priority in priority_by_id.items()
+        )
+        await self.session.execute(
+            update(model)
+            .where(model.id.in_(priority_by_id.keys()))
+            .values(
+                priority=case(
+                    *priority_cases,
+                    else_=model.priority,
+                ),
+            ),
         )
 
     async def _get_sheet_model(self, *, sheet_id: IntId) -> CompetencyMatrixSheetModel:
@@ -658,12 +776,17 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         *,
         filters: CompetencyMatrixWorkspaceFilters,
     ) -> tuple[Any, ...]:
-        section_column = self._section_column(language=filters.language)
-        subsection_column = self._subsection_column(language=filters.language)
         question_column = self._question_column(language=filters.language)
+        structure_ordering = (
+            CompetencyMatrixSheetModel.priority,
+            CompetencyMatrixSheetModel.id,
+            CompetencyMatrixSectionModel.priority,
+            CompetencyMatrixSectionModel.id,
+            CompetencyMatrixSubsectionModel.priority,
+            CompetencyMatrixSubsectionModel.id,
+        )
         default_ordering = (
-            section_column,
-            subsection_column,
+            *structure_ordering,
             CompetencyMatrixItemModel.grade,
             CompetencyMatrixItemModel.id,
         )
@@ -674,22 +797,24 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         ordering_by_sort = {
             CompetencyMatrixWorkspaceSortEnum.GRADE: (
                 CompetencyMatrixItemModel.grade,
-                section_column,
-                subsection_column,
+                *structure_ordering,
                 question_column,
                 CompetencyMatrixItemModel.id,
             ),
             CompetencyMatrixWorkspaceSortEnum.INTERVIEW_FREQUENCY: (
                 self._interview_frequency_ordering(),
-                section_column,
-                subsection_column,
+                *structure_ordering,
                 question_column,
                 CompetencyMatrixItemModel.id,
             ),
             CompetencyMatrixWorkspaceSortEnum.SECTION: default_ordering,
             CompetencyMatrixWorkspaceSortEnum.SUBSECTION: (
-                subsection_column,
-                section_column,
+                CompetencyMatrixSheetModel.priority,
+                CompetencyMatrixSheetModel.id,
+                CompetencyMatrixSubsectionModel.priority,
+                CompetencyMatrixSubsectionModel.id,
+                CompetencyMatrixSectionModel.priority,
+                CompetencyMatrixSectionModel.id,
                 CompetencyMatrixItemModel.grade,
                 question_column,
                 CompetencyMatrixItemModel.id,
@@ -704,8 +829,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             ),
             CompetencyMatrixWorkspaceSortEnum.MISSING_FIELDS: (
                 self._workspace_missing_count().desc(),
-                section_column,
-                subsection_column,
+                *structure_ordering,
                 CompetencyMatrixItemModel.id,
             ),
             CompetencyMatrixWorkspaceSortEnum.DANGEROUS_PUBLISHED: (

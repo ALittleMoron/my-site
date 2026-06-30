@@ -18,12 +18,15 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemUpdateParams,
     CompetencyMatrixMissingFieldEnum,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixStructure,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspace,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -73,6 +76,7 @@ class StructureNameTranslationsSchema(CamelCaseSchema):
 class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
     id: Annotated[int, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
+    priority: Annotated[int, Field(title="Priority")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
 
     @classmethod
@@ -85,6 +89,7 @@ class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
         return cls(
             id=schema.id,
             name=schema.localized_name(language=language),
+            priority=schema.priority,
             translations=StructureNameTranslationsSchema(
                 ru=StructureNameTranslationSchema(name=schema.name_ru),
                 en=StructureNameTranslationSchema(name=schema.name_en),
@@ -95,6 +100,7 @@ class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
 class MatrixStructureSectionResponseSchema(CamelCaseSchema):
     id: Annotated[int, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
+    priority: Annotated[int, Field(title="Priority")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
     subsections: Annotated[
         list[MatrixStructureSubsectionResponseSchema], Field(title="Subsections")
@@ -110,6 +116,7 @@ class MatrixStructureSectionResponseSchema(CamelCaseSchema):
         return cls(
             id=schema.id,
             name=schema.localized_name(language=language),
+            priority=schema.priority,
             translations=StructureNameTranslationsSchema(
                 ru=StructureNameTranslationSchema(name=schema.name_ru),
                 en=StructureNameTranslationSchema(name=schema.name_en),
@@ -128,6 +135,7 @@ class MatrixStructureSheetResponseSchema(CamelCaseSchema):
     id: Annotated[int, Field(title="Identifier")]
     key: Annotated[str, Field(title="Key")]
     name: Annotated[str, Field(title="Name")]
+    priority: Annotated[int, Field(title="Priority")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
     sections: Annotated[list[MatrixStructureSectionResponseSchema], Field(title="Sections")]
 
@@ -142,6 +150,7 @@ class MatrixStructureSheetResponseSchema(CamelCaseSchema):
             id=schema.id,
             key=schema.key,
             name=schema.localized_name(language=language),
+            priority=schema.priority,
             translations=StructureNameTranslationsSchema(
                 ru=StructureNameTranslationSchema(name=schema.name_ru),
                 en=StructureNameTranslationSchema(name=schema.name_en),
@@ -208,6 +217,31 @@ class MatrixSubsectionCreateRequestSchema(CamelCaseSchema):
             section_id=section_id,
             name_ru=self.translations.ru.name,
             name_en=self.translations.en.name,
+        )
+
+
+class MatrixStructurePriorityUpdateRequestSchema(CamelCaseSchema):
+    ordered_ids: Annotated[list[int], Field(title="Ordered identifiers")]
+
+    def to_sheet_schema(self) -> CompetencyMatrixSheetPriorityUpdateParams:
+        return CompetencyMatrixSheetPriorityUpdateParams(
+            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
+        )
+
+    def to_section_schema(self, *, sheet_id: IntId) -> CompetencyMatrixSectionPriorityUpdateParams:
+        return CompetencyMatrixSectionPriorityUpdateParams(
+            sheet_id=sheet_id,
+            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
+        )
+
+    def to_subsection_schema(
+        self,
+        *,
+        section_id: IntId,
+    ) -> CompetencyMatrixSubsectionPriorityUpdateParams:
+        return CompetencyMatrixSubsectionPriorityUpdateParams(
+            section_id=section_id,
+            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
         )
 
 
@@ -719,15 +753,7 @@ class CompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
         schema: CompetencyMatrixItems,
         language: LanguageEnum,
     ) -> Self:
-        items = sorted(
-            [item for item in schema.values if item.sheet_key == sheet_key],
-            key=lambda item: (
-                item.localized_section(language=language).lower(),
-                item.localized_subsection(language=language).lower(),
-                item.grade.value if item.grade is not None else "",
-                item.id,
-            ),
-        )
+        items = [item for item in schema.values if item.sheet_key == sheet_key]
         if not items:
             return cls.empty(sheet_key=sheet_key)
         sections = [
@@ -851,15 +877,7 @@ class PublicCompetencyMatrixItemsListResponseSchema(CamelCaseSchema):
         schema: CompetencyMatrixItems,
         language: LanguageEnum,
     ) -> Self:
-        items = sorted(
-            [item for item in schema.values if item.sheet_key == sheet_key],
-            key=lambda item: (
-                item.localized_section(language=language).lower(),
-                item.localized_subsection(language=language).lower(),
-                item.grade.value if item.grade is not None else "",
-                item.id,
-            ),
-        )
+        items = [item for item in schema.values if item.sheet_key == sheet_key]
         if not items:
             return cls.empty(sheet_key=sheet_key)
         sections = [

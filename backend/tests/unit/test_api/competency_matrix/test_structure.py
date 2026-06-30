@@ -2,10 +2,13 @@ import pytest_asyncio
 from httpx import codes
 
 from core.competency_matrix.schemas import (
+    CompetencyMatrixSectionPriorityUpdateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixStructure,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
 )
 from tests.test_cases import ApiTestCase
 
@@ -23,16 +26,19 @@ class TestMatrixStructureAPI(ApiTestCase):
                     key="python",
                     name_ru="Питон",
                     name_en="Python",
+                    priority=1,
                     sections=[
                         CompetencyMatrixStructureSection(
                             id=self.factory.core.int_id(2),
                             name_ru="Основы",
                             name_en="Basics",
+                            priority=1,
                             subsections=[
                                 CompetencyMatrixStructureSubsection(
                                     id=self.factory.core.int_id(3),
                                     name_ru="Функции",
                                     name_en="Functions",
+                                    priority=1,
                                 ),
                             ],
                         ),
@@ -53,6 +59,7 @@ class TestMatrixStructureAPI(ApiTestCase):
                     "id": 1,
                     "key": "python",
                     "name": "Python",
+                    "priority": 1,
                     "translations": {
                         "ru": {"name": "Питон"},
                         "en": {"name": "Python"},
@@ -61,6 +68,7 @@ class TestMatrixStructureAPI(ApiTestCase):
                         {
                             "id": 2,
                             "name": "Basics",
+                            "priority": 1,
                             "translations": {
                                 "ru": {"name": "Основы"},
                                 "en": {"name": "Basics"},
@@ -69,6 +77,7 @@ class TestMatrixStructureAPI(ApiTestCase):
                                 {
                                     "id": 3,
                                     "name": "Functions",
+                                    "priority": 1,
                                     "translations": {
                                         "ru": {"name": "Функции"},
                                         "en": {"name": "Functions"},
@@ -88,18 +97,21 @@ class TestMatrixStructureAPI(ApiTestCase):
             key="python",
             name_ru="Питон",
             name_en="Python",
+            priority=1,
             sections=[],
         )
         self.use_case.create_section.return_value = CompetencyMatrixStructureSection(
             id=self.factory.core.int_id(2),
             name_ru="Основы",
             name_en="Basics",
+            priority=1,
             subsections=[],
         )
         self.use_case.create_subsection.return_value = CompetencyMatrixStructureSubsection(
             id=self.factory.core.int_id(3),
             name_ru="Функции",
             name_en="Functions",
+            priority=1,
         )
 
         sheet_response = self.api.client.post(
@@ -140,6 +152,38 @@ class TestMatrixStructureAPI(ApiTestCase):
         assert sheet_response.json()["key"] == "python"
         assert section_response.json()["name"] == "Basics"
         assert subsection_response.json()["name"] == "Functions"
+
+    def test_updates_structure_priorities(self) -> None:
+        sheet_response = self.api.put_update_matrix_sheet_priorities(ordered_ids=[2, 1])
+        section_response = self.api.put_update_matrix_section_priorities(
+            sheet_id=1,
+            ordered_ids=[3, 2],
+        )
+        subsection_response = self.api.put_update_matrix_subsection_priorities(
+            section_id=2,
+            ordered_ids=[5, 4],
+        )
+
+        assert sheet_response.status_code == codes.NO_CONTENT, sheet_response.content
+        assert section_response.status_code == codes.NO_CONTENT, section_response.content
+        assert subsection_response.status_code == codes.NO_CONTENT, subsection_response.content
+        self.use_case.update_sheet_priorities.assert_called_once_with(
+            params=CompetencyMatrixSheetPriorityUpdateParams(
+                ordered_ids=(self.factory.core.int_id(2), self.factory.core.int_id(1)),
+            ),
+        )
+        self.use_case.update_section_priorities.assert_called_once_with(
+            params=CompetencyMatrixSectionPriorityUpdateParams(
+                sheet_id=self.factory.core.int_id(1),
+                ordered_ids=(self.factory.core.int_id(3), self.factory.core.int_id(2)),
+            ),
+        )
+        self.use_case.update_subsection_priorities.assert_called_once_with(
+            params=CompetencyMatrixSubsectionPriorityUpdateParams(
+                section_id=self.factory.core.int_id(2),
+                ordered_ids=(self.factory.core.int_id(5), self.factory.core.int_id(4)),
+            ),
+        )
 
     def test_create_sheet_rejects_invalid_key(self) -> None:
         response = self.api.client.post(
@@ -191,3 +235,6 @@ class TestMatrixStructureAPI(ApiTestCase):
             },
         )
         assert response.status_code == codes.METHOD_NOT_ALLOWED
+
+        response = self.no_auth_api.put_update_matrix_sheet_priorities(ordered_ids=[1])
+        assert response.status_code == codes.UNAUTHORIZED

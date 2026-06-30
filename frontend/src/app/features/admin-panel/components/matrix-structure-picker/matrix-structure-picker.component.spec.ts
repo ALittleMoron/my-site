@@ -11,16 +11,19 @@ const initialStructure: AdminMatrixStructure = {
       id: 1,
       key: 'python',
       name: 'Питон',
+      priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [
         {
           id: 2,
           name: 'Основы',
+          priority: 1,
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
           subsections: [
             {
               id: 3,
               name: 'Стиль',
+              priority: 1,
               translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
             },
           ],
@@ -109,6 +112,7 @@ describe('MatrixStructurePickerComponent', () => {
           id: 4,
           key: 'sql',
           name: 'SQL',
+          priority: 2,
           translations: { ru: { name: 'SQL' }, en: { name: 'SQL' } },
           sections: [],
         },
@@ -122,6 +126,7 @@ describe('MatrixStructurePickerComponent', () => {
         id: 4,
         key: 'sql',
         name: 'SQL',
+        priority: 2,
         translations: { ru: { name: 'SQL' }, en: { name: 'SQL' } },
         sections: [],
       }),
@@ -276,6 +281,7 @@ describe('MatrixStructurePickerComponent', () => {
                 {
                   id: 5,
                   name: 'Типизация',
+                  priority: 2,
                   translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
                 },
               ],
@@ -291,6 +297,7 @@ describe('MatrixStructurePickerComponent', () => {
       of({
         id: 5,
         name: 'Типизация',
+        priority: 2,
         translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
       }),
     );

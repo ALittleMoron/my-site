@@ -23,6 +23,7 @@ from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
     CompetencyMatrixStructureAlreadyExistsError,
+    CompetencyMatrixStructurePriorityInvalidError,
     QuestionQueueImportInvalidError,
     QuestionQueueImportIssue,
     QuestionSuggestionQuotaExceededError,
@@ -152,6 +153,7 @@ def test_domain_error_verbose_exception_mapping() -> None:
         FileStorageInternalError: InternalServerErrorHTTPException,
         CompetencyMatrixItemNotPublicReadyError: BadRequestHTTPException,
         CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
+        CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,
         QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
         QuestionQueueImportInvalidError: BadRequestHTTPException,
         AccountUsernameAlreadyExistsError: BadRequestHTTPException,

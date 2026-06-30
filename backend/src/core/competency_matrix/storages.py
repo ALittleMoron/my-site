@@ -6,12 +6,15 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixStructure,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspaceFilters,
     CompetencyMatrixWorkspaceItem,
     CompetencyMatrixWorkspaceSummary,
@@ -67,6 +70,30 @@ class CompetencyMatrixStorage(ABC):
         *,
         params: CompetencyMatrixSubsectionCreateParams,
     ) -> CompetencyMatrixStructureSubsection:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_sheet_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSheetPriorityUpdateParams,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_section_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSectionPriorityUpdateParams,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_subsection_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionPriorityUpdateParams,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod

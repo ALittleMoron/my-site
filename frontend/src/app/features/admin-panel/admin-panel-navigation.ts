@@ -46,6 +46,13 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         adminOnly: false,
       },
       {
+        key: 'matrix-structure',
+        labelKey: 'adminPanel.section.matrixStructure',
+        route: '/admin-panel/matrix-structure',
+        badgeTextKey: null,
+        adminOnly: false,
+      },
+      {
         key: 'matrix-question-queue',
         labelKey: 'adminPanel.section.matrixQuestionQueue',
         route: '/admin-panel/matrix-question-queue',

@@ -100,6 +100,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.emptySections": "Разделы админки появятся позже.",
         "adminPanel.section.articles": "Статьи",
         "adminPanel.section.matrixQuestions": "Вопросы матрицы",
+        "adminPanel.section.matrixStructure": "Структура матрицы",
         "adminPanel.section.matrixQuestionQueue": "Очередь вопросов матрицы",
         "adminPanel.section.workspace": "Рабочая область",
         "adminPanel.section.team": "Команда",
@@ -318,6 +319,14 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Ожидаемый ответ EN",
         "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
         "adminMatrixStructure.createError": "Не удалось создать элемент структуры матрицы.",
+        "adminMatrixStructure.title": "Структура матрицы",
+        "adminMatrixStructure.empty": "Структура матрицы пока не создана.",
+        "adminMatrixStructure.emptySections": "В этом листе пока нет разделов.",
+        "adminMatrixStructure.emptySubsections": "В этом разделе пока нет подразделов.",
+        "adminMatrixStructure.priority": "Приоритет",
+        "adminMatrixStructure.saving": "Сохранение",
+        "adminMatrixStructure.saved": "Порядок структуры сохранён.",
+        "adminMatrixStructure.saveError": "Не удалось сохранить порядок структуры.",
         "adminMatrixQueue.title": "Очередь вопросов матрицы",
         "adminMatrixQueue.empty": "Очередь пуста.",
         "adminMatrixQueue.createdAt": "Создан",
@@ -503,8 +512,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.decision.matrixTaxonomy": (
             "Таксономия матрицы нормализована в листы, разделы и подразделы: автор "
-            "выбирает или создаёт структуру один раз, а публичные API по-прежнему отдают "
-            "стабильные локализованные проекции."
+            "выбирает или создаёт структуру один раз, управляет её приоритетом отдельно "
+            "от вопросов, а публичные API по-прежнему отдают стабильные локализованные "
+            "проекции."
         ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe аналитика считает просмотры и реакции без cookies, raw IP, "
@@ -901,6 +911,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.emptySections": "Admin sections will appear later.",
         "adminPanel.section.articles": "Articles",
         "adminPanel.section.matrixQuestions": "Matrix questions",
+        "adminPanel.section.matrixStructure": "Matrix structure",
         "adminPanel.section.matrixQuestionQueue": "Matrix question queue",
         "adminPanel.section.workspace": "Workspace",
         "adminPanel.section.team": "Team",
@@ -1116,6 +1127,14 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Expected answer EN",
         "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
         "adminMatrixStructure.createError": "Failed to create the matrix structure item.",
+        "adminMatrixStructure.title": "Matrix structure",
+        "adminMatrixStructure.empty": "The matrix structure has not been created yet.",
+        "adminMatrixStructure.emptySections": "This sheet has no sections yet.",
+        "adminMatrixStructure.emptySubsections": "This section has no subsections yet.",
+        "adminMatrixStructure.priority": "Priority",
+        "adminMatrixStructure.saving": "Saving",
+        "adminMatrixStructure.saved": "Structure order saved.",
+        "adminMatrixStructure.saveError": "Failed to save the structure order.",
         "adminMatrixQueue.title": "Matrix question queue",
         "adminMatrixQueue.empty": "The queue is empty.",
         "adminMatrixQueue.createdAt": "Created",
@@ -1296,8 +1315,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.decision.matrixTaxonomy": (
             "The competency matrix taxonomy is normalized into sheets, sections, and "
-            "subsections, so authors choose or create structure once while public APIs "
-            "still expose stable localized projections."
+            "subsections, so authors choose or create structure once, manage its priority "
+            "separately from questions, and public APIs still expose stable localized "
+            "projections."
         ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe analytics count views and reactions without cookies, raw IPs, "

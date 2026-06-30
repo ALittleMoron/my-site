@@ -505,7 +505,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Use stable `sheetKey` values as language-neutral sheet identifiers
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
 - [x] Move sheet, section, subsection to separated tables
-- [ ] Priority for sections and subsections (drag and drop in admin panel?)
+- [x] Priority for matrix sheets, sections, and subsections with drag-and-drop admin ordering
 - [ ] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix
 - [x] Add moderation inbox for suggested matrix questions.

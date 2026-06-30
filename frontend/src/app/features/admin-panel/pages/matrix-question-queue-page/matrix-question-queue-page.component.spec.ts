@@ -32,16 +32,19 @@ const matrixStructure: AdminMatrixStructure = {
       id: 1,
       key: 'python',
       name: 'Python',
+      priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [
         {
           id: 2,
           name: 'Core',
+          priority: 1,
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
           subsections: [
             {
               id: 3,
               name: 'Style',
+              priority: 1,
               translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
             },
           ],

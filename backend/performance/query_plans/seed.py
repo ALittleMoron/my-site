@@ -415,7 +415,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
     sheet_value = sql_cast(sheet_series.c.value, Integer)
     await connection.execute(
         insert(CompetencyMatrixSheetModel.__table__).from_select(
-            ["id", "key", "name_ru", "name_en"],
+            ["id", "key", "name_ru", "name_en", "priority"],
             select(
                 sheet_value,
                 case(
@@ -430,6 +430,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
                     (sheet_value == PYTHON_ID, literal("Python")),
                     else_=func.concat(literal("Sheet "), sheet_value - 1),
                 ),
+                sheet_value,
             ).select_from(sheet_series),
         ),
     )
@@ -440,7 +441,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
     section_sheet_id = sql_cast(func.floor((section_value - 1) / 8), Integer) + 1
     await connection.execute(
         insert(CompetencyMatrixSectionModel.__table__).from_select(
-            ["id", "sheet_id", "name_ru", "name_en"],
+            ["id", "sheet_id", "name_ru", "name_en", "priority"],
             select(
                 section_value,
                 section_sheet_id,
@@ -458,6 +459,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
                     ),
                     else_=func.concat(literal("Section "), section_bucket),
                 ),
+                section_bucket + 1,
             ).select_from(section_series),
         ),
     )
@@ -475,7 +477,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
     )
     await connection.execute(
         insert(CompetencyMatrixSubsectionModel.__table__).from_select(
-            ["id", "section_id", "name_ru", "name_en"],
+            ["id", "section_id", "name_ru", "name_en", "priority"],
             select(
                 subsection_value,
                 subsection_section_id,
@@ -487,6 +489,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
                     (python_basics, literal("Functions")),
                     else_=func.concat(literal("Subsection "), subsection_bucket),
                 ),
+                subsection_bucket + 1,
             ).select_from(subsection_series),
         ),
     )

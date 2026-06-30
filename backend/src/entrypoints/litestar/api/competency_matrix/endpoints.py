@@ -45,6 +45,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixWorkspaceResponseSchema,
     MatrixSectionCreateRequestSchema,
     MatrixSheetCreateRequestSchema,
+    MatrixStructurePriorityUpdateRequestSchema,
     MatrixStructureResponseSchema,
     MatrixStructureSectionResponseSchema,
     MatrixStructureSheetResponseSchema,
@@ -259,6 +260,66 @@ class AdminCompetencyMatrixApiController(Controller):
         return MatrixStructureSubsectionResponseSchema.from_domain_schema(
             schema=subsection,
             language=language,
+        )
+
+    @put(
+        "/sheets/priorities",
+        description="Update competency matrix sheet priority order.",
+        name="admin-competency-matrix-sheet-priorities-update-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def update_competency_matrix_sheet_priorities(
+        self,
+        request: Request[JwtUser, Token | None, State],
+        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+    ) -> None:
+        await use_case.update_sheet_priorities(params=data.to_sheet_schema())
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+        )
+
+    @put(
+        "/sheets/{sheet_id:int}/sections/priorities",
+        description="Update competency matrix section priority order for one sheet.",
+        name="admin-competency-matrix-section-priorities-update-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def update_competency_matrix_section_priorities(
+        self,
+        sheet_id: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
+        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+    ) -> None:
+        await use_case.update_section_priorities(
+            params=data.to_section_schema(sheet_id=IntId(sheet_id)),
+        )
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+        )
+
+    @put(
+        "/sections/{section_id:int}/subsections/priorities",
+        description="Update competency matrix subsection priority order for one section.",
+        name="admin-competency-matrix-subsection-priorities-update-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def update_competency_matrix_subsection_priorities(
+        self,
+        section_id: FromPath[int],
+        request: Request[JwtUser, Token | None, State],
+        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+    ) -> None:
+        await use_case.update_subsection_priorities(
+            params=data.to_subsection_schema(section_id=IntId(section_id)),
+        )
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
 
     @get(

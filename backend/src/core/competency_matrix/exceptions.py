@@ -1,7 +1,12 @@
-from dataclasses import dataclass
+from __future__ import annotations
 
-from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 from core.exceptions import DomainError, EntryNotFoundError
+
+if TYPE_CHECKING:
+    from core.competency_matrix.schemas import CompetencyMatrixMissingFieldEnum
 
 
 class CompetencyMatrixItemNotFoundError(EntryNotFoundError):
@@ -14,6 +19,10 @@ class CompetencyMatrixStructureNotFoundError(EntryNotFoundError):
 
 class CompetencyMatrixStructureAlreadyExistsError(DomainError):
     message = "Competency matrix structure entry already exists"
+
+
+class CompetencyMatrixStructurePriorityInvalidError(DomainError):
+    message = "Competency matrix structure priority order is invalid"
 
 
 class CompetencyMatrixItemNotPublicReadyError(DomainError):

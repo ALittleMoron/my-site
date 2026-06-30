@@ -36,6 +36,13 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'matrix-structure',
+        loadComponent: () =>
+          import('./pages/matrix-structure-page/matrix-structure-page.component').then(
+            (m) => m.MatrixStructurePageComponent,
+          ),
+      },
+      {
         path: 'matrix-questions/:id',
         loadComponent: () =>
           import('./pages/matrix-question-detail-page/matrix-question-detail-page.component').then(

@@ -46,7 +46,7 @@ my-site/
 
 ## ✨ Features
 
-- Competency matrix with normalized localized sheets, sections, and subsections, search, a grid/table view, detailed Q&A, public SEO question pages, an admin structure picker, and linked resources
+- Competency matrix with priority-ordered localized sheets, sections, and subsections, search, a grid/table view, detailed Q&A, public SEO question pages, admin structure picker/reordering, and linked resources
 - Articles with localized RU/EN content, folders, tags, search, date/tag filters, publish visibility, and SSR public article pages
 - Protected owner/admin/moderator panel for creating, editing, publishing, and unpublishing articles and matrix questions, plus owner/admin team governance where admins manage moderators and the single owner has full team access
 - Privacy-safe article analytics with public view counters, engaged views, source categories, and anonymous reactions

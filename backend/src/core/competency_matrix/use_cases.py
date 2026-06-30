@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 
-from core.competency_matrix.exceptions import (
-    CompetencyMatrixItemNotFoundError,
-    CompetencyMatrixItemNotPublicReadyError,
-)
+from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
 from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixItem,
@@ -14,15 +11,17 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpdateParams,
-    CompetencyMatrixItemWriteParams,
     CompetencyMatrixResourceSearchParams,
     CompetencyMatrixSectionCreateParams,
+    CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
+    CompetencyMatrixSheetPriorityUpdateParams,
     CompetencyMatrixStructure,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
     CompetencyMatrixSubsectionCreateParams,
+    CompetencyMatrixSubsectionPriorityUpdateParams,
     CompetencyMatrixWorkspace,
     CompetencyMatrixWorkspaceFilters,
     ExternalResources,
@@ -72,6 +71,35 @@ class CompetencyMatrixUseCase:
         params: CompetencyMatrixSubsectionCreateParams,
     ) -> CompetencyMatrixStructureSubsection:
         return await self.storage.create_subsection(params=params)
+
+    async def update_sheet_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSheetPriorityUpdateParams,
+    ) -> None:
+        structure = await self.storage.list_structure()
+        structure.ensure_sheet_priority_order_matches(ordered_ids=params.ordered_ids)
+        await self.storage.update_sheet_priorities(params=params)
+
+    async def update_section_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSectionPriorityUpdateParams,
+    ) -> None:
+        structure = await self.storage.list_structure()
+        sheet = structure.require_sheet(sheet_id=params.sheet_id)
+        sheet.ensure_section_priority_order_matches(ordered_ids=params.ordered_ids)
+        await self.storage.update_section_priorities(params=params)
+
+    async def update_subsection_priorities(
+        self,
+        *,
+        params: CompetencyMatrixSubsectionPriorityUpdateParams,
+    ) -> None:
+        structure = await self.storage.list_structure()
+        section = structure.require_section(section_id=params.section_id)
+        section.ensure_subsection_priority_order_matches(ordered_ids=params.ordered_ids)
+        await self.storage.update_subsection_priorities(params=params)
 
     async def find_resources(
         self,
@@ -148,8 +176,20 @@ class CompetencyMatrixUseCase:
         *,
         params: CompetencyMatrixItemCreateParams,
     ) -> CompetencyMatrixItem:
-        item = await self._build_item_from_params(params=params)
-        self._ensure_publishable(item=item)
+        resource_ids_to_assign = params.get_resource_ids_to_assign()
+        resources = (
+            await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
+            if resource_ids_to_assign
+            else ExternalResources(values=[])
+        )
+        if not resources.all_resources_exists_by_ids(ids=set(resource_ids_to_assign)):
+            raise CompetencyMatrixItemNotFoundError
+        structure = await self.storage.get_item_structure_by_subsection_id(
+            subsection_id=params.subsection_id,
+        )
+        item = params.to_item(resources=resources, structure=structure, published_at=None)
+        if item.publish_status == PublishStatusEnum.PUBLISHED:
+            item.ensure_public_ready()
         return await self.storage.create_competency_matrix_item(item=item)
 
     async def create_item_from_queue(
@@ -158,8 +198,20 @@ class CompetencyMatrixUseCase:
         params: QueuedCompetencyMatrixQuestionCreateItemParams,
     ) -> CompetencyMatrixItem:
         await self.storage.get_queued_question(question_id=params.queued_question_id)
-        item = await self._build_item_from_params(params=params.item)
-        self._ensure_publishable(item=item)
+        resource_ids_to_assign = params.item.get_resource_ids_to_assign()
+        resources = (
+            await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
+            if resource_ids_to_assign
+            else ExternalResources(values=[])
+        )
+        if not resources.all_resources_exists_by_ids(ids=set(resource_ids_to_assign)):
+            raise CompetencyMatrixItemNotFoundError
+        structure = await self.storage.get_item_structure_by_subsection_id(
+            subsection_id=params.item.subsection_id,
+        )
+        item = params.item.to_item(resources=resources, structure=structure, published_at=None)
+        if item.publish_status == PublishStatusEnum.PUBLISHED:
+            item.ensure_public_ready()
         created_item = await self.storage.create_competency_matrix_item(item=item)
         await self.storage.delete_queued_question(question_id=params.queued_question_id)
         return created_item
@@ -168,15 +220,6 @@ class CompetencyMatrixUseCase:
         self,
         *,
         params: CompetencyMatrixItemUpdateParams,
-    ) -> CompetencyMatrixItem:
-        item = await self._build_item_from_params(params=params)
-        self._ensure_publishable(item=item)
-        return await self.storage.update_competency_matrix_item(item=item)
-
-    async def _build_item_from_params(
-        self,
-        *,
-        params: CompetencyMatrixItemWriteParams,
     ) -> CompetencyMatrixItem:
         resource_ids_to_assign = params.get_resource_ids_to_assign()
         resources = (
@@ -189,7 +232,10 @@ class CompetencyMatrixUseCase:
         structure = await self.storage.get_item_structure_by_subsection_id(
             subsection_id=params.subsection_id,
         )
-        return params.to_item(resources=resources, structure=structure, published_at=None)
+        item = params.to_item(resources=resources, structure=structure, published_at=None)
+        if item.publish_status == PublishStatusEnum.PUBLISHED:
+            item.ensure_public_ready()
+        return await self.storage.update_competency_matrix_item(item=item)
 
     async def delete_item(self, *, item_id: IntId) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)
@@ -201,21 +247,11 @@ class CompetencyMatrixUseCase:
     ) -> None:
         if params.publish_status == PublishStatusEnum.PUBLISHED:
             item = await self.storage.get_competency_matrix_item(item_id=params.item_id)
-            self._ensure_public_ready_fields(item=item)
+            item.ensure_public_ready()
         await self.storage.update_competency_matrix_item_publish_status(
             item_id=params.item_id,
             publish_status=params.publish_status,
         )
-
-    def _ensure_publishable(self, *, item: CompetencyMatrixItem) -> None:
-        if item.publish_status != PublishStatusEnum.PUBLISHED:
-            return
-        self._ensure_public_ready_fields(item=item)
-
-    def _ensure_public_ready_fields(self, *, item: CompetencyMatrixItem) -> None:
-        missing_fields = item.missing_publication_fields()
-        if missing_fields:
-            raise CompetencyMatrixItemNotPublicReadyError(missing_fields=missing_fields)
 
     async def suggest_question(
         self,

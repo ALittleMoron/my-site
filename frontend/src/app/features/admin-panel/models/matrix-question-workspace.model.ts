@@ -216,12 +216,14 @@ export interface AdminMatrixStructureNameTranslations {
 export interface AdminMatrixStructureSubsection {
   id: number;
   name: string;
+  priority: number;
   translations: AdminMatrixStructureNameTranslations;
 }
 
 export interface AdminMatrixStructureSection {
   id: number;
   name: string;
+  priority: number;
   translations: AdminMatrixStructureNameTranslations;
   subsections: AdminMatrixStructureSubsection[];
 }
@@ -230,6 +232,7 @@ export interface AdminMatrixStructureSheet {
   id: number;
   key: string;
   name: string;
+  priority: number;
   translations: AdminMatrixStructureNameTranslations;
   sections: AdminMatrixStructureSection[];
 }
