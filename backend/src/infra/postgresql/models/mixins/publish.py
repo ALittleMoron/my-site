@@ -18,6 +18,6 @@ class PublishMixin(BaseModelMixin):
         doc="Publication date of the article",
     )
     publish_status: Mapped[PublishStatusEnum] = mapped_column(
-        Enum(PublishStatusEnum, native_enum=False, length=10, name="publish_status_enum"),
+        Enum(PublishStatusEnum, native_enum=True, name="publish_status_enum"),
         doc="Record publication status",
     )

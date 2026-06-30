@@ -143,20 +143,23 @@ async def insert_users(*, connection: AsyncConnection) -> None:
                     else_=func.concat(literal("benchmark-user-"), value),
                 ),
                 func.concat(literal("query-plan-seed-password-hash-"), value),
-                case(
-                    (value == 1, literal(RoleEnum.ADMIN.name)),
-                    (value == INACTIVE_MODERATOR_SEED_INDEX, literal(RoleEnum.MODERATOR.name)),
-                    (value == OWNER_SEED_INDEX, literal(RoleEnum.OWNER.name)),
-                    (
-                        value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR == 0,
-                        literal(RoleEnum.ADMIN.name),
+                sql_cast(
+                    case(
+                        (value == 1, literal(RoleEnum.ADMIN.name)),
+                        (value == INACTIVE_MODERATOR_SEED_INDEX, literal(RoleEnum.MODERATOR.name)),
+                        (value == OWNER_SEED_INDEX, literal(RoleEnum.OWNER.name)),
+                        (
+                            value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR == 0,
+                            literal(RoleEnum.ADMIN.name),
+                        ),
+                        (
+                            value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR
+                            == MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER,
+                            literal(RoleEnum.MODERATOR.name),
+                        ),
+                        else_=literal(RoleEnum.USER.name),
                     ),
-                    (
-                        value % MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR
-                        == MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER,
-                        literal(RoleEnum.MODERATOR.name),
-                    ),
-                    else_=literal(RoleEnum.USER.name),
+                    UserModel.__table__.c.role.type,
                 ),
                 case(
                     (value == INACTIVE_MODERATOR_SEED_INDEX, literal(value=False)),
@@ -257,7 +260,10 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
                 literal("Knowledge base"),
                 literal("benchmark"),
                 case((published_article, literal(SEED_NOW)), else_=literal(None)),
-                case((published_article, literal("PUBLISHED")), else_=literal("DRAFT")),
+                sql_cast(
+                    case((published_article, literal("PUBLISHED")), else_=literal("DRAFT")),
+                    ArticleModel.__table__.c.publish_status.type,
+                ),
             ).select_from(series),
         ),
     )
@@ -343,9 +349,12 @@ async def insert_article_reactions(*, connection: AsyncConnection, profile: Data
                     64,
                     literal("x"),
                 ),
-                case(
-                    (func.mod(value, 2) == 0, literal(ArticleReactionKind.HEART.name)),
-                    else_=literal(ArticleReactionKind.FIRE.name),
+                sql_cast(
+                    case(
+                        (func.mod(value, 2) == 0, literal(ArticleReactionKind.HEART.name)),
+                        else_=literal(ArticleReactionKind.FIRE.name),
+                    ),
+                    ArticleReactionModel.__table__.c.reaction_kind.type,
                 ),
                 literal(SEED_NOW),
                 literal(SEED_NOW),
@@ -363,7 +372,7 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
             select(
                 value,
                 func.concat(literal("Query plan resume "), value),
-                literal(LanguageEnum.EN.name),
+                sql_cast(literal(LanguageEnum.EN.name), ResumeModel.__table__.c.language.type),
                 literal(SEED_USERNAME),
                 literal(RESUME_SEED_CONTENT, type_=postgresql.JSONB),
                 literal(SEED_NOW),
@@ -567,25 +576,34 @@ async def insert_competency_matrix_items(
                 func.concat(literal("Ожидаемый ответ "), value),
                 func.concat(literal("Expected answer "), value),
                 subsection_id,
-                case(
-                    (grade_bucket == 0, literal("JUNIOR")),
-                    (grade_bucket == 1, literal("JUNIOR_PLUS")),
-                    (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE, literal("MIDDLE")),
-                    (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE_PLUS, literal("MIDDLE_PLUS")),
-                    else_=literal("SENIOR"),
-                ),
-                case(
-                    (frequency_bucket == 0, literal("CONSTANTLY")),
-                    (frequency_bucket == 1, literal("OFTEN")),
-                    (frequency_bucket == MATRIX_FREQUENCY_BUCKET_RARELY, literal("RARELY")),
-                    (
-                        frequency_bucket == MATRIX_FREQUENCY_BUCKET_NEVER_SEEN,
-                        literal("NEVER_SEEN"),
+                sql_cast(
+                    case(
+                        (grade_bucket == 0, literal("JUNIOR")),
+                        (grade_bucket == 1, literal("JUNIOR_PLUS")),
+                        (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE, literal("MIDDLE")),
+                        (grade_bucket == MATRIX_GRADE_BUCKET_MIDDLE_PLUS, literal("MIDDLE_PLUS")),
+                        else_=literal("SENIOR"),
                     ),
-                    else_=literal(None),
+                    CompetencyMatrixItemModel.__table__.c.grade.type,
+                ),
+                sql_cast(
+                    case(
+                        (frequency_bucket == 0, literal("CONSTANTLY")),
+                        (frequency_bucket == 1, literal("OFTEN")),
+                        (frequency_bucket == MATRIX_FREQUENCY_BUCKET_RARELY, literal("RARELY")),
+                        (
+                            frequency_bucket == MATRIX_FREQUENCY_BUCKET_NEVER_SEEN,
+                            literal("NEVER_SEEN"),
+                        ),
+                        else_=literal(None),
+                    ),
+                    CompetencyMatrixItemModel.__table__.c.interview_frequency.type,
                 ),
                 case((draft_item, literal(None)), else_=literal(SEED_NOW)),
-                case((draft_item, literal("DRAFT")), else_=literal("PUBLISHED")),
+                sql_cast(
+                    case((draft_item, literal("DRAFT")), else_=literal("PUBLISHED")),
+                    CompetencyMatrixItemModel.__table__.c.publish_status.type,
+                ),
             ).select_from(series),
         ),
     )

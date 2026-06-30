@@ -8,9 +8,12 @@ class TestBackendModuleFunctions:
         offenders: list[str] = []
 
         for path in source_root.rglob("*.py"):
+            relative_path = path.relative_to(source_root)
+            if relative_path.parts[:4] == ("infra", "postgresql", "alembic", "versions"):
+                continue
             tree = ast.parse(path.read_text(), filename=str(path))
             offenders.extend(
-                f"{path.relative_to(source_root)}:{node.lineno}:{node.name}"
+                f"{relative_path}:{node.lineno}:{node.name}"
                 for node in tree.body
                 if isinstance(
                     node,

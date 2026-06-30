@@ -9,7 +9,68 @@ branch_labels = None
 depends_on = None
 
 
+def _enum_types_by_name() -> dict[str, postgresql.ENUM]:
+    return {
+        "article_reaction_kind": postgresql.ENUM(
+            "HEART",
+            "FIRE",
+            "THINKING",
+            "NEUTRAL",
+            "POOP",
+            name="article_reaction_kind_enum",
+            create_type=False,
+        ),
+        "article_view_source_category": postgresql.ENUM(
+            "DIRECT",
+            "INTERNAL",
+            "SEARCH",
+            "SOCIAL",
+            "EXTERNAL",
+            "UNKNOWN",
+            name="article_view_source_category_enum",
+            create_type=False,
+        ),
+        "grade": postgresql.ENUM(
+            "JUNIOR",
+            "JUNIOR_PLUS",
+            "MIDDLE",
+            "MIDDLE_PLUS",
+            "SENIOR",
+            name="grade_enum",
+            create_type=False,
+        ),
+        "interview_frequency": postgresql.ENUM(
+            "CONSTANTLY",
+            "OFTEN",
+            "RARELY",
+            "NEVER_SEEN",
+            name="interview_frequency_enum",
+            create_type=False,
+        ),
+        "language": postgresql.ENUM("RU", "EN", name="language_enum", create_type=False),
+        "publish_status": postgresql.ENUM(
+            "DRAFT",
+            "PUBLISHED",
+            name="publish_status_enum",
+            create_type=False,
+        ),
+        "role": postgresql.ENUM(
+            "ANON",
+            "USER",
+            "MODERATOR",
+            "ADMIN",
+            "OWNER",
+            name="role_enum",
+            create_type=False,
+        ),
+    }
+
+
 def upgrade() -> None:
+    enum_types = _enum_types_by_name()
+    for enum_type in enum_types.values():
+        enum_type.create(op.get_bind(), checkfirst=True)
+
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
     op.create_table(
         "articles__article_model",
@@ -53,7 +114,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "publish_status",
-            sa.Enum("DRAFT", "PUBLISHED", name="publish_status_enum", native_enum=False, length=10),
+            enum_types["publish_status"],
             nullable=False,
         ),
         sa.Column("id", sa.UUID(), nullable=False),
@@ -193,16 +254,7 @@ def upgrade() -> None:
         sa.Column("password_hash", sa.String(length=127), nullable=False),
         sa.Column(
             "role",
-            sa.Enum(
-                "ANON",
-                "USER",
-                "MODERATOR",
-                "ADMIN",
-                "OWNER",
-                name="role_enum",
-                native_enum=False,
-                length=10,
-            ),
+            enum_types["role"],
             nullable=False,
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False),
@@ -305,7 +357,9 @@ def upgrade() -> None:
         "resumes__resume_model",
         sa.Column("title", sa.String(length=255), nullable=False),
         sa.Column(
-            "language", sa.Enum("RU", "EN", name="language_enum", native_enum=False), nullable=False
+            "language",
+            enum_types["language"],
+            nullable=False,
         ),
         sa.Column("author_username", sa.String(length=255), nullable=False),
         sa.Column("content", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
@@ -341,17 +395,7 @@ def upgrade() -> None:
         sa.Column("date", sa.Date(), nullable=False),
         sa.Column(
             "source_category",
-            sa.Enum(
-                "DIRECT",
-                "INTERNAL",
-                "SEARCH",
-                "SOCIAL",
-                "EXTERNAL",
-                "UNKNOWN",
-                name="article_view_source_category_enum",
-                native_enum=False,
-                length=20,
-            ),
+            enum_types["article_view_source_category"],
             nullable=False,
         ),
         sa.Column("view_count", sa.Integer(), nullable=False),
@@ -377,16 +421,7 @@ def upgrade() -> None:
         sa.Column("article_scoped_voter_hash", sa.String(length=64), nullable=False),
         sa.Column(
             "reaction_kind",
-            sa.Enum(
-                "HEART",
-                "FIRE",
-                "THINKING",
-                "NEUTRAL",
-                "POOP",
-                name="article_reaction_kind_enum",
-                native_enum=False,
-                length=20,
-            ),
+            enum_types["article_reaction_kind"],
             nullable=False,
         ),
         sa.Column(
@@ -472,15 +507,7 @@ def upgrade() -> None:
         sa.Column("question", sa.String(length=255), nullable=False),
         sa.Column(
             "grade",
-            sa.Enum(
-                "JUNIOR",
-                "JUNIOR_PLUS",
-                "MIDDLE",
-                "MIDDLE_PLUS",
-                "SENIOR",
-                name="grade_enum",
-                native_enum=False,
-            ),
+            enum_types["grade"],
             nullable=True,
         ),
         sa.Column("sheet", sa.String(length=255), nullable=True),
@@ -570,28 +597,12 @@ def upgrade() -> None:
         ),
         sa.Column(
             "grade",
-            sa.Enum(
-                "JUNIOR",
-                "JUNIOR_PLUS",
-                "MIDDLE",
-                "MIDDLE_PLUS",
-                "SENIOR",
-                name="grade_enum",
-                native_enum=False,
-            ),
+            enum_types["grade"],
             nullable=True,
         ),
         sa.Column(
             "interview_frequency",
-            sa.Enum(
-                "CONSTANTLY",
-                "OFTEN",
-                "RARELY",
-                "NEVER_SEEN",
-                name="interview_frequency_enum",
-                native_enum=False,
-                length=11,
-            ),
+            enum_types["interview_frequency"],
             nullable=True,
         ),
         sa.Column(
@@ -601,7 +612,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "publish_status",
-            sa.Enum("DRAFT", "PUBLISHED", name="publish_status_enum", native_enum=False, length=10),
+            enum_types["publish_status"],
             nullable=False,
         ),
         sa.Column(
@@ -708,6 +719,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    enum_types = _enum_types_by_name()
+
     op.drop_table("competency_matrix__resource_to_item_secondary_model")
     op.drop_index(
         op.f("ix_competency_matrix__competency_matrix_item_model_slug"),
@@ -871,3 +884,6 @@ def downgrade() -> None:
         "articles_article_publish_status_published_at_idx", table_name="articles__article_model"
     )
     op.drop_table("articles__article_model")
+
+    for enum_type in reversed(tuple(enum_types.values())):
+        enum_type.drop(op.get_bind(), checkfirst=True)

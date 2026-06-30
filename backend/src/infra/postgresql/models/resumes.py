@@ -31,7 +31,7 @@ from infra.postgresql.models.base import BaseModel
 class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
     title: Mapped[str] = mapped_column(String(length=255), doc="Private workspace resume title")
     language: Mapped[LanguageEnum] = mapped_column(
-        Enum(LanguageEnum, native_enum=False, length=2, name="language_enum"),
+        Enum(LanguageEnum, native_enum=True, name="language_enum"),
         doc="User-selected resume language",
     )
     author_username: Mapped[str] = mapped_column(

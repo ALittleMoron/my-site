@@ -6,6 +6,16 @@ These rules apply to SQLAlchemy models, PostgreSQL storages, and Alembic migrati
 
 - Any changes under `backend/src/infra/postgresql/` must also be reflected in `backend/performance/query_plans/` by updating the relevant query capture, seed data, expectations, docs, or tests so the query-plan harness continues to exercise the changed PostgreSQL behavior.
 
+## Data Models
+
+- SQLAlchemy data models may use only database-native PostgreSQL enum types for enum-valued
+  columns. Do not set `native_enum=False` or emulate enums with `VARCHAR` plus check constraints;
+  matching migrations must preserve native PostgreSQL enum types for those columns.
+- When adding or changing SQLAlchemy data models, look for repeated field groups and repeated model
+  behavior before writing them inline. Prefer an existing project mixin, a small new project mixin,
+  or a suitable third-party mixin from `sqlalchemy_dev_utils` when the same columns, constraints,
+  indexes, conversion helpers, or lifecycle behavior appear across multiple models.
+
 ## Storages
 
 - Storage mutation methods must not hide preliminary read/get operations. Public use cases should

@@ -19,7 +19,7 @@ class UserModel(BaseModel):
         doc="User password hash",
     )
     role: Mapped[RoleEnum] = mapped_column(
-        Enum(RoleEnum, native_enum=False, length=10, name="role_enum"),
+        Enum(RoleEnum, native_enum=True, name="role_enum"),
         doc="User role",
     )
     is_active: Mapped[bool] = mapped_column(

@@ -352,8 +352,7 @@ class ArticleDailyAnalyticsModel(IntegerIDMixin, BaseModel):
     source_category: Mapped[ArticleViewSourceCategory] = mapped_column(
         Enum(
             ArticleViewSourceCategory,
-            native_enum=False,
-            length=20,
+            native_enum=True,
             name="article_view_source_category_enum",
         ),
         doc="Coarse referrer source category",
@@ -391,8 +390,7 @@ class ArticleReactionModel(IntegerIDMixin, AuditMixin, BaseModel):
     reaction_kind: Mapped[ArticleReactionKind] = mapped_column(
         Enum(
             ArticleReactionKind,
-            native_enum=False,
-            length=20,
+            native_enum=True,
             name="article_reaction_kind_enum",
         ),
         doc="Anonymous reaction kind",

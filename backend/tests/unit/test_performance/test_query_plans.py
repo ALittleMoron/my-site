@@ -1,6 +1,7 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import Any, cast
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.dialects import postgresql
@@ -14,6 +15,7 @@ from performance.query_plans import (
     generate_series_subquery,
 )
 from performance.query_plans import scenarios as query_plan_scenarios
+from performance.query_plans import seed as query_plan_seed
 from performance.query_plans.discovery import discover_storage_methods
 from performance.query_plans.expectations import (
     QueryThresholdPolicy,
@@ -24,6 +26,7 @@ from performance.query_plans.models import (
     BenchmarkResult,
     CapturedQuery,
     CoverageReport,
+    DatasetProfile,
     PlanAnalysis,
     QueryThresholdGroup,
     StorageMethod,
@@ -141,6 +144,44 @@ class TestQueryCapture:
 
         assert "generate_series(1, 3) AS value" in compiled
         assert "sample_series.value" in compiled
+
+    async def test_seed_bulk_selects_cast_native_enum_values(self) -> None:
+        profile = DatasetProfile(
+            name="unit",
+            article_count=10,
+            tag_count=10,
+            article_tag_link_count=10,
+            resource_count=10,
+            explain_runs=1,
+        )
+        expectations: tuple[
+            tuple[Callable[..., Awaitable[None]], Mapping[str, object], tuple[str, ...]],
+            ...,
+        ] = (
+            (query_plan_seed.insert_users, {}, ("role_enum",)),
+            (query_plan_seed.insert_articles, {"profile": profile}, ("publish_status_enum",)),
+            (
+                query_plan_seed.insert_article_reactions,
+                {"profile": profile},
+                ("article_reaction_kind_enum",),
+            ),
+            (query_plan_seed.insert_resumes, {}, ("language_enum",)),
+            (
+                query_plan_seed.insert_competency_matrix_items,
+                {"profile": profile},
+                ("grade_enum", "interview_frequency_enum", "publish_status_enum"),
+            ),
+        )
+
+        for seed_function, kwargs, enum_type_names in expectations:
+            connection = AsyncMock()
+
+            await seed_function(connection=connection, **kwargs)
+
+            statement = connection.execute.await_args_list[0].args[0]
+            compiled = str(statement.compile(dialect=postgresql.dialect()))
+            for enum_type_name in enum_type_names:
+                assert f"AS {enum_type_name}" in compiled
 
     def test_discover_storage_methods_finds_public_async_methods_only(self) -> None:
         methods = discover_storage_methods()

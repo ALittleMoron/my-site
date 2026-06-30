@@ -256,14 +256,13 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         doc="Question subsection identifier",
     )
     grade: Mapped[GradeEnum | None] = mapped_column(
-        Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
+        Enum(GradeEnum, native_enum=True, name="grade_enum"),
         doc="Competency grade",
     )
     interview_frequency: Mapped[InterviewFrequencyEnum | None] = mapped_column(
         Enum(
             InterviewFrequencyEnum,
-            native_enum=False,
-            length=11,
+            native_enum=True,
             name="interview_frequency_enum",
         ),
         doc="How often the question appears in interviews",
@@ -411,7 +410,7 @@ class QueuedQuestionModel(IntegerIDMixin, BaseModel):
         doc="Suggested or imported raw competency matrix question",
     )
     grade: Mapped[GradeEnum | None] = mapped_column(
-        Enum(GradeEnum, native_enum=False, length=11, name="grade_enum"),
+        Enum(GradeEnum, native_enum=True, name="grade_enum"),
         doc="Optional competency grade",
     )
     sheet: Mapped[str | None] = mapped_column(
