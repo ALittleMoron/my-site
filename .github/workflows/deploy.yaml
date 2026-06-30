@@ -40,17 +40,16 @@ jobs:
           --manifest infra/deploy/runtime-env.manifest.json
           --output .env
 
+      - name: Prepare deploy payload
+        run: |
+          mkdir -p .deploy-payload
+          cp -a Makefile docker-compose.yml backend/ frontend/ infra/ .env .deploy-payload/
+
       - name: Sync runtime files to server
         uses: burnett01/rsync-deployments@9.0.0
         with:
-          switches: -avzr --delete --exclude '.git' --exclude 'node_modules' --exclude '.venv' --exclude 'infra/nginx/certs/*.pem'
-          path: |
-            Makefile
-            docker-compose.yml
-            backend/
-            frontend/
-            infra/
-            .env
+          switches: -avzr --delete --exclude '.git' --exclude '.deploy-state' --exclude 'node_modules' --exclude '.venv' --exclude 'infra/nginx/certs/*.pem'
+          path: .deploy-payload/
           remote_path: ${{ vars.REMOTE_PATH }}
           remote_host: ${{ vars.REMOTE_HOST }}
           remote_user: ${{ vars.REMOTE_USER }}
