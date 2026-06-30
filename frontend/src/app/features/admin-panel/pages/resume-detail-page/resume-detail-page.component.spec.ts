@@ -10,11 +10,7 @@ import { ResumeWorkspaceService } from '../../services/resume-workspace.service'
 import { AdminResumeDetailPageComponent } from './resume-detail-page.component';
 
 type ResumeValidationCaseSetup =
-  | 'education'
-  | 'language'
-  | 'certification'
-  | 'additionalSection'
-  | 'additionalItem';
+  'education' | 'language' | 'certification' | 'additionalSection' | 'additionalItem';
 
 type ResumeEditorTab =
   | 'profile'
@@ -1084,17 +1080,13 @@ describe('AdminResumeDetailPageComponent', () => {
 
   function inputValue(testId: string): string {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     return input.value;
   }
 
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1103,9 +1095,7 @@ describe('AdminResumeDetailPageComponent', () => {
 
   function setElementValueById(elementId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`#${elementId}`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1114,8 +1104,7 @@ describe('AdminResumeDetailPageComponent', () => {
 
   function elementValueById(elementId: string): string {
     const input = fixture.nativeElement.querySelector(`#${elementId}`) as
-      | HTMLInputElement
-      | HTMLTextAreaElement;
+      HTMLInputElement | HTMLTextAreaElement;
     return input.value;
   }
 

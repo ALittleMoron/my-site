@@ -194,8 +194,7 @@ export interface NewMatrixResourceAttachmentPayload {
 }
 
 export type MatrixResourceAttachmentPayload =
-  | ExistingMatrixResourceAttachmentPayload
-  | NewMatrixResourceAttachmentPayload;
+  ExistingMatrixResourceAttachmentPayload | NewMatrixResourceAttachmentPayload;
 
 export interface MatrixQuestionPayload {
   slug: string;
