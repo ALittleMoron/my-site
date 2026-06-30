@@ -3,7 +3,6 @@
     { "name": "IMAGE_TAG", "allowEmpty": false }
   ],
   "vars": [
-    { "name": "OWNER_INIT_ENABLED", "allowEmpty": false },
     { "name": "OWNER_INIT_LOGIN", "allowEmpty": false },
     { "name": "APP_CONTACT_REQUESTS_ENABLED", "allowEmpty": false },
     { "name": "APP_DEBUG", "allowEmpty": false },

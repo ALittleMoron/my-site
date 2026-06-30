@@ -12,6 +12,7 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 |---|---|---|
 | Unit | Single layer in isolation. Uses mock storages/providers. | `backend/tests/unit/` |
 | Integration | DB storages + core together, no mocks. Happy path only. | `backend/tests/integration/` |
+| Migration | Alembic revision upgrade/downgrade behavior against real PostgreSQL. | `backend/tests/migrations/` |
 
 ## Unit Tests
 
@@ -25,15 +26,31 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 
 - Test the full stack: HTTP -> handler -> use case -> real DB (no mocks anywhere).
 - Happy path only.
-- Real PostgreSQL test DB (`my_site_database_test`) — auto-migrated via conftest.
+- Real PostgreSQL test DB (`my_site_database_test`) — tests under `backend/tests/integration/`
+  are auto-migrated to `heads` via their package conftest.
 - Real Dishka providers (not mocks).
 - Inherit `StorageTestCase` for DB assertion helpers; session auto-rollbacks after each test.
+- Alembic migration tests live outside `integration/` under `backend/tests/migrations/`, with one
+  file per revision such as `test_0001.py`; each file should cover upgrade and downgrade behavior
+  and explicitly call migration helpers for the revision under test.
+
+## Migration Tests
+
+- Prefer testing migrations against populated tables affected by the revision. For a migration that
+  changes an existing table, migrate to the revision immediately before the one under test, insert
+  representative rows into that table, then run the target migration and assert the data/schema
+  result.
+- Do not import application ORM models in migration tests. Use only SQLAlchemy Core tables,
+  columns, expressions, and query builder constructs because later revisions may remove or reshape
+  ORM models that older migration tests still need to exercise.
+- Raw SQL is prohibited completely in migration tests: do not use handwritten SQL strings,
+  `sqlalchemy.text()`, `op.execute()` with SQL strings, or `connection.exec_driver_sql()`.
 
 ## Commands
 
 ```bash
 make test-unit           # unit tests only (fast, run often)
-make test-integration    # integration tests; starts/reuses test DB automatically
+make test-integration    # integration + migration tests; starts/reuses test DB automatically
 make tests               # all tests
 make tests-coverage      # all + coverage report
 ```

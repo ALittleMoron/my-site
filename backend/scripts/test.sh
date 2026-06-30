@@ -25,7 +25,7 @@ case "$action" in
     test-integration)
         ensure_backend_test_db
         trap cleanup_owned_test_db EXIT
-        run_with_test_env uv run pytest --durations=10 -vvv -x tests/integration/
+        run_with_test_env uv run pytest --durations=10 -vvv -x tests/integration/ tests/migrations/
         ;;
     tests-coverage)
         ensure_backend_test_db

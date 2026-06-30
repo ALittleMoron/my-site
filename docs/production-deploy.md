@@ -26,7 +26,6 @@ Deploy-only secret:
 
 Runtime variables:
 
-- `OWNER_INIT_ENABLED`
 - `OWNER_INIT_LOGIN`
 - `APP_CONTACT_REQUESTS_ENABLED`
 - `APP_DEBUG`
@@ -82,10 +81,9 @@ Use `SSL_CERT=/certs/fullchain.pem` and `SSL_KEY=/certs/privkey.pem` for the com
 certificate sync path. Keep deploy-only values such as `REMOTE_HOST`, `REMOTE_USER`,
 `REMOTE_PATH`, `SSH_PRIVATE_KEY`, and registry passwords out of runtime `.env`.
 
-Set `OWNER_INIT_ENABLED=true` when backend init should try to create the owner account from
-`OWNER_INIT_LOGIN` and `OWNER_INIT_PASSWORD`. Set it to `false` after the owner account is managed
-manually or restored from existing data; migrations, cache invalidation, and bucket initialization
-still run.
+The initial database migration creates the owner account from `OWNER_INIT_LOGIN` and
+`OWNER_INIT_PASSWORD`. The migration runs once per database and uses an idempotent insert, so there
+is no separate owner-init toggle.
 
 Use `MINIO_HOST=minio` and `MINIO_PORT=9000` for the backend-internal S3 endpoint in the Compose
 network. Use `MINIO_PUBLIC_URL=https://s3.<APP_DOMAIN>` for browser-facing object access and

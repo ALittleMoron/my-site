@@ -38,7 +38,6 @@ require_environment() {
         "APP_SECRET_KEY"
         "APP_USE_CACHE"
         "APP_CONTACT_REQUESTS_ENABLED"
-        "OWNER_INIT_ENABLED"
         "OWNER_INIT_LOGIN"
         "OWNER_INIT_PASSWORD"
         "DB_USER"

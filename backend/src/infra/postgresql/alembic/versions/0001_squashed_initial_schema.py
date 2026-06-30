@@ -1,4 +1,7 @@
+import os
+
 from alembic import op
+from argon2 import PasswordHasher
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
@@ -64,6 +67,27 @@ def _enum_types_by_name() -> dict[str, postgresql.ENUM]:
             create_type=False,
         ),
     }
+
+
+def _create_initial_owner(role_type: postgresql.ENUM) -> None:
+    owner_table = sa.table(
+        "auth__user_model",
+        sa.column("username", sa.String(255)),
+        sa.column("password_hash", sa.String(127)),
+        sa.column("role", role_type),
+        sa.column("is_active", sa.Boolean()),
+    )
+    statement = (
+        postgresql.insert(owner_table)
+        .values(
+            username=os.environ["OWNER_INIT_LOGIN"],
+            password_hash=PasswordHasher().hash(os.environ["OWNER_INIT_PASSWORD"]),
+            role="OWNER",
+            is_active=True,
+        )
+        .on_conflict_do_nothing(index_elements=["username"])
+    )
+    op.get_bind().execute(statement)
 
 
 def upgrade() -> None:
@@ -280,6 +304,7 @@ def upgrade() -> None:
         [sa.literal_column("lower(username)").label("username_lower")],
         unique=True,
     )
+    _create_initial_owner(enum_types["role"])
     op.create_table(
         "competency_matrix__competency_matrix_sheet_model",
         sa.Column("key", sa.String(length=255), nullable=False),
