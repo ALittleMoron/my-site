@@ -1,15 +1,15 @@
-# Personal Site Concept
+# Knowledge Base Concept
 
 ## Concept
 
-Personal portfolio site with articles and an interactive competency matrix.
-Demonstrates technical skills through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
+Knowledge base with articles, an interactive competency matrix, and an engineering case study.
+Documents technical decisions through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
 
 ## Audience
 
-- Potential employers and recruiters
 - Colleagues and like-minded people in IT
-- The author himself (as a knowledge base and article archive)
+- Readers looking for practical engineering notes
+- The author as maintainer of the knowledge base and article archive
 
 ## Non-goals (will not build)
 
@@ -45,4 +45,4 @@ Demonstrates technical skills through Clean Architecture, Angular, API-first bac
 
 ## Goal
 
-Portfolio for potential employers and IT colleagues. Also, a personal knowledge base and article archive for self-development.
+Public knowledge base for IT colleagues and readers, plus an article archive and engineering notebook for continued development.

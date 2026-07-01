@@ -43,7 +43,7 @@ describe('I18nService', () => {
     bundleReq.flush({
       language: 'ru',
       messages: {
-        'shell.nav.about': 'Обо мне',
+        'shell.nav.articles': 'Статьи',
         greeting: 'Привет, {name}',
       },
     });
@@ -53,7 +53,7 @@ describe('I18nService', () => {
       { code: 'ru', label: 'Русский' },
       { code: 'en', label: 'English' },
     ]);
-    expect(service.translate('shell.nav.about')).toBe('Обо мне');
+    expect(service.translate('shell.nav.articles')).toBe('Статьи');
     expect(service.translate('greeting', { name: 'Дима' })).toBe('Привет, Дима');
     expect(document.documentElement.lang).toBe('ru');
   });
@@ -71,7 +71,7 @@ describe('I18nService', () => {
     transferState.set(bundleKey, {
       language: 'ru',
       messages: {
-        'shell.nav.about': 'Обо мне',
+        'shell.nav.articles': 'Статьи',
       },
     });
 
@@ -83,7 +83,7 @@ describe('I18nService', () => {
       { code: 'ru', label: 'Русский' },
       { code: 'en', label: 'English' },
     ]);
-    expect(service.translate('shell.nav.about')).toBe('Обо мне');
+    expect(service.translate('shell.nav.articles')).toBe('Статьи');
     expect(document.documentElement.lang).toBe('ru');
     expect(transferState.hasKey(languagesKey)).toBe(false);
     expect(transferState.hasKey(bundleKey)).toBe(false);
@@ -104,10 +104,10 @@ describe('I18nService', () => {
       });
 
     const bundleReq = httpMock.expectOne((req) => req.url.endsWith('/api/i18n/bundles/en'));
-    bundleReq.flush({ language: 'en', messages: { 'shell.nav.about': 'About' } });
+    bundleReq.flush({ language: 'en', messages: { 'shell.nav.articles': 'Articles' } });
 
     expect(service.language()).toBe('en');
-    expect(service.translate('shell.nav.about')).toBe('About');
+    expect(service.translate('shell.nav.articles')).toBe('Articles');
   });
 
   it('uses the URL language prefix before the stored language', () => {
@@ -126,7 +126,7 @@ describe('I18nService', () => {
       });
 
     const bundleReq = httpMock.expectOne((req) => req.url.endsWith('/api/i18n/bundles/en'));
-    bundleReq.flush({ language: 'en', messages: { 'shell.nav.about': 'About' } });
+    bundleReq.flush({ language: 'en', messages: { 'shell.nav.articles': 'Articles' } });
 
     expect(service.language()).toBe('en');
     expect(localStorage.getItem('chosenLanguage')).toBe('en');
@@ -148,7 +148,7 @@ describe('I18nService', () => {
       });
 
     const bundleReq = httpMock.expectOne((req) => req.url.endsWith('/api/i18n/bundles/ru'));
-    bundleReq.flush({ language: 'ru', messages: { 'shell.nav.about': 'Обо мне' } });
+    bundleReq.flush({ language: 'ru', messages: { 'shell.nav.articles': 'Статьи' } });
 
     expect(service.language()).toBe('ru');
     expect(localStorage.getItem('chosenLanguage')).toBe('ru');

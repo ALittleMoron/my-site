@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,10 +10,11 @@ import {
   UrlTree,
 } from '@angular/router';
 import { provideRouter } from '@angular/router';
-import { firstValueFrom, isObservable, of } from 'rxjs';
+import { firstValueFrom, isObservable, of, throwError } from 'rxjs';
 import { authGuard, teamGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { ApiClient } from '../http/api-client.service';
+import { I18nService } from '../i18n/i18n.service';
 
 describe('authGuard', () => {
   function mockAuthService(canManageContent: boolean): Partial<AuthService> {
@@ -28,6 +30,7 @@ describe('authGuard', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: mockAuthService(canManageContent) },
+        { provide: I18nService, useValue: { language: signal('ru') } },
       ],
     });
     return TestBed.runInInjectionContext(() =>
@@ -50,10 +53,37 @@ describe('authGuard', () => {
     await expect(resolveGuardResult(runGuard(true))).resolves.toBe(true);
   });
 
-  it('returns UrlTree redirect to /about-me when user cannot manage content', async () => {
+  it('returns UrlTree redirect to the localized public home when user cannot manage content', async () => {
     const result = await resolveGuardResult(runGuard(false));
     expect(result instanceof UrlTree).toBe(true);
-    expect((result as UrlTree).toString()).toBe('/about-me');
+    expect((result as UrlTree).toString()).toBe('/ru/how-this-site-is-built');
+  });
+
+  it('clears local session and redirects to localized public home when account restore fails', async () => {
+    const clearLocalSession = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: {
+            ensureCurrentUserLoaded: () => throwError(() => new Error('restore failed')),
+            clearLocalSession,
+          },
+        },
+        { provide: I18nService, useValue: { language: signal('ru') } },
+      ],
+    });
+
+    const result = await resolveGuardResult(
+      TestBed.runInInjectionContext(() =>
+        authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+      ),
+    );
+
+    expect(clearLocalSession).toHaveBeenCalledTimes(1);
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/ru/how-this-site-is-built');
   });
 
   it('waits for stored-token account restore before allowing admin-panel reload', async () => {
@@ -65,6 +95,7 @@ describe('authGuard', () => {
         provideHttpClientTesting(),
         ApiClient,
         AuthService,
+        { provide: I18nService, useValue: { language: signal('ru') } },
       ],
     });
     const httpMock = TestBed.inject(HttpTestingController);
@@ -95,6 +126,7 @@ describe('teamGuard', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: mockAuthService(canManageTeam) },
+        { provide: I18nService, useValue: { language: signal('ru') } },
       ],
     });
     return TestBed.runInInjectionContext(() =>
@@ -118,5 +150,32 @@ describe('teamGuard', () => {
 
     expect(result instanceof UrlTree).toBe(true);
     expect((result as UrlTree).toString()).toBe('/admin-panel/articles');
+  });
+
+  it('clears local session and redirects to localized public home when team account restore fails', async () => {
+    const clearLocalSession = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: {
+            ensureCurrentUserLoaded: () => throwError(() => new Error('restore failed')),
+            clearLocalSession,
+          },
+        },
+        { provide: I18nService, useValue: { language: signal('ru') } },
+      ],
+    });
+
+    const result = await resolveGuardResult(
+      TestBed.runInInjectionContext(() =>
+        teamGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+      ),
+    );
+
+    expect(clearLocalSession).toHaveBeenCalledTimes(1);
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).toString()).toBe('/ru/how-this-site-is-built');
   });
 });

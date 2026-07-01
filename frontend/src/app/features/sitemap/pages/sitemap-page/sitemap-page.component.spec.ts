@@ -61,5 +61,7 @@ describe('SitemapPageComponent', () => {
 
     expect(link).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Как устроен сайт');
+    expect(fixture.nativeElement.querySelector('a[href="/ru/about-me"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Обо мне');
   });
 });

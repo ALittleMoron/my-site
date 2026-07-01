@@ -19,10 +19,11 @@ describe('SiteCaseStudyPageComponent', () => {
         provideRouter([]),
         provideI18nTesting({
           'siteBuild.hero.title': 'Как устроен этот сайт',
-          'siteBuild.hero.lead': 'Портфолио-кейс о production-подходе.',
+          'siteBuild.hero.lead': 'Инженерный разбор production-подхода.',
           'siteBuild.hero.sourceCode': 'Исходный код',
           'siteBuild.problem.title': 'Задача',
-          'siteBuild.problem.body': 'Сайт объединяет портфолио, статьи и матрицу компетенций.',
+          'siteBuild.problem.body':
+            'Сайт объединяет статьи, матрицу компетенций и разбор собственной архитектуры.',
           'siteBuild.architecture.title': 'Архитектура',
           'siteBuild.architecture.backendTitle': 'Backend',
           'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka и PostgreSQL.',
@@ -68,7 +69,9 @@ describe('SiteCaseStudyPageComponent', () => {
     ) as HTMLAnchorElement | null;
 
     expect(pageText).toContain('Как устроен этот сайт');
-    expect(pageText).toContain('Сайт объединяет портфолио, статьи и матрицу компетенций.');
+    expect(pageText).toContain(
+      'Сайт объединяет статьи, матрицу компетенций и разбор собственной архитектуры.',
+    );
     expect(pageText).toContain('Litestar, SQLAlchemy, Dishka и PostgreSQL.');
     expect(pageText).toContain('Angular hybrid SSR/CSR и backend-driven i18n.');
     expect(pageText).toContain('Нормализованная taxonomy матрицы');

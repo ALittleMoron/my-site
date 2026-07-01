@@ -101,7 +101,7 @@ describe('AdminPanelHeaderComponent', () => {
     expect(primary).not.toBeNull();
     expect(primary?.contains(homeLink)).toBe(true);
     expect(primary?.contains(title)).toBe(true);
-    expect(homeLink.getAttribute('href')).toBe('/ru/about-me');
+    expect(homeLink.getAttribute('href')).toBe('/ru/how-this-site-is-built');
     expect(homeLink.getAttribute('aria-label')).toBe('На главную');
     expect(homeLink.textContent?.trim()).toBe('');
     expect(title?.textContent?.trim()).toBe('Админ-панель');

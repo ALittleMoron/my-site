@@ -45,8 +45,8 @@ class TestSeoDiscoveryAPI(ApiTestCase):
         assert response.status_code == codes.OK, response.content
         assert response.headers["content-type"].startswith("application/xml")
         sitemap = response.text
-        assert "<loc>http://localhost:8000/ru/about-me</loc>" in sitemap
-        assert "<loc>http://localhost:8000/en/about-me</loc>" in sitemap
+        assert "http://localhost:8000/ru/about-me" not in sitemap
+        assert "http://localhost:8000/en/about-me" not in sitemap
         assert "<loc>http://localhost:8000/ru/how-this-site-is-built</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/how-this-site-is-built</loc>" in sitemap
         assert "<loc>http://localhost:8000/ru/articles/typed-articles</loc>" in sitemap
@@ -115,7 +115,6 @@ class TestSeoDiscoveryAPI(ApiTestCase):
             "Allow: /sitemap.xml\n"
             "Disallow: /api/\n"
             "Disallow: /login\n"
-            "Disallow: /about-me\n"
             "Disallow: /how-this-site-is-built\n"
             "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"

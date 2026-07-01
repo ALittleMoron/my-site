@@ -1,4 +1,4 @@
-# My Personal Site
+# My Knowledge Base
 
 [🇷🇺 Russian version](./README_RU.md)
 
@@ -20,8 +20,8 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
-A personal knowledge site with portfolio and case-study pages, a competency matrix, localized articles,
-and protected owner/admin/moderator workspaces.
+A knowledge base with an engineering case-study page, a competency matrix, localized articles, and
+protected owner/admin/moderator workspaces.
 
 ## 📖 Documentation
 

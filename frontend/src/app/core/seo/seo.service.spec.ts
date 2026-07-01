@@ -18,9 +18,9 @@ describe('SeoService', () => {
   });
 
   it('setMeta() sets document title using Title service', () => {
-    service.setMeta({ title: 'Обо мне', description: 'Описание страницы.' });
+    service.setMeta({ title: 'Как устроен сайт', description: 'Описание страницы.' });
 
-    expect(titleService.getTitle()).toBe('Обо мне - Мой сайт');
+    expect(titleService.getTitle()).toBe('Как устроен сайт - Мой сайт');
   });
 
   it('setMeta() sets og:title meta tag', () => {
@@ -31,8 +31,8 @@ describe('SeoService', () => {
   });
 
   it('setMeta() sets description meta tag', () => {
-    const description = 'Личный сайт Дмитрия Лунева.';
-    service.setMeta({ title: 'Обо мне', description });
+    const description = 'Инженерный разбор устройства сайта.';
+    service.setMeta({ title: 'Как устроен сайт', description });
 
     const tag = metaService.getTag('name="description"');
     expect(tag?.content).toBe(description);
@@ -40,20 +40,20 @@ describe('SeoService', () => {
 
   it('setMeta() creates canonical link from canonical path', () => {
     service.setMeta({
-      title: 'Обо мне',
+      title: 'Как устроен сайт',
       description: 'Описание страницы.',
-      canonicalPath: '/ru/about-me',
+      canonicalPath: '/ru/how-this-site-is-built',
     });
 
     const link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    expect(link?.href).toBe('http://localhost:4200/ru/about-me');
+    expect(link?.href).toBe('http://localhost:4200/ru/how-this-site-is-built');
   });
 
   it('setMeta() removes stale canonical link when canonical is not provided', () => {
     service.setMeta({
-      title: 'Обо мне',
+      title: 'Как устроен сайт',
       description: 'Описание страницы.',
-      canonicalPath: '/about-me',
+      canonicalPath: '/how-this-site-is-built',
     });
 
     service.setMeta({ title: '404', description: 'Страница не найдена.' });

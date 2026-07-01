@@ -5,7 +5,7 @@
 ### Minimum Viable Product (MVP)
 
 - [x] Competency matrix grid/table view
-- [x] About me section
+- [x] Public site-build case-study home
 - [x] Contact form
 - [x] Articles (previous MVP core-only implementation)
 - [x] Admin panel via SQLAdmin
@@ -13,7 +13,7 @@
 - [x] Add Databasus for database backups
 - [x] Configure Let's Encrypt
 - [x] Remove password_hash from the User domain model
-- [x] Remove the mentorship section. Keep "about me".
+- [x] Remove the mentorship section.
 - [x] Fix static files on MinIO and the backup service.
 - [x] (SEO) Add a canonical link
 - [x] Validate CSS (focus on overriding Bootstrap variables)
@@ -65,7 +65,7 @@
   - [x] Expand Locust scenarios with seeded article/detail/matrix data
   - [x] Add Lighthouse CI with strict quality/performance gates for Angular hybrid SSR/CSR routes
   - [x] Lighthouse audit — fix non-performance errors and enforce strict gates
-- [x] Add public "how this site is built" portfolio/case-study page.
+- [x] Add public "how this site is built" engineering case-study page.
 - [x] Add privacy-safe article analytics (public views, engaged views, anonymous reactions).
 - [x] Move tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
@@ -263,8 +263,8 @@
     - [x] Add missing backend API endpoints only where data currently exists only in Jinja templates
     - [x] Keep feature services using `ApiClient`; do not inject raw `HttpClient` outside `core/http/`
   - [x] Frontend app shell
-    - [x] Route parity: `/about-me`, `/competency-matrix`, `/sitemap`, `/404`
-    - [x] Redirect `/` to `/about-me`
+    - [x] Route parity: `/how-this-site-is-built`, `/competency-matrix`, `/sitemap`, `/404`
+    - [x] Redirect `/` to the localized site-build case study
     - [x] Header with current navigation and active route state
     - [x] Footer with docs, source, sitemap, and social links
     - [x] Global alert/notification area for API success and error feedback
@@ -294,14 +294,9 @@
     - [x] Code highlighting for Markdown code blocks
     - [x] External resources list
     - [x] Loading, empty, and error states for every API-backed view
-  - [x] About me
-    - [x] landing
-    - [x] Contact me form
-    - [x] Preserve current image and content assets
-    - [x] Typed reactive contact form
-    - [x] Client validation matching backend constraints
-    - [x] Backend validation error rendering, including nested errors
-    - [x] Success notification after request creation
+  - [x] Public home
+    - [x] Use the site-build case study as the public home
+    - [x] Keep direct contact via footer links
   - [x] Auth and account
     - [x] Auth token storage strategy
     - [x] HTTP interceptor that sends `Authorization: Bearer <token>`
@@ -316,7 +311,7 @@
     - [x] Build Angular as an independent frontend Docker image
     - [x] Serve Angular hybrid SSR/CSR from a frontend Node.js runtime
     - [x] Proxy `/api/*` and `/api/docs` from nginx to Litestar
-    - [x] Smoke test direct route loads (`/about-me`, `/competency-matrix`, `/sitemap`)
+    - [x] Smoke test direct route loads (`/how-this-site-is-built`, `/competency-matrix`, `/sitemap`)
     - [x] Smoke test browser refresh on Angular routes
     - [x] Remove `views_router` from Litestar app after Angular parity
     - [x] Remove Jinja templates and HTMX/Hyperscript dependencies after Angular parity
@@ -575,7 +570,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Restyle the articles side panel so folders and articles read as a tree: reduce the default article background contrast, use hover background for articles, increase article indentation inside folders, and consider cohesive tree connector glyphs.
   - [x] Fix the sitemap page title overlapping the header.
   - [x] Show the list of published articles on the sitemap page.
-  - [x] Fix the about page `Contact me` anchor so scrolling to the contact form does not visibly re-render the page.
+  - [x] Remove the former public biography/contact surface from the unauthenticated site.
 - [x] Production admin UI QA
   - [x] Make the logout control borderless: red text only, separated from the username by a vertical `|` delimiter.
   - [x] Prevent the English `Logout` button text from wrapping as `Log` / `out`.
@@ -592,7 +587,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 ## Documentation
 
 - [ ] Add parameter details to the API and include examples and other fields.
-- [ ] Add public architecture, quality, and security articles as portfolio documentation.
+- [ ] Add public architecture, quality, and security articles as engineering documentation.
 - [ ] Add ADRs for major platform choices.
 
 ## Refactoring

@@ -84,7 +84,6 @@ describe('AppComponent', () => {
                 'i18n.startupError.title': 'Failed to load localization',
                 'i18n.startupError.message': 'Check the API connection and try again.',
                 'i18n.startupError.retry': 'Retry',
-                'shell.nav.about': 'Обо мне',
                 'shell.nav.matrix': 'Матрица компетенций',
                 'shell.nav.articles': 'Статьи',
                 'shell.nav.adminPanel': 'Админ-панель',

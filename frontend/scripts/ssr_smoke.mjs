@@ -52,6 +52,7 @@ async function assertDiscoveryEndpoints(frontendPort) {
       sitemapText.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'),
     ],
     ['sitemap canonical route', sitemapText.includes(`${origin}/ru/how-this-site-is-built`)],
+    ['sitemap excludes removed about page', !sitemapText.includes('/about-me')],
   ];
   assertExpected(expected, `${robotsText}\n${sitemapText}`, 'LHCI discovery endpoints');
 }
@@ -89,7 +90,7 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
   const expected = [
     ['status 200', response.status === 200],
     ['title', html.includes('How this site is built - My site')],
-    ['hero', html.includes('Portfolio case study about a production-minded personal site.')],
+    ['hero', html.includes('Engineering case study of a production-minded knowledge base.')],
     ['architecture', html.includes('Angular hybrid SSR/CSR and backend-driven i18n.')],
     ['source code CTA', html.includes('href="https://github.com/ALittleMoron/my-site"')],
     [

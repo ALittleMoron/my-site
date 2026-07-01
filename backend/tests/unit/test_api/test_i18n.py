@@ -22,7 +22,8 @@ class TestI18nApi(ApiTestCase):
         assert response.status_code == codes.OK, response.content
         body = response.json()
         assert body["language"] == "ru"
-        assert body["messages"]["shell.nav.about"] == "Обо мне"
+        assert "shell.nav.about" not in body["messages"]
+        assert body["messages"]["shell.footer.email"] == "Эл. почта"
         assert body["messages"]["shell.nav.adminPanel"] == "Админ-панель"
         assert body["messages"]["adminPanel.title"] == "Админ-панель"
         assert body["messages"]["enum.publishStatus.Draft"] == "Черновик"
@@ -37,7 +38,8 @@ class TestI18nApi(ApiTestCase):
         assert response.status_code == codes.OK, response.content
         body = response.json()
         assert body["language"] == "en"
-        assert body["messages"]["shell.nav.about"] == "About"
+        assert "shell.nav.about" not in body["messages"]
+        assert body["messages"]["shell.footer.email"] == "Email"
         assert body["messages"]["shell.nav.adminPanel"] == "Admin panel"
         assert body["messages"]["adminPanel.title"] == "Admin panel"
         assert body["messages"]["enum.publishStatus.Draft"] == "Draft"

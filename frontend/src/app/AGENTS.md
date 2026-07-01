@@ -116,11 +116,10 @@ features/<name>/
 | Feature           | Route                                                                                                                              | Description                                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell, owner/admin/moderator article/matrix workspaces, and owner/admin resume/team workspaces; no SSR |
-| `about`           | `/ru/about-me`, `/en/about-me`                                                                                                     | Public page with direct contact methods; unprefixed compatibility route remains                                            |
 | `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                                                       |
 | `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                           |
 | `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, tags, and statistics exception                             |
-| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public portfolio/case-study page; unprefixed compatibility route remains                                               |
+| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public home and engineering case-study page; unprefixed compatibility route remains                                    |
 | `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                            |
 | `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                   |
 | `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                          |
@@ -128,6 +127,8 @@ features/<name>/
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.
+- `/` redirects to the localized site-build case study using the initialized backend-driven UI
+  language; keep shared public-home URL construction in `core/routing/`.
 - Public canonical routes are language-prefixed. Keep `/ru/articles/:slug`, `/en/articles/:slug`,
   `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`,
   `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug` as SSR

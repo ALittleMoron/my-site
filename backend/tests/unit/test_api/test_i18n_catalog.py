@@ -41,33 +41,29 @@ class TestI18nCatalog:
         assert english_messages["shared.datePicker.previousYear"] == "Previous year"
         assert english_messages["shared.datePicker.nextYear"] == "Next year"
 
-    def test_about_catalog_matches_current_resume_experience(self) -> None:
+    def test_shell_catalog_keeps_footer_contact_without_about_navigation(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
-        assert "более чем 6 годами опыта" in russian_messages["about.hero.description"]
-        assert "более чем 6 годами опыта" in russian_messages["about.experience.description"]
-        assert "more than 6 years of experience" in english_messages["about.hero.description"]
-        assert "more than 6 years of experience" in english_messages["about.experience.description"]
-        assert russian_messages["about.job.seniorBackendDeveloper"] == "Старший backend-разработчик"
-        assert english_messages["about.job.seniorBackendDeveloper"] == "Senior backend developer"
-        assert (
-            russian_messages["about.job.seniorBackendPythonTechLead"]
-            == "Старший backend-разработчик / технический руководитель Python"
-        )
-        assert (
-            english_messages["about.job.seniorBackendPythonTechLead"]
-            == "Senior backend developer / Python Tech Lead"
-        )
+        assert "shell.nav.about" not in russian_messages
+        assert "shell.nav.about" not in english_messages
+        assert not any(key.startswith("about.") for key in russian_messages)
+        assert not any(key.startswith("about.") for key in english_messages)
+        assert russian_messages["shell.footer.email"] == "Эл. почта"
+        assert english_messages["shell.footer.email"] == "Email"
 
-    def test_site_build_case_study_catalog_describes_public_portfolio_page(self) -> None:
+    def test_site_build_case_study_catalog_describes_public_engineering_page(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
         assert russian_messages["shell.footer.siteBuild"] == "Как устроен сайт"
         assert english_messages["shell.footer.siteBuild"] == "How this site is built"
-        assert "портфолио" in russian_messages["siteBuild.hero.lead"]
-        assert "portfolio" in english_messages["siteBuild.hero.lead"]
+        assert "инженерный разбор" in russian_messages["siteBuild.hero.lead"].lower()
+        assert "engineering case study" in english_messages["siteBuild.hero.lead"].lower()
+        assert "портфолио" not in russian_messages["siteBuild.hero.lead"].lower()
+        assert "личн" not in russian_messages["siteBuild.seo.description"].lower()
+        assert "portfolio" not in english_messages["siteBuild.hero.lead"].lower()
+        assert "personal" not in english_messages["siteBuild.seo.description"].lower()
         assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
         assert "Lighthouse CI" in russian_messages["siteBuild.quality.body"]

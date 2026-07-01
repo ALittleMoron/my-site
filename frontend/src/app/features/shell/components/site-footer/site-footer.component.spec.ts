@@ -15,6 +15,7 @@ describe('SiteFooterComponent', () => {
         provideI18nTesting({
           'shell.footer.sourceCode': 'Исходный код',
           'shell.footer.siteBuild': 'Как устроен сайт',
+          'shell.footer.email': 'Эл. почта',
           'shell.footer.githubProfile': 'Профиль GitHub',
           'shell.footer.telegramProfile': 'Профиль Telegram',
           'shell.footer.linkedinProfile': 'Профиль LinkedIn',
@@ -52,8 +53,14 @@ describe('SiteFooterComponent', () => {
   it('renders localized source and social labels', () => {
     expect(el.textContent).toContain('Исходный код');
     expect(el.querySelector('a[aria-label="Профиль GitHub"]')).not.toBeNull();
+    expect(el.querySelector('a[aria-label="Эл. почта"]')).not.toBeNull();
     expect(el.querySelector('a[aria-label="Профиль Telegram"]')).not.toBeNull();
     expect(el.querySelector('a[aria-label="Профиль LinkedIn"]')).not.toBeNull();
+  });
+
+  it('renders email link', () => {
+    const link = el.querySelector('a[href="mailto:d.lunev.dev@gmail.com"]');
+    expect(link).not.toBeNull();
   });
 
   it('renders Telegram link', () => {

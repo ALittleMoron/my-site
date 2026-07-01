@@ -1,8 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { injectedPublicHomePath } from './core/routing/public-home';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'about-me', pathMatch: 'full' },
+  { path: '', redirectTo: () => injectedPublicHomePath(), pathMatch: 'full' },
   {
     path: 'ru',
     children: publicRoutes(),
@@ -32,10 +33,6 @@ export const routes: Routes = [
 
 function publicRoutes(): Routes {
   return [
-    {
-      path: 'about-me',
-      loadChildren: () => import('./features/about/about.routes').then((m) => m.aboutRoutes),
-    },
     {
       path: 'competency-matrix',
       loadChildren: () => import('./features/matrix/matrix.routes').then((m) => m.matrixRoutes),

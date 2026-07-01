@@ -6,6 +6,7 @@ import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
+import { localizedPublicHomePath } from '../../../../core/routing/public-home';
 
 interface LanguageOption {
   code: LanguageCode;
@@ -29,8 +30,7 @@ export class SiteHeaderComponent {
   private readonly router = inject(Router);
 
   readonly isNavOpen = signal(false);
-  readonly homeLink = computed(() => `/${this.currentLanguage()}/about-me`);
-  readonly aboutLink = computed(() => `/${this.currentLanguage()}/about-me`);
+  readonly homeLink = computed(() => localizedPublicHomePath(this.currentLanguage()));
   readonly matrixLink = computed(() => `/${this.currentLanguage()}/competency-matrix`);
   readonly articlesLink = computed(() => `/${this.currentLanguage()}/articles`);
   readonly adminPanelLink = computed(() => '/admin-panel');
@@ -111,7 +111,6 @@ export function rewriteLanguagePrefixedUrl(currentUrl: string, language: Languag
 function isPublicRouteSegment(segment: string | undefined): boolean {
   return (
     segment === undefined ||
-    segment === 'about-me' ||
     segment === 'competency-matrix' ||
     segment === 'how-this-site-is-built' ||
     segment === 'articles' ||

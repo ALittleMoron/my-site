@@ -6,6 +6,7 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ThemeService } from '../../../../core/layout/theme.service';
+import { localizedPublicHomePath } from '../../../../core/routing/public-home';
 
 interface LanguageOption {
   code: LanguageCode;
@@ -28,7 +29,7 @@ export class AdminPanelHeaderComponent {
   private readonly i18n = inject(I18nService);
   private readonly themeService = inject(ThemeService);
 
-  readonly homeLink = computed(() => `/${this.currentLanguage()}/about-me`);
+  readonly homeLink = computed(() => localizedPublicHomePath(this.currentLanguage()));
   readonly toggleLabel = computed(() =>
     this.i18n.translate(
       this.themeService.theme() === 'light' ? 'shell.theme.dark' : 'shell.theme.light',

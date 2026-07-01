@@ -70,7 +70,6 @@ describe('SiteHeaderComponent', () => {
       switchLanguage: jest.fn().mockReturnValue(of(void 0)),
       translate: jest.fn((key: string, params?: Record<string, string | number>) => {
         const messages: Record<string, string> = {
-          'shell.nav.about': 'Обо мне',
           'shell.nav.matrix': 'Матрица компетенций',
           'shell.nav.articles': 'Статьи',
           'shell.nav.adminPanel': 'Админ-панель',
@@ -109,8 +108,10 @@ describe('SiteHeaderComponent', () => {
     router = TestBed.inject(Router);
   });
 
-  it('renders nav link to the localized about page', () => {
-    expect(fixture.componentInstance.aboutLink()).toBe('/ru/about-me');
+  it('uses the localized site-build case study as home and does not render about navigation', () => {
+    expect(fixture.componentInstance.homeLink()).toBe('/ru/how-this-site-is-built');
+    expect(el.querySelector('a[href="/ru/about-me"]')).toBeNull();
+    expect(el.textContent).not.toContain('Обо мне');
   });
 
   it('renders nav link to the localized competency matrix page', () => {
@@ -233,6 +234,7 @@ describe('SiteHeaderComponent', () => {
     expect(rewriteLanguagePrefixedUrl('/how-this-site-is-built', 'ru')).toBe(
       '/ru/how-this-site-is-built',
     );
+    expect(rewriteLanguagePrefixedUrl('/about-me', 'ru')).toBe('/about-me');
   });
 });
 

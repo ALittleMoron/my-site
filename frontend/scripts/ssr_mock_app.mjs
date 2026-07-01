@@ -290,7 +290,6 @@ function buildRobotsTxt(origin) {
     + 'Allow: /sitemap.xml\n'
     + 'Disallow: /api/\n'
     + 'Disallow: /login\n'
-    + 'Disallow: /about-me\n'
     + 'Disallow: /how-this-site-is-built\n'
     + 'Disallow: /articles\n'
     + 'Disallow: /competency-matrix\n'
@@ -301,8 +300,6 @@ function buildRobotsTxt(origin) {
 
 function buildSitemapXml(origin) {
   const urls = [
-    '/ru/about-me',
-    '/en/about-me',
     '/ru/how-this-site-is-built',
     '/en/how-this-site-is-built',
     '/ru/articles/typed-articles',
@@ -491,7 +488,6 @@ function articleSummary() {
 function buildMessages() {
   return {
     'app.siteName': 'My site',
-    'shell.nav.about': 'About',
     'shell.nav.matrix': 'Matrix',
     'shell.nav.articles': 'Articles',
     'shell.nav.toggleNavigation': 'Toggle navigation',
@@ -502,19 +498,20 @@ function buildMessages() {
     'shell.auth.login': 'Login',
     'shell.footer.sourceCode': 'Source code',
     'shell.footer.siteBuild': 'How this site is built',
+    'shell.footer.email': 'Email',
     'shell.footer.githubProfile': 'GitHub',
     'shell.footer.telegramProfile': 'Telegram',
     'shell.footer.linkedinProfile': 'LinkedIn',
     'siteBuild.seo.title': 'How this site is built',
-    'siteBuild.seo.description': 'A portfolio case study about this site.',
+    'siteBuild.seo.description': 'An engineering case study about this knowledge base.',
     'siteBuild.hero.kicker': 'Case study',
     'siteBuild.hero.title': 'How this site is built',
-    'siteBuild.hero.lead': 'Portfolio case study about a production-minded personal site.',
+    'siteBuild.hero.lead': 'Engineering case study of a production-minded knowledge base.',
     'siteBuild.hero.sourceCode': 'Source code',
     'siteBuild.hero.matrixLink': 'Open matrix',
     'siteBuild.hero.logoAlt': 'Site logo',
     'siteBuild.problem.title': 'Problem',
-    'siteBuild.problem.body': 'Portfolio, articles, and competency matrix in one product.',
+    'siteBuild.problem.body': 'Articles, competency matrix, and architecture notes in one product.',
     'siteBuild.architecture.title': 'Architecture',
     'siteBuild.architecture.backendTitle': 'Backend',
     'siteBuild.architecture.backendBody': 'Litestar, SQLAlchemy, Dishka, and PostgreSQL.',
