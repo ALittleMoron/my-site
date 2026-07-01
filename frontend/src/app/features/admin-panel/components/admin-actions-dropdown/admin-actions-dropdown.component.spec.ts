@@ -87,6 +87,38 @@ describe('AdminActionsDropdownComponent', () => {
     expect(dropdownMenu().classList).not.toContain('show');
   });
 
+  it('hides unavailable actions instead of rendering disabled buttons', () => {
+    fixture.componentRef.setInput('actions', [
+      { id: 'edit', label: 'Редактировать', destructive: false, disabled: false },
+      { id: 'delete', label: 'Удалить', destructive: true, disabled: true },
+    ]);
+    fixture.detectChanges();
+
+    dropdownToggle().click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-actions-typed-articles-edit"]'),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-actions-typed-articles-delete"]'),
+    ).toBeNull();
+  });
+
+  it('hides the dropdown trigger when every action is unavailable', () => {
+    fixture.componentRef.setInput('actions', [
+      { id: 'delete', label: 'Удалить', destructive: true, disabled: true },
+    ]);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-actions-typed-articles-toggle"]'),
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-actions-typed-articles-menu"]'),
+    ).toBeNull();
+  });
+
   function dropdownToggle(): HTMLButtonElement {
     const toggle = fixture.nativeElement.querySelector(
       '[data-testid="article-actions-typed-articles-toggle"]',

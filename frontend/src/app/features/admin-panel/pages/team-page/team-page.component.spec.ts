@@ -134,20 +134,20 @@ describe('TeamPageComponent', () => {
     expect(notifications.error).toHaveBeenCalledWith('Проверьте поля участника.');
   });
 
-  it('disables self role, deactivate, and delete actions in the row dropdown', () => {
+  it('hides unavailable self actions in the row dropdown', () => {
     service.listAccounts.mockReturnValue(of(accountsList([account({ username: 'admin' })])));
     fixture.componentInstance.loadAccounts();
     fixture.detectChanges();
 
     openActions('admin');
 
-    expect(elementByTestId<HTMLButtonElement>('team-actions-admin-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-actions-admin-deactivate').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-actions-admin-delete').disabled).toBe(true);
+    expect(queryByTestId('team-actions-admin-role')).toBeNull();
+    expect(queryByTestId('team-actions-admin-deactivate')).toBeNull();
+    expect(queryByTestId('team-actions-admin-delete')).toBeNull();
     expect(elementByTestId<HTMLButtonElement>('team-actions-admin-password').disabled).toBe(false);
   });
 
-  it('makes owner and admin rows read-only for admins', () => {
+  it('hides privileged owner and admin row actions from admins', () => {
     service.listAccounts.mockReturnValue(
       of(
         accountsList([
@@ -160,29 +160,21 @@ describe('TeamPageComponent', () => {
     fixture.detectChanges();
 
     openActions('OwnerUser');
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-password').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-deactivate').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-delete').disabled).toBe(true);
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OwnerUser-detail')).not.toBeNull();
+    expect(queryByTestId('team-actions-OwnerUser-role')).toBeNull();
+    expect(queryByTestId('team-actions-OwnerUser-password')).toBeNull();
+    expect(queryByTestId('team-actions-OwnerUser-deactivate')).toBeNull();
+    expect(queryByTestId('team-actions-OwnerUser-delete')).toBeNull();
 
     openActions('OtherAdmin');
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-password').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-deactivate').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-delete').disabled).toBe(
-      true,
-    );
+    expect(elementByTestId<HTMLButtonElement>('team-actions-OtherAdmin-detail')).not.toBeNull();
+    expect(queryByTestId('team-actions-OtherAdmin-role')).toBeNull();
+    expect(queryByTestId('team-actions-OtherAdmin-password')).toBeNull();
+    expect(queryByTestId('team-actions-OtherAdmin-deactivate')).toBeNull();
+    expect(queryByTestId('team-actions-OtherAdmin-delete')).toBeNull();
   });
 
-  it('lets admins manage moderator rows except role changes', () => {
+  it('lets admins manage moderator rows except hidden role changes', () => {
     service.listAccounts.mockReturnValue(
       of(accountsList([account({ username: 'Moderator1', role: 'moderator' })])),
     );
@@ -191,7 +183,7 @@ describe('TeamPageComponent', () => {
 
     openActions('Moderator1');
 
-    expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-role').disabled).toBe(true);
+    expect(queryByTestId('team-actions-Moderator1-role')).toBeNull();
     expect(elementByTestId<HTMLButtonElement>('team-actions-Moderator1-password').disabled).toBe(
       false,
     );
@@ -294,6 +286,10 @@ describe('TeamPageComponent', () => {
     const element = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as T | null;
     expect(element).not.toBeNull();
     return element as T;
+  }
+
+  function queryByTestId(testId: string): Element | null {
+    return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as Element | null;
   }
 });
 

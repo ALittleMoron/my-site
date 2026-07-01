@@ -78,7 +78,7 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('AdminUser');
     expect(fixture.nativeElement.textContent).toContain('Администратор');
     expect(fixture.nativeElement.textContent).toContain('Активен');
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-toggle')).not.toBeNull();
+    expect(queryByTestId('team-detail-actions-toggle')).toBeNull();
   });
 
   it('renders owner account role labels', () => {
@@ -126,45 +126,30 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/team');
   });
 
-  it('disables self role, deactivate, and delete actions but allows self password updates', () => {
+  it('hides unavailable self actions but allows self password updates', () => {
     currentUser.set({ username: 'AdminUser', role: 'admin' });
     fixture.detectChanges();
 
     openActions();
 
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(true);
+    expect(queryByTestId('team-detail-actions-role')).toBeNull();
+    expect(queryByTestId('team-detail-actions-deactivate')).toBeNull();
+    expect(queryByTestId('team-detail-actions-delete')).toBeNull();
     expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(false);
   });
 
-  it('makes owner and admin detail actions read-only for admins', () => {
+  it('hides owner and admin detail actions from admins', () => {
     service.getAccount.mockReturnValue(of(account({ username: 'OwnerUser', role: 'owner' })));
     fixture.componentInstance.loadAccount();
     fixture.detectChanges();
 
-    openActions();
-
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(true);
+    expect(queryByTestId('team-detail-actions-toggle')).toBeNull();
 
     service.getAccount.mockReturnValue(of(account({ username: 'OtherAdmin', role: 'admin' })));
     fixture.componentInstance.loadAccount();
     fixture.detectChanges();
-    openActions();
 
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-role').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-password').disabled).toBe(true);
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-deactivate').disabled).toBe(
-      true,
-    );
-    expect(elementByTestId<HTMLButtonElement>('team-detail-actions-delete').disabled).toBe(true);
+    expect(queryByTestId('team-detail-actions-toggle')).toBeNull();
   });
 
   it('lets owners manage admin details with admin and moderator role options', () => {
@@ -213,6 +198,10 @@ describe('TeamMemberDetailPageComponent', () => {
     const element = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as T | null;
     expect(element).not.toBeNull();
     return element as T;
+  }
+
+  function queryByTestId(testId: string): Element | null {
+    return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as Element | null;
   }
 });
 
