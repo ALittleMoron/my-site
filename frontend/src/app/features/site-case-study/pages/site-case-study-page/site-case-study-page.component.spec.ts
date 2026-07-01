@@ -34,7 +34,6 @@ describe('SiteCaseStudyPageComponent', () => {
           'siteBuild.decisions.title': 'Инженерные решения',
           'siteBuild.decision.cleanArchitecture': 'Clean Architecture',
           'siteBuild.decision.localizedContent': 'RU/EN локализация',
-          'siteBuild.decision.matrixTaxonomy': 'Нормализованная taxonomy матрицы',
           'siteBuild.decision.privacyAnalytics': 'Privacy-safe аналитика',
           'siteBuild.decision.deployManifest': 'Manifest-driven deploy env',
           'siteBuild.quality.title': 'Качество и эксплуатация',
@@ -74,7 +73,6 @@ describe('SiteCaseStudyPageComponent', () => {
     );
     expect(pageText).toContain('Litestar, SQLAlchemy, Dishka и PostgreSQL.');
     expect(pageText).toContain('Angular hybrid SSR/CSR и backend-driven i18n.');
-    expect(pageText).toContain('Нормализованная taxonomy матрицы');
     expect(pageText).toContain('Privacy-safe аналитика');
     expect(pageText).toContain('Manifest-driven deploy env');
     expect(sourceLink).not.toBeNull();

@@ -66,6 +66,11 @@ Portfolio and articles site with a knowledge database
     `/en/how-this-site-is-built`) should be updated. Decide what should be added, removed, or
     changed there, and keep that page current when the change affects the site's public technical
     story.
+  - Do not present trivial implementation facts, routine CRUD, ordinary normalized database
+    modeling, framework defaults, or other baseline engineering hygiene as "technology choices" or
+    public case-study highlights. The case-study page should mention only decisions that are
+    genuinely distinctive, risky, educational, or important to the product's architecture,
+    security, operations, UX, or quality story.
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.

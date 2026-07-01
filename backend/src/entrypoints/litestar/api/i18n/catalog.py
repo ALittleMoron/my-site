@@ -402,12 +402,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "RU/EN локализация разделена на UI-каталог и контентные поля, чтобы не "
             "смешивать интерфейс со статьями и матрицей."
         ),
-        "siteBuild.decision.matrixTaxonomy": (
-            "Таксономия матрицы нормализована в листы, разделы и подразделы: автор "
-            "выбирает или создаёт структуру один раз, управляет её приоритетом отдельно "
-            "от вопросов, а публичные API по-прежнему отдают стабильные локализованные "
-            "проекции."
-        ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe аналитика считает просмотры и реакции без cookies, raw IP, "
             "user-agent или сторонних идентификаторов."
@@ -1101,12 +1095,6 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.decision.localizedContent": (
             "RU/EN localization is split between the UI catalog and content fields, so "
             "interface text is not mixed with articles and matrix content."
-        ),
-        "siteBuild.decision.matrixTaxonomy": (
-            "The competency matrix taxonomy is normalized into sheets, sections, and "
-            "subsections, so authors choose or create structure once, manage its priority "
-            "separately from questions, and public APIs still expose stable localized "
-            "projections."
         ),
         "siteBuild.decision.privacyAnalytics": (
             "Privacy-safe analytics count views and reactions without cookies, raw IPs, "
