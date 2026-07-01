@@ -145,10 +145,13 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
     this.creating.set(true);
     this.errorKey.set(null);
     this.workspaceService
-      .createSheet({
-        key: value.key.trim(),
-        translations: translationsFromForm(value),
-      })
+      .createSheet(
+        {
+          key: value.key.trim(),
+          translations: translationsFromForm(value),
+        },
+        this.language,
+      )
       .pipe(
         switchMap((sheet) =>
           this.workspaceService
@@ -181,7 +184,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
     this.creating.set(true);
     this.errorKey.set(null);
     this.workspaceService
-      .createSection(sheetId, { translations: translationsFromForm(value) })
+      .createSection(sheetId, { translations: translationsFromForm(value) }, this.language)
       .pipe(
         switchMap((section) =>
           this.workspaceService
@@ -213,7 +216,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
     this.creating.set(true);
     this.errorKey.set(null);
     this.workspaceService
-      .createSubsection(sectionId, { translations: translationsFromForm(value) })
+      .createSubsection(sectionId, { translations: translationsFromForm(value) }, this.language)
       .pipe(
         switchMap((subsection) =>
           this.workspaceService

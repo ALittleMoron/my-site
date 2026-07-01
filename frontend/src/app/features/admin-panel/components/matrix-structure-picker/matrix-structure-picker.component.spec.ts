@@ -145,11 +145,69 @@ describe('MatrixStructurePickerComponent', () => {
       ?.click();
     fixture.detectChanges();
 
-    expect(service.createSheet).toHaveBeenCalledWith({
-      key: 'sql',
-      translations: { ru: { name: 'SQL' }, en: { name: 'SQL' } },
-    });
+    expect(service.createSheet).toHaveBeenCalledWith(
+      {
+        key: 'sql',
+        translations: { ru: { name: 'SQL' }, en: { name: 'SQL' } },
+      },
+      'ru',
+    );
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('4');
+  });
+
+  it('reloads structure and selects newly created section', () => {
+    const updatedStructure: AdminMatrixStructure = {
+      sheets: [
+        {
+          ...initialStructure.sheets[0],
+          sections: [
+            ...initialStructure.sheets[0].sections,
+            {
+              id: 6,
+              name: 'Асинхронность',
+              priority: 2,
+              translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
+              subsections: [],
+            },
+          ],
+        },
+      ],
+    };
+    service.getStructure
+      .mockReturnValueOnce(of(initialStructure))
+      .mockReturnValueOnce(of(updatedStructure));
+    service.createSection.mockReturnValue(
+      of({
+        id: 6,
+        name: 'Асинхронность',
+        priority: 2,
+        translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
+        subsections: [],
+      }),
+    );
+    fixture = TestBed.createComponent(MatrixStructurePickerComponent);
+    fixture.componentRef.setInput('language', 'ru');
+    fixture.componentRef.setInput('selectedSubsectionId', null);
+    fixture.detectChanges();
+    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    fixture.detectChanges();
+    setInput('[data-testid="matrix-structure-section-ru"]', 'Асинхронность');
+    setInput('[data-testid="matrix-structure-section-en"]', 'Async');
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-structure-add-section"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(service.createSection).toHaveBeenCalledWith(
+      1,
+      {
+        translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
+      },
+      'ru',
+    );
+    expect(select('[data-testid="matrix-structure-section"]').value).toBe('6');
   });
 
   it('blocks invalid sheet key and whitespace-only structure names', () => {
@@ -319,9 +377,13 @@ describe('MatrixStructurePickerComponent', () => {
       ?.click();
     fixture.detectChanges();
 
-    expect(service.createSubsection).toHaveBeenCalledWith(2, {
-      translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
-    });
+    expect(service.createSubsection).toHaveBeenCalledWith(
+      2,
+      {
+        translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
+      },
+      'ru',
+    );
     expect(emit).toHaveBeenLastCalledWith(5);
     expect(select('[data-testid="matrix-structure-subsection"]').textContent).toContain(
       'Типизация',

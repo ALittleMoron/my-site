@@ -28,6 +28,12 @@ Portfolio and articles site with a knowledge database
 - For non-trivial tasks, create and follow a Superpowers implementation plan before changing code or configuration. Trivial docs-only edits and direct answers do not require a plan.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.
 - Implement behavior changes and bug fixes with TDD by default: add or update the failing test first, then make it pass. If a test is not practical for the change, state why before implementing.
+  Do not apply TDD by default to infrastructure-only changes such as Dockerfiles, docker compose,
+  nginx, Make targets, deployment scripts, and environment wiring. Add infrastructure tests only
+  when there is a high risk of silently regressing a pre-deploy invariant that ordinary checks would
+  not catch, such as required environment-variable coverage. Do not add tests that merely assert
+  incidental implementation details, such as the exact presence of a Dockerfile command, when a
+  direct review or a real build/run check is the meaningful validation.
 - Treat UX regressions as real bugs. When changing user-facing flows, check not only correctness but
   also whether the interaction feels stable, predictable, accessible, and respectful of the user's
   context. Bad UX includes theme flashing during navigation or page load, controls that are hard to

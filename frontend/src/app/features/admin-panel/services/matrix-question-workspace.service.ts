@@ -57,27 +57,38 @@ export class MatrixQuestionWorkspaceService {
     });
   }
 
-  createSheet(payload: AdminMatrixSheetCreatePayload): Observable<AdminMatrixStructureSheet> {
-    return this.api.post<AdminMatrixStructureSheet>('/api/admin/competency-matrix/sheets', payload);
+  createSheet(
+    payload: AdminMatrixSheetCreatePayload,
+    language: LanguageCode,
+  ): Observable<AdminMatrixStructureSheet> {
+    return this.api.post<AdminMatrixStructureSheet>(
+      '/api/admin/competency-matrix/sheets',
+      payload,
+      { language },
+    );
   }
 
   createSection(
     sheetId: number,
     payload: AdminMatrixSectionCreatePayload,
+    language: LanguageCode,
   ): Observable<AdminMatrixStructureSection> {
     return this.api.post<AdminMatrixStructureSection>(
       `/api/admin/competency-matrix/sheets/${sheetId}/sections`,
       payload,
+      { language },
     );
   }
 
   createSubsection(
     sectionId: number,
     payload: AdminMatrixSubsectionCreatePayload,
+    language: LanguageCode,
   ): Observable<AdminMatrixStructureSubsection> {
     return this.api.post<AdminMatrixStructureSubsection>(
       `/api/admin/competency-matrix/sections/${sectionId}/subsections`,
       payload,
+      { language },
     );
   }
 

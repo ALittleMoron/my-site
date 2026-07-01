@@ -30,6 +30,7 @@ WORKDIR $APP_PATH
 
 COPY --from=builder /project/.venv /project/.venv
 COPY . ./
+RUN chmod 755 start_application.sh
 
 USER $CUSTOM_USER:$CUSTOM_USER
 

@@ -194,15 +194,19 @@ describe('MatrixQuestionWorkspaceService', () => {
 
   it('creates matrix structure nodes through admin endpoints', () => {
     service
-      .createSheet({
-        key: 'python',
-        translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
-      })
+      .createSheet(
+        {
+          key: 'python',
+          translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
+        },
+        'en',
+      )
       .subscribe();
     const sheetReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/admin/competency-matrix/sheets'),
     );
     expect(sheetReq.request.method).toBe('POST');
+    expect(sheetReq.request.params.get('language')).toBe('en');
     expect(sheetReq.request.body.key).toBe('python');
     sheetReq.flush({
       id: 1,
@@ -214,14 +218,19 @@ describe('MatrixQuestionWorkspaceService', () => {
     });
 
     service
-      .createSection(1, {
-        translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
-      })
+      .createSection(
+        1,
+        {
+          translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
+        },
+        'en',
+      )
       .subscribe();
     const sectionReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/admin/competency-matrix/sheets/1/sections'),
     );
     expect(sectionReq.request.method).toBe('POST');
+    expect(sectionReq.request.params.get('language')).toBe('en');
     expect(sectionReq.request.body.translations.en.name).toBe('Core');
     sectionReq.flush({
       id: 2,
@@ -232,14 +241,19 @@ describe('MatrixQuestionWorkspaceService', () => {
     });
 
     service
-      .createSubsection(2, {
-        translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
-      })
+      .createSubsection(
+        2,
+        {
+          translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
+        },
+        'en',
+      )
       .subscribe();
     const subsectionReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/admin/competency-matrix/sections/2/subsections'),
     );
     expect(subsectionReq.request.method).toBe('POST');
+    expect(subsectionReq.request.params.get('language')).toBe('en');
     expect(subsectionReq.request.body.translations.ru.name).toBe('Стиль');
     subsectionReq.flush({
       id: 3,
