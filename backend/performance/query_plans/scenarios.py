@@ -614,6 +614,8 @@ async def run_create_queued_question(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).create_queued_question(
         params=QueuedCompetencyMatrixQuestionCreateParams(
             question="How should query-plan checks cover the matrix queue?",
+            sheet="query-plan-sheet",
+            grade=GradeEnum.JUNIOR,
         ),
     )
 
@@ -624,9 +626,13 @@ async def run_create_queued_questions(session: AsyncSession) -> None:
             questions=[
                 QueuedCompetencyMatrixQuestionCreateParams(
                     question="How should query-plan checks cover matrix imports?",
+                    sheet="query-plan-sheet",
+                    grade=None,
                 ),
                 QueuedCompetencyMatrixQuestionCreateParams(
                     question="How should FIFO ordering behave for imported questions?",
+                    sheet="query-plan-sheet",
+                    grade=GradeEnum.MIDDLE,
                 ),
             ],
         ),

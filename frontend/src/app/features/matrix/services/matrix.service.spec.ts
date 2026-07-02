@@ -104,7 +104,7 @@ describe('MatrixService', () => {
   it('suggestQuestion posts anonymous question suggestion', () => {
     let completed = false;
 
-    service.suggestQuestion('What is PEP 8?').subscribe(() => {
+    service.suggestQuestion('What is PEP 8?', 'python').subscribe(() => {
       completed = true;
     });
 
@@ -112,7 +112,7 @@ describe('MatrixService', () => {
       r.url.endsWith('/api/competency-matrix/question-suggestions'),
     );
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ question: 'What is PEP 8?' });
+    expect(req.request.body).toEqual({ question: 'What is PEP 8?', sheet: 'python' });
     req.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(completed).toBe(true);

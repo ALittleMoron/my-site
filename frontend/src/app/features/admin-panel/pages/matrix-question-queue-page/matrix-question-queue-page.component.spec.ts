@@ -280,6 +280,15 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Выберите один файл.');
   });
 
+  it('explains text and table import formats in import mode', () => {
+    openImportMode();
+
+    const text = fixture.nativeElement.textContent;
+
+    expect(text).toContain('TXT: один вопрос на строку.');
+    expect(text).toContain('CSV, XLSX и XLSM: колонки question, sheet, grade');
+  });
+
   it('selects one import file from file input', () => {
     openImportMode();
     chooseImportFile(new File(['question'], 'questions.txt', { type: 'text/plain' }));

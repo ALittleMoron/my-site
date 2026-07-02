@@ -112,6 +112,8 @@ class _QuestionQueueImportConstants:
         supported_extensions_for_message=(".txt", ".csv", ".xlsx", ".xlsm"),
         question_headers=frozenset({"question", "questions", "вопрос", "вопросы"}),
         question_headers_for_message=("question", "questions", "вопрос", "вопросы"),
+        sheet_headers=frozenset({"sheet", "лист"}),
+        grade_headers=frozenset({"grade", "грейд"}),
         csv_delimiters=",;\t|",
         question_max_length=255,
     )

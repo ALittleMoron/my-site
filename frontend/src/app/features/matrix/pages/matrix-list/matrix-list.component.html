@@ -113,6 +113,24 @@
           ></button>
         </div>
         <div class="modal-body">
+          <label class="form-label" for="matrix-question-suggestion-sheet">
+            {{ 'matrix.form.sheet' | t }}
+          </label>
+          <select
+            id="matrix-question-suggestion-sheet"
+            class="form-select form-bordered mb-3"
+            [value]="suggestionSheetKey() ?? ''"
+            [disabled]="suggestionSubmitting() || sheets().length === 0"
+            (change)="onQuestionSuggestionSheetChange($event)"
+          >
+            @if (sheets().length === 0) {
+              <option value="">{{ 'shared.notSet' | t }}</option>
+            }
+            @for (sheet of sheets(); track sheet.key) {
+              <option [value]="sheet.key">{{ sheet.name }}</option>
+            }
+          </select>
+
           <label class="form-label" for="matrix-question-suggestion">
             {{ 'matrix.suggestion.question' | t }}
           </label>

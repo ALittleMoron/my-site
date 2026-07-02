@@ -176,21 +176,26 @@ class APIHelper:
     def post_question_suggestion(
         self,
         question: str,
+        sheet: str | None = None,
         headers: dict[str, str] | None = None,
     ) -> Response:
         return self.client.post(
             "/api/competency-matrix/question-suggestions",
             headers=headers,
-            json={"question": question},
+            json={"question": question, "sheet": sheet},
         )
 
     def get_queued_matrix_questions(self) -> Response:
         return self.client.get("/api/admin/competency-matrix/queued-questions")
 
-    def post_create_queued_matrix_question(self, question: str) -> Response:
+    def post_create_queued_matrix_question(
+        self,
+        question: str,
+        sheet: str | None = None,
+    ) -> Response:
         return self.client.post(
             "/api/admin/competency-matrix/queued-questions",
-            json={"question": question},
+            json={"question": question, "sheet": sheet},
         )
 
     def post_import_queued_matrix_questions(

@@ -449,8 +449,8 @@ class QueuedQuestionModel(IntegerIDMixin, BaseModel):
     ) -> Self:
         return cls(
             question=params.question,
-            grade=None,
-            sheet=None,
+            grade=params.grade,
+            sheet=params.sheet,
             section=None,
             subsection=None,
             suggested_by_username=None,

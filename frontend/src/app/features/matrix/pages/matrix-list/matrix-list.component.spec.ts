@@ -503,10 +503,11 @@ describe('MatrixListComponent', () => {
     matrixService.suggestQuestion.mockReturnValue(throwError(() => quotaError));
 
     fixture.detectChanges();
+    component.openQuestionSuggestion();
     component.setQuestionSuggestion('What is PEP 8?');
     component.sendQuestionSuggestion();
 
-    expect(matrixService.suggestQuestion).toHaveBeenCalledWith('What is PEP 8?');
+    expect(matrixService.suggestQuestion).toHaveBeenCalledWith('What is PEP 8?', 'javascript');
     expect(notificationService.error).toHaveBeenCalledWith(
       'Лимит предложений на сегодня исчерпан.',
     );
@@ -527,14 +528,55 @@ describe('MatrixListComponent', () => {
     expect(fixture.nativeElement.querySelector('textarea#matrix-question-suggestion')).toBeNull();
   });
 
+  it('renders suggestion sheet selector initialized with the current sheet only', () => {
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector<HTMLSelectElement>(
+      '#matrix-question-suggestion-sheet',
+    );
+
+    expect(select).toBeTruthy();
+    expect(select?.value).toBe('javascript');
+    expect(Array.from(select?.options ?? []).map((option) => option.value)).toEqual([
+      'javascript',
+      'python',
+    ]);
+    expect(fixture.nativeElement.querySelector('#matrix-question-suggestion-grade')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#matrix-question-suggestion-section')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('#matrix-question-suggestion-subsection'),
+    ).toBeNull();
+  });
+
+  it('sends suggestion with the selected sheet key', () => {
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector<HTMLSelectElement>(
+      '#matrix-question-suggestion-sheet',
+    )!;
+    select.value = 'python';
+    select.dispatchEvent(new Event('change'));
+    component.setQuestionSuggestion('What is PEP 8?');
+
+    component.sendQuestionSuggestion();
+
+    expect(matrixService.suggestQuestion).toHaveBeenCalledWith('What is PEP 8?', 'python');
+  });
+
   it('normalizes multiline pasted suggestion text before sending it', () => {
     fixture.detectChanges();
+    component.openQuestionSuggestion();
     component.setQuestionSuggestion('What is PEP 8?\nHow should it be used?');
 
     component.sendQuestionSuggestion();
 
     expect(matrixService.suggestQuestion).toHaveBeenCalledWith(
       'What is PEP 8? How should it be used?',
+      'javascript',
     );
   });
 });

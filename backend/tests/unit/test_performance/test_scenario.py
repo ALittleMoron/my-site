@@ -306,7 +306,12 @@ class TestPublicSiteScenario:
 
         assert client.calls == []
 
-    def test_matrix_question_suggestion_posts_when_enabled(self) -> None:
+    def test_matrix_question_suggestion_posts_when_enabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(scenario_module, "choice", lambda values: values[0])
+
         client = FakeHttpClient()
         scenario = PublicSiteScenario(
             client=client,
@@ -320,7 +325,7 @@ class TestPublicSiteScenario:
             {
                 "path": "/api/competency-matrix/question-suggestions",
                 "name": "POST /api/competency-matrix/question-suggestions",
-                "json": {"question": "Locust matrix suggestion en-1"},
+                "json": {"question": "Locust matrix suggestion en-1", "sheet": "python"},
                 "catch_response": True,
             },
         ]

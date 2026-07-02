@@ -79,7 +79,7 @@ describe('MatrixQuestionQueueService', () => {
       r.url.endsWith('/api/admin/competency-matrix/queued-questions'),
     );
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ question: 'What is PEP 8?' });
+    expect(req.request.body).toEqual({ question: 'What is PEP 8?', sheet: null });
     req.flush({
       id: 7,
       question: 'What is PEP 8?',

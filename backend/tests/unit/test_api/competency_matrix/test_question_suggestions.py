@@ -39,7 +39,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         self.use_case = await self.container.get_competency_matrix_use_case()
 
     def test_anonymous_user_can_suggest_question(self) -> None:
-        response = self.no_auth_api.post_question_suggestion(question="  What is PEP 8?  ")
+        response = self.no_auth_api.post_question_suggestion(
+            question="  What is PEP 8?  ",
+            sheet="python",
+        )
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.suggest_question.assert_called_once_with(
@@ -49,10 +52,26 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         assert isinstance(call_params, QuestionSuggestionCreateParams)
         assert call_params.question == QueuedCompetencyMatrixQuestionCreateParams(
             question="What is PEP 8?",
+            sheet="python",
+            grade=None,
         )
         assert call_params.limit is not None
         assert call_params.limit.client_identifier != ""
         assert call_params.limit.now.tzinfo is not None
+
+    def test_anonymous_user_can_suggest_question_without_sheet_key(self) -> None:
+        response = self.no_auth_api.client.post(
+            "/api/competency-matrix/question-suggestions",
+            json={"question": "What is PEP 8?"},
+        )
+
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
+        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
+        assert call_params.question == QueuedCompetencyMatrixQuestionCreateParams(
+            question="What is PEP 8?",
+            sheet=None,
+            grade=None,
+        )
 
     def test_anonymous_suggestion_uses_forwarded_client_identifier(self) -> None:
         response = self.no_auth_api.post_question_suggestion(
@@ -66,7 +85,11 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
         call_params = self.use_case.suggest_question.call_args.kwargs["params"]
         assert call_params == QuestionSuggestionCreateParams(
-            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                sheet=None,
+                grade=None,
+            ),
             limit=call_params.limit,
         )
         assert call_params.limit is not None
@@ -205,7 +228,11 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         self.use_case.suggest_question.assert_called_once_with(params=ANY)
         call_params = self.use_case.suggest_question.call_args.kwargs["params"]
         assert call_params == QuestionSuggestionCreateParams(
-            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                sheet=None,
+                grade=None,
+            ),
             limit=None,
         )
 
@@ -268,6 +295,8 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 self.factory.core.queued_competency_matrix_question(
                     question_id=5,
                     question="What is PEP 8?",
+                    grade=GradeEnum.JUNIOR,
+                    sheet="python",
                     created_at=datetime(2026, 6, 7, 12, 5, tzinfo=UTC),
                 ),
             ],
@@ -275,7 +304,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         response = self.api.post_import_queued_matrix_questions(
             filename="questions.csv",
-            content="ignored;вопрос\nx;Что такое PEP 8?".encode(),
+            content="question;sheet;grade\nЧто такое PEP 8?;python;Junior".encode(),
             content_type="text/csv",
         )
 
@@ -284,6 +313,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "Что такое PEP 8?",
+        ]
+        assert self.collections.pluck(items=call_params.questions, attr="sheet") == ["python"]
+        assert self.collections.pluck(items=call_params.questions, attr="grade") == [
+            GradeEnum.JUNIOR,
         ]
 
     def test_import_normalizes_line_breaks_inside_question_text(self) -> None:

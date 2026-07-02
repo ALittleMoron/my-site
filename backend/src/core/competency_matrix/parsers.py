@@ -6,6 +6,7 @@ from io import StringIO
 from pathlib import PurePath
 from typing import NoReturn, cast
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import (
     QuestionQueueImportInvalidError,
     QuestionQueueImportIssue,
@@ -18,6 +19,13 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
 )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportColumnIndexes:
+    question: int
+    sheet: int | None
+    grade: int | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -55,7 +63,9 @@ class QuestionQueueImportParser:
         return QueuedCompetencyMatrixQuestionsCreateParams(
             questions=[
                 QueuedCompetencyMatrixQuestionCreateParams(
-                    question=self.normalize_question_text(value=cast("str", row.value)).strip(),
+                    question=self.normalize_question_text(value=cast("str", row.question)).strip(),
+                    sheet=self.normalize_optional_text(value=cast("str | None", row.sheet)),
+                    grade=self.normalize_optional_grade(value=cast("str | None", row.grade)),
                 )
                 for row in rows
             ],
@@ -79,7 +89,12 @@ class QuestionQueueImportParser:
     def parse_txt(self, *, content: bytes) -> list[ParsedQuestionRow]:
         text = self.decode_text(content=content)
         return [
-            ParsedQuestionRow(row_number=row_number, value=line.strip())
+            ParsedQuestionRow(
+                row_number=row_number,
+                question=line.strip(),
+                sheet=None,
+                grade=None,
+            )
             for row_number, line in enumerate(text.splitlines(), start=1)
         ]
 
@@ -92,11 +107,13 @@ class QuestionQueueImportParser:
                 [self.issue(message="Import file must contain at least one question.", row=None)],
             )
 
-        question_column_index = self.question_column_index(header=rows[0])
+        column_indexes = self.csv_column_indexes(header=rows[0])
         return [
             ParsedQuestionRow(
                 row_number=row_number,
-                value=row[question_column_index] if question_column_index < len(row) else "",
+                question=self.cell(row=row, index=column_indexes.question, missing_value=""),
+                sheet=self.cell(row=row, index=column_indexes.sheet, missing_value=None),
+                grade=self.cell(row=row, index=column_indexes.grade, missing_value=None),
             )
             for row_number, row in enumerate(rows[1:], start=2)
         ]
@@ -107,11 +124,13 @@ class QuestionQueueImportParser:
             self.raise_invalid(
                 [self.issue(message="Import file must contain at least one question.", row=None)],
             )
-        question_column_index, first_question_row_index = self.excel_question_column(rows=rows)
+        column_indexes, first_question_row_index = self.excel_column_indexes(rows=rows)
         return [
             ParsedQuestionRow(
                 row_number=row_number,
-                value=row[question_column_index] if question_column_index < len(row) else None,
+                question=self.cell(row=row, index=column_indexes.question, missing_value=None),
+                sheet=self.cell(row=row, index=column_indexes.sheet, missing_value=None),
+                grade=self.cell(row=row, index=column_indexes.grade, missing_value=None),
             )
             for row_number, row in enumerate(
                 rows[first_question_row_index:],
@@ -133,9 +152,16 @@ class QuestionQueueImportParser:
         except csv.Error:
             return csv.excel
 
-    def question_column_index(self, *, header: list[str]) -> int:
+    def csv_column_indexes(self, *, header: list[str]) -> QuestionQueueImportColumnIndexes:
+        return QuestionQueueImportColumnIndexes(
+            question=self.question_column_index(header=header),
+            sheet=self.optional_column_index(header=header, headers=self.rules.sheet_headers),
+            grade=self.optional_column_index(header=header, headers=self.rules.grade_headers),
+        )
+
+    def question_column_index(self, *, header: tuple[object, ...] | list[str]) -> int:
         for index, value in enumerate(header):
-            if value.strip().casefold() in self.rules.question_headers:
+            if isinstance(value, str) and value.strip().casefold() in self.rules.question_headers:
                 return index
         self.raise_invalid(
             [
@@ -150,19 +176,59 @@ class QuestionQueueImportParser:
         )
         raise AssertionError
 
-    def excel_question_column(self, *, rows: list[tuple[object, ...]]) -> tuple[int, int]:
-        for index, value in enumerate(rows[0]):
+    def optional_column_index(
+        self,
+        *,
+        header: tuple[object, ...] | list[str],
+        headers: frozenset[str],
+    ) -> int | None:
+        for index, value in enumerate(header):
+            if isinstance(value, str) and value.strip().casefold() in headers:
+                return index
+        return None
+
+    def excel_column_indexes(
+        self,
+        *,
+        rows: list[tuple[object, ...]],
+    ) -> tuple[QuestionQueueImportColumnIndexes, int]:
+        header = rows[0]
+        for value in header:
             if isinstance(value, str) and value.strip().casefold() in self.rules.question_headers:
-                return index, 1
-        return 0, 0
+                return (
+                    QuestionQueueImportColumnIndexes(
+                        question=self.question_column_index(header=header),
+                        sheet=self.optional_column_index(
+                            header=header,
+                            headers=self.rules.sheet_headers,
+                        ),
+                        grade=self.optional_column_index(
+                            header=header,
+                            headers=self.rules.grade_headers,
+                        ),
+                    ),
+                    1,
+                )
+        return QuestionQueueImportColumnIndexes(question=0, sheet=None, grade=None), 0
+
+    def cell(
+        self,
+        *,
+        row: tuple[object, ...] | list[str],
+        index: int | None,
+        missing_value: object | None,
+    ) -> object | None:
+        if index is None or index >= len(row):
+            return missing_value
+        return row[index]
 
     def validate_rows(self, *, rows: list[ParsedQuestionRow]) -> list[QuestionQueueImportIssue]:
         issues: list[QuestionQueueImportIssue] = []
         for row in rows:
-            if not isinstance(row.value, str):
+            if not isinstance(row.question, str):
                 issues.append(self.issue(message="Row {row} question must be text.", row=row))
                 continue
-            question = self.normalize_question_text(value=row.value).strip()
+            question = self.normalize_question_text(value=row.question).strip()
             if not question:
                 issues.append(self.issue(message="Row {row} question must not be blank.", row=row))
             elif len(question) > self.rules.question_max_length:
@@ -175,6 +241,23 @@ class QuestionQueueImportParser:
                         row=row,
                     ),
                 )
+            if row.sheet is not None and not isinstance(row.sheet, str):
+                issues.append(self.issue(message="Row {row} sheet must be text.", row=row))
+            if row.grade is not None:
+                if not isinstance(row.grade, str):
+                    issues.append(self.issue(message="Row {row} grade must be text.", row=row))
+                elif self.normalize_optional_text(value=row.grade) is not None:
+                    grade = self.normalize_optional_text(value=row.grade)
+                    if grade not in {item.value for item in GradeEnum}:
+                        issues.append(
+                            self.issue(
+                                message=(
+                                    "Row {row} grade must be one of: "
+                                    f"{', '.join(grade.value for grade in GradeEnum)}."
+                                ),
+                                row=row,
+                            ),
+                        )
         if len(rows) == 0:
             issues.append(
                 self.issue(message="Import file must contain at least one question.", row=None),
@@ -183,6 +266,20 @@ class QuestionQueueImportParser:
 
     def normalize_question_text(self, *, value: str) -> str:
         return value.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+    def normalize_optional_text(self, *, value: str | None) -> str | None:
+        if value is None:
+            return None
+        text = self.normalize_question_text(value=value).strip()
+        if not text:
+            return None
+        return text
+
+    def normalize_optional_grade(self, *, value: str | None) -> GradeEnum | None:
+        text = self.normalize_optional_text(value=value)
+        if text is None:
+            return None
+        return GradeEnum(text)
 
     def issue(
         self,

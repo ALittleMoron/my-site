@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from itertools import groupby
 from typing import Annotated, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
@@ -247,6 +247,14 @@ class MatrixStructurePriorityUpdateRequestSchema(CamelCaseSchema):
 
 class QuestionSuggestionRequestSchema(CamelCaseSchema):
     question: Annotated[RequiredShortText, Field(title="Question")]
+    sheet: Annotated[RequiredShortText | None, Field(title="Sheet")]
+
+    @model_validator(mode="before")
+    @classmethod
+    def allow_omitted_sheet(cls, data: object) -> object:
+        if isinstance(data, dict) and "sheet" not in data:
+            return {**data, "sheet": None}
+        return data
 
     @field_validator("question", mode="after")
     @classmethod
@@ -257,13 +265,27 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
             raise ValueError(msg)
         return question
 
+    @field_validator("sheet", mode="after")
+    @classmethod
+    def normalize_sheet(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        sheet = value.strip()
+        if not sheet:
+            return None
+        return sheet
+
     def to_schema(
         self,
         *,
         limit: QuestionSuggestionLimitParams | None,
     ) -> QuestionSuggestionCreateParams:
         return QuestionSuggestionCreateParams(
-            question=QueuedCompetencyMatrixQuestionCreateParams(question=self.question),
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question=self.question,
+                sheet=self.sheet,
+                grade=None,
+            ),
             limit=limit,
         )
 

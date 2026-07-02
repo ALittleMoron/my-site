@@ -1,5 +1,6 @@
 import pytest
 
+from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import QuestionQueueImportInvalidError
 from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.readers import QuestionQueueImportExcelReader
@@ -15,6 +16,8 @@ TEST_IMPORT_RULES = QuestionQueueImportRules(
     supported_extensions_for_message=(".txt", ".csv", ".xlsx", ".xlsm"),
     question_headers=frozenset({"question", "questions", "вопрос", "вопросы"}),
     question_headers_for_message=("question", "questions", "вопрос", "вопросы"),
+    sheet_headers=frozenset({"sheet", "лист"}),
+    grade_headers=frozenset({"grade", "грейд"}),
     csv_delimiters=",;\t|",
     question_max_length=255,
 )
@@ -57,6 +60,34 @@ class TestQuestionQueueImportParser:
         )
 
         assert [question.question for question in params.questions] == ["Что такое PEP 8?"]
+
+    def test_csv_import_reads_optional_context_columns_in_declared_order(self) -> None:
+        parser = parser_with_excel_rows([])
+
+        params = parser.parse(
+            file=QuestionQueueImportFile(
+                filename="questions.csv",
+                content=b"question,sheet,grade\nWhat is PEP 8?,python,Junior",
+            ),
+        )
+
+        assert params.questions[0].question == "What is PEP 8?"
+        assert params.questions[0].sheet == "python"
+        assert params.questions[0].grade == GradeEnum.JUNIOR
+
+    def test_csv_import_keeps_blank_optional_context_columns_empty(self) -> None:
+        parser = parser_with_excel_rows([])
+
+        params = parser.parse(
+            file=QuestionQueueImportFile(
+                filename="questions.csv",
+                content=b"question,sheet,grade\nWhat is PEP 8?,,",
+            ),
+        )
+
+        assert params.questions[0].question == "What is PEP 8?"
+        assert params.questions[0].sheet is None
+        assert params.questions[0].grade is None
 
     def test_import_normalizes_line_breaks_inside_question_text(self) -> None:
         parser = parser_with_excel_rows([])
@@ -103,6 +134,26 @@ class TestQuestionQueueImportParser:
         assert reader.read_contents == [b"xlsx bytes"]
         assert [question.question for question in params.questions] == ["What is PEP 8?"]
 
+    def test_excel_with_header_reads_optional_context_columns(self) -> None:
+        reader = FakeExcelReader(
+            rows=[
+                ("questions", "sheet", "grade"),
+                ("How does mypy help?", "python", "Middle"),
+            ],
+        )
+        parser = parser_with_excel_reader(reader)
+
+        params = parser.parse(
+            file=QuestionQueueImportFile(
+                filename="questions.xlsx",
+                content=b"xlsx bytes",
+            ),
+        )
+
+        assert params.questions[0].question == "How does mypy help?"
+        assert params.questions[0].sheet == "python"
+        assert params.questions[0].grade == GradeEnum.MIDDLE
+
     def test_excel_without_header_reads_first_column_from_first_row(self) -> None:
         parser = parser_with_excel_rows([("What is PEP 8?", "ignored"), ("What is Black?",)])
 
@@ -131,6 +182,22 @@ class TestQuestionQueueImportParser:
 
         assert [issue.message for issue in exc_info.value.issues] == [
             "Row 2 question must be text.",
+        ]
+        assert [issue.attr_name for issue in exc_info.value.issues] == ["file.row.2"]
+
+    def test_import_invalid_grade_returns_row_issue(self) -> None:
+        parser = parser_with_excel_rows([])
+
+        with pytest.raises(QuestionQueueImportInvalidError) as exc_info:
+            parser.parse(
+                file=QuestionQueueImportFile(
+                    filename="questions.csv",
+                    content=b"grade,question\nLead,What is PEP 8?",
+                ),
+            )
+
+        assert [issue.message for issue in exc_info.value.issues] == [
+            "Row 2 grade must be one of: Junior, Junior+, Middle, Middle+, Senior.",
         ]
         assert [issue.attr_name for issue in exc_info.value.issues] == ["file.row.2"]
 

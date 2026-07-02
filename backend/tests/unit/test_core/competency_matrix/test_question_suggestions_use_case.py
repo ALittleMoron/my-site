@@ -50,7 +50,11 @@ class TestQuestionSuggestionsUseCase(TestCase):
         )
 
         params = QuestionSuggestionCreateParams(
-            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                grade=None,
+                sheet="python",
+            ),
             limit=QuestionSuggestionLimitParams(
                 client_identifier="203.0.113.10",
                 now=now,
@@ -63,7 +67,11 @@ class TestQuestionSuggestionsUseCase(TestCase):
             params=params.limit,
         )
         self.storage.create_queued_question.assert_called_once_with(
-            params=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            params=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                grade=None,
+                sheet="python",
+            ),
         )
 
     async def test_suggest_question_skips_quota_limiter_when_limit_is_absent(self) -> None:
@@ -79,7 +87,11 @@ class TestQuestionSuggestionsUseCase(TestCase):
             created_at=now,
         )
         params = QuestionSuggestionCreateParams(
-            question=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                grade=None,
+                sheet=None,
+            ),
             limit=None,
         )
         self.storage.create_queued_question.return_value = queued_question
@@ -93,8 +105,16 @@ class TestQuestionSuggestionsUseCase(TestCase):
     async def test_import_queued_questions_creates_questions_without_quota_limiter(self) -> None:
         params = QueuedCompetencyMatrixQuestionsCreateParams(
             questions=[
-                QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
-                QueuedCompetencyMatrixQuestionCreateParams(question="How does mypy help?"),
+                QueuedCompetencyMatrixQuestionCreateParams(
+                    question="What is PEP 8?",
+                    grade=None,
+                    sheet="python",
+                ),
+                QueuedCompetencyMatrixQuestionCreateParams(
+                    question="How does mypy help?",
+                    grade=GradeEnum.MIDDLE,
+                    sheet="python",
+                ),
             ],
         )
         queued_questions = QueuedCompetencyMatrixQuestions(

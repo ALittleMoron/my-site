@@ -77,6 +77,7 @@ export class MatrixListComponent implements OnInit {
   readonly detailVisible = signal(false);
   readonly suggestionVisible = signal(false);
   readonly suggestionQuestion = signal('');
+  readonly suggestionSheetKey = signal<string | null>(null);
   readonly suggestionSubmitting = signal(false);
   readonly suggestionError = signal<ApiError | null>(null);
 
@@ -236,6 +237,7 @@ export class MatrixListComponent implements OnInit {
   openQuestionSuggestion(): void {
     this.suggestionVisible.set(true);
     this.suggestionQuestion.set('');
+    this.suggestionSheetKey.set(this.selectedSheetKey());
     this.suggestionSubmitting.set(false);
     this.suggestionError.set(null);
   }
@@ -244,6 +246,7 @@ export class MatrixListComponent implements OnInit {
     if (this.suggestionSubmitting()) return;
     this.suggestionVisible.set(false);
     this.suggestionQuestion.set('');
+    this.suggestionSheetKey.set(null);
     this.suggestionError.set(null);
   }
 
@@ -261,19 +264,31 @@ export class MatrixListComponent implements OnInit {
     this.setQuestionSuggestion(value);
   }
 
+  onQuestionSuggestionSheetChange(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    this.setQuestionSuggestionSheet(target?.value ?? '');
+  }
+
+  setQuestionSuggestionSheet(value: string): void {
+    const sheetKey = value.trim();
+    this.suggestionSheetKey.set(sheetKey.length > 0 ? sheetKey : null);
+    this.suggestionError.set(null);
+  }
+
   sendQuestionSuggestion(): void {
     const trimmedQuestion = normalizeSuggestionQuestion(this.suggestionQuestion()).trim();
     if (!trimmedQuestion) return;
     this.suggestionSubmitting.set(true);
     this.suggestionError.set(null);
     this.matrixService
-      .suggestQuestion(trimmedQuestion)
+      .suggestQuestion(trimmedQuestion, this.suggestionSheetKey() ?? this.selectedSheetKey())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.suggestionSubmitting.set(false);
           this.suggestionVisible.set(false);
           this.suggestionQuestion.set('');
+          this.suggestionSheetKey.set(null);
           this.notifications.success(this.i18n.translate('matrix.suggestion.sent'));
         },
         error: (err: ApiError) => {

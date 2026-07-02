@@ -23,7 +23,10 @@ export class MatrixQuestionQueueService {
 
   createQueuedQuestion(question: string): Observable<QueuedMatrixQuestion> {
     return this.api
-      .post<QueuedMatrixQuestionDto>('/api/admin/competency-matrix/queued-questions', { question })
+      .post<QueuedMatrixQuestionDto>('/api/admin/competency-matrix/queued-questions', {
+        question,
+        sheet: null,
+      })
       .pipe(map(mapQueuedMatrixQuestionDto));
   }
 

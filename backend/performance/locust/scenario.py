@@ -176,6 +176,7 @@ class PublicSiteScenario:
                     f"{constants.MATRIX_QUESTION_SUGGESTION_PREFIX} "
                     f"{self.language.value}-{self.matrix_suggestion_number}"
                 ),
+                "sheet": choice(self.matrix_sheets) if self.matrix_sheets else None,
             },
             catch_response=True,
         ) as response:

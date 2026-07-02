@@ -66,20 +66,35 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
     async def test_create_queued_question_returns_persisted_question(self) -> None:
         question = await self.storage.create_queued_question(
-            params=QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
+            params=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is PEP 8?",
+                sheet="python",
+                grade=GradeEnum.JUNIOR,
+            ),
         )
 
         assert question.id > 0
         assert question.question == "What is PEP 8?"
-        assert question.grade is None
+        assert question.grade == GradeEnum.JUNIOR
+        assert question.sheet == "python"
+        assert question.section is None
+        assert question.subsection is None
         assert question.suggested_by_username is None
 
     async def test_create_queued_questions_returns_persisted_questions_in_input_order(self) -> None:
         questions = await self.storage.create_queued_questions(
             params=QueuedCompetencyMatrixQuestionsCreateParams(
                 questions=[
-                    QueuedCompetencyMatrixQuestionCreateParams(question="What is PEP 8?"),
-                    QueuedCompetencyMatrixQuestionCreateParams(question="How does mypy help?"),
+                    QueuedCompetencyMatrixQuestionCreateParams(
+                        question="What is PEP 8?",
+                        sheet="python",
+                        grade=None,
+                    ),
+                    QueuedCompetencyMatrixQuestionCreateParams(
+                        question="How does mypy help?",
+                        sheet="python",
+                        grade=GradeEnum.MIDDLE,
+                    ),
                 ],
             ),
         )
@@ -88,6 +103,10 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
             "What is PEP 8?",
             "How does mypy help?",
         ]
+        assert [question.sheet for question in questions] == ["python", "python"]
+        assert [question.grade for question in questions] == [None, GradeEnum.MIDDLE]
+        assert [question.section for question in questions] == [None, None]
+        assert [question.subsection for question in questions] == [None, None]
         assert questions.values[0].id < questions.values[1].id
         assert questions.values[0].created_at == questions.values[1].created_at
 

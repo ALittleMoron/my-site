@@ -449,8 +449,14 @@ class CoreFactoryHelper:
     def queued_competency_matrix_question_create_params(
         cls,
         question: str = "What is PEP 8?",
+        grade: GradeEnum | None = None,
+        sheet: str | None = None,
     ) -> QueuedCompetencyMatrixQuestionCreateParams:
-        return QueuedCompetencyMatrixQuestionCreateParams(question=question)
+        return QueuedCompetencyMatrixQuestionCreateParams(
+            question=question,
+            grade=grade,
+            sheet=sheet,
+        )
 
     @classmethod
     def user(

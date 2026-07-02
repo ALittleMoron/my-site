@@ -224,6 +224,8 @@ class QueuedCompetencyMatrixQuestions(ValuedDataclass[QueuedCompetencyMatrixQues
 @dataclass(frozen=True, slots=True, kw_only=True)
 class QueuedCompetencyMatrixQuestionCreateParams:
     question: str
+    sheet: str | None
+    grade: GradeEnum | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -239,6 +241,8 @@ class QuestionQueueImportRules:
     supported_extensions_for_message: tuple[str, ...]
     question_headers: frozenset[str]
     question_headers_for_message: tuple[str, ...]
+    sheet_headers: frozenset[str]
+    grade_headers: frozenset[str]
     csv_delimiters: str
     question_max_length: int
 
@@ -252,7 +256,9 @@ class QuestionQueueImportFile:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ParsedQuestionRow:
     row_number: int
-    value: object
+    question: object
+    sheet: object | None
+    grade: object | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

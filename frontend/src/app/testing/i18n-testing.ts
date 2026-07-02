@@ -301,7 +301,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixQueue.addManualError': 'Не удалось добавить вопрос в очередь.',
   'adminMatrixQueue.importDrop': 'Перетащите файл сюда или выберите его',
   'adminMatrixQueue.importChooseFile': 'Выбрать файл',
-  'adminMatrixQueue.importHelp': 'Поддерживаются TXT, CSV, XLSX и XLSM.',
+  'adminMatrixQueue.importHelp':
+    'TXT: один вопрос на строку. CSV, XLSX и XLSM: колонки question, sheet, grade; ' +
+    'sheet и grade необязательны.',
   'adminMatrixQueue.importSelectedFile': 'Выбран файл: {filename}',
   'adminMatrixQueue.importSubmit': 'Импортировать',
   'adminMatrixQueue.importSubmitting': 'Импорт...',

@@ -344,7 +344,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.addManualError": "Не удалось добавить вопрос в очередь.",
         "adminMatrixQueue.importDrop": "Перетащите файл сюда или выберите его",
         "adminMatrixQueue.importChooseFile": "Выбрать файл",
-        "adminMatrixQueue.importHelp": "Поддерживаются TXT, CSV, XLSX и XLSM.",
+        "adminMatrixQueue.importHelp": (
+            "TXT: один вопрос на строку. CSV, XLSX и XLSM: колонки question, sheet, grade; "
+            "sheet и grade необязательны."
+        ),
         "adminMatrixQueue.importSelectedFile": "Выбран файл: {filename}",
         "adminMatrixQueue.importSubmit": "Импортировать",
         "adminMatrixQueue.importSubmitting": "Импорт...",
@@ -1038,7 +1041,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.addManualError": "Failed to add the question to the queue.",
         "adminMatrixQueue.importDrop": "Drop a file here or choose one",
         "adminMatrixQueue.importChooseFile": "Choose file",
-        "adminMatrixQueue.importHelp": "TXT, CSV, XLSX, and XLSM are supported.",
+        "adminMatrixQueue.importHelp": (
+            "TXT: one question per line. CSV, XLSX, and XLSM: columns question, sheet, grade; "
+            "sheet and grade are optional."
+        ),
         "adminMatrixQueue.importSelectedFile": "Selected file: {filename}",
         "adminMatrixQueue.importSubmit": "Import",
         "adminMatrixQueue.importSubmitting": "Importing...",
