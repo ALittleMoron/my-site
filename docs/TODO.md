@@ -70,12 +70,12 @@
 - [x] Move tests to backend and create a src subfolder for backend
 - [ ] Deploy to a remote server
   - [x] Choose hosting
-  - [ ] Wire up missing secrets and vars
-  - [ ] Run deployment strictly from the GitHub workflow
-  - [ ] After first deployment, remove the unpublished-contract compatibility rule from `AGENTS.md`
-  - [ ] After deployment, log in to internal services over WireGuard and verify auth
-    - [ ] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
-    - [ ] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
+  - [x] Wire up missing secrets and vars
+  - [x] Run deployment strictly from the GitHub workflow
+  - [x] Remove the unpublished-contract compatibility rule from `AGENTS.md`
+  - [x] After deployment, log in to internal services over WireGuard and verify auth
+    - [x] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
+    - [x] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
   - [ ] Load the real competency matrix content from the current Google Docs source into the database before first deployment.
   - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
@@ -235,6 +235,7 @@
 
 ### Frontend
 
+- [ ] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [x] Cookie consent
 - [x] Fix question search on the frontend: empty sections should also be removed
@@ -338,7 +339,7 @@
   - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
   - [x] Keep `tagSlug` as one language-neutral English filter
   - [x] Add admin-panel content authoring UI controls for editing RU and EN article and tag fields in one form
-  - [x] Update the init Alembic migration because the service is not deployed yet
+  - [x] Update the init Alembic migration during pre-deployment development
   - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
   - [x] Cover backend and frontend behaviour with focused tests
 - [x] Hide/Publish articles
