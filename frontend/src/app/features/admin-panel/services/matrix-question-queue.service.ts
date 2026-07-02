@@ -41,12 +41,12 @@ export class MatrixQuestionQueueService {
       .pipe(map((dto) => dto.questions.map(mapQueuedMatrixQuestionDto)));
   }
 
-  rejectQueuedQuestion(questionId: number): Observable<void> {
+  rejectQueuedQuestion(questionId: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/competency-matrix/queued-questions/${questionId}`);
   }
 
   createQuestionFromQueue(
-    questionId: number,
+    questionId: string,
     payload: AdminMatrixItemPayload,
     language: LanguageCode,
   ): Observable<AdminMatrixItemDetailDto> {

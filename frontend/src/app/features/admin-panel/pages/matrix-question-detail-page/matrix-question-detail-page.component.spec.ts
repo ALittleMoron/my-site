@@ -13,6 +13,9 @@ import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-w
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
 import { MatrixQuestionDetailPageComponent } from './matrix-question-detail-page.component';
 
+const INCOMPLETE_QUESTION_ID = '00000000000000000000000000000007';
+const READY_QUESTION_ID = '00000000000000000000000000000008';
+
 describe('MatrixQuestionDetailPageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionDetailPageComponent>;
   let routeParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
@@ -21,7 +24,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
   let notifications: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
-    routeParams = new BehaviorSubject(convertToParamMap({ id: '7' }));
+    routeParams = new BehaviorSubject(convertToParamMap({ id: INCOMPLETE_QUESTION_ID }));
     service = {
       getQuestion: jest.fn().mockReturnValue(of(incompleteQuestion())),
       updateQuestion: jest.fn().mockReturnValue(of(readyQuestion('Draft'))),
@@ -59,7 +62,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
   });
 
   it('loads matrix question detail and renders the duplicated actions dropdown', () => {
-    expect(service.getQuestion).toHaveBeenCalledWith('7', 'ru');
+    expect(service.getQuestion).toHaveBeenCalledWith(INCOMPLETE_QUESTION_ID, 'ru');
     expect(fixture.nativeElement.textContent).toContain('Incomplete question?');
     expect(
       fixture.nativeElement.querySelector('[data-testid="matrix-detail-actions-toggle"]'),
@@ -74,7 +77,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
     form?.questionSave.emit(questionPayload('ready-question', 'Published'));
 
     expect(service.updateQuestion).toHaveBeenCalledWith(
-      '7',
+      INCOMPLETE_QUESTION_ID,
       questionPayload('ready-question', 'Published'),
       'ru',
     );
@@ -93,17 +96,17 @@ describe('MatrixQuestionDetailPageComponent', () => {
   it('publishes, unpublishes, and deletes complete questions from the detail dropdown', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     service.getQuestion.mockReturnValue(of(readyQuestion('Draft')));
-    routeParams.next(convertToParamMap({ id: '8' }));
+    routeParams.next(convertToParamMap({ id: READY_QUESTION_ID }));
     fixture.detectChanges();
 
     openDetailActions();
     fixture.nativeElement
       .querySelector<HTMLButtonElement>('[data-testid="matrix-detail-actions-publish"]')
       ?.click();
-    expect(service.publishQuestion).toHaveBeenCalledWith('8');
+    expect(service.publishQuestion).toHaveBeenCalledWith(READY_QUESTION_ID);
 
     service.getQuestion.mockReturnValue(of(readyQuestion('Published')));
-    routeParams.next(convertToParamMap({ id: '8' }));
+    routeParams.next(convertToParamMap({ id: READY_QUESTION_ID }));
     fixture.detectChanges();
     openDetailActions();
     fixture.nativeElement
@@ -114,9 +117,9 @@ describe('MatrixQuestionDetailPageComponent', () => {
       .querySelector<HTMLButtonElement>('[data-testid="matrix-detail-actions-delete"]')
       ?.click();
 
-    expect(service.unpublishQuestion).toHaveBeenCalledWith('8');
+    expect(service.unpublishQuestion).toHaveBeenCalledWith(READY_QUESTION_ID);
     expect(window.confirm).toHaveBeenCalled();
-    expect(service.deleteQuestion).toHaveBeenCalledWith('8');
+    expect(service.deleteQuestion).toHaveBeenCalledWith(READY_QUESTION_ID);
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/matrix-questions');
   });
 
@@ -144,7 +147,7 @@ class MatrixQuestionFormStubComponent {
 function incompleteQuestion(): AdminMatrixQuestionDetailDto {
   return {
     ...readyQuestion('Draft'),
-    id: '7',
+    id: INCOMPLETE_QUESTION_ID,
     slug: 'incomplete-question',
     question: 'Incomplete question?',
     grade: null,
@@ -157,12 +160,12 @@ function incompleteQuestion(): AdminMatrixQuestionDetailDto {
 
 function readyQuestion(publishStatus: 'Draft' | 'Published'): AdminMatrixQuestionDetailDto {
   return {
-    id: '8',
+    id: READY_QUESTION_ID,
     slug: 'ready-question',
     question: 'Ready question?',
     answer: 'Answer',
     interviewExpectedAnswer: 'Expected',
-    subsectionId: 3,
+    subsectionId: '00000000000000000000000000000003',
     sheetKey: 'python',
     sheet: 'Python',
     grade: 'Junior',
@@ -192,7 +195,7 @@ function questionPayload(
 ): AdminMatrixQuestionPayload {
   return {
     slug,
-    subsectionId: 3,
+    subsectionId: '00000000000000000000000000000003',
     grade: 'Junior',
     interviewFrequency: 'often',
     publishStatus,

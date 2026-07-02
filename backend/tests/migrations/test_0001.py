@@ -3,7 +3,7 @@ from argon2 import PasswordHasher
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from infra.config.settings import Settings
-from infra.postgresql.utils import downgrade, migrate
+from infra.postgresql.utils import downgrade
 
 user_table = sa.table(
     "auth__user_model",
@@ -29,13 +29,14 @@ pg_type_table = sa.table(
 )
 
 
-async def test_0001_upgrade_creates_configured_owner(
-    engine: AsyncEngine,
-    test_settings: Settings,
-) -> None:
-    migrate(revision="0001")
-
-    try:
+class TestMigration0001:
+    async def test_upgrade_creates_configured_owner(
+        self,
+        engine: AsyncEngine,
+        test_settings: Settings,
+        migrated_to_0001: None,
+    ) -> None:
+        _ = migrated_to_0001
         owner_settings = test_settings.owner
         async with engine.connect() as connection:
             result = await connection.execute(
@@ -55,44 +56,42 @@ async def test_0001_upgrade_creates_configured_owner(
             owner["password_hash"],
             owner_settings.init_password.get_secret_value(),
         )
-    finally:
+
+    async def test_downgrade_removes_initial_auth_schema(
+        self,
+        engine: AsyncEngine,
+        migrated_to_0001: None,
+    ) -> None:
+        _ = migrated_to_0001
         downgrade(revision="base")
 
-
-async def test_0001_downgrade_removes_initial_auth_schema(
-    engine: AsyncEngine,
-) -> None:
-    migrate(revision="0001")
-
-    downgrade(revision="base")
-
-    async with engine.connect() as connection:
-        user_table_result = await connection.execute(
-            sa.select(pg_class_table.c.relname)
-            .select_from(
-                pg_class_table.join(
-                    pg_namespace_table,
-                    pg_class_table.c.relnamespace == pg_namespace_table.c.oid,
+        async with engine.connect() as connection:
+            user_table_result = await connection.execute(
+                sa.select(pg_class_table.c.relname)
+                .select_from(
+                    pg_class_table.join(
+                        pg_namespace_table,
+                        pg_class_table.c.relnamespace == pg_namespace_table.c.oid,
+                    ),
+                )
+                .where(
+                    pg_class_table.c.relname == "auth__user_model",
+                    pg_namespace_table.c.nspname == "public",
                 ),
             )
-            .where(
-                pg_class_table.c.relname == "auth__user_model",
-                pg_namespace_table.c.nspname == "public",
-            ),
-        )
-        role_type_result = await connection.execute(
-            sa.select(pg_type_table.c.typname)
-            .select_from(
-                pg_type_table.join(
-                    pg_namespace_table,
-                    pg_type_table.c.typnamespace == pg_namespace_table.c.oid,
+            role_type_result = await connection.execute(
+                sa.select(pg_type_table.c.typname)
+                .select_from(
+                    pg_type_table.join(
+                        pg_namespace_table,
+                        pg_type_table.c.typnamespace == pg_namespace_table.c.oid,
+                    ),
+                )
+                .where(
+                    pg_type_table.c.typname == "role_enum",
+                    pg_namespace_table.c.nspname == "public",
                 ),
             )
-            .where(
-                pg_type_table.c.typname == "role_enum",
-                pg_namespace_table.c.nspname == "public",
-            ),
-        )
 
-    assert user_table_result.scalar_one_or_none() is None
-    assert role_type_result.scalar_one_or_none() is None
+        assert user_table_result.scalar_one_or_none() is None
+        assert role_type_result.scalar_one_or_none() is None

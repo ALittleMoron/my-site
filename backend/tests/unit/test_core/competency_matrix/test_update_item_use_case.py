@@ -53,7 +53,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.update_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
-            resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
+            resource_ids=[self.factory.core.hex_id(1), self.factory.core.hex_id(2)],
         )
         self.storage.update_competency_matrix_item.assert_not_called()
 
@@ -108,7 +108,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         )
         await self.use_case.update_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
-            resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
+            resource_ids=[self.factory.core.hex_id(1), self.factory.core.hex_id(2)],
         )
         self.storage.update_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(

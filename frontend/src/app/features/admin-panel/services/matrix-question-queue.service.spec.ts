@@ -4,6 +4,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApiClient } from '../../../core/http/api-client.service';
 import { MatrixQuestionQueueService } from './matrix-question-queue.service';
 
+const QUESTION_ID = '00000000000000000000000000000007';
+const SECOND_QUESTION_ID = '00000000000000000000000000000008';
+const SUBSECTION_ID = '00000000000000000000000000000003';
+
 describe('MatrixQuestionQueueService', () => {
   let service: MatrixQuestionQueueService;
   let httpMock: HttpTestingController;
@@ -37,7 +41,7 @@ describe('MatrixQuestionQueueService', () => {
     req.flush({
       questions: [
         {
-          id: 1,
+          id: '00000000000000000000000000000001',
           question: 'What is PEP 8?',
           grade: null,
           sheet: null,
@@ -55,12 +59,12 @@ describe('MatrixQuestionQueueService', () => {
   it('rejects queued question', () => {
     let completed = false;
 
-    service.rejectQueuedQuestion(7).subscribe(() => {
+    service.rejectQueuedQuestion(QUESTION_ID).subscribe(() => {
       completed = true;
     });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/queued-questions/7'),
+      r.url.endsWith(`/api/admin/competency-matrix/queued-questions/${QUESTION_ID}`),
     );
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
@@ -81,7 +85,7 @@ describe('MatrixQuestionQueueService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ question: 'What is PEP 8?', sheet: null });
     req.flush({
-      id: 7,
+      id: QUESTION_ID,
       question: 'What is PEP 8?',
       grade: null,
       sheet: null,
@@ -111,7 +115,7 @@ describe('MatrixQuestionQueueService', () => {
     req.flush({
       questions: [
         {
-          id: 7,
+          id: QUESTION_ID,
           question: 'What is PEP 8?',
           grade: null,
           sheet: null,
@@ -121,7 +125,7 @@ describe('MatrixQuestionQueueService', () => {
           createdAt: '2026-06-07T12:00:00+00:00',
         },
         {
-          id: 8,
+          id: SECOND_QUESTION_ID,
           question: 'What is Black?',
           grade: null,
           sheet: null,
@@ -141,10 +145,10 @@ describe('MatrixQuestionQueueService', () => {
 
     service
       .createQuestionFromQueue(
-        7,
+        QUESTION_ID,
         {
           slug: 'pep-8',
-          subsectionId: 3,
+          subsectionId: SUBSECTION_ID,
           grade: 'Junior',
           publishStatus: 'Draft',
           translations: {
@@ -168,12 +172,12 @@ describe('MatrixQuestionQueueService', () => {
       });
 
     const req = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/queued-questions/7/create-item'),
+      r.url.endsWith(`/api/admin/competency-matrix/queued-questions/${QUESTION_ID}/create-item`),
     );
     expect(req.request.method).toBe('POST');
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.body.slug).toBe('pep-8');
-    expect(req.request.body.subsectionId).toBe(3);
+    expect(req.request.body.subsectionId).toBe(SUBSECTION_ID);
     expect(req.request.body.sheetKey).toBeUndefined();
     expect(req.request.body.translations.en.section).toBeUndefined();
     req.flush({ id: '10', slug: 'pep-8', question: 'What is PEP 8?' });

@@ -38,6 +38,7 @@ from performance.query_plans.scenarios import (
     STORAGE_SCENARIOS,
     article_id,
     evaluate_storage_method_coverage,
+    hex_id,
     write_article_for_existing_article,
 )
 from performance.query_plans.sql import group_queries_by_scenario
@@ -218,7 +219,7 @@ class TestQueryCapture:
         article = write_article_for_existing_article()
 
         assert article.id == article_id(99)
-        assert {tag.id for tag in article.tags} == {1, 2}
+        assert {tag.id for tag in article.tags} == {hex_id(1), hex_id(2)}
 
     async def test_resume_list_scenario_passes_explicit_search_query(
         self,
@@ -348,13 +349,13 @@ class TestQueryCapture:
             ordinal=2,
             sql=(
                 "INSERT INTO articles__article_to_tag_secondary_model (article_id, tag_id) "
-                "SELECT p0::UUID, p1::BIGINT FROM "
-                "(VALUES (%(article_id)s::UUID, %(tag_id)s::BIGINT)) "
+                "SELECT p0::VARCHAR, p1::VARCHAR FROM "
+                "(VALUES (%(article_id)s::VARCHAR, %(tag_id)s::VARCHAR)) "
                 "AS imp_sen(p0, p1, sen_counter) ORDER BY sen_counter "
                 "RETURNING articles__article_to_tag_secondary_model.id"
             ),
             normalized_sql="",
-            params={"article_id": article_id(1), "tag_id": 1},
+            params={"article_id": article_id(1), "tag_id": hex_id(1)},
             elapsed_ms=10.0,
             executemany=False,
             expectation=PlanExpectation(

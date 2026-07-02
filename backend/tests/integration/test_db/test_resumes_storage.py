@@ -10,7 +10,6 @@ from core.resumes.schemas import (
     ResumeCreateParams,
     ResumeFilters,
 )
-from core.types import IntId
 from infra.postgresql.models import ResumeModel
 from infra.postgresql.storages.resumes import ResumesDatabaseStorage
 from tests.test_cases import StorageTestCase
@@ -51,25 +50,25 @@ class TestResumesDatabaseStorage(StorageTestCase):
 
     async def test_list_resumes_orders_by_updated_at_then_id_and_paginates(self) -> None:
         await self.create_resume_row(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             title="Older",
             author_username="admin",
             updated_at=datetime(2026, 1, 1, tzinfo=UTC),
         )
         await self.create_resume_row(
-            resume_id=IntId(2),
+            resume_id=self.factory.core.hex_id(2),
             title="Tie lower id",
             author_username="admin",
             updated_at=datetime(2026, 1, 3, tzinfo=UTC),
         )
         await self.create_resume_row(
-            resume_id=IntId(3),
+            resume_id=self.factory.core.hex_id(3),
             title="Tie higher id",
             author_username="admin",
             updated_at=datetime(2026, 1, 3, tzinfo=UTC),
         )
         await self.create_resume_row(
-            resume_id=IntId(4),
+            resume_id=self.factory.core.hex_id(4),
             title="Other author",
             author_username="other-admin",
             updated_at=datetime(2026, 1, 3, tzinfo=UTC),
@@ -84,7 +83,10 @@ class TestResumesDatabaseStorage(StorageTestCase):
             ),
         )
 
-        assert self.collections.ids(resumes) == [IntId(3), IntId(2)]
+        assert self.collections.ids(resumes) == [
+            self.factory.core.hex_id(3),
+            self.factory.core.hex_id(2),
+        ]
         assert total_count == 3
 
     async def test_update_resume_replaces_content(self) -> None:
@@ -119,7 +121,7 @@ class TestResumesDatabaseStorage(StorageTestCase):
 
     async def test_get_resume_normalizes_nullable_content_jsonb(self) -> None:
         model = ResumeModel(
-            id=IntId(50),
+            id=self.factory.core.hex_id(50),
             title="Nullable resume",
             language=LanguageEnum.RU,
             author_username="admin",
@@ -130,7 +132,9 @@ class TestResumesDatabaseStorage(StorageTestCase):
         self.db_session.add(model)
         await self.db_session.flush()
 
-        loaded = await self.storage.get_resume(resume_id=IntId(50), author_username="admin")
+        loaded = await self.storage.get_resume(
+            resume_id=self.factory.core.hex_id(50), author_username="admin"
+        )
 
         assert loaded.content.profile.full_name == ""
         assert loaded.content.profile.phone == ""
@@ -161,13 +165,13 @@ class TestResumesDatabaseStorage(StorageTestCase):
 
     async def test_other_author_resume_operations_raise_domain_error(self) -> None:
         await self.create_resume_row(
-            resume_id=IntId(10),
+            resume_id=self.factory.core.hex_id(10),
             title="Other author",
             author_username="other-admin",
             updated_at=datetime(2026, 1, 3, tzinfo=UTC),
         )
         other_author_resume = self.factory.core.resume(
-            resume_id=IntId(10),
+            resume_id=self.factory.core.hex_id(10),
             title="Attempted update",
             language=LanguageEnum.RU,
             content=self.factory.core.resume_empty_content(summary=""),
@@ -177,15 +181,19 @@ class TestResumesDatabaseStorage(StorageTestCase):
         )
 
         with pytest.raises(ResumeNotFoundError):
-            await self.storage.get_resume(resume_id=IntId(10), author_username="admin")
+            await self.storage.get_resume(
+                resume_id=self.factory.core.hex_id(10), author_username="admin"
+            )
         with pytest.raises(ResumeNotFoundError):
             await self.storage.update_resume(resume=other_author_resume)
         with pytest.raises(ResumeNotFoundError):
-            await self.storage.delete_resume(resume_id=IntId(10), author_username="admin")
+            await self.storage.delete_resume(
+                resume_id=self.factory.core.hex_id(10), author_username="admin"
+            )
 
     async def test_missing_resume_operations_raise_domain_error(self) -> None:
         missing_resume = self.factory.core.resume(
-            resume_id=IntId(404),
+            resume_id=self.factory.core.hex_id(404),
             title="Missing",
             language=LanguageEnum.RU,
             content=self.factory.core.resume_empty_content(summary=""),
@@ -195,16 +203,20 @@ class TestResumesDatabaseStorage(StorageTestCase):
         )
 
         with pytest.raises(ResumeNotFoundError):
-            await self.storage.get_resume(resume_id=IntId(404), author_username="admin")
+            await self.storage.get_resume(
+                resume_id=self.factory.core.hex_id(404), author_username="admin"
+            )
         with pytest.raises(ResumeNotFoundError):
             await self.storage.update_resume(resume=missing_resume)
         with pytest.raises(ResumeNotFoundError):
-            await self.storage.delete_resume(resume_id=IntId(404), author_username="admin")
+            await self.storage.delete_resume(
+                resume_id=self.factory.core.hex_id(404), author_username="admin"
+            )
 
     async def create_resume_row(
         self,
         *,
-        resume_id: IntId,
+        resume_id: str,
         title: str,
         author_username: str,
         updated_at: datetime,

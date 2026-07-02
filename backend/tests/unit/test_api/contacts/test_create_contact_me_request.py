@@ -9,7 +9,7 @@ from tests.test_cases import ApiTestCase
 class TestContactMeRequestAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.uuid = await self.container.get_random_uuid()
+        self.contact_me_id = (await self.container.get_hex_uuid_id_generator()).get_next()
         self.use_case = await self.container.get_contacts_use_case()
 
     def test_contact_me_request(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -24,7 +24,7 @@ class TestContactMeRequestAPI(ApiTestCase):
         )
         self.use_case.create_contact_me_request.assert_called_once_with(
             form=self.factory.core.contact_me(
-                contact_me_id=self.uuid,
+                contact_me_id=self.contact_me_id,
                 name="NAME",
                 email="example@mail.ru",
                 telegram="@telegram",

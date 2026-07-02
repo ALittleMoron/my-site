@@ -11,7 +11,6 @@ from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.resumes.schemas import ResumeFilters
 from core.resumes.use_cases import ResumesUseCase
-from core.types import IntId
 from entrypoints.litestar.api.resumes.dependencies import provide_resume_filters
 from entrypoints.litestar.api.resumes.responses import ResumeExportResponse
 from entrypoints.litestar.api.resumes.schemas import (
@@ -61,80 +60,80 @@ class AdminResumesApiController(Controller):
         return ResumeResponseSchema.from_domain_schema(schema=resume)
 
     @get(
-        "/{resume_id:int}",
+        "/{resume_id:str}",
         description="Get admin resume details.",
         name="admin-resumes-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def get_resume(
         self,
-        resume_id: FromPath[int],
+        resume_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
         resume = await use_case.get_resume(
-            resume_id=IntId(resume_id),
+            resume_id=resume_id,
             author_username=request.user.username,
         )
         return ResumeResponseSchema.from_domain_schema(schema=resume)
 
     @put(
-        "/{resume_id:int}",
+        "/{resume_id:str}",
         description="Update a resume.",
         name="admin-resumes-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_resume(
         self,
-        resume_id: FromPath[int],
+        resume_id: FromPath[str],
         data: Annotated[ResumeRequestSchema, Body()],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
         resume = await use_case.update_resume(
-            resume_id=IntId(resume_id),
+            resume_id=resume_id,
             params=data.to_update_schema(),
             author_username=request.user.username,
         )
         return ResumeResponseSchema.from_domain_schema(schema=resume)
 
     @post(
-        "/{resume_id:int}/export",
+        "/{resume_id:str}/export",
         description="Export a resume.",
         name="admin-resumes-export-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def export_resume(
         self,
-        resume_id: FromPath[int],
+        resume_id: FromPath[str],
         data: Annotated[ResumeExportRequestSchema, Body()],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeExportResponse:
         document = await use_case.export_resume(
-            resume_id=IntId(resume_id),
+            resume_id=resume_id,
             params=data.to_export_schema(),
             author_username=request.user.username,
         )
         return ResumeExportResponse.from_resume_export(
-            resume_id=IntId(resume_id),
+            resume_id=resume_id,
             document=document,
         )
 
     @delete(
-        "/{resume_id:int}",
+        "/{resume_id:str}",
         description="Delete a resume.",
         name="admin-resumes-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_resume(
         self,
-        resume_id: FromPath[int],
+        resume_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> None:
         await use_case.delete_resume(
-            resume_id=IntId(resume_id),
+            resume_id=resume_id,
             author_username=request.user.username,
         )
 

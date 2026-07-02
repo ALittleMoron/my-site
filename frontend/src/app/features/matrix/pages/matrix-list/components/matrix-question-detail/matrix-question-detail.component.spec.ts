@@ -37,7 +37,7 @@ const mockDetail: MatrixQuestionDetail = {
   },
   resources: [
     {
-      id: 10,
+      id: '00000000000000000000000000000010',
       name: 'MDN',
       url: 'https://mdn.io',
       context: 'See MDN docs',

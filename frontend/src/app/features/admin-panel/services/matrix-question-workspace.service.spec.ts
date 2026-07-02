@@ -4,6 +4,11 @@ import { TestBed } from '@angular/core/testing';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { MatrixQuestionWorkspaceService } from './matrix-question-workspace.service';
 
+const SHEET_ID = '00000000000000000000000000000001';
+const SECTION_ID = '00000000000000000000000000000002';
+const SUBSECTION_ID = '00000000000000000000000000000003';
+const RESOURCE_ID = '00000000000000000000000000000004';
+
 describe('MatrixQuestionWorkspaceService', () => {
   let service: MatrixQuestionWorkspaceService;
   let httpMock: HttpTestingController;
@@ -131,20 +136,20 @@ describe('MatrixQuestionWorkspaceService', () => {
     req.flush({
       sheets: [
         {
-          id: 1,
+          id: SHEET_ID,
           key: 'python',
           name: 'Python',
           priority: 1,
           translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
           sections: [
             {
-              id: 2,
+              id: SECTION_ID,
               name: 'Core',
               priority: 1,
               translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
               subsections: [
                 {
-                  id: 3,
+                  id: SUBSECTION_ID,
                   name: 'Style',
                   priority: 1,
                   translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
@@ -176,7 +181,7 @@ describe('MatrixQuestionWorkspaceService', () => {
       question: 'Большой id?',
       answer: '',
       interviewExpectedAnswer: '',
-      subsectionId: 3,
+      subsectionId: SUBSECTION_ID,
       sheetKey: 'python',
       sheet: 'Python',
       grade: 'Junior',
@@ -209,7 +214,7 @@ describe('MatrixQuestionWorkspaceService', () => {
     expect(sheetReq.request.params.get('language')).toBe('en');
     expect(sheetReq.request.body.key).toBe('python');
     sheetReq.flush({
-      id: 1,
+      id: SHEET_ID,
       key: 'python',
       name: 'Python',
       priority: 1,
@@ -219,7 +224,7 @@ describe('MatrixQuestionWorkspaceService', () => {
 
     service
       .createSection(
-        1,
+        SHEET_ID,
         {
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
         },
@@ -227,13 +232,13 @@ describe('MatrixQuestionWorkspaceService', () => {
       )
       .subscribe();
     const sectionReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/sheets/1/sections'),
+      r.url.endsWith(`/api/admin/competency-matrix/sheets/${SHEET_ID}/sections`),
     );
     expect(sectionReq.request.method).toBe('POST');
     expect(sectionReq.request.params.get('language')).toBe('en');
     expect(sectionReq.request.body.translations.en.name).toBe('Core');
     sectionReq.flush({
-      id: 2,
+      id: SECTION_ID,
       name: 'Core',
       priority: 1,
       translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
@@ -242,7 +247,7 @@ describe('MatrixQuestionWorkspaceService', () => {
 
     service
       .createSubsection(
-        2,
+        SECTION_ID,
         {
           translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
         },
@@ -250,13 +255,13 @@ describe('MatrixQuestionWorkspaceService', () => {
       )
       .subscribe();
     const subsectionReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/sections/2/subsections'),
+      r.url.endsWith(`/api/admin/competency-matrix/sections/${SECTION_ID}/subsections`),
     );
     expect(subsectionReq.request.method).toBe('POST');
     expect(subsectionReq.request.params.get('language')).toBe('en');
     expect(subsectionReq.request.body.translations.ru.name).toBe('Стиль');
     subsectionReq.flush({
-      id: 3,
+      id: SUBSECTION_ID,
       name: 'Style',
       priority: 1,
       translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
@@ -264,28 +269,28 @@ describe('MatrixQuestionWorkspaceService', () => {
   });
 
   it('updates matrix structure priorities through admin endpoints', () => {
-    service.updateSheetPriorities([2, 1]).subscribe();
+    service.updateSheetPriorities([SECTION_ID, SHEET_ID]).subscribe();
     const sheetReq = httpMock.expectOne((r) =>
       r.url.endsWith('/api/admin/competency-matrix/sheets/priorities'),
     );
     expect(sheetReq.request.method).toBe('PUT');
-    expect(sheetReq.request.body).toEqual({ orderedIds: [2, 1] });
+    expect(sheetReq.request.body).toEqual({ orderedIds: [SECTION_ID, SHEET_ID] });
     sheetReq.flush(null);
 
-    service.updateSectionPriorities(1, [3, 2]).subscribe();
+    service.updateSectionPriorities(SHEET_ID, [SUBSECTION_ID, SECTION_ID]).subscribe();
     const sectionReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/sheets/1/sections/priorities'),
+      r.url.endsWith(`/api/admin/competency-matrix/sheets/${SHEET_ID}/sections/priorities`),
     );
     expect(sectionReq.request.method).toBe('PUT');
-    expect(sectionReq.request.body).toEqual({ orderedIds: [3, 2] });
+    expect(sectionReq.request.body).toEqual({ orderedIds: [SUBSECTION_ID, SECTION_ID] });
     sectionReq.flush(null);
 
-    service.updateSubsectionPriorities(2, [5, 4]).subscribe();
+    service.updateSubsectionPriorities(SECTION_ID, [SUBSECTION_ID, RESOURCE_ID]).subscribe();
     const subsectionReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/competency-matrix/sections/2/subsections/priorities'),
+      r.url.endsWith(`/api/admin/competency-matrix/sections/${SECTION_ID}/subsections/priorities`),
     );
     expect(subsectionReq.request.method).toBe('PUT');
-    expect(subsectionReq.request.body).toEqual({ orderedIds: [5, 4] });
+    expect(subsectionReq.request.body).toEqual({ orderedIds: [SUBSECTION_ID, RESOURCE_ID] });
     subsectionReq.flush(null);
   });
 
@@ -306,7 +311,7 @@ describe('MatrixQuestionWorkspaceService', () => {
     req.flush({
       resources: [
         {
-          id: 1,
+          id: RESOURCE_ID,
           name: 'Python docs',
           url: 'https://docs.python.org',
           translations: {

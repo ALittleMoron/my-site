@@ -1,7 +1,6 @@
 import asyncio
 from datetime import UTC, date, datetime, timedelta
 from urllib.parse import urlparse
-from uuid import UUID
 
 from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -439,8 +438,8 @@ def linked_resource_indexes(*, item_index: int) -> tuple[int, int]:
     return ((item_index - 1) % resource_count()) + 1, (item_index % resource_count()) + 1
 
 
-def article_id(article_index: int) -> UUID:
-    return UUID(f"20000000-0000-4000-8000-{article_index:012d}")
+def article_id(article_index: int) -> str:
+    return f"20000000000040008000{article_index:012d}"
 
 
 def article_slug(*, article_index: int) -> str:
@@ -481,28 +480,32 @@ def resource_count() -> int:
     return len(MATRIX_SHEETS) * 2
 
 
-def tag_id(tag_index: int) -> int:
-    return SEED_BASE_ID + tag_index
+def tag_id(tag_index: int) -> str:
+    return hex_id(SEED_BASE_ID + tag_index)
 
 
-def matrix_resource_id(resource_index: int) -> int:
-    return SEED_BASE_ID + 100 + resource_index
+def matrix_resource_id(resource_index: int) -> str:
+    return hex_id(SEED_BASE_ID + 100 + resource_index)
 
 
-def matrix_item_id(item_index: int) -> int:
-    return SEED_BASE_ID + 200 + item_index
+def matrix_item_id(item_index: int) -> str:
+    return hex_id(SEED_BASE_ID + 200 + item_index)
 
 
-def matrix_sheet_id(sheet_index: int) -> int:
-    return SEED_BASE_ID + 300 + sheet_index
+def matrix_sheet_id(sheet_index: int) -> str:
+    return hex_id(SEED_BASE_ID + 300 + sheet_index)
 
 
-def matrix_section_id(sheet_index: int) -> int:
-    return SEED_BASE_ID + 400 + sheet_index
+def matrix_section_id(sheet_index: int) -> str:
+    return hex_id(SEED_BASE_ID + 400 + sheet_index)
 
 
-def matrix_subsection_id(sheet_index: int) -> int:
-    return SEED_BASE_ID + 500 + sheet_index
+def matrix_subsection_id(sheet_index: int) -> str:
+    return hex_id(SEED_BASE_ID + 500 + sheet_index)
+
+
+def hex_id(value: int) -> str:
+    return f"{value:032x}"
 
 
 def main() -> None:

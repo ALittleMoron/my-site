@@ -31,7 +31,7 @@ describe('ArticlesStatsPanelComponent', () => {
       totals: { viewCount: 7, engagedViewCount: 3, reactionCount: 2 },
       articles: [
         {
-          articleId: '00000000-0000-0000-0000-000000000001',
+          articleId: '00000000000000000000000000000001',
           title: 'Typed articles',
           slug: 'typed-articles',
           viewCount: 7,

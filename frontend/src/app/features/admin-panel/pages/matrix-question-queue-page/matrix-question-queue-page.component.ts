@@ -71,7 +71,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly error = signal<ApiError | null>(null);
   readonly selectedQuestion = signal<QueuedMatrixQuestion | null>(null);
   readonly submitting = signal(false);
-  readonly rejectingQuestionId = signal<number | null>(null);
+  readonly rejectingQuestionId = signal<string | null>(null);
   readonly manualAddVisible = signal(false);
   readonly addMode = signal<QueueAddMode>('manual');
   readonly manualAddQuestion = signal('');
@@ -105,7 +105,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       '',
       [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
     ],
-    subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
+    subsectionId: new FormControl<string | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade>('Junior', {
       validators: Validators.required,
     }),
@@ -335,7 +335,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .join(' / ');
   }
 
-  selectQuestionSubsection(subsectionId: number | null): void {
+  selectQuestionSubsection(subsectionId: string | null): void {
     this.form.controls.subsectionId.setValue(subsectionId);
     this.form.controls.subsectionId.markAsTouched();
     this.form.controls.subsectionId.markAsDirty();

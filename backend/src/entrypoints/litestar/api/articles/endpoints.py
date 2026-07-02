@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 from typing import Annotated
 
@@ -14,8 +13,8 @@ from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.enums import PublishStatusEnum
+from core.generators import HexUuidIdGenerator
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from entrypoints.litestar.api.articles.dependencies import (
     provide_article_filters,
     provide_public_article_filters,
@@ -109,7 +108,7 @@ class PublicArticlesApiController(Controller):
     )
     async def get_public_stats(
         self,
-        article_ids: Annotated[list[uuid.UUID], QueryParameter(name="articleIds", min_items=1)],
+        article_ids: Annotated[list[str], QueryParameter(name="articleIds", min_items=1)],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
     ) -> ArticlePublicStatsCollectionResponseSchema:
         stats = await analytics_use_case.get_public_stats(article_ids=article_ids)
@@ -224,7 +223,7 @@ class AdminArticlesApiController(Controller):
     )
     async def create_article(
         self,
-        article_id: FromDishka[uuid.UUID],
+        id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[ArticleRequestSchema, Body()],
@@ -232,7 +231,7 @@ class AdminArticlesApiController(Controller):
     ) -> ArticleDetailResponseSchema:
         article = await use_case.create_article(
             params=data.to_create_schema(
-                article_id=article_id,
+                article_id=id_generator.get_next(),
                 author_username=request.user.username,
             ),
         )
@@ -430,14 +429,14 @@ class AdminArticlesApiController(Controller):
     )
     async def create_tag(
         self,
-        tag_id: FromDishka[IntId],
+        id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.create_tag(
-            params=data.to_create_schema(tag_id=tag_id),
+            params=data.to_create_schema(tag_id=id_generator.get_next()),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
@@ -446,21 +445,21 @@ class AdminArticlesApiController(Controller):
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @put(
-        "/tags/{tag_id:int}",
+        "/tags/{tag_id:str}",
         description="Update a tag.",
         name="admin-articles-tags-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_tag(
         self,
-        tag_id: FromPath[int],
+        tag_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
         data: Annotated[TagRequestSchema, Body()],
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.update_tag(
-            tag_id=IntId(tag_id),
+            tag_id=tag_id,
             params=data.to_update_schema(),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -470,36 +469,36 @@ class AdminArticlesApiController(Controller):
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
     @delete(
-        "/tags/{tag_id:int}",
+        "/tags/{tag_id:str}",
         description="Delete a tag.",
         name="admin-articles-tags-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_tag(
         self,
-        tag_id: FromPath[int],
+        tag_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
-        await use_case.soft_delete_tag(tag_id=IntId(tag_id))
+        await use_case.soft_delete_tag(tag_id=tag_id)
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
         )
 
     @post(
-        "/tags/{tag_id:int}/restore",
+        "/tags/{tag_id:str}/restore",
         description="Restore a tag.",
         name="admin-articles-tags-restore-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def restore_tag(
         self,
-        tag_id: FromPath[int],
+        tag_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
-        await use_case.restore_tag(tag_id=IntId(tag_id))
+        await use_case.restore_tag(tag_id=tag_id)
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,

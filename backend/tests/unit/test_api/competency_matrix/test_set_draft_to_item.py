@@ -29,7 +29,7 @@ class TestSetDraftStatusToItemAPI(ApiTestCase):
         assert response.status_code == codes.NO_CONTENT, response.content
         self.use_case.switch_item_publish_status.assert_called_once_with(
             params=CompetencyMatrixItemPublishStatusSwitchParams(
-                item_id=self.factory.core.int_id(1),
+                item_id=self.factory.core.hex_id(1),
                 publish_status=PublishStatusEnum.DRAFT,
             ),
         )

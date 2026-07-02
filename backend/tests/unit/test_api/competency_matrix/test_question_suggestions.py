@@ -24,7 +24,6 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestions,
 )
 from core.enums import PublishStatusEnum
-from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_question_suggestion_limit_params,
 )
@@ -165,7 +164,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             expected_body={
                 "questions": [
                     {
-                        "id": 1,
+                        "id": self.factory.core.hex_id(1),
                         "question": "First question",
                         "grade": None,
                         "sheet": None,
@@ -175,7 +174,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                         "createdAt": "2026-06-07T12:00:00+00:00",
                     },
                     {
-                        "id": 2,
+                        "id": self.factory.core.hex_id(2),
                         "question": "Second question",
                         "grade": "Junior",
                         "sheet": "Python",
@@ -215,7 +214,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             response=response,
             expected_status=codes.CREATED,
             expected_body={
-                "id": 3,
+                "id": self.factory.core.hex_id(3),
                 "question": "What is PEP 8?",
                 "grade": None,
                 "sheet": None,
@@ -262,7 +261,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         body = response.json()
         assert body["questions"] == [
             {
-                "id": 3,
+                "id": self.factory.core.hex_id(3),
                 "question": "What is PEP 8?",
                 "grade": None,
                 "sheet": None,
@@ -272,7 +271,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "createdAt": "2026-06-07T12:03:00+00:00",
             },
             {
-                "id": 4,
+                "id": self.factory.core.hex_id(4),
                 "question": "How does mypy help?",
                 "grade": None,
                 "sheet": None,
@@ -494,7 +493,9 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         response = self.api.delete_queued_matrix_question(question_id=7)
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
-        self.use_case.delete_queued_question.assert_called_once_with(question_id=IntId(7))
+        self.use_case.delete_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7)
+        )
 
     def test_reject_queue_entry_returns_not_found(self) -> None:
         self.use_case.delete_queued_question.side_effect = (
@@ -555,14 +556,14 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
         body = response.json()
-        assert body["id"] == "10"
+        assert body["id"] == self.factory.core.hex_id(10)
         assert body["question"] == "What is PEP 8?"
         self.use_case.create_item_from_queue.assert_called_once_with(
             params=ANY,
         )
         call_params = self.use_case.create_item_from_queue.call_args.kwargs["params"]
         assert isinstance(call_params, QueuedCompetencyMatrixQuestionCreateItemParams)
-        assert call_params.queued_question_id == IntId(7)
+        assert call_params.queued_question_id == self.factory.core.hex_id(7)
 
 
 def xlsx_bytes(rows: list[list[object]]) -> bytes:

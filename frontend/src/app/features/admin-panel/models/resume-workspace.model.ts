@@ -93,7 +93,7 @@ export interface ResumeContentDto {
 }
 
 export interface ResumeDto {
-  id: number;
+  id: string;
   title: string;
   language: ResumeLanguage;
   content: ResumeContentDto;
@@ -206,7 +206,7 @@ export interface ResumeContent {
 }
 
 export interface Resume {
-  id: number;
+  id: string;
   title: string;
   language: ResumeLanguage;
   content: ResumeContent;

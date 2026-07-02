@@ -5,23 +5,30 @@ import { AdminMatrixStructure } from '../../models/matrix-question-workspace.mod
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from './matrix-structure-picker.component';
 
+const SHEET_ID = '00000000000000000000000000000001';
+const SECTION_ID = '00000000000000000000000000000002';
+const SUBSECTION_ID = '00000000000000000000000000000003';
+const SQL_SHEET_ID = '00000000000000000000000000000004';
+const NEW_SUBSECTION_ID = '00000000000000000000000000000005';
+const NEW_SECTION_ID = '00000000000000000000000000000006';
+
 const initialStructure: AdminMatrixStructure = {
   sheets: [
     {
-      id: 1,
+      id: SHEET_ID,
       key: 'python',
       name: 'Питон',
       priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [
         {
-          id: 2,
+          id: SECTION_ID,
           name: 'Основы',
           priority: 1,
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
           subsections: [
             {
-              id: 3,
+              id: SUBSECTION_ID,
               name: 'Стиль',
               priority: 1,
               translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
@@ -79,13 +86,13 @@ describe('MatrixStructurePickerComponent', () => {
     expect(section.disabled).toBe(true);
     expect(subsection.disabled).toBe(true);
 
-    choose(sheet, '1');
+    choose(sheet, SHEET_ID);
     fixture.detectChanges();
 
     expect(section.disabled).toBe(false);
     expect(section.textContent).toContain('Основы');
 
-    choose(section, '2');
+    choose(section, SECTION_ID);
     fixture.detectChanges();
 
     expect(subsection.disabled).toBe(false);
@@ -95,13 +102,13 @@ describe('MatrixStructurePickerComponent', () => {
   it('emits selected subsection id', () => {
     const emit = jest.spyOn(fixture.componentInstance.selectedSubsectionIdChange, 'emit');
 
-    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
-    choose(select('[data-testid="matrix-structure-section"]'), '2');
+    choose(select('[data-testid="matrix-structure-section"]'), SECTION_ID);
     fixture.detectChanges();
-    choose(select('[data-testid="matrix-structure-subsection"]'), '3');
+    choose(select('[data-testid="matrix-structure-subsection"]'), SUBSECTION_ID);
 
-    expect(emit).toHaveBeenLastCalledWith(3);
+    expect(emit).toHaveBeenLastCalledWith(SUBSECTION_ID);
   });
 
   it('reloads structure and selects newly created sheet', () => {
@@ -109,7 +116,7 @@ describe('MatrixStructurePickerComponent', () => {
       sheets: [
         ...initialStructure.sheets,
         {
-          id: 4,
+          id: SQL_SHEET_ID,
           key: 'sql',
           name: 'SQL',
           priority: 2,
@@ -123,7 +130,7 @@ describe('MatrixStructurePickerComponent', () => {
       .mockReturnValueOnce(of(updatedStructure));
     service.createSheet.mockReturnValue(
       of({
-        id: 4,
+        id: SQL_SHEET_ID,
         key: 'sql',
         name: 'SQL',
         priority: 2,
@@ -152,7 +159,7 @@ describe('MatrixStructurePickerComponent', () => {
       },
       'ru',
     );
-    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('4');
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SQL_SHEET_ID);
   });
 
   it('reloads structure and selects newly created section', () => {
@@ -163,7 +170,7 @@ describe('MatrixStructurePickerComponent', () => {
           sections: [
             ...initialStructure.sheets[0].sections,
             {
-              id: 6,
+              id: NEW_SECTION_ID,
               name: 'Асинхронность',
               priority: 2,
               translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
@@ -178,7 +185,7 @@ describe('MatrixStructurePickerComponent', () => {
       .mockReturnValueOnce(of(updatedStructure));
     service.createSection.mockReturnValue(
       of({
-        id: 6,
+        id: NEW_SECTION_ID,
         name: 'Асинхронность',
         priority: 2,
         translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
@@ -189,7 +196,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.detectChanges();
-    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
     setInput('[data-testid="matrix-structure-section-ru"]', 'Асинхронность');
     setInput('[data-testid="matrix-structure-section-en"]', 'Async');
@@ -201,13 +208,13 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.detectChanges();
 
     expect(service.createSection).toHaveBeenCalledWith(
-      1,
+      SHEET_ID,
       {
         translations: { ru: { name: 'Асинхронность' }, en: { name: 'Async' } },
       },
       'ru',
     );
-    expect(select('[data-testid="matrix-structure-section"]').value).toBe('6');
+    expect(select('[data-testid="matrix-structure-section"]').value).toBe(NEW_SECTION_ID);
   });
 
   it('blocks invalid sheet key and whitespace-only structure names', () => {
@@ -270,7 +277,7 @@ describe('MatrixStructurePickerComponent', () => {
       addButtonSelector: '[data-testid="matrix-structure-add-section"]',
       expectedMessage: 'Заполните поле.',
       prepare: () => {
-        choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+        choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
         fixture.detectChanges();
         setInput('[data-testid="matrix-structure-section-ru"]', '   ');
         setInput('[data-testid="matrix-structure-section-en"]', 'Core');
@@ -282,7 +289,7 @@ describe('MatrixStructurePickerComponent', () => {
       addButtonSelector: '[data-testid="matrix-structure-add-section"]',
       expectedMessage: 'Максимум 255 символов.',
       prepare: () => {
-        choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+        choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
         fixture.detectChanges();
         setInput('[data-testid="matrix-structure-section-ru"]', 'Основы');
         setInput('[data-testid="matrix-structure-section-en"]', INVALID_SHORT_TEXT);
@@ -337,7 +344,7 @@ describe('MatrixStructurePickerComponent', () => {
               subsections: [
                 ...initialStructure.sheets[0].sections[0].subsections,
                 {
-                  id: 5,
+                  id: NEW_SUBSECTION_ID,
                   name: 'Типизация',
                   priority: 2,
                   translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
@@ -353,7 +360,7 @@ describe('MatrixStructurePickerComponent', () => {
       .mockReturnValueOnce(of(updatedStructure));
     service.createSubsection.mockReturnValue(
       of({
-        id: 5,
+        id: NEW_SUBSECTION_ID,
         name: 'Типизация',
         priority: 2,
         translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
@@ -364,9 +371,9 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.detectChanges();
     const emit = jest.spyOn(fixture.componentInstance.selectedSubsectionIdChange, 'emit');
-    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
-    choose(select('[data-testid="matrix-structure-section"]'), '2');
+    choose(select('[data-testid="matrix-structure-section"]'), SECTION_ID);
     fixture.detectChanges();
     setInput('[data-testid="matrix-structure-subsection-ru"]', 'Типизация');
     setInput('[data-testid="matrix-structure-subsection-en"]', 'Typing');
@@ -378,13 +385,13 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.detectChanges();
 
     expect(service.createSubsection).toHaveBeenCalledWith(
-      2,
+      SECTION_ID,
       {
         translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
       },
       'ru',
     );
-    expect(emit).toHaveBeenLastCalledWith(5);
+    expect(emit).toHaveBeenLastCalledWith(NEW_SUBSECTION_ID);
     expect(select('[data-testid="matrix-structure-subsection"]').textContent).toContain(
       'Типизация',
     );
@@ -407,9 +414,9 @@ describe('MatrixStructurePickerComponent', () => {
   }
 
   function selectExistingSection(): void {
-    choose(select('[data-testid="matrix-structure-sheet"]'), '1');
+    choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
-    choose(select('[data-testid="matrix-structure-section"]'), '2');
+    choose(select('[data-testid="matrix-structure-section"]'), SECTION_ID);
     fixture.detectChanges();
   }
 

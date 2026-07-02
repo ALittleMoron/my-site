@@ -17,6 +17,14 @@ import {
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixQuestionsPageComponent } from './matrix-questions-page.component';
 
+const QUESTION_ID = '00000000000000000000000000000007';
+const READY_QUESTION_ID = '00000000000000000000000000000008';
+const SAVED_QUESTION_ID = '00000000000000000000000000000009';
+const SHEET_ID = '00000000000000000000000000000001';
+const SECTION_ID = '00000000000000000000000000000002';
+const SUBSECTION_ID = '00000000000000000000000000000003';
+const RESOURCE_ID = '00000000000000000000000000000004';
+
 const workspace: AdminMatrixQuestionWorkspace = {
   totalCount: 2,
   totalPages: 1,
@@ -29,7 +37,7 @@ const workspace: AdminMatrixQuestionWorkspace = {
   },
   items: [
     {
-      id: '7',
+      id: QUESTION_ID,
       slug: 'typing',
       question: 'What is typing?',
       sheetKey: 'python',
@@ -43,7 +51,7 @@ const workspace: AdminMatrixQuestionWorkspace = {
       missingFields: ['answerEn'],
     },
     {
-      id: '8',
+      id: READY_QUESTION_ID,
       slug: 'ready-question',
       question: 'Ready question?',
       sheetKey: 'python',
@@ -80,12 +88,12 @@ const options: AdminMatrixWorkspaceFilterOptions = {
 };
 
 const savedQuestion: AdminMatrixQuestionDetailDto = {
-  id: '9',
+  id: SAVED_QUESTION_ID,
   slug: 'new-question',
   question: 'New question?',
   answer: '',
   interviewExpectedAnswer: '',
-  subsectionId: 3,
+  subsectionId: SUBSECTION_ID,
   sheetKey: 'python',
   sheet: '',
   grade: null,
@@ -109,7 +117,7 @@ const savedQuestion: AdminMatrixQuestionDetailDto = {
 };
 
 const resource: AdminMatrixResource = {
-  id: 3,
+  id: RESOURCE_ID,
   name: 'Python docs',
   url: 'https://docs.python.org',
   translations: {
@@ -122,20 +130,20 @@ const previewSheets: AdminReadonlyMatrixSheet[] = [{ key: 'python', name: 'Pytho
 const matrixStructure: AdminMatrixStructure = {
   sheets: [
     {
-      id: 1,
+      id: SHEET_ID,
       key: 'python',
       name: 'Питон',
       priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [
         {
-          id: 2,
+          id: SECTION_ID,
           name: 'Основы',
           priority: 1,
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
           subsections: [
             {
-              id: 3,
+              id: SUBSECTION_ID,
               name: 'Стиль',
               priority: 1,
               translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
@@ -339,14 +347,14 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
     setInput('#matrix-form-question-en', 'Incomplete question?');
 
     saveButton().click();
 
     const payload = service.createQuestion.mock.calls[0][0];
-    expect(payload.subsectionId).toBe(3);
+    expect(payload.subsectionId).toBe(SUBSECTION_ID);
     expect('sheetKey' in payload).toBe(false);
     expect(payload.grade).toBeNull();
     expect(payload.interviewFrequency).toBeNull();
@@ -359,7 +367,7 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
     setInput('#matrix-form-slug', 'frequent-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Частый вопрос?');
     setInput('#matrix-form-question-en', 'Frequent question?');
     const frequency = fixture.nativeElement.querySelector(
@@ -374,9 +382,9 @@ describe('MatrixQuestionsPageComponent', () => {
   });
 
   it('warns and skips the publish API for incomplete workspace rows', () => {
-    openRowActions('7');
+    openRowActions(QUESTION_ID);
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-publish"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-actions-${QUESTION_ID}-publish"]`)
       ?.click();
 
     expect(service.publishQuestion).not.toHaveBeenCalled();
@@ -386,13 +394,13 @@ describe('MatrixQuestionsPageComponent', () => {
   it('routes the row edit action to the matrix question detail page', () => {
     service.getQuestion.mockReturnValue(of(savedQuestion));
 
-    openRowActions('7');
+    openRowActions(QUESTION_ID);
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-edit"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-actions-${QUESTION_ID}-edit"]`)
       ?.click();
     fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', '7']);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID]);
     expect(service.getQuestion).not.toHaveBeenCalled();
   });
 
@@ -405,7 +413,7 @@ describe('MatrixQuestionsPageComponent', () => {
 
     expect(service.searchResources).toHaveBeenCalledWith('python', 10, 'ru');
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-resource-attach-3"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-resource-attach-${RESOURCE_ID}"]`)
       ?.click();
     fixture.detectChanges();
     setTextarea('#matrixResourceContextRu0', 'Читать');
@@ -427,14 +435,14 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Новый ресурс');
 
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
     saveButton().click();
 
     expect(service.createQuestion.mock.calls[0][0].resources).toEqual([
       {
-        resourceId: 3,
+        resourceId: RESOURCE_ID,
         translations: { ru: { context: 'Читать' }, en: { context: 'Read' } },
       },
     ]);
@@ -475,13 +483,13 @@ describe('MatrixQuestionsPageComponent', () => {
   it('confirms deletes before calling the admin delete endpoint', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 
-    openRowActions('7');
+    openRowActions(QUESTION_ID);
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-actions-7-delete"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-actions-${QUESTION_ID}-delete"]`)
       ?.click();
 
     expect(window.confirm).toHaveBeenCalled();
-    expect(service.deleteQuestion).toHaveBeenCalledWith('7');
+    expect(service.deleteQuestion).toHaveBeenCalledWith(QUESTION_ID);
   });
 
   function lastWorkspaceFilters(): Parameters<
@@ -501,7 +509,7 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.detectChanges();
   }
 
-  function selectQuestionSubsection(subsectionId: number): void {
+  function selectQuestionSubsection(subsectionId: string): void {
     const form = fixture.debugElement.query(By.directive(MatrixQuestionFormComponent))
       .componentInstance as MatrixQuestionFormComponent;
     form.selectQuestionSubsection(subsectionId);

@@ -35,6 +35,7 @@ const INVALID_SHORT_TEXT = 'x'.repeat(256);
 const INVALID_LONG_TEXT = 'x'.repeat(10001);
 const INVALID_DATE_TEXT = 'x'.repeat(33);
 const INVALID_URL = 'ftp://example.com';
+const RESUME_ID = '00000000000000000000000000000007';
 
 describe('AdminResumeDetailPageComponent', () => {
   let fixture: ComponentFixture<AdminResumeDetailPageComponent>;
@@ -75,7 +76,7 @@ describe('AdminResumeDetailPageComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? '7' : null),
+                get: (key: string) => (key === 'id' ? RESUME_ID : null),
               },
             },
           },
@@ -102,7 +103,7 @@ describe('AdminResumeDetailPageComponent', () => {
   });
 
   it('loads detail into the edit form', () => {
-    expect(service.getResume).toHaveBeenCalledWith(7);
+    expect(service.getResume).toHaveBeenCalledWith(RESUME_ID);
     expect(inputValue('resume-title')).toBe('Backend resume');
     expect(inputValue('resume-language')).toBe('ru');
     expect(inputValue('resume-profile-full-name')).toBe('Candidate Name');
@@ -123,7 +124,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         title: 'Target backend resume',
         language: 'en',
@@ -421,7 +422,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.detectChanges();
 
     expect(service.exportResume).toHaveBeenCalledWith(
-      7,
+      RESUME_ID,
       'docx',
       expect.objectContaining({
         content: expect.objectContaining({
@@ -1073,7 +1074,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         content: expect.objectContaining({
           profile: expect.objectContaining({
@@ -1089,7 +1090,7 @@ describe('AdminResumeDetailPageComponent', () => {
 
     fixture.componentInstance.deleteResume();
 
-    expect(service.deleteResume).toHaveBeenCalledWith(7);
+    expect(service.deleteResume).toHaveBeenCalledWith(RESUME_ID);
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes');
   });
 
@@ -1114,7 +1115,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         content: expect.objectContaining({
           skills: [
@@ -1157,7 +1158,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenLastCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         content: expect.objectContaining({
           experience: [
@@ -1235,7 +1236,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenLastCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         content: expect.objectContaining({
           experience: [
@@ -1262,7 +1263,7 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.saveResume();
 
     expect(service.updateResume).toHaveBeenLastCalledWith(
-      7,
+      RESUME_ID,
       expect.objectContaining({
         content: expect.objectContaining({
           summary: expect.objectContaining({
@@ -1427,7 +1428,7 @@ describe('AdminResumeDetailPageComponent', () => {
 
 function resume(overrides: Partial<Resume> = {}): Resume {
   return {
-    id: 7,
+    id: RESUME_ID,
     title: 'Backend resume',
     language: 'ru',
     createdAt: '2026-01-01T03:04:05+00:00',

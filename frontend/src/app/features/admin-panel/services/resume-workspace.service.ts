@@ -28,7 +28,7 @@ export class ResumeWorkspaceService {
       .pipe(map(mapResumesDto));
   }
 
-  getResume(id: number): Observable<Resume> {
+  getResume(id: string): Observable<Resume> {
     return this.api.get<ResumeDto>(`/api/admin/resumes/${id}`).pipe(map(mapResumeDto));
   }
 
@@ -38,17 +38,17 @@ export class ResumeWorkspaceService {
       .pipe(map(mapResumeDto));
   }
 
-  updateResume(id: number, payload: ResumePayload): Observable<Resume> {
+  updateResume(id: string, payload: ResumePayload): Observable<Resume> {
     return this.api
       .put<ResumeDto>(`/api/admin/resumes/${id}`, toResumePayloadDto(payload))
       .pipe(map(mapResumeDto));
   }
 
-  deleteResume(id: number): Observable<void> {
+  deleteResume(id: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/resumes/${id}`);
   }
 
-  exportResume(id: number, format: ResumeExportFormat, payload: ResumePayload): Observable<Blob> {
+  exportResume(id: string, format: ResumeExportFormat, payload: ResumePayload): Observable<Blob> {
     return this.api.postBlob(
       `/api/admin/resumes/${id}/export`,
       toResumeExportPayloadDto(payload, format),

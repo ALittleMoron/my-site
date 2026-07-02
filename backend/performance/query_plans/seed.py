@@ -1,7 +1,6 @@
 from datetime import UTC, date, datetime, timedelta
 from hashlib import md5
 from sys import stdout
-from uuid import UUID
 
 from sqlalchemy import (
     Integer,
@@ -13,7 +12,6 @@ from sqlalchemy import (
     literal,
     select,
     text,
-    true,
     union_all,
 )
 from sqlalchemy import and_ as sa_and
@@ -177,7 +175,7 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
         insert(TagModel.__table__).from_select(
             ["id", "name_ru", "name_en", "slug", "deleted_at"],
             select(
-                value,
+                hex_id_expr(value=value),
                 case(
                     (value == PYTHON_ID, literal("Питон")),
                     (value == POSTGRESQL_ID, literal("PostgreSQL")),
@@ -223,7 +221,7 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
                 "publish_status",
             ],
             select(
-                deterministic_uuid_from_int(value=value),
+                deterministic_hex_from_int(value=value),
                 case(
                     (
                         target_article,
@@ -279,8 +277,8 @@ async def insert_article_tag_links(*, connection: AsyncConnection, profile: Data
     target_series = generate_series_subquery(end=target_link_count, name="target_links")
     target_value = sql_cast(target_series.c.value, Integer)
     target_select = select(
-        deterministic_uuid_from_int(value=target_value * TARGET_ARTICLE_DIVISOR),
-        literal(POSTGRESQL_ID),
+        deterministic_hex_from_int(value=target_value * TARGET_ARTICLE_DIVISOR),
+        literal(hex_id(POSTGRESQL_ID)),
     ).select_from(target_series)
 
     general_series = generate_series_subquery(end=general_link_count, name="general_links")
@@ -295,14 +293,15 @@ async def insert_article_tag_links(*, connection: AsyncConnection, profile: Data
         + GENERAL_TAG_START_ID
     )
     general_select = select(
-        deterministic_uuid_from_int(value=article_number),
-        tag_number,
+        deterministic_hex_from_int(value=article_number),
+        hex_id_expr(value=tag_number),
     ).select_from(general_series)
 
     await connection.execute(
         insert(ArticleToTagSecondaryModel.__table__).from_select(
             ["article_id", "tag_id"],
             union_all(target_select, general_select),
+            include_defaults=False,
         ),
     )
 
@@ -312,7 +311,7 @@ async def insert_article_analytics(*, connection: AsyncConnection) -> None:
         insert(ArticleDailyAnalyticsModel),
         [
             {
-                "article_id": deterministic_python_uuid_from_int(value=article_number),
+                "article_id": deterministic_python_hex_from_int(value=article_number),
                 "date": recorded_on,
                 "source_category": source_category,
                 "view_count": 100 + article_number,
@@ -343,7 +342,7 @@ async def insert_article_reactions(*, connection: AsyncConnection, profile: Data
                 "updated_at",
             ],
             select(
-                deterministic_uuid_from_int(value=article_number),
+                deterministic_hex_from_int(value=article_number),
                 func.rpad(
                     func.concat(literal("query-plan-voter-"), value),
                     64,
@@ -359,6 +358,7 @@ async def insert_article_reactions(*, connection: AsyncConnection, profile: Data
                 literal(SEED_NOW),
                 literal(SEED_NOW),
             ).select_from(series),
+            include_defaults=False,
         ),
     )
 
@@ -370,7 +370,7 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
         insert(ResumeModel.__table__).from_select(
             ["id", "title", "language", "author_username", "content", "created_at", "updated_at"],
             select(
-                value,
+                hex_id_expr(value=value),
                 func.concat(literal("Query plan resume "), value),
                 sql_cast(literal(LanguageEnum.EN.name), ResumeModel.__table__.c.language.type),
                 literal(SEED_USERNAME),
@@ -378,15 +378,6 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
                 literal(SEED_NOW),
                 literal(SEED_NOW),
             ).select_from(series),
-        ),
-    )
-    await connection.execute(
-        select(
-            func.setval(
-                func.pg_get_serial_sequence(ResumeModel.__tablename__, "id"),
-                RESUME_SEED_COUNT,
-                true(),
-            ),
         ),
     )
 
@@ -398,7 +389,7 @@ async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfi
         insert(ExternalResourceModel.__table__).from_select(
             ["id", "name_ru", "name_en", "url"],
             select(
-                value,
+                hex_id_expr(value=value),
                 case(
                     (value == PYTHON_ID, literal("Документация Pydantic")),
                     (value == POSTGRESQL_ID, literal("Документация Python")),
@@ -426,7 +417,7 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
         insert(CompetencyMatrixSheetModel.__table__).from_select(
             ["id", "key", "name_ru", "name_en", "priority"],
             select(
-                sheet_value,
+                hex_id_expr(value=sheet_value),
                 case(
                     (sheet_value == PYTHON_ID, literal("python")),
                     else_=func.concat(literal("sheet-"), sheet_value - 1),
@@ -447,23 +438,23 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
     section_series = generate_series_subquery(end=20 * 8, name="matrix_section_series")
     section_value = sql_cast(section_series.c.value, Integer)
     section_bucket = func.mod(section_value - 1, 8)
-    section_sheet_id = sql_cast(func.floor((section_value - 1) / 8), Integer) + 1
+    section_sheet_number = sql_cast(func.floor((section_value - 1) / 8), Integer) + 1
     await connection.execute(
         insert(CompetencyMatrixSectionModel.__table__).from_select(
             ["id", "sheet_id", "name_ru", "name_en", "priority"],
             select(
-                section_value,
-                section_sheet_id,
+                hex_id_expr(value=section_value),
+                hex_id_expr(value=section_sheet_number),
                 case(
                     (
-                        sa_and(section_sheet_id == PYTHON_ID, section_bucket == 0),
+                        sa_and(section_sheet_number == PYTHON_ID, section_bucket == 0),
                         literal("Основы"),
                     ),
                     else_=func.concat(literal("Раздел "), section_bucket),
                 ),
                 case(
                     (
-                        sa_and(section_sheet_id == PYTHON_ID, section_bucket == 0),
+                        sa_and(section_sheet_number == PYTHON_ID, section_bucket == 0),
                         literal("Basics"),
                     ),
                     else_=func.concat(literal("Section "), section_bucket),
@@ -476,11 +467,11 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
     subsection_series = generate_series_subquery(end=20 * 8 * 12, name="matrix_subsection_series")
     subsection_value = sql_cast(subsection_series.c.value, Integer)
     subsection_bucket = func.mod(subsection_value - 1, 12)
-    subsection_section_id = sql_cast(func.floor((subsection_value - 1) / 12), Integer) + 1
-    subsection_sheet_id = sql_cast(func.floor((subsection_section_id - 1) / 8), Integer) + 1
-    subsection_section_bucket = func.mod(subsection_section_id - 1, 8)
+    subsection_section_number = sql_cast(func.floor((subsection_value - 1) / 12), Integer) + 1
+    subsection_sheet_number = sql_cast(func.floor((subsection_section_number - 1) / 8), Integer) + 1
+    subsection_section_bucket = func.mod(subsection_section_number - 1, 8)
     python_basics = sa_and(
-        subsection_sheet_id == PYTHON_ID,
+        subsection_sheet_number == PYTHON_ID,
         subsection_section_bucket == 0,
         subsection_bucket == 0,
     )
@@ -488,8 +479,8 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
         insert(CompetencyMatrixSubsectionModel.__table__).from_select(
             ["id", "section_id", "name_ru", "name_en", "priority"],
             select(
-                subsection_value,
-                subsection_section_id,
+                hex_id_expr(value=subsection_value),
+                hex_id_expr(value=subsection_section_number),
                 case(
                     (python_basics, literal("Функции")),
                     else_=func.concat(literal("Подраздел "), subsection_bucket),
@@ -500,33 +491,6 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
                 ),
                 subsection_bucket + 1,
             ).select_from(subsection_series),
-        ),
-    )
-    await connection.execute(
-        select(
-            func.setval(
-                func.pg_get_serial_sequence(CompetencyMatrixSheetModel.__tablename__, "id"),
-                20,
-                true(),
-            ),
-        ),
-    )
-    await connection.execute(
-        select(
-            func.setval(
-                func.pg_get_serial_sequence(CompetencyMatrixSectionModel.__tablename__, "id"),
-                20 * 8,
-                true(),
-            ),
-        ),
-    )
-    await connection.execute(
-        select(
-            func.setval(
-                func.pg_get_serial_sequence(CompetencyMatrixSubsectionModel.__tablename__, "id"),
-                20 * 8 * 12,
-                true(),
-            ),
         ),
     )
 
@@ -543,7 +507,7 @@ async def insert_competency_matrix_items(
     missing_answer_en = func.mod(value, 13) == 0
     section_bucket = func.mod(value, 8)
     subsection_bucket = func.mod(value, 12)
-    subsection_id = (sheet_bucket * 8 + section_bucket) * 12 + subsection_bucket + 1
+    subsection_number = (sheet_bucket * 8 + section_bucket) * 12 + subsection_bucket + 1
     grade_bucket = func.mod(value, 5)
     frequency_bucket = func.mod(value, 5)
     await connection.execute(
@@ -564,7 +528,7 @@ async def insert_competency_matrix_items(
                 "publish_status",
             ],
             select(
-                value,
+                hex_id_expr(value=value),
                 func.concat(literal("matrix-question-"), value),
                 func.concat(literal("Вопрос матрицы "), value),
                 func.concat(literal("Matrix question "), value),
@@ -575,7 +539,7 @@ async def insert_competency_matrix_items(
                 ),
                 func.concat(literal("Ожидаемый ответ "), value),
                 func.concat(literal("Expected answer "), value),
-                subsection_id,
+                hex_id_expr(value=subsection_number),
                 sql_cast(
                     case(
                         (grade_bucket == 0, literal("JUNIOR")),
@@ -619,8 +583,8 @@ async def insert_competency_matrix_resource_links(*, connection: AsyncConnection
                 "context_ru": "Контекст query-plan ресурса",
                 "context_en": "Query-plan resource context",
             }
-            for item_id in (100, 101)
-            for resource_id in (PYTHON_ID, POSTGRESQL_ID)
+            for item_id in (hex_id(100), hex_id(101))
+            for resource_id in (hex_id(PYTHON_ID), hex_id(POSTGRESQL_ID))
         ],
     )
 
@@ -630,7 +594,7 @@ async def insert_queued_competency_matrix_questions(*, connection: AsyncConnecti
         insert(QueuedQuestionModel.__table__),
         [
             {
-                "id": value,
+                "id": hex_id(value),
                 "question": f"Queued matrix question {value}",
                 "grade": "JUNIOR" if value % 5 == 0 else None,
                 "sheet": "Python" if value % 7 == 0 else None,
@@ -642,42 +606,26 @@ async def insert_queued_competency_matrix_questions(*, connection: AsyncConnecti
             for value in range(1, QUEUED_QUESTION_SEED_COUNT + 1)
         ],
     )
-    await connection.execute(
-        select(
-            func.setval(
-                func.pg_get_serial_sequence(QueuedQuestionModel.__tablename__, "id"),
-                QUEUED_QUESTION_SEED_COUNT,
-                true(),
-            ),
-        ),
-    )
 
 
 def generate_series_subquery(*, end: int, name: str) -> Subquery:
     return select(func.generate_series(1, end).label("value")).subquery(name)
 
 
-def deterministic_uuid_from_int(*, value: object) -> object:
-    digest = func.md5(sql_cast(value, String))
-    uuid_text = func.concat(
-        func.substr(digest, 1, 8),
-        literal("-"),
-        func.substr(digest, 9, 4),
-        literal("-"),
-        func.substr(digest, 13, 4),
-        literal("-"),
-        func.substr(digest, 17, 4),
-        literal("-"),
-        func.substr(digest, 21, 12),
-    )
-    return sql_cast(uuid_text, postgresql.UUID(as_uuid=True))
+def deterministic_hex_from_int(*, value: object) -> object:
+    return func.md5(sql_cast(value, String))
 
 
-def deterministic_python_uuid_from_int(*, value: int) -> UUID:
-    digest = md5(str(value).encode(), usedforsecurity=False).hexdigest()
-    return UUID(
-        f"{digest[0:8]}-{digest[8:12]}-{digest[12:16]}-{digest[16:20]}-{digest[20:32]}",
-    )
+def deterministic_python_hex_from_int(*, value: int) -> str:
+    return md5(str(value).encode(), usedforsecurity=False).hexdigest()
+
+
+def hex_id_expr(*, value: object) -> object:
+    return func.lpad(func.to_hex(value), 32, literal("0"))
+
+
+def hex_id(value: int) -> str:
+    return f"{value:032x}"
 
 
 async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:

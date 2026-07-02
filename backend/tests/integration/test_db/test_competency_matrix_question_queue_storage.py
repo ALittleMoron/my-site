@@ -11,7 +11,6 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
 )
-from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -28,7 +27,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         await self.storage_helper.create_queued_matrix_questions(
             questions=[
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(2),
+                    id=self.factory.core.hex_id(2),
                     question="Earliest",
                     grade=GradeEnum.JUNIOR,
                     sheet="Python",
@@ -38,7 +37,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     created_at=first_created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(1),
+                    id=self.factory.core.hex_id(1),
                     question="Middle",
                     grade=None,
                     sheet=None,
@@ -48,7 +47,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     created_at=second_created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(3),
+                    id=self.factory.core.hex_id(3),
                     question="Latest",
                     grade=None,
                     sheet=None,
@@ -62,7 +61,11 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
         questions = await self.storage.list_queued_questions()
 
-        assert [question.id for question in questions] == [2, 1, 3]
+        assert [question.id for question in questions] == [
+            self.factory.core.hex_id(2),
+            self.factory.core.hex_id(1),
+            self.factory.core.hex_id(3),
+        ]
 
     async def test_create_queued_question_returns_persisted_question(self) -> None:
         question = await self.storage.create_queued_question(
@@ -73,7 +76,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
             ),
         )
 
-        assert question.id > 0
+        self.asserts.hex_id(question.id)
         assert question.question == "What is PEP 8?"
         assert question.grade == GradeEnum.JUNIOR
         assert question.sheet == "python"
@@ -107,7 +110,9 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         assert [question.grade for question in questions] == [None, GradeEnum.MIDDLE]
         assert [question.section for question in questions] == [None, None]
         assert [question.subsection for question in questions] == [None, None]
-        assert questions.values[0].id < questions.values[1].id
+        self.asserts.hex_id(questions.values[0].id)
+        self.asserts.hex_id(questions.values[1].id)
+        assert questions.values[0].id != questions.values[1].id
         assert questions.values[0].created_at == questions.values[1].created_at
 
     async def test_list_queued_questions_breaks_fifo_ties_by_id(self) -> None:
@@ -115,7 +120,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         await self.storage_helper.create_queued_matrix_questions(
             questions=[
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(2),
+                    id=self.factory.core.hex_id(2),
                     question="Second",
                     grade=None,
                     sheet=None,
@@ -125,7 +130,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     created_at=created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(1),
+                    id=self.factory.core.hex_id(1),
                     question="First",
                     grade=None,
                     sheet=None,
@@ -139,17 +144,20 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
         questions = await self.storage.list_queued_questions()
 
-        assert [question.id for question in questions] == [1, 2]
+        assert [question.id for question in questions] == [
+            self.factory.core.hex_id(1),
+            self.factory.core.hex_id(2),
+        ]
 
     async def test_get_queued_question_not_found(self) -> None:
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
-            await self.storage.get_queued_question(question_id=IntId(404))
+            await self.storage.get_queued_question(question_id=self.factory.core.hex_id(404))
 
     async def test_delete_queued_question_removes_pending_entry(self) -> None:
         await self.storage_helper.create_queued_matrix_questions(
             questions=[
                 QueuedCompetencyMatrixQuestion(
-                    id=IntId(7),
+                    id=self.factory.core.hex_id(7),
                     question="What is PEP 8?",
                     grade=None,
                     sheet=None,
@@ -161,7 +169,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
             ],
         )
 
-        await self.storage.delete_queued_question(question_id=IntId(7))
+        await self.storage.delete_queued_question(question_id=self.factory.core.hex_id(7))
 
         questions = await self.storage.list_queued_questions()
         assert questions.values == []

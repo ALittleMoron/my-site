@@ -133,7 +133,7 @@ export class ArticleFormComponent implements OnInit {
   readonly tagsChanged = output<void>();
 
   readonly tags = signal<TagDraft[]>([]);
-  readonly selectedTagIds = signal<ReadonlySet<number>>(new Set<number>());
+  readonly selectedTagIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
   readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
@@ -317,7 +317,7 @@ export class ArticleFormComponent implements OnInit {
       });
   }
 
-  toggleTag(tagId: number, event: Event): void {
+  toggleTag(tagId: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.selectedTagIds.update((current) => {
       const next = new Set(current);
@@ -330,7 +330,7 @@ export class ArticleFormComponent implements OnInit {
     });
   }
 
-  isTagSelected(tagId: number): boolean {
+  isTagSelected(tagId: string): boolean {
     return this.selectedTagIds().has(tagId);
   }
 
@@ -338,21 +338,21 @@ export class ArticleFormComponent implements OnInit {
     return tag.deletedAt !== null;
   }
 
-  updateTagDraftNameRu(tagId: number, event: Event): void {
+  updateTagDraftNameRu(tagId: string, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.tags.update((tags) =>
       tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameRu: value } : tag)),
     );
   }
 
-  updateTagDraftNameEn(tagId: number, event: Event): void {
+  updateTagDraftNameEn(tagId: string, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.tags.update((tags) =>
       tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameEn: value } : tag)),
     );
   }
 
-  updateTagDraftSlug(tagId: number, event: Event): void {
+  updateTagDraftSlug(tagId: string, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.tags.update((tags) =>
       tags.map((tag) => (tag.id === tagId ? { ...tag, draftSlug: value } : tag)),
@@ -429,7 +429,7 @@ export class ArticleFormComponent implements OnInit {
       });
   }
 
-  deleteTag(tagId: number): void {
+  deleteTag(tagId: string): void {
     this.tagError.set(null);
     this.articlesService
       .deleteTag(tagId)
@@ -448,7 +448,7 @@ export class ArticleFormComponent implements OnInit {
       });
   }
 
-  restoreTag(tagId: number): void {
+  restoreTag(tagId: string): void {
     this.tagError.set(null);
     this.articlesService
       .restoreTag(tagId)
@@ -597,7 +597,7 @@ export class ArticleFormComponent implements OnInit {
         publishStatus: 'Draft',
       });
       this.formSnapshot.set(this.form.getRawValue());
-      this.selectedTagIds.set(new Set<number>());
+      this.selectedTagIds.set(new Set<string>());
       return;
     }
     this.slugEdited = true;

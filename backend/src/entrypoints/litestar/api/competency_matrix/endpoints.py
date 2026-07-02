@@ -11,7 +11,6 @@ from litestar.params import Body, FromPath, MultipartBody, QueryParameter
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
@@ -24,8 +23,8 @@ from core.competency_matrix.schemas import (
     QuestionSuggestionLimitParams,
 )
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
+from core.generators import HexUuidIdGenerator
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_competency_matrix_item_draft_status_params,
     provide_competency_matrix_item_get_params,
@@ -221,20 +220,20 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @post(
-        "/sheets/{sheet_id:int}/sections",
+        "/sheets/{sheet_id:str}/sections",
         description="Create a competency matrix section.",
         name="admin-competency-matrix-section-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_competency_matrix_section(
         self,
-        sheet_id: FromPath[int],
+        sheet_id: FromPath[str],
         data: Annotated[MatrixSectionCreateRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> MatrixStructureSectionResponseSchema:
         section = await use_case.create_section(
-            params=data.to_schema(sheet_id=IntId(sheet_id)),
+            params=data.to_schema(sheet_id=sheet_id),
         )
         return MatrixStructureSectionResponseSchema.from_domain_schema(
             schema=section,
@@ -242,20 +241,20 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @post(
-        "/sections/{section_id:int}/subsections",
+        "/sections/{section_id:str}/subsections",
         description="Create a competency matrix subsection.",
         name="admin-competency-matrix-subsection-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_competency_matrix_subsection(
         self,
-        section_id: FromPath[int],
+        section_id: FromPath[str],
         data: Annotated[MatrixSubsectionCreateRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: Annotated[LanguageEnum, QueryParameter(name="language")],
     ) -> MatrixStructureSubsectionResponseSchema:
         subsection = await use_case.create_subsection(
-            params=data.to_schema(section_id=IntId(section_id)),
+            params=data.to_schema(section_id=section_id),
         )
         return MatrixStructureSubsectionResponseSchema.from_domain_schema(
             schema=subsection,
@@ -281,20 +280,20 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @put(
-        "/sheets/{sheet_id:int}/sections/priorities",
+        "/sheets/{sheet_id:str}/sections/priorities",
         description="Update competency matrix section priority order for one sheet.",
         name="admin-competency-matrix-section-priorities-update-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def update_competency_matrix_section_priorities(
         self,
-        sheet_id: FromPath[int],
+        sheet_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.update_section_priorities(
-            params=data.to_section_schema(sheet_id=IntId(sheet_id)),
+            params=data.to_section_schema(sheet_id=sheet_id),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
@@ -302,20 +301,20 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @put(
-        "/sections/{section_id:int}/subsections/priorities",
+        "/sections/{section_id:str}/subsections/priorities",
         description="Update competency matrix subsection priority order for one section.",
         name="admin-competency-matrix-subsection-priorities-update-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def update_competency_matrix_subsection_priorities(
         self,
-        section_id: FromPath[int],
+        section_id: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.update_subsection_priorities(
-            params=data.to_subsection_schema(section_id=IntId(section_id)),
+            params=data.to_subsection_schema(section_id=section_id),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
@@ -394,29 +393,28 @@ class AdminCompetencyMatrixApiController(Controller):
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
 
     @delete(
-        "/queued-questions/{pk:int}",
+        "/queued-questions/{pk:str}",
         description="Reject a queued competency matrix question.",
         name="admin-competency-matrix-queued-question-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_queued_competency_matrix_question(
         self,
-        pk: FromPath[int],
+        pk: FromPath[str],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
-        await use_case.delete_queued_question(question_id=IntId(pk))
+        await use_case.delete_queued_question(question_id=pk)
 
     @post(
-        "/queued-questions/{pk:int}/create-item",
+        "/queued-questions/{pk:str}/create-item",
         description="Create a competency matrix question from the queue.",
         name="admin-competency-matrix-queued-question-create-item-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def create_competency_matrix_item_from_queue(  # noqa: PLR0913
         self,
-        pk: FromPath[int],
-        item_id_generator: FromDishka[ItemIdGenerator],
-        resource_id_generator: FromDishka[ResourceIdGenerator],
+        pk: FromPath[str],
+        id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
@@ -424,9 +422,9 @@ class AdminCompetencyMatrixApiController(Controller):
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item_from_queue(
             params=data.to_create_from_queue_schema(
-                queued_question_id=IntId(pk),
-                item_id_generator=item_id_generator,
-                resource_id_generator=resource_id_generator,
+                queued_question_id=pk,
+                item_id_generator=id_generator,
+                resource_id_generator=id_generator,
             ),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -502,10 +500,9 @@ class AdminCompetencyMatrixApiController(Controller):
         name="admin-competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_competency_matrix_item(  # noqa: PLR0913
+    async def create_competency_matrix_item(
         self,
-        item_id_generator: FromDishka[ItemIdGenerator],
-        resource_id_generator: FromDishka[ResourceIdGenerator],
+        id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
@@ -513,8 +510,8 @@ class AdminCompetencyMatrixApiController(Controller):
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
             params=data.to_create_schema(
-                item_id_generator=item_id_generator,
-                resource_id_generator=resource_id_generator,
+                item_id_generator=id_generator,
+                resource_id_generator=id_generator,
             ),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -527,7 +524,7 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @get(
-        "/items/detail/{pk:int}",
+        "/items/detail/{pk:str}",
         description="Get admin competency matrix question details.",
         name="admin-competency-matrix-item-detail-api-handler",
         status_code=status_codes.HTTP_200_OK,
@@ -551,15 +548,15 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @put(
-        "/items/detail/{pk:int}",
+        "/items/detail/{pk:str}",
         description="Update a competency matrix question.",
         name="admin-competency-matrix-item-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
     async def update_competency_matrix_item(  # noqa: PLR0913
         self,
-        pk: FromPath[int],
-        resource_id_generator: FromDishka[ResourceIdGenerator],
+        pk: FromPath[str],
+        id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
         data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
         use_case: FromDishka[CompetencyMatrixUseCase],
@@ -567,8 +564,8 @@ class AdminCompetencyMatrixApiController(Controller):
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.update_item(
             params=data.to_update_schema(
-                item_id=IntId(pk),
-                resource_id_generator=resource_id_generator,
+                item_id=pk,
+                resource_id_generator=id_generator,
             ),
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
@@ -581,25 +578,25 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @delete(
-        "/items/detail/{pk:int}",
+        "/items/detail/{pk:str}",
         description="Delete a competency matrix question.",
         name="admin-competency-matrix-item-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
     async def delete_competency_matrix_item(
         self,
-        pk: FromPath[int],
+        pk: FromPath[str],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
-        await use_case.delete_item(item_id=IntId(pk))
+        await use_case.delete_item(item_id=pk)
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
         )
 
     @post(
-        "/items/detail/{pk:int}/set-draft",
+        "/items/detail/{pk:str}/set-draft",
         description='Set competency matrix question status to "Draft".',
         name="admin-competency-matrix-item-set-draft-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
@@ -623,7 +620,7 @@ class AdminCompetencyMatrixApiController(Controller):
         )
 
     @post(
-        "/items/detail/{pk:int}/set-published",
+        "/items/detail/{pk:str}/set-published",
         description='Set competency matrix question status to "Published".',
         name="admin-competency-matrix-item-set-published-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,

@@ -6,7 +6,6 @@ from typing import Self
 from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum, ResumeExportFormatEnum
 from core.schemas import ValuedDataclass
-from core.types import IntId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -110,7 +109,7 @@ class ResumeContent:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Resume:
-    id: IntId
+    id: str
     title: str
     language: LanguageEnum
     content: ResumeContent

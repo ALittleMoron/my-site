@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from core.resumes.schemas import Resume, ResumeCreateParams, ResumeFilters
-from core.types import IntId
 
 
 class ResumesStorage(ABC):
@@ -10,7 +9,7 @@ class ResumesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_resume(self, *, resume_id: IntId, author_username: str) -> Resume:
+    async def get_resume(self, *, resume_id: str, author_username: str) -> Resume:
         raise NotImplementedError
 
     @abstractmethod
@@ -22,5 +21,5 @@ class ResumesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_resume(self, *, resume_id: IntId, author_username: str) -> None:
+    async def delete_resume(self, *, resume_id: str, author_username: str) -> None:
         raise NotImplementedError

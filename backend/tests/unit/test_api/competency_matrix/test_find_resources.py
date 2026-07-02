@@ -30,7 +30,7 @@ class TestFindResourcesAPI(ApiTestCase):
         assert response.json() == {
             "resources": [
                 {
-                    "id": 1,
+                    "id": self.factory.core.hex_id(1),
                     "name": "documentation",
                     "url": "https://example.com",
                     "translations": {

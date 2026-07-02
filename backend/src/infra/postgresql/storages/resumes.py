@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.resumes.exceptions import ResumeNotFoundError
 from core.resumes.schemas import Resume, ResumeCreateParams, ResumeFilters
 from core.resumes.storages import ResumesStorage
-from core.types import IntId
 from infra.postgresql.models import ResumeModel
 
 
@@ -29,7 +28,7 @@ class ResumesDatabaseStorage(ResumesStorage):
         total_count = (await self.session.scalar(count_query)) or 0
         return [model.to_domain_schema() for model in models], total_count
 
-    async def get_resume(self, *, resume_id: IntId, author_username: str) -> Resume:
+    async def get_resume(self, *, resume_id: str, author_username: str) -> Resume:
         model = await self._get_resume_model(
             resume_id=resume_id,
             author_username=author_username,
@@ -52,7 +51,7 @@ class ResumesDatabaseStorage(ResumesStorage):
         await self.session.flush()
         return model.to_domain_schema()
 
-    async def delete_resume(self, *, resume_id: IntId, author_username: str) -> None:
+    async def delete_resume(self, *, resume_id: str, author_username: str) -> None:
         model = await self._get_resume_model(
             resume_id=resume_id,
             author_username=author_username,
@@ -60,7 +59,7 @@ class ResumesDatabaseStorage(ResumesStorage):
         await self.session.delete(model)
         await self.session.flush()
 
-    async def _get_resume_model(self, *, resume_id: IntId, author_username: str) -> ResumeModel:
+    async def _get_resume_model(self, *, resume_id: str, author_username: str) -> ResumeModel:
         query = select(ResumeModel).where(
             ResumeModel.id == resume_id,
             ResumeModel.author_username == author_username,

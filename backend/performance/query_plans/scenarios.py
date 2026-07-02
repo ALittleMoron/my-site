@@ -2,7 +2,6 @@ from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from hashlib import md5
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,7 +41,6 @@ from core.resumes.schemas import (
     ResumeProfile,
     ResumeSummary,
 )
-from core.types import IntId
 from infra.postgresql.storages.articles import (
     ArticleAnalyticsDatabaseStorage,
     ArticlesDatabaseStorage,
@@ -66,17 +64,40 @@ from performance.query_plans.models import (
 
 ScenarioRunner = Callable[[AsyncSession], Awaitable[None]]
 
+
+def hex_id(value: int) -> str:
+    return f"{value:032x}"
+
+
 SEED_NOW = datetime(2026, 1, 15, 12, 0, tzinfo=UTC)
 SEED_USERNAME = "benchmark"
 NEW_AUTH_HASH = "query-plan-auth-hash"
 NEW_MANAGED_ACCOUNT_USERNAME = "query-plan-admin"
-NEW_ARTICLE_ID = UUID("10000000-0000-4000-8000-000000000001")
-NEW_CONTACT_ID = UUID("10000000-0000-4000-8000-000000000002")
+NEW_ARTICLE_ID = "10000000000040008000000000000001"
+NEW_CONTACT_ID = "10000000000040008000000000000002"
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
-NEW_TAG_ID = IntId(90_000_001)
-NEW_MATRIX_ITEM_ID = IntId(900_001)
+NEW_TAG_ID = hex_id(90_000_001)
+NEW_MATRIX_ITEM_ID = hex_id(900_001)
 NEW_MATRIX_SHEET_KEY = "query-plan-new-sheet"
 NEW_RESUME_TITLE = "Query plan new resume"
+EXISTING_RESUME_ID = hex_id(100)
+DELETABLE_RESUME_ID = hex_id(101)
+PYTHON_TAG_ID = hex_id(1)
+POSTGRESQL_TAG_ID = hex_id(2)
+PYDANTIC_TAG_ID = hex_id(3)
+DELETED_TAG_ID = hex_id(4)
+PYTHON_RESOURCE_ID = hex_id(1)
+POSTGRESQL_RESOURCE_ID = hex_id(2)
+PYDANTIC_RESOURCE_ID = hex_id(3)
+PYTHON_SHEET_ID = hex_id(1)
+POSTGRESQL_SHEET_ID = hex_id(2)
+PYDANTIC_SHEET_ID = hex_id(3)
+PYTHON_SECTION_ID = hex_id(1)
+PYTHON_SUBSECTION_ID = hex_id(1)
+EXISTING_MATRIX_ITEM_ID = hex_id(100)
+DELETABLE_MATRIX_ITEM_ID = hex_id(101)
+EXISTING_QUEUED_QUESTION_ID = hex_id(100)
+DELETABLE_QUEUED_QUESTION_ID = hex_id(101)
 SHORT_TRIGRAM_ALLOW_REASON = (
     "short search string has too few extractable trigrams for an index-selective search"
 )
@@ -243,7 +264,7 @@ async def run_list_resumes(session: AsyncSession) -> None:
 
 async def run_get_resume(session: AsyncSession) -> None:
     await ResumesDatabaseStorage(session=session).get_resume(
-        resume_id=IntId(100),
+        resume_id=EXISTING_RESUME_ID,
         author_username=SEED_USERNAME,
     )
 
@@ -262,7 +283,7 @@ async def run_create_resume(session: AsyncSession) -> None:
 async def run_update_resume(session: AsyncSession) -> None:
     await ResumesDatabaseStorage(session=session).update_resume(
         resume=Resume(
-            id=IntId(100),
+            id=EXISTING_RESUME_ID,
             title="Query plan updated resume",
             language=LanguageEnum.EN,
             content=write_resume_content(summary="Updated resume for query-plan smoke."),
@@ -275,7 +296,7 @@ async def run_update_resume(session: AsyncSession) -> None:
 
 async def run_delete_resume(session: AsyncSession) -> None:
     await ResumesDatabaseStorage(session=session).delete_resume(
-        resume_id=IntId(101),
+        resume_id=DELETABLE_RESUME_ID,
         author_username=SEED_USERNAME,
     )
 
@@ -355,7 +376,7 @@ async def run_update_article_publish_status(session: AsyncSession) -> None:
 
 async def run_get_tags_by_ids(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).get_tags_by_ids(
-        tag_ids=[IntId(1), IntId(2), IntId(3)],
+        tag_ids=[PYTHON_TAG_ID, POSTGRESQL_TAG_ID, PYDANTIC_TAG_ID],
         include_deleted=False,
     )
 
@@ -407,7 +428,7 @@ async def run_create_tag(session: AsyncSession) -> None:
 async def run_update_tag(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).update_tag(
         tag=Tag(
-            id=IntId(1),
+            id=PYTHON_TAG_ID,
             name_ru="Питон обновленный",
             name_en="Python updated",
             slug="python",
@@ -417,11 +438,11 @@ async def run_update_tag(session: AsyncSession) -> None:
 
 
 async def run_soft_delete_tag(session: AsyncSession) -> None:
-    await ArticlesDatabaseStorage(session=session).soft_delete_tag(tag_id=IntId(1))
+    await ArticlesDatabaseStorage(session=session).soft_delete_tag(tag_id=PYTHON_TAG_ID)
 
 
 async def run_restore_tag(session: AsyncSession) -> None:
-    await ArticlesDatabaseStorage(session=session).restore_tag(tag_id=IntId(4))
+    await ArticlesDatabaseStorage(session=session).restore_tag(tag_id=DELETED_TAG_ID)
 
 
 async def run_increment_view(session: AsyncSession) -> None:
@@ -478,7 +499,7 @@ async def run_list_matrix_structure(session: AsyncSession) -> None:
 
 async def run_get_item_structure_by_subsection_id(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).get_item_structure_by_subsection_id(
-        subsection_id=IntId(1),
+        subsection_id=PYTHON_SUBSECTION_ID,
     )
 
 
@@ -495,7 +516,7 @@ async def run_create_matrix_sheet(session: AsyncSession) -> None:
 async def run_create_matrix_section(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).create_section(
         params=CompetencyMatrixSectionCreateParams(
-            sheet_id=IntId(1),
+            sheet_id=PYTHON_SHEET_ID,
             name_ru="Новый раздел query plan",
             name_en="Query plan new section",
         ),
@@ -505,7 +526,7 @@ async def run_create_matrix_section(session: AsyncSession) -> None:
 async def run_create_matrix_subsection(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).create_subsection(
         params=CompetencyMatrixSubsectionCreateParams(
-            section_id=IntId(1),
+            section_id=PYTHON_SECTION_ID,
             name_ru="Новый подраздел query plan",
             name_en="Query plan new subsection",
         ),
@@ -515,7 +536,7 @@ async def run_create_matrix_subsection(session: AsyncSession) -> None:
 async def run_update_matrix_sheet_priorities(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).update_sheet_priorities(
         params=CompetencyMatrixSheetPriorityUpdateParams(
-            ordered_ids=(IntId(2), IntId(1), IntId(3)),
+            ordered_ids=(POSTGRESQL_SHEET_ID, PYTHON_SHEET_ID, PYDANTIC_SHEET_ID),
         ),
     )
 
@@ -523,8 +544,8 @@ async def run_update_matrix_sheet_priorities(session: AsyncSession) -> None:
 async def run_update_matrix_section_priorities(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).update_section_priorities(
         params=CompetencyMatrixSectionPriorityUpdateParams(
-            sheet_id=IntId(1),
-            ordered_ids=(IntId(2), IntId(1), IntId(3)),
+            sheet_id=PYTHON_SHEET_ID,
+            ordered_ids=(hex_id(2), PYTHON_SECTION_ID, hex_id(3)),
         ),
     )
 
@@ -532,8 +553,8 @@ async def run_update_matrix_section_priorities(session: AsyncSession) -> None:
 async def run_update_matrix_subsection_priorities(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).update_subsection_priorities(
         params=CompetencyMatrixSubsectionPriorityUpdateParams(
-            section_id=IntId(1),
-            ordered_ids=(IntId(2), IntId(1), IntId(3)),
+            section_id=PYTHON_SECTION_ID,
+            ordered_ids=(hex_id(2), PYTHON_SUBSECTION_ID, hex_id(3)),
         ),
     )
 
@@ -572,7 +593,9 @@ async def run_list_competency_matrix_workspace_filter_options(session: AsyncSess
 
 
 async def run_get_competency_matrix_item(session: AsyncSession) -> None:
-    await CompetencyMatrixDatabaseStorage(session=session).get_competency_matrix_item(IntId(100))
+    await CompetencyMatrixDatabaseStorage(session=session).get_competency_matrix_item(
+        EXISTING_MATRIX_ITEM_ID,
+    )
 
 
 async def run_get_competency_matrix_item_by_slug(session: AsyncSession) -> None:
@@ -589,7 +612,7 @@ async def run_create_competency_matrix_item(session: AsyncSession) -> None:
 
 async def run_update_competency_matrix_item(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).update_competency_matrix_item(
-        write_matrix_item(item_id=IntId(100), slug="matrix-question-100"),
+        write_matrix_item(item_id=EXISTING_MATRIX_ITEM_ID, slug="matrix-question-100"),
     )
 
 
@@ -597,7 +620,7 @@ async def run_update_competency_matrix_item_publish_status(session: AsyncSession
     await CompetencyMatrixDatabaseStorage(
         session=session,
     ).update_competency_matrix_item_publish_status(
-        IntId(100),
+        EXISTING_MATRIX_ITEM_ID,
         PublishStatusEnum.DRAFT,
     )
 
@@ -607,7 +630,9 @@ async def run_list_queued_questions(session: AsyncSession) -> None:
 
 
 async def run_get_queued_question(session: AsyncSession) -> None:
-    await CompetencyMatrixDatabaseStorage(session=session).get_queued_question(IntId(100))
+    await CompetencyMatrixDatabaseStorage(session=session).get_queued_question(
+        EXISTING_QUEUED_QUESTION_ID,
+    )
 
 
 async def run_create_queued_question(session: AsyncSession) -> None:
@@ -640,17 +665,21 @@ async def run_create_queued_questions(session: AsyncSession) -> None:
 
 
 async def run_delete_queued_question(session: AsyncSession) -> None:
-    await CompetencyMatrixDatabaseStorage(session=session).delete_queued_question(IntId(101))
+    await CompetencyMatrixDatabaseStorage(session=session).delete_queued_question(
+        DELETABLE_QUEUED_QUESTION_ID,
+    )
 
 
 async def run_get_resources_by_ids(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).get_resources_by_ids(
-        [IntId(1), IntId(2), IntId(3)],
+        [PYTHON_RESOURCE_ID, POSTGRESQL_RESOURCE_ID, PYDANTIC_RESOURCE_ID],
     )
 
 
 async def run_delete_competency_matrix_item(session: AsyncSession) -> None:
-    await CompetencyMatrixDatabaseStorage(session=session).delete_competency_matrix_item(IntId(101))
+    await CompetencyMatrixDatabaseStorage(session=session).delete_competency_matrix_item(
+        DELETABLE_MATRIX_ITEM_ID,
+    )
 
 
 async def run_search_resources_exact(session: AsyncSession) -> None:
@@ -677,11 +706,8 @@ async def run_search_resources(*, session: AsyncSession, search_name: str) -> No
     )
 
 
-def article_id(value: int) -> UUID:
-    digest = md5(str(value).encode(), usedforsecurity=False).hexdigest()
-    return UUID(
-        f"{digest[0:8]}-{digest[8:12]}-{digest[12:16]}-{digest[16:20]}-{digest[20:32]}",
-    )
+def article_id(value: int) -> str:
+    return md5(str(value).encode(), usedforsecurity=False).hexdigest()
 
 
 def write_article() -> Article:
@@ -700,7 +726,7 @@ def write_article() -> Article:
         metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
-        tags=Tags(values=[seed_tag(IntId(1)), seed_tag(IntId(2))]),
+        tags=Tags(values=[seed_tag(1), seed_tag(2)]),
     )
 
 
@@ -720,7 +746,7 @@ def write_article_for_existing_article() -> Article:
         metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
-        tags=Tags(values=[seed_tag(IntId(1)), seed_tag(IntId(2))]),
+        tags=Tags(values=[seed_tag(1), seed_tag(2)]),
     )
 
 
@@ -736,14 +762,14 @@ def empty_article_metadata() -> ArticleMetadata:
     )
 
 
-def seed_tag(tag_id: IntId) -> Tag:
+def seed_tag(tag_index: int) -> Tag:
     names = {
-        IntId(1): ("Питон", "Python", "python"),
-        IntId(2): ("PostgreSQL", "PostgreSQL", "postgresql"),
-        IntId(3): ("Pydantic", "Pydantic", "pydantic"),
+        1: ("Питон", "Python", "python"),
+        2: ("PostgreSQL", "PostgreSQL", "postgresql"),
+        3: ("Pydantic", "Pydantic", "pydantic"),
     }
-    name_ru, name_en, slug = names[tag_id]
-    return Tag(id=tag_id, name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
+    name_ru, name_en, slug = names[tag_index]
+    return Tag(id=hex_id(tag_index), name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
 
 
 def write_resume_content(*, summary: str) -> ResumeContent:
@@ -771,7 +797,7 @@ def write_resume_content(*, summary: str) -> ResumeContent:
     )
 
 
-def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
+def write_matrix_item(*, item_id: str, slug: str) -> CompetencyMatrixItem:
     return CompetencyMatrixItem(
         id=item_id,
         slug=slug,
@@ -784,14 +810,14 @@ def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
         interview_expected_answer_ru="Назвать listener, EXPLAIN и thresholds.",
         interview_expected_answer_en="Name listener, EXPLAIN, and thresholds.",
         structure=CompetencyMatrixItemStructure(
-            sheet_id=IntId(1),
+            sheet_id=PYTHON_SHEET_ID,
             sheet_key="python",
             sheet_ru="Питон",
             sheet_en="Python",
-            section_id=IntId(1),
+            section_id=PYTHON_SECTION_ID,
             section_ru="Основы",
             section_en="Basics",
-            subsection_id=IntId(1),
+            subsection_id=PYTHON_SUBSECTION_ID,
             subsection_ru="Функции",
             subsection_en="Functions",
         ),
@@ -800,7 +826,7 @@ def write_matrix_item(*, item_id: IntId, slug: str) -> CompetencyMatrixItem:
         resources=AttachedExternalResources(
             values=[
                 AttachedExternalResource(
-                    id=IntId(1),
+                    id=PYTHON_RESOURCE_ID,
                     name_ru="Документация Pydantic",
                     name_en="Pydantic validation guide",
                     url="https://docs.pydantic.dev/latest/",
@@ -1104,7 +1130,7 @@ STORAGE_SCENARIOS = (
         storage_class="ArticlesDatabaseStorage",
         method_name="list_tags",
         group=QueryThresholdGroup.LIST_READ,
-        expected_index_names=(),
+        expected_index_names=("articles_tag_active_name_en_id_idx",),
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason="full tag listing is intentionally sorted for authoring UI",
         run=run_list_tags,
@@ -1359,8 +1385,11 @@ STORAGE_SCENARIOS = (
         method_name="list_competency_matrix_items",
         group=QueryThresholdGroup.HEAVY,
         expected_index_names=(),
-        forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
-        allow_seq_scan_reason=None,
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=(
+            "public sheet matrix listing reads a large published slice and sorts by normalized "
+            "structure"
+        ),
         run=run_list_competency_matrix_items,
     ),
     scenario(

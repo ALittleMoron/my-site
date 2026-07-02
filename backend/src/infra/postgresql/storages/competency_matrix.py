@@ -4,7 +4,6 @@ from typing import Any
 
 from sqlalchemy import (
     ARRAY,
-    Integer,
     Select,
     String,
     and_,
@@ -61,7 +60,6 @@ from core.competency_matrix.schemas import (
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from infra.config.constants import constants
 from infra.postgresql.models import (
     CompetencyMatrixItemModel,
@@ -120,7 +118,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def get_item_structure_by_subsection_id(
         self,
         *,
-        subsection_id: IntId,
+        subsection_id: str,
     ) -> CompetencyMatrixItemStructure:
         subsection = await self._get_subsection_model(subsection_id=subsection_id)
         return subsection.to_item_structure()
@@ -141,7 +139,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self.session.add(sheet)
         await self.session.flush()
         return CompetencyMatrixStructureSheet(
-            id=IntId(sheet.id),
+            id=sheet.id,
             key=sheet.key,
             name_ru=sheet.name_ru,
             name_en=sheet.name_en,
@@ -166,7 +164,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self.session.add(section)
         await self.session.flush()
         return CompetencyMatrixStructureSection(
-            id=IntId(section.id),
+            id=section.id,
             name_ru=section.name_ru,
             name_en=section.name_en,
             priority=section.priority,
@@ -190,7 +188,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self.session.add(subsection)
         await self.session.flush()
         return CompetencyMatrixStructureSubsection(
-            id=IntId(subsection.id),
+            id=subsection.id,
             name_ru=subsection.name_ru,
             name_en=subsection.name_en,
             priority=subsection.priority,
@@ -379,7 +377,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             for sheet_key, sheet in sheets.items()
         ]
 
-    async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
+    async def get_competency_matrix_item(self, item_id: str) -> CompetencyMatrixItem:
         stmt = (
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.id == item_id)
@@ -447,7 +445,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def update_competency_matrix_item_publish_status(
         self,
-        item_id: IntId,
+        item_id: str,
         publish_status: PublishStatusEnum,
     ) -> None:
         item_model = await self._get_competency_matrix_item_model(
@@ -460,7 +458,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def _get_competency_matrix_item_model(
         self,
-        item_id: IntId,
+        item_id: str,
         *,
         load_resource_links: bool,
     ) -> CompetencyMatrixItemModel:
@@ -532,13 +530,13 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def _next_sheet_priority(self) -> int:
         return await self._next_priority(model=CompetencyMatrixSheetModel, conditions=())
 
-    async def _next_section_priority(self, *, sheet_id: IntId) -> int:
+    async def _next_section_priority(self, *, sheet_id: str) -> int:
         return await self._next_priority(
             model=CompetencyMatrixSectionModel,
             conditions=(CompetencyMatrixSectionModel.sheet_id == sheet_id,),
         )
 
-    async def _next_subsection_priority(self, *, section_id: IntId) -> int:
+    async def _next_subsection_priority(self, *, section_id: str) -> int:
         return await self._next_priority(
             model=CompetencyMatrixSubsectionModel,
             conditions=(CompetencyMatrixSubsectionModel.section_id == section_id,),
@@ -559,12 +557,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self,
         *,
         model: PriorityStructureModel,
-        ordered_ids: tuple[IntId, ...],
+        ordered_ids: tuple[str, ...],
     ) -> None:
         if not ordered_ids:
             return
         priority_by_id = {
-            int(ordered_id): priority for priority, ordered_id in enumerate(ordered_ids, start=1)
+            ordered_id: priority for priority, ordered_id in enumerate(ordered_ids, start=1)
         }
         priority_cases = tuple(
             (model.id == ordered_id, priority) for ordered_id, priority in priority_by_id.items()
@@ -580,13 +578,13 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             ),
         )
 
-    async def _get_sheet_model(self, *, sheet_id: IntId) -> CompetencyMatrixSheetModel:
+    async def _get_sheet_model(self, *, sheet_id: str) -> CompetencyMatrixSheetModel:
         sheet = await self.session.get(CompetencyMatrixSheetModel, sheet_id)
         if sheet is None:
             raise CompetencyMatrixStructureNotFoundError
         return sheet
 
-    async def _get_section_model(self, *, section_id: IntId) -> CompetencyMatrixSectionModel:
+    async def _get_section_model(self, *, section_id: str) -> CompetencyMatrixSectionModel:
         section = await self.session.get(CompetencyMatrixSectionModel, section_id)
         if section is None:
             raise CompetencyMatrixStructureNotFoundError
@@ -595,7 +593,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def _get_subsection_model(
         self,
         *,
-        subsection_id: IntId,
+        subsection_id: str,
     ) -> CompetencyMatrixSubsectionModel:
         stmt = (
             select(CompetencyMatrixSubsectionModel)
@@ -953,9 +951,9 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     async def get_resources_by_ids(
         self,
-        resource_ids: list[IntId],
+        resource_ids: list[str],
     ) -> ExternalResources:
-        ids = bindparam("ids", value=resource_ids, type_=ARRAY(Integer))
+        ids = bindparam("ids", value=resource_ids, type_=ARRAY(String))
         cte = select(func.unnest(ids).label("resource_id")).cte("ids")
         stmt = select(ExternalResourceModel).join(
             cte,
@@ -964,7 +962,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         resources = await self.session.scalars(stmt)
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
 
-    async def delete_competency_matrix_item(self, item_id: IntId) -> None:
+    async def delete_competency_matrix_item(self, item_id: str) -> None:
         stmt = select(CompetencyMatrixItemModel).where(CompetencyMatrixItemModel.id == item_id)
         item = await self.session.scalar(stmt)
         if item is None:
@@ -1050,7 +1048,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             values=[question.to_domain_schema() for question in questions],
         )
 
-    async def get_queued_question(self, question_id: IntId) -> QueuedCompetencyMatrixQuestion:
+    async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
         question = await self._get_queued_question_model(question_id=question_id)
         return question.to_domain_schema()
 
@@ -1083,12 +1081,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             values=[question.to_domain_schema() for question in questions],
         )
 
-    async def delete_queued_question(self, question_id: IntId) -> None:
+    async def delete_queued_question(self, question_id: str) -> None:
         question = await self._get_queued_question_model(question_id=question_id)
         await self.session.delete(question)
         await self.session.flush()
 
-    async def _get_queued_question_model(self, question_id: IntId) -> QueuedQuestionModel:
+    async def _get_queued_question_model(self, question_id: str) -> QueuedQuestionModel:
         stmt = select(QueuedQuestionModel).where(QueuedQuestionModel.id == question_id)
         question = await self.session.scalar(stmt)
         if question is None:

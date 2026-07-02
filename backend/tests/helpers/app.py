@@ -17,6 +17,7 @@ from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.contacts.use_cases import ContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.use_cases import FilesUseCase
+from core.generators import HexUuidIdGenerator
 from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
 from core.wiki_links.use_cases import WikiLinksUseCase
@@ -33,6 +34,9 @@ class IocContainerHelper:
 
     async def get_random_int(self) -> IntId:
         return await self.container.get(IntId)
+
+    async def get_hex_uuid_id_generator(self) -> HexUuidIdGenerator:
+        return await self.container.get(HexUuidIdGenerator)
 
     async def get_item_id_generator(self) -> ItemIdGenerator:
         return await self.container.get(ItemIdGenerator)

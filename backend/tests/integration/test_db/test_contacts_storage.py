@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +11,7 @@ class TestContactMeStorage(StorageTestCase):
         self.storage = ContactMeDatabaseStorage(session=session)
 
     async def test_create_mentoring_contact_me(self) -> None:
-        contact_me_id = uuid.uuid4()
+        contact_me_id = self.factory.core.hex_id(1)
         await self.storage.create_contact_me_request(
             form=self.factory.core.contact_me(
                 contact_me_id=contact_me_id,

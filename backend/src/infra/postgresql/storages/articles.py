@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any, TypeVar
-from uuid import UUID
 
 from sqlalchemy import Select, String, and_, bindparam, case, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
@@ -24,7 +23,6 @@ from core.articles.schemas import (
 from core.articles.storages import ArticleAnalyticsStorage, ArticlesStorage
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from infra.config.constants import constants
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
@@ -271,7 +269,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
     async def get_tags_by_ids(
         self,
         *,
-        tag_ids: list[IntId],
+        tag_ids: list[str],
         include_deleted: bool,
     ) -> Tags:
         if not tag_ids:
@@ -384,19 +382,19 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         await self.session.flush()
         return model.to_domain_schema()
 
-    async def _get_tag_model(self, *, tag_id: IntId) -> TagModel:
+    async def _get_tag_model(self, *, tag_id: str) -> TagModel:
         model = await self.session.scalar(select(TagModel).where(TagModel.id == tag_id))
         if model is None:
             raise TagNotFoundError
         return model
 
-    async def soft_delete_tag(self, *, tag_id: IntId) -> None:
+    async def soft_delete_tag(self, *, tag_id: str) -> None:
         model = await self._get_tag_model(tag_id=tag_id)
         if model.deleted_at is None:
             model.deleted_at = datetime.now(tz=UTC)
         await self.session.flush()
 
-    async def restore_tag(self, *, tag_id: IntId) -> None:
+    async def restore_tag(self, *, tag_id: str) -> None:
         model = await self._get_tag_model(tag_id=tag_id)
         model.deleted_at = None
         await self.session.flush()
@@ -409,7 +407,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
     async def increment_view(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         source_category: ArticleViewSourceCategory,
         viewed_on: date | None,
     ) -> None:
@@ -424,7 +422,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
     async def increment_engaged_view(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         source_category: ArticleViewSourceCategory,
         viewed_on: date | None,
     ) -> None:
@@ -439,7 +437,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
     async def _increment_daily_counter(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         source_category: ArticleViewSourceCategory,
         viewed_on: date | None,
         view_count_increment: int,
@@ -472,7 +470,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
         )
         await self.session.flush()
 
-    async def get_public_stats(self, *, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
+    async def get_public_stats(self, *, article_ids: list[str]) -> ArticlePublicStatsCollection:
         if not article_ids:
             return ArticlePublicStatsCollection(values=[])
         view_counts = await self._get_view_counts(article_ids=article_ids)
@@ -488,7 +486,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
             ],
         )
 
-    async def _get_view_counts(self, *, article_ids: list[UUID]) -> dict[UUID, int]:
+    async def _get_view_counts(self, *, article_ids: list[str]) -> dict[str, int]:
         result = await self.session.execute(
             select(
                 ArticleDailyAnalyticsModel.article_id,
@@ -502,8 +500,8 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
     async def get_reaction_counts(
         self,
         *,
-        article_ids: list[UUID],
-    ) -> dict[UUID, ArticleReactionCounts]:
+        article_ids: list[str],
+    ) -> dict[str, ArticleReactionCounts]:
         if not article_ids:
             return {}
         result = await self.session.execute(
@@ -515,7 +513,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
             .where(ArticleReactionModel.article_id.in_(article_ids))
             .group_by(ArticleReactionModel.article_id, ArticleReactionModel.reaction_kind),
         )
-        raw_counts: dict[UUID, dict[ArticleReactionKind, int]] = {}
+        raw_counts: dict[str, dict[ArticleReactionKind, int]] = {}
         for article_id, reaction_kind, count in result:
             raw_counts.setdefault(article_id, {})[self._to_reaction_kind(reaction_kind)] = count
         return {
@@ -526,7 +524,7 @@ class ArticleAnalyticsDatabaseStorage(ArticleAnalyticsStorage):
     async def set_reaction(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         article_scoped_voter_hash: str,
         reaction_kind: ArticleReactionKind | None,
     ) -> None:

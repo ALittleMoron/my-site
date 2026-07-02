@@ -4,7 +4,7 @@ import { MatrixResource } from '../../../../models/matrix-question.model';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 
 const existingResource: MatrixResource = {
-  id: 1,
+  id: '00000000000000000000000000000001',
   name: 'Python docs',
   url: 'https://docs.python.org',
   translations: {

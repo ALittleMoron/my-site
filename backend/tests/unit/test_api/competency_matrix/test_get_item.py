@@ -8,7 +8,6 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemGetParams,
 )
 from core.enums import PublishStatusEnum
-from core.types import IntId
 from tests.test_cases import ApiTestCase
 
 
@@ -72,12 +71,12 @@ class TestGetItemAPI(ApiTestCase):
         )
         assert response.status_code == codes.OK
         assert response.json() == {
-            "id": "1",
+            "id": self.factory.core.hex_id(1),
             "slug": "how-to-write-function",
             "question": "How to write a function?",
             "answer": "Just write it.",
             "interviewExpectedAnswer": "Write it!",
-            "subsectionId": 1,
+            "subsectionId": self.factory.core.hex_id(1),
             "grade": "Junior",
             "subsection": "Functions",
             "section": "Basics",
@@ -99,7 +98,7 @@ class TestGetItemAPI(ApiTestCase):
             },
             "resources": [
                 {
-                    "id": 1,
+                    "id": self.factory.core.hex_id(1),
                     "name": "resource",
                     "url": "http://example.com",
                     "context": "resource context",
@@ -112,7 +111,7 @@ class TestGetItemAPI(ApiTestCase):
         }
         self.use_case.get_item.assert_called_once_with(
             params=CompetencyMatrixItemGetParams(
-                item_id=IntId(1),
+                item_id=self.factory.core.hex_id(1),
                 only_published=False,
             ),
         )
@@ -139,10 +138,10 @@ class TestGetItemAPI(ApiTestCase):
         )
 
         assert response.status_code == codes.OK
-        assert response.json()["id"] == "1152921504606846975"
+        assert response.json()["id"] == self.factory.core.hex_id(1_152_921_504_606_846_975)
         self.use_case.get_item.assert_called_once_with(
             params=CompetencyMatrixItemGetParams(
-                item_id=IntId(1_152_921_504_606_846_975),
+                item_id=self.factory.core.hex_id(1_152_921_504_606_846_975),
                 only_published=False,
             ),
         )

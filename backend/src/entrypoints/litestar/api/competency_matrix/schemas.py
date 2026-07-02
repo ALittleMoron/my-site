@@ -5,7 +5,6 @@ from typing import Annotated, Self
 from pydantic import Field, field_validator, model_validator
 
 from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
-from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     CompetencyMatrixFilterOption,
@@ -44,8 +43,8 @@ from core.competency_matrix.schemas import (
     Sheets,
 )
 from core.enums import PublishStatusEnum
+from core.generators import HexUuidIdGenerator
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 from entrypoints.litestar.api.validation import (
     MatrixLongText,
@@ -74,7 +73,7 @@ class StructureNameTranslationsSchema(CamelCaseSchema):
 
 
 class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     priority: Annotated[int, Field(title="Priority")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
@@ -98,7 +97,7 @@ class MatrixStructureSubsectionResponseSchema(CamelCaseSchema):
 
 
 class MatrixStructureSectionResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     priority: Annotated[int, Field(title="Priority")]
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
@@ -132,7 +131,7 @@ class MatrixStructureSectionResponseSchema(CamelCaseSchema):
 
 
 class MatrixStructureSheetResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     key: Annotated[str, Field(title="Key")]
     name: Annotated[str, Field(title="Name")]
     priority: Annotated[int, Field(title="Priority")]
@@ -201,7 +200,7 @@ class MatrixSheetCreateRequestSchema(CamelCaseSchema):
 class MatrixSectionCreateRequestSchema(CamelCaseSchema):
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
 
-    def to_schema(self, *, sheet_id: IntId) -> CompetencyMatrixSectionCreateParams:
+    def to_schema(self, *, sheet_id: str) -> CompetencyMatrixSectionCreateParams:
         return CompetencyMatrixSectionCreateParams(
             sheet_id=sheet_id,
             name_ru=self.translations.ru.name,
@@ -212,7 +211,7 @@ class MatrixSectionCreateRequestSchema(CamelCaseSchema):
 class MatrixSubsectionCreateRequestSchema(CamelCaseSchema):
     translations: Annotated[StructureNameTranslationsSchema, Field(title="Translations")]
 
-    def to_schema(self, *, section_id: IntId) -> CompetencyMatrixSubsectionCreateParams:
+    def to_schema(self, *, section_id: str) -> CompetencyMatrixSubsectionCreateParams:
         return CompetencyMatrixSubsectionCreateParams(
             section_id=section_id,
             name_ru=self.translations.ru.name,
@@ -221,27 +220,27 @@ class MatrixSubsectionCreateRequestSchema(CamelCaseSchema):
 
 
 class MatrixStructurePriorityUpdateRequestSchema(CamelCaseSchema):
-    ordered_ids: Annotated[list[int], Field(title="Ordered identifiers")]
+    ordered_ids: Annotated[list[str], Field(title="Ordered identifiers")]
 
     def to_sheet_schema(self) -> CompetencyMatrixSheetPriorityUpdateParams:
         return CompetencyMatrixSheetPriorityUpdateParams(
-            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
+            ordered_ids=tuple(self.ordered_ids),
         )
 
-    def to_section_schema(self, *, sheet_id: IntId) -> CompetencyMatrixSectionPriorityUpdateParams:
+    def to_section_schema(self, *, sheet_id: str) -> CompetencyMatrixSectionPriorityUpdateParams:
         return CompetencyMatrixSectionPriorityUpdateParams(
             sheet_id=sheet_id,
-            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
+            ordered_ids=tuple(self.ordered_ids),
         )
 
     def to_subsection_schema(
         self,
         *,
-        section_id: IntId,
+        section_id: str,
     ) -> CompetencyMatrixSubsectionPriorityUpdateParams:
         return CompetencyMatrixSubsectionPriorityUpdateParams(
             section_id=section_id,
-            ordered_ids=tuple(IntId(ordered_id) for ordered_id in self.ordered_ids),
+            ordered_ids=tuple(self.ordered_ids),
         )
 
 
@@ -291,7 +290,7 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
 
 
 class QueuedQuestionResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     question: Annotated[str, Field(title="Question")]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
     sheet: Annotated[str | None, Field(title="Sheet")]
@@ -328,7 +327,7 @@ class QueuedQuestionsResponseSchema(CamelCaseSchema):
 
 
 class ResourceResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     url: Annotated[str, Field(title="URL")]
     translations: Annotated[ResourceTranslationsSchema, Field(title="Translations")]
@@ -350,7 +349,7 @@ class ResourceRequestSchema(CamelCaseSchema):
     url: Annotated[RequiredHttpUrlString, Field(title="URL")]
     translations: Annotated[ResourceTranslationsSchema, Field(title="Translations")]
 
-    def to_schema(self, resource_id: IntId) -> ExternalResource:
+    def to_schema(self, resource_id: str) -> ExternalResource:
         return ExternalResource(
             id=resource_id,
             name_ru=self.translations.ru.name,
@@ -379,7 +378,7 @@ class AttachedResourceTranslationsSchema(CamelCaseSchema):
 
 
 class AttachedResourceResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     url: Annotated[str, Field(title="URL")]
     context: Annotated[str, Field(title="Context")]
@@ -411,12 +410,12 @@ class AttachedResourceResponseSchema(CamelCaseSchema):
 
 
 class ExistingResourceAttachmentRequestSchema(CamelCaseSchema):
-    resource_id: Annotated[int, Field(title="Identifier", ge=1)]
+    resource_id: Annotated[str, Field(title="Identifier")]
     translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Translations")]
 
     def to_schema(self) -> ExistingExternalResourceAttachment:
         return ExistingExternalResourceAttachment(
-            resource_id=IntId(self.resource_id),
+            resource_id=self.resource_id,
             context_ru=self.translations.ru.context,
             context_en=self.translations.en.context,
         )
@@ -429,7 +428,7 @@ class NewResourceAttachmentRequestSchema(CamelCaseSchema):
     ]
     translations: Annotated[AttachmentContextTranslationsSchema, Field(title="Translations")]
 
-    def to_schema(self, resource_id: IntId) -> NewExternalResourceAttachment:
+    def to_schema(self, resource_id: str) -> NewExternalResourceAttachment:
         return NewExternalResourceAttachment(
             resource=self.resource.to_schema(resource_id=resource_id),
             context_ru=self.translations.ru.context,
@@ -547,7 +546,7 @@ class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemR
 class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
     answer: Annotated[str, Field(title="Answer")]
     interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
-    subsection_id: Annotated[int, Field(title="Subsection identifier")]
+    subsection_id: Annotated[str, Field(title="Subsection identifier")]
     sheet_key: Annotated[str, Field(title="Sheet key")]
     sheet: Annotated[str, Field(title="Sheet")]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
@@ -594,7 +593,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
 
 class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
     slug: Annotated[SlugString, Field(title="Slug")]
-    subsection_id: Annotated[int, Field(title="Subsection identifier", ge=1)]
+    subsection_id: Annotated[str, Field(title="Subsection identifier")]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
     interview_frequency: Annotated[
         InterviewFrequencyEnum | None,
@@ -609,8 +608,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
     def to_create_schema(
         self,
-        item_id_generator: ItemIdGenerator,
-        resource_id_generator: ResourceIdGenerator,
+        item_id_generator: HexUuidIdGenerator,
+        resource_id_generator: HexUuidIdGenerator,
     ) -> CompetencyMatrixItemCreateParams:
         return CompetencyMatrixItemCreateParams(
             id=item_id_generator.get_next(),
@@ -621,7 +620,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             answer_en=self.translations.en.answer,
             interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
             interview_expected_answer_en=self.translations.en.interview_expected_answer,
-            subsection_id=IntId(self.subsection_id),
+            subsection_id=self.subsection_id,
             grade=self.grade,
             interview_frequency=self.interview_frequency,
             publish_status=self.publish_status,
@@ -630,9 +629,9 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
     def to_create_from_queue_schema(
         self,
-        queued_question_id: IntId,
-        item_id_generator: ItemIdGenerator,
-        resource_id_generator: ResourceIdGenerator,
+        queued_question_id: str,
+        item_id_generator: HexUuidIdGenerator,
+        resource_id_generator: HexUuidIdGenerator,
     ) -> QueuedCompetencyMatrixQuestionCreateItemParams:
         return QueuedCompetencyMatrixQuestionCreateItemParams(
             queued_question_id=queued_question_id,
@@ -644,8 +643,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
     def to_update_schema(
         self,
-        item_id: IntId,
-        resource_id_generator: ResourceIdGenerator,
+        item_id: str,
+        resource_id_generator: HexUuidIdGenerator,
     ) -> CompetencyMatrixItemUpdateParams:
         return CompetencyMatrixItemUpdateParams(
             id=item_id,
@@ -656,7 +655,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             answer_en=self.translations.en.answer,
             interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
             interview_expected_answer_en=self.translations.en.interview_expected_answer,
-            subsection_id=IntId(self.subsection_id),
+            subsection_id=self.subsection_id,
             grade=self.grade,
             interview_frequency=self.interview_frequency,
             publish_status=self.publish_status,
@@ -665,7 +664,7 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
 
     def _to_resource_attachments(
         self,
-        resource_id_generator: ResourceIdGenerator,
+        resource_id_generator: HexUuidIdGenerator,
     ) -> list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]:
         return [
             resource.to_schema()

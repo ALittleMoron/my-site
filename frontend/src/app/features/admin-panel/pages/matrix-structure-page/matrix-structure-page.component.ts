@@ -46,7 +46,7 @@ export class MatrixStructurePageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly structure = signal<AdminMatrixStructure>({ sheets: [] });
-  readonly selectedSheetId = signal<number | null>(null);
+  readonly selectedSheetId = signal<string | null>(null);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<ApiError | null>(null);
@@ -81,7 +81,7 @@ export class MatrixStructurePageComponent implements OnInit {
       });
   }
 
-  selectSheet(sheetId: number): void {
+  selectSheet(sheetId: string): void {
     this.selectedSheetId.set(sheetId);
   }
 
@@ -118,7 +118,7 @@ export class MatrixStructurePageComponent implements OnInit {
     );
   }
 
-  private reorderSections(sheetId: number, previousIndex: number, currentIndex: number): void {
+  private reorderSections(sheetId: string, previousIndex: number, currentIndex: number): void {
     const current = this.structure();
     const sheet = current.sheets.find((item) => item.id === sheetId);
     if (!sheet || this.shouldSkipReorder(previousIndex, currentIndex, sheet.sections.length))
@@ -139,7 +139,7 @@ export class MatrixStructurePageComponent implements OnInit {
     );
   }
 
-  private reorderSubsections(sectionId: number, previousIndex: number, currentIndex: number): void {
+  private reorderSubsections(sectionId: string, previousIndex: number, currentIndex: number): void {
     const current = this.structure();
     const section = findSection(current, sectionId);
     if (
@@ -192,7 +192,7 @@ export class MatrixStructurePageComponent implements OnInit {
     );
   }
 
-  private nextSelectedSheetId(structure: AdminMatrixStructure): number | null {
+  private nextSelectedSheetId(structure: AdminMatrixStructure): string | null {
     const selectedId = this.selectedSheetId();
     const existing = structure.sheets.find((sheet) => sheet.id === selectedId);
     return existing?.id ?? structure.sheets[0]?.id ?? null;
@@ -209,7 +209,7 @@ export class MatrixStructurePageComponent implements OnInit {
 
 function findSection(
   structure: AdminMatrixStructure,
-  sectionId: number,
+  sectionId: string,
 ): AdminMatrixStructureSection | null {
   for (const sheet of structure.sheets) {
     const section = sheet.sections.find((item) => item.id === sectionId);

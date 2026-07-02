@@ -14,7 +14,7 @@ describe('ArticleListComponent', () => {
     fixture = TestBed.createComponent(ArticleListComponent);
     fixture.componentRef.setInput('articles', [
       {
-        id: '00000000-0000-0000-0000-000000000001',
+        id: '00000000000000000000000000000001',
         title: 'Typed articles',
         slug: 'typed-articles',
         folder: 'Engineering',
@@ -26,7 +26,7 @@ describe('ArticleListComponent', () => {
         viewCount: 42,
         tags: [
           {
-            id: 1,
+            id: '00000000000000000000000000000002',
             name: 'Python',
             slug: 'python',
             deletedAt: null,
@@ -48,7 +48,7 @@ describe('ArticleListComponent', () => {
   it('does not render draft badges on the public article list', () => {
     fixture.componentRef.setInput('articles', [
       {
-        id: '00000000-0000-0000-0000-000000000002',
+        id: '00000000000000000000000000000003',
         title: 'Draft article',
         slug: 'draft-article',
         folder: 'Engineering',

@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from typing import Self
-from uuid import UUID
 
 from sqlalchemy import (
     Computed,
@@ -17,18 +16,17 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
-from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin, UUIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleMetadata, Tag, Tags
 from core.enums import PublishStatusEnum
-from core.types import IntId
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
 
 
-class ArticleModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
+class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
     title_ru: Mapped[str] = mapped_column(
         String(length=255),
         doc="Russian title of the article",
@@ -244,7 +242,7 @@ class ArticleModel(PublishMixin, UUIDMixin, AuditMixin, BaseModel):
         )
 
 
-class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
+class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
     name_ru: Mapped[str] = mapped_column(
         String(length=255),
         doc="Russian human-readable tag name",
@@ -278,6 +276,34 @@ class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
             postgresql_ops={"name_en_lower": "gin_trgm_ops"},
         ),
         Index(
+            "articles_tag_active_name_ru_id_idx",
+            func.lower(name_ru).label("active_name_ru_lower"),
+            "id",
+            postgresql_include=(
+                "name_ru",
+                "name_en",
+                "slug",
+                "deleted_at",
+                "created_at",
+                "updated_at",
+            ),
+            postgresql_where=deleted_at.is_(None),
+        ),
+        Index(
+            "articles_tag_active_name_en_id_idx",
+            func.lower(name_en).label("active_name_en_lower"),
+            "id",
+            postgresql_include=(
+                "name_ru",
+                "name_en",
+                "slug",
+                "deleted_at",
+                "created_at",
+                "updated_at",
+            ),
+            postgresql_where=deleted_at.is_(None),
+        ),
+        Index(
             "articles_tag_slug_trgm_idx",
             func.lower(slug).label("slug_lower"),
             postgresql_using="gin",
@@ -305,7 +331,7 @@ class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
 
     def to_domain_schema(self) -> Tag:
         return Tag(
-            id=IntId(self.id),
+            id=self.id,
             name_ru=self.name_ru,
             name_en=self.name_en,
             slug=self.slug,
@@ -313,12 +339,12 @@ class TagModel(IntegerIDMixin, AuditMixin, BaseModel):
         )
 
 
-class ArticleToTagSecondaryModel(IntegerIDMixin, BaseModel):
-    article_id: Mapped[UUID] = mapped_column(
+class ArticleToTagSecondaryModel(HexUuidIDMixin, BaseModel):
+    article_id: Mapped[str] = mapped_column(
         ForeignKey(ArticleModel.id, ondelete="CASCADE"),
         doc="Article identifier",
     )
-    tag_id: Mapped[int] = mapped_column(
+    tag_id: Mapped[str] = mapped_column(
         ForeignKey(TagModel.id, ondelete="CASCADE"),
         doc="Tag identifier",
     )
@@ -340,8 +366,8 @@ class ArticleToTagSecondaryModel(IntegerIDMixin, BaseModel):
         )
 
 
-class ArticleDailyAnalyticsModel(IntegerIDMixin, BaseModel):
-    article_id: Mapped[UUID] = mapped_column(
+class ArticleDailyAnalyticsModel(HexUuidIDMixin, BaseModel):
+    article_id: Mapped[str] = mapped_column(
         ForeignKey(ArticleModel.id, ondelete="CASCADE"),
         doc="Article identifier",
     )
@@ -378,8 +404,8 @@ class ArticleDailyAnalyticsModel(IntegerIDMixin, BaseModel):
     )
 
 
-class ArticleReactionModel(IntegerIDMixin, AuditMixin, BaseModel):
-    article_id: Mapped[UUID] = mapped_column(
+class ArticleReactionModel(HexUuidIDMixin, AuditMixin, BaseModel):
+    article_id: Mapped[str] = mapped_column(
         ForeignKey(ArticleModel.id, ondelete="CASCADE"),
         doc="Article identifier",
     )

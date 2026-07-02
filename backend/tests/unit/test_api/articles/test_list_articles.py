@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 from typing import cast
 
@@ -117,7 +116,7 @@ class TestListArticlesAPI(ApiTestCase):
     def test_list_articles(self) -> None:
         tag = self.factory.core.tag(tag_id=1, name="Python", slug="python")
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             title="Typed articles",
             content="Typed articles content for excerpt.",
             slug="typed-articles",
@@ -163,7 +162,7 @@ class TestListArticlesAPI(ApiTestCase):
                     },
                     "tags": [
                         {
-                            "id": 1,
+                            "id": self.factory.core.hex_id(1),
                             "name": "Python",
                             "slug": "python",
                             "deletedAt": None,

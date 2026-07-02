@@ -1,5 +1,4 @@
 import re
-import uuid
 from datetime import date
 from typing import Annotated, Self
 
@@ -29,7 +28,6 @@ from core.articles.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 from entrypoints.litestar.api.validation import (
     ArticleContentText,
@@ -41,7 +39,7 @@ from infra.config.constants import constants
 
 
 class TagResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     slug: Annotated[str, Field(title="Slug")]
     deleted_at: Annotated[str | None, Field(title="Deletion date")]
@@ -96,7 +94,7 @@ class TagRequestSchema(CamelCaseSchema):
     slug: Annotated[SlugString, Field(title="Slug")]
     translations: Annotated[TagTranslationsSchema, Field(title="Translations")]
 
-    def to_create_schema(self, *, tag_id: IntId) -> TagCreateParams:
+    def to_create_schema(self, *, tag_id: str) -> TagCreateParams:
         return TagCreateParams(
             id=tag_id,
             name_ru=self.translations.ru.name,
@@ -351,14 +349,14 @@ class ArticleTranslationsResponseSchema(CamelCaseSchema):
 class ArticleRequestSchema(CamelCaseSchema):
     slug: Annotated[SlugString, Field(title="Slug")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
-    tag_ids: Annotated[list[int], Field(title="Tag identifiers")]
+    tag_ids: Annotated[list[str], Field(title="Tag identifiers")]
     translations: Annotated[ArticleTranslationsSchema, Field(title="Translations")]
     metadata: Annotated[ArticleMetadataSchema, Field(title="SEO metadata")]
 
     def to_create_schema(
         self,
         *,
-        article_id: uuid.UUID,
+        article_id: str,
         author_username: str,
     ) -> ArticleCreateParams:
         return ArticleCreateParams(
@@ -373,7 +371,7 @@ class ArticleRequestSchema(CamelCaseSchema):
             author_username=author_username,
             publish_status=self.publish_status,
             metadata=self.metadata.to_domain_schema(),
-            tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
+            tag_ids=list(self.tag_ids),
         )
 
     def to_update_schema(self) -> ArticleUpdateParams:
@@ -387,7 +385,7 @@ class ArticleRequestSchema(CamelCaseSchema):
             folder_en=self.translations.en.folder,
             publish_status=self.publish_status,
             metadata=self.metadata.to_domain_schema(),
-            tag_ids=[IntId(tag_id) for tag_id in self.tag_ids],
+            tag_ids=list(self.tag_ids),
         )
 
 

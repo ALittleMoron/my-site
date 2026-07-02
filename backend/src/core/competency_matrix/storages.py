@@ -28,7 +28,6 @@ from core.competency_matrix.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 
 
 class CompetencyMatrixStorage(ABC):
@@ -44,7 +43,7 @@ class CompetencyMatrixStorage(ABC):
     async def get_item_structure_by_subsection_id(
         self,
         *,
-        subsection_id: IntId,
+        subsection_id: str,
     ) -> CompetencyMatrixItemStructure:
         raise NotImplementedError
 
@@ -125,7 +124,7 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_competency_matrix_item(self, item_id: IntId) -> CompetencyMatrixItem:
+    async def get_competency_matrix_item(self, item_id: str) -> CompetencyMatrixItem:
         raise NotImplementedError
 
     @abstractmethod
@@ -149,7 +148,7 @@ class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def update_competency_matrix_item_publish_status(
         self,
-        item_id: IntId,
+        item_id: str,
         publish_status: PublishStatusEnum,
     ) -> None:
         raise NotImplementedError
@@ -157,12 +156,12 @@ class CompetencyMatrixStorage(ABC):
     @abstractmethod
     async def get_resources_by_ids(
         self,
-        resource_ids: list[IntId],
+        resource_ids: list[str],
     ) -> ExternalResources:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_competency_matrix_item(self, item_id: IntId) -> None:
+    async def delete_competency_matrix_item(self, item_id: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -179,7 +178,7 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_queued_question(self, question_id: IntId) -> QueuedCompetencyMatrixQuestion:
+    async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
         raise NotImplementedError
 
     @abstractmethod
@@ -199,7 +198,7 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_queued_question(self, question_id: IntId) -> None:
+    async def delete_queued_question(self, question_id: str) -> None:
         raise NotImplementedError
 
 

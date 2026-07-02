@@ -12,7 +12,6 @@ from core.resumes.schemas import (
     ResumeUpdateParams,
 )
 from core.resumes.storages import ResumesStorage
-from core.types import IntId
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -31,7 +30,7 @@ class ResumesUseCase:
             page_size=filters.page_size,
         )
 
-    async def get_resume(self, *, resume_id: IntId, author_username: str) -> Resume:
+    async def get_resume(self, *, resume_id: str, author_username: str) -> Resume:
         return await self.storage.get_resume(
             resume_id=resume_id,
             author_username=author_username,
@@ -43,7 +42,7 @@ class ResumesUseCase:
     async def update_resume(
         self,
         *,
-        resume_id: IntId,
+        resume_id: str,
         params: ResumeUpdateParams,
         author_username: str,
     ) -> Resume:
@@ -56,13 +55,13 @@ class ResumesUseCase:
             resume=params.to_resume(existing_resume=existing_resume, now=now),
         )
 
-    async def delete_resume(self, *, resume_id: IntId, author_username: str) -> None:
+    async def delete_resume(self, *, resume_id: str, author_username: str) -> None:
         await self.storage.delete_resume(resume_id=resume_id, author_username=author_username)
 
     async def export_resume(
         self,
         *,
-        resume_id: IntId,
+        resume_id: str,
         params: ResumeExportParams,
         author_username: str,
     ) -> ResumeExport:

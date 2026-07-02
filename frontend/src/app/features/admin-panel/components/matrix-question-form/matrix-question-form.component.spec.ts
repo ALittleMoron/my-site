@@ -12,8 +12,11 @@ import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-w
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
 import { MatrixQuestionFormComponent } from './matrix-question-form.component';
 
+const RESOURCE_ID = '00000000000000000000000000000003';
+const SUBSECTION_ID = '00000000000000000000000000000013';
+
 const resource: AdminMatrixResource = {
-  id: 3,
+  id: RESOURCE_ID,
   name: 'Python docs',
   url: 'https://docs.python.org',
   translations: {
@@ -147,7 +150,7 @@ describe('MatrixQuestionFormComponent', () => {
 
   it('emits an incomplete draft payload with only minimum required fields', () => {
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
     setInput('#matrix-form-question-en', 'Incomplete question?');
 
@@ -155,7 +158,7 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(emittedPayloads[0]).toEqual(
       expect.objectContaining({
-        subsectionId: 3,
+        subsectionId: SUBSECTION_ID,
         grade: null,
         interviewFrequency: null,
         publishStatus: 'Draft',
@@ -169,7 +172,7 @@ describe('MatrixQuestionFormComponent', () => {
 
   it('blocks invalid slug and long answer text before emitting', () => {
     setInput('#matrix-form-slug', 'Invalid Slug');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
 
@@ -187,7 +190,7 @@ describe('MatrixQuestionFormComponent', () => {
 
   it('blocks an incomplete published payload before emitting', () => {
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
     setInput('#matrix-form-question-en', 'Incomplete question?');
     setSelect('#matrix-form-status', 'Published');
@@ -259,7 +262,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
     setTextarea('#matrixResourceContextEn0', 'x'.repeat(20_001));
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
 
@@ -341,21 +344,21 @@ describe('MatrixQuestionFormComponent', () => {
     expect(service.searchResources).toHaveBeenCalledWith('python', 10, 'ru');
 
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-resource-attach-3"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-resource-attach-${RESOURCE_ID}"]`)
       ?.click();
     fixture.detectChanges();
     setTextarea('#matrixResourceContextRu0', 'Читать');
     setTextarea('#matrixResourceContextEn0', 'Read');
 
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
     submitForm();
 
     expect(emittedPayloads[0].resources).toEqual([
       {
-        resourceId: 3,
+        resourceId: RESOURCE_ID,
         translations: { ru: { context: 'Читать' }, en: { context: 'Read' } },
       },
     ]);
@@ -396,7 +399,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
   }
 
-  function selectQuestionSubsection(subsectionId: number): void {
+  function selectQuestionSubsection(subsectionId: string): void {
     const picker = fixture.debugElement.query(By.directive(MatrixStructurePickerStubComponent))
       .componentInstance as MatrixStructurePickerStubComponent;
     picker.selectedSubsectionIdChange.emit(subsectionId);
@@ -405,7 +408,7 @@ describe('MatrixQuestionFormComponent', () => {
 
   function fillValidQuestionMinimum(): void {
     setInput('#matrix-form-slug', 'draft-question');
-    selectQuestionSubsection(3);
+    selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
   }
@@ -441,10 +444,10 @@ describe('MatrixQuestionFormComponent', () => {
 })
 class MatrixStructurePickerStubComponent {
   @Input({ required: true }) language!: 'ru' | 'en';
-  @Input({ required: true }) selectedSubsectionId!: number | null;
+  @Input({ required: true }) selectedSubsectionId!: string | null;
   @Input() disabled = false;
   @Input() invalid = false;
-  @Output() readonly selectedSubsectionIdChange = new EventEmitter<number | null>();
+  @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
 }
 
 function questionDetail(): AdminMatrixQuestionDetailDto {
@@ -454,7 +457,7 @@ function questionDetail(): AdminMatrixQuestionDetailDto {
     question: 'Existing question?',
     answer: '',
     interviewExpectedAnswer: '',
-    subsectionId: 3,
+    subsectionId: SUBSECTION_ID,
     sheetKey: 'python',
     sheet: 'Python',
     grade: null,

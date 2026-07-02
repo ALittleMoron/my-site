@@ -1,5 +1,5 @@
+import hashlib
 import re
-import uuid
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -56,10 +56,20 @@ from core.resumes.schemas import (
     ResumeSummary,
 )
 from core.schemas import Secret
-from core.types import IntId, SearchName
+from core.types import SearchName
 
 
 class CoreFactoryHelper:
+    @classmethod
+    def hex_id(cls, value: int | str = 1) -> str:
+        if isinstance(value, str):
+            return value
+        return f"{value % (1 << 128):032x}"
+
+    @classmethod
+    def hex_id_from_text(cls, value: str) -> str:
+        return hashlib.sha256(value.encode()).hexdigest()[:32]
+
     @staticmethod
     def _fallback(value: str | None, fallback: str) -> str:
         return value if value is not None else fallback
@@ -74,7 +84,7 @@ class CoreFactoryHelper:
         url: str = "https://example.com",
     ) -> ExternalResource:
         return ExternalResource(
-            id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
+            id=cls.hex_id(resource_id) if isinstance(resource_id, int) else resource_id,
             name_ru=name_ru or name,
             name_en=name_en or name,
             url=url,
@@ -100,7 +110,7 @@ class CoreFactoryHelper:
         context_en: str | None = None,
     ) -> AttachedExternalResource:
         return AttachedExternalResource(
-            id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
+            id=cls.hex_id(resource_id) if isinstance(resource_id, int) else resource_id,
             name_ru=name_ru or name,
             name_en=name_en or name,
             url=url,
@@ -124,7 +134,7 @@ class CoreFactoryHelper:
         context_en: str | None = None,
     ) -> ExistingExternalResourceAttachment:
         return ExistingExternalResourceAttachment(
-            resource_id=cls.int_id(resource_id) if isinstance(resource_id, int) else resource_id,
+            resource_id=cls.hex_id(resource_id) if isinstance(resource_id, int) else resource_id,
             context_ru=context_ru or context,
             context_en=context_en or context,
         )
@@ -156,10 +166,10 @@ class CoreFactoryHelper:
     @classmethod
     def competency_matrix_item(
         cls,
-        item_id: int,
-        sheet_id: int = 1,
-        section_id: int = 1,
-        subsection_id: int = 1,
+        item_id: int | str,
+        sheet_id: int | str = 1,
+        section_id: int | str = 1,
+        subsection_id: int | str = 1,
         slug: str | None = None,
         published_at: str | None = None,
         question: str = "QUESTION",
@@ -188,7 +198,7 @@ class CoreFactoryHelper:
     ) -> CompetencyMatrixItem:
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItem(
-            id=cls.int_id(item_id),
+            id=cls.hex_id(item_id),
             slug=cls._fallback(slug, slugify(question_en_value)),
             question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
@@ -228,26 +238,26 @@ class CoreFactoryHelper:
     @classmethod
     def competency_matrix_item_structure(
         cls,
-        subsection_id: int = 1,
-        sheet_id: int = 1,
+        subsection_id: int | str = 1,
+        sheet_id: int | str = 1,
         sheet_key: str = "sheet",
         sheet_ru: str = "Sheet",
         sheet_en: str = "Sheet",
-        section_id: int = 1,
+        section_id: int | str = 1,
         section_ru: str = "Section",
         section_en: str = "Section",
         subsection_ru: str = "Subsection",
         subsection_en: str = "Subsection",
     ) -> CompetencyMatrixItemStructure:
         return CompetencyMatrixItemStructure(
-            sheet_id=cls.int_id(sheet_id),
+            sheet_id=cls.hex_id(sheet_id),
             sheet_key=sheet_key,
             sheet_ru=sheet_ru,
             sheet_en=sheet_en,
-            section_id=cls.int_id(section_id),
+            section_id=cls.hex_id(section_id),
             section_ru=section_ru,
             section_en=section_en,
-            subsection_id=cls.int_id(subsection_id),
+            subsection_id=cls.hex_id(subsection_id),
             subsection_ru=subsection_ru,
             subsection_en=subsection_en,
         )
@@ -255,10 +265,10 @@ class CoreFactoryHelper:
     @classmethod
     def competency_matrix_item_create_params(
         cls,
-        item_id: int,
-        sheet_id: int = 1,
-        section_id: int = 1,
-        subsection_id: int = 1,
+        item_id: int | str,
+        sheet_id: int | str = 1,
+        section_id: int | str = 1,
+        subsection_id: int | str = 1,
         slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
@@ -302,7 +312,7 @@ class CoreFactoryHelper:
         )
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemCreateParams(
-            id=cls.int_id(item_id),
+            id=cls.hex_id(item_id),
             slug=cls._fallback(slug, slugify(question_en_value)),
             question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
@@ -317,7 +327,7 @@ class CoreFactoryHelper:
                 interview_expected_answer_en,
                 interview_expected_answer,
             ),
-            subsection_id=cls.int_id(subsection_id),
+            subsection_id=cls.hex_id(subsection_id),
             grade=grade,
             interview_frequency=interview_frequency,
             resources=resources or [],
@@ -326,10 +336,10 @@ class CoreFactoryHelper:
     @classmethod
     def competency_matrix_item_update_params(
         cls,
-        item_id: int,
-        sheet_id: int = 1,
-        section_id: int = 1,
-        subsection_id: int = 1,
+        item_id: int | str,
+        sheet_id: int | str = 1,
+        section_id: int | str = 1,
+        subsection_id: int | str = 1,
         slug: str | None = None,
         question: str = "QUESTION",
         question_ru: str | None = None,
@@ -373,7 +383,7 @@ class CoreFactoryHelper:
         )
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItemUpdateParams(
-            id=cls.int_id(item_id),
+            id=cls.hex_id(item_id),
             slug=cls._fallback(slug, slugify(question_en_value)),
             question_ru=cls._fallback(question_ru, question),
             question_en=question_en_value,
@@ -388,7 +398,7 @@ class CoreFactoryHelper:
                 interview_expected_answer_en,
                 interview_expected_answer,
             ),
-            subsection_id=cls.int_id(subsection_id),
+            subsection_id=cls.hex_id(subsection_id),
             grade=grade,
             interview_frequency=interview_frequency,
             resources=resources or [],
@@ -418,7 +428,7 @@ class CoreFactoryHelper:
     @classmethod
     def queued_competency_matrix_question(
         cls,
-        question_id: int,
+        question_id: int | str,
         question: str = "What is PEP 8?",
         grade: GradeEnum | None = None,
         sheet: str | None = None,
@@ -428,7 +438,7 @@ class CoreFactoryHelper:
         created_at: datetime | None = None,
     ) -> QueuedCompetencyMatrixQuestion:
         return QueuedCompetencyMatrixQuestion(
-            id=cls.int_id(question_id),
+            id=cls.hex_id(question_id),
             question=question,
             grade=grade,
             sheet=sheet,
@@ -496,14 +506,14 @@ class CoreFactoryHelper:
     @classmethod
     def contact_me(
         cls,
-        contact_me_id: uuid.UUID | None = None,
+        contact_me_id: str | None = None,
         name: str | None = None,
         email: str | None = None,
         telegram: str | None = None,
         message: str = "Message",
     ) -> ContactMe:
         return ContactMe(
-            id=contact_me_id or uuid.uuid4(),
+            id=contact_me_id or cls.hex_id(1),
             name=name,
             email=email,
             telegram=telegram,
@@ -513,7 +523,7 @@ class CoreFactoryHelper:
     @classmethod
     def article(
         cls,
-        article_id: uuid.UUID | None = None,
+        article_id: str | None = None,
         title: str = "Test Article",
         content: str = "This is a test article content.",
         slug: str = "test-articles-article",
@@ -541,7 +551,7 @@ class CoreFactoryHelper:
     ) -> Article:
         now = datetime.now(tz=UTC)
         return Article(
-            id=article_id or uuid.uuid4(),
+            id=article_id or cls.hex_id_from_text(f"article:{slug}"),
             slug=slug,
             title_ru=title_ru or title,
             title_en=title_en or title,
@@ -591,7 +601,7 @@ class CoreFactoryHelper:
     @classmethod
     def tag(
         cls,
-        tag_id: IntId | int = 1,
+        tag_id: int | str = 1,
         name: str = "Python",
         name_ru: str | None = None,
         name_en: str | None = None,
@@ -599,7 +609,7 @@ class CoreFactoryHelper:
         deleted_at: str | None = None,
     ) -> Tag:
         return Tag(
-            id=cls.int_id(tag_id) if isinstance(tag_id, int) else tag_id,
+            id=cls.hex_id(tag_id),
             name_ru=name_ru or name,
             name_en=name_en or name,
             slug=slug,
@@ -765,7 +775,7 @@ class CoreFactoryHelper:
     @classmethod
     def resume(
         cls,
-        resume_id: IntId | int = 1,
+        resume_id: int | str = 1,
         title: str = "Backend resume",
         language: LanguageEnum = LanguageEnum.RU,
         content: ResumeContent | None = None,
@@ -775,7 +785,7 @@ class CoreFactoryHelper:
     ) -> Resume:
         now = datetime.now(tz=UTC)
         return Resume(
-            id=cls.int_id(resume_id) if isinstance(resume_id, int) else resume_id,
+            id=cls.hex_id(resume_id),
             title=title,
             language=language,
             content=content or cls.resume_content(),
@@ -850,10 +860,6 @@ class CoreFactoryHelper:
     @classmethod
     def token(cls, value: bytes) -> Token:
         return Token(value)
-
-    @classmethod
-    def int_id(cls, value: int) -> IntId:
-        return IntId(value)
 
     @classmethod
     def search_name(cls, value: Any) -> SearchName:

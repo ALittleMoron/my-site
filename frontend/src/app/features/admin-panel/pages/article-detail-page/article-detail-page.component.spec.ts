@@ -133,7 +133,7 @@ class ArticleFormStubComponent {
 
 function articleDetail(slug: string, publishStatus: 'Draft' | 'Published'): AdminArticleDetail {
   return {
-    id: '00000000-0000-0000-0000-000000000001',
+    id: '00000000000000000000000000000001',
     title: 'Typed articles',
     slug,
     folder: 'Engineering',

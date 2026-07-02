@@ -70,7 +70,7 @@ class FakeHttpClient:
 
 def article_summary_payload(*, slug: str) -> dict[str, object]:
     return {
-        "id": "10000000-0000-4000-8000-000000000001",
+        "id": "10000000000040008000000000000001",
         "title": "Seeded article",
         "slug": slug,
         "folder": "Performance",

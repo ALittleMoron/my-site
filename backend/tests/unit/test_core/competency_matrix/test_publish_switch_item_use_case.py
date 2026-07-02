@@ -24,13 +24,13 @@ class TestCompetencyMatrixUseCase(TestCase):
     async def test_set_draft(self) -> None:
         await self.use_case.switch_item_publish_status(
             params=CompetencyMatrixItemPublishStatusSwitchParams(
-                item_id=self.factory.core.int_id(1),
+                item_id=self.factory.core.hex_id(1),
                 publish_status=PublishStatusEnum.DRAFT,
             ),
         )
         self.storage.get_competency_matrix_item.assert_not_called()
         self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
-            item_id=self.factory.core.int_id(1),
+            item_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.DRAFT,
         )
 
@@ -44,15 +44,15 @@ class TestCompetencyMatrixUseCase(TestCase):
 
         await self.use_case.switch_item_publish_status(
             params=CompetencyMatrixItemPublishStatusSwitchParams(
-                item_id=self.factory.core.int_id(1),
+                item_id=self.factory.core.hex_id(1),
                 publish_status=PublishStatusEnum.PUBLISHED,
             ),
         )
         self.storage.get_competency_matrix_item.assert_called_once_with(
-            item_id=self.factory.core.int_id(1),
+            item_id=self.factory.core.hex_id(1),
         )
         self.storage.update_competency_matrix_item_publish_status.assert_called_once_with(
-            item_id=self.factory.core.int_id(1),
+            item_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
 
@@ -68,7 +68,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
             await self.use_case.switch_item_publish_status(
                 params=CompetencyMatrixItemPublishStatusSwitchParams(
-                    item_id=self.factory.core.int_id(1),
+                    item_id=self.factory.core.hex_id(1),
                     publish_status=PublishStatusEnum.PUBLISHED,
                 ),
             )

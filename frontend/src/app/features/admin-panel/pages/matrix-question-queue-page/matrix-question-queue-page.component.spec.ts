@@ -9,8 +9,14 @@ import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-w
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
 import { MatrixQuestionQueuePageComponent } from './matrix-question-queue-page.component';
 
+const QUESTION_ID = '00000000000000000000000000000007';
+const IMPORTED_QUESTION_ID = '00000000000000000000000000000008';
+const SHEET_ID = '00000000000000000000000000000001';
+const SECTION_ID = '00000000000000000000000000000002';
+const SUBSECTION_ID = '00000000000000000000000000000003';
+
 const queuedQuestion: QueuedMatrixQuestion = {
-  id: 7,
+  id: QUESTION_ID,
   question: 'What is PEP 8?',
   grade: 'Junior',
   sheet: 'Python',
@@ -22,27 +28,27 @@ const queuedQuestion: QueuedMatrixQuestion = {
 
 const importedQuestion: QueuedMatrixQuestion = {
   ...queuedQuestion,
-  id: 8,
+  id: IMPORTED_QUESTION_ID,
   question: 'What is Black?',
 };
 
 const matrixStructure: AdminMatrixStructure = {
   sheets: [
     {
-      id: 1,
+      id: SHEET_ID,
       key: 'python',
       name: 'Python',
       priority: 1,
       translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
       sections: [
         {
-          id: 2,
+          id: SECTION_ID,
           name: 'Core',
           priority: 1,
           translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
           subsections: [
             {
-              id: 3,
+              id: SUBSECTION_ID,
               name: 'Style',
               priority: 1,
               translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
@@ -83,7 +89,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
       importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
-      createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: '1', slug: 'pep-8' })),
+      createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: QUESTION_ID, slug: 'pep-8' })),
     };
     workspaceService = {
       getStructure: jest.fn().mockReturnValue(of(matrixStructure)),
@@ -386,7 +392,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.detectChanges();
 
     const selectedButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
-      '[data-testid="matrix-queue-question-7"]',
+      `[data-testid="matrix-queue-question-${QUESTION_ID}"]`,
     );
 
     expect(selectedButton).toBeTruthy();
@@ -398,7 +404,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   it('rejects queued question and reloads queue', () => {
     component.rejectQuestion(queuedQuestion);
 
-    expect(queueService.rejectQueuedQuestion).toHaveBeenCalledWith(7);
+    expect(queueService.rejectQueuedQuestion).toHaveBeenCalledWith(QUESTION_ID);
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос отклонён.');
     expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
   });
@@ -407,7 +413,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     component.selectQuestion(queuedQuestion);
     component.form.patchValue({
       slug: 'pep-8',
-      subsectionId: 3,
+      subsectionId: SUBSECTION_ID,
       answerRu: 'Ответ',
       answerEn: 'Answer',
       expectedAnswerRu: 'Ожидаемый ответ',
@@ -417,10 +423,10 @@ describe('MatrixQuestionQueuePageComponent', () => {
     component.createQuestion();
 
     expect(queueService.createQuestionFromQueue).toHaveBeenCalledWith(
-      7,
+      QUESTION_ID,
       expect.objectContaining({
         slug: 'pep-8',
-        subsectionId: 3,
+        subsectionId: SUBSECTION_ID,
         grade: 'Junior',
         publishStatus: 'Draft',
         resources: [],
@@ -433,7 +439,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     component.selectQuestion(queuedQuestion);
     component.form.patchValue({
       slug: 'Invalid Slug',
-      subsectionId: 3,
+      subsectionId: SUBSECTION_ID,
       answerRu: 'Ответ',
       answerEn: 'Answer',
       expectedAnswerRu: 'Ожидаемый ответ',
@@ -556,7 +562,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.detectChanges();
     component.form.patchValue({
       slug: 'pep-8',
-      subsectionId: 3,
+      subsectionId: SUBSECTION_ID,
       grade: 'Junior',
       questionRu: 'Что такое PEP 8?',
       questionEn: 'What is PEP 8?',

@@ -2,13 +2,13 @@ from typing import Self
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy_dev_utils.mixins.ids import UUIDMixin
 
 from core.contacts.schemas import ContactMe
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
-class ContactMeModel(UUIDMixin, BaseModel):
+class ContactMeModel(HexUuidIDMixin, BaseModel):
     name: Mapped[str | None] = mapped_column(String(length=255))
     email: Mapped[str | None] = mapped_column(String(length=255))
     telegram: Mapped[str | None] = mapped_column(String(length=256))

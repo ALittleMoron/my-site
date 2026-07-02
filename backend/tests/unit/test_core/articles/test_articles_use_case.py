@@ -1,4 +1,3 @@
-import uuid
 from datetime import UTC, datetime
 from unittest.mock import Mock
 
@@ -20,7 +19,6 @@ from core.articles.storages import ArticlesStorage
 from core.articles.use_cases import ArticlesUseCase
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from tests.test_cases import TestCase
 
 
@@ -157,9 +155,9 @@ class TestArticlesUseCase(TestCase):
         )
 
     async def test_create_article_requires_all_tags_to_exist_and_be_active(self) -> None:
-        tag_ids = [IntId(1), IntId(2)]
+        tag_ids = [self.factory.core.hex_id(1), self.factory.core.hex_id(2)]
         params = ArticleCreateParams(
-            id=uuid.uuid4(),
+            id=self.factory.core.hex_id(10),
             slug="article",
             title_ru="Статья",
             title_en="Article",
@@ -181,15 +179,15 @@ class TestArticlesUseCase(TestCase):
             tag_ids=tag_ids,
         )
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(
-            values=[self.factory.core.tag(tag_id=IntId(1))],
+            values=[self.factory.core.tag(tag_id=1)],
         )
 
         with pytest.raises(TagNotFoundError):
             await self.use_case.create_article(params=params)
 
     async def test_create_article_persists_article_with_active_tags(self) -> None:
-        tag_ids = [IntId(1)]
-        article_id = uuid.uuid4()
+        tag_ids = [self.factory.core.hex_id(1)]
+        article_id = self.factory.core.hex_id(10)
         params = ArticleCreateParams(
             id=article_id,
             slug="article",
@@ -212,7 +210,7 @@ class TestArticlesUseCase(TestCase):
             ),
             tag_ids=tag_ids,
         )
-        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        tag = self.factory.core.tag(tag_id=1, slug="python")
         expected = self.factory.core.article(
             article_id=article_id,
             slug="article",
@@ -256,9 +254,9 @@ class TestArticlesUseCase(TestCase):
         assert created_article.tags.values == [tag]
 
     def test_article_create_params_builds_canonical_article(self) -> None:
-        article_id = uuid.uuid4()
+        article_id = self.factory.core.hex_id(10)
         now = datetime(2026, 5, 31, 12, 0, tzinfo=UTC)
-        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        tag = self.factory.core.tag(tag_id=1, slug="python")
         params = ArticleCreateParams(
             id=article_id,
             slug="article",
@@ -279,7 +277,7 @@ class TestArticlesUseCase(TestCase):
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,
             ),
-            tag_ids=[IntId(1)],
+            tag_ids=[self.factory.core.hex_id(1)],
         )
 
         article = params.to_article(now=now, tags=self.factory.core.tags(values=[tag]))
@@ -296,7 +294,7 @@ class TestArticlesUseCase(TestCase):
         assert article.tags.values == [tag]
 
     async def test_update_article_keeps_existing_author(self) -> None:
-        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        tag = self.factory.core.tag(tag_id=1, slug="python")
         existing = self.factory.core.article(
             slug="old-article",
             author_username="original-author",
@@ -320,7 +318,7 @@ class TestArticlesUseCase(TestCase):
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,
             ),
-            tag_ids=[IntId(1)],
+            tag_ids=[self.factory.core.hex_id(1)],
         )
         self.storage.get_article_by_slug.return_value = existing
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
@@ -358,13 +356,13 @@ class TestArticlesUseCase(TestCase):
 
     async def test_create_tag_delegates_to_storage(self) -> None:
         params = TagCreateParams(
-            id=IntId(1),
+            id=self.factory.core.hex_id(1),
             name_ru="Питон",
             name_en="Python",
             slug="python",
         )
         expected = self.factory.core.tag(
-            tag_id=IntId(1),
+            tag_id=1,
             name_ru="Питон",
             name_en="Python",
             slug="python",
@@ -383,7 +381,7 @@ class TestArticlesUseCase(TestCase):
             slug="python-updated",
         )
         expected = self.factory.core.tag(
-            tag_id=IntId(1),
+            tag_id=1,
             name_ru="Питон обновлённый",
             name_en="Python Updated",
             slug="python-updated",
@@ -391,7 +389,7 @@ class TestArticlesUseCase(TestCase):
         self.storage.update_tag.return_value = expected
 
         result = await self.use_case.update_tag(
-            tag_id=IntId(1),
+            tag_id=self.factory.core.hex_id(1),
             params=params,
         )
 

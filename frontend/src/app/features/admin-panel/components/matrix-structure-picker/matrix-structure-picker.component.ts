@@ -57,18 +57,18 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
 
   @Input({ required: true }) language!: LanguageCode;
-  @Input({ required: true }) selectedSubsectionId!: number | null;
+  @Input({ required: true }) selectedSubsectionId!: string | null;
   @Input() disabled = false;
   @Input() invalid = false;
 
-  @Output() readonly selectedSubsectionIdChange = new EventEmitter<number | null>();
+  @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
 
   readonly structure = signal<AdminMatrixStructure>({ sheets: [] });
   readonly loading = signal(false);
   readonly creating = signal(false);
   readonly errorKey = signal<string | null>(null);
-  readonly selectedSheetId = signal<number | null>(null);
-  readonly selectedSectionId = signal<number | null>(null);
+  readonly selectedSheetId = signal<string | null>(null);
+  readonly selectedSectionId = signal<string | null>(null);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly selectedSections = computed(() => {
@@ -114,18 +114,18 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   }
 
   onSheetChange(value: string): void {
-    this.selectedSheetId.set(optionalNumber(value));
+    this.selectedSheetId.set(optionalString(value));
     this.selectedSectionId.set(null);
     this.selectedSubsectionIdChange.emit(null);
   }
 
   onSectionChange(value: string): void {
-    this.selectedSectionId.set(optionalNumber(value));
+    this.selectedSectionId.set(optionalString(value));
     this.selectedSubsectionIdChange.emit(null);
   }
 
   onSubsectionChange(value: string): void {
-    this.selectedSubsectionIdChange.emit(optionalNumber(value));
+    this.selectedSubsectionIdChange.emit(optionalString(value));
   }
 
   controlInvalid(control: AbstractControl<unknown>): boolean {
@@ -255,7 +255,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
       });
   }
 
-  private alignSelectionToSubsection(subsectionId: number | null): void {
+  private alignSelectionToSubsection(subsectionId: string | null): void {
     const path = subsectionId === null ? null : findSubsectionPath(this.structure(), subsectionId);
     this.selectedSheetId.set(path?.sheet.id ?? null);
     this.selectedSectionId.set(path?.section.id ?? null);
@@ -272,13 +272,13 @@ function translationsFromForm(value: MatrixStructureCreateFormValue): {
   };
 }
 
-function optionalNumber(value: string): number | null {
-  return value === '' ? null : Number(value);
+function optionalString(value: string): string | null {
+  return value === '' ? null : value;
 }
 
 function findSubsectionPath(
   structure: AdminMatrixStructure,
-  subsectionId: number,
+  subsectionId: string,
 ): {
   sheet: AdminMatrixStructureSheet;
   section: AdminMatrixStructureSection;

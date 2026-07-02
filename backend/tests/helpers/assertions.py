@@ -31,6 +31,12 @@ class AssertsHelper:
         assert body["message"] == expected_message
         return body
 
+    def hex_id(self, value: object) -> None:
+        assert isinstance(value, str)
+        assert len(value) == 32
+        assert value == value.lower()
+        assert all(character in "0123456789abcdef" for character in value)
+
     def resume_response_nulls_are_dates_only(
         self,
         *,

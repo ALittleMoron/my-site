@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { ArticlesService } from './articles.service';
 
-const ARTICLE_ID = '00000000-0000-0000-0000-000000000001';
+const ARTICLE_ID = '00000000000000000000000000000001';
+const TAG_ID = '00000000000000000000000000000002';
 
 describe('ArticlesService', () => {
   let service: ArticlesService;
@@ -69,7 +70,7 @@ describe('ArticlesService', () => {
           metadata: metadataDto(),
           tags: [
             {
-              id: 1,
+              id: TAG_ID,
               name: 'Python',
               slug: 'python',
               deletedAt: null,
@@ -189,7 +190,7 @@ describe('ArticlesService', () => {
       totals: { viewCount: 7, engagedViewCount: 3, reactionCount: 2 },
       articles: [
         {
-          articleId: '00000000-0000-0000-0000-000000000001',
+          articleId: ARTICLE_ID,
           title: 'Typed articles',
           slug: 'typed-articles',
           viewCount: 7,
@@ -199,7 +200,7 @@ describe('ArticlesService', () => {
       ],
       daily: [
         {
-          articleId: '00000000-0000-0000-0000-000000000001',
+          articleId: ARTICLE_ID,
           title: 'Typed articles',
           slug: 'typed-articles',
           date: '2026-01-02',

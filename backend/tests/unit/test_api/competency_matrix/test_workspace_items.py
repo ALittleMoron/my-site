@@ -55,7 +55,7 @@ class TestWorkspaceItemsAPI(ApiTestCase):
             ),
             values=[
                 CompetencyMatrixWorkspaceItem(
-                    id=self.factory.core.int_id(7),
+                    id=self.factory.core.hex_id(7),
                     slug="python-functions",
                     question="How do functions work?",
                     sheet_key="python",
@@ -101,7 +101,7 @@ class TestWorkspaceItemsAPI(ApiTestCase):
             },
             "items": [
                 {
-                    "id": "7",
+                    "id": self.factory.core.hex_id(7),
                     "slug": "python-functions",
                     "question": "How do functions work?",
                     "sheetKey": "python",

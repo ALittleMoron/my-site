@@ -1,4 +1,3 @@
-import uuid
 from datetime import UTC, datetime
 
 import pytest_asyncio
@@ -37,7 +36,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
             deleted_at="2026-01-04T03:04:05",
         )
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             title="Detail article",
             content="# Markdown detail",
             slug="detail-article",
@@ -75,7 +74,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
             },
             "tags": [
                 {
-                    "id": 2,
+                    "id": self.factory.core.hex_id(2),
                     "name": "Old",
                     "slug": "old",
                     "deletedAt": "2026-01-04T03:04:05+00:00",
@@ -109,7 +108,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
 
     def test_public_get_article_does_not_track_view(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=2),
+            article_id=self.factory.core.hex_id(2),
             title="Public article",
             slug="public-article",
             publish_status=PublishStatusEnum.PUBLISHED,
@@ -151,7 +150,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
             role=RoleEnum.MODERATOR,
         )
         self.use_case.get_article.return_value = self.factory.core.article(
-            article_id=uuid.UUID(int=3),
+            article_id=self.factory.core.hex_id(3),
             title="Draft article",
             slug="draft",
             publish_status=PublishStatusEnum.DRAFT,

@@ -36,7 +36,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.get_item(
                 params=CompetencyMatrixItemGetParams(
-                    item_id=self.factory.core.int_id(2),
+                    item_id=self.factory.core.hex_id(2),
                     only_published=True,
                 ),
             )
@@ -54,7 +54,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.get_competency_matrix_item.return_value = item
         res_item = await self.use_case.get_item(
             params=CompetencyMatrixItemGetParams(
-                item_id=self.factory.core.int_id(1),
+                item_id=self.factory.core.hex_id(1),
                 only_published=True,
             ),
         )
@@ -73,7 +73,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.get_competency_matrix_item.return_value = item
         res_item = await self.use_case.get_item(
             params=CompetencyMatrixItemGetParams(
-                item_id=self.factory.core.int_id(1),
+                item_id=self.factory.core.hex_id(1),
                 only_published=False,
             ),
         )

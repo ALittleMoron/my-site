@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 import pytest_asyncio
 from httpx import codes
@@ -7,7 +5,6 @@ from httpx import codes
 from core.articles.exceptions import ArticleNotFoundError
 from core.articles.schemas import ArticleCreateParams, ArticleMetadata, ArticleUpdateParams
 from core.enums import PublishStatusEnum
-from core.types import IntId
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.test_cases import ApiTestCase
 
@@ -15,7 +12,7 @@ from tests.test_cases import ApiTestCase
 class TestAdminArticlesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.article_id = await self.container.get_random_uuid()
+        self.article_id = (await self.container.get_hex_uuid_id_generator()).get_next()
         self.use_case = await self.container.get_articles_use_case()
 
     def test_create_article_saves_author(self) -> None:
@@ -42,7 +39,10 @@ class TestAdminArticlesAPI(ApiTestCase):
                 folder_ru="Входящие",
                 folder_en="Inbox",
                 publish_status="Draft",
-                tag_ids=[IntId(1), IntId(2)],
+                tag_ids=[
+                    "00000000000040008000000000000031",
+                    "00000000000040008000000000000032",
+                ],
             ),
         )
 
@@ -69,13 +69,16 @@ class TestAdminArticlesAPI(ApiTestCase):
                     cover_image_alt_ru="Обложка статьи",
                     cover_image_alt_en="Article cover",
                 ),
-                tag_ids=[IntId(1), IntId(2)],
+                tag_ids=[
+                    "00000000000040008000000000000031",
+                    "00000000000040008000000000000032",
+                ],
             ),
         )
 
     def test_update_article(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id="00000000000040008000000000000022",
             title="Updated article",
             content="Updated content",
             slug="updated-article",
@@ -108,7 +111,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                     "coverImageAltRu": None,
                     "coverImageAltEn": None,
                 },
-                tag_ids=[IntId(1)],
+                tag_ids=["00000000000040008000000000000031"],
             ),
         )
 
@@ -134,7 +137,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                     cover_image_alt_ru=None,
                     cover_image_alt_en=None,
                 ),
-                tag_ids=[IntId(1)],
+                tag_ids=["00000000000040008000000000000031"],
             ),
         )
 
@@ -307,7 +310,7 @@ class TestAdminArticlesAPI(ApiTestCase):
             publish_status=PublishStatusEnum.DRAFT,
         )
         updated_article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id="00000000000040008000000000000022",
             slug="updated-article",
             publish_status=PublishStatusEnum.PUBLISHED,
         )

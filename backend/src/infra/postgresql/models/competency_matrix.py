@@ -3,7 +3,6 @@ from typing import Self
 
 from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
@@ -20,13 +19,13 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestionCreateParams,
 )
 from core.enums import PublishStatusEnum
-from core.types import IntId
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 from infra.postgresql.models.mixins.priority import PriorityMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
 
 
-class ExternalResourceModel(IntegerIDMixin, BaseModel):
+class ExternalResourceModel(HexUuidIDMixin, BaseModel):
     name_ru: Mapped[str] = mapped_column(
         String(length=255),
         doc="Russian resource name",
@@ -75,14 +74,14 @@ class ExternalResourceModel(IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> ExternalResource:
         return ExternalResource(
-            id=IntId(self.id),
+            id=self.id,
             name_ru=self.name_ru,
             name_en=self.name_en,
             url=self.url,
         )
 
 
-class CompetencyMatrixSheetModel(PriorityMixin, IntegerIDMixin, BaseModel):
+class CompetencyMatrixSheetModel(PriorityMixin, HexUuidIDMixin, BaseModel):
     key: Mapped[str] = mapped_column(
         String(length=255),
         unique=True,
@@ -111,7 +110,7 @@ class CompetencyMatrixSheetModel(PriorityMixin, IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSheet:
         return CompetencyMatrixStructureSheet(
-            id=IntId(self.id),
+            id=self.id,
             key=self.key,
             name_ru=self.name_ru,
             name_en=self.name_en,
@@ -120,8 +119,8 @@ class CompetencyMatrixSheetModel(PriorityMixin, IntegerIDMixin, BaseModel):
         )
 
 
-class CompetencyMatrixSectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
-    sheet_id: Mapped[int] = mapped_column(
+class CompetencyMatrixSectionModel(PriorityMixin, HexUuidIDMixin, BaseModel):
+    sheet_id: Mapped[str] = mapped_column(
         ForeignKey(CompetencyMatrixSheetModel.id, ondelete="CASCADE"),
         doc="Sheet identifier",
     )
@@ -158,7 +157,7 @@ class CompetencyMatrixSectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSection:
         return CompetencyMatrixStructureSection(
-            id=IntId(self.id),
+            id=self.id,
             name_ru=self.name_ru,
             name_en=self.name_en,
             priority=self.priority,
@@ -166,8 +165,8 @@ class CompetencyMatrixSectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
         )
 
 
-class CompetencyMatrixSubsectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
-    section_id: Mapped[int] = mapped_column(
+class CompetencyMatrixSubsectionModel(PriorityMixin, HexUuidIDMixin, BaseModel):
+    section_id: Mapped[str] = mapped_column(
         ForeignKey(CompetencyMatrixSectionModel.id, ondelete="CASCADE"),
         doc="Section identifier",
     )
@@ -199,7 +198,7 @@ class CompetencyMatrixSubsectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSubsection:
         return CompetencyMatrixStructureSubsection(
-            id=IntId(self.id),
+            id=self.id,
             name_ru=self.name_ru,
             name_en=self.name_en,
             priority=self.priority,
@@ -207,20 +206,20 @@ class CompetencyMatrixSubsectionModel(PriorityMixin, IntegerIDMixin, BaseModel):
 
     def to_item_structure(self) -> CompetencyMatrixItemStructure:
         return CompetencyMatrixItemStructure(
-            sheet_id=IntId(self.section.sheet.id),
+            sheet_id=self.section.sheet.id,
             sheet_key=self.section.sheet.key,
             sheet_ru=self.section.sheet.name_ru,
             sheet_en=self.section.sheet.name_en,
-            section_id=IntId(self.section.id),
+            section_id=self.section.id,
             section_ru=self.section.name_ru,
             section_en=self.section.name_en,
-            subsection_id=IntId(self.id),
+            subsection_id=self.id,
             subsection_ru=self.name_ru,
             subsection_en=self.name_en,
         )
 
 
-class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
+class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
     slug: Mapped[str] = mapped_column(
         String(length=255),
         unique=True,
@@ -251,7 +250,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         String(),
         doc="English interview expected answer",
     )
-    subsection_id: Mapped[int] = mapped_column(
+    subsection_id: Mapped[str] = mapped_column(
         ForeignKey(CompetencyMatrixSubsectionModel.id, ondelete="RESTRICT"),
         doc="Question subsection identifier",
     )
@@ -343,7 +342,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         include_relationships: bool,
     ) -> Self:
         return cls(
-            pk=item.id,
+            id=item.id,
             slug=item.slug,
             question_ru=item.question_ru,
             question_en=item.question_en,
@@ -381,7 +380,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self, *, include_relationships: bool) -> CompetencyMatrixItem:
         return CompetencyMatrixItem(
-            id=IntId(self.pk),
+            id=self.id,
             slug=self.slug,
             question_ru=self.question_ru,
             question_en=self.question_en,
@@ -404,7 +403,7 @@ class CompetencyMatrixItemModel(PublishMixin, IntegerIDMixin, BaseModel):
         )
 
 
-class QueuedQuestionModel(IntegerIDMixin, BaseModel):
+class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
     question: Mapped[str] = mapped_column(
         String(length=255),
         doc="Suggested or imported raw competency matrix question",
@@ -472,7 +471,7 @@ class QueuedQuestionModel(IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> QueuedCompetencyMatrixQuestion:
         return QueuedCompetencyMatrixQuestion(
-            id=IntId(self.id),
+            id=self.id,
             question=self.question,
             grade=self.grade,
             sheet=self.sheet,
@@ -483,12 +482,12 @@ class QueuedQuestionModel(IntegerIDMixin, BaseModel):
         )
 
 
-class ResourceToItemSecondaryModel(IntegerIDMixin, BaseModel):
-    item_id: Mapped[int] = mapped_column(
+class ResourceToItemSecondaryModel(HexUuidIDMixin, BaseModel):
+    item_id: Mapped[str] = mapped_column(
         ForeignKey(CompetencyMatrixItemModel.id, ondelete="CASCADE"),
         doc="Competency matrix item identifier",
     )
-    resource_id: Mapped[int] = mapped_column(
+    resource_id: Mapped[str] = mapped_column(
         ForeignKey(ExternalResourceModel.id, ondelete="CASCADE"),
         doc="External resource identifier",
     )
@@ -524,7 +523,7 @@ class ResourceToItemSecondaryModel(IntegerIDMixin, BaseModel):
 
     def to_domain_schema(self) -> AttachedExternalResource:
         return AttachedExternalResource(
-            id=IntId(self.resource.id),
+            id=self.resource.id,
             name_ru=self.resource.name_ru,
             name_en=self.resource.name_en,
             url=self.resource.url,

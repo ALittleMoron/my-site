@@ -133,7 +133,7 @@ function articleList(): AdminArticleList {
     totalPages: 1,
     articles: [
       {
-        id: '00000000-0000-0000-0000-000000000001',
+        id: '00000000000000000000000000000001',
         title: 'Typed articles',
         slug: 'typed-articles',
         folder: 'Engineering',

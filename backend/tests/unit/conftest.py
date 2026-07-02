@@ -11,7 +11,6 @@ from litestar.testing import TestClient
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.auth.types import RawToken
-from core.types import IntId
 from entrypoints.litestar.initializers import create_litestar_app
 from infra.config.settings import Settings
 from tests.unit.mocks.providers.account import MockUserAccountProvider
@@ -52,12 +51,12 @@ async def container(  # noqa: PLR0913
     jwt_admin: JwtUser,
     raw_token: RawToken,
     global_random_uuid: uuid.UUID,
-    global_random_int: IntId,
+    global_random_hex_uuid: str,
     random_suffix: str,
 ) -> AsyncGenerator[AsyncContainer]:
     container = make_async_container(
         LitestarProvider(),
-        MockGeneralProvider(uuid_=global_random_uuid, int_=global_random_int),
+        MockGeneralProvider(uuid_=global_random_uuid, hex_uuid=global_random_hex_uuid),
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),
         MockArticlesProvider(),

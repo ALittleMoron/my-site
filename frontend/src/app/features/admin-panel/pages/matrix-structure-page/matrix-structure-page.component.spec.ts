@@ -7,6 +7,13 @@ import { AdminMatrixStructure } from '../../models/matrix-question-workspace.mod
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePageComponent } from './matrix-structure-page.component';
 
+const PYTHON_SHEET_ID = '00000000000000000000000000000001';
+const SQL_SHEET_ID = '00000000000000000000000000000002';
+const BASICS_SECTION_ID = '00000000000000000000000000000003';
+const ADVANCED_SECTION_ID = '00000000000000000000000000000004';
+const STYLE_SUBSECTION_ID = '00000000000000000000000000000005';
+const TYPING_SUBSECTION_ID = '00000000000000000000000000000006';
+
 describe('MatrixStructurePageComponent', () => {
   let fixture: ComponentFixture<MatrixStructurePageComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
@@ -75,7 +82,7 @@ describe('MatrixStructurePageComponent', () => {
     fixture.componentInstance.dropSheets(dropEvent(0, 1));
     fixture.detectChanges();
 
-    expect(service.updateSheetPriorities).toHaveBeenCalledWith([2, 1]);
+    expect(service.updateSheetPriorities).toHaveBeenCalledWith([SQL_SHEET_ID, PYTHON_SHEET_ID]);
     expect(notifications.success).toHaveBeenCalledWith('Порядок структуры сохранён.');
     const tabs = sheetTabs();
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(['SQL', 'Питон']);
@@ -109,8 +116,14 @@ describe('MatrixStructurePageComponent', () => {
     fixture.componentInstance.dropSections(dropEvent(0, 1), sheet);
     fixture.componentInstance.dropSubsections(dropEvent(0, 1), section);
 
-    expect(service.updateSectionPriorities).toHaveBeenCalledWith(1, [3, 2]);
-    expect(service.updateSubsectionPriorities).toHaveBeenCalledWith(2, [5, 4]);
+    expect(service.updateSectionPriorities).toHaveBeenCalledWith(PYTHON_SHEET_ID, [
+      ADVANCED_SECTION_ID,
+      BASICS_SECTION_ID,
+    ]);
+    expect(service.updateSubsectionPriorities).toHaveBeenCalledWith(BASICS_SECTION_ID, [
+      TYPING_SUBSECTION_ID,
+      STYLE_SUBSECTION_ID,
+    ]);
   });
 
   function createComponent(): void {
@@ -133,26 +146,26 @@ function matrixStructure(): AdminMatrixStructure {
   return {
     sheets: [
       {
-        id: 1,
+        id: PYTHON_SHEET_ID,
         key: 'python',
         name: 'Питон',
         priority: 1,
         translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
         sections: [
           {
-            id: 2,
+            id: BASICS_SECTION_ID,
             name: 'Основы',
             priority: 1,
             translations: { ru: { name: 'Основы' }, en: { name: 'Core' } },
             subsections: [
               {
-                id: 4,
+                id: STYLE_SUBSECTION_ID,
                 name: 'Стиль',
                 priority: 1,
                 translations: { ru: { name: 'Стиль' }, en: { name: 'Style' } },
               },
               {
-                id: 5,
+                id: TYPING_SUBSECTION_ID,
                 name: 'Типизация',
                 priority: 2,
                 translations: { ru: { name: 'Типизация' }, en: { name: 'Typing' } },
@@ -160,7 +173,7 @@ function matrixStructure(): AdminMatrixStructure {
             ],
           },
           {
-            id: 3,
+            id: ADVANCED_SECTION_ID,
             name: 'Продвинутое',
             priority: 2,
             translations: { ru: { name: 'Продвинутое' }, en: { name: 'Advanced' } },
@@ -169,7 +182,7 @@ function matrixStructure(): AdminMatrixStructure {
         ],
       },
       {
-        id: 2,
+        id: SQL_SHEET_ID,
         key: 'sql',
         name: 'SQL',
         priority: 2,

@@ -4,7 +4,6 @@ from litestar import Response
 
 from core.resumes.enums import ResumeExportFormatEnum
 from core.resumes.schemas import ResumeExport
-from core.types import IntId
 from infra.config.constants import constants
 
 
@@ -13,7 +12,7 @@ class ResumeExportResponse(Response[bytes]):
     def from_resume_export(
         cls,
         *,
-        resume_id: IntId,
+        resume_id: str,
         document: ResumeExport,
     ) -> Self:
         media_type: str = constants.resume_export.pdf_media_type

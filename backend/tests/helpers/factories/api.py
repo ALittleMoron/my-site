@@ -3,6 +3,12 @@ from typing import Any
 
 class ApiFactoryHelper:
     @classmethod
+    def hex_id(cls, value: int | str) -> str:
+        if isinstance(value, str):
+            return value
+        return f"{value:032x}"
+
+    @classmethod
     def contact_me_request(
         cls,
         name: str | None = None,
@@ -33,7 +39,7 @@ class ApiFactoryHelper:
         folder_en: str = "General",
         publish_status: str = "Draft",
         metadata: dict[str, Any] | None = None,
-        tag_ids: list[int] | None = None,
+        tag_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         return {
             "slug": slug,
@@ -124,7 +130,7 @@ class ApiFactoryHelper:
     def competency_matrix_item_request(
         cls,
         slug: str = "question-1",
-        subsection_id: int = 1,
+        subsection_id: int | str = "00000000000000000000000000000001",
         question_ru: str = "вопрос 1",
         question_en: str = "question 1",
         answer_ru: str = "ответ 1",
@@ -154,7 +160,7 @@ class ApiFactoryHelper:
         )
         return {
             "slug": slug,
-            "subsectionId": subsection_id,
+            "subsectionId": cls.hex_id(subsection_id),
             "grade": grade,
             "interviewFrequency": interview_frequency,
             "publishStatus": publish_status,
@@ -180,12 +186,12 @@ class ApiFactoryHelper:
     @classmethod
     def existing_matrix_resource_attachment_request(
         cls,
-        resource_id: int = 1,
+        resource_id: int | str = "00000000000000000000000000000001",
         context_ru: str = "контекст ресурса",
         context_en: str = "resource context",
     ) -> dict[str, Any]:
         return {
-            "resourceId": resource_id,
+            "resourceId": cls.hex_id(resource_id),
             "translations": {
                 "ru": {"context": context_ru},
                 "en": {"context": context_en},

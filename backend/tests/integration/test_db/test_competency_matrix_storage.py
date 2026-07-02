@@ -28,7 +28,6 @@ from core.competency_matrix.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -129,14 +128,14 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         )
         section = await self.storage.create_section(
             params=CompetencyMatrixSectionCreateParams(
-                sheet_id=self.factory.core.int_id(1),
+                sheet_id=self.factory.core.hex_id(1),
                 name_ru="Расширенно",
                 name_en="Advanced",
             ),
         )
         subsection = await self.storage.create_subsection(
             params=CompetencyMatrixSubsectionCreateParams(
-                section_id=self.factory.core.int_id(1),
+                section_id=self.factory.core.hex_id(1),
                 name_ru="Асинхронность",
                 name_en="Async",
             ),
@@ -149,14 +148,14 @@ class TestCompetencyMatrixStorage(StorageTestCase):
     async def test_update_structure_priorities_persists_order(self) -> None:
         section = await self.storage.create_section(
             params=CompetencyMatrixSectionCreateParams(
-                sheet_id=self.factory.core.int_id(1),
+                sheet_id=self.factory.core.hex_id(1),
                 name_ru="Расширенно",
                 name_en="Advanced",
             ),
         )
         subsection = await self.storage.create_subsection(
             params=CompetencyMatrixSubsectionCreateParams(
-                section_id=self.factory.core.int_id(1),
+                section_id=self.factory.core.hex_id(1),
                 name_ru="Асинхронность",
                 name_en="Async",
             ),
@@ -164,19 +163,19 @@ class TestCompetencyMatrixStorage(StorageTestCase):
 
         await self.storage.update_sheet_priorities(
             params=CompetencyMatrixSheetPriorityUpdateParams(
-                ordered_ids=(self.factory.core.int_id(2), self.factory.core.int_id(1)),
+                ordered_ids=(self.factory.core.hex_id(2), self.factory.core.hex_id(1)),
             ),
         )
         await self.storage.update_section_priorities(
             params=CompetencyMatrixSectionPriorityUpdateParams(
-                sheet_id=self.factory.core.int_id(1),
-                ordered_ids=(section.id, self.factory.core.int_id(1)),
+                sheet_id=self.factory.core.hex_id(1),
+                ordered_ids=(section.id, self.factory.core.hex_id(1)),
             ),
         )
         await self.storage.update_subsection_priorities(
             params=CompetencyMatrixSubsectionPriorityUpdateParams(
-                section_id=self.factory.core.int_id(1),
-                ordered_ids=(subsection.id, self.factory.core.int_id(1)),
+                section_id=self.factory.core.hex_id(1),
+                ordered_ids=(subsection.id, self.factory.core.hex_id(1)),
             ),
         )
 
@@ -184,7 +183,11 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         structure = await self.storage.list_structure()
 
         python_sheet = next(sheet for sheet in structure if sheet.key == "python")
-        basics_section = next(section for section in python_sheet.sections if section.id == 1)
+        basics_section = next(
+            section
+            for section in python_sheet.sections
+            if section.id == self.factory.core.hex_id(1)
+        )
         assert sheets == self.factory.core.sheets(values=["SQL", "Python"])
         assert [sheet.key for sheet in structure] == ["sql", "python"]
         assert [section.name_en for section in python_sheet.sections] == ["Advanced", "Basics"]
@@ -196,7 +199,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
     async def test_list_items_uses_structure_priority_order(self) -> None:
         section = await self.storage.create_section(
             params=CompetencyMatrixSectionCreateParams(
-                sheet_id=self.factory.core.int_id(1),
+                sheet_id=self.factory.core.hex_id(1),
                 name_ru="Расширенно",
                 name_en="Advanced",
             ),
@@ -222,8 +225,8 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         )
         await self.storage.update_section_priorities(
             params=CompetencyMatrixSectionPriorityUpdateParams(
-                sheet_id=self.factory.core.int_id(1),
-                ordered_ids=(section.id, self.factory.core.int_id(1)),
+                sheet_id=self.factory.core.hex_id(1),
+                ordered_ids=(section.id, self.factory.core.hex_id(1)),
             ),
         )
 
@@ -235,7 +238,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
 
     async def test_get_item_structure_by_subsection_id(self) -> None:
         structure = await self.storage.get_item_structure_by_subsection_id(
-            subsection_id=self.factory.core.int_id(1),
+            subsection_id=self.factory.core.hex_id(1),
         )
 
         assert structure.sheet_key == "python"
@@ -246,7 +249,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
     async def test_get_item_structure_by_subsection_id_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixStructureNotFoundError):
             await self.storage.get_item_structure_by_subsection_id(
-                subsection_id=self.factory.core.int_id(-1),
+                subsection_id=self.factory.core.hex_id(-1),
             )
 
     async def test_create_structure_rejects_duplicates_and_missing_parents(self) -> None:
@@ -261,7 +264,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         with pytest.raises(CompetencyMatrixStructureNotFoundError):
             await self.storage.create_section(
                 params=CompetencyMatrixSectionCreateParams(
-                    sheet_id=self.factory.core.int_id(-1),
+                    sheet_id=self.factory.core.hex_id(-1),
                     name_ru="Missing",
                     name_en="Missing",
                 ),
@@ -269,7 +272,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         with pytest.raises(CompetencyMatrixStructureAlreadyExistsError):
             await self.storage.create_section(
                 params=CompetencyMatrixSectionCreateParams(
-                    sheet_id=self.factory.core.int_id(1),
+                    sheet_id=self.factory.core.hex_id(1),
                     name_ru="Basics duplicate",
                     name_en="Basics",
                 ),
@@ -277,7 +280,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         with pytest.raises(CompetencyMatrixStructureNotFoundError):
             await self.storage.create_subsection(
                 params=CompetencyMatrixSubsectionCreateParams(
-                    section_id=self.factory.core.int_id(-1),
+                    section_id=self.factory.core.hex_id(-1),
                     name_ru="Missing",
                     name_en="Missing",
                 ),
@@ -285,7 +288,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         with pytest.raises(CompetencyMatrixStructureAlreadyExistsError):
             await self.storage.create_subsection(
                 params=CompetencyMatrixSubsectionCreateParams(
-                    section_id=self.factory.core.int_id(1),
+                    section_id=self.factory.core.hex_id(1),
                     name_ru="Functions duplicate",
                     name_en="Functions",
                 ),
@@ -311,10 +314,10 @@ class TestCompetencyMatrixStorage(StorageTestCase):
 
     async def test_get_competency_matrix_item_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(-1))
+            await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(-1))
 
     async def test_get_competency_matrix_item_found(self) -> None:
-        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(1))
+        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(1))
         assert item == self.factory.core.competency_matrix_item(
             item_id=1,
             question="1",
@@ -994,10 +997,10 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             ],
         )
         await self.storage.update_competency_matrix_item_publish_status(
-            item_id=self.factory.core.int_id(3),
+            item_id=self.factory.core.hex_id(3),
             publish_status=PublishStatusEnum.DRAFT,
         )
-        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        item = await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(3))
         assert item.publish_status == PublishStatusEnum.DRAFT
 
     async def test_update_publish_status_sets_first_published_at_only_once(self) -> None:
@@ -1017,19 +1020,19 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         )
 
         await self.storage.update_competency_matrix_item_publish_status(
-            item_id=self.factory.core.int_id(3),
+            item_id=self.factory.core.hex_id(3),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        first = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        first = await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(3))
         await self.storage.update_competency_matrix_item_publish_status(
-            item_id=self.factory.core.int_id(3),
+            item_id=self.factory.core.hex_id(3),
             publish_status=PublishStatusEnum.DRAFT,
         )
         await self.storage.update_competency_matrix_item_publish_status(
-            item_id=self.factory.core.int_id(3),
+            item_id=self.factory.core.hex_id(3),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        second = await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        second = await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(3))
 
         assert first.published_at is not None
         assert second.published_at == first.published_at
@@ -1037,7 +1040,7 @@ class TestCompetencyMatrixStorage(StorageTestCase):
     async def test_update_publish_status_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.storage.update_competency_matrix_item_publish_status(
-                item_id=self.factory.core.int_id(3),
+                item_id=self.factory.core.hex_id(3),
                 publish_status=PublishStatusEnum.DRAFT,
             )
 
@@ -1056,7 +1059,9 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 ),
             ],
         )
-        resources = await self.storage.get_resources_by_ids(resource_ids=[IntId(100), IntId(101)])
+        resources = await self.storage.get_resources_by_ids(
+            resource_ids=[self.factory.core.hex_id(100), self.factory.core.hex_id(101)]
+        )
         assert resources.values == [
             self.factory.core.external_resource(
                 resource_id=100,
@@ -1094,13 +1099,13 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 ),
             ],
         )
-        await self.storage.delete_competency_matrix_item(item_id=self.factory.core.int_id(3))
+        await self.storage.delete_competency_matrix_item(item_id=self.factory.core.hex_id(3))
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.storage.get_competency_matrix_item(item_id=self.factory.core.int_id(3))
+            await self.storage.get_competency_matrix_item(item_id=self.factory.core.hex_id(3))
 
     async def test_delete_not_found(self) -> None:
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.storage.delete_competency_matrix_item(item_id=self.factory.core.int_id(3))
+            await self.storage.delete_competency_matrix_item(item_id=self.factory.core.hex_id(3))
 
     async def test_search_competency_matrix_resources(self) -> None:
         await self.storage_helper.create_external_resources(

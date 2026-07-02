@@ -40,7 +40,7 @@ class TestCompetencyMatrixWorkspaceUseCase(TestCase):
         )
         published_at = datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
         item = CompetencyMatrixWorkspaceItem(
-            id=self.factory.core.int_id(10),
+            id=self.factory.core.hex_id(10),
             slug="python-functions",
             question="How do functions work?",
             sheet_key="python",

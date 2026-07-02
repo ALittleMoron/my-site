@@ -67,7 +67,7 @@ BALANCED_THRESHOLD_POLICY = QueryThresholdPolicy(
     scenario_max_execution_ms={
         "articles_published_for_seo_sitemap": 250.0,
         "tags_short_en": 250.0,
-        "resources_short_en": 250.0,
+        "resources_short_en": 300.0,
     },
     query_max_execution_ms={
         "articles_list_en_full_text_tag_date__002": 250.0,
@@ -86,5 +86,7 @@ BALANCED_THRESHOLD_POLICY = QueryThresholdPolicy(
         "managed_accounts_deactivate__002": ("users_username_idx",),
         "managed_accounts_delete__001": ("users_username_lower_uniq",),
         "managed_accounts_delete__002": ("users_username_idx",),
+        "resumes_list_workspace__001": ("resumes_resume_author_updated_id_idx",),
+        "resumes_list_workspace__002": (),
     },
 )

@@ -366,7 +366,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   loadResume(): void {
-    if (this.resumeId <= 0) {
+    if (this.resumeId === '') {
       this.error.set(createInvalidResumeIdError());
       return;
     }
@@ -1507,10 +1507,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
       });
   }
 
-  private resolveResumeId(): number {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isInteger(id)) return 0;
-    return id;
+  private resolveResumeId(): string {
+    return this.route.snapshot.paramMap.get('id') ?? '';
   }
 
   private downloadExport(blob: Blob, format: ResumeExportFormat): void {

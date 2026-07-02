@@ -4,7 +4,7 @@ export type AdminMatrixGrade = 'Junior' | 'Junior+' | 'Middle' | 'Middle+' | 'Se
 export type AdminMatrixPublishStatus = 'Draft' | 'Published';
 
 export interface QueuedMatrixQuestionDto {
-  id: number;
+  id: string;
   question: string;
   grade: AdminMatrixGrade | null;
   sheet: string | null;
@@ -19,7 +19,7 @@ export interface QueuedMatrixQuestionsDto {
 }
 
 export interface QueuedMatrixQuestion {
-  id: number;
+  id: string;
   question: string;
   grade: AdminMatrixGrade | null;
   sheet: string | null;
@@ -37,7 +37,7 @@ export interface AdminMatrixItemTranslationPayload {
 
 export interface AdminMatrixItemPayload {
   slug: string;
-  subsectionId: number;
+  subsectionId: string;
   grade: AdminMatrixGrade;
   publishStatus: AdminMatrixPublishStatus;
   translations: Record<LanguageCode, AdminMatrixItemTranslationPayload>;

@@ -19,7 +19,6 @@ from core.competency_matrix.schemas import (
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
-from core.types import IntId
 from tests.test_cases import TestCase
 
 
@@ -39,7 +38,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
     async def test_suggest_question_delegates_limit_check_before_creating(self) -> None:
         now = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
         self.storage.create_queued_question.return_value = QueuedCompetencyMatrixQuestion(
-            id=IntId(1),
+            id=self.factory.core.hex_id(1),
             question="What is PEP 8?",
             grade=None,
             sheet=None,
@@ -77,7 +76,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
     async def test_suggest_question_skips_quota_limiter_when_limit_is_absent(self) -> None:
         now = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
         queued_question = QueuedCompetencyMatrixQuestion(
-            id=IntId(1),
+            id=self.factory.core.hex_id(1),
             question="What is PEP 8?",
             grade=None,
             sheet=None,
@@ -141,7 +140,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
     async def test_create_item_from_queue_creates_item_then_removes_queue_entry(self) -> None:
         queued_question = QueuedCompetencyMatrixQuestion(
-            id=IntId(7),
+            id=self.factory.core.hex_id(7),
             question="What is PEP 8?",
             grade=GradeEnum.JUNIOR,
             sheet="Python",
@@ -168,22 +167,26 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
         item = await self.use_case.create_item_from_queue(
             params=QueuedCompetencyMatrixQuestionCreateItemParams(
-                queued_question_id=IntId(7),
+                queued_question_id=self.factory.core.hex_id(7),
                 item=params,
             ),
         )
 
         assert item == created_item
-        self.storage.get_queued_question.assert_called_once_with(question_id=IntId(7))
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7)
+        )
         self.storage.create_competency_matrix_item.assert_called_once()
-        self.storage.delete_queued_question.assert_called_once_with(question_id=IntId(7))
+        self.storage.delete_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7)
+        )
         create_item_call_index = next(
             index
             for index, method_call in enumerate(self.storage.method_calls)
             if method_call[0] == "create_competency_matrix_item"
         )
         delete_queue_call_index = self.storage.method_calls.index(
-            call.delete_queued_question(question_id=IntId(7)),
+            call.delete_queued_question(question_id=self.factory.core.hex_id(7)),
         )
         assert create_item_call_index < delete_queue_call_index
 
@@ -193,7 +196,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
             await self.use_case.create_item_from_queue(
                 params=QueuedCompetencyMatrixQuestionCreateItemParams(
-                    queued_question_id=IntId(404),
+                    queued_question_id=self.factory.core.hex_id(404),
                     item=self.factory.core.competency_matrix_item_create_params(item_id=1),
                 ),
             )

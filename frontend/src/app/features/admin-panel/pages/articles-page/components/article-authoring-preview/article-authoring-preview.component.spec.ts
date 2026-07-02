@@ -17,7 +17,7 @@ describe('ArticleAuthoringPreviewComponent', () => {
     fixture.componentRef.setInput('content', 'Read [[articles:typed-article|typed article]].');
     fixture.componentRef.setInput('tags', [
       {
-        id: 1,
+        id: '00000000000000000000000000000001',
         name: 'Angular',
         slug: 'angular',
         deletedAt: null,

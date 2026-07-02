@@ -19,7 +19,7 @@ from core.competency_matrix.exceptions import (
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
-from core.types import IntId, SearchName
+from core.types import SearchName
 
 
 class CompetencyMatrixMissingFieldEnum(StrEnum):
@@ -51,7 +51,7 @@ class Sheets(ValuedDataclass[Sheet]): ...
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixStructureSubsection:
-    id: IntId
+    id: str
     name_ru: str
     name_en: str
     priority: int
@@ -64,7 +64,7 @@ class CompetencyMatrixStructureSubsection:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixStructureSection:
-    id: IntId
+    id: str
     name_ru: str
     name_en: str
     priority: int
@@ -75,7 +75,7 @@ class CompetencyMatrixStructureSection:
             return self.name_ru
         return self.name_en
 
-    def ensure_subsection_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+    def ensure_subsection_priority_order_matches(self, *, ordered_ids: tuple[str, ...]) -> None:
         existing_ids = tuple(subsection.id for subsection in self.subsections)
         if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
             raise CompetencyMatrixStructurePriorityInvalidError
@@ -83,7 +83,7 @@ class CompetencyMatrixStructureSection:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixStructureSheet:
-    id: IntId
+    id: str
     key: str
     name_ru: str
     name_en: str
@@ -95,7 +95,7 @@ class CompetencyMatrixStructureSheet:
             return self.name_ru
         return self.name_en
 
-    def ensure_section_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+    def ensure_section_priority_order_matches(self, *, ordered_ids: tuple[str, ...]) -> None:
         existing_ids = tuple(section.id for section in self.sections)
         if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
             raise CompetencyMatrixStructurePriorityInvalidError
@@ -108,13 +108,13 @@ class CompetencyMatrixStructure:
     def __iter__(self) -> Iterator[CompetencyMatrixStructureSheet]:
         return iter(self.sheets)
 
-    def require_sheet(self, *, sheet_id: IntId) -> CompetencyMatrixStructureSheet:
+    def require_sheet(self, *, sheet_id: str) -> CompetencyMatrixStructureSheet:
         sheet = next((item for item in self.sheets if item.id == sheet_id), None)
         if sheet is None:
             raise CompetencyMatrixStructureNotFoundError
         return sheet
 
-    def require_section(self, *, section_id: IntId) -> CompetencyMatrixStructureSection:
+    def require_section(self, *, section_id: str) -> CompetencyMatrixStructureSection:
         section = next(
             (
                 candidate
@@ -128,7 +128,7 @@ class CompetencyMatrixStructure:
             raise CompetencyMatrixStructureNotFoundError
         return section
 
-    def ensure_sheet_priority_order_matches(self, *, ordered_ids: tuple[IntId, ...]) -> None:
+    def ensure_sheet_priority_order_matches(self, *, ordered_ids: tuple[str, ...]) -> None:
         existing_ids = tuple(sheet.id for sheet in self.sheets)
         if len(set(ordered_ids)) != len(ordered_ids) or set(ordered_ids) != set(existing_ids):
             raise CompetencyMatrixStructurePriorityInvalidError
@@ -143,45 +143,45 @@ class CompetencyMatrixSheetCreateParams:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixSectionCreateParams:
-    sheet_id: IntId
+    sheet_id: str
     name_ru: str
     name_en: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixSubsectionCreateParams:
-    section_id: IntId
+    section_id: str
     name_ru: str
     name_en: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixSheetPriorityUpdateParams:
-    ordered_ids: tuple[IntId, ...]
+    ordered_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixSectionPriorityUpdateParams:
-    sheet_id: IntId
-    ordered_ids: tuple[IntId, ...]
+    sheet_id: str
+    ordered_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixSubsectionPriorityUpdateParams:
-    section_id: IntId
-    ordered_ids: tuple[IntId, ...]
+    section_id: str
+    ordered_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItemStructure:
-    sheet_id: IntId
+    sheet_id: str
     sheet_key: str
     sheet_ru: str
     sheet_en: str
-    section_id: IntId
+    section_id: str
     section_ru: str
     section_en: str
-    subsection_id: IntId
+    subsection_id: str
     subsection_ru: str
     subsection_en: str
 
@@ -207,7 +207,7 @@ class Subsections(ValuedDataclass[str]): ...
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class QueuedCompetencyMatrixQuestion:
-    id: IntId
+    id: str
     question: str
     grade: GradeEnum | None
     sheet: str | None
@@ -275,7 +275,7 @@ class QuestionSuggestionCreateParams:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class QueuedCompetencyMatrixQuestionCreateItemParams:
-    queued_question_id: IntId
+    queued_question_id: str
     item: CompetencyMatrixItemCreateParams
 
 
@@ -288,7 +288,7 @@ class CompetencyMatrixResourceSearchParams:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItemGetParams:
-    item_id: IntId
+    item_id: str
     only_published: bool
 
 
@@ -300,7 +300,7 @@ class CompetencyMatrixItemBySlugGetParams:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixItemPublishStatusSwitchParams:
-    item_id: IntId
+    item_id: str
     publish_status: PublishStatusEnum
 
 
@@ -324,7 +324,7 @@ class BaseExternalResource:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ExternalResource(BaseExternalResource):
-    id: IntId
+    id: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -348,7 +348,7 @@ class AttachedExternalResource(ExternalResource):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ExternalResources(ValuedDataclass[ExternalResource]):
-    def all_resources_exists_by_ids(self, ids: set[IntId]) -> bool:
+    def all_resources_exists_by_ids(self, ids: set[str]) -> bool:
         return ids.difference({resource.id for resource in self.values}) == set()
 
 
@@ -358,7 +358,7 @@ class AttachedExternalResources(ValuedDataclass[AttachedExternalResource]): ...
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ExistingExternalResourceAttachment:
-    resource_id: IntId
+    resource_id: str
     context_ru: str
     context_en: str
 
@@ -382,7 +382,7 @@ class NewExternalResourceAttachment:
 
 @dataclass(slots=True, kw_only=True)
 class BaseCompetencyMatrixItem:
-    id: IntId
+    id: str
     slug: str
     question_ru: str
     question_en: str
@@ -449,7 +449,7 @@ class BaseCompetencyMatrixItem:
         return self.structure.section_en
 
     @property
-    def subsection_id(self) -> IntId:
+    def subsection_id(self) -> str:
         return self.structure.subsection_id
 
     @property
@@ -493,7 +493,7 @@ class CompetencyMatrixItem(BaseCompetencyMatrixItem):
 
 @dataclass(slots=True, kw_only=True)
 class CompetencyMatrixItemWriteParams:
-    id: IntId
+    id: str
     slug: str
     question_ru: str
     question_en: str
@@ -502,7 +502,7 @@ class CompetencyMatrixItemWriteParams:
     answer_en: str
     interview_expected_answer_ru: str
     interview_expected_answer_en: str
-    subsection_id: IntId
+    subsection_id: str
     grade: GradeEnum | None
     interview_frequency: InterviewFrequencyEnum | None
     resources: list[ExistingExternalResourceAttachment | NewExternalResourceAttachment]
@@ -521,7 +521,7 @@ class CompetencyMatrixItemWriteParams:
             if isinstance(attachment, ExistingExternalResourceAttachment)
         ]
 
-    def get_resource_ids_to_assign(self) -> list[IntId]:
+    def get_resource_ids_to_assign(self) -> list[str]:
         return [
             attachment.resource_id
             for attachment in self.resources
@@ -622,7 +622,7 @@ class CompetencyMatrixWorkspaceSummary:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CompetencyMatrixWorkspaceItem:
-    id: IntId
+    id: str
     slug: str
     question: str
     sheet_key: str

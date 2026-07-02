@@ -7,7 +7,6 @@ from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
 from core.articles.schemas import ArticleFilters
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from infra.postgresql.storages.articles import ArticlesDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -18,9 +17,9 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         self.storage = ArticlesDatabaseStorage(session=self.db_session)
 
     async def test_get_article_by_slug_success(self) -> None:
-        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         deleted_tag = self.factory.core.tag(
-            tag_id=IntId(2),
+            tag_id=self.factory.core.hex_id(2),
             name="Deleted",
             slug="deleted",
             deleted_at="2024-01-01T00:00:00",
@@ -103,8 +102,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             )
 
     async def test_list_articles_filters_by_active_tag_and_published_status(self) -> None:
-        python = self.factory.core.tag(tag_id=IntId(1), slug="python")
-        draft_tag = self.factory.core.tag(tag_id=IntId(2), slug="draft")
+        python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
+        draft_tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(2), slug="draft")
         await self.storage_helper.create_tags(tags=[python, draft_tag])
         await self.storage_helper.create_articles(
             articles=[
@@ -412,8 +411,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert self.collections.slugs(en_articles) == ["task-queues"]
 
     async def test_list_articles_composes_tag_date_and_search_filters(self) -> None:
-        python = self.factory.core.tag(tag_id=IntId(1), slug="python")
-        database = self.factory.core.tag(tag_id=IntId(2), slug="database")
+        python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
+        database = self.factory.core.tag(tag_id=self.factory.core.hex_id(2), slug="database")
         await self.storage_helper.create_tags(tags=[python, database])
         await self.storage_helper.create_articles(
             articles=[
@@ -534,10 +533,10 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert second.published_at == first.published_at
 
     async def test_tag_soft_delete_and_restore(self) -> None:
-        tag = self.factory.core.tag(tag_id=IntId(1), slug="python")
+        tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         await self.storage.create_tag(tag=tag)
 
-        await self.storage.soft_delete_tag(tag_id=IntId(1))
+        await self.storage.soft_delete_tag(tag_id=self.factory.core.hex_id(1))
         active_tags = await self.storage.list_tags(
             include_deleted=False,
             language=LanguageEnum.RU,
@@ -546,7 +545,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             include_deleted=True,
             language=LanguageEnum.RU,
         )
-        await self.storage.restore_tag(tag_id=IntId(1))
+        await self.storage.restore_tag(tag_id=self.factory.core.hex_id(1))
         restored_tags = await self.storage.list_tags(
             include_deleted=False,
             language=LanguageEnum.RU,
@@ -559,8 +558,12 @@ class TestArticlesDatabaseStorage(StorageTestCase):
     async def test_search_tags_matches_typo(self) -> None:
         await self.storage_helper.create_tags(
             tags=[
-                self.factory.core.tag(tag_id=IntId(1), name="Python", slug="python"),
-                self.factory.core.tag(tag_id=IntId(2), name="Django", slug="django"),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(1), name="Python", slug="python"
+                ),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(2), name="Django", slug="django"
+                ),
             ],
         )
 
@@ -577,7 +580,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         await self.storage_helper.create_tags(
             tags=[
                 self.factory.core.tag(
-                    tag_id=IntId(1),
+                    tag_id=self.factory.core.hex_id(1),
                     name_ru="Базы данных",
                     name_en="Databases",
                     slug="databases",
@@ -598,17 +601,17 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         await self.storage_helper.create_tags(
             tags=[
                 self.factory.core.tag(
-                    tag_id=IntId(1),
+                    tag_id=self.factory.core.hex_id(1),
                     name="Package tooling",
                     slug="python-packages",
                 ),
                 self.factory.core.tag(
-                    tag_id=IntId(2),
+                    tag_id=self.factory.core.hex_id(2),
                     name="Python",
                     slug="language",
                 ),
                 self.factory.core.tag(
-                    tag_id=IntId(3),
+                    tag_id=self.factory.core.hex_id(3),
                     name="Python internals",
                     slug="runtime",
                 ),
@@ -627,9 +630,15 @@ class TestArticlesDatabaseStorage(StorageTestCase):
     async def test_search_tags_respects_limit(self) -> None:
         await self.storage_helper.create_tags(
             tags=[
-                self.factory.core.tag(tag_id=IntId(1), name="Limit A", slug="limit-a"),
-                self.factory.core.tag(tag_id=IntId(2), name="Limit B", slug="limit-b"),
-                self.factory.core.tag(tag_id=IntId(3), name="Limit C", slug="limit-c"),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(1), name="Limit A", slug="limit-a"
+                ),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(2), name="Limit B", slug="limit-b"
+                ),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(3), name="Limit C", slug="limit-c"
+                ),
             ],
         )
 
@@ -645,9 +654,11 @@ class TestArticlesDatabaseStorage(StorageTestCase):
     async def test_search_tags_excludes_deleted_tags(self) -> None:
         await self.storage_helper.create_tags(
             tags=[
-                self.factory.core.tag(tag_id=IntId(1), name="Python", slug="python"),
                 self.factory.core.tag(
-                    tag_id=IntId(2),
+                    tag_id=self.factory.core.hex_id(1), name="Python", slug="python"
+                ),
+                self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(2),
                     name="Python deleted",
                     slug="python-deleted",
                     deleted_at="2026-01-04T03:04:05",
@@ -667,5 +678,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
     async def test_update_unknown_tag_raises_not_found(self) -> None:
         with pytest.raises(TagNotFoundError):
             await self.storage.update_tag(
-                tag=self.factory.core.tag(tag_id=IntId(999), name="Missing", slug="missing"),
+                tag=self.factory.core.tag(
+                    tag_id=self.factory.core.hex_id(999), name="Missing", slug="missing"
+                ),
             )

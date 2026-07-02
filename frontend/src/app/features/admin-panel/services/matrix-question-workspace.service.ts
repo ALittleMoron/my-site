@@ -69,7 +69,7 @@ export class MatrixQuestionWorkspaceService {
   }
 
   createSection(
-    sheetId: number,
+    sheetId: string,
     payload: AdminMatrixSectionCreatePayload,
     language: LanguageCode,
   ): Observable<AdminMatrixStructureSection> {
@@ -81,7 +81,7 @@ export class MatrixQuestionWorkspaceService {
   }
 
   createSubsection(
-    sectionId: number,
+    sectionId: string,
     payload: AdminMatrixSubsectionCreatePayload,
     language: LanguageCode,
   ): Observable<AdminMatrixStructureSubsection> {
@@ -92,20 +92,20 @@ export class MatrixQuestionWorkspaceService {
     );
   }
 
-  updateSheetPriorities(orderedIds: readonly number[]): Observable<void> {
+  updateSheetPriorities(orderedIds: readonly string[]): Observable<void> {
     return this.api.put<void>('/api/admin/competency-matrix/sheets/priorities', {
       orderedIds,
     });
   }
 
-  updateSectionPriorities(sheetId: number, orderedIds: readonly number[]): Observable<void> {
+  updateSectionPriorities(sheetId: string, orderedIds: readonly string[]): Observable<void> {
     return this.api.put<void>(
       `/api/admin/competency-matrix/sheets/${sheetId}/sections/priorities`,
       { orderedIds },
     );
   }
 
-  updateSubsectionPriorities(sectionId: number, orderedIds: readonly number[]): Observable<void> {
+  updateSubsectionPriorities(sectionId: string, orderedIds: readonly string[]): Observable<void> {
     return this.api.put<void>(
       `/api/admin/competency-matrix/sections/${sectionId}/subsections/priorities`,
       { orderedIds },

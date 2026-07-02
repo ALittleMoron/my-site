@@ -8,6 +8,8 @@ import { Resume, Resumes, ResumePayload } from '../../models/resume-workspace.mo
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import { AdminResumesPageComponent } from './resumes-page.component';
 
+const RESUME_ID = '00000000000000000000000000000007';
+
 describe('AdminResumesPageComponent', () => {
   let fixture: ComponentFixture<AdminResumesPageComponent>;
   let service: {
@@ -109,7 +111,9 @@ describe('AdminResumesPageComponent', () => {
       }),
     } satisfies ResumePayload);
     expect(notifications.success).toHaveBeenCalledWith('Резюме сохранено.');
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes/7');
+    expect(router.navigateByUrl).toHaveBeenCalledWith(
+      `/admin-panel/workspace/resumes/${RESUME_ID}`,
+    );
   });
 
   it('marks required create fields and clears red border after a required value is entered', () => {
@@ -215,7 +219,7 @@ function resumesList(resumes: Resume[]): Resumes {
 
 function resume(): Resume {
   return {
-    id: 7,
+    id: RESUME_ID,
     title: 'Backend resume',
     language: 'en',
     createdAt: '2026-01-01T03:04:05+00:00',

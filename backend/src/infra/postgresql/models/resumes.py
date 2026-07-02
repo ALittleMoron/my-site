@@ -5,7 +5,6 @@ from sqlalchemy import Enum, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
-from sqlalchemy_dev_utils.mixins.ids import IntegerIDMixin
 
 from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
@@ -24,11 +23,11 @@ from core.resumes.schemas import (
     ResumeSkillGroup,
     ResumeSummary,
 )
-from core.types import IntId
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
-class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
+class ResumeModel(HexUuidIDMixin, AuditMixin, BaseModel):
     title: Mapped[str] = mapped_column(String(length=255), doc="Private workspace resume title")
     language: Mapped[LanguageEnum] = mapped_column(
         Enum(LanguageEnum, native_enum=True, name="language_enum"),
@@ -79,7 +78,7 @@ class ResumeModel(IntegerIDMixin, AuditMixin, BaseModel):
 
     def to_domain_schema(self) -> Resume:
         return Resume(
-            id=IntId(self.id),
+            id=self.id,
             title=self.title,
             language=self.language,
             content=self._content_from_json(data=self.content),

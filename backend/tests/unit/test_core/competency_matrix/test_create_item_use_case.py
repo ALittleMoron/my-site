@@ -41,7 +41,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         await self.use_case.create_item(params=params)
         self.storage.get_resources_by_ids.assert_not_called()
         self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
-            subsection_id=self.factory.core.int_id(1),
+            subsection_id=self.factory.core.hex_id(1),
         )
         self.storage.create_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(
@@ -68,7 +68,7 @@ class TestCompetencyMatrixUseCase(TestCase):
             await self.use_case.create_item(params=params)
 
         self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
-            subsection_id=self.factory.core.int_id(1),
+            subsection_id=self.factory.core.hex_id(1),
         )
         self.storage.create_competency_matrix_item.assert_not_called()
 
@@ -98,7 +98,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         with pytest.raises(CompetencyMatrixItemNotFoundError):
             await self.use_case.create_item(params=params)
         self.storage.get_resources_by_ids.assert_called_once_with(
-            resource_ids=[self.factory.core.int_id(1), self.factory.core.int_id(2)],
+            resource_ids=[self.factory.core.hex_id(1), self.factory.core.hex_id(2)],
         )
         self.storage.get_item_structure_by_subsection_id.assert_not_called()
         self.storage.create_competency_matrix_item.assert_not_called()

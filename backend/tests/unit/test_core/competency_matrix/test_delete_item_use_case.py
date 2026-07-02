@@ -19,6 +19,6 @@ class TestCompetencyMatrixUseCase(TestCase):
         )
 
     async def test_delete(self) -> None:
-        item_id = self.factory.core.int_id(1)
+        item_id = self.factory.core.hex_id(1)
         await self.use_case.delete_item(item_id=item_id)
         self.storage.delete_competency_matrix_item.assert_called_once_with(item_id=item_id)

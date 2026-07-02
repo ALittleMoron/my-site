@@ -9,6 +9,12 @@ from litestar.testing import TestClient
 class APIHelper:
     client: TestClient
 
+    @staticmethod
+    def _entity_id(value: int | str) -> str:
+        if isinstance(value, str):
+            return value
+        return f"{value:032x}"
+
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
@@ -140,7 +146,7 @@ class APIHelper:
 
     def get_admin_competency_matrix_item(
         self,
-        pk: int,
+        pk: int | str,
         only_published: bool | None = True,
         language: str | None = "ru",
     ) -> Response:
@@ -150,7 +156,7 @@ class APIHelper:
         if only_published is not None:
             params["onlyPublished"] = only_published
         return self.client.get(
-            f"/api/admin/competency-matrix/items/detail/{pk}",
+            f"/api/admin/competency-matrix/items/detail/{self._entity_id(pk)}",
             params=params,
         )
 
@@ -210,12 +216,14 @@ class APIHelper:
             files={"file": (filename, content, content_type)},
         )
 
-    def delete_queued_matrix_question(self, question_id: int) -> Response:
-        return self.client.delete(f"/api/admin/competency-matrix/queued-questions/{question_id}")
+    def delete_queued_matrix_question(self, question_id: int | str) -> Response:
+        return self.client.delete(
+            f"/api/admin/competency-matrix/queued-questions/{self._entity_id(question_id)}",
+        )
 
     def post_create_item_from_queue(
         self,
-        question_id: int,
+        question_id: int | str,
         data: dict[str, Any],
         language: str | None = "ru",
     ) -> Response:
@@ -223,42 +231,44 @@ class APIHelper:
         if language is not None:
             params["language"] = language
         return self.client.post(
-            f"/api/admin/competency-matrix/queued-questions/{question_id}/create-item",
+            "/api/admin/competency-matrix/queued-questions/"
+            f"{self._entity_id(question_id)}/create-item",
             params=params,
             json=data,
         )
 
-    def put_update_matrix_sheet_priorities(self, ordered_ids: list[int]) -> Response:
+    def put_update_matrix_sheet_priorities(self, ordered_ids: list[int | str]) -> Response:
         return self.client.put(
             "/api/admin/competency-matrix/sheets/priorities",
-            json={"orderedIds": ordered_ids},
+            json={"orderedIds": [self._entity_id(item_id) for item_id in ordered_ids]},
         )
 
     def put_update_matrix_section_priorities(
         self,
         *,
-        sheet_id: int,
-        ordered_ids: list[int],
+        sheet_id: int | str,
+        ordered_ids: list[int | str],
     ) -> Response:
         return self.client.put(
-            f"/api/admin/competency-matrix/sheets/{sheet_id}/sections/priorities",
-            json={"orderedIds": ordered_ids},
+            f"/api/admin/competency-matrix/sheets/{self._entity_id(sheet_id)}/sections/priorities",
+            json={"orderedIds": [self._entity_id(item_id) for item_id in ordered_ids]},
         )
 
     def put_update_matrix_subsection_priorities(
         self,
         *,
-        section_id: int,
-        ordered_ids: list[int],
+        section_id: int | str,
+        ordered_ids: list[int | str],
     ) -> Response:
         return self.client.put(
-            f"/api/admin/competency-matrix/sections/{section_id}/subsections/priorities",
-            json={"orderedIds": ordered_ids},
+            f"/api/admin/competency-matrix/sections/{self._entity_id(section_id)}"
+            "/subsections/priorities",
+            json={"orderedIds": [self._entity_id(item_id) for item_id in ordered_ids]},
         )
 
     def put_update_item(
         self,
-        pk: int,
+        pk: int | str,
         data: dict[str, Any],
         language: str | None = "ru",
     ) -> Response:
@@ -266,19 +276,25 @@ class APIHelper:
         if language is not None:
             params["language"] = language
         return self.client.put(
-            f"/api/admin/competency-matrix/items/detail/{pk}",
+            f"/api/admin/competency-matrix/items/detail/{self._entity_id(pk)}",
             params=params,
             json=data,
         )
 
-    def delete_item(self, pk: int) -> Response:
-        return self.client.delete(f"/api/admin/competency-matrix/items/detail/{pk}")
+    def delete_item(self, pk: int | str) -> Response:
+        return self.client.delete(
+            f"/api/admin/competency-matrix/items/detail/{self._entity_id(pk)}",
+        )
 
-    def post_set_draft_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/admin/competency-matrix/items/detail/{pk}/set-draft")
+    def post_set_draft_status_to_item(self, pk: int | str) -> Response:
+        return self.client.post(
+            f"/api/admin/competency-matrix/items/detail/{self._entity_id(pk)}/set-draft",
+        )
 
-    def post_set_published_status_to_item(self, pk: int) -> Response:
-        return self.client.post(f"/api/admin/competency-matrix/items/detail/{pk}/set-published")
+    def post_set_published_status_to_item(self, pk: int | str) -> Response:
+        return self.client.post(
+            f"/api/admin/competency-matrix/items/detail/{self._entity_id(pk)}/set-published",
+        )
 
     def get_articles(
         self,
@@ -468,17 +484,20 @@ class APIHelper:
     def post_create_resume(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/admin/resumes", json=data)
 
-    def get_admin_resume(self, resume_id: int) -> Response:
-        return self.client.get(f"/api/admin/resumes/{resume_id}")
+    def get_admin_resume(self, resume_id: int | str) -> Response:
+        return self.client.get(f"/api/admin/resumes/{self._entity_id(resume_id)}")
 
-    def put_update_resume(self, resume_id: int, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/admin/resumes/{resume_id}", json=data)
+    def put_update_resume(self, resume_id: int | str, data: dict[str, Any]) -> Response:
+        return self.client.put(f"/api/admin/resumes/{self._entity_id(resume_id)}", json=data)
 
-    def post_export_resume(self, resume_id: int, data: dict[str, Any]) -> Response:
-        return self.client.post(f"/api/admin/resumes/{resume_id}/export", json=data)
+    def post_export_resume(self, resume_id: int | str, data: dict[str, Any]) -> Response:
+        return self.client.post(
+            f"/api/admin/resumes/{self._entity_id(resume_id)}/export",
+            json=data,
+        )
 
-    def delete_resume(self, resume_id: int) -> Response:
-        return self.client.delete(f"/api/admin/resumes/{resume_id}")
+    def delete_resume(self, resume_id: int | str) -> Response:
+        return self.client.delete(f"/api/admin/resumes/{self._entity_id(resume_id)}")
 
     def put_update_article(
         self,
@@ -545,7 +564,7 @@ class APIHelper:
 
     def put_update_tag(
         self,
-        tag_id: int,
+        tag_id: str,
         data: dict[str, Any],
         language: str | None = "ru",
     ) -> Response:
@@ -554,10 +573,10 @@ class APIHelper:
             params["language"] = language
         return self.client.put(f"/api/admin/articles/tags/{tag_id}", params=params, json=data)
 
-    def delete_tag(self, tag_id: int) -> Response:
+    def delete_tag(self, tag_id: str) -> Response:
         return self.client.delete(f"/api/admin/articles/tags/{tag_id}")
 
-    def post_restore_tag(self, tag_id: int) -> Response:
+    def post_restore_tag(self, tag_id: str) -> Response:
         return self.client.post(f"/api/admin/articles/tags/{tag_id}/restore")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:

@@ -20,7 +20,6 @@ from core.resumes.schemas import (
     ResumeProjectItem,
     ResumeUpdateParams,
 )
-from core.types import IntId
 from tests.test_cases import ApiTestCase
 
 
@@ -50,7 +49,7 @@ class TestAdminResumesAPI(ApiTestCase):
         listed_resume = body["resumes"][0]
         assert body["totalCount"] == 1
         assert body["totalPages"] == 1
-        assert listed_resume["id"] == 1
+        assert listed_resume["id"] == self.factory.core.hex_id(1)
         assert listed_resume["title"] == "Backend resume"
         assert listed_resume["language"] == "ru"
         assert listed_resume["content"]["profile"]["fullName"] == "Candidate Name"
@@ -170,7 +169,7 @@ class TestAdminResumesAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
         body = response.json()
-        assert body["id"] == 2
+        assert body["id"] == self.factory.core.hex_id(2)
         assert body["language"] == "en"
         assert body["content"]["profile"]["phone"] == ""
         assert body["content"]["experience"][0]["currentStatus"] == "current"
@@ -209,7 +208,7 @@ class TestAdminResumesAPI(ApiTestCase):
         assert body["title"] == "Updated resume"
         assert body["language"] == "en"
         self.use_case.update_resume.assert_called_once_with(
-            resume_id=IntId(3),
+            resume_id=self.factory.core.hex_id(3),
             params=ResumeUpdateParams(
                 title="Updated resume",
                 language=LanguageEnum.EN,
@@ -506,11 +505,11 @@ class TestAdminResumesAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.OK)
         body = response.json()
-        assert body["id"] == 3
+        assert body["id"] == self.factory.core.hex_id(3)
         assert body["language"] == "ru"
         self.asserts.resume_response_contract(value=body)
         self.use_case.get_resume.assert_called_once_with(
-            resume_id=IntId(3),
+            resume_id=self.factory.core.hex_id(3),
             author_username="test",
         )
 
@@ -525,7 +524,7 @@ class TestAdminResumesAPI(ApiTestCase):
             expected_message=ResumeNotFoundError.message,
         )
         self.use_case.get_resume.assert_called_once_with(
-            resume_id=IntId(404),
+            resume_id=self.factory.core.hex_id(404),
             author_username="test",
         )
 
@@ -559,9 +558,11 @@ class TestAdminResumesAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.content == b"%PDF-1.4"
         assert response.headers["content-type"] == "application/pdf"
-        assert response.headers["content-disposition"] == 'attachment; filename="resume-3.pdf"'
+        assert response.headers["content-disposition"] == (
+            f'attachment; filename="resume-{self.factory.core.hex_id(3)}.pdf"'
+        )
         self.use_case.export_resume.assert_called_once_with(
-            resume_id=IntId(3),
+            resume_id=self.factory.core.hex_id(3),
             params=ResumeExportParams(
                 format=ResumeExportFormatEnum.PDF,
                 title="Target resume",
@@ -594,7 +595,9 @@ class TestAdminResumesAPI(ApiTestCase):
             response.headers["content-type"]
             == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-        assert response.headers["content-disposition"] == 'attachment; filename="resume-5.docx"'
+        assert response.headers["content-disposition"] == (
+            f'attachment; filename="resume-{self.factory.core.hex_id(5)}.docx"'
+        )
         self.use_case.export_resume.assert_called_once()
 
     def test_export_resume_rejects_unknown_format(self) -> None:
@@ -638,7 +641,7 @@ class TestAdminResumesAPI(ApiTestCase):
             expected_message=ResumeNotFoundError.message,
         )
         self.use_case.delete_resume.assert_called_once_with(
-            resume_id=IntId(404),
+            resume_id=self.factory.core.hex_id(404),
             author_username="test",
         )
 
@@ -647,7 +650,7 @@ class TestAdminResumesAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.delete_resume.assert_called_once_with(
-            resume_id=IntId(3),
+            resume_id=self.factory.core.hex_id(3),
             author_username="test",
         )
 

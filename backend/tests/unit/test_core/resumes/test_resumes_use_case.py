@@ -17,7 +17,6 @@ from core.resumes.schemas import (
 )
 from core.resumes.storages import ResumesStorage
 from core.resumes.use_cases import ResumesUseCase
-from core.types import IntId
 from tests.test_cases import TestCase
 
 
@@ -42,7 +41,7 @@ class TestResumesUseCase(TestCase):
             author_username="test",
         )
         resume = self.factory.core.resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             content=self.factory.core.resume_full_content(
                 summary="Builds reliable systems.",
                 skill_items=["Python"],
@@ -72,7 +71,7 @@ class TestResumesUseCase(TestCase):
 
     async def test_get_resume_delegates_to_storage(self) -> None:
         expected = self.factory.core.resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             content=self.factory.core.resume_full_content(
                 summary="Builds reliable systems.",
                 skill_items=["Python"],
@@ -80,11 +79,13 @@ class TestResumesUseCase(TestCase):
         )
         self.storage.get_resume.return_value = expected
 
-        result = await self.use_case.get_resume(resume_id=IntId(1), author_username="test")
+        result = await self.use_case.get_resume(
+            resume_id=self.factory.core.hex_id(1), author_username="test"
+        )
 
         assert result == expected
         self.storage.get_resume.assert_called_once_with(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             author_username="test",
         )
 
@@ -92,7 +93,9 @@ class TestResumesUseCase(TestCase):
         self.storage.get_resume.side_effect = ResumeNotFoundError
 
         with pytest.raises(ResumeNotFoundError):
-            await self.use_case.get_resume(resume_id=IntId(404), author_username="test")
+            await self.use_case.get_resume(
+                resume_id=self.factory.core.hex_id(404), author_username="test"
+            )
 
     async def test_create_resume_persists_explicit_content(self) -> None:
         content = self.factory.core.resume_full_content(
@@ -105,7 +108,7 @@ class TestResumesUseCase(TestCase):
             content=content,
             author_username="test",
         )
-        expected = self.factory.core.resume(resume_id=IntId(1), content=content)
+        expected = self.factory.core.resume(resume_id=self.factory.core.hex_id(1), content=content)
         self.storage.create_resume.return_value = expected
 
         result = await self.use_case.create_resume(params=params)
@@ -119,7 +122,7 @@ class TestResumesUseCase(TestCase):
             skill_items=["Python", "SQL"],
         )
         existing_resume = self.factory.core.resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             content=existing_content,
             author_username="original-author",
             created_at="2026-01-01T00:00:00",
@@ -132,7 +135,7 @@ class TestResumesUseCase(TestCase):
             content=replacement_content,
         )
         expected = self.factory.core.resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             content=replacement_content,
             author_username="original-author",
         )
@@ -140,14 +143,14 @@ class TestResumesUseCase(TestCase):
         self.storage.update_resume.return_value = expected
 
         result = await self.use_case.update_resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             params=params,
             author_username="original-author",
         )
 
         assert result == expected
         self.storage.get_resume.assert_called_once_with(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             author_username="original-author",
         )
         self.storage.update_resume.assert_called_once()
@@ -162,16 +165,18 @@ class TestResumesUseCase(TestCase):
         assert updated_resume.content.experience == []
 
     async def test_delete_resume_delegates_to_storage(self) -> None:
-        await self.use_case.delete_resume(resume_id=IntId(1), author_username="test")
+        await self.use_case.delete_resume(
+            resume_id=self.factory.core.hex_id(1), author_username="test"
+        )
 
         self.storage.delete_resume.assert_called_once_with(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             author_username="test",
         )
 
     async def test_export_resume_checks_owner_and_exports_current_payload(self) -> None:
         existing_resume = self.factory.core.resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             content=self.factory.core.resume_full_content(
                 summary="Saved summary",
                 skill_items=["Python"],
@@ -192,14 +197,14 @@ class TestResumesUseCase(TestCase):
         self.exporter.export_resume.return_value = expected
 
         result = await self.use_case.export_resume(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             params=params,
             author_username="test",
         )
 
         assert result == expected
         self.storage.get_resume.assert_called_once_with(
-            resume_id=IntId(1),
+            resume_id=self.factory.core.hex_id(1),
             author_username="test",
         )
         self.exporter.export_resume.assert_called_once_with(params=params)
@@ -218,7 +223,7 @@ class TestResumesUseCase(TestCase):
 
         with pytest.raises(ResumeNotFoundError):
             await self.use_case.export_resume(
-                resume_id=IntId(404),
+                resume_id=self.factory.core.hex_id(404),
                 params=params,
                 author_username="test",
             )

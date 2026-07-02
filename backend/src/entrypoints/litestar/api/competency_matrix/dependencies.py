@@ -22,7 +22,7 @@ from core.competency_matrix.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId, SearchName
+from core.types import SearchName
 
 
 def provide_competency_matrix_resource_search_params(
@@ -38,11 +38,11 @@ def provide_competency_matrix_resource_search_params(
 
 
 def provide_competency_matrix_item_get_params(
-    pk: FromPath[int],
+    pk: FromPath[str],
     only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
 ) -> CompetencyMatrixItemGetParams:
     return CompetencyMatrixItemGetParams(
-        item_id=IntId(pk),
+        item_id=pk,
         only_published=only_published,
     )
 
@@ -57,19 +57,19 @@ def provide_competency_matrix_public_item_get_params(
 
 
 def provide_competency_matrix_item_draft_status_params(
-    pk: FromPath[int],
+    pk: FromPath[str],
 ) -> CompetencyMatrixItemPublishStatusSwitchParams:
     return CompetencyMatrixItemPublishStatusSwitchParams(
-        item_id=IntId(pk),
+        item_id=pk,
         publish_status=PublishStatusEnum.DRAFT,
     )
 
 
 def provide_competency_matrix_item_published_status_params(
-    pk: FromPath[int],
+    pk: FromPath[str],
 ) -> CompetencyMatrixItemPublishStatusSwitchParams:
     return CompetencyMatrixItemPublishStatusSwitchParams(
-        item_id=IntId(pk),
+        item_id=pk,
         publish_status=PublishStatusEnum.PUBLISHED,
     )
 

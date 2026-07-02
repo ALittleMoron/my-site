@@ -34,7 +34,7 @@ export interface ArticleTagTranslationsDto {
 }
 
 export interface ArticleTagDto {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   deletedAt: string | null;
@@ -142,7 +142,7 @@ export interface ArticleStatsDto {
 }
 
 export interface ArticleTag {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   deletedAt: string | null;
@@ -241,7 +241,7 @@ export interface ArticleTagTranslations {
 export interface ArticlePayload {
   slug: string;
   publishStatus: ArticlePublishStatus;
-  tagIds: number[];
+  tagIds: string[];
   metadata: ArticleMetadata;
   translations: ArticleTranslations;
 }

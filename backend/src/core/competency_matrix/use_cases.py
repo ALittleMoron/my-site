@@ -37,7 +37,6 @@ from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -237,7 +236,7 @@ class CompetencyMatrixUseCase:
             item.ensure_public_ready()
         return await self.storage.update_competency_matrix_item(item=item)
 
-    async def delete_item(self, *, item_id: IntId) -> None:
+    async def delete_item(self, *, item_id: str) -> None:
         await self.storage.delete_competency_matrix_item(item_id=item_id)
 
     async def switch_item_publish_status(
@@ -272,5 +271,5 @@ class CompetencyMatrixUseCase:
     ) -> QueuedCompetencyMatrixQuestions:
         return await self.storage.create_queued_questions(params=params)
 
-    async def delete_queued_question(self, *, question_id: IntId) -> None:
+    async def delete_queued_question(self, *, question_id: str) -> None:
         await self.storage.delete_queued_question(question_id=question_id)

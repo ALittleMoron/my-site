@@ -33,26 +33,26 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
         self.storage.list_structure.return_value = CompetencyMatrixStructure(
             sheets=[
                 CompetencyMatrixStructureSheet(
-                    id=self.factory.core.int_id(1),
+                    id=self.factory.core.hex_id(1),
                     key="python",
                     name_ru="Питон",
                     name_en="Python",
                     priority=1,
                     sections=[
                         CompetencyMatrixStructureSection(
-                            id=self.factory.core.int_id(2),
+                            id=self.factory.core.hex_id(2),
                             name_ru="Основы",
                             name_en="Basics",
                             priority=1,
                             subsections=[
                                 CompetencyMatrixStructureSubsection(
-                                    id=self.factory.core.int_id(4),
+                                    id=self.factory.core.hex_id(4),
                                     name_ru="Функции",
                                     name_en="Functions",
                                     priority=1,
                                 ),
                                 CompetencyMatrixStructureSubsection(
-                                    id=self.factory.core.int_id(5),
+                                    id=self.factory.core.hex_id(5),
                                     name_ru="Типизация",
                                     name_en="Typing",
                                     priority=2,
@@ -60,7 +60,7 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
                             ],
                         ),
                         CompetencyMatrixStructureSection(
-                            id=self.factory.core.int_id(3),
+                            id=self.factory.core.hex_id(3),
                             name_ru="Стиль",
                             name_en="Style",
                             priority=2,
@@ -82,7 +82,7 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
 
     async def test_updates_valid_sheet_order(self) -> None:
         params = CompetencyMatrixSheetPriorityUpdateParams(
-            ordered_ids=(self.factory.core.int_id(1),),
+            ordered_ids=(self.factory.core.hex_id(1),),
         )
 
         await self.use_case.update_sheet_priorities(params=params)
@@ -91,8 +91,8 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
 
     async def test_rejects_duplicate_or_stale_order(self) -> None:
         params = CompetencyMatrixSectionPriorityUpdateParams(
-            sheet_id=self.factory.core.int_id(1),
-            ordered_ids=(self.factory.core.int_id(2), self.factory.core.int_id(2)),
+            sheet_id=self.factory.core.hex_id(1),
+            ordered_ids=(self.factory.core.hex_id(2), self.factory.core.hex_id(2)),
         )
 
         with pytest.raises(CompetencyMatrixStructurePriorityInvalidError):
@@ -102,7 +102,7 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
 
     async def test_rejects_missing_parent(self) -> None:
         params = CompetencyMatrixSubsectionPriorityUpdateParams(
-            section_id=self.factory.core.int_id(-1),
+            section_id=self.factory.core.hex_id(-1),
             ordered_ids=(),
         )
 
@@ -115,45 +115,45 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
         structure = self.storage.list_structure.return_value
 
         structure.ensure_sheet_priority_order_matches(
-            ordered_ids=(self.factory.core.int_id(1),),
+            ordered_ids=(self.factory.core.hex_id(1),),
         )
 
         with pytest.raises(CompetencyMatrixStructurePriorityInvalidError):
             structure.ensure_sheet_priority_order_matches(
-                ordered_ids=(self.factory.core.int_id(1), self.factory.core.int_id(1)),
+                ordered_ids=(self.factory.core.hex_id(1), self.factory.core.hex_id(1)),
             )
 
     def test_structure_finds_sheet_and_section(self) -> None:
         structure = self.storage.list_structure.return_value
 
-        sheet = structure.require_sheet(sheet_id=self.factory.core.int_id(1))
-        section = structure.require_section(section_id=self.factory.core.int_id(2))
+        sheet = structure.require_sheet(sheet_id=self.factory.core.hex_id(1))
+        section = structure.require_section(section_id=self.factory.core.hex_id(2))
 
         assert sheet.key == "python"
         assert section.name_en == "Basics"
 
         with pytest.raises(CompetencyMatrixStructureNotFoundError):
-            structure.require_sheet(sheet_id=self.factory.core.int_id(-1))
+            structure.require_sheet(sheet_id=self.factory.core.hex_id(-1))
 
         with pytest.raises(CompetencyMatrixStructureNotFoundError):
-            structure.require_section(section_id=self.factory.core.int_id(-1))
+            structure.require_section(section_id=self.factory.core.hex_id(-1))
 
     def test_structure_nodes_validate_child_priority_order(self) -> None:
         structure = self.storage.list_structure.return_value
-        sheet = structure.require_sheet(sheet_id=self.factory.core.int_id(1))
-        section = structure.require_section(section_id=self.factory.core.int_id(2))
+        sheet = structure.require_sheet(sheet_id=self.factory.core.hex_id(1))
+        section = structure.require_section(section_id=self.factory.core.hex_id(2))
 
         sheet.ensure_section_priority_order_matches(
-            ordered_ids=(self.factory.core.int_id(3), self.factory.core.int_id(2)),
+            ordered_ids=(self.factory.core.hex_id(3), self.factory.core.hex_id(2)),
         )
         section.ensure_subsection_priority_order_matches(
-            ordered_ids=(self.factory.core.int_id(5), self.factory.core.int_id(4)),
+            ordered_ids=(self.factory.core.hex_id(5), self.factory.core.hex_id(4)),
         )
 
         with pytest.raises(CompetencyMatrixStructurePriorityInvalidError):
-            sheet.ensure_section_priority_order_matches(ordered_ids=(self.factory.core.int_id(2),))
+            sheet.ensure_section_priority_order_matches(ordered_ids=(self.factory.core.hex_id(2),))
 
         with pytest.raises(CompetencyMatrixStructurePriorityInvalidError):
             section.ensure_subsection_priority_order_matches(
-                ordered_ids=(self.factory.core.int_id(4), self.factory.core.int_id(4)),
+                ordered_ids=(self.factory.core.hex_id(4), self.factory.core.hex_id(4)),
             )

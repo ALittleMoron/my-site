@@ -4,18 +4,16 @@ from dataclasses import dataclass, replace
 from datetime import date, datetime
 from math import ceil
 from typing import Self
-from uuid import UUID
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
-from core.types import IntId
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Tag:
-    id: IntId
+    id: str
     name_ru: str
     name_en: str
     slug: str
@@ -32,7 +30,7 @@ class Tag:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Tags(ValuedDataclass[Tag]):
-    def all_tags_exist_by_ids(self, ids: set[IntId]) -> bool:
+    def all_tags_exist_by_ids(self, ids: set[str]) -> bool:
         return ids.difference({tag.id for tag in self.values}) == set()
 
 
@@ -64,7 +62,7 @@ class ArticleMetadata:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Article:
-    id: UUID
+    id: str
     slug: str
     title_ru: str
     title_en: str
@@ -167,7 +165,7 @@ class ArticleFilters:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleCreateParams:
-    id: UUID
+    id: str
     slug: str
     title_ru: str
     title_en: str
@@ -178,7 +176,7 @@ class ArticleCreateParams:
     author_username: str
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
-    tag_ids: list[IntId]
+    tag_ids: list[str]
 
     def to_article(self, *, now: datetime, tags: Tags) -> Article:
         return Article(
@@ -211,7 +209,7 @@ class ArticleUpdateParams:
     folder_en: str
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
-    tag_ids: list[IntId]
+    tag_ids: list[str]
 
     def to_article(self, *, existing_article: Article, now: datetime, tags: Tags) -> Article:
         published_at = existing_article.published_at
@@ -316,14 +314,14 @@ class ArticleReactionCounts:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticlePublicStats:
-    article_id: UUID
+    article_id: str
     view_count: int
     reaction_counts: ArticleReactionCounts
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticlePublicStatsCollection(ValuedDataclass[ArticlePublicStats]):
-    def by_article_id(self, article_id: UUID) -> ArticlePublicStats:
+    def by_article_id(self, article_id: str) -> ArticlePublicStats:
         for stats in self.values:
             if stats.article_id == article_id:
                 return stats
@@ -333,7 +331,7 @@ class ArticlePublicStatsCollection(ValuedDataclass[ArticlePublicStats]):
             reaction_counts=ArticleReactionCounts.zero(),
         )
 
-    def fill_missing(self, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
+    def fill_missing(self, article_ids: list[str]) -> ArticlePublicStatsCollection:
         return ArticlePublicStatsCollection(
             values=[self.by_article_id(article_id) for article_id in article_ids],
         )
@@ -348,7 +346,7 @@ class ArticleAnalyticsTotals:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleAnalyticsArticleStats:
-    article_id: UUID
+    article_id: str
     title: str
     slug: str
     view_count: int
@@ -384,7 +382,7 @@ class ArticleAnalyticsArticleStats:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleAnalyticsDailyStats:
-    article_id: UUID
+    article_id: str
     title: str
     slug: str
     date: date
@@ -408,7 +406,7 @@ class ArticleAnalyticsStats:
         date_from: date,
         date_to: date,
         daily: list[ArticleAnalyticsDailyStats],
-        reaction_counts: dict[UUID, ArticleReactionCounts],
+        reaction_counts: dict[str, ArticleReactionCounts],
     ) -> Self:
         articles = cls._build_article_stats(daily=daily, reaction_counts=reaction_counts)
         return cls(
@@ -428,9 +426,9 @@ class ArticleAnalyticsStats:
         cls,
         *,
         daily: list[ArticleAnalyticsDailyStats],
-        reaction_counts: dict[UUID, ArticleReactionCounts],
+        reaction_counts: dict[str, ArticleReactionCounts],
     ) -> list[ArticleAnalyticsArticleStats]:
-        article_stats: dict[UUID, ArticleAnalyticsArticleStats] = {}
+        article_stats: dict[str, ArticleAnalyticsArticleStats] = {}
         for item in daily:
             existing = article_stats.get(item.article_id)
             if existing is None:
@@ -448,7 +446,7 @@ class ArticleAnalyticsStats:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TagCreateParams:
-    id: IntId
+    id: str
     name_ru: str
     name_en: str
     slug: str
@@ -469,7 +467,7 @@ class TagUpdateParams:
     name_en: str
     slug: str
 
-    def to_tag(self, tag_id: IntId) -> Tag:
+    def to_tag(self, tag_id: str) -> Tag:
         return Tag(
             id=tag_id,
             name_ru=self.name_ru,

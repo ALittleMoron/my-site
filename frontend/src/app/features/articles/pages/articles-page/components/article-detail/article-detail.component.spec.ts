@@ -13,7 +13,7 @@ describe('ArticleDetailComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(ArticleDetailComponent);
     fixture.componentRef.setInput('article', {
-      id: '00000000-0000-0000-0000-000000000001',
+      id: '00000000000000000000000000000001',
       title: 'Typed articles',
       slug: 'typed-articles',
       folder: 'Engineering',
@@ -39,7 +39,7 @@ describe('ArticleDetailComponent', () => {
       reactionCounts: { heart: 1, fire: 2, thinking: 3, neutral: 4, poop: 5 },
       tags: [
         {
-          id: 1,
+          id: '00000000000000000000000000000002',
           name: 'Python',
           slug: 'python',
           deletedAt: null,

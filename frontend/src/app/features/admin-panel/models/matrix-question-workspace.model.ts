@@ -122,7 +122,7 @@ export interface AdminMatrixQuestionTranslations {
 }
 
 export interface AdminMatrixAttachedResourceDto {
-  id: number;
+  id: string;
   name: string;
   url: string;
   context: string;
@@ -138,7 +138,7 @@ export interface AdminMatrixQuestionDetailDto {
   question: string;
   answer: string;
   interviewExpectedAnswer: string;
-  subsectionId: number;
+  subsectionId: string;
   sheetKey: string;
   sheet: string;
   grade: AdminMatrixGrade | null;
@@ -151,7 +151,7 @@ export interface AdminMatrixQuestionDetailDto {
 }
 
 export interface AdminMatrixExistingResourceAttachmentPayload {
-  resourceId: number;
+  resourceId: string;
   translations: {
     ru: { context: string };
     en: { context: string };
@@ -168,7 +168,7 @@ export interface AdminMatrixResourceTranslations {
 }
 
 export interface AdminMatrixResource {
-  id: number;
+  id: string;
   name: string;
   url: string;
   translations: AdminMatrixResourceTranslations;
@@ -196,7 +196,7 @@ export type AdminMatrixResourceAttachmentPayload =
 
 export interface AdminMatrixQuestionPayload {
   slug: string;
-  subsectionId: number;
+  subsectionId: string;
   grade: AdminMatrixGrade | null;
   interviewFrequency: AdminMatrixInterviewFrequency | null;
   publishStatus: AdminMatrixPublishStatus;
@@ -214,14 +214,14 @@ export interface AdminMatrixStructureNameTranslations {
 }
 
 export interface AdminMatrixStructureSubsection {
-  id: number;
+  id: string;
   name: string;
   priority: number;
   translations: AdminMatrixStructureNameTranslations;
 }
 
 export interface AdminMatrixStructureSection {
-  id: number;
+  id: string;
   name: string;
   priority: number;
   translations: AdminMatrixStructureNameTranslations;
@@ -229,7 +229,7 @@ export interface AdminMatrixStructureSection {
 }
 
 export interface AdminMatrixStructureSheet {
-  id: number;
+  id: string;
   key: string;
   name: string;
   priority: number;

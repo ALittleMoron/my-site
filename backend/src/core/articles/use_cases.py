@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from hashlib import sha256
 from urllib.parse import urlparse
-from uuid import UUID
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.event_dispatchers import ArticleAnalyticsErrorReporter
@@ -27,7 +26,6 @@ from core.articles.storages import ArticleAnalyticsStorage, ArticlesStorage
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import Secret
-from core.types import IntId
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -89,7 +87,7 @@ class ArticlesUseCase:
             article=params.to_article(existing_article=existing_article, now=now, tags=tags),
         )
 
-    async def _get_active_tags(self, *, tag_ids: list[IntId]) -> Tags:
+    async def _get_active_tags(self, *, tag_ids: list[str]) -> Tags:
         tags = await self.storage.get_tags_by_ids(
             tag_ids=tag_ids,
             include_deleted=False,
@@ -133,15 +131,15 @@ class ArticlesUseCase:
     async def update_tag(
         self,
         *,
-        tag_id: IntId,
+        tag_id: str,
         params: TagUpdateParams,
     ) -> Tag:
         return await self.storage.update_tag(tag=params.to_tag(tag_id=tag_id))
 
-    async def soft_delete_tag(self, *, tag_id: IntId) -> None:
+    async def soft_delete_tag(self, *, tag_id: str) -> None:
         await self.storage.soft_delete_tag(tag_id=tag_id)
 
-    async def restore_tag(self, *, tag_id: IntId) -> None:
+    async def restore_tag(self, *, tag_id: str) -> None:
         await self.storage.restore_tag(tag_id=tag_id)
 
 
@@ -194,7 +192,7 @@ class ArticleAnalyticsUseCase:
             viewed_on=None,
         )
 
-    async def get_public_stats(self, *, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
+    async def get_public_stats(self, *, article_ids: list[str]) -> ArticlePublicStatsCollection:
         unique_article_ids = list(dict.fromkeys(article_ids))
         stats = await self.analytics_storage.get_public_stats(article_ids=unique_article_ids)
         return stats.fill_missing(article_ids=unique_article_ids)
@@ -289,7 +287,7 @@ class ArticleAnalyticsUseCase:
             )
         )
 
-    def _build_article_scoped_voter_hash(self, *, article_id: UUID, client_token: str) -> str:
+    def _build_article_scoped_voter_hash(self, *, article_id: str, client_token: str) -> str:
         message = f"{article_id}:{client_token}".encode()
         return hmac.new(
             self.reaction_secret.get_secret_value().encode(),

@@ -4,6 +4,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { MatrixService } from './matrix.service';
 import { ApiClient } from '../../../core/http/api-client.service';
 
+const RESOURCE_ID = '00000000000000000000000000000001';
+
 describe('MatrixService', () => {
   let service: MatrixService;
   let httpMock: HttpTestingController;
@@ -152,7 +154,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
     },
     resources: [
       {
-        id: 1,
+        id: RESOURCE_ID,
         name: 'Python docs',
         url: 'https://docs.python.org',
         context: 'Read first',

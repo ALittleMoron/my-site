@@ -1,5 +1,4 @@
 from typing import Annotated, Self
-from uuid import UUID
 
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
@@ -65,7 +64,7 @@ class ContactMeRequest(CamelCaseSchema):
             raise ValueError(msg)
         return self
 
-    def to_schema(self, contact_me_id: UUID) -> ContactMe:
+    def to_schema(self, contact_me_id: str) -> ContactMe:
         return ContactMe(
             id=contact_me_id,
             name=self.name,

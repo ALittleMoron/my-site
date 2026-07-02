@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 
 import pytest_asyncio
@@ -29,7 +28,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
 
     def test_track_public_view(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id="00000000000040008000000000000041",
             title="Public article",
             slug="public-article",
         )
@@ -106,7 +105,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
         )
 
     def test_get_public_stats(self) -> None:
-        article_id = uuid.UUID(int=1)
+        article_id = "00000000000040008000000000000041"
         self.analytics_use_case.get_public_stats.return_value = ArticlePublicStatsCollection(
             values=[
                 ArticlePublicStats(
@@ -123,13 +122,13 @@ class TestArticleAnalyticsAPI(ApiTestCase):
             ],
         )
 
-        response = self.no_auth_api.get_article_public_stats(article_ids=[str(article_id)])
+        response = self.no_auth_api.get_article_public_stats(article_ids=[article_id])
 
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
             "stats": [
                 {
-                    "articleId": str(article_id),
+                    "articleId": article_id,
                     "viewCount": 7,
                     "reactionCounts": {
                         "heart": 1,
@@ -182,7 +181,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
         )
 
     def test_get_stats(self) -> None:
-        article_id = uuid.UUID(int=1)
+        article_id = "00000000000040008000000000000041"
         self.analytics_use_case.get_stats.return_value = ArticleAnalyticsStats(
             date_from=date(2026, 1, 1),
             date_to=date(2026, 1, 31),
@@ -233,7 +232,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
             },
             "articles": [
                 {
-                    "articleId": str(article_id),
+                    "articleId": article_id,
                     "title": "Typed articles",
                     "slug": "typed-articles",
                     "viewCount": 7,
@@ -249,7 +248,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
             ],
             "daily": [
                 {
-                    "articleId": str(article_id),
+                    "articleId": article_id,
                     "title": "Typed articles",
                     "slug": "typed-articles",
                     "date": "2026-01-02",

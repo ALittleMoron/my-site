@@ -5,6 +5,8 @@ import { ApiClient } from '../../../core/http/api-client.service';
 import { ResumePayload } from '../models/resume-workspace.model';
 import { ResumeWorkspaceService } from './resume-workspace.service';
 
+const RESUME_ID = '00000000000000000000000000000007';
+
 describe('ResumeWorkspaceService', () => {
   let service: ResumeWorkspaceService;
   let httpMock: HttpTestingController;
@@ -50,11 +52,13 @@ describe('ResumeWorkspaceService', () => {
   it('loads resume detail through the admin endpoint', () => {
     let fullName = '';
 
-    service.getResume(7).subscribe((resume) => {
+    service.getResume(RESUME_ID).subscribe((resume) => {
       fullName = resume.content.profile.fullName;
     });
 
-    const detailReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
+    const detailReq = httpMock.expectOne((request) =>
+      request.url.endsWith(`/api/admin/resumes/${RESUME_ID}`),
+    );
     expect(detailReq.request.method).toBe('GET');
     detailReq.flush(resumeDto());
 
@@ -65,23 +69,27 @@ describe('ResumeWorkspaceService', () => {
     const payload = resumePayload();
 
     service.createResume(payload).subscribe((resume) => {
-      expect(resume.id).toBe(7);
+      expect(resume.id).toBe(RESUME_ID);
     });
     const createReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes'));
     expect(createReq.request.method).toBe('POST');
     expect(createReq.request.body).toEqual(payload);
     createReq.flush(resumeDto());
 
-    service.updateResume(7, payload).subscribe((resume) => {
+    service.updateResume(RESUME_ID, payload).subscribe((resume) => {
       expect(resume.title).toBe('Backend resume');
     });
-    const updateReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
+    const updateReq = httpMock.expectOne((request) =>
+      request.url.endsWith(`/api/admin/resumes/${RESUME_ID}`),
+    );
     expect(updateReq.request.method).toBe('PUT');
     expect(updateReq.request.body).toEqual(payload);
     updateReq.flush(resumeDto());
 
-    service.deleteResume(7).subscribe();
-    const deleteReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
+    service.deleteResume(RESUME_ID).subscribe();
+    const deleteReq = httpMock.expectOne((request) =>
+      request.url.endsWith(`/api/admin/resumes/${RESUME_ID}`),
+    );
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
   });
@@ -90,12 +98,12 @@ describe('ResumeWorkspaceService', () => {
     const payload = resumePayload();
     let exportedBlob: Blob | null = null;
 
-    service.exportResume(7, 'pdf', payload).subscribe((blob) => {
+    service.exportResume(RESUME_ID, 'pdf', payload).subscribe((blob) => {
       exportedBlob = blob;
     });
 
     const exportReq = httpMock.expectOne((request) =>
-      request.url.endsWith('/api/admin/resumes/7/export'),
+      request.url.endsWith(`/api/admin/resumes/${RESUME_ID}/export`),
     );
     expect(exportReq.request.method).toBe('POST');
     expect(exportReq.request.responseType).toBe('blob');
@@ -113,14 +121,16 @@ describe('ResumeWorkspaceService', () => {
     let payloadProjectTechnologies: readonly string[] = [];
     const dto = resumeDto();
 
-    service.getResume(7).subscribe((resume) => {
+    service.getResume(RESUME_ID).subscribe((resume) => {
       payloadItems = resume.content.skills[0].items;
       payloadProjectTechnologies = resume.content.experience[0].projects[0].technologies;
       resume.content.skills[0].items.push('TypeScript');
       resume.content.experience[0].projects[0].technologies.push('Angular');
     });
 
-    const detailReq = httpMock.expectOne((request) => request.url.endsWith('/api/admin/resumes/7'));
+    const detailReq = httpMock.expectOne((request) =>
+      request.url.endsWith(`/api/admin/resumes/${RESUME_ID}`),
+    );
     detailReq.flush(dto);
 
     expect(payloadItems).toEqual(['Python', 'PostgreSQL', 'TypeScript']);
@@ -139,7 +149,7 @@ function resumePayload(): ResumePayload {
 }
 
 function resumeDto(): {
-  id: number;
+  id: string;
   title: string;
   language: 'en';
   content: ReturnType<typeof resumeContent>;
@@ -147,7 +157,7 @@ function resumeDto(): {
   updatedAt: string;
 } {
   return {
-    id: 7,
+    id: RESUME_ID,
     title: 'Backend resume',
     language: 'en',
     content: resumeContent(),

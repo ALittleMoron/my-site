@@ -71,7 +71,7 @@ interface AdminMatrixAttachedResourceTranslations {
 }
 
 interface AdminMatrixResourceDraft {
-  id: number;
+  id: string;
   name: string;
   url: string;
   context: string;
@@ -132,7 +132,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
       '',
       [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
     ],
-    subsectionId: new FormControl<number | null>(null, { validators: Validators.required }),
+    subsectionId: new FormControl<string | null>(null, { validators: Validators.required }),
     grade: this.formBuilder.control<AdminMatrixGrade | ''>(''),
     interviewFrequency: this.formBuilder.control<AdminMatrixInterviewFrequency | ''>(''),
     publishStatus: this.formBuilder.control<AdminMatrixPublishStatus>('Draft', {
@@ -188,7 +188,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
     return validationMessage(this.questionForm.controls[field], this.i18n);
   }
 
-  selectQuestionSubsection(subsectionId: number | null): void {
+  selectQuestionSubsection(subsectionId: string | null): void {
     this.questionForm.controls.subsectionId.setValue(subsectionId);
     this.questionForm.controls.subsectionId.markAsTouched();
     this.questionForm.controls.subsectionId.markAsDirty();
@@ -255,7 +255,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.resourceDrafts.update((drafts) => [
       ...drafts,
       {
-        id: this.nextNewResourceId--,
+        id: `new-${this.nextNewResourceId--}`,
         name: this.currentLanguage() === 'ru' ? nameRu : nameEn,
         url,
         context: '',

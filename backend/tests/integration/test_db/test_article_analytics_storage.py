@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 
 import pytest_asyncio
@@ -15,7 +14,9 @@ class TestArticleAnalyticsDatabaseStorage(StorageTestCase):
         self.storage = ArticleAnalyticsDatabaseStorage(session=self.db_session)
 
     async def test_public_stats_include_views_and_reactions(self) -> None:
-        article = self.factory.core.article(article_id=uuid.UUID(int=1), slug="analytics-article")
+        article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(1), slug="analytics-article"
+        )
         await self.storage_helper.create_article(article=article)
 
         await self.storage.increment_view(
@@ -45,7 +46,9 @@ class TestArticleAnalyticsDatabaseStorage(StorageTestCase):
         assert result.by_article_id(article.id).reaction_counts.fire == 1
 
     async def test_same_voter_reaction_is_replaced_and_removed(self) -> None:
-        article = self.factory.core.article(article_id=uuid.UUID(int=1), slug="reaction-article")
+        article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(1), slug="reaction-article"
+        )
         await self.storage_helper.create_article(article=article)
 
         await self.storage.set_reaction(
@@ -71,8 +74,12 @@ class TestArticleAnalyticsDatabaseStorage(StorageTestCase):
         assert removed.by_article_id(article.id).reaction_counts.poop == 0
 
     async def test_stats_are_filtered_by_date_range(self) -> None:
-        first_article = self.factory.core.article(article_id=uuid.UUID(int=1), slug="first")
-        second_article = self.factory.core.article(article_id=uuid.UUID(int=2), slug="second")
+        first_article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(1), slug="first"
+        )
+        second_article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(2), slug="second"
+        )
         await self.storage_helper.create_articles(articles=[first_article, second_article])
         await self.storage.increment_view(
             article_id=first_article.id,

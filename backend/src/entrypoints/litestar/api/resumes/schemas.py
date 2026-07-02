@@ -424,7 +424,7 @@ class ResumeExportRequestSchema(ResumeRequestSchema):
 
 
 class ResumeResponseSchema(CamelCaseSchema):
-    id: Annotated[int, Field(title="Identifier")]
+    id: Annotated[str, Field(title="Identifier")]
     title: Annotated[str, Field(title="Workspace title")]
     language: Annotated[LanguageEnum, Field(title="Resume language")]
     content: Annotated[ResumeContentSchema, Field(title="Resume content")]

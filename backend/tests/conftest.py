@@ -1,4 +1,3 @@
-import secrets
 import uuid
 from collections.abc import AsyncGenerator, Generator
 
@@ -7,7 +6,6 @@ import pytest_asyncio
 from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from core.types import IntId
 from infra.config.settings import Settings, settings
 
 
@@ -17,8 +15,8 @@ def global_random_uuid() -> uuid.UUID:
 
 
 @pytest.fixture
-def global_random_int() -> IntId:
-    return IntId(secrets.randbelow(20_000_001) - 10_000_000)
+def global_random_hex_uuid(global_random_uuid: uuid.UUID) -> str:
+    return global_random_uuid.hex
 
 
 @pytest.fixture(scope="session")

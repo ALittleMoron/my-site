@@ -36,7 +36,7 @@ export interface MatrixItemTranslationsDto {
 }
 
 export interface MatrixResourceDto {
-  id: number;
+  id: string;
   name: string;
   url: string;
   translations: MatrixResourceTranslationsDto;
@@ -139,7 +139,7 @@ export interface MatrixSheet {
 }
 
 export interface MatrixResource {
-  id: number;
+  id: string;
   name: string;
   url: string;
   translations: MatrixResourceTranslations;
@@ -179,7 +179,7 @@ export interface MatrixAttachmentContextTranslationsPayload {
 }
 
 export interface ExistingMatrixResourceAttachmentPayload {
-  resourceId: number;
+  resourceId: string;
   translations: MatrixAttachmentContextTranslationsPayload;
 }
 

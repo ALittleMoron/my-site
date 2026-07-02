@@ -22,20 +22,20 @@ class TestMatrixStructureAPI(ApiTestCase):
         self.use_case.list_structure.return_value = CompetencyMatrixStructure(
             sheets=[
                 CompetencyMatrixStructureSheet(
-                    id=self.factory.core.int_id(1),
+                    id=self.factory.core.hex_id(1),
                     key="python",
                     name_ru="Питон",
                     name_en="Python",
                     priority=1,
                     sections=[
                         CompetencyMatrixStructureSection(
-                            id=self.factory.core.int_id(2),
+                            id=self.factory.core.hex_id(2),
                             name_ru="Основы",
                             name_en="Basics",
                             priority=1,
                             subsections=[
                                 CompetencyMatrixStructureSubsection(
-                                    id=self.factory.core.int_id(3),
+                                    id=self.factory.core.hex_id(3),
                                     name_ru="Функции",
                                     name_en="Functions",
                                     priority=1,
@@ -56,7 +56,7 @@ class TestMatrixStructureAPI(ApiTestCase):
         assert response.json() == {
             "sheets": [
                 {
-                    "id": 1,
+                    "id": self.factory.core.hex_id(1),
                     "key": "python",
                     "name": "Python",
                     "priority": 1,
@@ -66,7 +66,7 @@ class TestMatrixStructureAPI(ApiTestCase):
                     },
                     "sections": [
                         {
-                            "id": 2,
+                            "id": self.factory.core.hex_id(2),
                             "name": "Basics",
                             "priority": 1,
                             "translations": {
@@ -75,7 +75,7 @@ class TestMatrixStructureAPI(ApiTestCase):
                             },
                             "subsections": [
                                 {
-                                    "id": 3,
+                                    "id": self.factory.core.hex_id(3),
                                     "name": "Functions",
                                     "priority": 1,
                                     "translations": {
@@ -93,7 +93,7 @@ class TestMatrixStructureAPI(ApiTestCase):
 
     def test_creates_sheet_section_and_subsection(self) -> None:
         self.use_case.create_sheet.return_value = CompetencyMatrixStructureSheet(
-            id=self.factory.core.int_id(1),
+            id=self.factory.core.hex_id(1),
             key="python",
             name_ru="Питон",
             name_en="Python",
@@ -101,14 +101,14 @@ class TestMatrixStructureAPI(ApiTestCase):
             sections=[],
         )
         self.use_case.create_section.return_value = CompetencyMatrixStructureSection(
-            id=self.factory.core.int_id(2),
+            id=self.factory.core.hex_id(2),
             name_ru="Основы",
             name_en="Basics",
             priority=1,
             subsections=[],
         )
         self.use_case.create_subsection.return_value = CompetencyMatrixStructureSubsection(
-            id=self.factory.core.int_id(3),
+            id=self.factory.core.hex_id(3),
             name_ru="Функции",
             name_en="Functions",
             priority=1,
@@ -169,19 +169,19 @@ class TestMatrixStructureAPI(ApiTestCase):
         assert subsection_response.status_code == codes.NO_CONTENT, subsection_response.content
         self.use_case.update_sheet_priorities.assert_called_once_with(
             params=CompetencyMatrixSheetPriorityUpdateParams(
-                ordered_ids=(self.factory.core.int_id(2), self.factory.core.int_id(1)),
+                ordered_ids=(self.factory.core.hex_id(2), self.factory.core.hex_id(1)),
             ),
         )
         self.use_case.update_section_priorities.assert_called_once_with(
             params=CompetencyMatrixSectionPriorityUpdateParams(
-                sheet_id=self.factory.core.int_id(1),
-                ordered_ids=(self.factory.core.int_id(3), self.factory.core.int_id(2)),
+                sheet_id=self.factory.core.hex_id(1),
+                ordered_ids=(self.factory.core.hex_id(3), self.factory.core.hex_id(2)),
             ),
         )
         self.use_case.update_subsection_priorities.assert_called_once_with(
             params=CompetencyMatrixSubsectionPriorityUpdateParams(
-                section_id=self.factory.core.int_id(2),
-                ordered_ids=(self.factory.core.int_id(5), self.factory.core.int_id(4)),
+                section_id=self.factory.core.hex_id(2),
+                ordered_ids=(self.factory.core.hex_id(5), self.factory.core.hex_id(4)),
             ),
         )
 

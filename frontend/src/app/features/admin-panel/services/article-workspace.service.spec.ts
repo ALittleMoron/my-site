@@ -5,6 +5,9 @@ import { ApiClient } from '../../../core/http/api-client.service';
 import { AdminArticlePayload, AdminArticleTagPayload } from '../models/article-workspace.model';
 import { ArticleWorkspaceService } from './article-workspace.service';
 
+const ARTICLE_ID = '00000000000000000000000000000001';
+const TAG_ID = '00000000000000000000000000000002';
+
 describe('ArticleWorkspaceService', () => {
   let service: ArticleWorkspaceService;
   let httpMock: HttpTestingController;
@@ -60,13 +63,11 @@ describe('ArticleWorkspaceService', () => {
 
     const statsReq = httpMock.expectOne((r) => r.url.endsWith('/api/articles/public-stats'));
     expect(statsReq.request.method).toBe('GET');
-    expect(statsReq.request.params.getAll('articleIds')).toEqual([
-      '00000000-0000-0000-0000-000000000001',
-    ]);
+    expect(statsReq.request.params.getAll('articleIds')).toEqual([ARTICLE_ID]);
     statsReq.flush({
       stats: [
         {
-          articleId: '00000000-0000-0000-0000-000000000001',
+          articleId: ARTICLE_ID,
           viewCount: 7,
           reactionCounts: { heart: 1, fire: 0, thinking: 0, neutral: 0, poop: 0 },
         },
@@ -174,24 +175,28 @@ describe('ArticleWorkspaceService', () => {
     expect(createReq.request.body).toEqual(tagPayload());
     createReq.flush(tagDto());
 
-    service.updateTag(1, tagPayload(), 'en').subscribe();
+    service.updateTag(TAG_ID, tagPayload(), 'en').subscribe();
 
-    const updateReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags/1'));
+    const updateReq = httpMock.expectOne((r) =>
+      r.url.endsWith(`/api/admin/articles/tags/${TAG_ID}`),
+    );
     expect(updateReq.request.method).toBe('PUT');
     expect(updateReq.request.params.get('language')).toBe('en');
     expect(updateReq.request.body).toEqual(tagPayload());
     updateReq.flush(tagDto());
 
-    service.deleteTag(1).subscribe();
+    service.deleteTag(TAG_ID).subscribe();
 
-    const deleteReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags/1'));
+    const deleteReq = httpMock.expectOne((r) =>
+      r.url.endsWith(`/api/admin/articles/tags/${TAG_ID}`),
+    );
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
 
-    service.restoreTag(1).subscribe();
+    service.restoreTag(TAG_ID).subscribe();
 
     const restoreReq = httpMock.expectOne((r) =>
-      r.url.endsWith('/api/admin/articles/tags/1/restore'),
+      r.url.endsWith(`/api/admin/articles/tags/${TAG_ID}/restore`),
     );
     expect(restoreReq.request.method).toBe('POST');
     restoreReq.flush(null);
@@ -200,7 +205,7 @@ describe('ArticleWorkspaceService', () => {
 
 function articleSummaryDto(): unknown {
   return {
-    id: '00000000-0000-0000-0000-000000000001',
+    id: ARTICLE_ID,
     title: 'Typed articles',
     slug: 'typed-articles',
     folder: 'Engineering',
@@ -236,7 +241,7 @@ function articleDetailDto(): unknown {
 
 function publicStatsDto(): unknown {
   return {
-    articleId: '00000000-0000-0000-0000-000000000001',
+    articleId: ARTICLE_ID,
     viewCount: 7,
     reactionCounts: { heart: 1, fire: 0, thinking: 0, neutral: 0, poop: 0 },
   };
@@ -275,7 +280,7 @@ function tagPayload(): AdminArticleTagPayload {
 
 function tagDto(): unknown {
   return {
-    id: 1,
+    id: TAG_ID,
     name: 'Backend',
     slug: 'backend',
     deletedAt: null,

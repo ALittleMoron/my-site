@@ -13,6 +13,9 @@ import { ArticleFormComponent } from './article-form.component';
 const INVALID_SHORT_TEXT = 'x'.repeat(256);
 const INVALID_SEO_DESCRIPTION = 'x'.repeat(321);
 const INVALID_ARTICLE_CONTENT = 'x'.repeat(100_001);
+const PYTHON_TAG_ID = '00000000000000000000000000000001';
+const OLD_TAG_ID = '00000000000000000000000000000002';
+const BACKEND_TAG_ID = '00000000000000000000000000000003';
 
 interface ArticleValidationCase {
   description: string;
@@ -51,9 +54,9 @@ describe('ArticleFormComponent', () => {
     articlesService = {
       getTags: jest.fn().mockReturnValue(
         of([
-          tag({ id: 1, name: 'Python', slug: 'python', deletedAt: null }),
+          tag({ id: PYTHON_TAG_ID, name: 'Python', slug: 'python', deletedAt: null }),
           tag({
-            id: 2,
+            id: OLD_TAG_ID,
             name: 'Old',
             slug: 'old',
             deletedAt: '2026-01-04T03:04:05+00:00',
@@ -62,10 +65,12 @@ describe('ArticleFormComponent', () => {
       ),
       createTag: jest
         .fn()
-        .mockReturnValue(of(tag({ id: 3, name: 'Backend', slug: 'backend', deletedAt: null }))),
+        .mockReturnValue(
+          of(tag({ id: BACKEND_TAG_ID, name: 'Backend', slug: 'backend', deletedAt: null })),
+        ),
       updateTag: jest
         .fn()
-        .mockReturnValue(of(tag({ id: 1, name: 'Py', slug: 'py', deletedAt: null }))),
+        .mockReturnValue(of(tag({ id: PYTHON_TAG_ID, name: 'Py', slug: 'py', deletedAt: null }))),
       deleteTag: jest.fn().mockReturnValue(of(undefined)),
       restoreTag: jest.fn().mockReturnValue(of(undefined)),
     };
@@ -176,7 +181,7 @@ describe('ArticleFormComponent', () => {
       .nativeElement as HTMLInputElement;
     coverImageAltEn.value = 'Cover';
     coverImageAltEn.dispatchEvent(new Event('input'));
-    const tagCheckbox = fixture.debugElement.query(By.css('#articleTag-1'))
+    const tagCheckbox = fixture.debugElement.query(By.css(`#articleTag-${PYTHON_TAG_ID}`))
       .nativeElement as HTMLInputElement;
     tagCheckbox.click();
     fixture.detectChanges();
@@ -187,7 +192,7 @@ describe('ArticleFormComponent', () => {
     expect(saveSpy).toHaveBeenCalledWith({
       slug: 'typed-article',
       publishStatus: 'Draft',
-      tagIds: [1],
+      tagIds: [PYTHON_TAG_ID],
       metadata: {
         seoTitleRu: 'SEO типизированная статья',
         seoTitleEn: 'SEO typed article',
@@ -465,27 +470,30 @@ describe('ArticleFormComponent', () => {
   it.each<ArticleValidationCase>([
     {
       description: 'inline tag RU name required text',
-      selector: '[data-testid="article-tag-1-name-ru"]',
+      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`,
       expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => setInput('[data-testid="article-tag-1-name-ru"]', '   '),
+      setInvalidValue: () =>
+        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`, '   '),
     },
     {
       description: 'inline tag EN name max length',
-      selector: '[data-testid="article-tag-1-name-en"]',
+      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-name-en"]`,
       expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () => setInput('[data-testid="article-tag-1-name-en"]', INVALID_SHORT_TEXT),
+      setInvalidValue: () =>
+        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-en"]`, INVALID_SHORT_TEXT),
     },
     {
       description: 'inline tag slug pattern',
-      selector: '[data-testid="article-tag-1-slug"]',
+      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`,
       expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
-      setInvalidValue: () => setInput('[data-testid="article-tag-1-slug"]', 'Python Tag'),
+      setInvalidValue: () =>
+        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`, 'Python Tag'),
     },
   ])('shows invalid styling and localized feedback for $description', (validationCase) => {
     validationCase.setInvalidValue();
 
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="article-tag-1-save"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-${PYTHON_TAG_ID}-save"]`)
       ?.click();
     fixture.detectChanges();
 
@@ -504,17 +512,42 @@ describe('ArticleFormComponent', () => {
     expect(articlesService.createTag).not.toHaveBeenCalled();
 
     const inlineSlug = fixture.nativeElement.querySelector(
-      '[data-testid="article-tag-1-slug"]',
+      `[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`,
     ) as HTMLInputElement | null;
     expect(inlineSlug).not.toBeNull();
     inlineSlug!.value = 'Python Tag';
     inlineSlug!.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="article-tag-1-save"]')
+      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-${PYTHON_TAG_ID}-save"]`)
       ?.click();
 
     expect(articlesService.updateTag).not.toHaveBeenCalled();
+  });
+
+  it('edits, deletes, and restores tags with string ids', () => {
+    const draft = fixture.componentInstance.tags().find((tag) => tag.id === PYTHON_TAG_ID);
+    expect(draft).toBeDefined();
+
+    fixture.componentInstance.updateTag({
+      ...draft!,
+      draftNameRu: 'Питон',
+      draftNameEn: 'Python',
+      draftSlug: 'python',
+    });
+    fixture.componentInstance.deleteTag(PYTHON_TAG_ID);
+    fixture.componentInstance.restoreTag(OLD_TAG_ID);
+
+    expect(articlesService.updateTag).toHaveBeenCalledWith(
+      PYTHON_TAG_ID,
+      {
+        slug: 'python',
+        translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
+      },
+      'ru',
+    );
+    expect(articlesService.deleteTag).toHaveBeenCalledWith(PYTHON_TAG_ID);
+    expect(articlesService.restoreTag).toHaveBeenCalledWith(OLD_TAG_ID);
   });
 
   it('uploads cover image and writes access URL into the metadata field', () => {
@@ -664,7 +697,7 @@ class MarkdownEditorStubComponent {
 }
 
 function tag(params: {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   deletedAt: string | null;
@@ -680,7 +713,7 @@ function tag(params: {
 
 function articleDetail(slug: string, title: string): ArticleDetail {
   return {
-    id: `00000000-0000-0000-0000-00000000000${slug === 'first-article' ? '1' : '2'}`,
+    id: `0000000000000000000000000000000${slug === 'first-article' ? '1' : '2'}`,
     title,
     slug,
     folder: 'Engineering',

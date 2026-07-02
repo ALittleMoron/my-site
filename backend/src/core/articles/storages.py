@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import date
-from uuid import UUID
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import (
@@ -15,7 +14,6 @@ from core.articles.schemas import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 
 
 class ArticlesStorage(ABC):
@@ -66,7 +64,7 @@ class ArticlesStorage(ABC):
     async def get_tags_by_ids(
         self,
         *,
-        tag_ids: list[IntId],
+        tag_ids: list[str],
         include_deleted: bool,
     ) -> Tags:
         raise NotImplementedError
@@ -95,11 +93,11 @@ class ArticlesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def soft_delete_tag(self, *, tag_id: IntId) -> None:
+    async def soft_delete_tag(self, *, tag_id: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def restore_tag(self, *, tag_id: IntId) -> None:
+    async def restore_tag(self, *, tag_id: str) -> None:
         raise NotImplementedError
 
 
@@ -108,7 +106,7 @@ class ArticleAnalyticsStorage(ABC):
     async def increment_view(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         source_category: ArticleViewSourceCategory,
         viewed_on: date | None,
     ) -> None:
@@ -118,21 +116,21 @@ class ArticleAnalyticsStorage(ABC):
     async def increment_engaged_view(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         source_category: ArticleViewSourceCategory,
         viewed_on: date | None,
     ) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_public_stats(self, *, article_ids: list[UUID]) -> ArticlePublicStatsCollection:
+    async def get_public_stats(self, *, article_ids: list[str]) -> ArticlePublicStatsCollection:
         raise NotImplementedError
 
     @abstractmethod
     async def set_reaction(
         self,
         *,
-        article_id: UUID,
+        article_id: str,
         article_scoped_voter_hash: str,
         reaction_kind: ArticleReactionKind | None,
     ) -> None:
@@ -152,6 +150,6 @@ class ArticleAnalyticsStorage(ABC):
     async def get_reaction_counts(
         self,
         *,
-        article_ids: list[UUID],
-    ) -> dict[UUID, ArticleReactionCounts]:
+        article_ids: list[str],
+    ) -> dict[str, ArticleReactionCounts]:
         raise NotImplementedError

@@ -1,4 +1,3 @@
-import uuid
 from datetime import date
 from unittest.mock import Mock
 
@@ -34,7 +33,7 @@ class TestArticleAnalyticsUseCase(TestCase):
 
     async def test_track_view_delegates_published_article(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
 
@@ -51,7 +50,7 @@ class TestArticleAnalyticsUseCase(TestCase):
 
     async def test_track_view_ignores_draft_article(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.DRAFT,
         )
 
@@ -64,7 +63,7 @@ class TestArticleAnalyticsUseCase(TestCase):
 
     async def test_track_public_view_classifies_referrer(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
 
@@ -81,7 +80,7 @@ class TestArticleAnalyticsUseCase(TestCase):
 
     async def test_track_public_view_reports_error_without_raising(self) -> None:
         article = self.factory.core.article(
-            article_id=uuid.UUID(int=1),
+            article_id=self.factory.core.hex_id(1),
             publish_status=PublishStatusEnum.PUBLISHED,
         )
         error = RuntimeError("db is down")
@@ -108,8 +107,14 @@ class TestArticleAnalyticsUseCase(TestCase):
         self.analytics_storage.increment_engaged_view.assert_not_called()
 
     async def test_same_token_is_article_scoped_for_reactions(self) -> None:
-        first_article = self.factory.core.article(article_id=uuid.UUID(int=1), slug="first")
-        second_article = self.factory.core.article(article_id=uuid.UUID(int=2), slug="second")
+        first_article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(1),
+            slug="first",
+        )
+        second_article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(2),
+            slug="second",
+        )
         self.articles_storage.get_article_by_slug.side_effect = [first_article, second_article]
 
         await self.use_case.set_reaction(
@@ -132,7 +137,7 @@ class TestArticleAnalyticsUseCase(TestCase):
         )
 
     async def test_public_stats_are_filled_with_zero_counts(self) -> None:
-        article_id = uuid.UUID(int=1)
+        article_id = self.factory.core.hex_id(1)
         self.analytics_storage.get_public_stats.return_value = ArticlePublicStatsCollection(
             values=[],
         )
@@ -150,7 +155,7 @@ class TestArticleAnalyticsUseCase(TestCase):
         )
 
     async def test_get_stats_builds_totals_and_article_rows_from_storage_data(self) -> None:
-        article_id = uuid.UUID(int=1)
+        article_id = self.factory.core.hex_id(1)
         self.analytics_storage.get_daily_stats.return_value = [
             ArticleAnalyticsDailyStats(
                 article_id=article_id,

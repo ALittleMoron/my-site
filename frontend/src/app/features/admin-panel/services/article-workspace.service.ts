@@ -148,17 +148,17 @@ export class ArticleWorkspaceService {
       .pipe(map(mapTagDto));
   }
 
-  updateTag(tagId: number, payload: TagPayload, language: LanguageCode): Observable<ArticleTag> {
+  updateTag(tagId: string, payload: TagPayload, language: LanguageCode): Observable<ArticleTag> {
     return this.api
       .put<ArticleTagDto>(`/api/admin/articles/tags/${tagId}`, payload, { language })
       .pipe(map(mapTagDto));
   }
 
-  deleteTag(tagId: number): Observable<void> {
+  deleteTag(tagId: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/articles/tags/${tagId}`);
   }
 
-  restoreTag(tagId: number): Observable<void> {
+  restoreTag(tagId: string): Observable<void> {
     return this.api.post<void>(`/api/admin/articles/tags/${tagId}/restore`, {});
   }
 

@@ -6,7 +6,6 @@ from core.articles.exceptions import TagNotFoundError
 from core.articles.schemas import TagCreateParams, TagUpdateParams
 from core.auth.exceptions import UnauthorizedError
 from core.i18n.enums import LanguageEnum
-from core.types import IntId
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.test_cases import ApiTestCase
 
@@ -14,15 +13,19 @@ from tests.test_cases import ApiTestCase
 class TestTagsAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
-        self.tag_id = await self.container.get_random_int()
+        self.tag_id = (await self.container.get_hex_uuid_id_generator()).get_next()
         self.use_case = await self.container.get_articles_use_case()
 
     def test_list_tags(self) -> None:
         self.use_case.list_tags.return_value = self.factory.core.tags(
             values=[
-                self.factory.core.tag(tag_id=1, name="Python", slug="python"),
                 self.factory.core.tag(
-                    tag_id=2,
+                    tag_id="00000000000040008000000000000101",
+                    name="Python",
+                    slug="python",
+                ),
+                self.factory.core.tag(
+                    tag_id="00000000000040008000000000000102",
                     name="Old",
                     slug="old",
                     deleted_at="2026-01-04T03:04:05",
@@ -36,7 +39,7 @@ class TestTagsAPI(ApiTestCase):
         assert response.json() == {
             "tags": [
                 {
-                    "id": 1,
+                    "id": "00000000000040008000000000000101",
                     "name": "Python",
                     "slug": "python",
                     "deletedAt": None,
@@ -46,7 +49,7 @@ class TestTagsAPI(ApiTestCase):
                     },
                 },
                 {
-                    "id": 2,
+                    "id": "00000000000040008000000000000102",
                     "name": "Old",
                     "slug": "old",
                     "deletedAt": "2026-01-04T03:04:05+00:00",
@@ -102,7 +105,13 @@ class TestTagsAPI(ApiTestCase):
 
     def test_search_tags(self) -> None:
         self.use_case.search_tags.return_value = self.factory.core.tags(
-            values=[self.factory.core.tag(tag_id=1, name="Python", slug="python")],
+            values=[
+                self.factory.core.tag(
+                    tag_id="00000000000040008000000000000101",
+                    name="Python",
+                    slug="python",
+                ),
+            ],
         )
 
         response = self.api.get_search_tags(search_name="py", include_deleted=False, limit=5)
@@ -131,7 +140,7 @@ class TestTagsAPI(ApiTestCase):
 
         assert response.status_code == codes.CREATED, response.content
         assert response.json() == {
-            "id": int(self.tag_id),
+            "id": self.tag_id,
             "name": "Бэкенд",
             "slug": "backend",
             "deletedAt": None,
@@ -151,7 +160,7 @@ class TestTagsAPI(ApiTestCase):
 
     def test_update_tag(self) -> None:
         self.use_case.update_tag.return_value = self.factory.core.tag(
-            tag_id=3,
+            tag_id="00000000000040008000000000000003",
             name="Архитектура",
             name_ru="Архитектура",
             name_en="Architecture",
@@ -159,7 +168,7 @@ class TestTagsAPI(ApiTestCase):
         )
 
         response = self.api.put_update_tag(
-            tag_id=3,
+            tag_id="00000000000040008000000000000003",
             data=self.factory.api.tag_request(
                 name_ru="Архитектура",
                 name_en="Architecture",
@@ -169,7 +178,7 @@ class TestTagsAPI(ApiTestCase):
 
         assert response.status_code == codes.OK, response.content
         self.use_case.update_tag.assert_called_once_with(
-            tag_id=IntId(3),
+            tag_id="00000000000040008000000000000003",
             params=TagUpdateParams(
                 name_ru="Архитектура",
                 name_en="Architecture",
@@ -202,24 +211,28 @@ class TestTagsAPI(ApiTestCase):
         self.use_case.create_tag.assert_not_called()
 
     def test_delete_tag(self) -> None:
-        response = self.api.delete_tag(tag_id=3)
+        response = self.api.delete_tag(tag_id="00000000000040008000000000000003")
 
         assert response.status_code == codes.NO_CONTENT
-        self.use_case.soft_delete_tag.assert_called_once_with(tag_id=IntId(3))
+        self.use_case.soft_delete_tag.assert_called_once_with(
+            tag_id="00000000000040008000000000000003",
+        )
 
     def test_restore_tag_not_found(self) -> None:
         self.use_case.restore_tag.side_effect = TagNotFoundError()
 
-        response = self.api.post_restore_tag(tag_id=3)
+        response = self.api.post_restore_tag(tag_id="00000000000040008000000000000003")
 
         assert response.status_code == codes.NOT_FOUND
         assert response.json()["message"] == TagNotFoundError.message
 
     def test_restore_tag(self) -> None:
-        response = self.api.post_restore_tag(tag_id=3)
+        response = self.api.post_restore_tag(tag_id="00000000000040008000000000000003")
 
         assert response.status_code == codes.NO_CONTENT
-        self.use_case.restore_tag.assert_called_once_with(tag_id=IntId(3))
+        self.use_case.restore_tag.assert_called_once_with(
+            tag_id="00000000000040008000000000000003",
+        )
 
     def test_successful_tag_mutations_enqueue_articles_response_cache_warm(
         self,
@@ -241,16 +254,18 @@ class TestTagsAPI(ApiTestCase):
             raising=False,
         )
         self.use_case.create_tag.return_value = self.factory.core.tag(tag_id=self.tag_id)
-        self.use_case.update_tag.return_value = self.factory.core.tag(tag_id=3)
+        self.use_case.update_tag.return_value = self.factory.core.tag(
+            tag_id="00000000000040008000000000000003",
+        )
 
         responses = [
             self.api.post_create_tag(data=self.factory.api.tag_request(slug="backend")),
             self.api.put_update_tag(
-                tag_id=3,
+                tag_id="00000000000040008000000000000003",
                 data=self.factory.api.tag_request(slug="architecture"),
             ),
-            self.api.delete_tag(tag_id=3),
-            self.api.post_restore_tag(tag_id=3),
+            self.api.delete_tag(tag_id="00000000000040008000000000000003"),
+            self.api.post_restore_tag(tag_id="00000000000040008000000000000003"),
         ]
 
         assert [response.status_code for response in responses] == [

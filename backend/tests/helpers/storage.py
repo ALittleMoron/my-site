@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.schemas import Article, Tag
@@ -33,7 +32,7 @@ from infra.postgresql.models import (
 class StorageHelper:
     session: AsyncSession
 
-    async def get_contact_me_by_id(self, contact_me_id: UUID) -> ContactMe:
+    async def get_contact_me_by_id(self, contact_me_id: str) -> ContactMe:
         query = select(ContactMeModel).where(ContactMeModel.id == contact_me_id)
         contact_me = await self.session.scalar(query)
         if contact_me is None:
@@ -72,7 +71,6 @@ class StorageHelper:
         await self._ensure_matrix_section(structure=structure)
         await self._ensure_matrix_subsection(structure=structure)
         await self.session.flush()
-        await self._sync_competency_matrix_structure_sequences()
 
     async def _ensure_matrix_sheet(self, structure: CompetencyMatrixItemStructure) -> None:
         sheet = await self.session.get(CompetencyMatrixSheetModel, structure.sheet_id)
@@ -83,7 +81,7 @@ class StorageHelper:
                     key=structure.sheet_key,
                     name_ru=structure.sheet_ru,
                     name_en=structure.sheet_en,
-                    priority=int(structure.sheet_id),
+                    priority=int(structure.sheet_id, 16),
                 ),
             )
             return
@@ -91,7 +89,7 @@ class StorageHelper:
             structure.sheet_key,
             structure.sheet_ru,
             structure.sheet_en,
-            int(structure.sheet_id),
+            int(structure.sheet_id, 16),
         )
         actual = (sheet.key, sheet.name_ru, sheet.name_en, sheet.priority)
         if actual != expected:
@@ -109,7 +107,7 @@ class StorageHelper:
                     sheet_id=structure.sheet_id,
                     name_ru=structure.section_ru,
                     name_en=structure.section_en,
-                    priority=int(structure.section_id),
+                    priority=int(structure.section_id, 16),
                 ),
             )
             return
@@ -117,7 +115,7 @@ class StorageHelper:
             structure.sheet_id,
             structure.section_ru,
             structure.section_en,
-            int(structure.section_id),
+            int(structure.section_id, 16),
         )
         actual = (section.sheet_id, section.name_ru, section.name_en, section.priority)
         if actual != expected:
@@ -139,7 +137,7 @@ class StorageHelper:
                     section_id=structure.section_id,
                     name_ru=structure.subsection_ru,
                     name_en=structure.subsection_en,
-                    priority=int(structure.subsection_id),
+                    priority=int(structure.subsection_id, 16),
                 ),
             )
             return
@@ -147,7 +145,7 @@ class StorageHelper:
             structure.section_id,
             structure.subsection_ru,
             structure.subsection_en,
-            int(structure.subsection_id),
+            int(structure.subsection_id, 16),
         )
         actual = (
             subsection.section_id,
@@ -161,28 +159,6 @@ class StorageHelper:
                 f"{actual} != {expected}"
             )
             raise AssertionError(msg)
-
-    async def _sync_competency_matrix_structure_sequences(self) -> None:
-        for model in (
-            (CompetencyMatrixSheetModel, "competency_matrix__competency_matrix_sheet_model"),
-            (CompetencyMatrixSectionModel, "competency_matrix__competency_matrix_section_model"),
-            (
-                CompetencyMatrixSubsectionModel,
-                "competency_matrix__competency_matrix_subsection_model",
-            ),
-        ):
-            model_class, table_name = model
-            max_id = await self.session.scalar(select(func.max(model_class.id)))
-            if max_id is None:
-                continue
-            await self.session.execute(
-                select(
-                    func.setval(
-                        func.pg_get_serial_sequence(table_name, "id"),
-                        max_id,
-                    ),
-                ),
-            )
 
     async def create_queued_matrix_questions(
         self,
