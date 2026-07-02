@@ -6,7 +6,7 @@ ENV UV_VENV_PATH=/project/.venv
 WORKDIR $APP_PATH
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends build-essential \
+ && apt-get install -y --no-install-recommends build-essential=12.12 \
  && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock ./
@@ -28,8 +28,8 @@ RUN groupadd $CUSTOM_USER \
 
 WORKDIR $APP_PATH
 
-COPY --from=builder /project/.venv /project/.venv
-COPY . ./
+COPY --from=builder --chown=$CUSTOM_USER:$CUSTOM_USER /project/.venv /project/.venv
+COPY --chown=$CUSTOM_USER:$CUSTOM_USER . ./
 RUN chmod 755 start_application.sh
 
 USER $CUSTOM_USER:$CUSTOM_USER
