@@ -6,6 +6,8 @@ from core.articles.schemas import (
     Article,
     ArticleAnalyticsDailyStats,
     ArticleFilters,
+    ArticleFolder,
+    ArticleFolders,
     ArticlePublicStatsCollection,
     ArticleReactionCounts,
     ArticleTreeItemData,
@@ -58,6 +60,30 @@ class ArticlesStorage(ABC):
         slug: str,
         publish_status: PublishStatusEnum,
     ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_folder_by_id(self, *, folder_id: str) -> ArticleFolder:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_folders(self, *, language: LanguageEnum) -> ArticleFolders:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def next_folder_priority(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def folder_key_exists(self, *, key: str) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def create_folder(self, *, folder: ArticleFolder) -> ArticleFolder:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_folder_priorities(self, *, ordered_ids: tuple[str, ...]) -> None:
         raise NotImplementedError
 
     @abstractmethod

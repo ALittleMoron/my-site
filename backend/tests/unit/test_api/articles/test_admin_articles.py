@@ -3,8 +3,15 @@ import pytest_asyncio
 from httpx import codes
 
 from core.articles.exceptions import ArticleNotFoundError
-from core.articles.schemas import ArticleCreateParams, ArticleMetadata, ArticleUpdateParams
+from core.articles.schemas import (
+    ArticleCreateParams,
+    ArticleFolderCreateParams,
+    ArticleFolderPriorityUpdateParams,
+    ArticleMetadata,
+    ArticleUpdateParams,
+)
 from core.enums import PublishStatusEnum
+from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.test_cases import ApiTestCase
 
@@ -13,6 +20,7 @@ class TestAdminArticlesAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.article_id = (await self.container.get_hex_uuid_id_generator()).get_next()
+        self.folder_id = (await self.container.get_hex_uuid_id_generator()).get_next()
         self.use_case = await self.container.get_articles_use_case()
 
     def test_create_article_saves_author(self) -> None:
@@ -36,8 +44,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 content_ru="Новое содержимое",
                 content_en="New content",
                 slug="new-article",
-                folder_ru="Входящие",
-                folder_en="Inbox",
+                folder_id=self.folder_id,
                 publish_status="Draft",
                 tag_ids=[
                     "00000000000040008000000000000031",
@@ -56,8 +63,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 title_en="New article",
                 content_ru="Новое содержимое",
                 content_en="New content",
-                folder_ru="Входящие",
-                folder_en="Inbox",
+                folder_id=self.folder_id,
                 author_username="test",
                 publish_status=PublishStatusEnum.DRAFT,
                 metadata=ArticleMetadata(
@@ -99,8 +105,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 content_ru="Обновлённое содержимое",
                 content_en="Updated content",
                 slug="updated-article",
-                folder_ru="Входящие",
-                folder_en="Inbox",
+                folder_id=self.folder_id,
                 publish_status="Published",
                 metadata={
                     "seoTitleRu": "SEO обновлённая статья",
@@ -125,8 +130,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 title_en="Updated article",
                 content_ru="Обновлённое содержимое",
                 content_en="Updated content",
-                folder_ru="Входящие",
-                folder_en="Inbox",
+                folder_id=self.folder_id,
                 publish_status=PublishStatusEnum.PUBLISHED,
                 metadata=ArticleMetadata(
                     seo_title_ru="SEO обновлённая статья",
@@ -194,7 +198,24 @@ class TestAdminArticlesAPI(ApiTestCase):
 
     def test_create_article_rejects_whitespace_required_translation_fields(self) -> None:
         response = self.api.post_create_article(
-            data=self.factory.api.article_request(title_ru="   ", folder_en="\t"),
+            data=self.factory.api.article_request(title_ru="   "),
+        )
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_create_article_requires_folder_id(self) -> None:
+        data = self.factory.api.article_request()
+        del data["folderId"]
+
+        response = self.api.post_create_article(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_create_article_rejects_blank_folder_id(self) -> None:
+        response = self.api.post_create_article(
+            data=self.factory.api.article_request(folder_id="   "),
         )
 
         assert response.status_code == codes.BAD_REQUEST
@@ -225,6 +246,87 @@ class TestAdminArticlesAPI(ApiTestCase):
 
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.create_article.assert_not_called()
+
+    def test_create_article_rejects_folder_inside_translations(self) -> None:
+        data = self.factory.api.article_request()
+        data["translations"]["en"]["folder"] = "Legacy folder"
+
+        response = self.api.post_create_article(data=data)
+
+        assert response.status_code == codes.BAD_REQUEST
+        self.use_case.create_article.assert_not_called()
+
+    def test_list_article_folders(self) -> None:
+        self.use_case.list_folders.return_value = self.factory.core.article_folders(
+            values=[
+                self.factory.core.article_folder(
+                    folder_id=self.factory.core.hex_id(2),
+                    key="architecture",
+                    name_ru="Архитектура",
+                    name_en="Architecture",
+                    priority=1,
+                ),
+            ],
+        )
+
+        response = self.api.get_admin_article_folders(language="en")
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json() == {
+            "folders": [
+                {
+                    "id": self.factory.core.hex_id(2),
+                    "key": "architecture",
+                    "name": "Architecture",
+                    "priority": 1,
+                    "translations": {
+                        "ru": {"name": "Архитектура"},
+                        "en": {"name": "Architecture"},
+                    },
+                },
+            ],
+        }
+        self.use_case.list_folders.assert_called_once_with(language=LanguageEnum.EN)
+
+    def test_create_article_folder(self) -> None:
+        self.use_case.create_folder.return_value = self.factory.core.article_folder(
+            folder_id=self.folder_id,
+            key="backend",
+            name_ru="Бэкенд",
+            name_en="Backend",
+            priority=3,
+        )
+
+        response = self.api.post_create_article_folder(
+            data=self.factory.api.article_folder_request(
+                key="backend",
+                name_ru="Бэкенд",
+                name_en="Backend",
+            ),
+            language="ru",
+        )
+
+        assert response.status_code == codes.CREATED, response.content
+        assert response.json()["id"] == self.folder_id
+        assert response.json()["name"] == "Бэкенд"
+        self.use_case.create_folder.assert_called_once_with(
+            params=ArticleFolderCreateParams(
+                id=self.folder_id,
+                key="backend",
+                name_ru="Бэкенд",
+                name_en="Backend",
+            ),
+        )
+
+    def test_update_article_folder_priorities(self) -> None:
+        response = self.api.put_update_article_folder_priorities(ordered_ids=[2, 1])
+
+        assert response.status_code == codes.NO_CONTENT
+        self.use_case.update_folder_priorities.assert_called_once_with(
+            params=ArticleFolderPriorityUpdateParams(
+                ordered_ids=(self.factory.core.hex_id(2), self.factory.core.hex_id(1)),
+            ),
+        )
 
     def test_create_article_validation_error_does_not_enqueue_response_cache_warm(
         self,

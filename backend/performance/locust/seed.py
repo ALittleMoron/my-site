@@ -13,6 +13,7 @@ from infra.config.loggers import logger
 from infra.postgresql.meta import sessionmaker
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
@@ -34,6 +35,7 @@ LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "0.0.0.0", "::1"})  # noqa: S
 SEED_AUTHOR_USERNAME = "performance-seed-admin"
 SEED_PASSWORD_HASH = "performance-seed-password-hash"  # noqa: S105
 SEED_ARTICLE_COUNT = 48
+SEED_ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
 SEED_MATRIX_ITEMS_PER_SHEET = 12
 SEED_BASE_ID = 880000
 SEED_START = datetime(2026, 3, 1, 10, tzinfo=UTC)
@@ -101,6 +103,7 @@ async def seed_performance_data(*, session: AsyncSession) -> None:
     await clear_seeded_data(session=session)
     await insert_seed_user(session=session)
     await insert_seed_tags(session=session)
+    await insert_seed_article_folder(session=session)
     await insert_seed_articles(session=session)
     await insert_seed_article_tags(session=session)
     await insert_seed_article_analytics(session=session)
@@ -129,6 +132,7 @@ async def clear_seeded_data(*, session: AsyncSession) -> None:
         ),
     )
     await session.execute(delete(ArticleModel).where(ArticleModel.slug.like("perf-seed-article-%")))
+    await session.execute(delete(ArticleFolderModel).where(ArticleFolderModel.key == "performance"))
     await session.execute(delete(TagModel).where(TagModel.slug.like("perf-seed-%")))
     await session.execute(
         delete(ResourceToItemSecondaryModel).where(
@@ -196,6 +200,20 @@ async def insert_seed_tags(*, session: AsyncSession) -> None:
             for tag_index, (slug, name_ru, name_en) in enumerate(TAG_SPECS, start=1)
         ],
     )
+
+
+async def insert_seed_article_folder(*, session: AsyncSession) -> None:
+    await session.execute(insert(ArticleFolderModel), article_folder_row())
+
+
+def article_folder_row() -> dict[str, object]:
+    return {
+        "id": SEED_ARTICLE_FOLDER_ID,
+        "key": "performance",
+        "name_ru": "Производительность",
+        "name_en": "Performance",
+        "priority": 1,
+    }
 
 
 async def insert_seed_articles(*, session: AsyncSession) -> None:
@@ -362,8 +380,7 @@ def article_row(*, article_index: int) -> dict[str, object]:
             f"Related question: [[matrix:{matrix_slug}|matrix question]]."
         ),
         "slug": article_slug(article_index=article_index),
-        "folder_ru": "Производительность",
-        "folder_en": "Performance",
+        "folder_id": SEED_ARTICLE_FOLDER_ID,
         "author_username": SEED_AUTHOR_USERNAME,
         "seo_title_ru": f"Performance seed статья {article_index}",
         "seo_title_en": f"Performance seed article {article_index}",

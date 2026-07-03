@@ -29,6 +29,8 @@ class TestWikiLinksUseCase(TestCase):
         now = datetime.now(tz=UTC)
         self.articles_storage.list_tree_items.return_value = [
             ArticleTreeItemData(
+                folder_id=self.factory.core.hex_id(1),
+                folder_key="engineering",
                 folder="Engineering",
                 title="Typed articles",
                 slug="typed-articles",
@@ -37,6 +39,8 @@ class TestWikiLinksUseCase(TestCase):
                 updated_at=now,
             ),
             ArticleTreeItemData(
+                folder_id=self.factory.core.hex_id(1),
+                folder_key="engineering",
                 folder="Engineering",
                 title="Draft articles",
                 slug="draft-articles",

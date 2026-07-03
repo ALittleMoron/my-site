@@ -3,7 +3,11 @@ from datetime import date
 import pytest
 import pytest_asyncio
 
-from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
+from core.articles.exceptions import (
+    ArticleFolderNotFoundError,
+    ArticleNotFoundError,
+    TagNotFoundError,
+)
 from core.articles.schemas import ArticleFilters
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
@@ -79,7 +83,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         assert not hasattr(result, "title")
         assert not hasattr(result, "content")
-        assert not hasattr(result, "folder")
+        assert result.folder.id == self.factory.core.hex_id_from_text("article-folder:general")
+        assert result.folder.key == "general"
         assert result.localized_title(language=LanguageEnum.RU) == "Русская статья"
         assert result.localized_content(language=LanguageEnum.RU) == "Русское содержимое"
         assert result.localized_folder(language=LanguageEnum.RU) == "Русская папка"
@@ -465,6 +470,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
                     title="B Article",
                     slug="b-article",
                     folder="Backend",
+                    folder_id=self.factory.core.hex_id(2),
+                    folder_key="backend",
                     publish_status=PublishStatusEnum.PUBLISHED,
                     published_at="2024-01-01T00:00:00",
                 ),
@@ -472,6 +479,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
                     title="A Article",
                     slug="a-article",
                     folder="Architecture",
+                    folder_id=self.factory.core.hex_id(1),
+                    folder_key="architecture",
                     publish_status=PublishStatusEnum.PUBLISHED,
                     published_at="2024-02-01T00:00:00",
                 ),
@@ -479,6 +488,8 @@ class TestArticlesDatabaseStorage(StorageTestCase):
                     title="Draft",
                     slug="draft",
                     folder="Architecture",
+                    folder_id=self.factory.core.hex_id(1),
+                    folder_key="architecture",
                     publish_status=PublishStatusEnum.DRAFT,
                 ),
             ],
@@ -497,11 +508,124 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             ("Architecture", "a-article"),
             ("Backend", "b-article"),
         ]
+        assert [(item.folder_id, item.folder_key) for item in public_items] == [
+            (self.factory.core.hex_id(1), "architecture"),
+            (self.factory.core.hex_id(2), "backend"),
+        ]
         assert [(item.folder, item.slug) for item in admin_items] == [
             ("Architecture", "a-article"),
             ("Architecture", "draft"),
             ("Backend", "b-article"),
         ]
+
+    async def test_list_tree_orders_folders_by_priority(self) -> None:
+        await self.storage_helper.create_article_folder(
+            folder=self.factory.core.article_folder(
+                folder_id=self.factory.core.hex_id(1),
+                key="first",
+                name_ru="Первая",
+                name_en="First",
+                priority=2,
+            ),
+        )
+        await self.storage_helper.create_article_folder(
+            folder=self.factory.core.article_folder(
+                folder_id=self.factory.core.hex_id(2),
+                key="second",
+                name_ru="Вторая",
+                name_en="Second",
+                priority=1,
+            ),
+        )
+        await self.storage_helper.create_articles(
+            articles=[
+                self.factory.core.article(
+                    title="First article",
+                    slug="first-article",
+                    folder_id=self.factory.core.hex_id(1),
+                    folder_key="first",
+                    folder_priority=2,
+                    folder_ru="Первая",
+                    folder_en="First",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+                self.factory.core.article(
+                    title="Second article",
+                    slug="second-article",
+                    folder_id=self.factory.core.hex_id(2),
+                    folder_key="second",
+                    folder_priority=1,
+                    folder_ru="Вторая",
+                    folder_en="Second",
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+            ],
+        )
+
+        items = await self.storage.list_tree_items(
+            only_published=True,
+            language=LanguageEnum.EN,
+        )
+
+        assert [(item.folder_key, item.slug) for item in items] == [
+            ("second", "second-article"),
+            ("first", "first-article"),
+        ]
+
+    async def test_folder_create_list_get_and_reorder(self) -> None:
+        first = await self.storage.create_folder(
+            folder=self.factory.core.article_folder(
+                folder_id=self.factory.core.hex_id(10),
+                key="backend",
+                name_ru="Бэкенд",
+                name_en="Backend",
+                priority=1,
+            ),
+        )
+        second = await self.storage.create_folder(
+            folder=self.factory.core.article_folder(
+                folder_id=self.factory.core.hex_id(11),
+                key="architecture",
+                name_ru="Архитектура",
+                name_en="Architecture",
+                priority=2,
+            ),
+        )
+
+        initial = await self.storage.list_folders(language=LanguageEnum.EN)
+        loaded = await self.storage.get_folder_by_id(folder_id=first.id)
+        await self.storage.update_folder_priorities(
+            ordered_ids=(second.id, first.id),
+        )
+        reordered = await self.storage.list_folders(language=LanguageEnum.EN)
+        initial_test_folders = [folder for folder in initial if folder.id in {first.id, second.id}]
+        reordered_test_folders = [
+            folder for folder in reordered if folder.id in {first.id, second.id}
+        ]
+
+        assert [folder.key for folder in initial_test_folders] == ["backend", "architecture"]
+        assert [folder.priority for folder in initial_test_folders] == [1, 2]
+        assert loaded == first
+        assert [folder.key for folder in reordered_test_folders] == ["architecture", "backend"]
+        assert [folder.priority for folder in reordered_test_folders] == [1, 2]
+
+    async def test_folder_key_exists_matches_case_insensitively(self) -> None:
+        await self.storage.create_folder(
+            folder=self.factory.core.article_folder(
+                folder_id=self.factory.core.hex_id(10),
+                key="backend",
+                name_ru="Бэкенд",
+                name_en="Backend",
+                priority=1,
+            ),
+        )
+
+        assert await self.storage.folder_key_exists(key="BACKEND")
+        assert not await self.storage.folder_key_exists(key="frontend")
+
+    async def test_get_missing_folder_raises_not_found(self) -> None:
+        with pytest.raises(ArticleFolderNotFoundError):
+            await self.storage.get_folder_by_id(folder_id=self.factory.core.hex_id(404))
 
     async def test_update_article_publish_status_sets_first_published_at_only_once(self) -> None:
         await self.storage_helper.create_article(

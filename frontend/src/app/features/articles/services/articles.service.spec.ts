@@ -62,6 +62,8 @@ describe('ArticlesService', () => {
           content: 'Ignored in list',
           slug: 'typed-articles',
           folder: 'Engineering',
+          folderId: 'folder-1',
+          folderKey: 'engineering',
           authorUsername: 'admin',
           publishedAt: '2026-01-02T03:04:05+00:00',
           publishStatus: 'Published',
@@ -108,6 +110,8 @@ describe('ArticlesService', () => {
       content: '# Markdown',
       slug: 'typed-articles',
       folder: 'Engineering',
+      folderId: 'folder-1',
+      folderKey: 'engineering',
       authorUsername: 'admin',
       publishedAt: '2026-01-02T03:04:05+00:00',
       publishStatus: 'Published',
@@ -117,8 +121,8 @@ describe('ArticlesService', () => {
       metadata: metadataDto(),
       tags: [],
       translations: {
-        ru: { title: 'Типизированные статьи', content: '# Markdown', folder: 'Инженерия' },
-        en: { title: 'Typed articles', content: '# Markdown', folder: 'Engineering' },
+        ru: { title: 'Типизированные статьи', content: '# Markdown' },
+        en: { title: 'Typed articles', content: '# Markdown' },
       },
     });
     flushPublicStats(httpMock, [
@@ -227,6 +231,8 @@ describe('ArticlesService', () => {
     req.flush({
       folders: [
         {
+          folderId: 'folder-1',
+          folderKey: 'engineering',
           folder: 'Engineering',
           articles: [
             {

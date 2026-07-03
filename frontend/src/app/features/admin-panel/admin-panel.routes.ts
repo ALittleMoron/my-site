@@ -22,6 +22,13 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'article-folders',
+        loadComponent: () =>
+          import('./pages/article-folders-page/article-folders-page.component').then(
+            (m) => m.ArticleFoldersPageComponent,
+          ),
+      },
+      {
         path: 'articles/:slug',
         loadComponent: () =>
           import('./pages/article-detail-page/article-detail-page.component').then(

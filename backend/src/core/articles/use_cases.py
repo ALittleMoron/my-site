@@ -6,12 +6,20 @@ from urllib.parse import urlparse
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.event_dispatchers import ArticleAnalyticsErrorReporter
-from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
+from core.articles.exceptions import (
+    ArticleFolderAlreadyExistsError,
+    ArticleNotFoundError,
+    TagNotFoundError,
+)
 from core.articles.schemas import (
     Article,
     ArticleAnalyticsStats,
     ArticleCreateParams,
     ArticleFilters,
+    ArticleFolder,
+    ArticleFolderCreateParams,
+    ArticleFolderPriorityUpdateParams,
+    ArticleFolders,
     ArticlePublicStatsCollection,
     Articles,
     ArticleTree,
@@ -68,8 +76,11 @@ class ArticlesUseCase:
 
     async def create_article(self, *, params: ArticleCreateParams) -> Article:
         tags = await self._get_active_tags(tag_ids=params.tag_ids)
+        folder = await self.storage.get_folder_by_id(folder_id=params.folder_id)
         now = datetime.now(tz=UTC)
-        return await self.storage.create_article(article=params.to_article(now=now, tags=tags))
+        return await self.storage.create_article(
+            article=params.to_article(now=now, folder=folder, tags=tags),
+        )
 
     async def update_article(
         self,
@@ -82,9 +93,15 @@ class ArticlesUseCase:
             include_deleted_tags=True,
         )
         tags = await self._get_active_tags(tag_ids=params.tag_ids)
+        folder = await self.storage.get_folder_by_id(folder_id=params.folder_id)
         now = datetime.now(tz=UTC)
         return await self.storage.update_article(
-            article=params.to_article(existing_article=existing_article, now=now, tags=tags),
+            article=params.to_article(
+                existing_article=existing_article,
+                now=now,
+                folder=folder,
+                tags=tags,
+            ),
         )
 
     async def _get_active_tags(self, *, tag_ids: list[str]) -> Tags:
@@ -141,6 +158,20 @@ class ArticlesUseCase:
 
     async def restore_tag(self, *, tag_id: str) -> None:
         await self.storage.restore_tag(tag_id=tag_id)
+
+    async def list_folders(self, *, language: LanguageEnum) -> ArticleFolders:
+        return await self.storage.list_folders(language=language)
+
+    async def create_folder(self, *, params: ArticleFolderCreateParams) -> ArticleFolder:
+        if await self.storage.folder_key_exists(key=params.key):
+            raise ArticleFolderAlreadyExistsError
+        priority = await self.storage.next_folder_priority()
+        return await self.storage.create_folder(folder=params.to_folder(priority=priority))
+
+    async def update_folder_priorities(self, *, params: ArticleFolderPriorityUpdateParams) -> None:
+        folders = await self.storage.list_folders(language=LanguageEnum.EN)
+        folders.ensure_priority_order_matches(ordered_ids=params.ordered_ids)
+        await self.storage.update_folder_priorities(ordered_ids=params.ordered_ids)
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)

@@ -1,0 +1,51 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+  <div class="d-flex align-items-center gap-2">
+    <h2 class="h4 mb-0">{{ 'articles.folders.title' | t }}</h2>
+    @if (saving()) {
+      <span class="badge text-bg-secondary">{{ 'articles.folders.saving' | t }}</span>
+    }
+  </div>
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    data-testid="article-folders-reload"
+    [disabled]="loading() || saving()"
+    (click)="loadFolders()"
+  >
+    {{ 'shared.update' | t }}
+  </button>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+} @else if (error()) {
+  <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" (retry)="loadFolders()" />
+} @else if (isEmpty()) {
+  <app-empty-state [message]="'articles.folders.empty' | t" />
+} @else {
+  <div
+    class="article-folder-list list-group"
+    cdkDropList
+    [cdkDropListData]="folders()"
+    [cdkDropListDisabled]="saving()"
+    (cdkDropListDropped)="dropFolders($event)"
+    data-testid="article-folder-list"
+  >
+    @for (folder of folders(); track folder.id) {
+      <div
+        class="list-group-item article-folder-item"
+        cdkDrag
+        [cdkDragDisabled]="saving()"
+        data-testid="article-folder-row"
+      >
+        <div class="min-w-0">
+          <div class="fw-semibold text-truncate">{{ folder.name }}</div>
+          <div class="small text-body-secondary text-truncate">{{ folder.key }}</div>
+        </div>
+        <span class="small text-body-secondary">
+          {{ 'articles.folders.priority' | t }} {{ folder.priority }}
+        </span>
+      </div>
+    }
+  </div>
+}

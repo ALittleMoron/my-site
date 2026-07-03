@@ -26,7 +26,7 @@ export class ArticlesSidePanelComponent {
   readonly sections = computed<readonly FoldableTreeSection[]>(() => {
     this.i18n.language();
     return this.tree().folders.map((folder) => ({
-      key: folder.folder,
+      key: folder.folderKey,
       label: folder.folder,
       trailingText: String(folder.articles.length),
       items: folder.articles.map((article) => ({

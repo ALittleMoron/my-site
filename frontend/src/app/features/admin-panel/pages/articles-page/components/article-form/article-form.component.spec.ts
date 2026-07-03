@@ -29,6 +29,9 @@ describe('ArticleFormComponent', () => {
   let fixture: ComponentFixture<ArticleFormComponent>;
   let articlesService: {
     getTags: jest.Mock;
+    getFolders: jest.Mock;
+    createFolder: jest.Mock;
+    updateFolderPriorities: jest.Mock;
     createTag: jest.Mock;
     updateTag: jest.Mock;
     deleteTag: jest.Mock;
@@ -52,6 +55,33 @@ describe('ArticleFormComponent', () => {
       ),
     };
     articlesService = {
+      getFolders: jest.fn().mockReturnValue(
+        of([
+          {
+            id: 'folder-1',
+            key: 'engineering',
+            name: 'Инженерия',
+            priority: 1,
+            translations: {
+              ru: { name: 'Инженерия' },
+              en: { name: 'Engineering' },
+            },
+          },
+        ]),
+      ),
+      createFolder: jest.fn().mockReturnValue(
+        of({
+          id: 'folder-2',
+          key: 'architecture',
+          name: 'Архитектура',
+          priority: 2,
+          translations: {
+            ru: { name: 'Архитектура' },
+            en: { name: 'Architecture' },
+          },
+        }),
+      ),
+      updateFolderPriorities: jest.fn().mockReturnValue(of(undefined)),
       getTags: jest.fn().mockReturnValue(
         of([
           tag({ id: PYTHON_TAG_ID, name: 'Python', slug: 'python', deletedAt: null }),
@@ -145,14 +175,7 @@ describe('ArticleFormComponent', () => {
     titleEn.dispatchEvent(new Event('input'));
     contentEditors[0].componentInstance.valueChange.emit('Содержимое');
     contentEditors[1].componentInstance.valueChange.emit('Content');
-    const folderRu = fixture.debugElement.query(By.css('#articleFolderRu'))
-      .nativeElement as HTMLInputElement;
-    folderRu.value = 'Инженерия';
-    folderRu.dispatchEvent(new Event('input'));
-    const folderEn = fixture.debugElement.query(By.css('#articleFolderEn'))
-      .nativeElement as HTMLInputElement;
-    folderEn.value = 'Engineering';
-    folderEn.dispatchEvent(new Event('input'));
+    selectFolder('folder-1');
     const seoTitleRu = fixture.debugElement.query(By.css('#articleSeoTitleRu'))
       .nativeElement as HTMLInputElement;
     seoTitleRu.value = 'SEO типизированная статья';
@@ -191,6 +214,7 @@ describe('ArticleFormComponent', () => {
 
     expect(saveSpy).toHaveBeenCalledWith({
       slug: 'typed-article',
+      folderId: 'folder-1',
       publishStatus: 'Draft',
       tagIds: [PYTHON_TAG_ID],
       metadata: {
@@ -203,8 +227,8 @@ describe('ArticleFormComponent', () => {
         coverImageAltEn: 'Cover',
       },
       translations: {
-        ru: { title: 'Типизированная статья', content: 'Содержимое', folder: 'Инженерия' },
-        en: { title: 'Typed article', content: 'Content', folder: 'Engineering' },
+        ru: { title: 'Типизированная статья', content: 'Содержимое' },
+        en: { title: 'Typed article', content: 'Content' },
       },
     });
   });
@@ -223,8 +247,8 @@ describe('ArticleFormComponent', () => {
     ) as HTMLElement | null;
 
     expect(fixture.nativeElement.textContent).toContain('Slug *');
+    expect(fixture.nativeElement.textContent).toContain('Папка *');
     expect(fixture.nativeElement.textContent).toContain('Заголовок RU *');
-    expect(fixture.nativeElement.textContent).toContain('Папка RU *');
     expect(fixture.nativeElement.textContent).toContain('Содержимое RU *');
     expect(contentRuEditor).not.toBeNull();
 
@@ -234,6 +258,9 @@ describe('ArticleFormComponent', () => {
     expect(saveSpy).not.toHaveBeenCalled();
     expect(slug.classList).toContain('is-invalid');
     expect(titleRu.classList).toContain('is-invalid');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-folder-select"]').classList,
+    ).toContain('is-invalid');
     expect(contentRuEditor?.classList).toContain('article-markdown-editor-invalid');
 
     slug.value = 'typed-article';
@@ -257,12 +284,6 @@ describe('ArticleFormComponent', () => {
       setInvalidValue: () => setInput('#articleTitleRu', '   '),
     },
     {
-      description: 'RU folder max length',
-      selector: '#articleFolderRu',
-      expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () => setInput('#articleFolderRu', INVALID_SHORT_TEXT),
-    },
-    {
       description: 'RU content required text',
       selector: '[data-testid="article-content-ru-editor"]',
       expectedMessage: 'Заполните поле.',
@@ -274,12 +295,6 @@ describe('ArticleFormComponent', () => {
       selector: '#articleTitleEn',
       expectedMessage: 'Заполните поле.',
       setInvalidValue: () => setInput('#articleTitleEn', '   '),
-    },
-    {
-      description: 'EN folder max length',
-      selector: '#articleFolderEn',
-      expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () => setInput('#articleFolderEn', INVALID_SHORT_TEXT),
     },
     {
       description: 'EN content max length',
@@ -570,16 +585,13 @@ describe('ArticleFormComponent', () => {
       .nativeElement as HTMLInputElement;
     const titleRu = fixture.debugElement.query(By.css('#articleTitleRu'))
       .nativeElement as HTMLInputElement;
-    const folderRu = fixture.debugElement.query(By.css('#articleFolderRu'))
-      .nativeElement as HTMLInputElement;
     const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
 
     slug.value = 'typed-article';
     slug.dispatchEvent(new Event('input'));
     titleRu.value = 'Типизированная статья для поиска';
     titleRu.dispatchEvent(new Event('input'));
-    folderRu.value = 'Инженерия';
-    folderRu.dispatchEvent(new Event('input'));
+    selectFolder('folder-1');
     contentEditors[0].componentInstance.valueChange.emit(
       'Эта статья объясняет работу типизированных Angular форм, сигналов и локализованных полей в редакторе статей.',
     );
@@ -641,13 +653,21 @@ describe('ArticleFormComponent', () => {
 
   function fillValidArticleMinimum(): void {
     setInput('#articleSlug', 'typed-article');
+    selectFolder('folder-1');
     setInput('#articleTitleRu', 'Типизированная статья');
     setInput('#articleTitleEn', 'Typed article');
-    setInput('#articleFolderRu', 'Инженерия');
-    setInput('#articleFolderEn', 'Engineering');
     const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
     contentEditors[0].componentInstance.valueChange.emit('Содержимое');
     contentEditors[1].componentInstance.valueChange.emit('Content');
+    fixture.detectChanges();
+  }
+
+  function selectFolder(folderId: string): void {
+    const select = fixture.nativeElement.querySelector(
+      '[data-testid="article-folder-select"]',
+    ) as HTMLSelectElement;
+    select.value = folderId;
+    select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 
@@ -717,6 +737,8 @@ function articleDetail(slug: string, title: string): ArticleDetail {
     title,
     slug,
     folder: 'Engineering',
+    folderId: 'folder-1',
+    folderKey: 'engineering',
     authorUsername: 'admin',
     publishedAt: null,
     publishStatus: 'Draft',
@@ -737,8 +759,8 @@ function articleDetail(slug: string, title: string): ArticleDetail {
     createdAt: '2026-01-01T03:04:05+00:00',
     reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     translations: {
-      ru: { title: `${title} RU`, content: '# RU', folder: 'Инженерия' },
-      en: { title, content: '# EN', folder: 'Engineering' },
+      ru: { title: `${title} RU`, content: '# RU' },
+      en: { title, content: '# EN' },
     },
   };
 }

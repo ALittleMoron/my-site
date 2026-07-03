@@ -19,6 +19,8 @@ describe('ArticlesSidePanelComponent', () => {
     const tree: ArticleTree = {
       folders: [
         {
+          folderId: 'folder-1',
+          folderKey: 'engineering',
           folder: 'Engineering',
           articles: [
             {

@@ -2,17 +2,23 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any, TypeVar
 
-from sqlalchemy import Select, String, and_, bindparam, case, func, or_, select
+from sqlalchemy import Select, String, and_, bindparam, case, func, or_, select, true, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, joinedload, selectinload
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
-from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
+from core.articles.exceptions import (
+    ArticleFolderNotFoundError,
+    ArticleNotFoundError,
+    TagNotFoundError,
+)
 from core.articles.schemas import (
     Article,
     ArticleAnalyticsDailyStats,
     ArticleFilters,
+    ArticleFolder,
+    ArticleFolders,
     ArticlePublicStats,
     ArticlePublicStatsCollection,
     ArticleReactionCounts,
@@ -26,6 +32,7 @@ from core.i18n.enums import LanguageEnum
 from infra.config.constants import constants
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
@@ -49,6 +56,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             select(ArticleModel)
             .where(ArticleModel.slug == slug)
             .options(
+                joinedload(ArticleModel.folder),
                 selectinload(ArticleModel.tag_links).selectinload(ArticleToTagSecondaryModel.tag),
             )
         )
@@ -61,7 +69,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         )
 
     async def list_articles(self, *, filters: ArticleFilters) -> tuple[list[Article], int]:
-        query = select(ArticleModel)
+        query = select(ArticleModel).options(joinedload(ArticleModel.folder))
         if filters.include_tags:
             query = query.options(
                 selectinload(ArticleModel.tag_links).selectinload(ArticleToTagSecondaryModel.tag),
@@ -152,10 +160,10 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             return ArticleModel.title_ru
         return ArticleModel.title_en
 
-    def _folder_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
+    def _folder_name_column(self, *, language: LanguageEnum) -> InstrumentedAttribute[str]:
         if language == LanguageEnum.RU:
-            return ArticleModel.folder_ru
-        return ArticleModel.folder_en
+            return ArticleFolderModel.name_ru
+        return ArticleFolderModel.name_en
 
     def _date_start(self, *, value: date) -> datetime:
         return datetime.combine(value, time.min, tzinfo=UTC)
@@ -169,37 +177,95 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         only_published: bool,
         language: LanguageEnum,
     ) -> list[ArticleTreeItemData]:
+        if only_published:
+            return await self._list_published_tree_items(language=language)
+
         filters = ArticleFilters(language=language)
-        folder_column = self._folder_column(language=language).label("folder")
+        folder_column = self._folder_name_column(language=language).label("folder")
         title_column = self._title_column(language=language).label("title")
-        ordering = (
-            (
-                self._folder_column(language=language),
-                ArticleModel.published_at.desc().nullslast(),
-                ArticleModel.updated_at.desc(),
-                self._title_column(language=language),
+        query = (
+            select(
+                ArticleFolderModel.id.label("folder_id"),
+                ArticleFolderModel.key.label("folder_key"),
+                folder_column,
+                title_column,
+                ArticleModel.slug,
+                ArticleModel.publish_status,
+                ArticleModel.published_at,
+                ArticleModel.updated_at,
             )
-            if only_published
-            else (
-                self._folder_column(language=language),
+            .select_from(ArticleFolderModel)
+            .join(
+                ArticleModel,
+                ArticleFolderModel.id == ArticleModel.folder_id,
+            )
+            .order_by(
+                ArticleFolderModel.priority,
+                ArticleFolderModel.id,
                 *self._article_ordering(filters=filters),
             )
         )
-        query = select(
-            folder_column,
-            title_column,
-            ArticleModel.slug,
-            ArticleModel.publish_status,
-            ArticleModel.published_at,
-            ArticleModel.updated_at,
-        ).order_by(
-            *ordering,
-        )
-        if only_published:
-            query = query.where(ArticleModel.publish_status == PublishStatusEnum.PUBLISHED)
         rows = await self.session.execute(query)
         return [
             ArticleTreeItemData(
+                folder_id=row.folder_id,
+                folder_key=row.folder_key,
+                folder=row.folder,
+                title=row.title,
+                slug=row.slug,
+                publish_status=row.publish_status,
+                published_at=row.published_at,
+                updated_at=row.updated_at,
+            )
+            for row in rows
+        ]
+
+    async def _list_published_tree_items(
+        self,
+        *,
+        language: LanguageEnum,
+    ) -> list[ArticleTreeItemData]:
+        folder_column = self._folder_name_column(language=language).label("folder")
+        title_column = self._title_column(language=language)
+        article_rows = (
+            select(
+                title_column.label("title"),
+                ArticleModel.slug.label("slug"),
+                ArticleModel.publish_status.label("publish_status"),
+                ArticleModel.published_at.label("published_at"),
+                ArticleModel.updated_at.label("updated_at"),
+            )
+            .where(
+                ArticleModel.folder_id == ArticleFolderModel.id,
+                ArticleModel.publish_status == PublishStatusEnum.PUBLISHED,
+            )
+            .order_by(
+                ArticleModel.published_at.desc().nullslast(),
+                ArticleModel.updated_at.desc(),
+                title_column,
+            )
+            .lateral("article_tree_articles")
+        )
+        query = (
+            select(
+                ArticleFolderModel.id.label("folder_id"),
+                ArticleFolderModel.key.label("folder_key"),
+                folder_column,
+                article_rows.c.title,
+                article_rows.c.slug,
+                article_rows.c.publish_status,
+                article_rows.c.published_at,
+                article_rows.c.updated_at,
+            )
+            .select_from(ArticleFolderModel)
+            .join(article_rows, true())
+            .order_by(ArticleFolderModel.priority, ArticleFolderModel.id)
+        )
+        rows = await self.session.execute(query)
+        return [
+            ArticleTreeItemData(
+                folder_id=row.folder_id,
+                folder_key=row.folder_key,
                 folder=row.folder,
                 title=row.title,
                 slug=row.slug,
@@ -264,6 +330,65 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         model.publish_status = publish_status
         if publish_status == PublishStatusEnum.PUBLISHED and model.published_at is None:
             model.published_at = datetime.now(tz=UTC)
+        await self.session.flush()
+
+    async def get_folder_by_id(self, *, folder_id: str) -> ArticleFolder:
+        model = await self.session.get(ArticleFolderModel, folder_id)
+        if model is None:
+            raise ArticleFolderNotFoundError
+        return model.to_domain_schema()
+
+    async def list_folders(self, *, language: LanguageEnum) -> ArticleFolders:
+        name_column = self._folder_name_column(language=language)
+        models = await self.session.scalars(
+            select(ArticleFolderModel).order_by(
+                ArticleFolderModel.priority,
+                func.lower(name_column),
+                ArticleFolderModel.id,
+            ),
+        )
+        return ArticleFolders(values=[model.to_domain_schema() for model in models])
+
+    async def next_folder_priority(self) -> int:
+        priority = await self.session.scalar(
+            select(func.coalesce(func.max(ArticleFolderModel.priority), 0) + 1),
+        )
+        return int(priority or 1)
+
+    async def folder_key_exists(self, *, key: str) -> bool:
+        exists_stmt = select(
+            select(ArticleFolderModel.id)
+            .where(func.lower(ArticleFolderModel.key) == key.lower())
+            .exists(),
+        )
+        return bool(await self.session.scalar(exists_stmt))
+
+    async def create_folder(self, *, folder: ArticleFolder) -> ArticleFolder:
+        model = ArticleFolderModel.from_domain_schema(folder=folder)
+        self.session.add(model)
+        await self.session.flush()
+        return model.to_domain_schema()
+
+    async def update_folder_priorities(self, *, ordered_ids: tuple[str, ...]) -> None:
+        if not ordered_ids:
+            return
+        priority_by_id = {
+            ordered_id: priority for priority, ordered_id in enumerate(ordered_ids, start=1)
+        }
+        priority_cases = tuple(
+            (ArticleFolderModel.id == folder_id, priority)
+            for folder_id, priority in priority_by_id.items()
+        )
+        await self.session.execute(
+            update(ArticleFolderModel)
+            .where(ArticleFolderModel.id.in_(priority_by_id.keys()))
+            .values(
+                priority=case(
+                    *priority_cases,
+                    else_=ArticleFolderModel.priority,
+                ),
+            ),
+        )
         await self.session.flush()
 
     async def get_tags_by_ids(

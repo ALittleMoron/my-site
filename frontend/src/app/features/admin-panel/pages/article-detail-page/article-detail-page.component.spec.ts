@@ -137,6 +137,8 @@ function articleDetail(slug: string, publishStatus: 'Draft' | 'Published'): Admi
     title: 'Typed articles',
     slug,
     folder: 'Engineering',
+    folderId: 'folder-1',
+    folderKey: 'engineering',
     authorUsername: 'admin',
     publishedAt: publishStatus === 'Published' ? '2026-01-02T03:04:05+00:00' : null,
     publishStatus,
@@ -157,8 +159,8 @@ function articleDetail(slug: string, publishStatus: 'Draft' | 'Published'): Admi
     createdAt: '2026-01-01T03:04:05+00:00',
     reactionCounts: { heart: 1, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
   };
 }
@@ -166,6 +168,7 @@ function articleDetail(slug: string, publishStatus: 'Draft' | 'Published'): Admi
 function articlePayload(slug: string): AdminArticlePayload {
   return {
     slug,
+    folderId: 'folder-1',
     publishStatus: 'Draft',
     tagIds: [],
     metadata: {
@@ -178,8 +181,8 @@ function articlePayload(slug: string): AdminArticlePayload {
       coverImageAltEn: null,
     },
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
   };
 }

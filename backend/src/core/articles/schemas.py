@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date, datetime
@@ -6,6 +5,7 @@ from math import ceil
 from typing import Self
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
+from core.articles.exceptions import ArticleFolderPriorityInvalidError
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
@@ -32,6 +32,28 @@ class Tag:
 class Tags(ValuedDataclass[Tag]):
     def all_tags_exist_by_ids(self, ids: set[str]) -> bool:
         return ids.difference({tag.id for tag in self.values}) == set()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ArticleFolder:
+    id: str
+    key: str
+    name_ru: str
+    name_en: str
+    priority: int
+
+    def localized_name(self, *, language: LanguageEnum) -> str:
+        if language == LanguageEnum.RU:
+            return self.name_ru
+        return self.name_en
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ArticleFolders(ValuedDataclass[ArticleFolder]):
+    def ensure_priority_order_matches(self, *, ordered_ids: tuple[str, ...]) -> None:
+        folder_ids = tuple(folder.id for folder in self.values)
+        if len(folder_ids) != len(ordered_ids) or set(folder_ids) != set(ordered_ids):
+            raise ArticleFolderPriorityInvalidError
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -68,8 +90,7 @@ class Article:
     title_en: str
     content_ru: str
     content_en: str
-    folder_ru: str
-    folder_en: str
+    folder: ArticleFolder
     author_username: str
     published_at: datetime | None
     publish_status: PublishStatusEnum
@@ -92,9 +113,7 @@ class Article:
         return self.content_en
 
     def localized_folder(self, *, language: LanguageEnum) -> str:
-        if language == LanguageEnum.RU:
-            return self.folder_ru
-        return self.folder_en
+        return self.folder.localized_name(language=language)
 
     def public_copy(self) -> Article:
         return replace(self, tags=Tags(values=[tag for tag in self.tags if not tag.is_deleted()]))
@@ -171,14 +190,13 @@ class ArticleCreateParams:
     title_en: str
     content_ru: str
     content_en: str
-    folder_ru: str
-    folder_en: str
+    folder_id: str
     author_username: str
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
     tag_ids: list[str]
 
-    def to_article(self, *, now: datetime, tags: Tags) -> Article:
+    def to_article(self, *, now: datetime, folder: ArticleFolder, tags: Tags) -> Article:
         return Article(
             id=self.id,
             slug=self.slug,
@@ -186,8 +204,7 @@ class ArticleCreateParams:
             title_en=self.title_en,
             content_ru=self.content_ru,
             content_en=self.content_en,
-            folder_ru=self.folder_ru,
-            folder_en=self.folder_en,
+            folder=folder,
             author_username=self.author_username,
             publish_status=self.publish_status,
             metadata=self.metadata,
@@ -205,13 +222,19 @@ class ArticleUpdateParams:
     title_en: str
     content_ru: str
     content_en: str
-    folder_ru: str
-    folder_en: str
+    folder_id: str
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
     tag_ids: list[str]
 
-    def to_article(self, *, existing_article: Article, now: datetime, tags: Tags) -> Article:
+    def to_article(
+        self,
+        *,
+        existing_article: Article,
+        now: datetime,
+        folder: ArticleFolder,
+        tags: Tags,
+    ) -> Article:
         published_at = existing_article.published_at
         if published_at is None and self.publish_status == PublishStatusEnum.PUBLISHED:
             published_at = now
@@ -222,8 +245,7 @@ class ArticleUpdateParams:
             title_en=self.title_en,
             content_ru=self.content_ru,
             content_en=self.content_en,
-            folder_ru=self.folder_ru,
-            folder_en=self.folder_en,
+            folder=folder,
             author_username=existing_article.author_username,
             publish_status=self.publish_status,
             metadata=self.metadata,
@@ -245,6 +267,8 @@ class ArticleTreeItem:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleTreeItemData:
+    folder_id: str
+    folder_key: str
     folder: str
     title: str
     slug: str
@@ -264,6 +288,8 @@ class ArticleTreeItemData:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleTreeFolder:
+    folder_id: str
+    folder_key: str
     folder: str
     articles: list[ArticleTreeItem]
 
@@ -274,15 +300,39 @@ class ArticleTree:
 
     @classmethod
     def from_items(cls, *, items: list[ArticleTreeItemData]) -> Self:
-        folders: defaultdict[str, list[ArticleTreeItem]] = defaultdict(list)
+        folders: dict[str, ArticleTreeFolder] = {}
         for item in items:
-            folders[item.folder].append(item.to_tree_item())
-        return cls(
-            folders=[
-                ArticleTreeFolder(folder=folder, articles=articles)
-                for folder, articles in sorted(folders.items(), key=lambda item: item[0].lower())
-            ],
+            if item.folder_id not in folders:
+                folders[item.folder_id] = ArticleTreeFolder(
+                    folder_id=item.folder_id,
+                    folder_key=item.folder_key,
+                    folder=item.folder,
+                    articles=[],
+                )
+            folders[item.folder_id].articles.append(item.to_tree_item())
+        return cls(folders=list(folders.values()))
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ArticleFolderCreateParams:
+    id: str
+    key: str
+    name_ru: str
+    name_en: str
+
+    def to_folder(self, *, priority: int) -> ArticleFolder:
+        return ArticleFolder(
+            id=self.id,
+            key=self.key,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            priority=priority,
         )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ArticleFolderPriorityUpdateParams:
+    ordered_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

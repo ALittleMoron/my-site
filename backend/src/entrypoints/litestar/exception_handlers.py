@@ -23,6 +23,10 @@ from core.account.exceptions import (
     ManagedAccountActionForbiddenError,
     SelfAccountActionForbiddenError,
 )
+from core.articles.exceptions import (
+    ArticleFolderAlreadyExistsError,
+    ArticleFolderPriorityInvalidError,
+)
 from core.auth.exceptions import ForbiddenError, UnauthorizedError
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
@@ -50,6 +54,8 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     InvalidManagedAccountRoleError: BadRequestHTTPException,
     SelfAccountActionForbiddenError: ForbiddenHTTPException,
     ManagedAccountActionForbiddenError: ForbiddenHTTPException,
+    ArticleFolderAlreadyExistsError: BadRequestHTTPException,
+    ArticleFolderPriorityInvalidError: BadRequestHTTPException,
 }
 
 

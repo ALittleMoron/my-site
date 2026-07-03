@@ -16,7 +16,6 @@ export interface ArticleReactionCountsDto {
 export interface ArticleTranslationDto {
   title: string;
   content: string;
-  folder: string;
 }
 
 export interface ArticleTranslationsDto {
@@ -56,6 +55,8 @@ export interface ArticleSummaryDto {
   title: string;
   slug: string;
   folder: string;
+  folderId: string;
+  folderKey: string;
   authorUsername: string;
   publishedAt: string | null;
   publishStatus: ArticlePublishStatus;
@@ -96,6 +97,8 @@ export interface ArticleTreeItemDto {
 }
 
 export interface ArticleTreeFolderDto {
+  folderId: string;
+  folderKey: string;
   folder: string;
   articles: ArticleTreeItemDto[];
 }
@@ -172,6 +175,8 @@ export interface ArticleSummary {
   title: string;
   slug: string;
   folder: string;
+  folderId: string;
+  folderKey: string;
   authorUsername: string;
   publishedAt: string | null;
   publishStatus: ArticlePublishStatus;
@@ -210,6 +215,8 @@ export interface ArticleTreeItem {
 }
 
 export interface ArticleTreeFolder {
+  folderId: string;
+  folderKey: string;
   folder: string;
   articles: ArticleTreeItem[];
 }
@@ -221,7 +228,6 @@ export interface ArticleTree {
 export interface ArticleTranslation {
   title: string;
   content: string;
-  folder: string;
 }
 
 export interface ArticleTranslations {
@@ -326,6 +332,8 @@ export function mapArticleSummaryDto(
     title: dto.title,
     slug: dto.slug,
     folder: dto.folder,
+    folderId: dto.folderId,
+    folderKey: dto.folderKey,
     authorUsername: dto.authorUsername,
     publishedAt: dto.publishedAt,
     publishStatus: dto.publishStatus,
@@ -365,6 +373,8 @@ export function mapArticleListDto(
 export function mapArticleTreeDto(dto: ArticleTreeDto): ArticleTree {
   return {
     folders: dto.folders.map((folder) => ({
+      folderId: folder.folderId,
+      folderKey: folder.folderKey,
       folder: folder.folder,
       articles: folder.articles.map((article) => ({ ...article })),
     })),

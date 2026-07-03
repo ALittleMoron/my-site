@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.account.schemas import ManagedAccountFilters
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
-from core.articles.schemas import Article, ArticleFilters, ArticleMetadata, Tag, Tags
+from core.articles.schemas import Article, ArticleFilters, ArticleFolder, ArticleMetadata, Tag, Tags
 from core.auth.enums import RoleEnum
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
@@ -76,6 +76,8 @@ NEW_MANAGED_ACCOUNT_USERNAME = "query-plan-admin"
 NEW_ARTICLE_ID = "10000000000040008000000000000001"
 NEW_CONTACT_ID = "10000000000040008000000000000002"
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
+NEW_ARTICLE_FOLDER_ID = "10000000000040008000000000000003"
+EXISTING_ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
 NEW_TAG_ID = hex_id(90_000_001)
 NEW_MATRIX_ITEM_ID = hex_id(900_001)
 NEW_MATRIX_SHEET_KEY = "query-plan-new-sheet"
@@ -371,6 +373,34 @@ async def run_update_article_publish_status(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).update_article_publish_status(
         slug="article-102",
         publish_status=PublishStatusEnum.DRAFT,
+    )
+
+
+async def run_get_article_folder_by_id(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).get_folder_by_id(
+        folder_id=EXISTING_ARTICLE_FOLDER_ID,
+    )
+
+
+async def run_list_article_folders(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).list_folders(language=LanguageEnum.EN)
+
+
+async def run_next_article_folder_priority(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).next_folder_priority()
+
+
+async def run_article_folder_key_exists(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).folder_key_exists(key="knowledge-base")
+
+
+async def run_create_article_folder(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).create_folder(folder=write_article_folder())
+
+
+async def run_update_article_folder_priorities(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).update_folder_priorities(
+        ordered_ids=(EXISTING_ARTICLE_FOLDER_ID,),
     )
 
 
@@ -718,8 +748,7 @@ def write_article() -> Article:
         title_en="New query plan article",
         content_ru="Контент для smoke проверки запросов",
         content_en="Content for query smoke checks",
-        folder_ru="Производительность",
-        folder_en="Performance",
+        folder=existing_article_folder(),
         author_username=SEED_USERNAME,
         published_at=SEED_NOW,
         publish_status=PublishStatusEnum.PUBLISHED,
@@ -738,8 +767,7 @@ def write_article_for_existing_article() -> Article:
         title_en="Updated query plan article",
         content_ru="Обновленный контент для smoke проверки",
         content_en="Updated content for query smoke checks",
-        folder_ru="Производительность",
-        folder_en="Performance",
+        folder=existing_article_folder(),
         author_username=SEED_USERNAME,
         published_at=SEED_NOW,
         publish_status=PublishStatusEnum.PUBLISHED,
@@ -747,6 +775,26 @@ def write_article_for_existing_article() -> Article:
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
         tags=Tags(values=[seed_tag(1), seed_tag(2)]),
+    )
+
+
+def existing_article_folder() -> ArticleFolder:
+    return ArticleFolder(
+        id=EXISTING_ARTICLE_FOLDER_ID,
+        key="knowledge-base",
+        name_ru="База знаний",
+        name_en="Knowledge base",
+        priority=1,
+    )
+
+
+def write_article_folder() -> ArticleFolder:
+    return ArticleFolder(
+        id=NEW_ARTICLE_FOLDER_ID,
+        key="query-plan-folder",
+        name_ru="Папка query plan",
+        name_en="Query plan folder",
+        priority=2,
     )
 
 
@@ -1070,7 +1118,7 @@ STORAGE_SCENARIOS = (
         storage_class="ArticlesDatabaseStorage",
         method_name="list_tree_items",
         group=QueryThresholdGroup.HEAVY,
-        expected_index_names=("articles_article_tree_en_published_idx",),
+        expected_index_names=("articles_article_tree_folder_en_published_idx",),
         forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
         run=run_list_tree_items,
@@ -1114,6 +1162,66 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("articles__article_model",),
         allow_seq_scan_reason=None,
         run=run_update_article_publish_status,
+    ),
+    scenario(
+        name="article_folders_detail_by_id",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="get_folder_by_id",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("articles__article_folder_model_pkey",),
+        forbidden_seq_scan_relations=("articles__article_folder_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_article_folder_by_id,
+    ),
+    scenario(
+        name="article_folders_list",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="list_folders",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_list_article_folders,
+    ),
+    scenario(
+        name="article_folders_next_priority",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="next_folder_priority",
+        group=QueryThresholdGroup.AGGREGATE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_next_article_folder_priority,
+    ),
+    scenario(
+        name="article_folders_key_exists",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="folder_key_exists",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("articles_folder_key_lower_uniq",),
+        forbidden_seq_scan_relations=("articles__article_folder_model",),
+        allow_seq_scan_reason=None,
+        run=run_article_folder_key_exists,
+    ),
+    scenario(
+        name="article_folders_create",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="create_folder",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_article_folder,
+    ),
+    scenario(
+        name="article_folders_update_priorities",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="update_folder_priorities",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("articles__article_folder_model_pkey",),
+        forbidden_seq_scan_relations=("articles__article_folder_model",),
+        allow_seq_scan_reason=None,
+        run=run_update_article_folder_priorities,
     ),
     scenario(
         name="tags_get_by_ids",

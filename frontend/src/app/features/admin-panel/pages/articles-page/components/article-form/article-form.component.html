@@ -21,6 +21,18 @@
         <div class="invalid-feedback d-block">{{ message }}</div>
       }
     </div>
+    <div class="col-12">
+      <app-article-folder-picker
+        [language]="activeLanguageTab()"
+        [selectedFolderId]="form.controls.folderId.value"
+        [invalid]="articleFieldInvalid('folderId')"
+        (selectedFolderIdChange)="setFolderId($event)"
+        (selectedFolderChange)="setSelectedFolder($event)"
+      />
+      @if (articleFieldInvalid('folderId') && articleFieldMessage('folderId'); as message) {
+        <div class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
     <div class="col-md-8">
       <label class="form-label" for="articleCoverImageUrl">{{
         'articles.form.coverImageUrl' | t
@@ -95,7 +107,7 @@
   <div class="border border-top-0 rounded-bottom p-3 mb-3">
     <div [class.d-none]="activeLanguageTab() !== 'ru'">
       <div class="row g-3">
-        <div class="col-md-8">
+        <div class="col-12">
           <label class="form-label" for="articleTitleRu">
             {{ 'articles.form.titleRu' | t }}
             <span class="required-marker" aria-hidden="true">*</span>
@@ -112,26 +124,6 @@
             formControlName="titleRu"
           />
           @if (articleFieldInvalid('titleRu') && articleFieldMessage('titleRu'); as message) {
-            <div class="invalid-feedback d-block">{{ message }}</div>
-          }
-        </div>
-        <div class="col-md-4">
-          <label class="form-label" for="articleFolderRu">
-            {{ 'articles.form.folderRu' | t }}
-            <span class="required-marker" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="articleFolderRu"
-            type="text"
-            class="form-control"
-            [class.is-invalid]="articleFieldInvalid('folderRu')"
-            [attr.aria-invalid]="articleFieldInvalid('folderRu') ? 'true' : null"
-            required
-            aria-required="true"
-            [attr.maxlength]="validationLimits.shortText"
-            formControlName="folderRu"
-          />
-          @if (articleFieldInvalid('folderRu') && articleFieldMessage('folderRu'); as message) {
             <div class="invalid-feedback d-block">{{ message }}</div>
           }
         </div>
@@ -218,7 +210,7 @@
 
     <div [class.d-none]="activeLanguageTab() !== 'en'">
       <div class="row g-3">
-        <div class="col-md-8">
+        <div class="col-12">
           <label class="form-label" for="articleTitleEn">
             {{ 'articles.form.titleEn' | t }}
             <span class="required-marker" aria-hidden="true">*</span>
@@ -236,26 +228,6 @@
             (input)="onTitleEnInput()"
           />
           @if (articleFieldInvalid('titleEn') && articleFieldMessage('titleEn'); as message) {
-            <div class="invalid-feedback d-block">{{ message }}</div>
-          }
-        </div>
-        <div class="col-md-4">
-          <label class="form-label" for="articleFolderEn">
-            {{ 'articles.form.folderEn' | t }}
-            <span class="required-marker" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="articleFolderEn"
-            type="text"
-            class="form-control"
-            [class.is-invalid]="articleFieldInvalid('folderEn')"
-            [attr.aria-invalid]="articleFieldInvalid('folderEn') ? 'true' : null"
-            required
-            aria-required="true"
-            [attr.maxlength]="validationLimits.shortText"
-            formControlName="folderEn"
-          />
-          @if (articleFieldInvalid('folderEn') && articleFieldMessage('folderEn'); as message) {
             <div class="invalid-feedback d-block">{{ message }}</div>
           }
         </div>

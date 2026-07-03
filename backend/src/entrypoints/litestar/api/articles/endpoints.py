@@ -22,6 +22,10 @@ from entrypoints.litestar.api.articles.dependencies import (
 from entrypoints.litestar.api.articles.schemas import (
     ArticleAnalyticsStatsResponseSchema,
     ArticleDetailResponseSchema,
+    ArticleFolderPriorityUpdateRequestSchema,
+    ArticleFolderRequestSchema,
+    ArticleFolderResponseSchema,
+    ArticleFoldersResponseSchema,
     ArticleListResponseSchema,
     ArticlePublicStatsCollectionResponseSchema,
     ArticleReactionRequestSchema,
@@ -257,6 +261,67 @@ class AdminArticlesApiController(Controller):
     ) -> ArticleTreeResponseSchema:
         tree = await use_case.list_tree(only_published=False, language=language)
         return ArticleTreeResponseSchema.from_domain_schema(schema=tree)
+
+    @get(
+        "/folders",
+        description="Get the admin article folder list.",
+        name="admin-articles-folders-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def list_folders(
+        self,
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        use_case: FromDishka[ArticlesUseCase],
+    ) -> ArticleFoldersResponseSchema:
+        folders = await use_case.list_folders(language=language)
+        return ArticleFoldersResponseSchema.from_domain_schema(
+            schema=folders,
+            language=language,
+        )
+
+    @post(
+        "/folders",
+        description="Create an article folder.",
+        name="admin-articles-folders-create-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
+    )
+    async def create_folder(
+        self,
+        id_generator: FromDishka[HexUuidIdGenerator],
+        request: Request[JwtUser, Token | None, State],
+        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        data: Annotated[ArticleFolderRequestSchema, Body()],
+        use_case: FromDishka[ArticlesUseCase],
+    ) -> ArticleFolderResponseSchema:
+        folder = await use_case.create_folder(
+            params=data.to_create_schema(folder_id=id_generator.get_next()),
+        )
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.ARTICLES,
+        )
+        return ArticleFolderResponseSchema.from_domain_schema(
+            schema=folder,
+            language=language,
+        )
+
+    @put(
+        "/folders/priorities",
+        description="Update article folder priority order.",
+        name="admin-articles-folders-priorities-update-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def update_folder_priorities(
+        self,
+        request: Request[JwtUser, Token | None, State],
+        data: Annotated[ArticleFolderPriorityUpdateRequestSchema, Body()],
+        use_case: FromDishka[ArticlesUseCase],
+    ) -> None:
+        await use_case.update_folder_priorities(params=data.to_schema())
+        await invalidate_and_enqueue_response_cache_warm_domain(
+            request=request,
+            domain=ResponseCacheDomain.ARTICLES,
+        )
 
     @get(
         "/detail/{slug:str}",

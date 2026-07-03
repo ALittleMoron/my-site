@@ -82,6 +82,7 @@ describe('ArticleWorkspaceService', () => {
     const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles'));
     expect(createReq.request.method).toBe('POST');
     expect(createReq.request.params.get('language')).toBe('ru');
+    expect(createReq.request.body).toEqual(articlePayload());
     createReq.flush(articleDetailDto());
     httpMock
       .expectOne((r) => r.url.endsWith('/api/articles/public-stats'))
@@ -95,6 +96,7 @@ describe('ArticleWorkspaceService', () => {
     );
     expect(updateReq.request.method).toBe('PUT');
     expect(updateReq.request.params.get('language')).toBe('en');
+    expect(updateReq.request.body).toEqual(articlePayload());
     updateReq.flush(articleDetailDto());
     httpMock
       .expectOne((r) => r.url.endsWith('/api/articles/public-stats'))
@@ -122,6 +124,54 @@ describe('ArticleWorkspaceService', () => {
     );
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
+  });
+
+  it('manages article folders through admin endpoints', () => {
+    let folderName = '';
+
+    service.getFolders('en').subscribe((folders) => {
+      folderName = folders[0].name;
+    });
+
+    const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/folders'));
+    expect(listReq.request.method).toBe('GET');
+    expect(listReq.request.params.get('language')).toBe('en');
+    listReq.flush({ folders: [articleFolderDto()] });
+    expect(folderName).toBe('Engineering');
+
+    service
+      .createFolder(
+        {
+          key: 'architecture',
+          translations: {
+            ru: { name: 'Архитектура' },
+            en: { name: 'Architecture' },
+          },
+        },
+        'ru',
+      )
+      .subscribe();
+
+    const createReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/folders'));
+    expect(createReq.request.method).toBe('POST');
+    expect(createReq.request.params.get('language')).toBe('ru');
+    expect(createReq.request.body).toEqual({
+      key: 'architecture',
+      translations: {
+        ru: { name: 'Архитектура' },
+        en: { name: 'Architecture' },
+      },
+    });
+    createReq.flush(articleFolderDto());
+
+    service.updateFolderPriorities(['folder-2', 'folder-1']).subscribe();
+
+    const prioritiesReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/articles/folders/priorities'),
+    );
+    expect(prioritiesReq.request.method).toBe('PUT');
+    expect(prioritiesReq.request.body).toEqual({ orderedIds: ['folder-2', 'folder-1'] });
+    prioritiesReq.flush(null);
   });
 
   it('loads admin detail and tree through admin endpoints', () => {
@@ -209,6 +259,8 @@ function articleSummaryDto(): unknown {
     title: 'Typed articles',
     slug: 'typed-articles',
     folder: 'Engineering',
+    folderId: 'folder-1',
+    folderKey: 'engineering',
     authorUsername: 'admin',
     publishedAt: '2026-01-02T03:04:05+00:00',
     publishStatus: 'Published',
@@ -233,8 +285,8 @@ function articleDetailDto(): unknown {
     content: '# Content',
     createdAt: '2026-01-01T03:04:05+00:00',
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
   };
 }
@@ -250,6 +302,7 @@ function publicStatsDto(): unknown {
 function articlePayload(): AdminArticlePayload {
   return {
     slug: 'typed-articles',
+    folderId: 'folder-1',
     publishStatus: 'Draft',
     tagIds: [],
     metadata: {
@@ -262,8 +315,21 @@ function articlePayload(): AdminArticlePayload {
       coverImageAltEn: null,
     },
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
+    },
+  };
+}
+
+function articleFolderDto(): unknown {
+  return {
+    id: 'folder-1',
+    key: 'engineering',
+    name: 'Engineering',
+    priority: 1,
+    translations: {
+      ru: { name: 'Инженерия' },
+      en: { name: 'Engineering' },
     },
   };
 }

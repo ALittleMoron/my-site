@@ -5,6 +5,10 @@ import { LanguageCode } from '../../../core/i18n/i18n.model';
 import {
   ArticleDetail,
   ArticleDetailDto,
+  ArticleFolder,
+  ArticleFolderDto,
+  ArticleFolderPayload,
+  ArticleFoldersDto,
   ArticleList,
   ArticleListDto,
   ArticleListParams,
@@ -17,6 +21,7 @@ import {
   ArticleTreeDto,
   TagPayload,
   TagsDto,
+  mapArticleFolderDto,
   mapArticleDetailDto,
   mapArticleListDto,
   mapArticleTreeDto,
@@ -87,6 +92,22 @@ export class ArticleWorkspaceService {
     return this.api
       .get<ArticleTreeDto>('/api/admin/articles/tree', { language })
       .pipe(map(mapArticleTreeDto));
+  }
+
+  getFolders(language: LanguageCode): Observable<ArticleFolder[]> {
+    return this.api
+      .get<ArticleFoldersDto>('/api/admin/articles/folders', { language })
+      .pipe(map((dto) => dto.folders.map(mapArticleFolderDto)));
+  }
+
+  createFolder(payload: ArticleFolderPayload, language: LanguageCode): Observable<ArticleFolder> {
+    return this.api
+      .post<ArticleFolderDto>('/api/admin/articles/folders', payload, { language })
+      .pipe(map(mapArticleFolderDto));
+  }
+
+  updateFolderPriorities(orderedIds: readonly string[]): Observable<void> {
+    return this.api.put<void>('/api/admin/articles/folders/priorities', { orderedIds });
   }
 
   createArticle(payload: ArticlePayload, language: LanguageCode): Observable<ArticleDetail> {

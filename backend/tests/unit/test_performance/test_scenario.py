@@ -73,6 +73,8 @@ def article_summary_payload(*, slug: str) -> dict[str, object]:
         "id": "10000000000040008000000000000001",
         "title": "Seeded article",
         "slug": slug,
+        "folderId": "30000000000040008000000000000001",
+        "folderKey": "knowledge-base",
         "folder": "Performance",
         "authorUsername": "admin",
         "publishedAt": "2026-03-01T10:00:00+00:00",
@@ -102,12 +104,10 @@ def article_detail_payload(*, slug: str) -> dict[str, object]:
                 "ru": {
                     "title": "Тестовая статья",
                     "content": "# Тестовая статья",
-                    "folder": "Производительность",
                 },
                 "en": {
                     "title": "Seeded article",
                     "content": "# Seeded article",
-                    "folder": "Performance",
                 },
             },
         },

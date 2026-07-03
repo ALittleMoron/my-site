@@ -6,6 +6,8 @@ from typing import Any
 from core.account.schemas import ManagedAccount, ManagedAccounts
 from core.articles.schemas import (
     Article,
+    ArticleFolder,
+    ArticleFolders,
     ArticleMetadata,
     ArticleReactionCounts,
     Articles,
@@ -528,6 +530,9 @@ class CoreFactoryHelper:
         content: str = "This is a test article content.",
         slug: str = "test-articles-article",
         folder: str = "General",
+        folder_id: str | None = None,
+        folder_key: str = "general",
+        folder_priority: int = 1,
         title_ru: str | None = None,
         title_en: str | None = None,
         content_ru: str | None = None,
@@ -557,8 +562,13 @@ class CoreFactoryHelper:
             title_en=title_en or title,
             content_ru=content_ru or content,
             content_en=content_en or content,
-            folder_ru=folder_ru or folder,
-            folder_en=folder_en or folder,
+            folder=cls.article_folder(
+                folder_id=folder_id,
+                key=folder_key,
+                name_ru=folder_ru or folder,
+                name_en=folder_en or folder,
+                priority=folder_priority,
+            ),
             author_username=author_username,
             metadata=metadata
             or ArticleMetadata(
@@ -588,6 +598,27 @@ class CoreFactoryHelper:
             ),
             tags=Tags(values=tags or []),
         )
+
+    @classmethod
+    def article_folder(
+        cls,
+        folder_id: str | None = None,
+        key: str = "general",
+        name_ru: str = "Общее",
+        name_en: str = "General",
+        priority: int = 1,
+    ) -> ArticleFolder:
+        return ArticleFolder(
+            id=folder_id or cls.hex_id_from_text(f"article-folder:{key}"),
+            key=key,
+            name_ru=name_ru,
+            name_en=name_en,
+            priority=priority,
+        )
+
+    @classmethod
+    def article_folders(cls, values: list[ArticleFolder] | None = None) -> ArticleFolders:
+        return ArticleFolders(values=values or [])
 
     @classmethod
     def article_list(

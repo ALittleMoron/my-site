@@ -58,6 +58,8 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
             "title": "Detail article",
             "slug": "detail-article",
             "folder": "General",
+            "folderId": article.folder.id,
+            "folderKey": "general",
             "authorUsername": "admin",
             "publishedAt": "2026-01-02T03:04:05+00:00",
             "publishStatus": "Published",
@@ -90,12 +92,10 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
                 "ru": {
                     "title": "Detail article",
                     "content": "# Markdown detail",
-                    "folder": "General",
                 },
                 "en": {
                     "title": "Detail article",
                     "content": "# Markdown detail",
-                    "folder": "General",
                 },
             },
         }
@@ -165,6 +165,8 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
         self.use_case.list_tree.return_value = ArticleTree(
             folders=[
                 ArticleTreeFolder(
+                    folder_id=self.factory.core.hex_id(11),
+                    folder_key="engineering",
                     folder="Engineering",
                     articles=[
                         ArticleTreeItem(
@@ -189,6 +191,8 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
         assert response.json() == {
             "folders": [
                 {
+                    "folderId": self.factory.core.hex_id(11),
+                    "folderKey": "engineering",
                     "folder": "Engineering",
                     "articles": [
                         {

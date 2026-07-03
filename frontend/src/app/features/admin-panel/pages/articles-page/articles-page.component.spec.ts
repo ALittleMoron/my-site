@@ -18,6 +18,9 @@ describe('AdminArticlesPageComponent', () => {
   let service: {
     listArticles: jest.Mock;
     getTags: jest.Mock;
+    getFolders: jest.Mock;
+    createFolder: jest.Mock;
+    updateFolderPriorities: jest.Mock;
     getTree: jest.Mock;
     getArticle: jest.Mock;
     createArticle: jest.Mock;
@@ -32,6 +35,9 @@ describe('AdminArticlesPageComponent', () => {
     service = {
       listArticles: jest.fn().mockReturnValue(of(articleList())),
       getTags: jest.fn().mockReturnValue(of([] satisfies AdminArticleTag[])),
+      getFolders: jest.fn().mockReturnValue(of([])),
+      createFolder: jest.fn().mockReturnValue(of(null)),
+      updateFolderPriorities: jest.fn().mockReturnValue(of(undefined)),
       getTree: jest.fn().mockReturnValue(of({ folders: [] } satisfies AdminArticleTree)),
       getArticle: jest.fn().mockReturnValue(of(articleDetail())),
       createArticle: jest.fn().mockReturnValue(of(articleDetail())),
@@ -137,6 +143,8 @@ function articleList(): AdminArticleList {
         title: 'Typed articles',
         slug: 'typed-articles',
         folder: 'Engineering',
+        folderId: 'folder-1',
+        folderKey: 'engineering',
         authorUsername: 'admin',
         publishedAt: '2026-01-02T03:04:05+00:00',
         publishStatus: 'Published',
@@ -165,8 +173,8 @@ function articleDetail(): AdminArticleDetail {
     createdAt: '2026-01-01T03:04:05+00:00',
     reactionCounts: { heart: 1, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
   };
 }
@@ -174,6 +182,7 @@ function articleDetail(): AdminArticleDetail {
 function articlePayload(): AdminArticlePayload {
   return {
     slug: 'typed-articles',
+    folderId: 'folder-1',
     publishStatus: 'Draft',
     tagIds: [],
     metadata: {
@@ -186,8 +195,8 @@ function articlePayload(): AdminArticlePayload {
       coverImageAltEn: null,
     },
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
   };
 }

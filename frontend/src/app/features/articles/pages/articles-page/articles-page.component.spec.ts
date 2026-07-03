@@ -534,6 +534,8 @@ function articleDetail(overrides: Partial<ArticleDetail> = {}): ArticleDetail {
     title: 'Typed articles',
     slug: 'typed-articles',
     folder: 'Engineering',
+    folderId: 'folder-1',
+    folderKey: 'engineering',
     authorUsername: 'admin',
     publishedAt: '2026-01-02T03:04:05+00:00',
     publishStatus: 'Published',
@@ -556,8 +558,8 @@ function articleDetail(overrides: Partial<ArticleDetail> = {}): ArticleDetail {
     reactionCounts: { heart: 0, fire: 0, thinking: 0, neutral: 0, poop: 0 },
     tags: [],
     translations: {
-      ru: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
-      en: { title: 'Typed articles', content: '# Content', folder: 'Engineering' },
+      ru: { title: 'Typed articles', content: '# Content' },
+      en: { title: 'Typed articles', content: '# Content' },
     },
     ...overrides,
   };

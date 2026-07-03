@@ -35,14 +35,14 @@ class ApiFactoryHelper:
         content_ru: str = "Содержимое статьи",
         content_en: str = "Article content",
         slug: str = "article",
-        folder_ru: str = "Общее",
-        folder_en: str = "General",
+        folder_id: str | None = None,
         publish_status: str = "Draft",
         metadata: dict[str, Any] | None = None,
         tag_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         return {
             "slug": slug,
+            "folderId": folder_id or cls.hex_id(20),
             "publishStatus": publish_status,
             "tagIds": tag_ids or [],
             "metadata": metadata
@@ -57,8 +57,23 @@ class ApiFactoryHelper:
                 "coverImageAltEn": "Article cover",
             },
             "translations": {
-                "ru": {"title": title_ru, "content": content_ru, "folder": folder_ru},
-                "en": {"title": title_en, "content": content_en, "folder": folder_en},
+                "ru": {"title": title_ru, "content": content_ru},
+                "en": {"title": title_en, "content": content_en},
+            },
+        }
+
+    @classmethod
+    def article_folder_request(
+        cls,
+        key: str = "general",
+        name_ru: str = "Общее",
+        name_en: str = "General",
+    ) -> dict[str, Any]:
+        return {
+            "key": key,
+            "translations": {
+                "ru": {"name": name_ru},
+                "en": {"name": name_en},
             },
         }
 

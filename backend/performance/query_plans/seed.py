@@ -25,6 +25,7 @@ from core.auth.enums import RoleEnum
 from core.i18n.enums import LanguageEnum
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
@@ -48,6 +49,7 @@ PYTHON_ID = 1
 POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
 GENERAL_TAG_START_ID = 4
+ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
 TARGET_ARTICLE_DIVISOR = 100
 MATRIX_GRADE_BUCKET_MIDDLE = 2
 MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
@@ -96,6 +98,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await clear_seeded_tables(connection=connection)
     await insert_users(connection=connection)
     await insert_tags(connection=connection, profile=profile)
+    await insert_article_folders(connection=connection)
     await insert_articles(connection=connection, profile=profile)
     await insert_article_tag_links(connection=connection, profile=profile)
     await insert_article_analytics(connection=connection)
@@ -121,6 +124,7 @@ async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
         ArticleDailyAnalyticsModel,
         ArticleToTagSecondaryModel,
         ArticleModel,
+        ArticleFolderModel,
         TagModel,
         ResumeModel,
         ContactMeModel,
@@ -200,6 +204,18 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
     )
 
 
+async def insert_article_folders(*, connection: AsyncConnection) -> None:
+    await connection.execute(
+        insert(ArticleFolderModel.__table__).values(
+            id=ARTICLE_FOLDER_ID,
+            key="knowledge-base",
+            name_ru="База знаний",
+            name_en="Knowledge base",
+            priority=1,
+        ),
+    )
+
+
 async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
     series = generate_series_subquery(end=profile.article_count, name="article_series")
     value = sql_cast(series.c.value, Integer)
@@ -214,8 +230,7 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
                 "content_ru",
                 "content_en",
                 "slug",
-                "folder_ru",
-                "folder_en",
+                "folder_id",
                 "author_username",
                 "published_at",
                 "publish_status",
@@ -254,8 +269,7 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
                     else_=func.concat(literal("General backend content "), value),
                 ),
                 func.concat(literal("article-"), value),
-                literal("База знаний"),
-                literal("Knowledge base"),
+                literal(ARTICLE_FOLDER_ID),
                 literal("benchmark"),
                 case((published_article, literal(SEED_NOW)), else_=literal(None)),
                 sql_cast(

@@ -19,11 +19,72 @@ from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
-from core.articles.schemas import Article, ArticleMetadata, Tag, Tags
+from core.articles.schemas import Article, ArticleFolder, ArticleMetadata, Tag, Tags
 from core.enums import PublishStatusEnum
 from infra.postgresql.models.base import BaseModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
+from infra.postgresql.models.mixins.priority import PriorityMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
+
+
+class ArticleFolderModel(PriorityMixin, HexUuidIDMixin, BaseModel):
+    key: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Stable language-neutral folder key",
+    )
+    name_ru: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Russian human-readable folder name",
+    )
+    name_en: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="English human-readable folder name",
+    )
+    articles: Mapped[list[ArticleModel]] = relationship(
+        back_populates="folder",
+        doc="Articles assigned to this folder",
+    )
+
+    __table_args__ = (
+        Index(
+            "articles_folder_key_lower_uniq",
+            func.lower(key).label("folder_key_lower"),
+            unique=True,
+        ),
+        Index("articles_folder_priority_id_idx", "priority", "id"),
+        Index(
+            "articles_folder_name_ru_idx",
+            func.lower(name_ru).label("folder_name_ru_lower"),
+            "id",
+        ),
+        Index(
+            "articles_folder_name_en_idx",
+            func.lower(name_en).label("folder_name_en_lower"),
+            "id",
+        ),
+    )
+
+    def __str__(self) -> str:
+        return f'Article folder "{self.key}"'
+
+    @classmethod
+    def from_domain_schema(cls, folder: ArticleFolder) -> Self:
+        return cls(
+            id=folder.id,
+            key=folder.key,
+            name_ru=folder.name_ru,
+            name_en=folder.name_en,
+            priority=folder.priority,
+        )
+
+    def to_domain_schema(self) -> ArticleFolder:
+        return ArticleFolder(
+            id=self.id,
+            key=self.key,
+            name_ru=self.name_ru,
+            name_en=self.name_en,
+            priority=self.priority,
+        )
 
 
 class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
@@ -49,13 +110,9 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         index=True,
         doc="URL slug for the article",
     )
-    folder_ru: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="Russian one-level folder name for the article tree",
-    )
-    folder_en: Mapped[str] = mapped_column(
-        String(length=255),
-        doc="English one-level folder name for the article tree",
+    folder_id: Mapped[str] = mapped_column(
+        ForeignKey(ArticleFolderModel.id, ondelete="RESTRICT"),
+        doc="Article folder identifier",
     )
     author_username: Mapped[str] = mapped_column(
         String(length=255),
@@ -113,6 +170,10 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         cascade="all, delete-orphan",
         doc="Links between articles and tags",
     )
+    folder: Mapped[ArticleFolderModel] = relationship(
+        back_populates="articles",
+        doc="One-level article tree folder",
+    )
 
     __table_args__ = (
         Index(
@@ -137,8 +198,8 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             text("updated_at DESC"),
         ),
         Index(
-            "articles_article_tree_ru_published_idx",
-            "folder_ru",
+            "articles_article_tree_folder_ru_published_idx",
+            "folder_id",
             text("published_at DESC NULLS LAST"),
             text("updated_at DESC"),
             "title_ru",
@@ -146,8 +207,8 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             postgresql_where=text("publish_status = 'PUBLISHED'"),
         ),
         Index(
-            "articles_article_tree_en_published_idx",
-            "folder_en",
+            "articles_article_tree_folder_en_published_idx",
+            "folder_id",
             text("published_at DESC NULLS LAST"),
             text("updated_at DESC"),
             "title_en",
@@ -168,8 +229,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             content_ru=article.content_ru,
             content_en=article.content_en,
             slug=article.slug,
-            folder_ru=article.folder_ru,
-            folder_en=article.folder_en,
+            folder_id=article.folder.id,
             author_username=article.author_username,
             seo_title_ru=article.metadata.seo_title_ru,
             seo_title_en=article.metadata.seo_title_en,
@@ -190,8 +250,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         self.content_ru = article.content_ru
         self.content_en = article.content_en
         self.slug = article.slug
-        self.folder_ru = article.folder_ru
-        self.folder_en = article.folder_en
+        self.folder_id = article.folder.id
         self.seo_title_ru = article.metadata.seo_title_ru
         self.seo_title_en = article.metadata.seo_title_en
         self.seo_description_ru = article.metadata.seo_description_ru
@@ -211,8 +270,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             title_en=self.title_en,
             content_ru=self.content_ru,
             content_en=self.content_en,
-            folder_ru=self.folder_ru,
-            folder_en=self.folder_en,
+            folder=self.folder.to_domain_schema(),
             author_username=self.author_username,
             metadata=self.to_metadata_domain_schema(),
             published_at=self.published_at,

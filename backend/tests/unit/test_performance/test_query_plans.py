@@ -160,6 +160,7 @@ class TestQueryCapture:
             ...,
         ] = (
             (query_plan_seed.insert_users, {}, ("role_enum",)),
+            (query_plan_seed.insert_article_folders, {}, ()),
             (query_plan_seed.insert_articles, {"profile": profile}, ("publish_status_enum",)),
             (
                 query_plan_seed.insert_article_reactions,
@@ -183,6 +184,25 @@ class TestQueryCapture:
             compiled = str(statement.compile(dialect=postgresql.dialect()))
             for enum_type_name in enum_type_names:
                 assert f"AS {enum_type_name}" in compiled
+
+    async def test_article_seed_uses_normalized_folder_id(self) -> None:
+        profile = DatasetProfile(
+            name="unit",
+            article_count=10,
+            tag_count=10,
+            article_tag_link_count=10,
+            resource_count=10,
+            explain_runs=1,
+        )
+        connection = AsyncMock()
+
+        await query_plan_seed.insert_articles(connection=connection, profile=profile)
+
+        statement = connection.execute.await_args.args[0]
+        compiled = str(statement.compile(dialect=postgresql.dialect()))
+        assert "folder_id" in compiled
+        assert "folder_ru" not in compiled
+        assert "folder_en" not in compiled
 
     def test_discover_storage_methods_finds_public_async_methods_only(self) -> None:
         methods = discover_storage_methods()

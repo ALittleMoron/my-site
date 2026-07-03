@@ -32,6 +32,13 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         badgeTextKey: null,
         adminOnly: false,
       },
+      {
+        key: 'article-folders',
+        labelKey: 'adminPanel.section.articleFolders',
+        route: '/admin-panel/article-folders',
+        badgeTextKey: null,
+        adminOnly: false,
+      },
     ],
   },
   {

@@ -12,6 +12,10 @@ from core.articles.schemas import (
     ArticleAnalyticsStats,
     ArticleAnalyticsTotals,
     ArticleCreateParams,
+    ArticleFolder,
+    ArticleFolderCreateParams,
+    ArticleFolderPriorityUpdateParams,
+    ArticleFolders,
     ArticleMetadata,
     ArticlePublicStats,
     ArticlePublicStatsCollection,
@@ -196,6 +200,8 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
     title: Annotated[str, Field(title="Title")]
     slug: Annotated[str, Field(title="Slug")]
     folder: Annotated[str, Field(title="Folder")]
+    folder_id: Annotated[str, Field(title="Folder identifier")]
+    folder_key: Annotated[str, Field(title="Folder key")]
     author_username: Annotated[str, Field(title="Author")]
     published_at: Annotated[str | None, Field(title="Publication date")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
@@ -216,6 +222,8 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
             title=schema.localized_title(language=language),
             slug=schema.slug,
             folder=schema.localized_folder(language=language),
+            folder_id=schema.folder.id,
+            folder_key=schema.folder.key,
             author_username=schema.author_username,
             published_at=schema.published_at.isoformat()
             if schema.published_at is not None
@@ -318,7 +326,6 @@ class ArticlePublicStatsCollectionResponseSchema(CamelCaseSchema):
 class ArticleTranslationSchema(CamelCaseSchema):
     title: Annotated[RequiredShortText, Field(title="Title")]
     content: Annotated[ArticleContentText, Field(title="Content")]
-    folder: Annotated[RequiredShortText, Field(title="Folder")]
 
 
 class ArticleTranslationsSchema(CamelCaseSchema):
@@ -336,18 +343,17 @@ class ArticleTranslationsResponseSchema(CamelCaseSchema):
             ru=ArticleTranslationSchema(
                 title=schema.title_ru,
                 content=schema.content_ru,
-                folder=schema.folder_ru,
             ),
             en=ArticleTranslationSchema(
                 title=schema.title_en,
                 content=schema.content_en,
-                folder=schema.folder_en,
             ),
         )
 
 
 class ArticleRequestSchema(CamelCaseSchema):
     slug: Annotated[SlugString, Field(title="Slug")]
+    folder_id: Annotated[RequiredShortText, Field(title="Folder identifier")]
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     tag_ids: Annotated[list[str], Field(title="Tag identifiers")]
     translations: Annotated[ArticleTranslationsSchema, Field(title="Translations")]
@@ -366,8 +372,7 @@ class ArticleRequestSchema(CamelCaseSchema):
             title_en=self.translations.en.title,
             content_ru=self.translations.ru.content,
             content_en=self.translations.en.content,
-            folder_ru=self.translations.ru.folder,
-            folder_en=self.translations.en.folder,
+            folder_id=self.folder_id,
             author_username=author_username,
             publish_status=self.publish_status,
             metadata=self.metadata.to_domain_schema(),
@@ -381,8 +386,7 @@ class ArticleRequestSchema(CamelCaseSchema):
             title_en=self.translations.en.title,
             content_ru=self.translations.ru.content,
             content_en=self.translations.en.content,
-            folder_ru=self.translations.ru.folder,
-            folder_en=self.translations.en.folder,
+            folder_id=self.folder_id,
             publish_status=self.publish_status,
             metadata=self.metadata.to_domain_schema(),
             tag_ids=list(self.tag_ids),
@@ -418,12 +422,16 @@ class ArticleTreeItemResponseSchema(CamelCaseSchema):
 
 
 class ArticleTreeFolderResponseSchema(CamelCaseSchema):
+    folder_id: Annotated[str, Field(title="Folder identifier")]
+    folder_key: Annotated[str, Field(title="Folder key")]
     folder: Annotated[str, Field(title="Folder")]
     articles: Annotated[list[ArticleTreeItemResponseSchema], Field(title="Articles")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleTreeFolder) -> Self:
         return cls(
+            folder_id=schema.folder_id,
+            folder_key=schema.folder_key,
             folder=schema.folder,
             articles=[
                 ArticleTreeItemResponseSchema.from_domain_schema(schema=article)
@@ -443,6 +451,72 @@ class ArticleTreeResponseSchema(CamelCaseSchema):
                 for folder in schema.folders
             ],
         )
+
+
+class ArticleFolderNameSchema(CamelCaseSchema):
+    name: Annotated[RequiredShortText, Field(title="Name")]
+
+
+class ArticleFolderTranslationsSchema(CamelCaseSchema):
+    ru: Annotated[ArticleFolderNameSchema, Field(title="Russian translation")]
+    en: Annotated[ArticleFolderNameSchema, Field(title="English translation")]
+
+
+class ArticleFolderResponseSchema(CamelCaseSchema):
+    id: Annotated[str, Field(title="Identifier")]
+    key: Annotated[str, Field(title="Key")]
+    name: Annotated[str, Field(title="Name")]
+    priority: Annotated[int, Field(title="Priority")]
+    translations: Annotated[ArticleFolderTranslationsSchema, Field(title="Translations")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: ArticleFolder, language: LanguageEnum) -> Self:
+        return cls(
+            id=schema.id,
+            key=schema.key,
+            name=schema.localized_name(language=language),
+            priority=schema.priority,
+            translations=ArticleFolderTranslationsSchema(
+                ru=ArticleFolderNameSchema(name=schema.name_ru),
+                en=ArticleFolderNameSchema(name=schema.name_en),
+            ),
+        )
+
+
+class ArticleFoldersResponseSchema(CamelCaseSchema):
+    folders: Annotated[list[ArticleFolderResponseSchema], Field(title="Folders")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: ArticleFolders, language: LanguageEnum) -> Self:
+        return cls(
+            folders=[
+                ArticleFolderResponseSchema.from_domain_schema(
+                    schema=folder,
+                    language=language,
+                )
+                for folder in schema
+            ],
+        )
+
+
+class ArticleFolderRequestSchema(CamelCaseSchema):
+    key: Annotated[SlugString, Field(title="Key")]
+    translations: Annotated[ArticleFolderTranslationsSchema, Field(title="Translations")]
+
+    def to_create_schema(self, *, folder_id: str) -> ArticleFolderCreateParams:
+        return ArticleFolderCreateParams(
+            id=folder_id,
+            key=self.key,
+            name_ru=self.translations.ru.name,
+            name_en=self.translations.en.name,
+        )
+
+
+class ArticleFolderPriorityUpdateRequestSchema(CamelCaseSchema):
+    ordered_ids: Annotated[list[str], Field(title="Ordered identifiers")]
+
+    def to_schema(self) -> ArticleFolderPriorityUpdateParams:
+        return ArticleFolderPriorityUpdateParams(ordered_ids=tuple(self.ordered_ids))
 
 
 class ArticleAnalyticsTotalsResponseSchema(CamelCaseSchema):

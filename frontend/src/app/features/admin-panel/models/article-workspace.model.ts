@@ -16,7 +16,6 @@ export interface ArticleReactionCountsDto {
 export interface ArticleTranslationDto {
   title: string;
   content: string;
-  folder: string;
 }
 
 export interface ArticleTranslationsDto {
@@ -56,6 +55,8 @@ export interface ArticleSummaryDto {
   title: string;
   slug: string;
   folder: string;
+  folderId: string;
+  folderKey: string;
   authorUsername: string;
   publishedAt: string | null;
   publishStatus: ArticlePublishStatus;
@@ -96,6 +97,8 @@ export interface ArticleTreeItemDto {
 }
 
 export interface ArticleTreeFolderDto {
+  folderId: string;
+  folderKey: string;
   folder: string;
   articles: ArticleTreeItemDto[];
 }
@@ -106,6 +109,27 @@ export interface ArticleTreeDto {
 
 export interface TagsDto {
   tags: ArticleTagDto[];
+}
+
+export interface ArticleFolderTranslationDto {
+  name: string;
+}
+
+export interface ArticleFolderTranslationsDto {
+  ru: ArticleFolderTranslationDto;
+  en: ArticleFolderTranslationDto;
+}
+
+export interface ArticleFolderDto {
+  id: string;
+  key: string;
+  name: string;
+  priority: number;
+  translations: ArticleFolderTranslationsDto;
+}
+
+export interface ArticleFoldersDto {
+  folders: ArticleFolderDto[];
 }
 
 export interface ArticleStatsTotalsDto {
@@ -172,6 +196,8 @@ export interface ArticleSummary {
   title: string;
   slug: string;
   folder: string;
+  folderId: string;
+  folderKey: string;
   authorUsername: string;
   publishedAt: string | null;
   publishStatus: ArticlePublishStatus;
@@ -210,6 +236,8 @@ export interface ArticleTreeItem {
 }
 
 export interface ArticleTreeFolder {
+  folderId: string;
+  folderKey: string;
   folder: string;
   articles: ArticleTreeItem[];
 }
@@ -221,7 +249,6 @@ export interface ArticleTree {
 export interface ArticleTranslation {
   title: string;
   content: string;
-  folder: string;
 }
 
 export interface ArticleTranslations {
@@ -240,10 +267,33 @@ export interface ArticleTagTranslations {
 
 export interface ArticlePayload {
   slug: string;
+  folderId: string;
   publishStatus: ArticlePublishStatus;
   tagIds: string[];
   metadata: ArticleMetadata;
   translations: ArticleTranslations;
+}
+
+export interface ArticleFolder {
+  id: string;
+  key: string;
+  name: string;
+  priority: number;
+  translations: ArticleFolderTranslations;
+}
+
+export interface ArticleFolderTranslation {
+  name: string;
+}
+
+export interface ArticleFolderTranslations {
+  ru: ArticleFolderTranslation;
+  en: ArticleFolderTranslation;
+}
+
+export interface ArticleFolderPayload {
+  key: string;
+  translations: ArticleFolderTranslations;
 }
 
 export interface TagPayload {
@@ -317,6 +367,8 @@ export type AdminArticleDetail = ArticleDetail;
 export type AdminArticleList = ArticleList;
 export type AdminArticleTree = ArticleTree;
 export type AdminArticlePayload = ArticlePayload;
+export type AdminArticleFolder = ArticleFolder;
+export type AdminArticleFolderPayload = ArticleFolderPayload;
 export type AdminArticleTagPayload = TagPayload;
 export type AdminArticleListParams = ArticleListParams;
 
@@ -340,6 +392,8 @@ export function mapArticleSummaryDto(
     title: dto.title,
     slug: dto.slug,
     folder: dto.folder,
+    folderId: dto.folderId,
+    folderKey: dto.folderKey,
     authorUsername: dto.authorUsername,
     publishedAt: dto.publishedAt,
     publishStatus: dto.publishStatus,
@@ -379,9 +433,21 @@ export function mapArticleListDto(
 export function mapArticleTreeDto(dto: ArticleTreeDto): ArticleTree {
   return {
     folders: dto.folders.map((folder) => ({
+      folderId: folder.folderId,
+      folderKey: folder.folderKey,
       folder: folder.folder,
       articles: folder.articles.map((article) => ({ ...article })),
     })),
+  };
+}
+
+export function mapArticleFolderDto(dto: ArticleFolderDto): ArticleFolder {
+  return {
+    id: dto.id,
+    key: dto.key,
+    name: dto.name,
+    priority: dto.priority,
+    translations: dto.translations,
   };
 }
 

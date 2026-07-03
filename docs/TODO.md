@@ -331,7 +331,7 @@
 ### Articles
 
 - [x] Content localisation for articles
-  - [x] Store article `title_ru`, `title_en`, `content_ru`, `content_en`, `folder_ru`, and `folder_en` as required columns
+  - [x] Store article `title_ru`, `title_en`, and `content_ru` / `content_en` as required columns, with article folders normalized into a required localized folder table
   - [x] Store tag `name_ru` and `name_en` as required columns
   - [x] Keep article `slug` and tag `slug` as single stable English identifiers shared across languages
   - [x] Require all RU/EN fields on create and update for both draft and published articles

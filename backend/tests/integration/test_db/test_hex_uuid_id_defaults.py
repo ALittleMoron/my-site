@@ -11,6 +11,7 @@ from core.i18n.enums import LanguageEnum
 from core.resumes.schemas import ResumeCreateParams
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
@@ -28,6 +29,7 @@ from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryMod
 from tests.test_cases import StorageTestCase
 
 ID_TABLES = (
+    "articles__article_folder_model",
     "articles__article_model",
     "articles__tag_model",
     "articles__article_to_tag_secondary_model",
@@ -57,8 +59,12 @@ class TestHexUuidIdDefaults(StorageTestCase):
             content_ru="Контент",
             content_en="Content",
             slug="hex-default-article",
-            folder_ru="Общее",
-            folder_en="General",
+            folder=ArticleFolderModel(
+                key="hex-default-folder",
+                name_ru="Общее",
+                name_en="General",
+                priority=1,
+            ),
             author_username="admin",
             publish_status=PublishStatusEnum.PUBLISHED,
             published_at=self.now,
@@ -164,6 +170,7 @@ class TestHexUuidIdDefaults(StorageTestCase):
         await self.db_session.flush()
 
         generated_ids = (
+            article.folder.id,
             article.id,
             tag.id,
             article_tag.id,

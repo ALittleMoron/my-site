@@ -3,10 +3,18 @@ from unittest.mock import Mock
 
 import pytest
 
-from core.articles.exceptions import ArticleNotFoundError, TagNotFoundError
+from core.articles.exceptions import (
+    ArticleFolderAlreadyExistsError,
+    ArticleFolderNotFoundError,
+    ArticleFolderPriorityInvalidError,
+    ArticleNotFoundError,
+    TagNotFoundError,
+)
 from core.articles.schemas import (
     ArticleCreateParams,
     ArticleFilters,
+    ArticleFolderCreateParams,
+    ArticleFolderPriorityUpdateParams,
     ArticleMetadata,
     ArticleTreeItemData,
     ArticleUpdateParams,
@@ -94,6 +102,8 @@ class TestArticlesUseCase(TestCase):
         second_updated_at = datetime(2026, 1, 2, tzinfo=UTC)
         self.storage.list_tree_items.return_value = [
             ArticleTreeItemData(
+                folder_id=self.factory.core.hex_id(2),
+                folder_key="backend",
                 folder="Backend",
                 title="Storage",
                 slug="storage",
@@ -102,6 +112,8 @@ class TestArticlesUseCase(TestCase):
                 updated_at=first_updated_at,
             ),
             ArticleTreeItemData(
+                folder_id=self.factory.core.hex_id(1),
+                folder_key="architecture",
                 folder="Architecture",
                 title="Boundaries",
                 slug="boundaries",
@@ -116,9 +128,9 @@ class TestArticlesUseCase(TestCase):
             language=LanguageEnum.EN,
         )
 
-        assert [folder.folder for folder in result.folders] == ["Architecture", "Backend"]
-        assert [item.slug for item in result.folders[0].articles] == ["boundaries"]
-        assert [item.slug for item in result.folders[1].articles] == ["storage"]
+        assert [folder.folder for folder in result.folders] == ["Backend", "Architecture"]
+        assert [item.slug for item in result.folders[0].articles] == ["storage"]
+        assert [item.slug for item in result.folders[1].articles] == ["boundaries"]
         self.storage.list_tree_items.assert_called_once_with(
             only_published=False,
             language=LanguageEnum.EN,
@@ -163,8 +175,7 @@ class TestArticlesUseCase(TestCase):
             title_en="Article",
             content_ru="Содержимое",
             content_en="Content",
-            folder_ru="Питон",
-            folder_en="Python",
+            folder_id=self.factory.core.hex_id(3),
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
             metadata=ArticleMetadata(
@@ -195,8 +206,7 @@ class TestArticlesUseCase(TestCase):
             title_en="Article",
             content_ru="Содержимое",
             content_en="Content",
-            folder_ru="Питон",
-            folder_en="Python",
+            folder_id=self.factory.core.hex_id(3),
             author_username="admin",
             publish_status=PublishStatusEnum.DRAFT,
             metadata=ArticleMetadata(
@@ -211,6 +221,12 @@ class TestArticlesUseCase(TestCase):
             tag_ids=tag_ids,
         )
         tag = self.factory.core.tag(tag_id=1, slug="python")
+        folder = self.factory.core.article_folder(
+            folder_id=self.factory.core.hex_id(3),
+            key="python",
+            name_ru="Питон",
+            name_en="Python",
+        )
         expected = self.factory.core.article(
             article_id=article_id,
             slug="article",
@@ -218,6 +234,8 @@ class TestArticlesUseCase(TestCase):
             title_en="Article",
             content_ru="Содержимое",
             content_en="Content",
+            folder_id=folder.id,
+            folder_key=folder.key,
             folder_ru="Питон",
             folder_en="Python",
             author_username="admin",
@@ -234,6 +252,7 @@ class TestArticlesUseCase(TestCase):
             tags=[tag],
         )
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
+        self.storage.get_folder_by_id.return_value = folder
         self.storage.create_article.return_value = expected
 
         result = await self.use_case.create_article(params=params)
@@ -243,15 +262,46 @@ class TestArticlesUseCase(TestCase):
         created_article = self.storage.create_article.call_args.kwargs["article"]
         assert not hasattr(created_article, "title")
         assert not hasattr(created_article, "content")
-        assert not hasattr(created_article, "folder")
         assert created_article.localized_title(language=LanguageEnum.RU) == "Статья"
         assert created_article.localized_content(language=LanguageEnum.RU) == "Содержимое"
         assert created_article.localized_folder(language=LanguageEnum.RU) == "Питон"
+        assert created_article.folder.id == self.factory.core.hex_id(3)
+        assert created_article.folder.key == "python"
         assert created_article.title_ru == "Статья"
         assert created_article.title_en == "Article"
         assert created_article.metadata == params.metadata
         assert created_article.author_username == "admin"
         assert created_article.tags.values == [tag]
+
+    async def test_create_article_requires_existing_folder_before_storage_write(self) -> None:
+        params = ArticleCreateParams(
+            id=self.factory.core.hex_id(10),
+            slug="article",
+            title_ru="Статья",
+            title_en="Article",
+            content_ru="Содержимое",
+            content_en="Content",
+            folder_id=self.factory.core.hex_id(99),
+            author_username="admin",
+            publish_status=PublishStatusEnum.DRAFT,
+            metadata=ArticleMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
+            tag_ids=[],
+        )
+        self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[])
+        self.storage.get_folder_by_id.side_effect = ArticleFolderNotFoundError
+
+        with pytest.raises(ArticleFolderNotFoundError):
+            await self.use_case.create_article(params=params)
+
+        self.storage.create_article.assert_not_called()
 
     def test_article_create_params_builds_canonical_article(self) -> None:
         article_id = self.factory.core.hex_id(10)
@@ -264,8 +314,7 @@ class TestArticlesUseCase(TestCase):
             title_en="Article",
             content_ru="Содержимое",
             content_en="Content",
-            folder_ru="Питон",
-            folder_en="Python",
+            folder_id=self.factory.core.hex_id(3),
             author_username="admin",
             publish_status=PublishStatusEnum.PUBLISHED,
             metadata=ArticleMetadata(
@@ -280,11 +329,22 @@ class TestArticlesUseCase(TestCase):
             tag_ids=[self.factory.core.hex_id(1)],
         )
 
-        article = params.to_article(now=now, tags=self.factory.core.tags(values=[tag]))
+        folder = self.factory.core.article_folder(
+            folder_id=self.factory.core.hex_id(3),
+            key="python",
+            name_ru="Питон",
+            name_en="Python",
+        )
+
+        article = params.to_article(
+            now=now,
+            folder=folder,
+            tags=self.factory.core.tags(values=[tag]),
+        )
 
         assert not hasattr(article, "title")
         assert not hasattr(article, "content")
-        assert not hasattr(article, "folder")
+        assert article.folder == folder
         assert article.localized_title(language=LanguageEnum.RU) == "Статья"
         assert article.localized_title(language=LanguageEnum.EN) == "Article"
         assert article.metadata == params.metadata
@@ -306,8 +366,7 @@ class TestArticlesUseCase(TestCase):
             title_en="New",
             content_ru="Новый контент",
             content_en="New content",
-            folder_ru="Архитектура",
-            folder_en="Architecture",
+            folder_id=self.factory.core.hex_id(4),
             publish_status=PublishStatusEnum.PUBLISHED,
             metadata=ArticleMetadata(
                 seo_title_ru="Новая SEO",
@@ -322,6 +381,12 @@ class TestArticlesUseCase(TestCase):
         )
         self.storage.get_article_by_slug.return_value = existing
         self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
+        self.storage.get_folder_by_id.return_value = self.factory.core.article_folder(
+            folder_id=self.factory.core.hex_id(4),
+            key="architecture",
+            name_ru="Архитектура",
+            name_en="Architecture",
+        )
         self.storage.update_article.return_value = self.factory.core.article(
             title="New",
             slug="new-article",
@@ -340,8 +405,73 @@ class TestArticlesUseCase(TestCase):
         assert updated_article.author_username == "original-author"
         assert updated_article.title_ru == "Новая"
         assert updated_article.title_en == "New"
+        assert updated_article.folder.id == self.factory.core.hex_id(4)
         assert updated_article.metadata == params.metadata
         assert not hasattr(updated_article, "title")
+
+    async def test_list_folders_delegates_to_storage(self) -> None:
+        expected = self.factory.core.article_folders(
+            values=[self.factory.core.article_folder(key="backend")],
+        )
+        self.storage.list_folders.return_value = expected
+
+        result = await self.use_case.list_folders(language=LanguageEnum.EN)
+
+        assert result == expected
+        self.storage.list_folders.assert_called_once_with(language=LanguageEnum.EN)
+
+    async def test_create_folder_delegates_to_storage(self) -> None:
+        params = ArticleFolderCreateParams(
+            id=self.factory.core.hex_id(11),
+            key="backend",
+            name_ru="Бэкенд",
+            name_en="Backend",
+        )
+        expected = self.factory.core.article_folder(
+            folder_id=self.factory.core.hex_id(11),
+            key="backend",
+            name_ru="Бэкенд",
+            name_en="Backend",
+        )
+        self.storage.folder_key_exists.return_value = False
+        self.storage.next_folder_priority.return_value = 1
+        self.storage.create_folder.return_value = expected
+
+        result = await self.use_case.create_folder(params=params)
+
+        assert result == expected
+        self.storage.folder_key_exists.assert_called_once_with(key="backend")
+        self.storage.next_folder_priority.assert_called_once_with()
+        self.storage.create_folder.assert_called_once_with(folder=expected)
+
+    async def test_create_folder_rejects_existing_key_before_storage_write(self) -> None:
+        params = ArticleFolderCreateParams(
+            id=self.factory.core.hex_id(11),
+            key="backend",
+            name_ru="Бэкенд",
+            name_en="Backend",
+        )
+        self.storage.folder_key_exists.return_value = True
+
+        with pytest.raises(ArticleFolderAlreadyExistsError):
+            await self.use_case.create_folder(params=params)
+
+        self.storage.next_folder_priority.assert_not_called()
+        self.storage.create_folder.assert_not_called()
+
+    async def test_update_folder_priorities_rejects_incomplete_order(self) -> None:
+        self.storage.list_folders.return_value = self.factory.core.article_folders(
+            values=[
+                self.factory.core.article_folder(folder_id=self.factory.core.hex_id(1)),
+                self.factory.core.article_folder(folder_id=self.factory.core.hex_id(2)),
+            ],
+        )
+        params = ArticleFolderPriorityUpdateParams(ordered_ids=(self.factory.core.hex_id(1),))
+
+        with pytest.raises(ArticleFolderPriorityInvalidError):
+            await self.use_case.update_folder_priorities(params=params)
+
+        self.storage.update_folder_priorities.assert_not_called()
 
     async def test_switch_publish_status_delegates_to_storage(self) -> None:
         await self.use_case.switch_article_publish_status(

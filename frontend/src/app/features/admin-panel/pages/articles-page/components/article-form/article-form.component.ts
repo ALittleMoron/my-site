@@ -28,6 +28,7 @@ import {
 } from '../../../../models/article-seo-analysis';
 import {
   ArticleDetail,
+  ArticleFolder,
   ArticleMetadata,
   ArticlePayload,
   ArticleTag,
@@ -35,6 +36,7 @@ import {
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { slugify } from '../../../../../../shared/utils/slugify';
 import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/article-authoring-preview.component';
+import { ArticleFolderPickerComponent } from '../article-folder-picker/article-folder-picker.component';
 import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
 import { AdminControlValidationStateDirective } from '../../../../directives/admin-control-validation-state.directive';
 import {
@@ -54,8 +56,7 @@ interface ArticleFormControls {
   contentRu: FormControl<string>;
   contentEn: FormControl<string>;
   slug: FormControl<string>;
-  folderRu: FormControl<string>;
-  folderEn: FormControl<string>;
+  folderId: FormControl<string>;
   seoTitleRu: FormControl<string>;
   seoTitleEn: FormControl<string>;
   seoDescriptionRu: FormControl<string>;
@@ -111,6 +112,7 @@ type TagDraftField = 'nameRu' | 'nameEn' | 'slug';
     MarkdownEditorComponent,
     TranslatePipe,
     ArticleAuthoringPreviewComponent,
+    ArticleFolderPickerComponent,
     ArticleSeoPanelComponent,
     AdminControlValidationStateDirective,
   ],
@@ -135,6 +137,7 @@ export class ArticleFormComponent implements OnInit {
   readonly tags = signal<TagDraft[]>([]);
   readonly selectedTagIds = signal<ReadonlySet<string>>(new Set<string>());
   readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
+  readonly selectedFolder = signal<ArticleFolder | null>(null);
   readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
   readonly formSubmitted = signal(false);
@@ -166,13 +169,9 @@ export class ArticleFormComponent implements OnInit {
         slugValidator,
       ],
     }),
-    folderRu: new FormControl('', {
+    folderId: new FormControl('', {
       nonNullable: true,
-      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
-    }),
-    folderEn: new FormControl('', {
-      nonNullable: true,
-      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
+      validators: [trimRequired],
     }),
     seoTitleRu: new FormControl('', {
       nonNullable: true,
@@ -229,6 +228,7 @@ export class ArticleFormComponent implements OnInit {
     const value = this.formSnapshot();
     const language = this.activeLanguageTab();
     const metadata = toMetadata(value);
+    const folder = this.selectedFolder();
     return analyzeArticleSeo({
       input: {
         slug: value.slug,
@@ -242,7 +242,12 @@ export class ArticleFormComponent implements OnInit {
           markdown: language === 'ru' ? value.contentRu : value.contentEn,
           availableTargets: this.availableWikiLinkTargets(),
         }),
-        folder: language === 'ru' ? value.folderRu : value.folderEn,
+        folder:
+          folder === null
+            ? ''
+            : language === 'ru'
+              ? folder.translations.ru.name
+              : folder.translations.en.name,
         language,
         tags: this.activeTags(),
       },
@@ -303,6 +308,16 @@ export class ArticleFormComponent implements OnInit {
   setPublishStatusFromEvent(event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.form.controls.publishStatus.setValue(checked ? 'Draft' : 'Published');
+  }
+
+  setFolderId(folderId: string): void {
+    this.form.controls.folderId.setValue(folderId);
+    this.form.controls.folderId.markAsDirty();
+    this.form.controls.folderId.markAsTouched();
+  }
+
+  setSelectedFolder(folder: ArticleFolder | null): void {
+    this.selectedFolder.set(folder);
   }
 
   uploadCoverImage(event: Event): void {
@@ -474,6 +489,7 @@ export class ArticleFormComponent implements OnInit {
       .map((tag) => tag.id);
     this.articleSave.emit({
       slug: value.slug,
+      folderId: value.folderId,
       publishStatus: value.publishStatus,
       tagIds: activeTagIds,
       metadata: toMetadata(value),
@@ -481,12 +497,10 @@ export class ArticleFormComponent implements OnInit {
         ru: {
           title: value.titleRu,
           content: value.contentRu,
-          folder: value.folderRu,
         },
         en: {
           title: value.titleEn,
           content: value.contentEn,
-          folder: value.folderEn,
         },
       },
     });
@@ -539,7 +553,6 @@ export class ArticleFormComponent implements OnInit {
       language === 'ru'
         ? ([
             'titleRu',
-            'folderRu',
             'seoTitleRu',
             'seoDescriptionRu',
             'coverImageAltRu',
@@ -547,7 +560,6 @@ export class ArticleFormComponent implements OnInit {
           ] satisfies ArticleField[])
         : ([
             'titleEn',
-            'folderEn',
             'seoTitleEn',
             'seoDescriptionEn',
             'coverImageAltEn',
@@ -585,8 +597,7 @@ export class ArticleFormComponent implements OnInit {
         contentRu: '',
         contentEn: '',
         slug: '',
-        folderRu: '',
-        folderEn: '',
+        folderId: '',
         seoTitleRu: '',
         seoTitleEn: '',
         seoDescriptionRu: '',
@@ -597,6 +608,7 @@ export class ArticleFormComponent implements OnInit {
         publishStatus: 'Draft',
       });
       this.formSnapshot.set(this.form.getRawValue());
+      this.selectedFolder.set(null);
       this.selectedTagIds.set(new Set<string>());
       return;
     }
@@ -607,8 +619,7 @@ export class ArticleFormComponent implements OnInit {
       contentRu: article.translations.ru.content,
       contentEn: article.translations.en.content,
       slug: article.slug,
-      folderRu: article.translations.ru.folder,
-      folderEn: article.translations.en.folder,
+      folderId: article.folderId,
       seoTitleRu: article.metadata.seoTitleRu ?? '',
       seoTitleEn: article.metadata.seoTitleEn ?? '',
       seoDescriptionRu: article.metadata.seoDescriptionRu ?? '',
@@ -619,6 +630,7 @@ export class ArticleFormComponent implements OnInit {
       publishStatus: article.publishStatus,
     });
     this.formSnapshot.set(this.form.getRawValue());
+    this.selectedFolder.set(null);
     this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
   }
 

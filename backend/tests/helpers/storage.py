@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.articles.schemas import Article, Tag
+from core.articles.schemas import Article, ArticleFolder, Tag
 from core.auth.schemas import User
 from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
@@ -14,6 +14,7 @@ from core.competency_matrix.schemas import (
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
 from infra.postgresql.models import (
+    ArticleFolderModel,
     ArticleModel,
     ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
@@ -184,6 +185,7 @@ class StorageHelper:
         return db_users
 
     async def create_article(self, article: Article) -> ArticleModel:
+        await self.ensure_article_folder(folder=article.folder)
         db_article = ArticleModel.from_domain_schema(article=article)
         db_article.tag_links = [
             ArticleToTagSecondaryModel.from_domain_schema(tag=tag) for tag in article.tags
@@ -195,6 +197,7 @@ class StorageHelper:
     async def create_articles(self, articles: list[Article]) -> list[ArticleModel]:
         db_articles = []
         for article in articles:
+            await self.ensure_article_folder(folder=article.folder)
             db_article = ArticleModel.from_domain_schema(article=article)
             db_article.tag_links = [
                 ArticleToTagSecondaryModel.from_domain_schema(tag=tag) for tag in article.tags
@@ -203,6 +206,24 @@ class StorageHelper:
         self.session.add_all(db_articles)
         await self.session.flush()
         return db_articles
+
+    async def create_article_folder(self, folder: ArticleFolder) -> ArticleFolderModel:
+        db_folder = ArticleFolderModel.from_domain_schema(folder=folder)
+        self.session.add(db_folder)
+        await self.session.flush()
+        return db_folder
+
+    async def ensure_article_folder(self, folder: ArticleFolder) -> None:
+        db_folder = await self.session.get(ArticleFolderModel, folder.id)
+        if db_folder is None:
+            self.session.add(ArticleFolderModel.from_domain_schema(folder=folder))
+            await self.session.flush()
+            return
+        expected = (folder.key, folder.name_ru, folder.name_en, folder.priority)
+        actual = (db_folder.key, db_folder.name_ru, db_folder.name_en, db_folder.priority)
+        if actual != expected:
+            msg = f"Conflicting article folder fixture id {folder.id}: {actual} != {expected}"
+            raise AssertionError(msg)
 
     async def create_tag(self, tag: Tag) -> TagModel:
         db_tag = TagModel.from_domain_schema(tag=tag)

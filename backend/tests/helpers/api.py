@@ -438,6 +438,28 @@ class APIHelper:
             params["language"] = language
         return self.client.get("/api/admin/articles/tree", params=params)
 
+    def get_admin_article_folders(self, language: str | None = "ru") -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.get("/api/admin/articles/folders", params=params)
+
+    def post_create_article_folder(
+        self,
+        data: dict[str, Any],
+        language: str | None = "ru",
+    ) -> Response:
+        params: dict[str, str] = {}
+        if language is not None:
+            params["language"] = language
+        return self.client.post("/api/admin/articles/folders", params=params, json=data)
+
+    def put_update_article_folder_priorities(self, ordered_ids: list[int | str]) -> Response:
+        return self.client.put(
+            "/api/admin/articles/folders/priorities",
+            json={"orderedIds": [self._entity_id(ordered_id) for ordered_id in ordered_ids]},
+        )
+
     def post_create_article(self, data: dict[str, Any], language: str | None = "ru") -> Response:
         params: dict[str, str] = {}
         if language is not None:

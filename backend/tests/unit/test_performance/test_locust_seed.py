@@ -6,6 +6,7 @@ from sqlalchemy.dialects import postgresql
 
 from core.auth.enums import RoleEnum
 from performance.locust.seed import (
+    article_folder_row,
     article_range,
     article_tag_indexes,
     insert_seed_user,
@@ -137,6 +138,17 @@ class TestLocustPerformanceSeed:
         for article_index in article_range():
             indexes = article_tag_indexes(article_index=article_index)
             assert len(indexes) == len(set(indexes))
+
+    def test_article_seed_rows_reference_normalized_folder(self) -> None:
+        row = article_folder_row()
+
+        assert row == {
+            "id": "30000000000040008000000000000001",
+            "key": "performance",
+            "name_ru": "Производительность",
+            "name_en": "Performance",
+            "priority": 1,
+        }
 
     async def test_seed_user_is_created_as_active_admin(self) -> None:
         session = AsyncMock()

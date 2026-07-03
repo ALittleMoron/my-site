@@ -1,4 +1,5 @@
 from .articles import ArticleDailyAnalyticsModel as ArticleDailyAnalyticsModel
+from .articles import ArticleFolderModel as ArticleFolderModel
 from .articles import ArticleModel as ArticleModel
 from .articles import ArticleReactionModel as ArticleReactionModel
 from .articles import ArticleToTagSecondaryModel as ArticleToTagSecondaryModel
