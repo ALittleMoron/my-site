@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from infra.healthcheck import ReadinessChecker, ReadinessCheckError
-from infra.s3.file_storages import S3ClientBundle
+from infra.s3.clients import S3ClientBundle
 
 
 class TestReadinessChecker:

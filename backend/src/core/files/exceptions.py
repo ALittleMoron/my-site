@@ -13,6 +13,14 @@ class ContentTypeNotAllowedError(InvalidFileDataError):
         super().__init__()
 
 
+class FileSizeTooLargeError(InvalidFileDataError):
+    message = "File size is too large."
+
+    def __init__(self, *, size_bytes: int, max_size_bytes: int) -> None:
+        self.message = f"File size {size_bytes} exceeds limit {max_size_bytes}."
+        super().__init__()
+
+
 class NamespaceNotAllowedError(InvalidFileDataError):
     message = "Namespace not allowed."
 
@@ -21,9 +29,21 @@ class NamespaceNotAllowedError(InvalidFileDataError):
         super().__init__()
 
 
-class FileStorageInternalError(DomainError):
-    message = "File storage error"
+class FilePurposeNotAllowedError(InvalidFileDataError):
+    message = "File purpose is not allowed."
+
+
+class FileNameInvalidError(InvalidFileDataError):
+    message = "File name is invalid."
+
+
+class FileClientInternalError(DomainError):
+    message = "File client error"
 
     def __init__(self, *, message: str) -> None:
         self.message = message
         super().__init__()
+
+
+class FileInUseError(DomainError):
+    message = "File is used and cannot be deleted."

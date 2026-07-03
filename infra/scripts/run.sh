@@ -65,7 +65,7 @@ require_environment() {
         "MINIO_ACCESS_KEY"
         "MINIO_SECURE"
         "MINIO_PUBLIC_URL"
-        "MINIO_PRESIGN_PUT_EXPIRES_SECONDS"
+        "MINIO_CORS_MAX_AGE_SECONDS"
         "SENTRY_USE"
         "SENTRY_DSN"
         "VALKEY_HOST"

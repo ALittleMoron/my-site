@@ -12,11 +12,13 @@ from sqlalchemy.ext.asyncio import (
 from infra.config.settings import Settings
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
     CompetencyMatrixItemModel,
     ExternalResourceModel,
+    FileModel,
     TagModel,
     UserModel,
 )
@@ -42,10 +44,12 @@ async def clear_tables(engine: AsyncEngine) -> None:
         await conn.execute(delete(UserModel))
         await conn.execute(delete(ExternalResourceModel))
         await conn.execute(delete(CompetencyMatrixItemModel))
+        await conn.execute(delete(ArticleFileUsageModel))
         await conn.execute(delete(ArticleReactionModel))
         await conn.execute(delete(ArticleDailyAnalyticsModel))
         await conn.execute(delete(ArticleToTagSecondaryModel))
         await conn.execute(delete(ArticleModel))
+        await conn.execute(delete(FileModel))
         await conn.execute(delete(TagModel))
 
 

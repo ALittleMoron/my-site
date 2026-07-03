@@ -130,11 +130,12 @@ Portfolio and articles site with a knowledge database
 - Articles are the authored content model. SEO metadata for articles is explicit and
   nullable: API write payloads must include a
   `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
-  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
-  null. SEO analysis is advisory-only and must not block saving or publishing. Wiki-style content
-  links use typed prefixes, currently `[[articles:<slug>]]` and `[[matrix:<slug>]]`, with optional
-  labels such as `[[matrix:<slug>|Custom label]]`; unprefixed `[[article-slug]]` syntax is not
-  supported.
+  `seo_description_en`, `cover_image_file_id`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
+  null. `cover_image_url` is a computed response/read-model field from the managed file metadata,
+  not a write-payload field. SEO analysis is advisory-only and must not block saving or publishing.
+  Wiki-style content links use typed prefixes, currently `[[articles:<slug>]]` and
+  `[[matrix:<slug>]]`, with optional labels such as `[[matrix:<slug>|Custom label]]`; unprefixed
+  `[[article-slug]]` syntax is not supported.
 - Article analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only article-scoped derived identifiers.
 - Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, and matrix question routes and hydrates interactive CSR/content-authoring areas.
 - Coarse public request rate limiting for the current security baseline belongs to edge nginx, not

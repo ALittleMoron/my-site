@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    inspect,
     text,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
@@ -21,7 +22,9 @@ from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFolder, ArticleMetadata, Tag, Tags
 from core.enums import PublishStatusEnum
+from core.files.enums import FilePurpose
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.files import FileModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 from infra.postgresql.models.mixins.priority import PriorityMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
@@ -134,9 +137,9 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         String(length=320),
         doc="English SEO description for the article",
     )
-    cover_image_url: Mapped[str | None] = mapped_column(
-        String(length=2048),
-        doc="Public cover image URL for the article",
+    cover_image_file_id: Mapped[str | None] = mapped_column(
+        ForeignKey("files__file_model.id", ondelete="RESTRICT"),
+        doc="Managed article cover image file identifier",
     )
     cover_image_alt_ru: Mapped[str | None] = mapped_column(
         String(length=255),
@@ -174,6 +177,14 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         back_populates="articles",
         doc="One-level article tree folder",
     )
+    cover_image_file: Mapped[FileModel | None] = relationship(
+        doc="Managed article cover image file",
+    )
+    file_usage_links: Mapped[list[ArticleFileUsageModel]] = relationship(
+        back_populates="article",
+        cascade="all, delete-orphan",
+        doc="Managed files used by article content",
+    )
 
     __table_args__ = (
         Index(
@@ -197,6 +208,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             text("published_at DESC NULLS LAST"),
             text("updated_at DESC"),
         ),
+        Index("articles_article_cover_image_file_idx", "cover_image_file_id"),
         Index(
             "articles_article_tree_folder_ru_published_idx",
             "folder_id",
@@ -235,13 +247,16 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             seo_title_en=article.metadata.seo_title_en,
             seo_description_ru=article.metadata.seo_description_ru,
             seo_description_en=article.metadata.seo_description_en,
-            cover_image_url=article.metadata.cover_image_url,
+            cover_image_file_id=article.metadata.cover_image_file_id,
             cover_image_alt_ru=article.metadata.cover_image_alt_ru,
             cover_image_alt_en=article.metadata.cover_image_alt_en,
             published_at=article.published_at,
             publish_status=article.publish_status,
             created_at=article.created_at,
             updated_at=article.updated_at,
+            file_usage_links=ArticleFileUsageModel.file_usage_links_from_domain_schema(
+                article=article,
+            ),
         )
 
     def update_from_domain_schema(self, article: Article) -> None:
@@ -255,14 +270,23 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         self.seo_title_en = article.metadata.seo_title_en
         self.seo_description_ru = article.metadata.seo_description_ru
         self.seo_description_en = article.metadata.seo_description_en
-        self.cover_image_url = article.metadata.cover_image_url
+        self.cover_image_file_id = article.metadata.cover_image_file_id
         self.cover_image_alt_ru = article.metadata.cover_image_alt_ru
         self.cover_image_alt_en = article.metadata.cover_image_alt_en
         self.publish_status = article.publish_status
         self.published_at = article.published_at
         self.updated_at = article.updated_at
+        self.file_usage_links = ArticleFileUsageModel.file_usage_links_from_domain_schema(
+            article=article,
+        )
 
-    def to_domain_schema(self, *, include_deleted_tags: bool, include_tags: bool) -> Article:
+    def to_domain_schema(
+        self,
+        *,
+        include_deleted_tags: bool,
+        include_tags: bool,
+        include_files: bool,
+    ) -> Article:
         return Article(
             id=self.id,
             slug=self.slug,
@@ -272,9 +296,14 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             content_en=self.content_en,
             folder=self.folder.to_domain_schema(),
             author_username=self.author_username,
-            metadata=self.to_metadata_domain_schema(),
+            metadata=self.to_metadata_domain_schema(include_files=include_files),
             published_at=self.published_at,
             publish_status=PublishStatusEnum.from_storage_value(self.publish_status),
+            content_file_ids=(
+                frozenset(link.file_id for link in self.file_usage_links)
+                if include_files
+                else frozenset()
+            ),
             created_at=self.created_at,
             updated_at=self.updated_at,
             tags=Tags(
@@ -288,13 +317,22 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             ),
         )
 
-    def to_metadata_domain_schema(self) -> ArticleMetadata:
+    def to_metadata_domain_schema(self, *, include_files: bool) -> ArticleMetadata:
+        cover_image_file = (
+            self.cover_image_file.to_domain_schema()
+            if include_files
+            and "cover_image_file" not in inspect(self).unloaded
+            and self.cover_image_file is not None
+            else None
+        )
         return ArticleMetadata(
             seo_title_ru=self.seo_title_ru,
             seo_title_en=self.seo_title_en,
             seo_description_ru=self.seo_description_ru,
             seo_description_en=self.seo_description_en,
-            cover_image_url=self.cover_image_url,
+            cover_image_file_id=self.cover_image_file_id,
+            cover_image_file=cover_image_file,
+            cover_image_url=None,
             cover_image_alt_ru=self.cover_image_alt_ru,
             cover_image_alt_en=self.cover_image_alt_en,
         )
@@ -422,6 +460,54 @@ class ArticleToTagSecondaryModel(HexUuidIDMixin, BaseModel):
         return cls(
             tag_id=tag.id,
         )
+
+
+class ArticleFileUsageModel(HexUuidIDMixin, BaseModel):
+    article_id: Mapped[str] = mapped_column(
+        ForeignKey(ArticleModel.id, ondelete="CASCADE"),
+        doc="Article identifier",
+    )
+    file_id: Mapped[str] = mapped_column(
+        ForeignKey("files__file_model.id", ondelete="RESTRICT"),
+        doc="Managed file identifier",
+    )
+    usage: Mapped[FilePurpose] = mapped_column(
+        Enum(
+            FilePurpose,
+            native_enum=True,
+            name="file_purpose_enum",
+        ),
+        doc="How the article uses the managed file",
+    )
+
+    article: Mapped[ArticleModel] = relationship(
+        back_populates="file_usage_links",
+        doc="Linked article",
+    )
+    file: Mapped[FileModel] = relationship(
+        doc="Linked managed file",
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "article_id",
+            "file_id",
+            "usage",
+            name="articles_file_usage_article_file_usage_uniq",
+        ),
+        Index("articles_file_usage_file_idx", "file_id"),
+    )
+
+    @classmethod
+    def file_usage_links_from_domain_schema(cls, article: Article) -> list[Self]:
+        return [
+            cls(
+                article_id=article.id,
+                file_id=file_id,
+                usage=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            )
+            for file_id in sorted(article.content_file_ids)
+        ]
 
 
 class ArticleDailyAnalyticsModel(HexUuidIDMixin, BaseModel):

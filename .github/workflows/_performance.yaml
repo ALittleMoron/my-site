@@ -67,7 +67,7 @@ jobs:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECURE: "false"
       MINIO_PUBLIC_URL: http://localhost:9000
-      MINIO_PRESIGN_PUT_EXPIRES_SECONDS: 300
+      MINIO_CORS_MAX_AGE_SECONDS: 300
       SENTRY_USE: "false"
       SENTRY_DSN: ""
       VALKEY_HOST: localhost

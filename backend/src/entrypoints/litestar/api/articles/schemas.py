@@ -132,7 +132,7 @@ class ArticleReactionCountsResponseSchema(CamelCaseSchema):
         )
 
 
-class ArticleMetadataSchema(CamelCaseSchema):
+class ArticleMetadataRequestSchema(CamelCaseSchema):
     seo_title_ru: Annotated[
         str | None,
         Field(title="RU SEO title", max_length=constants.admin_validation.short_text_max_length),
@@ -155,7 +155,7 @@ class ArticleMetadataSchema(CamelCaseSchema):
             max_length=constants.admin_validation.seo_description_max_length,
         ),
     ]
-    cover_image_url: Annotated[OptionalHttpUrlString, Field(title="Cover image URL")]
+    cover_image_file_id: Annotated[str | None, Field(title="Cover image file ID")]
     cover_image_alt_ru: Annotated[
         str | None,
         Field(
@@ -177,10 +177,16 @@ class ArticleMetadataSchema(CamelCaseSchema):
             seo_title_en=self.seo_title_en,
             seo_description_ru=self.seo_description_ru,
             seo_description_en=self.seo_description_en,
-            cover_image_url=self.cover_image_url,
+            cover_image_file_id=self.cover_image_file_id,
+            cover_image_file=None,
+            cover_image_url=None,
             cover_image_alt_ru=self.cover_image_alt_ru,
             cover_image_alt_en=self.cover_image_alt_en,
         )
+
+
+class ArticleMetadataResponseSchema(ArticleMetadataRequestSchema):
+    cover_image_url: Annotated[OptionalHttpUrlString, Field(title="Cover image URL")]
 
     @classmethod
     def from_domain_schema(cls, *, schema: ArticleMetadata) -> Self:
@@ -189,6 +195,7 @@ class ArticleMetadataSchema(CamelCaseSchema):
             seo_title_en=schema.seo_title_en,
             seo_description_ru=schema.seo_description_ru,
             seo_description_en=schema.seo_description_en,
+            cover_image_file_id=schema.cover_image_file_id,
             cover_image_url=schema.cover_image_url,
             cover_image_alt_ru=schema.cover_image_alt_ru,
             cover_image_alt_en=schema.cover_image_alt_en,
@@ -207,7 +214,7 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     updated_at: Annotated[str, Field(title="Update date")]
     excerpt: Annotated[str, Field(title="Short preview")]
-    metadata: Annotated[ArticleMetadataSchema, Field(title="SEO metadata")]
+    metadata: Annotated[ArticleMetadataResponseSchema, Field(title="SEO metadata")]
     tags: Annotated[list[TagResponseSchema], Field(title="Tags")]
 
     @classmethod
@@ -231,7 +238,7 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
             publish_status=schema.publish_status,
             updated_at=schema.updated_at.isoformat(),
             excerpt=cls.build_excerpt(content=schema.localized_content(language=language)),
-            metadata=ArticleMetadataSchema.from_domain_schema(schema=schema.metadata),
+            metadata=ArticleMetadataResponseSchema.from_domain_schema(schema=schema.metadata),
             tags=[
                 TagResponseSchema.from_domain_schema(schema=tag, language=language)
                 for tag in schema.tags
@@ -357,7 +364,7 @@ class ArticleRequestSchema(CamelCaseSchema):
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     tag_ids: Annotated[list[str], Field(title="Tag identifiers")]
     translations: Annotated[ArticleTranslationsSchema, Field(title="Translations")]
-    metadata: Annotated[ArticleMetadataSchema, Field(title="SEO metadata")]
+    metadata: Annotated[ArticleMetadataRequestSchema, Field(title="SEO metadata")]
 
     def to_create_schema(
         self,

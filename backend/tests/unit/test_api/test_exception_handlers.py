@@ -33,7 +33,7 @@ from core.competency_matrix.exceptions import (
     QuestionSuggestionQuotaExceededError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
-from core.files.exceptions import FileStorageInternalError, InvalidFileDataError
+from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
 from entrypoints.litestar import exception_handlers
 from entrypoints.litestar.exception_handlers import get_litestar_exception_handlers
 from infra.healthcheck import ReadinessCheckError
@@ -154,7 +154,8 @@ def test_domain_error_verbose_exception_mapping() -> None:
         UnauthorizedError: UnauthorizedHTTPException,
         ForbiddenError: ForbiddenHTTPException,
         InvalidFileDataError: BadRequestHTTPException,
-        FileStorageInternalError: InternalServerErrorHTTPException,
+        FileInUseError: BadRequestHTTPException,
+        FileClientInternalError: InternalServerErrorHTTPException,
         CompetencyMatrixItemNotPublicReadyError: BadRequestHTTPException,
         CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
         CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,

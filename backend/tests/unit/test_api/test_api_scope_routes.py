@@ -142,9 +142,11 @@ class TestApiScopeRoutes(ApiTestCase):
             AdminCompetencyMatrixApiController.create_competency_matrix_item_from_queue.name
             == "admin-competency-matrix-queued-question-create-item-api-handler"
         )
-        assert (
-            FilesApiController.presign_put_media_file.name == "admin-files-presign-put-api-handler"
-        )
+        assert FilesApiController.upload_file.name == "admin-files-upload-api-handler"
+        assert FilesApiController.list_files.name == "admin-files-list-api-handler"
+        assert FilesApiController.get_file.name == "admin-files-detail-api-handler"
+        assert FilesApiController.update_file.name == "admin-files-update-api-handler"
+        assert FilesApiController.delete_file.name == "admin-files-delete-api-handler"
         assert AdminResumesApiController.list_resumes.name == "admin-resumes-list-api-handler"
         assert AdminResumesApiController.create_resume.name == "admin-resumes-create-api-handler"
         assert AdminResumesApiController.get_resume.name == "admin-resumes-detail-api-handler"

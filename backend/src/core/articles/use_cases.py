@@ -32,6 +32,9 @@ from core.articles.schemas import (
 )
 from core.articles.storages import ArticleAnalyticsStorage, ArticlesStorage
 from core.enums import PublishStatusEnum
+from core.files.clients import FileClient
+from core.files.enums import FilePurpose
+from core.files.services import FileService
 from core.i18n.enums import LanguageEnum
 from core.schemas import Secret
 
@@ -39,6 +42,8 @@ from core.schemas import Secret
 @dataclass(kw_only=True, slots=True, frozen=True)
 class ArticlesUseCase:
     storage: ArticlesStorage
+    file_service: FileService
+    file_client: FileClient
 
     async def get_article(self, *, slug: str, only_published: bool) -> Article:
         article = await self.storage.get_article_by_slug(
@@ -47,22 +52,48 @@ class ArticlesUseCase:
         )
         if only_published and not article.is_available():
             raise ArticleNotFoundError
-        return article.public_copy() if only_published else article
+        visible_article = article.public_copy() if only_published else article
+        cover_image_file = visible_article.metadata.cover_image_file
+        if cover_image_file is None:
+            return visible_article.with_cover_image_url(cover_image_url=None)
+        return visible_article.with_cover_image_url(
+            cover_image_url=self.file_client.get_access_url(
+                object_name=cover_image_file.relative_path,
+                namespace=cover_image_file.namespace,
+            ),
+        )
 
     async def list_articles(self, *, filters: ArticleFilters) -> Articles:
         if filters.page is None or filters.page_size is None:
             message = "pagination required"
             raise ValueError(message)
         articles, total_count = await self.storage.list_articles(filters=filters)
+        hydrated_articles: list[Article] = []
+        for article in articles:
+            cover_image_file = article.metadata.cover_image_file
+            cover_image_url = (
+                self.file_client.get_access_url(
+                    object_name=cover_image_file.relative_path,
+                    namespace=cover_image_file.namespace,
+                )
+                if cover_image_file is not None
+                else None
+            )
+            hydrated_articles.append(article.with_cover_image_url(cover_image_url=cover_image_url))
         return Articles.from_page(
-            values=articles,
+            values=hydrated_articles,
             total_count=total_count,
             page_size=filters.page_size,
         )
 
     async def list_published_articles_for_seo(self) -> PublishedArticlesForSeo:
         articles, _total_count = await self.storage.list_articles(
-            filters=ArticleFilters(only_published=True, include_tags=False, order_for_seo=True),
+            filters=ArticleFilters(
+                only_published=True,
+                include_tags=False,
+                include_files=False,
+                order_for_seo=True,
+            ),
         )
         available_articles = [article for article in articles if article.is_available()]
         return PublishedArticlesForSeo.from_articles(articles=available_articles)
@@ -75,11 +106,34 @@ class ArticlesUseCase:
         return ArticleTree.from_items(items=items)
 
     async def create_article(self, *, params: ArticleCreateParams) -> Article:
-        tags = await self._get_active_tags(tag_ids=params.tag_ids)
+        tags = await self.storage.get_tags_by_ids(
+            tag_ids=params.tag_ids,
+            include_deleted=False,
+        )
+        if not tags.all_tags_exist_by_ids(ids=set(params.tag_ids)):
+            raise TagNotFoundError
         folder = await self.storage.get_folder_by_id(folder_id=params.folder_id)
+        if params.metadata.cover_image_file_id is not None:
+            await self.file_service.ensure_files_allowed(
+                file_ids=frozenset({params.metadata.cover_image_file_id}),
+                purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            )
+        await self.file_service.ensure_files_allowed(
+            file_ids=params.content_file_ids,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+        )
         now = datetime.now(tz=UTC)
-        return await self.storage.create_article(
+        article = await self.storage.create_article(
             article=params.to_article(now=now, folder=folder, tags=tags),
+        )
+        cover_image_file = article.metadata.cover_image_file
+        if cover_image_file is None:
+            return article.with_cover_image_url(cover_image_url=None)
+        return article.with_cover_image_url(
+            cover_image_url=self.file_client.get_access_url(
+                object_name=cover_image_file.relative_path,
+                namespace=cover_image_file.namespace,
+            ),
         )
 
     async def update_article(
@@ -92,10 +146,24 @@ class ArticlesUseCase:
             slug=slug,
             include_deleted_tags=True,
         )
-        tags = await self._get_active_tags(tag_ids=params.tag_ids)
+        tags = await self.storage.get_tags_by_ids(
+            tag_ids=params.tag_ids,
+            include_deleted=False,
+        )
+        if not tags.all_tags_exist_by_ids(ids=set(params.tag_ids)):
+            raise TagNotFoundError
         folder = await self.storage.get_folder_by_id(folder_id=params.folder_id)
+        if params.metadata.cover_image_file_id is not None:
+            await self.file_service.ensure_files_allowed(
+                file_ids=frozenset({params.metadata.cover_image_file_id}),
+                purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            )
+        await self.file_service.ensure_files_allowed(
+            file_ids=params.content_file_ids,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+        )
         now = datetime.now(tz=UTC)
-        return await self.storage.update_article(
+        article = await self.storage.update_article(
             article=params.to_article(
                 existing_article=existing_article,
                 now=now,
@@ -103,15 +171,15 @@ class ArticlesUseCase:
                 tags=tags,
             ),
         )
-
-    async def _get_active_tags(self, *, tag_ids: list[str]) -> Tags:
-        tags = await self.storage.get_tags_by_ids(
-            tag_ids=tag_ids,
-            include_deleted=False,
+        cover_image_file = article.metadata.cover_image_file
+        if cover_image_file is None:
+            return article.with_cover_image_url(cover_image_url=None)
+        return article.with_cover_image_url(
+            cover_image_url=self.file_client.get_access_url(
+                object_name=cover_image_file.relative_path,
+                namespace=cover_image_file.namespace,
+            ),
         )
-        if not tags.all_tags_exist_by_ids(ids=set(tag_ids)):
-            raise TagNotFoundError
-        return tags
 
     async def delete_article(self, *, slug: str) -> None:
         await self.storage.delete_article(slug=slug)

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -26,6 +26,9 @@ from core.articles.schemas import (
 from core.articles.storages import ArticlesStorage
 from core.articles.use_cases import ArticlesUseCase
 from core.enums import PublishStatusEnum
+from core.files.clients import FileClient
+from core.files.enums import FilePurpose
+from core.files.services import FileService
 from core.i18n.enums import LanguageEnum
 from tests.test_cases import TestCase
 
@@ -34,7 +37,22 @@ class TestArticlesUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.storage = Mock(spec=ArticlesStorage)
-        self.use_case = ArticlesUseCase(storage=self.storage)
+        self.file_service = Mock(spec=FileService)
+        self.file_client = Mock(spec=FileClient)
+        self.use_case = ArticlesUseCase(
+            storage=self.storage,
+            file_service=self.file_service,
+            file_client=self.file_client,
+        )
+
+    def test_use_case_does_not_define_private_helpers(self) -> None:
+        private_helpers = [
+            name
+            for name, value in vars(ArticlesUseCase).items()
+            if name.startswith("_") and not name.startswith("__") and callable(value)
+        ]
+
+        assert private_helpers == []
 
     async def test_list_articles_builds_page_from_storage_rows(self) -> None:
         filters = ArticleFilters(
@@ -94,7 +112,12 @@ class TestArticlesUseCase(TestCase):
             ],
         )
         self.storage.list_articles.assert_called_once_with(
-            filters=ArticleFilters(only_published=True, include_tags=False, order_for_seo=True),
+            filters=ArticleFilters(
+                only_published=True,
+                include_tags=False,
+                include_files=False,
+                order_for_seo=True,
+            ),
         )
 
     async def test_list_tree_builds_folders_from_storage_items(self) -> None:
@@ -166,6 +189,102 @@ class TestArticlesUseCase(TestCase):
             include_deleted_tags=True,
         )
 
+    async def test_get_article_hydrates_cover_image_url_from_file_client(self) -> None:
+        cover = self.factory.core.stored_file(
+            file_id=30,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            namespace="media",
+            relative_path="article-cover-images/detail-cover.png",
+        )
+        article = self.factory.core.article(
+            slug="covered-article",
+            metadata=ArticleMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_file_id=cover.id,
+                cover_image_file=cover,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
+        )
+        self.storage.get_article_by_slug.return_value = article
+        self.file_client.get_access_url.return_value = "https://cdn.test/detail-cover.png"
+
+        result = await self.use_case.get_article(slug="covered-article", only_published=False)
+
+        assert result == article.with_cover_image_url(
+            cover_image_url="https://cdn.test/detail-cover.png",
+        )
+        self.file_client.get_access_url.assert_called_once_with(
+            object_name="article-cover-images/detail-cover.png",
+            namespace="media",
+        )
+
+    async def test_list_articles_hydrates_cover_image_urls_from_file_client(self) -> None:
+        cover = self.factory.core.stored_file(
+            file_id=31,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            namespace="media",
+            relative_path="article-cover-images/list-cover.png",
+        )
+        article = self.factory.core.article(
+            slug="covered-list-article",
+            metadata=ArticleMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_file_id=cover.id,
+                cover_image_file=cover,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
+        )
+        filters = ArticleFilters(
+            page=1,
+            page_size=10,
+            language=LanguageEnum.EN,
+            only_published=False,
+            tag_slug=None,
+            published_from=None,
+            published_to=None,
+            search_query=None,
+        )
+        self.storage.list_articles.return_value = ([article], 1)
+        self.file_client.get_access_url.return_value = "https://cdn.test/list-cover.png"
+
+        result = await self.use_case.list_articles(filters=filters)
+
+        assert result.values == [
+            article.with_cover_image_url(
+                cover_image_url="https://cdn.test/list-cover.png",
+            ),
+        ]
+        assert result.total_count == 1
+        assert result.total_pages == 1
+        self.file_client.get_access_url.assert_called_once_with(
+            object_name="article-cover-images/list-cover.png",
+            namespace="media",
+        )
+
+    async def test_get_article_clears_cover_image_url_when_file_metadata_is_missing(self) -> None:
+        article = self.factory.core.article(
+            slug="stale-cover-url",
+            cover_image_file_id=None,
+            cover_image_file=None,
+            cover_image_url="https://cdn.test/stale-cover.png",
+        )
+        self.storage.get_article_by_slug.return_value = article
+
+        result = await self.use_case.get_article(slug="stale-cover-url", only_published=False)
+
+        assert result == article.with_cover_image_url(cover_image_url=None)
+        self.file_client.get_access_url.assert_not_called()
+
     async def test_create_article_requires_all_tags_to_exist_and_be_active(self) -> None:
         tag_ids = [self.factory.core.hex_id(1), self.factory.core.hex_id(2)]
         params = ArticleCreateParams(
@@ -183,6 +302,8 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en=None,
                 seo_description_ru=None,
                 seo_description_en=None,
+                cover_image_file_id=None,
+                cover_image_file=None,
                 cover_image_url=None,
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,
@@ -214,7 +335,9 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en="SEO article",
                 seo_description_ru="Описание для поиска",
                 seo_description_en="Search description",
-                cover_image_url="https://example.com/cover.jpg",
+                cover_image_file_id=None,
+                cover_image_file=None,
+                cover_image_url=None,
                 cover_image_alt_ru="Обложка",
                 cover_image_alt_en="Cover",
             ),
@@ -245,7 +368,9 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en="SEO article",
                 seo_description_ru="Описание для поиска",
                 seo_description_en="Search description",
-                cover_image_url="https://example.com/cover.jpg",
+                cover_image_file_id=None,
+                cover_image_file=None,
+                cover_image_url=None,
                 cover_image_alt_ru="Обложка",
                 cover_image_alt_en="Cover",
             ),
@@ -270,8 +395,63 @@ class TestArticlesUseCase(TestCase):
         assert created_article.title_ru == "Статья"
         assert created_article.title_en == "Article"
         assert created_article.metadata == params.metadata
+        assert created_article.content_file_ids == frozenset()
         assert created_article.author_username == "admin"
         assert created_article.tags.values == [tag]
+
+    async def test_create_article_validates_and_syncs_managed_files(self) -> None:
+        cover_file_id = self.factory.core.hex_id(30)
+        inline_file_id = self.factory.core.hex_id(31)
+        tag = self.factory.core.tag(tag_id=1, slug="python")
+        folder = self.factory.core.article_folder(folder_id=self.factory.core.hex_id(3))
+        params = ArticleCreateParams(
+            id=self.factory.core.hex_id(10),
+            slug="article",
+            title_ru="Статья",
+            title_en="Article",
+            content_ru=f"![alt](https://cdn.test/content.png#fileId={inline_file_id})",
+            content_en="Content",
+            folder_id=folder.id,
+            author_username="admin",
+            publish_status=PublishStatusEnum.DRAFT,
+            metadata=ArticleMetadata(
+                seo_title_ru=None,
+                seo_title_en=None,
+                seo_description_ru=None,
+                seo_description_en=None,
+                cover_image_file_id=cover_file_id,
+                cover_image_file=None,
+                cover_image_url=None,
+                cover_image_alt_ru=None,
+                cover_image_alt_en=None,
+            ),
+            tag_ids=[tag.id],
+        )
+        self.storage.get_tags_by_ids.return_value = self.factory.core.tags(values=[tag])
+        self.storage.get_folder_by_id.return_value = folder
+        self.storage.create_article.return_value = self.factory.core.article(
+            slug="article",
+            content_file_ids=frozenset({inline_file_id}),
+            cover_image_file_id=cover_file_id,
+        )
+
+        await self.use_case.create_article(params=params)
+
+        created_article = self.storage.create_article.call_args.kwargs["article"]
+        assert created_article.metadata.cover_image_file_id == cover_file_id
+        assert created_article.content_file_ids == frozenset({inline_file_id})
+        self.file_service.ensure_files_allowed.assert_has_awaits(
+            [
+                call(
+                    file_ids=frozenset({cover_file_id}),
+                    purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+                ),
+                call(
+                    file_ids=frozenset({inline_file_id}),
+                    purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+                ),
+            ],
+        )
 
     async def test_create_article_requires_existing_folder_before_storage_write(self) -> None:
         params = ArticleCreateParams(
@@ -289,6 +469,8 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en=None,
                 seo_description_ru=None,
                 seo_description_en=None,
+                cover_image_file_id=None,
+                cover_image_file=None,
                 cover_image_url=None,
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,
@@ -322,6 +504,8 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en=None,
                 seo_description_ru=None,
                 seo_description_en=None,
+                cover_image_file_id=None,
+                cover_image_file=None,
                 cover_image_url=None,
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,
@@ -373,6 +557,8 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en="New SEO",
                 seo_description_ru="Новое описание",
                 seo_description_en="New description",
+                cover_image_file_id=None,
+                cover_image_file=None,
                 cover_image_url=None,
                 cover_image_alt_ru=None,
                 cover_image_alt_en=None,

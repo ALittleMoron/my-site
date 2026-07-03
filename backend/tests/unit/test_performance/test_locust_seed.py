@@ -6,9 +6,11 @@ from sqlalchemy.dialects import postgresql
 
 from core.auth.enums import RoleEnum
 from performance.locust.seed import (
+    SEED_ARTICLE_FOLDER_ID,
     article_folder_row,
     article_range,
     article_tag_indexes,
+    clear_seeded_data,
     insert_seed_user,
     validate_seed_config,
 )
@@ -160,3 +162,18 @@ class TestLocustPerformanceSeed:
         assert compiled.params["username"] == "performance-seed-admin"
         assert compiled.params["role"] == RoleEnum.ADMIN
         assert compiled.params["is_active"] is True
+
+    async def test_clear_seeded_data_removes_query_plan_article_folder_collision(self) -> None:
+        session = AsyncMock()
+
+        await clear_seeded_data(session=session)
+
+        statements = [call.args[0] for call in session.execute.await_args_list]
+        folder_delete = next(
+            statement
+            for statement in statements
+            if statement.table.name == "articles__article_folder_model"
+        )
+        compiled = folder_delete.compile(dialect=postgresql.dialect())
+
+        assert SEED_ARTICLE_FOLDER_ID in compiled.params.values()

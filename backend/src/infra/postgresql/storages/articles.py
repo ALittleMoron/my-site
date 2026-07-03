@@ -57,6 +57,8 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             .where(ArticleModel.slug == slug)
             .options(
                 joinedload(ArticleModel.folder),
+                joinedload(ArticleModel.cover_image_file),
+                selectinload(ArticleModel.file_usage_links),
                 selectinload(ArticleModel.tag_links).selectinload(ArticleToTagSecondaryModel.tag),
             )
         )
@@ -66,10 +68,16 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         return article_model.to_domain_schema(
             include_deleted_tags=include_deleted_tags,
             include_tags=True,
+            include_files=True,
         )
 
     async def list_articles(self, *, filters: ArticleFilters) -> tuple[list[Article], int]:
         query = select(ArticleModel).options(joinedload(ArticleModel.folder))
+        if filters.include_files:
+            query = query.options(
+                joinedload(ArticleModel.cover_image_file),
+                selectinload(ArticleModel.file_usage_links),
+            )
         if filters.include_tags:
             query = query.options(
                 selectinload(ArticleModel.tag_links).selectinload(ArticleToTagSecondaryModel.tag),
@@ -92,6 +100,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             article_model.to_domain_schema(
                 include_deleted_tags=filters.only_published is not True,
                 include_tags=filters.include_tags,
+                include_files=filters.include_files,
             )
             for article_model in article_models.unique()
         ]
@@ -290,12 +299,18 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         query = (
             select(ArticleModel)
             .where(ArticleModel.id == article.id)
-            .options(selectinload(ArticleModel.tag_links))
+            .options(
+                selectinload(ArticleModel.tag_links),
+                selectinload(ArticleModel.file_usage_links),
+            )
         )
         model = await self.session.scalar(query)
         if model is None:
             raise ArticleNotFoundError
+        previous_cover_image_file_id = model.cover_image_file_id
         model.update_from_domain_schema(article=article)
+        if previous_cover_image_file_id != article.metadata.cover_image_file_id:
+            self.session.expire(model, ["cover_image_file"])
         model.tag_links = self._build_tag_links(article=article)
         await self.session.flush()
         return await self.get_article_by_slug(

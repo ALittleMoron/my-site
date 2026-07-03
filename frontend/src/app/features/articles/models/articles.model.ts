@@ -45,6 +45,7 @@ export interface ArticleMetadataDto {
   seoTitleEn: string | null;
   seoDescriptionRu: string | null;
   seoDescriptionEn: string | null;
+  coverImageFileId: string | null;
   coverImageUrl: string | null;
   coverImageAltRu: string | null;
   coverImageAltEn: string | null;
@@ -165,6 +166,7 @@ export interface ArticleMetadata {
   seoTitleEn: string | null;
   seoDescriptionRu: string | null;
   seoDescriptionEn: string | null;
+  coverImageFileId: string | null;
   coverImageUrl: string | null;
   coverImageAltRu: string | null;
   coverImageAltEn: string | null;
@@ -248,8 +250,18 @@ export interface ArticlePayload {
   slug: string;
   publishStatus: ArticlePublishStatus;
   tagIds: string[];
-  metadata: ArticleMetadata;
+  metadata: ArticlePayloadMetadata;
   translations: ArticleTranslations;
+}
+
+export interface ArticlePayloadMetadata {
+  seoTitleRu: string | null;
+  seoTitleEn: string | null;
+  seoDescriptionRu: string | null;
+  seoDescriptionEn: string | null;
+  coverImageFileId: string | null;
+  coverImageAltRu: string | null;
+  coverImageAltEn: string | null;
 }
 
 export interface TagPayload {

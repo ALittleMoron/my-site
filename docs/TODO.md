@@ -21,7 +21,7 @@
 - [x] Rebuild admin panel on Litestar
   - [x] Remove SQLAdmin
     - [x] Remove admin startup (docker, create_admin + Makefile)
-    - [x] Move /presign-put to a Litestar handler
+    - [x] Move file upload handling to Litestar admin handlers
     - [x] Move apply_template_callables to Litestar
     - [x] Remove unused Litestar settings (admin, auth)
     - [x] Remove admin usage from code
@@ -37,7 +37,7 @@
     - [x] Publish
     - [x] Unpublish
     - [x] Normalize sheet/section/subsection structure into database tables and use an inline admin picker for question authoring
-    - [x] (BACK) Guard on /api/admin/files/presign-put
+    - [x] (BACK) Guard admin file upload endpoints
     - [x] (FRONT) Delete button on question detail
     - [x] (FRONT) Publish/Unpublish button (depending on status)
     - [x] Import competency matrix questions into the shared queued-question model
@@ -322,7 +322,7 @@
   - [x] Search through existing external resources
   - [x] Edit mode for a specific question in the admin matrix workspace
   - [x] Button and form for adding a question to a matrix section in the admin matrix workspace
-  - [x] ToastUI should work as before: file uploads via /presign-put, display uploaded files, edit content, save content.
+  - [x] ToastUI should work through backend-owned file uploads, display uploaded files, edit content, save content.
 - [x] "404" page
 - [x] Check for possible convert raw Markdown to HTML on the frontend side only
 - [x] Security audit
@@ -352,13 +352,25 @@
 - [x] Search articles by title and content
 - [x] Article authoring and public articles release
   - [x] Use articles as the authored content model and keep save/publish independent from SEO warnings
-  - [x] Add nullable RU/EN SEO metadata, cover URL, and cover alt fields to article storage/API
+  - [x] Add nullable RU/EN SEO metadata, managed cover file id, computed cover URL, and cover alt fields to article storage/API
   - [x] Require an explicit `metadata` request object while allowing individual metadata fields to be `null`
-  - [x] Add article form controls for SEO metadata and cover upload through the presign flow
+  - [x] Add article form controls for SEO metadata and cover upload through the backend file flow
   - [x] Expand the live admin SEO panel with metadata, cover, alt, and wiki-link checks
   - [x] Add in-form article/social preview for the active language
   - [x] Render typed `[[articles:<slug>]]` / `[[matrix:<slug>]]` links as internal localized links
   - [x] Warn when wiki links point to missing targets available in the admin target registry
+- [ ] Extend managed `FileModel` metadata when the next file workflow needs it:
+  - [ ] lifecycle status (`uploading`, `ready`, `deleteFailed`, `processingFailed`)
+  - [ ] integrity metadata (`sha256`, S3 `etag`)
+  - [ ] backend identifier (`storage_backend`) for future S3/local/CDN switching
+  - [ ] ownership/audit metadata (`uploaded_by_username`)
+  - [ ] image metadata (`width_px`, `height_px`) for cover/content image validation
+  - [ ] processing metadata (`original_mime_type`, `original_size_bytes`, `processing_status`) for WebP conversion/compression
+  - [ ] attachment safety metadata (`scan_status`, `scanned_at`) before broader attachment workflows
+  - [ ] separate file variants table instead of adding variant columns to `FileModel`
+- [ ] Add backend file-content signature checks during upload so duplicate files are not uploaded
+  repeatedly; compute a stable signature such as `sha256`, return or link to an existing matching
+  managed file when appropriate, and upload a new object only when no reusable file exists.
 - [x] SEO Foundation release
   - [x] Add Angular hybrid rendering for public article routes while keeping interactive/admin routes CSR
   - [x] Add `/ru` and `/en` canonical URL prefixes

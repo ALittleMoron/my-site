@@ -71,7 +71,9 @@ class TestAdminArticlesAPI(ApiTestCase):
                     seo_title_en="SEO article",
                     seo_description_ru="Описание для выдачи",
                     seo_description_en="Search result description",
-                    cover_image_url="https://example.com/cover.jpg",
+                    cover_image_file_id="0000000000000000000000000000001e",
+                    cover_image_file=None,
+                    cover_image_url=None,
                     cover_image_alt_ru="Обложка статьи",
                     cover_image_alt_en="Article cover",
                 ),
@@ -112,7 +114,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                     "seoTitleEn": "SEO updated article",
                     "seoDescriptionRu": "Обновлённое описание",
                     "seoDescriptionEn": "Updated description",
-                    "coverImageUrl": None,
+                    "coverImageFileId": None,
                     "coverImageAltRu": None,
                     "coverImageAltEn": None,
                 },
@@ -137,6 +139,8 @@ class TestAdminArticlesAPI(ApiTestCase):
                     seo_title_en="SEO updated article",
                     seo_description_ru="Обновлённое описание",
                     seo_description_en="Updated description",
+                    cover_image_file_id=None,
+                    cover_image_file=None,
                     cover_image_url=None,
                     cover_image_alt_ru=None,
                     cover_image_alt_en=None,
@@ -168,7 +172,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 "seoTitleEn": None,
                 "seoDescriptionRu": None,
                 "seoDescriptionEn": None,
-                "coverImageUrl": None,
+                "coverImageFileId": None,
                 "coverImageAltRu": None,
                 "coverImageAltEn": None,
             },
@@ -184,6 +188,8 @@ class TestAdminArticlesAPI(ApiTestCase):
             seo_title_en=None,
             seo_description_ru=None,
             seo_description_en=None,
+            cover_image_file_id=None,
+            cover_image_file=None,
             cover_image_url=None,
             cover_image_alt_ru=None,
             cover_image_alt_en=None,
@@ -221,9 +227,9 @@ class TestAdminArticlesAPI(ApiTestCase):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.create_article.assert_not_called()
 
-    def test_create_article_rejects_invalid_cover_url(self) -> None:
+    def test_create_article_rejects_legacy_cover_url_input(self) -> None:
         data = self.factory.api.article_request()
-        data["metadata"]["coverImageUrl"] = "ftp://example.com/cover.jpg"
+        data["metadata"]["coverImageUrl"] = "https://example.com/cover.jpg"
 
         response = self.api.post_create_article(data=data)
 

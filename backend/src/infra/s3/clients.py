@@ -9,9 +9,9 @@ from botocore.exceptions import ClientError
 from types_aiobotocore_s3.client import S3Client
 from types_aiobotocore_s3.type_defs import CORSConfigurationTypeDef
 
-from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
-from core.files.file_storages import FileStorage
-from core.files.schemas import FileUploadResult, PresignPutObject
+from core.files.clients import FileClient
+from core.files.exceptions import FileClientInternalError, NamespaceNotAllowedError
+from core.files.schemas import FileUploadResult
 from core.files.types import Namespace
 from infra.config.loggers import logger
 from infra.config.settings import settings
@@ -24,7 +24,7 @@ class S3ClientBundle:
 
 
 @dataclass(kw_only=True)
-class S3FileStorage(FileStorage):
+class S3FileClient(FileClient):
     clients: S3ClientBundle
 
     @staticmethod
@@ -53,7 +53,7 @@ class S3FileStorage(FileStorage):
             "CORSRules": [
                 {
                     "AllowedHeaders": ["*"],
-                    "AllowedMethods": ["GET", "PUT"],
+                    "AllowedMethods": ["GET"],
                     "AllowedOrigins": [allowed_origin],
                     "ExposeHeaders": ["ETag"],
                     "MaxAgeSeconds": max_age_seconds,
@@ -82,7 +82,7 @@ class S3FileStorage(FileStorage):
                 Bucket=namespace,
                 CORSConfiguration=self.create_bucket_cors(
                     allowed_origin=settings.app.public_origin,
-                    max_age_seconds=settings.minio.presign_put_expires_seconds,
+                    max_age_seconds=settings.minio.cors_max_age_seconds,
                 ),
             )
         except ClientError as exc:
@@ -99,23 +99,21 @@ class S3FileStorage(FileStorage):
         file_data: BytesIO,
         object_name: str,
         namespace: str,
-        content_type: str | None,
+        content_type: str,
     ) -> FileUploadResult:
         _namespace = self._ensure_valid_namespace(namespace)
         logger.info("Uploading file", bucket_name=_namespace, object_name=object_name)
         object_bytes = file_data.getvalue()
-        resolved_content_type = content_type or "application/octet-stream"
         try:
             await self.ensure_namespace_exists(namespace=_namespace)
             await self.clients.internal.put_object(
                 Bucket=_namespace,
                 Key=object_name,
                 Body=object_bytes,
-                ContentType=resolved_content_type,
+                ContentType=content_type,
             )
-            file_url = settings.minio.get_object_url(bucket=_namespace, object_path=object_name)
             upload_result = FileUploadResult(
-                url=file_url,
+                url=self.get_access_url(object_name=object_name, namespace=_namespace),
                 bucket=_namespace,
                 object_name=object_name,
                 size=len(object_bytes),
@@ -126,7 +124,7 @@ class S3FileStorage(FileStorage):
                 bucket_name=_namespace,
                 object_name=object_name,
             )
-            raise FileStorageInternalError(message="File upload failed") from e
+            raise FileClientInternalError(message="File upload failed") from e
         else:
             logger.info(
                 "File uploaded successfully",
@@ -134,35 +132,27 @@ class S3FileStorage(FileStorage):
             )
             return upload_result
 
+    async def delete_file(self, object_name: str, namespace: str) -> None:
+        _namespace = self._ensure_valid_namespace(namespace)
+        logger.info("Deleting file", bucket_name=_namespace, object_name=object_name)
+        try:
+            await self.clients.internal.delete_object(Bucket=_namespace, Key=object_name)
+        except ClientError as e:
+            logger.exception(
+                "S3 delete failed",
+                bucket_name=_namespace,
+                object_name=object_name,
+            )
+            raise FileClientInternalError(message="File delete failed") from e
+
     async def init_storage(self) -> None:
         logger.info("Initializing storage")
         await self.ensure_namespace_exists(namespace="media")
         logger.info("Storage initialized successfully")
 
-    async def presign_put_object(
-        self,
-        object_name: str,
-        namespace: str,
-        content_type: str,
-    ) -> PresignPutObject:
+    def get_access_url(self, object_name: str, namespace: str) -> str:
         _namespace = self._ensure_valid_namespace(namespace)
-        upload_url = await self.clients.public.generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": _namespace,
-                "Key": object_name,
-                "ContentType": content_type,
-            },
-            ExpiresIn=settings.minio.presign_put_expires_seconds,
-            HttpMethod="PUT",
-        )
-        return PresignPutObject(
-            upload_url=upload_url,
-            access_url=settings.minio.get_object_url(
-                bucket=_namespace,
-                object_path=object_name,
-            ),
-        )
+        return settings.minio.get_object_url(bucket=_namespace, object_path=object_name)
 
     async def _bucket_exists(self, bucket_name: str) -> bool:
         try:

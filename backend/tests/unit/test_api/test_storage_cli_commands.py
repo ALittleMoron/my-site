@@ -2,17 +2,17 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from core.files.file_storages import FileStorage
+from core.files.clients import FileClient
 from entrypoints.litestar.cli.commands.storage import init_buckets_command
 
 
 class TestStorageCliCommands:
     async def test_init_buckets_command_initializes_storage_and_closes_container(self) -> None:
         providers = (Mock(),)
-        file_storage = Mock(spec=FileStorage)
-        file_storage.init_storage = AsyncMock()
+        file_client = Mock(spec=FileClient)
+        file_client.init_storage = AsyncMock()
         command_container = Mock()
-        command_container.get = AsyncMock(return_value=file_storage)
+        command_container.get = AsyncMock(return_value=file_client)
         command_container.close = AsyncMock()
 
         with (
@@ -28,8 +28,8 @@ class TestStorageCliCommands:
             await init_buckets_command()
 
         make_async_container.assert_called_once_with(*providers)
-        command_container.get.assert_awaited_once_with(FileStorage)
-        file_storage.init_storage.assert_awaited_once_with()
+        command_container.get.assert_awaited_once_with(FileClient)
+        file_client.init_storage.assert_awaited_once_with()
         command_container.close.assert_awaited_once_with()
 
     async def test_init_buckets_command_closes_container_when_storage_initialization_fails(
@@ -37,10 +37,10 @@ class TestStorageCliCommands:
     ) -> None:
         storage_error = RuntimeError("storage initialization failed")
         providers = (Mock(),)
-        file_storage = Mock(spec=FileStorage)
-        file_storage.init_storage = AsyncMock(side_effect=storage_error)
+        file_client = Mock(spec=FileClient)
+        file_client.init_storage = AsyncMock(side_effect=storage_error)
         command_container = Mock()
-        command_container.get = AsyncMock(return_value=file_storage)
+        command_container.get = AsyncMock(return_value=file_client)
         command_container.close = AsyncMock()
 
         with (

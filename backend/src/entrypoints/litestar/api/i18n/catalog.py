@@ -555,7 +555,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "articles.seoAnalysis.message.seoDescription.missing": "Добавьте SEO-описание.",
         "articles.seoAnalysis.message.coverImage.good": "Обложка задана.",
-        "articles.seoAnalysis.message.coverImage.missing": ("Добавьте URL или загрузите обложку."),
+        "articles.seoAnalysis.message.coverImage.missing": "Загрузите обложку.",
         "articles.seoAnalysis.message.coverImageAlt.good": "Alt обложки подходит по длине.",
         "articles.seoAnalysis.message.coverImageAlt.warning": (
             "Alt обложки лучше держать от {min} до {max} символов; сейчас {count}."
@@ -653,8 +653,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.seoTitleEn": "SEO-заголовок EN",
         "articles.form.seoDescriptionRu": "SEO-описание RU",
         "articles.form.seoDescriptionEn": "SEO-описание EN",
-        "articles.form.coverImageUrl": "URL обложки",
         "articles.form.coverImageFile": "Загрузить обложку",
+        "articles.form.coverImageUploading": "Загрузка обложки...",
+        "articles.form.coverImageUploadError": "Не удалось загрузить обложку.",
         "articles.form.coverImageAltRu": "Alt обложки RU",
         "articles.form.coverImageAltEn": "Alt обложки EN",
         "articles.form.contentRu": "Содержимое RU",
@@ -1260,7 +1261,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "articles.seoAnalysis.message.seoDescription.missing": "Add an SEO description.",
         "articles.seoAnalysis.message.coverImage.good": "Cover image is set.",
-        "articles.seoAnalysis.message.coverImage.missing": "Add a cover URL or upload a cover.",
+        "articles.seoAnalysis.message.coverImage.missing": "Upload a cover image.",
         "articles.seoAnalysis.message.coverImageAlt.good": "Cover alt length looks useful.",
         "articles.seoAnalysis.message.coverImageAlt.warning": (
             "Keep the cover alt between {min} and {max} characters; it is {count} now."
@@ -1356,8 +1357,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.seoTitleEn": "SEO title EN",
         "articles.form.seoDescriptionRu": "SEO description RU",
         "articles.form.seoDescriptionEn": "SEO description EN",
-        "articles.form.coverImageUrl": "Cover image URL",
         "articles.form.coverImageFile": "Upload cover image",
+        "articles.form.coverImageUploading": "Uploading cover...",
+        "articles.form.coverImageUploadError": "Could not upload the cover image.",
         "articles.form.coverImageAltRu": "Cover alt RU",
         "articles.form.coverImageAltEn": "Cover alt EN",
         "articles.form.contentRu": "Content RU",

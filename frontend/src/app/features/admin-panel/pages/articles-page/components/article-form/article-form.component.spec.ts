@@ -1,10 +1,13 @@
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
-import { MediaUploadService } from '../../../../../../core/uploads/media-upload.service';
+import {
+  MediaUploadService,
+  UploadedMediaFile,
+} from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { ArticleDetail } from '../../../../models/article-workspace.model';
@@ -37,12 +40,43 @@ describe('ArticleFormComponent', () => {
     deleteTag: jest.Mock;
     restoreTag: jest.Mock;
   };
-  let mediaUpload: { uploadMediaFile: jest.Mock };
+  let mediaUpload: { uploadMediaFile: jest.Mock; getMediaFile: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
 
   beforeEach(async () => {
     mediaUpload = {
-      uploadMediaFile: jest.fn().mockReturnValue(of('https://cdn.example.com/cover.jpg')),
+      getMediaFile: jest.fn().mockReturnValue(
+        of({
+          id: 'cover-file-id',
+          purpose: 'articleCoverImage',
+          namespace: 'media',
+          relativePath: 'article-cover-images/cover.png',
+          mimeType: 'image/png',
+          sizeBytes: 5,
+          name: 'cover.png',
+          originalName: 'cover.png',
+          createdAt: '2026-07-03T10:00:00+00:00',
+          updatedAt: '2026-07-03T10:00:00+00:00',
+          accessUrl: 'https://cdn.example.com/cover.jpg',
+          markdownUrl: 'https://cdn.example.com/cover.jpg#fileId=cover-file-id',
+        }),
+      ),
+      uploadMediaFile: jest.fn().mockReturnValue(
+        of({
+          id: 'cover-file-id',
+          purpose: 'articleCoverImage',
+          namespace: 'media',
+          relativePath: 'article-cover-images/cover.png',
+          mimeType: 'image/png',
+          sizeBytes: 5,
+          name: 'cover.png',
+          originalName: 'cover.png',
+          createdAt: '2026-07-03T10:00:00+00:00',
+          updatedAt: '2026-07-03T10:00:00+00:00',
+          accessUrl: 'https://cdn.example.com/cover.jpg',
+          markdownUrl: 'https://cdn.example.com/cover.jpg#fileId=cover-file-id',
+        }),
+      ),
     };
     wikiLinkTargetsService = {
       getTargets: jest.fn().mockReturnValue(
@@ -192,10 +226,7 @@ describe('ArticleFormComponent', () => {
       .nativeElement as HTMLTextAreaElement;
     seoDescriptionEn.value = 'Description for search results';
     seoDescriptionEn.dispatchEvent(new Event('input'));
-    const coverImageUrl = fixture.debugElement.query(By.css('#articleCoverImageUrl'))
-      .nativeElement as HTMLInputElement;
-    coverImageUrl.value = 'https://example.com/cover.jpg';
-    coverImageUrl.dispatchEvent(new Event('input'));
+    uploadCoverFile();
     const coverImageAltRu = fixture.debugElement.query(By.css('#articleCoverImageAltRu'))
       .nativeElement as HTMLInputElement;
     coverImageAltRu.value = 'Обложка';
@@ -222,7 +253,7 @@ describe('ArticleFormComponent', () => {
         seoTitleEn: 'SEO typed article',
         seoDescriptionRu: 'Описание для поисковой выдачи',
         seoDescriptionEn: 'Description for search results',
-        coverImageUrl: 'https://example.com/cover.jpg',
+        coverImageFileId: 'cover-file-id',
         coverImageAltRu: 'Обложка',
         coverImageAltEn: 'Cover',
       },
@@ -328,12 +359,6 @@ describe('ArticleFormComponent', () => {
       setInvalidValue: () => setInput('#articleSeoDescriptionEn', INVALID_SEO_DESCRIPTION),
     },
     {
-      description: 'cover image URL scheme',
-      selector: '#articleCoverImageUrl',
-      expectedMessage: 'Укажите ссылку с http или https.',
-      setInvalidValue: () => setInput('#articleCoverImageUrl', 'ftp://example.com/cover.jpg'),
-    },
-    {
       description: 'RU cover alt max length',
       selector: '#articleCoverImageAltRu',
       expectedMessage: 'Максимум 255 символов.',
@@ -391,7 +416,7 @@ describe('ArticleFormComponent', () => {
     expect(slug.classList).toContain('is-invalid');
   });
 
-  it('blocks invalid article slug, cover URL, and content length violations', () => {
+  it('blocks invalid article slug and content length violations', () => {
     const saveSpy = jest.fn();
     fixture.componentInstance.articleSave.subscribe(saveSpy);
     fillValidArticleMinimum();
@@ -402,13 +427,6 @@ describe('ArticleFormComponent', () => {
     expect(saveSpy).not.toHaveBeenCalled();
 
     setInput('#articleSlug', 'typed-article');
-    setInput('#articleCoverImageUrl', 'ftp://example.com/cover.jpg');
-
-    submitArticleForm();
-
-    expect(saveSpy).not.toHaveBeenCalled();
-
-    setInput('#articleCoverImageUrl', 'https://example.com/cover.jpg');
     const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
     contentEditors[1].componentInstance.valueChange.emit('x'.repeat(100_001));
     fixture.detectChanges();
@@ -565,19 +583,114 @@ describe('ArticleFormComponent', () => {
     expect(articlesService.restoreTag).toHaveBeenCalledWith(OLD_TAG_ID);
   });
 
-  it('uploads cover image and writes access URL into the metadata field', () => {
-    const fileInput = fixture.debugElement.query(By.css('#articleCoverImageFile'))
-      .nativeElement as HTMLInputElement;
-    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
-    Object.defineProperty(fileInput, 'files', { value: [file] });
+  it('uploads cover image and writes file id into the article metadata payload', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
 
-    fileInput.dispatchEvent(new Event('change'));
+    fillValidArticleMinimum();
+    const file = uploadCoverFile();
+    submitArticleForm();
+
+    expect(mediaUpload.uploadMediaFile).toHaveBeenCalledWith({
+      file,
+      purpose: 'articleCoverImage',
+      name: 'cover.png',
+      fileName: 'cover.png',
+    });
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          coverImageFileId: 'cover-file-id',
+        }),
+      }),
+    );
+  });
+
+  it('shows existing cover image when an article is opened for editing', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: 'https://cdn.example.com/existing-cover.jpg',
+      }),
+    );
     fixture.detectChanges();
 
-    const coverImageUrl = fixture.debugElement.query(By.css('#articleCoverImageUrl'))
-      .nativeElement as HTMLInputElement;
-    expect(mediaUpload.uploadMediaFile).toHaveBeenCalledWith(file);
-    expect(coverImageUrl.value).toBe('https://cdn.example.com/cover.jpg');
+    const cover = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-current-preview"]',
+    ) as HTMLImageElement | null;
+
+    expect(cover).not.toBeNull();
+    expect(cover?.getAttribute('src')).toBe('https://cdn.example.com/existing-cover.jpg');
+    expect(mediaUpload.getMediaFile).not.toHaveBeenCalled();
+  });
+
+  it('restores existing cover preview from file metadata when detail has only a file id', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: null,
+      }),
+    );
+    fixture.detectChanges();
+
+    const cover = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-current-preview"]',
+    ) as HTMLImageElement | null;
+
+    expect(mediaUpload.getMediaFile).toHaveBeenCalledWith('cover-file-id');
+    expect(cover).not.toBeNull();
+    expect(cover?.getAttribute('src')).toBe('https://cdn.example.com/cover.jpg');
+  });
+
+  it('shows cover upload progress and disables save while uploading', () => {
+    const upload$ = new Subject<UploadedMediaFile>();
+    mediaUpload.uploadMediaFile.mockReturnValue(upload$);
+    const file = uploadCoverFile();
+
+    expect(mediaUpload.uploadMediaFile).toHaveBeenCalledWith({
+      file,
+      purpose: 'articleCoverImage',
+      name: 'cover.png',
+      fileName: 'cover.png',
+    });
+    expect(fixture.nativeElement.textContent).toContain('Загрузка обложки');
+    const saveButton = fixture.debugElement.query(By.css('button[type="submit"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(saveButton.disabled).toBe(true);
+
+    upload$.next({
+      id: 'cover-file-id',
+      purpose: 'articleCoverImage',
+      namespace: 'media',
+      relativePath: 'article-cover-images/cover.png',
+      mimeType: 'image/png',
+      sizeBytes: 5,
+      name: 'cover.png',
+      originalName: 'cover.png',
+      createdAt: '2026-07-03T10:00:00+00:00',
+      updatedAt: '2026-07-03T10:00:00+00:00',
+      accessUrl: 'https://cdn.example.com/cover.jpg',
+      markdownUrl: 'https://cdn.example.com/cover.jpg#fileId=cover-file-id',
+    });
+    upload$.complete();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Загрузка обложки');
+    expect(saveButton.disabled).toBe(false);
+  });
+
+  it('shows a visible cover upload error and does not keep stale uploading state', () => {
+    mediaUpload.uploadMediaFile.mockReturnValue(throwError(() => new Error('upload failed')));
+
+    uploadCoverFile();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить обложку');
+    const saveButton = fixture.debugElement.query(By.css('button[type="submit"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(saveButton.disabled).toBe(false);
   });
 
   it('updates SEO analysis while editing localized fields', () => {
@@ -671,6 +784,16 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
   }
 
+  function uploadCoverFile(): File {
+    const fileInput = fixture.debugElement.query(By.css('#articleCoverImageFile'))
+      .nativeElement as HTMLInputElement;
+    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file] });
+    fileInput.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    return file;
+  }
+
   function setArticleContent(language: 'ru' | 'en', value: string): void {
     const contentEditors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
     const index = language === 'ru' ? 0 : 1;
@@ -749,6 +872,7 @@ function articleDetail(slug: string, title: string): ArticleDetail {
       seoTitleEn: null,
       seoDescriptionRu: null,
       seoDescriptionEn: null,
+      coverImageFileId: null,
       coverImageUrl: null,
       coverImageAltRu: null,
       coverImageAltEn: null,
@@ -761,6 +885,23 @@ function articleDetail(slug: string, title: string): ArticleDetail {
     translations: {
       ru: { title: `${title} RU`, content: '# RU' },
       en: { title, content: '# EN' },
+    },
+  };
+}
+
+function articleDetailWithCover(params: {
+  coverImageFileId: string;
+  coverImageUrl: string | null;
+}): ArticleDetail {
+  const article = articleDetail('covered-article', 'Covered article');
+  return {
+    ...article,
+    metadata: {
+      ...article.metadata,
+      coverImageFileId: params.coverImageFileId,
+      coverImageUrl: params.coverImageUrl,
+      coverImageAltRu: 'Обложка',
+      coverImageAltEn: 'Cover',
     },
   };
 }

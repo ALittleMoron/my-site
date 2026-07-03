@@ -265,6 +265,7 @@ function metadataDto(): {
   seoTitleEn: string | null;
   seoDescriptionRu: string | null;
   seoDescriptionEn: string | null;
+  coverImageFileId: string | null;
   coverImageUrl: string | null;
   coverImageAltRu: string | null;
   coverImageAltEn: string | null;
@@ -274,6 +275,7 @@ function metadataDto(): {
     seoTitleEn: 'SEO Typed articles',
     seoDescriptionRu: 'SEO описание',
     seoDescriptionEn: 'SEO description',
+    coverImageFileId: 'cover-file-id',
     coverImageUrl: 'https://example.com/cover.jpg',
     coverImageAltRu: 'Обложка',
     coverImageAltEn: 'Cover',

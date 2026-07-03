@@ -38,7 +38,11 @@ from core.competency_matrix.schemas import (
 )
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
-from core.files.schemas import PresignPutObject, PresignPutObjectParams
+from core.files.enums import FilePurpose
+from core.files.schemas import (
+    FileRead,
+    StoredFile,
+)
 from core.files.types import Namespace
 from core.i18n.enums import LanguageEnum
 from core.resumes.enums import ResumeCurrentStatusEnum
@@ -543,9 +547,12 @@ class CoreFactoryHelper:
         seo_title_en: str | None = None,
         seo_description_ru: str | None = None,
         seo_description_en: str | None = None,
+        cover_image_file_id: str | None = None,
+        cover_image_file: StoredFile | None = None,
         cover_image_url: str | None = None,
         cover_image_alt_ru: str | None = None,
         cover_image_alt_en: str | None = None,
+        content_file_ids: frozenset[str] | None = None,
         metadata: ArticleMetadata | None = None,
         author_username: str = "admin",
         publish_status: PublishStatusEnum = PublishStatusEnum.PUBLISHED,
@@ -576,6 +583,9 @@ class CoreFactoryHelper:
                 seo_title_en=seo_title_en,
                 seo_description_ru=seo_description_ru,
                 seo_description_en=seo_description_en,
+                cover_image_file_id=cover_image_file_id
+                or (cover_image_file.id if cover_image_file is not None else None),
+                cover_image_file=cover_image_file,
                 cover_image_url=cover_image_url,
                 cover_image_alt_ru=cover_image_alt_ru,
                 cover_image_alt_en=cover_image_alt_en,
@@ -596,6 +606,7 @@ class CoreFactoryHelper:
                 if updated_at is not None
                 else now
             ),
+            content_file_ids=content_file_ids or frozenset(),
             tags=Tags(values=tags or []),
         )
 
@@ -868,25 +879,45 @@ class CoreFactoryHelper:
         return JwtUser(username=username, role=role)
 
     @classmethod
-    def presign_put_object_params(
+    def stored_file(
         cls,
-        folder: str = "folder",
+        file_id: int | str = 1,
+        purpose: FilePurpose = FilePurpose.ARTICLE_CONTENT_IMAGE,
         namespace: Namespace = "media",
-        content_type: str = "application/octet-stream",
-    ) -> PresignPutObjectParams:
-        return PresignPutObjectParams(
-            folder=folder,
+        relative_path: str = "article-content-images/file.png",
+        mime_type: str = "image/png",
+        size_bytes: int = 4,
+        name: str = "Inline image",
+        original_name: str = "original.png",
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None,
+    ) -> StoredFile:
+        now = datetime(2026, 7, 3, 10, 0, tzinfo=UTC)
+        return StoredFile(
+            id=cls.hex_id(file_id) if isinstance(file_id, int) else file_id,
+            purpose=purpose,
             namespace=namespace,
-            content_type=content_type,
+            relative_path=relative_path,
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+            name=name,
+            original_name=original_name,
+            created_at=created_at or now,
+            updated_at=updated_at or now,
         )
 
     @classmethod
-    def presign_put_object(
+    def file_read(
         cls,
-        upload_url: str = "http://localhost/upload_url",
-        access_url: str = "http://localhost/access_url",
-    ) -> PresignPutObject:
-        return PresignPutObject(upload_url=upload_url, access_url=access_url)
+        file: StoredFile | None = None,
+        access_url: str = "https://cdn.example.test/media/article-content-images/file.png",
+        markdown_url: str = "https://cdn.example.test/media/article-content-images/file.png#fileId=00000000000000000000000000000001",
+    ) -> FileRead:
+        return FileRead(
+            file=file or cls.stored_file(),
+            access_url=access_url,
+            markdown_url=markdown_url,
+        )
 
     @classmethod
     def token(cls, value: bytes) -> Token:

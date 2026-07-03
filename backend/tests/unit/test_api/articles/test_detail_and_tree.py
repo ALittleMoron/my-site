@@ -70,6 +70,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
                 "seoTitleEn": None,
                 "seoDescriptionRu": None,
                 "seoDescriptionEn": None,
+                "coverImageFileId": None,
                 "coverImageUrl": None,
                 "coverImageAltRu": None,
                 "coverImageAltEn": None,

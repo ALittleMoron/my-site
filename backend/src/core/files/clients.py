@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
 
-from core.files.schemas import FileUploadResult, PresignPutObject
+from core.files.schemas import FileUploadResult
 
 
-class FileStorage(ABC):
+class FileClient(ABC):
     @abstractmethod
     async def ensure_namespace_exists(self, namespace: str) -> None:
         raise NotImplementedError
@@ -15,8 +15,12 @@ class FileStorage(ABC):
         file_data: BytesIO,
         object_name: str,
         namespace: str,
-        content_type: str | None,
+        content_type: str,
     ) -> FileUploadResult:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_file(self, object_name: str, namespace: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -24,10 +28,5 @@ class FileStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def presign_put_object(
-        self,
-        object_name: str,
-        namespace: str,
-        content_type: str,
-    ) -> PresignPutObject:
+    def get_access_url(self, object_name: str, namespace: str) -> str:
         raise NotImplementedError

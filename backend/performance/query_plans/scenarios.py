@@ -344,7 +344,12 @@ async def run_list_articles_ru_full_text(session: AsyncSession) -> None:
 
 async def run_list_articles_for_seo(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).list_articles(
-        filters=ArticleFilters(only_published=True, include_tags=False, order_for_seo=True),
+        filters=ArticleFilters(
+            only_published=True,
+            include_tags=False,
+            include_files=False,
+            order_for_seo=True,
+        ),
     )
 
 
@@ -755,6 +760,7 @@ def write_article() -> Article:
         metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
+        content_file_ids=frozenset(),
         tags=Tags(values=[seed_tag(1), seed_tag(2)]),
     )
 
@@ -774,6 +780,7 @@ def write_article_for_existing_article() -> Article:
         metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
+        content_file_ids=frozenset(),
         tags=Tags(values=[seed_tag(1), seed_tag(2)]),
     )
 
@@ -804,6 +811,8 @@ def empty_article_metadata() -> ArticleMetadata:
         seo_title_en=None,
         seo_description_ru=None,
         seo_description_en=None,
+        cover_image_file_id=None,
+        cover_image_file=None,
         cover_image_url=None,
         cover_image_alt_ru=None,
         cover_image_alt_en=None,

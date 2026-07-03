@@ -1,8 +1,101 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from mimetypes import guess_extension
+from pathlib import PurePath
 
-from core.files.exceptions import ContentTypeNotAllowedError
+from core.files.enums import FilePurpose
+from core.files.exceptions import (
+    ContentTypeNotAllowedError,
+    FileNameInvalidError,
+    FileSizeTooLargeError,
+)
 from core.files.types import Namespace
+from core.schemas import ValuedDataclass
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileRule:
+    folder: str
+    allowed_mime_types: frozenset[str]
+    max_size_bytes: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileRules:
+    values: Mapping[FilePurpose, FileRule]
+
+    def require(self, purpose: FilePurpose) -> FileRule:
+        return self.values[purpose]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StoredFile:
+    id: str
+    purpose: FilePurpose
+    namespace: Namespace
+    relative_path: str
+    mime_type: str
+    size_bytes: int
+    name: str
+    original_name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StoredFiles(ValuedDataclass[StoredFile]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileUploadParams:
+    id: str
+    purpose: FilePurpose
+    name: str
+    original_name: str
+    mime_type: str
+    content: bytes
+
+    @property
+    def size_bytes(self) -> int:
+        return len(self.content)
+
+    @property
+    def file_extension(self) -> str:
+        return guess_extension(self.mime_type) or PurePath(self.original_name).suffix
+
+    def validate_mime_type(self, allowed_mime_types: frozenset[str]) -> None:
+        if "*/*" in allowed_mime_types:
+            return
+        if self.mime_type not in allowed_mime_types:
+            raise ContentTypeNotAllowedError(content_type=self.mime_type)
+
+    def validate_size(self, max_size_bytes: int) -> None:
+        if self.size_bytes > max_size_bytes:
+            raise FileSizeTooLargeError(
+                size_bytes=self.size_bytes,
+                max_size_bytes=max_size_bytes,
+            )
+
+    def validate_name(self) -> None:
+        if not self.name.strip():
+            raise FileNameInvalidError
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileUpdateParams:
+    name: str
+
+    def validate_name(self) -> None:
+        if not self.name.strip():
+            raise FileNameInvalidError
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileRead:
+    file: StoredFile
+    access_url: str
+    markdown_url: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -11,24 +104,3 @@ class FileUploadResult:
     bucket: str
     object_name: str
     size: int
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class PresignPutObjectParams:
-    content_type: str
-    folder: str
-    namespace: Namespace
-
-    @property
-    def file_extension(self) -> str:
-        return guess_extension(self.content_type) or ""
-
-    def validate_content_type(self, allowed_types: set[str] | list[str] | tuple[str, ...]) -> None:
-        if self.content_type not in allowed_types:
-            raise ContentTypeNotAllowedError(content_type=self.content_type)
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class PresignPutObject:
-    upload_url: str
-    access_url: str

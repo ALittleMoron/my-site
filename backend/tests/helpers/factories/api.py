@@ -52,7 +52,7 @@ class ApiFactoryHelper:
                 "seoTitleEn": "SEO article",
                 "seoDescriptionRu": "Описание для выдачи",
                 "seoDescriptionEn": "Search result description",
-                "coverImageUrl": "https://example.com/cover.jpg",
+                "coverImageFileId": cls.hex_id(30),
                 "coverImageAltRu": "Обложка статьи",
                 "coverImageAltEn": "Article cover",
             },

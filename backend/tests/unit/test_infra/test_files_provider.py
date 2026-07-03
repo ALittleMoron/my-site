@@ -1,10 +1,17 @@
 from types import TracebackType
 from unittest.mock import Mock, patch
 
-from dishka import make_async_container
+from dishka import Provider, Scope, make_async_container, provide
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from infra.ioc.prodivers.files_provider import FilesProvider
-from infra.s3.file_storages import S3ClientBundle
+from infra.s3.clients import S3ClientBundle
+
+
+class MockSessionProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    async def provide_async_session(self) -> AsyncSession:
+        return Mock(spec=AsyncSession)
 
 
 class S3ContextManagerDouble:
@@ -57,7 +64,7 @@ class TestFilesProvider:
             mock_settings.minio.secret_key.get_secret_value.return_value = "test-secret-key"
             mock_settings.minio.internal_endpoint_url = "http://minio:9000"
             mock_settings.minio.public_endpoint_url = "https://s3.example.test"
-            container = make_async_container(FilesProvider())
+            container = make_async_container(FilesProvider(), MockSessionProvider())
             try:
                 provided_clients = await container.get(S3ClientBundle)
             finally:

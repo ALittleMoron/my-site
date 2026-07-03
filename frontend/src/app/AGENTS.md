@@ -31,7 +31,7 @@ Never violate these boundaries:
 | `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                            |
 | `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                |
 | `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                 |
-| `core/editor/editor-image-upload.service.ts` | Presign + unsigned upload flow for editor images                      |
+| `core/editor/editor-image-upload.service.ts` | Backend multipart upload flow for editor images                       |
 | `core/auth/auth.service.ts`                  | Login/logout, role capability signals, session state                  |
 | `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
 | `core/auth/auth-token.service.ts`            | SSR-safe token read/write from `localStorage`                         |
@@ -146,7 +146,7 @@ Single place for all providers:
 - `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }))`
 - `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
 - `provideClientHydration(...)` with transfer cache limited to safe public GETs only. Do not transfer
-  auth, account, analytics, reaction, upload, presign, or other private/side-effect endpoints.
+  auth, account, analytics, reaction, upload, file-management, or other private/side-effect endpoints.
 - `{ provide: ErrorHandler, useClass: GlobalErrorHandler }`
 
 No `AppModule`. No `NgModule` anywhere.

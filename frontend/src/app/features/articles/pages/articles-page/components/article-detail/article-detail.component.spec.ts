@@ -33,6 +33,7 @@ describe('ArticleDetailComponent', () => {
           'SEO description RU with enough text to be useful for search snippets and social cards.',
         seoDescriptionEn:
           'SEO description EN with enough text to be useful for search snippets and social cards.',
+        coverImageFileId: 'cover-file-id',
         coverImageUrl: 'https://example.com/cover.jpg',
         coverImageAltRu: 'Cover image RU',
         coverImageAltEn: 'Cover image EN',

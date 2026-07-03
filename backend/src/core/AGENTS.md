@@ -39,7 +39,7 @@ Common files per domain in `backend/core/<domain>/`. Not all files are required.
 schemas.py              # domain models (dataclasses or class with init dunder method)
 use_cases.py            # Business logic - concrete use cases only, no ABC/Protocol/base inheritance.
 storages.py             # Storage ABC - repository pattern (SQLAlchemy, Mongo, etc.)
-file_storages.py        # File storages ABC - for manipluating files (S3-compatible, local files, etc.)
+clients.py              # External client ABCs (S3-compatible object clients, HTTP clients, etc.)
 exceptions.py           # Domain exceptions
 parsers.py              # Domain parsers
 readers.py              # Reader interfaces

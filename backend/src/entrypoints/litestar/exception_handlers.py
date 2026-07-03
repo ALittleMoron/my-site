@@ -36,7 +36,7 @@ from core.competency_matrix.exceptions import (
     QuestionSuggestionQuotaExceededError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
-from core.files.exceptions import FileStorageInternalError, InvalidFileDataError
+from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
 from infra.healthcheck import ReadinessCheckError
 
 DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = {
@@ -44,7 +44,8 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     UnauthorizedError: UnauthorizedHTTPException,
     ForbiddenError: ForbiddenHTTPException,
     InvalidFileDataError: BadRequestHTTPException,
-    FileStorageInternalError: InternalServerErrorHTTPException,
+    FileInUseError: BadRequestHTTPException,
+    FileClientInternalError: InternalServerErrorHTTPException,
     CompetencyMatrixItemNotPublicReadyError: BadRequestHTTPException,
     CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
     CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,

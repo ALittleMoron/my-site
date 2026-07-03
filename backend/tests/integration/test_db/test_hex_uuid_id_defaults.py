@@ -7,10 +7,12 @@ from sqlalchemy.engine import Connection
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.competency_matrix.enums import GradeEnum
 from core.enums import PublishStatusEnum
+from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
 from core.resumes.schemas import ResumeCreateParams
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
@@ -21,6 +23,7 @@ from infra.postgresql.models import (
     CompetencyMatrixSubsectionModel,
     ContactMeModel,
     ExternalResourceModel,
+    FileModel,
     QueuedQuestionModel,
     ResumeModel,
     TagModel,
@@ -31,10 +34,12 @@ from tests.test_cases import StorageTestCase
 ID_TABLES = (
     "articles__article_folder_model",
     "articles__article_model",
+    "articles__article_file_usage_model",
     "articles__tag_model",
     "articles__article_to_tag_secondary_model",
     "articles__article_daily_analytics_model",
     "articles__article_reaction_model",
+    "files__file_model",
     "contacts__contact_me_model",
     "resumes__resume_model",
     "competency_matrix__competency_matrix_sheet_model",
@@ -68,6 +73,21 @@ class TestHexUuidIdDefaults(StorageTestCase):
             author_username="admin",
             publish_status=PublishStatusEnum.PUBLISHED,
             published_at=self.now,
+        )
+        file = FileModel(
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            namespace="media",
+            relative_path="article-cover-images/hex-default-cover.png",
+            mime_type="image/png",
+            size_bytes=42,
+            name="Cover",
+            original_name="cover.png",
+        )
+        article.cover_image_file = file
+        article_file_usage = ArticleFileUsageModel(
+            article=article,
+            file=file,
+            usage=FilePurpose.ARTICLE_CONTENT_IMAGE,
         )
         tag = TagModel(name_ru="Python", name_en="Python", slug="hex-default-tag")
         article_tag = ArticleToTagSecondaryModel(article=article, tag=tag)
@@ -152,6 +172,8 @@ class TestHexUuidIdDefaults(StorageTestCase):
         self.db_session.add_all(
             [
                 article,
+                file,
+                article_file_usage,
                 tag,
                 article_tag,
                 analytics,
@@ -172,6 +194,8 @@ class TestHexUuidIdDefaults(StorageTestCase):
         generated_ids = (
             article.folder.id,
             article.id,
+            file.id,
+            article_file_usage.id,
             tag.id,
             article_tag.id,
             analytics.id,
@@ -189,6 +213,9 @@ class TestHexUuidIdDefaults(StorageTestCase):
         for generated_id in generated_ids:
             self.asserts.hex_id(generated_id)
         assert len(set(generated_ids)) == len(generated_ids)
+        assert article.cover_image_file_id == file.id
+        assert article_file_usage.article_id == article.id
+        assert article_file_usage.file_id == file.id
         assert article_tag.article_id == article.id
         assert article_tag.tag_id == tag.id
         assert analytics.article_id == article.id

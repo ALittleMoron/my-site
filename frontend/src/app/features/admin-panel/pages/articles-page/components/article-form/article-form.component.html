@@ -33,27 +33,7 @@
         <div class="invalid-feedback d-block">{{ message }}</div>
       }
     </div>
-    <div class="col-md-8">
-      <label class="form-label" for="articleCoverImageUrl">{{
-        'articles.form.coverImageUrl' | t
-      }}</label>
-      <input
-        id="articleCoverImageUrl"
-        type="url"
-        class="form-control"
-        [class.is-invalid]="articleFieldInvalid('coverImageUrl')"
-        [attr.aria-invalid]="articleFieldInvalid('coverImageUrl') ? 'true' : null"
-        [attr.maxlength]="validationLimits.url"
-        formControlName="coverImageUrl"
-      />
-      @if (
-        articleFieldInvalid('coverImageUrl') && articleFieldMessage('coverImageUrl');
-        as message
-      ) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
       <label class="form-label" for="articleCoverImageFile">{{
         'articles.form.coverImageFile' | t
       }}</label>
@@ -62,9 +42,29 @@
         type="file"
         class="form-control"
         accept="image/*"
+        [disabled]="coverImageUploading()"
+        [attr.aria-busy]="coverImageUploading() ? 'true' : null"
+        [attr.aria-describedby]="coverImageUploadError() ? 'articleCoverImageUploadError' : null"
         (change)="uploadCoverImage($event)"
       />
+      @if (coverImageUploading()) {
+        <div class="form-text">{{ 'articles.form.coverImageUploading' | t }}</div>
+      }
+      @if (coverImageUploadError(); as message) {
+        <div id="articleCoverImageUploadError" class="text-danger small mt-1">{{ message }}</div>
+      }
     </div>
+    @if (coverImagePreviewUrl(); as coverImageUrl) {
+      <div class="col-12">
+        <figure class="article-cover-current-preview">
+          <img
+            data-testid="article-cover-current-preview"
+            [src]="coverImageUrl"
+            [alt]="activePreview().coverImageAlt ?? ''"
+          />
+        </figure>
+      </div>
+    }
   </div>
 
   <ul class="nav nav-tabs mt-3" role="tablist">
@@ -529,6 +529,8 @@
     <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
       {{ 'shared.cancel' | t }}
     </button>
-    <button type="submit" class="btn btn-primary">{{ 'shared.save' | t }}</button>
+    <button type="submit" class="btn btn-primary" [disabled]="coverImageUploading()">
+      {{ 'shared.save' | t }}
+    </button>
   </div>
 </form>

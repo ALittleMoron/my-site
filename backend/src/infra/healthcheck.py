@@ -7,7 +7,7 @@ from valkey.asyncio import Valkey
 
 from infra.config.constants import constants
 from infra.config.loggers import logger
-from infra.s3.file_storages import S3ClientBundle
+from infra.s3.clients import S3ClientBundle
 
 
 class ReadinessCheckError(Exception):

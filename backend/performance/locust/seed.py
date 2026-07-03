@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, date, datetime, timedelta
 from urllib.parse import urlparse
 
-from sqlalchemy import delete, insert
+from sqlalchemy import delete, insert, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
@@ -115,7 +115,11 @@ async def seed_performance_data(*, session: AsyncSession) -> None:
 
 
 async def clear_seeded_data(*, session: AsyncSession) -> None:
-    seeded_article_ids = [article_id(article_index) for article_index in article_range()]
+    seeded_article_filter = or_(
+        ArticleModel.slug.like("perf-seed-article-%"),
+        ArticleModel.folder_id == SEED_ARTICLE_FOLDER_ID,
+    )
+    seeded_article_ids = select(ArticleModel.id).where(seeded_article_filter)
     await session.execute(
         delete(ArticleReactionModel).where(
             ArticleReactionModel.article_id.in_(seeded_article_ids),
@@ -131,8 +135,15 @@ async def clear_seeded_data(*, session: AsyncSession) -> None:
             ArticleToTagSecondaryModel.article_id.in_(seeded_article_ids),
         ),
     )
-    await session.execute(delete(ArticleModel).where(ArticleModel.slug.like("perf-seed-article-%")))
-    await session.execute(delete(ArticleFolderModel).where(ArticleFolderModel.key == "performance"))
+    await session.execute(delete(ArticleModel).where(seeded_article_filter))
+    await session.execute(
+        delete(ArticleFolderModel).where(
+            or_(
+                ArticleFolderModel.id == SEED_ARTICLE_FOLDER_ID,
+                ArticleFolderModel.key == "performance",
+            ),
+        ),
+    )
     await session.execute(delete(TagModel).where(TagModel.slug.like("perf-seed-%")))
     await session.execute(
         delete(ResourceToItemSecondaryModel).where(
@@ -388,7 +399,7 @@ def article_row(*, article_index: int) -> dict[str, object]:
         "seo_description_en": (
             f"Seeded article {article_index} description for the Locust baseline."
         ),
-        "cover_image_url": None,
+        "cover_image_file_id": None,
         "cover_image_alt_ru": None,
         "cover_image_alt_en": None,
         "published_at": published_at,

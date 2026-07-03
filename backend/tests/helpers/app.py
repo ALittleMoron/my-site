@@ -16,7 +16,7 @@ from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerat
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.contacts.use_cases import ContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
-from core.files.use_cases import FilesUseCase
+from core.files.services import FileService
 from core.generators import HexUuidIdGenerator
 from core.resumes.use_cases import ResumesUseCase
 from core.types import IntId
@@ -98,9 +98,9 @@ class IocContainerHelper:
         generator = await self.container.get(FileNameGenerator)
         return cast("Mock", generator)
 
-    async def get_files_use_case(self) -> Mock:
-        use_case = await self.container.get(FilesUseCase)
-        return cast("Mock", use_case)
+    async def get_file_service(self) -> Mock:
+        service = await self.container.get(FileService)
+        return cast("Mock", service)
 
     async def get_resumes_use_case(self) -> Mock:
         use_case = await self.container.get(ResumesUseCase)

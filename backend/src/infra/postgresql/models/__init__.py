@@ -1,4 +1,5 @@
 from .articles import ArticleDailyAnalyticsModel as ArticleDailyAnalyticsModel
+from .articles import ArticleFileUsageModel as ArticleFileUsageModel
 from .articles import ArticleFolderModel as ArticleFolderModel
 from .articles import ArticleModel as ArticleModel
 from .articles import ArticleReactionModel as ArticleReactionModel
@@ -13,4 +14,5 @@ from .competency_matrix import CompetencyMatrixSubsectionModel as CompetencyMatr
 from .competency_matrix import ExternalResourceModel as ExternalResourceModel
 from .competency_matrix import QueuedQuestionModel as QueuedQuestionModel
 from .contacts import ContactMeModel as ContactMeModel
+from .files import FileModel as FileModel
 from .resumes import ResumeModel as ResumeModel

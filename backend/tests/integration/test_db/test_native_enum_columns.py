@@ -10,6 +10,7 @@ class TestNativeEnumColumns(StorageTestCase):
                 "article_view_source_category_enum",
                 "e",
             ),
+            ("articles__article_file_usage_model", "usage"): ("file_purpose_enum", "e"),
             ("articles__article_model", "publish_status"): ("publish_status_enum", "e"),
             ("articles__article_reaction_model", "reaction_kind"): (
                 "article_reaction_kind_enum",
@@ -26,6 +27,7 @@ class TestNativeEnumColumns(StorageTestCase):
                 "e",
             ),
             ("competency_matrix__queued_question_model", "grade"): ("grade_enum", "e"),
+            ("files__file_model", "purpose"): ("file_purpose_enum", "e"),
             ("resumes__resume_model", "language"): ("language_enum", "e"),
         }
         result = await self.db_session.execute(
@@ -42,6 +44,7 @@ class TestNativeEnumColumns(StorageTestCase):
                             'articles__article_daily_analytics_model',
                             'source_category'
                         ),
+                        ('articles__article_file_usage_model', 'usage'),
                         ('articles__article_model', 'publish_status'),
                         ('articles__article_reaction_model', 'reaction_kind'),
                         ('auth__user_model', 'role'),
@@ -58,6 +61,7 @@ class TestNativeEnumColumns(StorageTestCase):
                             'publish_status'
                         ),
                         ('competency_matrix__queued_question_model', 'grade'),
+                        ('files__file_model', 'purpose'),
                         ('resumes__resume_model', 'language')
                 ) AS expected(table_name, column_name)
                 JOIN pg_class

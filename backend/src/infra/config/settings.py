@@ -108,7 +108,7 @@ class _MinioSettings(_ProjectBaseSettings):
     access_key: str
     secure: bool
     public_url: str
-    presign_put_expires_seconds: int
+    cors_max_age_seconds: int
 
     @property
     def endpoint(self) -> str:

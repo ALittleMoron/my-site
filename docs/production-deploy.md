@@ -55,7 +55,7 @@ Runtime variables:
 - `MINIO_HOST`
 - `MINIO_PORT`
 - `MINIO_REGION`
-- `MINIO_PRESIGN_PUT_EXPIRES_SECONDS`
+- `MINIO_CORS_MAX_AGE_SECONDS`
 - `MINIO_PUBLIC_URL`
 - `MINIO_SECURE`
 - `SENTRY_USE`
@@ -87,10 +87,11 @@ is no separate owner-init toggle.
 
 Use `MINIO_HOST=minio` and `MINIO_PORT=9000` for the backend-internal S3 endpoint in the Compose
 network. Use `MINIO_PUBLIC_URL=https://s3.<APP_DOMAIN>` for browser-facing object access and
-presigned upload URLs. `MINIO_REGION` must be explicit for SigV4 signing; `us-east-1` is suitable
-for the bundled MinIO service unless deployment policy chooses another region string. The Compose
-MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` from `APP_URL_SCHEMA` and `APP_DOMAIN` because
-the bundled MinIO release does not accept bucket-level CORS setup through `PutBucketCors`.
+computed public file URLs. `MINIO_REGION` must be explicit for SigV4 S3 client operations;
+`us-east-1` is suitable for the bundled MinIO service unless deployment policy chooses another
+region string. The Compose MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` from
+`APP_URL_SCHEMA` and `APP_DOMAIN` because the bundled MinIO release does not accept bucket-level
+CORS setup through `PutBucketCors`.
 
 ## TLS
 

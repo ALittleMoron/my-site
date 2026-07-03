@@ -1,28 +1,46 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, switchMap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiClient } from '../http/api-client.service';
-import { UnsignedUploadService } from '../http/unsigned-upload.service';
 
-interface PresignPutResponseDto {
-  uploadUrl: string;
+export type FilePurpose = 'articleContentImage' | 'articleCoverImage' | 'attachment';
+
+interface FileResponseDto {
+  id: string;
+  purpose: FilePurpose;
+  namespace: string;
+  relativePath: string;
+  mimeType: string;
+  sizeBytes: number;
+  name: string;
+  originalName: string;
+  createdAt: string;
+  updatedAt: string;
   accessUrl: string;
+  markdownUrl: string;
+}
+
+export type UploadedMediaFile = FileResponseDto;
+
+export interface MediaUploadRequest {
+  file: Blob;
+  purpose: FilePurpose;
+  name: string;
+  fileName: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class MediaUploadService {
   private readonly api = inject(ApiClient);
-  private readonly unsignedUpload = inject(UnsignedUploadService);
 
-  uploadMediaFile(file: Blob): Observable<string> {
-    const contentType = file.type || 'application/octet-stream';
-    return this.api
-      .get<PresignPutResponseDto>('/api/admin/files/presign-put', { contentType })
-      .pipe(
-        switchMap((presign) =>
-          this.unsignedUpload
-            .putBlob(presign.uploadUrl, file, contentType)
-            .pipe(map(() => presign.accessUrl)),
-        ),
-      );
+  uploadMediaFile(request: MediaUploadRequest): Observable<UploadedMediaFile> {
+    const formData = new FormData();
+    formData.append('purpose', request.purpose);
+    formData.append('name', request.name);
+    formData.append('file', request.file, request.fileName);
+    return this.api.post<FileResponseDto>('/api/admin/files', formData);
+  }
+
+  getMediaFile(fileId: string): Observable<UploadedMediaFile> {
+    return this.api.get<FileResponseDto>(`/api/admin/files/${fileId}`);
   }
 }

@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
 
 from core.articles.exceptions import (
     ArticleFolderNotFoundError,
@@ -10,7 +11,9 @@ from core.articles.exceptions import (
 )
 from core.articles.schemas import ArticleFilters
 from core.enums import PublishStatusEnum
+from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
+from infra.postgresql.models import ArticleFileUsageModel
 from infra.postgresql.storages.articles import ArticlesDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -57,6 +60,14 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert self.collections.slugs(admin_result.tags) == ["python", "deleted"]
 
     async def test_get_article_by_slug_returns_canonical_translations(self) -> None:
+        cover = self.factory.core.stored_file(
+            file_id=100,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            relative_path="article-cover-images/localized-cover.png",
+            name="Localized cover",
+            original_name="cover.png",
+        )
+        await self.storage_helper.create_file(cover)
         await self.storage_helper.create_article(
             article=self.factory.core.article(
                 title_ru="Русская статья",
@@ -70,7 +81,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
                 seo_title_en="SEO English article",
                 seo_description_ru="Описание русской статьи",
                 seo_description_en="English article description",
-                cover_image_url="https://example.com/cover.jpg",
+                cover_image_file_id=cover.id,
                 cover_image_alt_ru="Обложка",
                 cover_image_alt_en="Cover",
             ),
@@ -95,9 +106,78 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert result.metadata.seo_title_en == "SEO English article"
         assert result.metadata.seo_description_ru == "Описание русской статьи"
         assert result.metadata.seo_description_en == "English article description"
-        assert result.metadata.cover_image_url == "https://example.com/cover.jpg"
+        assert result.metadata.cover_image_file_id == cover.id
+        assert result.metadata.cover_image_url is None
+        assert result.metadata.cover_image_file == cover
         assert result.metadata.cover_image_alt_ru == "Обложка"
         assert result.metadata.cover_image_alt_en == "Cover"
+
+    async def test_create_and_update_article_syncs_managed_file_links(self) -> None:
+        cover = self.factory.core.stored_file(
+            file_id=110,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            relative_path="article-cover-images/initial-cover.png",
+            name="Initial cover",
+            original_name="initial-cover.png",
+        )
+        updated_cover = self.factory.core.stored_file(
+            file_id=111,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            relative_path="article-cover-images/updated-cover.png",
+            name="Updated cover",
+            original_name="updated-cover.png",
+        )
+        first_content = self.factory.core.stored_file(
+            file_id=112,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            relative_path="article-content-images/first-content.png",
+            name="First content",
+            original_name="first-content.png",
+        )
+        second_content = self.factory.core.stored_file(
+            file_id=113,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            relative_path="article-content-images/second-content.png",
+            name="Second content",
+            original_name="second-content.png",
+        )
+        for file in (cover, updated_cover, first_content, second_content):
+            await self.storage_helper.create_file(file)
+        article_folder = self.factory.core.article_folder()
+        await self.storage_helper.ensure_article_folder(folder=article_folder)
+
+        created = await self.storage.create_article(
+            article=self.factory.core.article(
+                slug="managed-file-links",
+                folder_id=article_folder.id,
+                cover_image_file_id=cover.id,
+                content_file_ids=frozenset({first_content.id}),
+            ),
+        )
+        updated = await self.storage.update_article(
+            article=self.factory.core.article(
+                article_id=created.id,
+                slug="managed-file-links",
+                folder_id=article_folder.id,
+                cover_image_file_id=updated_cover.id,
+                content_file_ids=frozenset({second_content.id}),
+            ),
+        )
+        usage_file_ids = await self.db_session.scalars(
+            select(ArticleFileUsageModel.file_id)
+            .where(ArticleFileUsageModel.article_id == created.id)
+            .order_by(ArticleFileUsageModel.file_id),
+        )
+
+        assert created.metadata.cover_image_file_id == cover.id
+        assert created.metadata.cover_image_url is None
+        assert created.metadata.cover_image_file == cover
+        assert created.content_file_ids == frozenset({first_content.id})
+        assert updated.metadata.cover_image_file_id == updated_cover.id
+        assert updated.metadata.cover_image_url is None
+        assert updated.metadata.cover_image_file == updated_cover
+        assert updated.content_file_ids == frozenset({second_content.id})
+        assert list(usage_file_ids) == [second_content.id]
 
     async def test_get_article_by_slug_not_found(self) -> None:
         with pytest.raises(ArticleNotFoundError):
@@ -191,6 +271,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             filters=ArticleFilters(
                 only_published=True,
                 include_tags=False,
+                include_files=False,
                 order_for_seo=True,
             ),
         )

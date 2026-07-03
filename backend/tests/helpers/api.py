@@ -604,11 +604,38 @@ class APIHelper:
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/contacts", json=data)
 
-    def get_presign_put_url(self, content_type: str) -> Response:
-        return self.client.get(
-            "/api/admin/files/presign-put",
-            params={"contentType": content_type},
+    def post_admin_file(
+        self,
+        *,
+        purpose: str,
+        name: str,
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> Response:
+        return self.client.post(
+            "/api/admin/files",
+            data={"purpose": purpose, "name": name},
+            files={"file": (filename, content, content_type)},
         )
+
+    def get_admin_files(self, *, purpose: str) -> Response:
+        return self.client.get(
+            "/api/admin/files",
+            params={"purpose": purpose},
+        )
+
+    def get_admin_file(self, *, file_id: str) -> Response:
+        return self.client.get(f"/api/admin/files/{file_id}")
+
+    def put_admin_file(self, *, file_id: str, name: str) -> Response:
+        return self.client.put(
+            f"/api/admin/files/{file_id}",
+            json={"name": name},
+        )
+
+    def delete_admin_file(self, *, file_id: str) -> Response:
+        return self.client.delete(f"/api/admin/files/{file_id}")
 
     def post_login(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/auth/login", json=data)

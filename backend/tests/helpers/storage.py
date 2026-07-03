@@ -13,6 +13,7 @@ from core.competency_matrix.schemas import (
 )
 from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.contacts.schemas import ContactMe
+from core.files.schemas import StoredFile
 from infra.postgresql.models import (
     ArticleFolderModel,
     ArticleModel,
@@ -23,6 +24,7 @@ from infra.postgresql.models import (
     CompetencyMatrixSubsectionModel,
     ContactMeModel,
     ExternalResourceModel,
+    FileModel,
     QueuedQuestionModel,
     TagModel,
     UserModel,
@@ -183,6 +185,12 @@ class StorageHelper:
         self.session.add_all(db_users)
         await self.session.flush()
         return db_users
+
+    async def create_file(self, file: StoredFile) -> FileModel:
+        model = FileModel.from_domain_schema(file)
+        self.session.add(model)
+        await self.session.flush()
+        return model
 
     async def create_article(self, article: Article) -> ArticleModel:
         await self.ensure_article_folder(folder=article.folder)

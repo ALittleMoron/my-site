@@ -7,6 +7,8 @@ from typing import Self
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.exceptions import ArticleFolderPriorityInvalidError
 from core.enums import PublishStatusEnum
+from core.files.markdown import extract_file_ids_from_markdown
+from core.files.schemas import StoredFile
 from core.i18n.enums import LanguageEnum
 from core.schemas import ValuedDataclass
 
@@ -62,9 +64,14 @@ class ArticleMetadata:
     seo_title_en: str | None
     seo_description_ru: str | None
     seo_description_en: str | None
+    cover_image_file_id: str | None
+    cover_image_file: StoredFile | None
     cover_image_url: str | None
     cover_image_alt_ru: str | None
     cover_image_alt_en: str | None
+
+    def with_cover_image_url(self, *, cover_image_url: str | None) -> ArticleMetadata:
+        return replace(self, cover_image_url=cover_image_url)
 
     def localized_seo_title(self, *, language: LanguageEnum) -> str | None:
         if language == LanguageEnum.RU:
@@ -95,6 +102,7 @@ class Article:
     published_at: datetime | None
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
+    content_file_ids: frozenset[str]
     created_at: datetime
     updated_at: datetime
     tags: Tags
@@ -117,6 +125,12 @@ class Article:
 
     def public_copy(self) -> Article:
         return replace(self, tags=Tags(values=[tag for tag in self.tags if not tag.is_deleted()]))
+
+    def with_cover_image_url(self, *, cover_image_url: str | None) -> Article:
+        return replace(
+            self,
+            metadata=self.metadata.with_cover_image_url(cover_image_url=cover_image_url),
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -167,6 +181,7 @@ class ArticleFilters:
     published_to: date | None = None
     search_query: str | None = None
     include_tags: bool = True
+    include_files: bool = True
     order_for_seo: bool = False
 
     @property
@@ -196,6 +211,12 @@ class ArticleCreateParams:
     metadata: ArticleMetadata
     tag_ids: list[str]
 
+    @property
+    def content_file_ids(self) -> frozenset[str]:
+        return extract_file_ids_from_markdown(self.content_ru) | extract_file_ids_from_markdown(
+            self.content_en,
+        )
+
     def to_article(self, *, now: datetime, folder: ArticleFolder, tags: Tags) -> Article:
         return Article(
             id=self.id,
@@ -208,6 +229,7 @@ class ArticleCreateParams:
             author_username=self.author_username,
             publish_status=self.publish_status,
             metadata=self.metadata,
+            content_file_ids=self.content_file_ids,
             published_at=now if self.publish_status == PublishStatusEnum.PUBLISHED else None,
             created_at=now,
             updated_at=now,
@@ -226,6 +248,12 @@ class ArticleUpdateParams:
     publish_status: PublishStatusEnum
     metadata: ArticleMetadata
     tag_ids: list[str]
+
+    @property
+    def content_file_ids(self) -> frozenset[str]:
+        return extract_file_ids_from_markdown(self.content_ru) | extract_file_ids_from_markdown(
+            self.content_en,
+        )
 
     def to_article(
         self,
@@ -249,6 +277,7 @@ class ArticleUpdateParams:
             author_username=existing_article.author_username,
             publish_status=self.publish_status,
             metadata=self.metadata,
+            content_file_ids=self.content_file_ids,
             published_at=published_at,
             created_at=existing_article.created_at,
             updated_at=now,

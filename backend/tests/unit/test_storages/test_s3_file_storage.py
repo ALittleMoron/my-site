@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from core.files.exceptions import FileStorageInternalError, NamespaceNotAllowedError
-from core.files.schemas import FileUploadResult, PresignPutObject
-from infra.s3.file_storages import S3ClientBundle, S3FileStorage
+from core.files.exceptions import FileClientInternalError, NamespaceNotAllowedError
+from core.files.schemas import FileUploadResult
+from infra.s3.clients import S3ClientBundle, S3FileClient
 
 
 def create_client_error(code: str, operation_name: str = "HeadBucket") -> ClientError:
@@ -29,16 +29,16 @@ def create_s3_client_double() -> Mock:
     client.put_bucket_policy = AsyncMock()
     client.put_bucket_cors = AsyncMock()
     client.put_object = AsyncMock()
-    client.generate_presigned_url = AsyncMock()
+    client.delete_object = AsyncMock()
     return client
 
 
-class TestS3FileStorage:
+class TestS3FileClient:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.internal_client = create_s3_client_double()
         self.public_client = create_s3_client_double()
-        self.storage = S3FileStorage(
+        self.storage = S3FileClient(
             clients=S3ClientBundle(
                 internal=self.internal_client,
                 public=self.public_client,
@@ -67,13 +67,13 @@ class TestS3FileStorage:
         self.internal_client.put_bucket_policy.assert_awaited_once()
         self.internal_client.put_bucket_cors.assert_awaited_once()
 
-    async def test_ensure_bucket_exists_sets_public_read_policy_and_upload_cors(self) -> None:
+    async def test_ensure_bucket_exists_sets_public_read_policy_and_file_cors(self) -> None:
         bucket_name = "media"
         self.internal_client.head_bucket.return_value = {}
 
-        with patch("infra.s3.file_storages.settings") as mock_settings:
+        with patch("infra.s3.clients.settings") as mock_settings:
             mock_settings.app.public_origin = "https://alittlemoron.ru"
-            mock_settings.minio.presign_put_expires_seconds = 300
+            mock_settings.minio.cors_max_age_seconds = 300
             await self.storage.ensure_namespace_exists(bucket_name)
 
         policy_call = self.internal_client.put_bucket_policy.await_args.kwargs
@@ -87,7 +87,7 @@ class TestS3FileStorage:
                 "CORSRules": [
                     {
                         "AllowedHeaders": ["*"],
-                        "AllowedMethods": ["GET", "PUT"],
+                        "AllowedMethods": ["GET"],
                         "AllowedOrigins": ["https://alittlemoron.ru"],
                         "ExposeHeaders": ["ETag"],
                         "MaxAgeSeconds": 300,
@@ -109,7 +109,7 @@ class TestS3FileStorage:
         self.internal_client.put_bucket_policy.assert_awaited_once()
         self.internal_client.put_bucket_cors.assert_awaited_once()
 
-    @patch("infra.s3.file_storages.settings")
+    @patch("infra.s3.clients.settings")
     async def test_upload_file_success(self, mock_settings: Mock) -> None:
         mock_settings.minio.get_object_url.return_value = "http://localhost/media/test.txt"
         file_data = BytesIO(b"test content")
@@ -151,7 +151,7 @@ class TestS3FileStorage:
                 file_data=file_data,
                 object_name=object_name,
                 namespace="NOT_VALID",
-                content_type=None,
+                content_type="application/octet-stream",
             )
 
     async def test_upload_file_minio_exception(self) -> None:
@@ -159,13 +159,30 @@ class TestS3FileStorage:
         object_name = "test.txt"
         self.internal_client.head_bucket.return_value = {}
         self.internal_client.put_object.side_effect = create_client_error("500")
-        with pytest.raises(FileStorageInternalError, match="File upload failed"):
+        with pytest.raises(FileClientInternalError, match="File upload failed"):
             await self.storage.upload_file(
                 file_data=file_data,
                 object_name=object_name,
                 namespace="media",
-                content_type=None,
+                content_type="application/octet-stream",
             )
+
+    async def test_delete_file_success(self) -> None:
+        await self.storage.delete_file(object_name="test.txt", namespace="media")
+
+        self.internal_client.delete_object.assert_awaited_once_with(
+            Bucket="media",
+            Key="test.txt",
+        )
+
+    async def test_delete_file_minio_exception(self) -> None:
+        self.internal_client.delete_object.side_effect = create_client_error(
+            code="500",
+            operation_name="DeleteObject",
+        )
+
+        with pytest.raises(FileClientInternalError, match="File delete failed"):
+            await self.storage.delete_file(object_name="test.txt", namespace="media")
 
     async def test_init_storage(self) -> None:
         with patch.object(self.storage, "ensure_namespace_exists") as mock_ensure:
@@ -173,35 +190,16 @@ class TestS3FileStorage:
             await self.storage.init_storage()
             mock_ensure.assert_called_once_with(namespace="media")
 
-    @patch("infra.s3.file_storages.settings")
-    async def test_presign_put_object_returns_upload_and_access_urls(
+    @patch("infra.s3.clients.settings")
+    async def test_get_access_url_returns_public_object_url(
         self,
         mock_settings: Mock,
     ) -> None:
-        mock_settings.minio.presign_put_expires_seconds = 60
         mock_settings.minio.get_object_url.return_value = "http://localhost/media/test.txt"
-        self.public_client.generate_presigned_url.return_value = "http://minio/upload"
 
-        result = await self.storage.presign_put_object(
-            object_name="test.txt",
-            namespace="media",
-            content_type="image/png",
-        )
+        result = self.storage.get_access_url(object_name="test.txt", namespace="media")
 
-        assert result == PresignPutObject(
-            upload_url="http://minio/upload",
-            access_url="http://localhost/media/test.txt",
-        )
-        self.public_client.generate_presigned_url.assert_awaited_once_with(
-            "put_object",
-            Params={
-                "Bucket": "media",
-                "Key": "test.txt",
-                "ContentType": "image/png",
-            },
-            ExpiresIn=60,
-            HttpMethod="PUT",
-        )
+        assert result == "http://localhost/media/test.txt"
         mock_settings.minio.get_object_url.assert_called_once_with(
             bucket="media",
             object_path="test.txt",

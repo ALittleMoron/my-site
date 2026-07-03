@@ -99,7 +99,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   matching Valkey namespace; do not add ad hoc cache key builders or write directly to a
   shared response-cache namespace.
 - Safe, stable GET handlers may use Litestar response caching with explicit cache metadata.
-  Keep user-implicit, privileged statistics, analytics, presign URL, account/session, and other
+  Keep user-implicit, privileged statistics, analytics, file-management, account/session, and other
   request-side-effect or user-specific responses uncached unless a new design explicitly
   makes their cache key and invalidation rules safe.
 - If a cached GET depends on auth-sensitive query parameters, enforce the access check with a
@@ -152,9 +152,10 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   models using `LanguageEnum`.
 - Article SEO metadata belongs to the article contract, not to a generic translation table.
   Keep the explicit nullable fields `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
-  `seo_description_en`, `cover_image_url`, `cover_image_alt_ru`, and `cover_image_alt_en` on article
-  domain/API/storage models. Article create/update API payloads must require the `metadata` object
-  itself while allowing individual metadata fields to be null, with no production defaults.
+  `seo_description_en`, `cover_image_file_id`, `cover_image_alt_ru`, and `cover_image_alt_en` on
+  article write/domain/storage contracts. `cover_image_url` is computed for read responses from the
+  managed `FileModel` metadata. Article create/update API payloads must require the `metadata`
+  object itself while allowing individual metadata fields to be null, with no production defaults.
 - Read/write APIs that expose localized article, tag, or competency matrix content must use the
   backend language enum and require explicit `LanguageEnum`/`language` selection where localized
   values are returned.

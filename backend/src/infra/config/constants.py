@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Literal
 
 from core.competency_matrix.schemas import QuestionQueueImportRules
+from core.files.enums import FilePurpose
+from core.files.schemas import FileRule, FileRules
 
 
 class _PathConstants:
@@ -54,7 +56,32 @@ class _TaskiqConstants:
 
 
 class _FilesConstants:
-    allowed_to_upload_media_types: set[str] = {"image/png", "image/jpeg", "image/webp", "image/gif"}
+    article_image_mime_types: frozenset[str] = frozenset(
+        {"image/png", "image/jpeg", "image/webp", "image/gif"},
+    )
+    attachment_mime_types: frozenset[str] = frozenset({"*/*"})
+    article_content_image_max_size_bytes: int = 5 * 1024 * 1024
+    article_cover_image_max_size_bytes: int = 5 * 1024 * 1024
+    attachment_max_size_bytes: int = 20 * 1024 * 1024
+    rules: FileRules = FileRules(
+        values={
+            FilePurpose.ARTICLE_CONTENT_IMAGE: FileRule(
+                folder="article-content-images",
+                allowed_mime_types=article_image_mime_types,
+                max_size_bytes=article_content_image_max_size_bytes,
+            ),
+            FilePurpose.ARTICLE_COVER_IMAGE: FileRule(
+                folder="article-cover-images",
+                allowed_mime_types=article_image_mime_types,
+                max_size_bytes=article_cover_image_max_size_bytes,
+            ),
+            FilePurpose.ATTACHMENT: FileRule(
+                folder="attachments",
+                allowed_mime_types=attachment_mime_types,
+                max_size_bytes=attachment_max_size_bytes,
+            ),
+        },
+    )
 
 
 class _ResumeExportConstants:

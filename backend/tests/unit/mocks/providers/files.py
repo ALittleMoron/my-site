@@ -3,10 +3,11 @@ from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide
 
+from core.files.clients import FileClient
 from core.files.file_name_generators import FileNameGenerator
-from core.files.file_storages import FileStorage
-from core.files.use_cases import FilesUseCase
-from infra.s3.file_storages import S3ClientBundle
+from core.files.services import FileService
+from core.files.storages import FileStorage
+from infra.s3.clients import S3ClientBundle
 
 
 class MockFilesProvider(Provider):
@@ -33,9 +34,13 @@ class MockFilesProvider(Provider):
         )
 
     @provide(scope=Scope.APP)
+    async def provide_file_client(self) -> FileClient:
+        return Mock(spec=FileClient)
+
+    @provide(scope=Scope.APP)
     async def provide_file_storage(self) -> FileStorage:
         return Mock(spec=FileStorage)
 
     @provide(scope=Scope.APP)
-    async def provide_files_use_case(self) -> FilesUseCase:
-        return Mock(spec=FilesUseCase)
+    async def provide_file_service(self) -> FileService:
+        return Mock(spec=FileService)

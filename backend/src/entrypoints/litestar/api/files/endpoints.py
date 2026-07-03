@@ -1,12 +1,20 @@
 from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
-from litestar import Controller, get
-from litestar.params import QueryParameter
+from litestar import Controller, delete, get, post, put, status_codes
+from litestar.params import FromPath, MultipartBody, QueryParameter
 
-from core.files.schemas import PresignPutObjectParams
-from core.files.use_cases import FilesUseCase
-from entrypoints.litestar.api.files.schemas import FilePresignPutResponseSchema
+from core.files.enums import FilePurpose
+from core.files.exceptions import InvalidFileDataError
+from core.files.schemas import FileUpdateParams, FileUploadParams
+from core.files.services import FileService
+from core.generators import HexUuidIdGenerator
+from entrypoints.litestar.api.files.schemas import (
+    FileResponseSchema,
+    FilesResponseSchema,
+    FileUpdateRequestSchema,
+    FileUploadRequestSchema,
+)
 from entrypoints.litestar.guards import content_manager_guard
 
 
@@ -15,23 +23,90 @@ class FilesApiController(Controller):
     tags = ["admin files"]
     guards = [content_manager_guard]
 
-    @get(
-        "/presign-put",
-        description="Get a presigned media file upload URL.",
-        name="admin-files-presign-put-api-handler",
+    @post(
+        "",
+        description="Upload a managed file.",
+        name="admin-files-upload-api-handler",
+        status_code=status_codes.HTTP_201_CREATED,
     )
-    async def presign_put_media_file(
+    async def upload_file(
         self,
-        content_type: Annotated[str, QueryParameter(name="contentType")],
-        use_case: FromDishka[FilesUseCase],
-    ) -> FilePresignPutResponseSchema:
-        params = PresignPutObjectParams(
-            content_type=content_type,
-            folder="text-attachments",
-            namespace="media",
+        data: MultipartBody[FileUploadRequestSchema],
+        file_service: FromDishka[FileService],
+        id_generator: FromDishka[HexUuidIdGenerator],
+    ) -> FileResponseSchema:
+        if data.file.filename is None:
+            raise InvalidFileDataError
+        file = await file_service.upload_file(
+            params=FileUploadParams(
+                id=id_generator.get_next(),
+                purpose=data.purpose,
+                name=data.name,
+                original_name=data.file.filename,
+                mime_type=data.file.content_type or "application/octet-stream",
+                content=await data.file.read(),
+            ),
         )
-        urls = await use_case.presign_put_object(params=params)
-        return FilePresignPutResponseSchema.from_domain_schema(schema=urls)
+        return FileResponseSchema.from_domain_schema(schema=file)
+
+    @get(
+        "",
+        description="List managed files.",
+        name="admin-files-list-api-handler",
+    )
+    async def list_files(
+        self,
+        purpose: Annotated[FilePurpose, QueryParameter(name="purpose")],
+        file_service: FromDishka[FileService],
+    ) -> FilesResponseSchema:
+        return FilesResponseSchema.from_domain_schema(
+            schema=await file_service.list_files(purpose=purpose),
+        )
+
+    @get(
+        "/{file_id:str}",
+        description="Get managed file metadata.",
+        name="admin-files-detail-api-handler",
+    )
+    async def get_file(
+        self,
+        file_id: FromPath[str],
+        file_service: FromDishka[FileService],
+    ) -> FileResponseSchema:
+        return FileResponseSchema.from_domain_schema(
+            schema=await file_service.get_file(file_id=file_id),
+        )
+
+    @put(
+        "/{file_id:str}",
+        description="Update managed file metadata.",
+        name="admin-files-update-api-handler",
+    )
+    async def update_file(
+        self,
+        file_id: FromPath[str],
+        data: FileUpdateRequestSchema,
+        file_service: FromDishka[FileService],
+    ) -> FileResponseSchema:
+        return FileResponseSchema.from_domain_schema(
+            schema=await file_service.update_file(
+                file_id=file_id,
+                params=FileUpdateParams(name=data.name),
+            ),
+        )
+
+    @delete(
+        "/{file_id:str}",
+        description="Delete a managed file.",
+        name="admin-files-delete-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def delete_file(
+        self,
+        file_id: FromPath[str],
+        file_service: FromDishka[FileService],
+    ) -> None:
+        await file_service.delete_file(file_id=file_id)
 
 
 admin_router = DishkaRouter("", route_handlers=[FilesApiController])

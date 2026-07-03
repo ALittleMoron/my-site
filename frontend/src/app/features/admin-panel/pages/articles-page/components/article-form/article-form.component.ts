@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -42,7 +43,6 @@ import { AdminControlValidationStateDirective } from '../../../../directives/adm
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
-  httpUrlValidator,
   isRequiredShortText,
   isSlug,
   slugValidator,
@@ -61,7 +61,7 @@ interface ArticleFormControls {
   seoTitleEn: FormControl<string>;
   seoDescriptionRu: FormControl<string>;
   seoDescriptionEn: FormControl<string>;
-  coverImageUrl: FormControl<string>;
+  coverImageFileId: FormControl<string>;
   coverImageAltRu: FormControl<string>;
   coverImageAltEn: FormControl<string>;
   publishStatus: FormControl<'Draft' | 'Published'>;
@@ -72,7 +72,7 @@ interface ArticleMetadataFormValue {
   seoTitleEn: string;
   seoDescriptionRu: string;
   seoDescriptionEn: string;
-  coverImageUrl: string;
+  coverImageFileId: string;
   coverImageAltRu: string;
   coverImageAltEn: string;
 }
@@ -142,6 +142,9 @@ export class ArticleFormComponent implements OnInit {
   readonly activeLanguageTab = signal<LanguageCode>('ru');
   readonly formSubmitted = signal(false);
   readonly newTagFormSubmitted = signal(false);
+  readonly coverImagePreviewUrl = signal<string | null>(null);
+  readonly coverImageUploading = signal(false);
+  readonly coverImageUploadError = signal<string | null>(null);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly form = new FormGroup<ArticleFormControls>({
@@ -189,9 +192,8 @@ export class ArticleFormComponent implements OnInit {
       nonNullable: true,
       validators: Validators.maxLength(ADMIN_VALIDATION_LIMITS.seoDescription),
     }),
-    coverImageUrl: new FormControl('', {
+    coverImageFileId: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.maxLength(ADMIN_VALIDATION_LIMITS.url), httpUrlValidator],
     }),
     coverImageAltRu: new FormControl('', {
       nonNullable: true,
@@ -227,7 +229,7 @@ export class ArticleFormComponent implements OnInit {
   readonly seoAnalysis = computed(() => {
     const value = this.formSnapshot();
     const language = this.activeLanguageTab();
-    const metadata = toMetadata(value);
+    const metadata = toMetadata(value, this.coverImagePreviewUrl());
     const folder = this.selectedFolder();
     return analyzeArticleSeo({
       input: {
@@ -236,7 +238,7 @@ export class ArticleFormComponent implements OnInit {
         content: language === 'ru' ? value.contentRu : value.contentEn,
         seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
         seoDescription: language === 'ru' ? metadata.seoDescriptionRu : metadata.seoDescriptionEn,
-        coverImageUrl: metadata.coverImageUrl,
+        coverImageUrl: this.coverImagePreviewUrl(),
         coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
         missingWikiLinkTargets: missingWikiLinkTargets({
           markdown: language === 'ru' ? value.contentRu : value.contentEn,
@@ -257,7 +259,7 @@ export class ArticleFormComponent implements OnInit {
   readonly activePreview = computed<ArticlePreviewState>(() => {
     const value = this.formSnapshot();
     const language = this.activeLanguageTab();
-    const metadata = toMetadata(value);
+    const metadata = toMetadata(value, this.coverImagePreviewUrl());
     return {
       title: language === 'ru' ? value.titleRu : value.titleEn,
       content: language === 'ru' ? value.contentRu : value.contentEn,
@@ -321,14 +323,37 @@ export class ArticleFormComponent implements OnInit {
   }
 
   uploadCoverImage(event: Event): void {
-    const files = (event.target as HTMLInputElement).files;
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
     const file = files?.item?.(0) ?? files?.[0];
     if (!file) return;
+    this.coverImageUploading.set(true);
+    this.coverImageUploadError.set(null);
     this.mediaUpload
-      .uploadMediaFile(file)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((accessUrl) => {
-        this.form.controls.coverImageUrl.setValue(accessUrl);
+      .uploadMediaFile({
+        file,
+        purpose: 'articleCoverImage',
+        name: file.name,
+        fileName: file.name,
+      })
+      .pipe(
+        finalize(() => this.coverImageUploading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (uploadedFile) => {
+          this.form.controls.coverImageFileId.setValue(uploadedFile.id);
+          this.form.controls.coverImageFileId.markAsDirty();
+          this.form.controls.coverImageFileId.markAsTouched();
+          this.coverImagePreviewUrl.set(uploadedFile.accessUrl);
+          this.formSnapshot.set(this.form.getRawValue());
+        },
+        error: () => {
+          this.coverImageUploadError.set(
+            this.i18n.translate('articles.form.coverImageUploadError'),
+          );
+          input.value = '';
+        },
       });
   }
 
@@ -492,7 +517,7 @@ export class ArticleFormComponent implements OnInit {
       folderId: value.folderId,
       publishStatus: value.publishStatus,
       tagIds: activeTagIds,
-      metadata: toMetadata(value),
+      metadata: toPayloadMetadata(value),
       translations: {
         ru: {
           title: value.titleRu,
@@ -602,11 +627,12 @@ export class ArticleFormComponent implements OnInit {
         seoTitleEn: '',
         seoDescriptionRu: '',
         seoDescriptionEn: '',
-        coverImageUrl: '',
+        coverImageFileId: '',
         coverImageAltRu: '',
         coverImageAltEn: '',
         publishStatus: 'Draft',
       });
+      this.coverImagePreviewUrl.set(null);
       this.formSnapshot.set(this.form.getRawValue());
       this.selectedFolder.set(null);
       this.selectedTagIds.set(new Set<string>());
@@ -624,11 +650,26 @@ export class ArticleFormComponent implements OnInit {
       seoTitleEn: article.metadata.seoTitleEn ?? '',
       seoDescriptionRu: article.metadata.seoDescriptionRu ?? '',
       seoDescriptionEn: article.metadata.seoDescriptionEn ?? '',
-      coverImageUrl: article.metadata.coverImageUrl ?? '',
+      coverImageFileId: article.metadata.coverImageFileId ?? '',
       coverImageAltRu: article.metadata.coverImageAltRu ?? '',
       coverImageAltEn: article.metadata.coverImageAltEn ?? '',
       publishStatus: article.publishStatus,
     });
+    const coverImageFileId = article.metadata.coverImageFileId;
+    this.coverImagePreviewUrl.set(article.metadata.coverImageUrl);
+    if (article.metadata.coverImageUrl === null && coverImageFileId !== null) {
+      this.mediaUpload
+        .getMediaFile(coverImageFileId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (file) => {
+            if (this.form.controls.coverImageFileId.value === coverImageFileId) {
+              this.coverImagePreviewUrl.set(file.accessUrl);
+            }
+          },
+          error: () => undefined,
+        });
+    }
     this.formSnapshot.set(this.form.getRawValue());
     this.selectedFolder.set(null);
     this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
@@ -659,13 +700,29 @@ export class ArticleFormComponent implements OnInit {
   }
 }
 
-function toMetadata(value: ArticleMetadataFormValue): ArticleMetadata {
+function toMetadata(
+  value: ArticleMetadataFormValue,
+  coverImageUrl: string | null,
+): ArticleMetadata {
   return {
     seoTitleRu: optionalText(value.seoTitleRu),
     seoTitleEn: optionalText(value.seoTitleEn),
     seoDescriptionRu: optionalText(value.seoDescriptionRu),
     seoDescriptionEn: optionalText(value.seoDescriptionEn),
-    coverImageUrl: optionalText(value.coverImageUrl),
+    coverImageFileId: optionalText(value.coverImageFileId),
+    coverImageUrl,
+    coverImageAltRu: optionalText(value.coverImageAltRu),
+    coverImageAltEn: optionalText(value.coverImageAltEn),
+  };
+}
+
+function toPayloadMetadata(value: ArticleMetadataFormValue): ArticlePayload['metadata'] {
+  return {
+    seoTitleRu: optionalText(value.seoTitleRu),
+    seoTitleEn: optionalText(value.seoTitleEn),
+    seoDescriptionRu: optionalText(value.seoDescriptionRu),
+    seoDescriptionEn: optionalText(value.seoDescriptionEn),
+    coverImageFileId: optionalText(value.coverImageFileId),
     coverImageAltRu: optionalText(value.coverImageAltRu),
     coverImageAltEn: optionalText(value.coverImageAltEn),
   };

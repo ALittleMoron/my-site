@@ -15,7 +15,7 @@ from core.contacts.exceptions import ContactMeRequestNotFoundError
 from core.exceptions import EntryNotFoundError
 from core.files.exceptions import (
     ContentTypeNotAllowedError,
-    FileStorageInternalError,
+    FileClientInternalError,
     InvalidFileDataError,
     NamespaceNotAllowedError,
 )
@@ -35,7 +35,7 @@ def core_exception_classes() -> Iterable[type[Exception]]:
         InvalidFileDataError,
         ContentTypeNotAllowedError,
         NamespaceNotAllowedError,
-        FileStorageInternalError,
+        FileClientInternalError,
         ArticleNotFoundError,
         TagNotFoundError,
     )

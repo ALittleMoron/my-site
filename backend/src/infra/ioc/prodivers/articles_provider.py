@@ -7,6 +7,8 @@ from core.articles.use_cases import (
     ArticleAnalyticsUseCase,
     ArticlesUseCase,
 )
+from core.files.clients import FileClient
+from core.files.services import FileService
 from infra.articles.event_dispatchers import StructlogArticleAnalyticsErrorReporter
 from infra.config.settings import settings
 from infra.postgresql.storages.articles import (
@@ -38,8 +40,14 @@ class ArticlesProvider(Provider):
     async def provide_articles_use_case(
         self,
         storage: ArticlesStorage,
+        file_service: FileService,
+        file_client: FileClient,
     ) -> ArticlesUseCase:
-        return ArticlesUseCase(storage=storage)
+        return ArticlesUseCase(
+            storage=storage,
+            file_service=file_service,
+            file_client=file_client,
+        )
 
     @provide(scope=Scope.REQUEST)
     async def provide_article_analytics_use_case(

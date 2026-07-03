@@ -86,6 +86,7 @@ def article_summary_payload(*, slug: str) -> dict[str, object]:
             "seoTitleEn": None,
             "seoDescriptionRu": None,
             "seoDescriptionEn": None,
+            "coverImageFileId": None,
             "coverImageUrl": None,
             "coverImageAltRu": None,
             "coverImageAltEn": None,
