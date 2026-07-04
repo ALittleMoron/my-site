@@ -56,30 +56,50 @@ require_file_exists() {
     fi
 }
 
+require_file_not_exists() {
+    local file_path="$1"
+    local description="$2"
+
+    if [ -f "$file_path" ]; then
+        echo "Unexpected ${description}: ${file_path}" >&2
+        exit 1
+    fi
+}
+
 run_deploy_env_configuration_check() {
     local compose_file="${repo_dir}/docker-compose.yml"
-    local deploy_workflow="${repo_dir}/.github/workflows/deploy.yaml"
+    local ci_workflow="${repo_dir}/.github/workflows/ci.yaml"
+    local legacy_deploy_workflow="${repo_dir}/.github/workflows/deploy.yaml"
     local env_example="${repo_dir}/.env.example"
     local manifest_file="${repo_dir}/infra/deploy/runtime-env.manifest.json"
     local renderer="${repo_dir}/infra/scripts/render_deploy_env.py"
     local rendered_env
 
     require_command python3
+    require_file_exists "$ci_workflow" "CI workflow"
+    require_file_not_exists "$legacy_deploy_workflow" "legacy manual deploy workflow"
     require_file_exists "$manifest_file" "runtime environment manifest"
     require_file_exists "$renderer" "runtime environment renderer"
 
-    require_file_contains "$deploy_workflow" "workflow_dispatch:" "manual deploy trigger"
-    require_file_contains "$deploy_workflow" "environment: production" "production deployment environment"
-    require_file_contains "$deploy_workflow" "vars.REMOTE_HOST" "remote host GitHub variable"
-    require_file_contains "$deploy_workflow" "vars.REMOTE_USER" "remote user GitHub variable"
-    require_file_contains "$deploy_workflow" "vars.REMOTE_PATH" "remote path GitHub variable"
-    require_file_contains "$deploy_workflow" "secrets.SSH_PRIVATE_KEY" "SSH private key deploy secret"
-    require_file_contains "$deploy_workflow" "Makefile" "Makefile deploy sync"
-    require_file_not_contains "$deploy_workflow" "Create .env file from secrets" "manual secret echo env generation"
-    require_file_not_contains "$deploy_workflow" "REMOTE_HOST=\${{ secrets.REMOTE_HOST }}" "remote host runtime env entry"
-    require_file_not_contains "$deploy_workflow" "SSH_PRIVATE_KEY=" "SSH private key runtime env entry"
-    require_file_not_contains "$deploy_workflow" "DOCKER_PASSWORD=" "Docker password runtime env entry"
-    require_file_not_contains "$deploy_workflow" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm env name"
+    require_file_contains "$ci_workflow" "post-smoke-security:" "post-smoke security job"
+    require_file_contains "$ci_workflow" "run-infra-security: true" "post-smoke infrastructure security scan"
+    require_file_contains "$ci_workflow" "deploy:" "CI deploy job"
+    require_file_contains "$ci_workflow" "if: github.ref == 'refs/heads/main'" "main-only deploy gate"
+    require_file_contains "$ci_workflow" "- post-smoke-security" "deploy dependency on post-smoke security"
+    require_file_contains "$ci_workflow" "environment: production" "production deployment environment"
+    require_file_contains "$ci_workflow" "vars.REMOTE_HOST" "remote host GitHub variable"
+    require_file_contains "$ci_workflow" "vars.REMOTE_USER" "remote user GitHub variable"
+    require_file_contains "$ci_workflow" "vars.REMOTE_PATH" "remote path GitHub variable"
+    require_file_contains "$ci_workflow" "secrets.SSH_PRIVATE_KEY" "SSH private key deploy secret"
+    require_file_contains "$ci_workflow" "cp -a Makefile docker-compose.yml backend/ frontend/ infra/ .env .deploy-payload/" "runtime file deploy sync"
+    require_file_contains "$ci_workflow" "make run" "remote stack restart"
+    require_file_not_contains "$ci_workflow" "Create .env file from secrets" "manual secret echo env generation"
+    require_file_not_contains "$ci_workflow" "REMOTE_HOST=\${{ secrets.REMOTE_HOST }}" "remote host runtime env entry"
+    require_file_not_contains "$ci_workflow" "SSH_PRIVATE_KEY=" "SSH private key runtime env entry"
+    require_file_not_contains "$ci_workflow" "DOCKER_PASSWORD=" "Docker password runtime env entry"
+    require_file_not_contains "$ci_workflow" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm env name"
+    require_file_not_contains "$ci_workflow" "issue_certificates" "deploy-time certificate issue input"
+    require_file_not_contains "$ci_workflow" "make certbot-issue" "deploy-time certificate issue step"
 
     require_file_contains "$manifest_file" '"CACHE_WARM_ARTICLES_PAGE_SIZE"' "cache warm articles page size manifest entry"
     require_file_not_contains "$manifest_file" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm manifest entry"
@@ -151,7 +171,7 @@ run_private_panel_configuration_check() {
 
 run_healthcheck_configuration_check() {
     local compose_file="${repo_dir}/docker-compose.yml"
-    local deploy_workflow="${repo_dir}/.github/workflows/deploy.yaml"
+    local ci_workflow="${repo_dir}/.github/workflows/ci.yaml"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
     local run_script="${repo_dir}/infra/scripts/run.sh"
     local frontend_server="${repo_dir}/frontend/src/server-app.ts"
@@ -178,12 +198,12 @@ run_healthcheck_configuration_check() {
     require_file_contains "$run_script" "backend-init" "backend init deploy step"
 
     require_file_contains "$frontend_server" "app.get('/healthz'" "frontend health endpoint"
-    require_file_contains "$deploy_workflow" "frontend/" "frontend deploy sync"
+    require_file_contains "$ci_workflow" "frontend/" "frontend deploy sync"
 }
 
 run_certbot_configuration_check() {
     local compose_file="${repo_dir}/docker-compose.yml"
-    local deploy_workflow="${repo_dir}/.github/workflows/deploy.yaml"
+    local ci_workflow="${repo_dir}/.github/workflows/ci.yaml"
     local makefile="${repo_dir}/Makefile"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
     local run_script="${repo_dir}/infra/scripts/run.sh"
@@ -200,8 +220,8 @@ run_certbot_configuration_check() {
     require_file_contains "$makefile" "certbot-issue" "certbot issue target"
     require_file_contains "$makefile" "certbot-renew" "certbot renew target"
     require_file_contains "$makefile" "certbot-sync" "certbot sync target"
-    require_file_contains "$deploy_workflow" "issue_certificates" "manual certificate issue input"
-    require_file_contains "$deploy_workflow" "make certbot-issue" "optional certificate issue deploy step"
+    require_file_not_contains "$ci_workflow" "issue_certificates" "deploy-time certificate issue input"
+    require_file_not_contains "$ci_workflow" "make certbot-issue" "deploy-time certificate issue step"
 }
 
 run_nginx_syntax_check() {

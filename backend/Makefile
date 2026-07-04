@@ -91,6 +91,10 @@ fix:
 format:
 	bash scripts/quality.sh format
 
+.PHONY: format-check
+format-check:
+	bash scripts/quality.sh format-check
+
 # Usage: make lint-file file=src/core/articles/use_cases.py
 .PHONY: lint-file
 lint-file:
@@ -99,6 +103,10 @@ lint-file:
 .PHONY: ruff-check
 ruff-check:
 	bash scripts/quality.sh ruff-check
+
+.PHONY: ruff-lint-check
+ruff-lint-check:
+	bash scripts/quality.sh ruff-lint-check
 
 .PHONY: lint-check
 lint-check:

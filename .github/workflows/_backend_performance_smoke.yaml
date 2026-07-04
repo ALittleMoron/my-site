@@ -1,4 +1,4 @@
-name: Performance
+name: Backend performance smoke
 
 on:
   workflow_call:
@@ -83,14 +83,12 @@ jobs:
         uses: astral-sh/setup-uv@v8.2.0
       - name: "Run Locust smoke profile"
         run: make performance-smoke
-      - name: "Run storage query-plan smoke"
-        run: make query-plans-balanced
       - name: "Upload performance reports"
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: performance-reports
-          path: backend/performance/reports/
+          path: backend/performance/reports/locust/
       - name: "Print backend log on failure"
         if: failure()
         run: |

@@ -25,6 +25,10 @@ run_fix() {
     uv run ruff format src tests performance --config ./pyproject.toml
 }
 
+run_format_check() {
+    uv run ruff format src tests performance --check --config ./pyproject.toml
+}
+
 run_lint_file() {
     file_path="${1:-}"
     if [ -z "$file_path" ]; then
@@ -39,9 +43,13 @@ run_ruff_check() {
     uv run ruff check src tests performance --fix
 }
 
-run_lint_check() {
-    uv run ruff format src tests performance --check --config ./pyproject.toml
+run_ruff_lint_check() {
     uv run ruff check src tests performance --config ./pyproject.toml
+}
+
+run_lint_check() {
+    run_format_check
+    run_ruff_lint_check
 }
 
 action="${1:?action is required}"
@@ -69,6 +77,9 @@ case "$action" in
     format)
         run_fix
         ;;
+    format-check)
+        run_format_check
+        ;;
     fix)
         run_fix
         ;;
@@ -77,6 +88,9 @@ case "$action" in
         ;;
     ruff-check)
         run_ruff_check
+        ;;
+    ruff-lint-check)
+        run_ruff_lint_check
         ;;
     lint-check)
         run_lint_check

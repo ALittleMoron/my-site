@@ -83,10 +83,13 @@ Portfolio and articles site with a knowledge database
   `make test-frontend`, `make tests`, `make tests-fast`, `make tests-coverage`,
   `make tests-coverage-frontend`, `make -C backend test-unit`, `make -C backend test`,
   `make -C backend test-integration`, `make -C backend tests-coverage`,
-  `make -C backend types`, `make -C backend lint-check`, `make -C backend bandit`,
-  `make -C backend vulture`, `make -C backend security`, `make -C frontend test`,
-  `make -C frontend test-coverage`, `make -C frontend tests-coverage`,
-  `make -C frontend lint`, `make -C frontend typecheck`, `make -C frontend format-check`,
+  `make -C backend types`, `make -C backend format-check`, `make -C backend ruff-lint-check`,
+  `make -C backend lint-check`, `make -C backend bandit`, `make -C backend security-bandit`,
+  `make -C backend security-pip-audit`, `make -C backend vulture`, `make -C backend security`,
+  `make performance-smoke`, `make performance-lighthouse`, `make query-plans-balanced`,
+  `make -C frontend test`, `make -C frontend test-coverage`,
+  `make -C frontend tests-coverage`, `make -C frontend lint`, `make -C frontend security`,
+  `make -C frontend typecheck`, `make -C frontend format-check`, `make -C frontend ssr-smoke`,
   and `make -C frontend build`.
 - Before adding any new Make command to the trusted-for-agents list, inspect the target and the
   scripts it delegates to for agent-safety risks, including repository writes, destructive file or

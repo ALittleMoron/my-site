@@ -411,16 +411,19 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent или сторонних идентификаторов."
         ),
         "siteBuild.decision.deployManifest": (
-            "Первый production deploy остаётся server-build: GitHub Actions рендерит "
-            "runtime .env из manifest, синхронизирует код, а Docker Compose управляет "
-            "health checks, TLS-сертификатами и blue/green переключением."
+            "Production deploy остаётся server-build: GitHub Actions CI рендерит "
+            "runtime .env из manifest после всех quality gates и manual production approval, "
+            "синхронизирует код, а Docker Compose управляет health checks, TLS-сертификатами "
+            "и blue/green переключением."
         ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
-            "Проект закрывается unit/integration-тестами, frontend Jest-проверками, "
-            "typecheck, lint, format-check, security gates, SSR smoke и performance "
-            "smoke-сценариями, а Angular SSR/CSR маршруты дополнительно проверяются "
-            "строгими Lighthouse CI гейтами качества и производительности через Make targets. "
+            "CI запускает backend и frontend static gates параллельно: style, lint, "
+            "typecheck, Bandit, pip-audit, Vulture и frontend security audit. Тесты "
+            "стартуют только после успешной статической проверки, затем идут backend "
+            "performance smoke, query-plan smoke и SSR/Lighthouse CI гейты качества "
+            "и производительности. Docker/image scans и infrastructure security запускаются "
+            "после smoke gates, а production deploy ждёт manual environment approval. "
             "Локальный и production запуск fail-fast проверяют конфигурацию, readiness "
             "backend зависимостей и nginx routing перед переключением трафика."
         ),
@@ -1119,18 +1122,21 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent strings, or third-party identifiers."
         ),
         "siteBuild.decision.deployManifest": (
-            "The first production deploy stays server-built: GitHub Actions renders the "
-            "runtime .env from a manifest, syncs source code, and Docker Compose owns "
-            "health checks, TLS certificates, and blue/green switching."
+            "Production deploy stays server-built: GitHub Actions CI renders the runtime "
+            ".env from a manifest after every quality gate and manual production approval, "
+            "syncs source code, and Docker Compose owns health checks, TLS certificates, "
+            "and blue/green switching."
         ),
         "siteBuild.quality.title": "Quality and operations",
         "siteBuild.quality.body": (
-            "The project is covered by unit/integration tests, frontend Jest checks, "
-            "typecheck, lint, format-check, security gates, SSR smoke, and performance "
-            "smoke scenarios, while Angular SSR/CSR routes are additionally guarded by "
-            "strict Lighthouse CI quality and performance gates through Make targets. Local "
-            "and production startup fail fast on missing configuration, backend dependency "
-            "readiness, and nginx routing before public traffic is switched."
+            "CI runs backend and frontend static gates in parallel: style, lint, typecheck, "
+            "Bandit, pip-audit, Vulture, and frontend security audit. Tests start only after "
+            "static checks pass, then backend performance smoke, query-plan smoke, and "
+            "SSR/Lighthouse CI quality and performance gates run. Docker/image scans and "
+            "infrastructure security run after smoke gates, and production deploy waits for "
+            "manual environment approval. Local and production startup fail fast on missing "
+            "configuration, backend dependency readiness, and nginx routing before public "
+            "traffic is switched."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

@@ -109,9 +109,11 @@ server's public IP.
 ## Deployment
 
 Set the GitHub Actions Environment `production` variable `VPN_BIND_ADDRESS` to
-the server's WireGuard address, for example `10.77.0.1`. The deploy workflow
-renders it into the runtime `.env` from the environment manifest before
-restarting Docker Compose.
+the server's WireGuard address, for example `10.77.0.1`. The CI deploy job runs
+after static checks, tests, smoke gates, Docker/image scans, and infrastructure
+security checks pass, then waits for manual `production` environment approval.
+After approval, it renders `VPN_BIND_ADDRESS` into the runtime `.env` from the
+environment manifest before restarting Docker Compose.
 
 After deployment, inspect the nginx bindings on the host:
 

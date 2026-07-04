@@ -5,39 +5,374 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality-backend:
-    name: "Backend quality"
-    uses: ./.github/workflows/_quality_backend.yaml
-
-  quality-frontend:
-    name: "Frontend quality"
-    uses: ./.github/workflows/_quality_frontend.yaml
-
-  lighthouse:
-    name: "Lighthouse CI"
-    needs:
-      - quality-frontend
-    uses: ./.github/workflows/_lighthouse.yaml
-
-  docker-security:
-    name: "Docker security"
-    uses: ./.github/workflows/_docker.yaml
-
-  security-infra:
-    name: "Infrastructure security"
+  backend-style:
+    name: "Backend style"
     runs-on: "ubuntu-latest"
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-      - name: "Security check"
-        run: make security-infra
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Format check"
+        run: make -C backend format-check
 
-  performance:
-    name: "Performance smoke"
+  backend-lint:
+    name: "Backend lint"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Ruff lint"
+        run: make -C backend ruff-lint-check
+
+  backend-types:
+    name: "Backend types"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Type check"
+        run: make -C backend types
+
+  backend-bandit:
+    name: "Backend Bandit"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Bandit"
+        run: make -C backend security-bandit
+
+  backend-pip-audit:
+    name: "Backend pip-audit"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "pip-audit"
+        run: make -C backend security-pip-audit
+
+  backend-vulture:
+    name: "Backend Vulture"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Dead code scan"
+        run: make -C backend vulture
+
+  frontend-style:
+    name: "Frontend style"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: "Format check"
+        run: make -C frontend format-check
+
+  frontend-lint:
+    name: "Frontend lint"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: "Lint"
+        run: make -C frontend lint
+
+  frontend-typecheck:
+    name: "Frontend typecheck"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: "Type check"
+        run: make -C frontend typecheck
+
+  frontend-security:
+    name: "Frontend security"
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: "Security audit"
+        run: make -C frontend security
+
+  static-gate:
+    name: "Static gate"
+    runs-on: "ubuntu-latest"
+    needs:
+      - backend-style
+      - backend-lint
+      - backend-types
+      - backend-bandit
+      - backend-pip-audit
+      - backend-vulture
+      - frontend-style
+      - frontend-lint
+      - frontend-typecheck
+      - frontend-security
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: "Static checks passed"
+        run: echo "All static checks passed."
+
+  backend-tests:
+    name: "Backend tests"
+    needs:
+      - static-gate
+    timeout-minutes: 60
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: my_site_database_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 55432:5432
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Run backend tests with coverage"
+        run: make tests-coverage
+      - name: "Coverage Badge"
+        run: |
+          pip install -U genbadge defusedxml
+          genbadge coverage -n backend -i backend/coverage.xml -o .github/badges/coverage-backend.svg
+      - name: "Verify Changed files"
+        id: verify-changed-files
+        run: |
+          if git diff --quiet -- .github/badges/coverage-backend.svg; then
+            echo "files_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "files_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: "Commit and push badge"
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: EndBug/add-and-commit@v10
+        with:
+          add: '.github/badges/coverage-backend.svg'
+          message: 'Updated .github/badges/coverage-backend.svg - project coverage have changed'
+          pull: '--rebase --autostash'
+          default_author: github_actions
+
+  frontend-tests:
+    name: "Frontend tests"
+    needs:
+      - static-gate
+    timeout-minutes: 30
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: "Run frontend tests with coverage"
+        run: make tests-coverage-frontend
+      - name: "Coverage Badge"
+        run: |
+          pip install -U genbadge defusedxml
+          genbadge coverage -n frontend -i frontend/coverage/cobertura-coverage.xml -o .github/badges/coverage-frontend.svg
+      - name: "Verify Changed files"
+        id: verify-changed-files
+        run: |
+          if git diff --quiet -- .github/badges/coverage-frontend.svg; then
+            echo "files_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "files_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: "Commit and push badge"
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: EndBug/add-and-commit@v10
+        with:
+          add: '.github/badges/coverage-frontend.svg'
+          message: 'Updated .github/badges/coverage-frontend.svg - project coverage have changed'
+          pull: '--rebase --autostash'
+          default_author: github_actions
+
+  backend-performance-smoke:
+    name: "Backend performance smoke"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - quality-backend
-      - quality-frontend
-    uses: ./.github/workflows/_performance.yaml
+      - backend-tests
+      - frontend-tests
+    uses: ./.github/workflows/_backend_performance_smoke.yaml
+
+  backend-query-plans:
+    name: "Backend query plans"
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs:
+      - backend-tests
+      - frontend-tests
+    uses: ./.github/workflows/_backend_query_plans.yaml
+
+  frontend-smoke:
+    name: "Frontend SSR and Lighthouse smoke"
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    needs:
+      - backend-tests
+      - frontend-tests
+    uses: ./.github/workflows/_lighthouse.yaml
+
+  post-smoke-security:
+    name: "Post-smoke security"
+    needs:
+      - backend-performance-smoke
+      - backend-query-plans
+      - frontend-smoke
+    uses: ./.github/workflows/_docker.yaml
+    with:
+      push-images: false
+      run-infra-security: true
+
+  deploy:
+    name: "Sync runtime files and restart"
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - post-smoke-security
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Render runtime .env
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          GITHUB_ENV_VARS_JSON: ${{ toJson(vars) }}
+          GITHUB_SECRETS_JSON: ${{ toJson(secrets) }}
+        run: >
+          python3 infra/scripts/render_deploy_env.py
+          --manifest infra/deploy/runtime-env.manifest.json
+          --output .env
+
+      - name: Prepare deploy payload
+        run: |
+          mkdir -p .deploy-payload
+          cp -a Makefile docker-compose.yml backend/ frontend/ infra/ .env .deploy-payload/
+
+      - name: Sync runtime files to server
+        uses: burnett01/rsync-deployments@9.0.0
+        with:
+          switches: -avzr --delete --exclude '.git' --exclude '.deploy-state' --exclude 'node_modules' --exclude '.venv' --exclude 'infra/nginx/certs/*.pem'
+          path: .deploy-payload/
+          remote_path: ${{ vars.REMOTE_PATH }}
+          remote_host: ${{ vars.REMOTE_HOST }}
+          remote_user: ${{ vars.REMOTE_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Restart stack
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ vars.REMOTE_HOST }}
+          username: ${{ vars.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ vars.REMOTE_PATH }}
+            make run

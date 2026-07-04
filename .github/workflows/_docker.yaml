@@ -7,6 +7,10 @@ on:
         required: false
         type: boolean
         default: false
+      run-infra-security:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   docker:
@@ -105,6 +109,10 @@ jobs:
           severity: "HIGH,CRITICAL"
           hide-progress: true
           skip-setup-trivy: true
+
+      - name: Infrastructure security
+        if: inputs.run-infra-security
+        run: make security-infra
 
       - name: Log in to Container Registry
         if: inputs.push-images && github.ref == 'refs/heads/main'

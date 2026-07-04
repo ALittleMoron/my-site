@@ -1,14 +1,19 @@
 # Production Deploy
 
-The first production deploy is a server-build deploy:
+Production deploy is a CI-gated server-build deploy:
 
-1. GitHub Actions builds and scans Docker images as a quality gate.
-2. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
-3. GitHub Actions syncs source/config to the server.
-4. The server runs `make run`, which builds images locally and switches the healthy blue/green slot.
+1. GitHub Actions runs backend and frontend static checks in parallel.
+2. Backend and frontend tests start only after every static check passes.
+3. Backend performance smoke, query-plan smoke, and frontend SSR/Lighthouse smoke run after tests.
+4. Docker/image scans and infrastructure security checks run after the smoke gates.
+5. The deploy job waits for manual `production` environment approval on `main`.
+6. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
+7. GitHub Actions syncs source/config to the server.
+8. The server runs `make run`, which builds images locally and switches the healthy blue/green slot.
 
-Deploy is manual from GitHub Actions: run **Deploy to Remote Server** and choose whether to issue
-Let's Encrypt certificates before starting the stack.
+Deploy is manual through the `production` environment approval in the **test, lint and publish**
+GitHub Actions workflow. The repository environment should restrict production deployments to
+`main` and require reviewer approval.
 
 ## GitHub Environment
 
@@ -95,12 +100,18 @@ CORS setup through `PutBucketCors`.
 
 ## TLS
 
-For the first deploy on a new server, run the workflow with `issue_certificates=true`.
-The certificate issue step uses certbot standalone mode, so port `80/tcp` must be free before the
-stack starts. The deploy then runs `make run`; the startup script syncs certbot-owned certificates
-into `infra/nginx/certs/` for the unprivileged nginx container.
+Certificate issuance is no longer part of the CI deploy path. The deployed host already owns its
+certificate lifecycle, while the deploy startup script still syncs certbot-owned certificates into
+`infra/nginx/certs/` for the unprivileged nginx container.
 
-For later certificate maintenance on a running stack:
+If certificates must be issued again on the server, run the maintenance target directly on the
+host while port `80/tcp` is free:
+
+```bash
+make certbot-issue
+```
+
+For certificate renewal on a running stack:
 
 ```bash
 make certbot-renew
@@ -115,5 +126,5 @@ make certbot-sync
 ## Server Expectations
 
 The remote host needs Docker with the Compose plugin, `make`, `curl`, and SSH access for the
-configured deploy user. The deploy workflow syncs `Makefile`, `docker-compose.yml`, `backend/`,
+configured deploy user. The CI deploy job syncs `Makefile`, `docker-compose.yml`, `backend/`,
 `frontend/`, `infra/`, and generated `.env`.

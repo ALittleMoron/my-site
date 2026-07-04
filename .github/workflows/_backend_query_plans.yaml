@@ -1,0 +1,91 @@
+name: Backend query plans
+
+on:
+  workflow_call:
+
+jobs:
+  query-plans:
+    name: Query-plan smoke
+    timeout-minutes: 20
+    runs-on: "ubuntu-latest"
+    defaults:
+      run:
+        shell: bash
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: my_site_database_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 55432:5432
+    env:
+      APP_URL_SCHEMA: http
+      APP_DEBUG: "true"
+      APP_SECRET_KEY: TEST_SECRET_KEY
+      APP_DOMAIN: localhost
+      APP_USE_CACHE: "false"
+      APP_CONTACT_REQUESTS_ENABLED: "false"
+      I18N_DEFAULT_LANGUAGE: ru
+      COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT: 10
+      OWNER_INIT_LOGIN: owner
+      OWNER_INIT_PASSWORD: owner
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DRIVER: postgresql+psycopg
+      DB_HOST: localhost
+      DB_PORT: 55432
+      DB_NAME: my_site_database_test
+      DB_POOL_PRE_PING: "true"
+      DB_POOL_SIZE: 10
+      DB_MAX_OVERFLOW: 20
+      DB_EXPIRE_ON_COMMIT: "false"
+      DB_LOG_QUERY_METRICS: "false"
+      DB_SLOW_QUERY_LOG_THRESHOLD_MS: 250
+      DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH: 1000
+      AUTH_TOKEN_EXPIRE_SECONDS: 172800
+      AUTH_TOKEN_HEADER_NAME: Authorization
+      AUTH_TOKEN_PREFIX: Bearer
+      AUTH_PUBLIC_KEY: |
+        -----BEGIN PUBLIC KEY-----
+        MCowBQYDK2VwAyEAgiimqA4yuUL9ahhsRGooZXoO4XTDzmK+pu4mJnfdPIk=
+        -----END PUBLIC KEY-----
+      AUTH_PRIVATE_KEY: |
+        -----BEGIN PRIVATE KEY-----
+        MC4CAQAwBQYDK2VwBCIEIHvAarrKpuBdN5qcsk7uVGwHA3HuzMr0j7ZGvIruVb+B
+        -----END PRIVATE KEY-----
+      MINIO_HOST: localhost
+      MINIO_PORT: 9000
+      MINIO_REGION: us-east-1
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECURE: "false"
+      MINIO_PUBLIC_URL: http://localhost:9000
+      MINIO_CORS_MAX_AGE_SECONDS: 300
+      SENTRY_USE: "false"
+      SENTRY_DSN: ""
+      VALKEY_HOST: localhost
+      VALKEY_PORT: 6379
+      PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "backend/pyproject.toml"
+      - name: "Install UV"
+        uses: astral-sh/setup-uv@v8.2.0
+      - name: "Run storage query-plan smoke"
+        run: make query-plans-balanced
+      - name: "Upload query-plan reports"
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: query-plan-reports
+          path: backend/performance/reports/query-plans/
