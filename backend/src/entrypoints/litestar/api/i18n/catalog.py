@@ -411,28 +411,24 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent или сторонних идентификаторов."
         ),
         "siteBuild.decision.deployManifest": (
-            "Production deploy остаётся server-build: GitHub Actions CI рендерит "
-            "runtime .env из manifest в deploy job общего CI только после smoke/security "
-            "gates и ручного Approve and deploy для protected production environment, "
-            "синхронизирует код, а Docker Compose управляет health checks, "
-            "TLS-сертификатами и blue/green переключением."
+            "Деплой оформлен как управляемый release process: runtime-конфигурация "
+            "собирается из manifest, кандидат релиза проходит smoke/security checks и "
+            "ручное подтверждение, а blue/green переключение с health checks снижает "
+            "риск релиза."
         ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
-            "CI запускает backend и frontend static gates параллельно: style, lint, "
-            "typecheck, Bandit, pip-audit, Vulture и frontend security audit. Тесты "
-            "стартуют только после успешной статической проверки, затем идут backend "
-            "performance smoke, query-plan smoke и SSR/Lighthouse CI гейты качества "
-            "и производительности. Docker/image scans и infrastructure security запускаются "
-            "после smoke gates, а production deploy остаётся в общем CI graph и ждёт "
-            "ручной production environment approval. "
-            "Локальный и production запуск fail-fast проверяют конфигурацию, readiness "
-            "backend зависимостей и nginx routing перед переключением трафика."
+            "Качество не сводится к одному набору тестов: быстрые проверки дают ранний "
+            "feedback по стилю, типам, безопасности и регрессиям, а production-facing "
+            "контур покрывает SSR, производительность, backend smoke, SQL-планы, "
+            "конфигурацию и readiness сервисов. Такой подход даёт guardrails на нескольких "
+            "уровнях, от кода до nginx routing, и снижает число слепых зон перед "
+            "переключением трафика."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
-            "Ближайшие направления: RSS/Atom, changelog, roadmap и более жёсткий "
-            "production deployment baseline."
+            "Ближайшие направления: RSS/Atom, changelog, публичный roadmap и дальнейшая "
+            "работа над наблюдаемостью, производительностью и качеством контента."
         ),
         "siteBuild.next.articlesLink": "Перейти к статьям",
         "matrix.seo.title": "Матрица компетенций",
@@ -1124,27 +1120,23 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent strings, or third-party identifiers."
         ),
         "siteBuild.decision.deployManifest": (
-            "Production deploy stays server-built: GitHub Actions CI renders the runtime "
-            ".env from a manifest in the shared CI deploy job only after smoke/security "
-            "gates and manual Approve and deploy for the protected production environment, "
-            "syncs source code, and Docker Compose owns health checks, TLS certificates, "
-            "and blue/green switching."
+            "Deployment is treated as a controlled release process: runtime configuration "
+            "is rendered from a manifest, release candidates pass smoke/security checks "
+            "and manual approval, and blue/green switching with health checks lowers "
+            "rollout risk."
         ),
         "siteBuild.quality.title": "Quality and operations",
         "siteBuild.quality.body": (
-            "CI runs backend and frontend static gates in parallel: style, lint, typecheck, "
-            "Bandit, pip-audit, Vulture, and frontend security audit. Tests start only after "
-            "static checks pass, then backend performance smoke, query-plan smoke, and "
-            "SSR/Lighthouse CI quality and performance gates run. Docker/image scans and "
-            "infrastructure security run after smoke gates, and production deploy stays in "
-            "the shared CI graph while waiting for manual production environment approval. "
-            "Local and production startup fail fast on missing configuration, backend "
-            "dependency readiness, and nginx routing before public traffic is switched."
+            "Quality is not treated as a single test stage: fast checks give early feedback "
+            "on style, types, security, and regressions, while production-facing checks "
+            "cover SSR, performance, backend smoke, SQL plans, configuration, and service "
+            "readiness. That gives the project guardrails at several layers, from code "
+            "to nginx routing, and reduces blind spots before traffic is switched."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (
-            "Near-term work includes RSS/Atom, changelog, roadmap, and a stricter "
-            "production deployment baseline."
+            "Near-term work includes RSS/Atom, changelog, a public roadmap, and continued "
+            "work on observability, performance, and content quality."
         ),
         "siteBuild.next.articlesLink": "Go to articles",
         "matrix.seo.title": "Competency matrix",

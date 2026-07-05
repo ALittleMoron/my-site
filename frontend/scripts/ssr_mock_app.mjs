@@ -525,7 +525,7 @@ function buildMessages() {
     'siteBuild.decision.privacyAnalytics': 'Privacy-safe analytics',
     'siteBuild.quality.title': 'Quality and operations',
     'siteBuild.quality.body':
-      'Quality checks, security gates, SSR smoke, and strict Lighthouse CI quality/performance gates.',
+      'Layered quality checks cover fast feedback, production readiness, and rollout risk.',
     'siteBuild.next.title': 'Next',
     'siteBuild.next.body': 'Feeds, roadmap, and deployment hardening.',
     'siteBuild.next.articlesLink': 'Go to articles',

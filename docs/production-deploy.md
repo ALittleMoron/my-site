@@ -2,17 +2,21 @@
 
 Production deploy is a CI-gated server-build deploy:
 
-1. GitHub Actions runs backend and frontend static checks in parallel.
-2. Backend and frontend tests start only after every static check passes.
-3. Backend performance smoke, query-plan smoke, and frontend SSR/Lighthouse smoke run after tests.
-4. Docker/image scans and infrastructure security checks run after the smoke gates.
-5. The deploy job is part of the same **test, lint and publish** workflow and depends on
-   `post-smoke-security`.
-6. The deploy job targets the protected `production` environment, so GitHub waits for the
+1. The root CI workflow is an orchestration graph: each job delegates its implementation to a
+   private reusable workflow under `.github/workflows/_*.yaml`.
+2. GitHub Actions runs backend and frontend quality gates in parallel.
+3. Backend tests wait only for backend gates, while frontend tests wait only for frontend gates.
+4. Backend performance smoke and query-plan smoke run after backend tests.
+5. Frontend SSR smoke and Lighthouse CI run as separate jobs after frontend tests.
+6. Dockerfile lint, Trivy config scan, per-image Docker build/image scans, and infrastructure
+   security checks run in parallel after the smoke gates.
+7. The deploy job is part of the same **test, lint and publish** workflow and depends on every
+   post-smoke security job.
+8. The deploy job targets the protected `production` environment, so GitHub waits for the
    **Review deployments** / **Approve and deploy** action before running deploy steps.
-7. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
-8. GitHub Actions syncs source/config to the server.
-9. The server runs `make run`, which builds images locally and switches the healthy blue/green slot.
+9. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
+10. GitHub Actions syncs source/config to the server.
+11. The server runs `make run`, which builds images locally and switches the healthy blue/green slot.
 
 Deploy is manual through the `production` environment review inside the **test, lint and publish**
 workflow. The repository environment must restrict production deployments to `main` and require
