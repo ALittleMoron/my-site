@@ -123,14 +123,24 @@ port. Подробнее: [WireGuard internal access](../docs/wireguard-internal
 
 ```bash
 make tests-compose              # запустить/переиспользовать test DB, backend + frontend, очистить своё
-make tests-fast                 # backend + frontend; test DB готовится автоматически
+make tests-fast                 # backend unit + frontend tests; backend test DB не нужна
+make tests                      # полный backend + frontend
 make test-env-up                # запустить переиспользуемый test PostgreSQL
 make test-env-down              # остановить test PostgreSQL и удалить данные
+make test-backend               # backend unit + integration + serial migrations
 make test-backend-unit          # unit-тесты backend, DB не нужна
 make test-backend-integration   # интеграционные тесты backend, test DB готовится автоматически
+make tests-coverage             # отчёт покрытия backend
+make tests-coverage-frontend    # отчёт покрытия frontend
 make test-frontend              # только frontend (jest)
 make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, case-study и вопроса матрицы
 make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-balanced       # test DB, storage-wide SQL capture и EXPLAIN ANALYZE gate
 ```
+
+Backend pytest targets запускаются с явным числом pytest-xdist воркеров по физическим CPU-ядрам,
+без `-n auto`. Для serial-режима задайте `BACKEND_PYTEST_WORKERS=0` или `1`; любое значение больше
+`1` принудительно задаёт точное число воркеров. Unit-тесты идут без test DB; integration-тесты
+клонируют мигрированную template DB текущего запуска в отдельные PostgreSQL базы на worker, а
+Alembic migration-тесты остаются serial на базовой test DB.

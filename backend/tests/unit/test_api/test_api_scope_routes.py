@@ -17,7 +17,9 @@ from entrypoints.litestar.api.competency_matrix.endpoints import (
 )
 from entrypoints.litestar.api.files.endpoints import FilesApiController
 from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
+from entrypoints.litestar.api.routers import api_router
 from entrypoints.litestar.api.wiki_links.endpoints import WikiLinksApiController
+from entrypoints.litestar.guards import content_manager_guard, team_manager_guard
 from tests.test_cases import ApiTestCase
 
 
@@ -98,6 +100,8 @@ class TestApiScopeRoutes(ApiTestCase):
             ),
         )
 
+
+class TestApiScopeRouteMetadata:
     def test_swagger_tags_are_scope_explicit_for_split_controllers(self) -> None:
         assert PublicArticlesApiController.tags == ["public articles"]
         assert AdminArticlesApiController.tags == ["admin articles"]
@@ -159,42 +163,27 @@ class TestApiScopeRoutes(ApiTestCase):
         )
 
     def test_resumes_admin_urls_are_not_exposed_under_public_api(self) -> None:
-        response = self.no_auth_api.client.get(
-            "/api/resumes",
-            params={"page": 1, "pageSize": 20},
-        )
-        assert response.status_code == codes.NOT_FOUND
+        route_paths = _api_route_paths()
 
-        response = self.no_auth_api.client.get("/api/resumes/1")
-        assert response.status_code == codes.NOT_FOUND
-
-        response = self.no_auth_api.client.post(
-            "/api/resumes/1/export",
-            json={
-                "format": "pdf",
-                **self.factory.api.resume_request(),
-            },
-        )
-        assert response.status_code == codes.NOT_FOUND
+        assert AdminResumesApiController.guards == [team_manager_guard]
+        assert "/api/resumes" not in route_paths
+        assert "/api/resumes/{resume_id:str}" not in route_paths
+        assert "/api/resumes/{resume_id:str}/export" not in route_paths
+        assert "/api/admin/resumes" in route_paths
+        assert "/api/admin/resumes/{resume_id:str}" in route_paths
+        assert "/api/admin/resumes/{resume_id:str}/export" in route_paths
 
     def test_matrix_admin_urls_are_not_exposed_under_public_api(self) -> None:
-        response = self.no_auth_api.client.get(
-            "/api/competency-matrix/resources/search",
-            params={"searchName": "python", "limit": 10, "language": "ru"},
-        )
-        assert response.status_code == codes.NOT_FOUND
+        route_paths = _api_route_paths()
 
-        response = self.no_auth_api.client.get("/api/competency-matrix/queued-questions")
-        assert response.status_code == codes.NOT_FOUND
+        assert AdminCompetencyMatrixApiController.guards == [content_manager_guard]
+        assert "/api/competency-matrix/resources/search" not in route_paths
+        assert "/api/competency-matrix/queued-questions" not in route_paths
+        assert "/api/competency-matrix/queued-questions/import" not in route_paths
+        assert "/api/admin/competency-matrix/resources/search" in route_paths
+        assert "/api/admin/competency-matrix/queued-questions" in route_paths
+        assert "/api/admin/competency-matrix/queued-questions/import" in route_paths
 
-        response = self.no_auth_api.client.post(
-            "/api/competency-matrix/queued-questions",
-            json={"question": "What is PEP 8?"},
-        )
-        assert response.status_code == codes.NOT_FOUND
 
-        response = self.no_auth_api.client.post(
-            "/api/competency-matrix/queued-questions/import",
-            files={"file": ("questions.txt", b"What is PEP 8?", "text/plain")},
-        )
-        assert response.status_code == codes.NOT_FOUND
+def _api_route_paths() -> set[str]:
+    return {route.path for route in api_router.routes}

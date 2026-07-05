@@ -48,7 +48,7 @@ test-backend:
 
 .PHONY: test-backend-fast
 test-backend-fast:
-	$(MAKE) -C backend test
+	$(MAKE) -C backend test-unit
 
 .PHONY: test-backend-unit
 test-backend-unit:

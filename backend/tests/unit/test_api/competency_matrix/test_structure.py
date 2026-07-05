@@ -10,6 +10,12 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixStructureSubsection,
     CompetencyMatrixSubsectionPriorityUpdateParams,
 )
+from entrypoints.litestar.api.competency_matrix.endpoints import (
+    AdminCompetencyMatrixApiController,
+    PublicCompetencyMatrixApiController,
+)
+from entrypoints.litestar.api.routers import api_router
+from entrypoints.litestar.guards import content_manager_guard
 from tests.test_cases import ApiTestCase
 
 
@@ -216,25 +222,30 @@ class TestMatrixStructureAPI(ApiTestCase):
         assert response.status_code == codes.BAD_REQUEST, response.content
         self.use_case.create_section.assert_not_called()
 
+
+class TestMatrixStructureRouteMetadata:
     def test_structure_endpoints_are_admin_only(self) -> None:
-        response = self.no_auth_api.client.get(
-            "/api/competency-matrix/structure",
-            params={"language": "ru"},
-        )
-        assert response.status_code == codes.NOT_FOUND
+        route_paths = _api_route_paths()
 
-        response = self.no_auth_api.client.post(
-            "/api/competency-matrix/sheets",
-            params={"language": "ru"},
-            json={
-                "key": "python",
-                "translations": {
-                    "ru": {"name": "Питон"},
-                    "en": {"name": "Python"},
-                },
-            },
+        assert AdminCompetencyMatrixApiController.guards == [content_manager_guard]
+        assert not hasattr(
+            PublicCompetencyMatrixApiController,
+            "list_competency_matrix_structure",
         )
-        assert response.status_code == codes.METHOD_NOT_ALLOWED
+        assert "/api/competency-matrix/structure" not in route_paths
+        assert "/api/admin/competency-matrix/structure" in route_paths
+        assert "POST" not in _api_route_methods(path="/api/competency-matrix/sheets")
+        assert "/api/admin/competency-matrix/sheets" in route_paths
+        assert "/api/admin/competency-matrix/sheets/priorities" in route_paths
 
-        response = self.no_auth_api.put_update_matrix_sheet_priorities(ordered_ids=[1])
-        assert response.status_code == codes.UNAUTHORIZED
+
+def _api_route_paths() -> set[str]:
+    return {route.path for route in api_router.routes}
+
+
+def _api_route_methods(path: str) -> set[str]:
+    for route in api_router.routes:
+        if route.path == path:
+            return set(route.methods)
+
+    raise AssertionError(path)

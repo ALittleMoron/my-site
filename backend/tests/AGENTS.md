@@ -58,11 +58,22 @@ make tests-coverage      # all + coverage report
 From the repository root:
 
 ```bash
-make tests-fast          # backend + frontend; starts/reuses test PostgreSQL automatically
+make tests-fast          # backend unit + frontend tests; no backend test PostgreSQL
 make tests-compose       # starts/reuses test PostgreSQL, runs tests, then cleans up owned services
 make test-env-up         # start isolated test PostgreSQL manually
 make test-env-down       # stop isolated test PostgreSQL and remove its data
 ```
+
+Backend pytest parallelism is explicit. Do not use `pytest-xdist -n auto`: the Make-backed test
+script computes physical CPU cores and passes `-n <workers>` itself. Override it only with
+`BACKEND_PYTEST_WORKERS`: `0` and `1` force serial execution, while any value greater than `1`
+forces that exact worker count.
+
+`make test-unit` runs only `backend/tests/unit/` and must not require a test database. Integration
+pytest workers clone a migrated run-scoped template database into isolated PostgreSQL databases
+named from the base database plus the xdist worker suffix, such as `my_site_database_test_gw0`.
+Alembic migration tests must stay serial because they exercise upgrade/downgrade behavior against
+the shared base schema.
 
 ## Patterns
 

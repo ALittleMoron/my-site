@@ -73,19 +73,28 @@ async def container(  # noqa: PLR0913
 
 @pytest.fixture
 def app(container: AsyncContainer) -> Litestar:
-    app = create_litestar_app(
+    return build_test_app(container=container)
+
+
+@pytest.fixture
+def no_auth_app(container: AsyncContainer) -> Litestar:
+    return build_test_app(container=container)
+
+
+def build_test_app(container: AsyncContainer) -> Litestar:
+    test_app = create_litestar_app(
         lifespan=[],
         container=container,
         extra_plugins=[],
         extra_middlewares=[],
     )
-    setup_dishka(container=container, app=app)
-    return app
+    setup_dishka(container=container, app=test_app)
+    return test_app
 
 
 @pytest.fixture
-def no_auth_client(app: Litestar) -> Generator[TestClient]:
-    with TestClient(app) as client:
+def no_auth_client(no_auth_app: Litestar) -> Generator[TestClient]:
+    with TestClient(no_auth_app) as client:
         yield client
 
 

@@ -122,14 +122,24 @@ See [docker-compose.yml](../docker-compose.yml) for all services.
 
 ```bash
 make tests-compose              # starts/reuses test DB, backend + frontend, owned cleanup
-make tests-fast                 # backend + frontend; starts/reuses test DB automatically
+make tests-fast                 # backend unit + frontend tests; no backend test DB
+make tests                      # full backend + frontend tests
 make test-env-up                # start reusable test PostgreSQL
 make test-env-down              # stop reusable test PostgreSQL and remove data
+make test-backend               # backend unit + integration + serial migrations
 make test-backend-unit          # backend unit tests, no DB required
 make test-backend-integration   # backend integration tests, auto test DB
+make tests-coverage             # backend coverage report
+make tests-coverage-frontend    # frontend coverage report
 make test-frontend              # frontend only (jest)
 make -C frontend ssr-smoke      # production SSR build + public article, case-study, and matrix question HTML smoke
 make performance-smoke          # auto local backend + seeded short Locust smoke profile
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-balanced       # auto test DB, storage-wide SQL capture + EXPLAIN ANALYZE gate
 ```
+
+Backend pytest targets run with an explicit pytest-xdist worker count based on physical CPU cores,
+not `-n auto`. Set `BACKEND_PYTEST_WORKERS=0` or `1` for serial execution, or set any value greater
+than `1` to force that exact worker count. Unit tests run without a test database; integration tests
+clone a migrated run-scoped template into isolated per-worker PostgreSQL databases, while Alembic
+migration tests stay serial against the base test database.
