@@ -412,9 +412,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.decision.deployManifest": (
             "Production deploy остаётся server-build: GitHub Actions CI рендерит "
-            "runtime .env из manifest после всех quality gates и manual production approval, "
-            "синхронизирует код, а Docker Compose управляет health checks, TLS-сертификатами "
-            "и blue/green переключением."
+            "runtime .env из manifest в deploy job общего CI только после smoke/security "
+            "gates и ручного Approve and deploy для protected production environment, "
+            "синхронизирует код, а Docker Compose управляет health checks, "
+            "TLS-сертификатами и blue/green переключением."
         ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
@@ -423,7 +424,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "стартуют только после успешной статической проверки, затем идут backend "
             "performance smoke, query-plan smoke и SSR/Lighthouse CI гейты качества "
             "и производительности. Docker/image scans и infrastructure security запускаются "
-            "после smoke gates, а production deploy ждёт manual environment approval. "
+            "после smoke gates, а production deploy остаётся в общем CI graph и ждёт "
+            "ручной production environment approval. "
             "Локальный и production запуск fail-fast проверяют конфигурацию, readiness "
             "backend зависимостей и nginx routing перед переключением трафика."
         ),
@@ -1123,7 +1125,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.decision.deployManifest": (
             "Production deploy stays server-built: GitHub Actions CI renders the runtime "
-            ".env from a manifest after every quality gate and manual production approval, "
+            ".env from a manifest in the shared CI deploy job only after smoke/security "
+            "gates and manual Approve and deploy for the protected production environment, "
             "syncs source code, and Docker Compose owns health checks, TLS certificates, "
             "and blue/green switching."
         ),
@@ -1133,10 +1136,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "Bandit, pip-audit, Vulture, and frontend security audit. Tests start only after "
             "static checks pass, then backend performance smoke, query-plan smoke, and "
             "SSR/Lighthouse CI quality and performance gates run. Docker/image scans and "
-            "infrastructure security run after smoke gates, and production deploy waits for "
-            "manual environment approval. Local and production startup fail fast on missing "
-            "configuration, backend dependency readiness, and nginx routing before public "
-            "traffic is switched."
+            "infrastructure security run after smoke gates, and production deploy stays in "
+            "the shared CI graph while waiting for manual production environment approval. "
+            "Local and production startup fail fast on missing configuration, backend "
+            "dependency readiness, and nginx routing before public traffic is switched."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

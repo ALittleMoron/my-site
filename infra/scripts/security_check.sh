@@ -77,7 +77,7 @@ run_deploy_env_configuration_check() {
 
     require_command python3
     require_file_exists "$ci_workflow" "CI workflow"
-    require_file_not_exists "$legacy_deploy_workflow" "legacy manual deploy workflow"
+    require_file_not_exists "$legacy_deploy_workflow" "standalone deploy workflow"
     require_file_exists "$manifest_file" "runtime environment manifest"
     require_file_exists "$renderer" "runtime environment renderer"
 
@@ -86,7 +86,7 @@ run_deploy_env_configuration_check() {
     require_file_contains "$ci_workflow" "deploy:" "CI deploy job"
     require_file_contains "$ci_workflow" "if: github.ref == 'refs/heads/main'" "main-only deploy gate"
     require_file_contains "$ci_workflow" "- post-smoke-security" "deploy dependency on post-smoke security"
-    require_file_contains "$ci_workflow" "environment: production" "production deployment environment"
+    require_file_contains "$ci_workflow" "environment: production" "production deployment environment approval"
     require_file_contains "$ci_workflow" "vars.REMOTE_HOST" "remote host GitHub variable"
     require_file_contains "$ci_workflow" "vars.REMOTE_USER" "remote user GitHub variable"
     require_file_contains "$ci_workflow" "vars.REMOTE_PATH" "remote path GitHub variable"

@@ -326,7 +326,7 @@ jobs:
       run-infra-security: true
 
   deploy:
-    name: "Sync runtime files and restart"
+    name: "Deploy to production (manual approval)"
     if: github.ref == 'refs/heads/main'
     needs:
       - post-smoke-security
@@ -360,7 +360,13 @@ jobs:
       - name: Sync runtime files to server
         uses: burnett01/rsync-deployments@9.0.0
         with:
-          switches: -avzr --delete --exclude '.git' --exclude '.deploy-state' --exclude 'node_modules' --exclude '.venv' --exclude 'infra/nginx/certs/*.pem'
+          switches: >-
+            -avzr --delete
+            --exclude '.git'
+            --exclude '.deploy-state'
+            --exclude 'node_modules'
+            --exclude '.venv'
+            --exclude 'infra/nginx/certs/*.pem'
           path: .deploy-payload/
           remote_path: ${{ vars.REMOTE_PATH }}
           remote_host: ${{ vars.REMOTE_HOST }}

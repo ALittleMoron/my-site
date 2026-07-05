@@ -68,14 +68,22 @@ class TestI18nCatalog:
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
         assert "Lighthouse CI" in russian_messages["siteBuild.quality.body"]
         assert "Lighthouse CI" in english_messages["siteBuild.quality.body"]
-        assert "manual production approval" in russian_messages["siteBuild.decision.deployManifest"]
-        assert "manual production approval" in english_messages["siteBuild.decision.deployManifest"]
+        assert "shared CI deploy job" in english_messages["siteBuild.decision.deployManifest"]
+        assert "deploy job общего CI" in russian_messages["siteBuild.decision.deployManifest"]
+        assert "Approve and deploy" in russian_messages["siteBuild.decision.deployManifest"]
+        assert "Approve and deploy" in english_messages["siteBuild.decision.deployManifest"]
         assert "static gates" in english_messages["siteBuild.quality.body"]
         assert "static gates" in russian_messages["siteBuild.quality.body"]
         assert "query-plan smoke" in english_messages["siteBuild.quality.body"]
         assert "query-plan smoke" in russian_messages["siteBuild.quality.body"]
-        assert "manual environment approval" in english_messages["siteBuild.quality.body"]
-        assert "manual environment approval" in russian_messages["siteBuild.quality.body"]
+        assert "shared CI graph" in english_messages["siteBuild.quality.body"]
+        assert "общем CI graph" in russian_messages["siteBuild.quality.body"]
+        assert (
+            "manual production environment approval" in english_messages["siteBuild.quality.body"]
+        )
+        assert (
+            "ручной production environment approval" in russian_messages["siteBuild.quality.body"]
+        )
         assert "гейты качества и производительности" in russian_messages["siteBuild.quality.body"]
         assert "quality and performance gates" in english_messages["siteBuild.quality.body"]
         assert "performance budgets" not in english_messages["siteBuild.quality.body"]
