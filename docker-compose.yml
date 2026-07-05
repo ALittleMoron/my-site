@@ -268,7 +268,7 @@ services:
 
   databasus:
     container_name: my_site_databasus
-    image: databasus/databasus:latest
+    image: databasus/databasus:v3.47.1
     volumes:
       - databasus_data:/databasus-data
     restart: unless-stopped
