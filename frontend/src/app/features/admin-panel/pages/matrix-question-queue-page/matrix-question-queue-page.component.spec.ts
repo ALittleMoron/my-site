@@ -387,6 +387,29 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(component.form.getRawValue().subsectionId).toBeNull();
   });
 
+  it('lays out queue create fields for the narrow queue column', () => {
+    component.selectQuestion(queuedQuestion);
+    fixture.detectChanges();
+
+    expect(fieldColumn('#queue-question-slug').classList).toContain('col-12');
+    expect(fieldColumn('#queue-question-slug').classList).toContain('col-md-8');
+    expect(fieldColumn('#queue-question-grade').classList).toContain('col-12');
+    expect(fieldColumn('#queue-question-grade').classList).toContain('col-md-4');
+
+    for (const selector of [
+      '#queue-question-ru',
+      '#queue-question-en',
+      '#queue-answer-ru',
+      '#queue-answer-en',
+      '#queue-expected-answer-ru',
+      '#queue-expected-answer-en',
+    ]) {
+      const column = fieldColumn(selector);
+      expect(column.classList).toContain('col-12');
+      expect(column.classList).not.toContain('col-md-6');
+    }
+  });
+
   it('marks selected queue question with green active styling', () => {
     component.selectQuestion(queuedQuestion);
     fixture.detectChanges();
@@ -588,5 +611,17 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(element?.classList).toContain('is-invalid');
     expect(element?.getAttribute('aria-invalid')).toBe('true');
     expect(fixture.nativeElement.textContent).toContain(expectedMessage);
+  }
+
+  function fieldColumn(selector: string): HTMLElement {
+    const field = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
+    if (field === null) {
+      throw new Error(`Missing queue create form field: ${selector}`);
+    }
+    const column = field.closest<HTMLElement>('.col-12, .col-md-4, .col-md-6, .col-md-8');
+    if (column === null) {
+      throw new Error(`Missing queue create form column for: ${selector}`);
+    }
+    return column;
   }
 });

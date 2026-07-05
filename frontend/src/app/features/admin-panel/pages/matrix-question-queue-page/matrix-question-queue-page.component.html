@@ -63,7 +63,7 @@
     <div class="col-12 col-xl-7">
       @if (selectedQuestion()) {
         <form class="row g-3" [formGroup]="form" (ngSubmit)="createQuestion()">
-          <div class="col-12">
+          <div class="col-12 col-md-8">
             <label class="form-label" for="queue-question-slug">{{ 'matrix.form.slug' | t }}</label>
             <input
               id="queue-question-slug"
@@ -79,21 +79,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-12">
-            <app-matrix-structure-picker
-              [language]="currentLanguage()"
-              [selectedSubsectionId]="form.controls.subsectionId.value"
-              [disabled]="submitting()"
-              [invalid]="queueFieldInvalid(form.controls.subsectionId)"
-              (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
-            />
-            @if (queueFieldInvalid(form.controls.subsectionId)) {
-              <div class="invalid-feedback d-block">
-                {{ 'matrix.form.subsectionRequired' | t }}
-              </div>
-            }
-          </div>
-          <div class="col-md-6">
+          <div class="col-12 col-md-4">
             <label class="form-label" for="queue-question-grade">
               {{ 'matrix.form.grade' | t }}
             </label>
@@ -115,7 +101,21 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
+            <app-matrix-structure-picker
+              [language]="currentLanguage()"
+              [selectedSubsectionId]="form.controls.subsectionId.value"
+              [disabled]="submitting()"
+              [invalid]="queueFieldInvalid(form.controls.subsectionId)"
+              (selectedSubsectionIdChange)="selectQuestionSubsection($event)"
+            />
+            @if (queueFieldInvalid(form.controls.subsectionId)) {
+              <div class="invalid-feedback d-block">
+                {{ 'matrix.form.subsectionRequired' | t }}
+              </div>
+            }
+          </div>
+          <div class="col-12">
             <label class="form-label" for="queue-question-ru">
               {{ 'matrix.form.questionRu' | t }}
             </label>
@@ -134,7 +134,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="queue-question-en">
               {{ 'matrix.form.questionEn' | t }}
             </label>
@@ -153,7 +153,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="queue-answer-ru">
               {{ 'matrix.form.answerRu' | t }}
             </label>
@@ -174,7 +174,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="queue-answer-en">
               {{ 'matrix.form.answerEn' | t }}
             </label>
@@ -195,7 +195,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="queue-expected-answer-ru">
               {{ 'matrix.form.expectedAnswerRu' | t }}
             </label>
@@ -215,7 +215,7 @@
               <div class="invalid-feedback d-block">{{ message }}</div>
             }
           </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <label class="form-label" for="queue-expected-answer-en">
               {{ 'matrix.form.expectedAnswerEn' | t }}
             </label>
