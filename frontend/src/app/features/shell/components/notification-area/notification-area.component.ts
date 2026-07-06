@@ -9,7 +9,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (notificationService.notifications().length > 0) {
-      <section class="alerts-section position-fixed top-0 end-0" aria-live="polite">
+      <section class="alerts-section position-fixed end-0" aria-live="polite">
         @for (notification of notificationService.notifications(); track notification.id) {
           <div
             class="alert alert-dismissible shadow-sm notification-alert"
@@ -35,6 +35,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
       .alerts-section {
         z-index: 1080;
         inline-size: min(24rem, calc(100vw - 2rem));
+        inset-block-start: 4rem;
         margin: 1rem;
       }
 

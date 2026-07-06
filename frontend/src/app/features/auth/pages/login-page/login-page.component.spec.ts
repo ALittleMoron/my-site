@@ -39,6 +39,13 @@ describe('LoginPageComponent', () => {
     expect(compiled.querySelector('#password')).not.toBeNull();
   });
 
+  it('uses a fullscreen dialog on narrow public screens', () => {
+    const dialog = fixture.nativeElement.querySelector('.modal-dialog') as HTMLElement | null;
+
+    expect(dialog).not.toBeNull();
+    expect(dialog?.classList).toContain('modal-fullscreen-sm-down');
+  });
+
   it('renders content-staff-only login warning', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const alert = compiled.querySelector('.alert-warning');

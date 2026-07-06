@@ -230,3 +230,18 @@
   color: var(--text-primary);
   white-space: pre;
 }
+
+.question-detail,
+.articles-markdown {
+  overflow-wrap: anywhere;
+}
+
+.question-detail :where(img, table),
+.articles-markdown :where(table) {
+  max-width: 100%;
+}
+
+.question-detail :where(pre, table),
+.articles-markdown :where(pre, table) {
+  overflow-x: auto;
+}

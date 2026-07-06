@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { SiteHeaderComponent, rewriteLanguagePrefixedUrl } from './site-header.component';
@@ -9,6 +9,12 @@ import { AuthService, AccountInfo } from '../../../../core/auth/auth.service';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { I18nLanguage, LanguageCode } from '../../../../core/i18n/i18n.model';
+
+@Component({
+  standalone: true,
+  template: '',
+})
+class EmptyRouteComponent {}
 
 describe('SiteHeaderComponent', () => {
   let fixture: ComponentFixture<SiteHeaderComponent>;
@@ -92,9 +98,14 @@ describe('SiteHeaderComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [SiteHeaderComponent],
+      imports: [SiteHeaderComponent, EmptyRouteComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          {
+            path: 'ru',
+            children: [{ path: 'competency-matrix', component: EmptyRouteComponent }],
+          },
+        ]),
         { provide: ThemeService, useValue: mockThemeService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthModalService, useValue: mockAuthModalService },
@@ -120,6 +131,31 @@ describe('SiteHeaderComponent', () => {
 
   it('renders nav link to the localized articles page', () => {
     expect(fixture.componentInstance.articlesLink()).toBe('/ru/articles');
+  });
+
+  it('uses responsive containers for collapsed public navigation and actions', () => {
+    const navList = el.querySelector('[data-testid="site-header-nav-list"]') as HTMLElement | null;
+    const actions = el.querySelector('[data-testid="site-header-actions"]') as HTMLElement | null;
+
+    expect(navList).not.toBeNull();
+    expect(navList?.classList).toContain('flex-column');
+    expect(navList?.classList).toContain('flex-lg-row');
+    expect(actions).not.toBeNull();
+    expect(actions?.classList).toContain('flex-wrap');
+    expect(actions?.classList).toContain('justify-content-start');
+    expect(actions?.classList).toContain('justify-content-lg-end');
+  });
+
+  it('closes expanded navigation when a public nav link is selected', () => {
+    fixture.componentInstance.toggleNav();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isNavOpen()).toBe(true);
+
+    const matrixLink = el.querySelector('a[aria-label="Матрица компетенций"]') as HTMLAnchorElement;
+    matrixLink.click();
+
+    expect(fixture.componentInstance.isNavOpen()).toBe(false);
   });
 
   it('hides admin-panel navigation from guests and regular users', () => {

@@ -18,7 +18,11 @@ import { ConsentService } from '../../../../core/privacy/consent.service';
           <p class="m-0 flex-grow-1">
             {{ 'shell.cookie.text' | t }}
           </p>
-          <button type="button" class="btn button-active" (click)="consent.acceptCookieConsent()">
+          <button
+            type="button"
+            class="btn button-active flex-shrink-0"
+            (click)="consent.acceptCookieConsent()"
+          >
             {{ 'shell.cookie.accept' | t }}
           </button>
         </div>

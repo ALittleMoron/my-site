@@ -321,6 +321,21 @@ describe('MatrixListComponent', () => {
     expect(title.textContent?.trim()).toBe('Матрица компетенций');
   });
 
+  it('uses fullscreen modal dialogs on narrow public screens', () => {
+    component.detailVisible.set(true);
+    component.suggestionVisible.set(true);
+    fixture.detectChanges();
+
+    const dialogs = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLElement>('.modal-dialog'),
+    );
+
+    expect(dialogs.length).toBe(2);
+    expect(dialogs.every((dialog) => dialog.classList.contains('modal-fullscreen-sm-down'))).toBe(
+      true,
+    );
+  });
+
   it('should not show published/all filter for users without content access', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#onlyPublishedToggle')).toBeNull();

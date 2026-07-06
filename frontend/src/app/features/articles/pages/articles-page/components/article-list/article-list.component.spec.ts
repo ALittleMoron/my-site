@@ -47,6 +47,22 @@ describe('ArticleListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('42 просмотров');
   });
 
+  it('uses a stackable article summary layout for narrow screens', () => {
+    const articleSummary = fixture.nativeElement.querySelector(
+      '[data-testid="article-list-summary"]',
+    ) as HTMLElement | null;
+    const metadata = fixture.nativeElement.querySelector(
+      '[data-testid="article-list-metadata"]',
+    ) as HTMLElement | null;
+
+    expect(articleSummary).not.toBeNull();
+    expect(articleSummary?.classList).toContain('flex-column');
+    expect(articleSummary?.classList).toContain('flex-sm-row');
+    expect(metadata).not.toBeNull();
+    expect(metadata?.classList).toContain('text-sm-end');
+    expect(metadata?.classList).toContain('align-self-sm-start');
+  });
+
   it('does not render draft badges on the public article list', () => {
     fixture.componentRef.setInput('articles', [
       {

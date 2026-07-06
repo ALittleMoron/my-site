@@ -23,6 +23,7 @@ interface GridRow {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-grouped-grid.component.html',
+  styleUrl: './matrix-grouped-grid.component.scss',
 })
 export class MatrixGroupedGridComponent {
   readonly questions = input.required<ReadonlyMatrixQuestionList>();

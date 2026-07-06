@@ -45,6 +45,24 @@ describe('SiteFooterComponent', () => {
     expect(link?.textContent?.trim()).toBe('Как устроен сайт');
   });
 
+  it('uses wrapping footer link groups for narrow screens', () => {
+    const footerLayout = el.querySelector(
+      '[data-testid="site-footer-layout"]',
+    ) as HTMLElement | null;
+    const textLinks = el.querySelector('[data-testid="site-footer-links"]') as HTMLElement | null;
+    const socialLinks = el.querySelector(
+      '[data-testid="site-footer-social"]',
+    ) as HTMLElement | null;
+
+    expect(footerLayout).not.toBeNull();
+    expect(footerLayout?.classList).toContain('flex-column');
+    expect(footerLayout?.classList).toContain('flex-md-row');
+    expect(textLinks).not.toBeNull();
+    expect(textLinks?.classList).toContain('flex-wrap');
+    expect(socialLinks).not.toBeNull();
+    expect(socialLinks?.classList).toContain('justify-content-md-end');
+  });
+
   it('renders GitHub profile link', () => {
     const link = el.querySelector('a[href="https://github.com/ALittleMoron"]');
     expect(link).not.toBeNull();

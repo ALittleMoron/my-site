@@ -57,6 +57,27 @@ describe('MatrixGroupedGridComponent', () => {
     expect(el.querySelector('.badge')).toBeNull();
   });
 
+  it('renders mobile cards with section, subsection, grade, and question context', () => {
+    const card = el.querySelector('[data-testid="matrix-mobile-card"]') as HTMLElement | null;
+
+    expect(card).not.toBeNull();
+    expect(card?.textContent).toContain('Section');
+    expect(card?.textContent).toContain('Core');
+    expect(card?.textContent).toContain('Subsection');
+    expect(card?.textContent).toContain('Syntax');
+    expect(card?.textContent).toContain('Junior');
+    expect(card?.textContent).toContain('What is PEP 8?');
+  });
+
+  it('emits selected question slugs from mobile card question buttons', () => {
+    const emitted: string[] = [];
+    fixture.componentInstance.questionSelected.subscribe((slug) => emitted.push(slug));
+
+    el.querySelector<HTMLButtonElement>('[data-testid="matrix-mobile-question"]')?.click();
+
+    expect(emitted).toEqual(['pep-8']);
+  });
+
   it('emits selected question slugs', () => {
     const emitted: string[] = [];
     fixture.componentInstance.questionSelected.subscribe((slug) => emitted.push(slug));

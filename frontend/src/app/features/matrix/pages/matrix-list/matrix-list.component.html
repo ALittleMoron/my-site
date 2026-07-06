@@ -1,5 +1,5 @@
-<div class="container py-4 mt-5">
-  <h1 class="fw-bold mb-3">{{ 'matrix.title' | t }}</h1>
+<main class="container py-4 mt-5">
+  <h1 class="fw-bold mb-3 text-break">{{ 'matrix.title' | t }}</h1>
 
   @if (sheets().length > 0) {
     <app-matrix-readonly-sheet-tabs
@@ -36,7 +36,7 @@
       (questionSelected)="openDetail($event)"
     />
   }
-</div>
+</main>
 
 @if (detailVisible()) {
   <div
@@ -49,7 +49,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered modal-lg"
+      class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -95,7 +95,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered"
+      class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"

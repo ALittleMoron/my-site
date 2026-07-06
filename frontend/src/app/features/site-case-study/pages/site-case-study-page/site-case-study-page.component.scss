@@ -8,6 +8,8 @@
 }
 
 .site-case-study__logo {
+  max-width: 100%;
+  height: auto;
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   background-color: var(--surface-1);
@@ -31,4 +33,15 @@
   border-left: 0.25rem solid var(--main-component-color);
   border-radius: 0.5rem;
   background-color: var(--surface-1);
+}
+
+@media (max-width: 575.98px) {
+  .site-case-study__hero,
+  .site-case-study__section {
+    padding-block: 1.75rem;
+  }
+
+  .site-case-study__logo {
+    width: 128px;
+  }
 }

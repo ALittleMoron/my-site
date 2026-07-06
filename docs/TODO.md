@@ -235,7 +235,7 @@
 
 ### Frontend
 
-- [ ] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
+- [x] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
 - [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [x] Cookie consent
 - [x] Fix question search on the frontend: empty sections should also be removed

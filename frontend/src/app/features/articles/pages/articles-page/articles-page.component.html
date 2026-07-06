@@ -55,7 +55,7 @@
         </button>
       }
       <div>
-        <h1 class="fw-bold mb-1">{{ 'articles.title' | t }}</h1>
+        <h1 class="fw-bold mb-1 text-break">{{ 'articles.title' | t }}</h1>
         @if (activeTag()) {
           <div class="small text-body-secondary">
             {{ 'articles.activeTag' | t: { name: activeTag()!.name } }}

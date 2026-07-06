@@ -3,7 +3,12 @@
   class="modal force-display-block"
   style="background-color: rgba(0, 0, 0, 0.5)"
 >
-  <form class="modal-dialog" [formGroup]="form" (ngSubmit)="login()" novalidate>
+  <form
+    class="modal-dialog modal-fullscreen-sm-down"
+    [formGroup]="form"
+    (ngSubmit)="login()"
+    novalidate
+  >
     <div class="modal-content" style="z-index: 1067">
       <div class="modal-header">
         <h5 class="modal-title">{{ 'auth.login.title' | t }}</h5>

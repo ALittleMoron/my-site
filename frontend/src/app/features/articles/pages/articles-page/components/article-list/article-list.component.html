@@ -1,11 +1,14 @@
 <div class="list-group list-group-flush">
   @for (article of articles(); track article.slug) {
     <article class="list-group-item px-3 px-md-4 py-3">
-      <div class="d-flex justify-content-between gap-3 align-items-start">
+      <div
+        class="d-flex flex-column flex-sm-row justify-content-between gap-3 align-items-start"
+        data-testid="article-list-summary"
+      >
         <div class="min-w-0">
           <button
             type="button"
-            class="btn btn-link p-0 fw-semibold text-start text-decoration-none articles-title-button"
+            class="btn btn-link p-0 fw-semibold text-start text-decoration-none text-break articles-title-button"
             (click)="articleSelected.emit(article.slug)"
           >
             {{ article.title }}
@@ -23,7 +26,10 @@
             }
           </div>
         </div>
-        <div class="text-end small text-body-secondary flex-shrink-0">
+        <div
+          class="text-start text-sm-end small text-body-secondary align-self-sm-start"
+          data-testid="article-list-metadata"
+        >
           <div>{{ articleDate(article) }}</div>
           <div>{{ article.authorUsername }}</div>
           <div>{{ 'articles.views' | t: { count: article.viewCount } }}</div>
