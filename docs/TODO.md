@@ -592,8 +592,8 @@ Flashcards should be implemented strictly after auth implementation for common u
   - [x] Make the add competency matrix question button green and move it inline after search.
   - [x] Make `published only` toggles green when enabled in admin matrix and article workspaces.
   - [x] Simplify admin actions for matrix questions and articles: use one actions dropdown in list rows and edit detail pages instead of several inline buttons.
-  - [x] Make the admin `add article` button and public article `statistics` button green.
-  - [x] Add a simple animation for showing and hiding statistics.
+  - [x] Make the admin `add article` control and article statistics navigation/action styling consistent with the admin UI.
+  - [x] Move article statistics out of the public articles page and keep it in a dedicated admin page.
   - [x] Hide folders and filters when opening an article detail page.
   - [x] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.
   - [x] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.

@@ -54,10 +54,6 @@
   padding: 0;
 }
 
-.articles-stats-panel-shell {
-  animation: articles-panel-enter 180ms ease;
-}
-
 .modal-backdrop-overlay {
   background-color: rgba(0, 0, 0, 0.5);
 }
@@ -126,17 +122,5 @@
 
   .articles-filter-form > .d-flex > .btn {
     flex: 1 1 100%;
-  }
-}
-
-@keyframes articles-panel-enter {
-  from {
-    opacity: 0;
-    transform: translateY(-0.25rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }

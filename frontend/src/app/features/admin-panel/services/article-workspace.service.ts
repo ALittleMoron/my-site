@@ -15,6 +15,9 @@ import {
   ArticlePayload,
   ArticlePublicStats,
   ArticlePublicStatsCollectionDto,
+  ArticleStats,
+  ArticleStatsDto,
+  ArticleStatsParams,
   ArticleTag,
   ArticleTagDto,
   ArticleTree,
@@ -24,6 +27,7 @@ import {
   mapArticleFolderDto,
   mapArticleDetailDto,
   mapArticleListDto,
+  mapArticleStatsDto,
   mapArticleTreeDto,
   mapPublicStatsCollectionDto,
   mapTagDto,
@@ -86,6 +90,16 @@ export class ArticleWorkspaceService {
         onlyPublished: 'false',
       })
       .pipe(switchMap((dto) => this.mapDetailWithPublicStats(dto)));
+  }
+
+  getAdminStats(params: ArticleStatsParams): Observable<ArticleStats> {
+    return this.api
+      .get<ArticleStatsDto>('/api/admin/articles/stats', {
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        language: params.language,
+      })
+      .pipe(map(mapArticleStatsDto));
   }
 
   getTree(language: LanguageCode): Observable<ArticleTree> {

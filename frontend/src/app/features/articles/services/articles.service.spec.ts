@@ -174,50 +174,6 @@ describe('ArticlesService', () => {
     reactionReq.flush(null);
   });
 
-  it('loads admin article statistics', () => {
-    let reactionTotal: number | undefined;
-
-    service
-      .getAdminStats({ dateFrom: '2026-01-01', dateTo: '2026-01-31', language: 'en' })
-      .subscribe((stats) => {
-        reactionTotal = stats.totals.reactionCount;
-      });
-
-    const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/stats'));
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('language')).toBe('en');
-    expect(req.request.params.get('dateFrom')).toBe('2026-01-01');
-    expect(req.request.params.get('dateTo')).toBe('2026-01-31');
-    req.flush({
-      dateFrom: '2026-01-01',
-      dateTo: '2026-01-31',
-      totals: { viewCount: 7, engagedViewCount: 3, reactionCount: 2 },
-      articles: [
-        {
-          articleId: ARTICLE_ID,
-          title: 'Typed articles',
-          slug: 'typed-articles',
-          viewCount: 7,
-          engagedViewCount: 3,
-          reactionCounts: { heart: 1, fire: 0, thinking: 1, neutral: 0, poop: 0 },
-        },
-      ],
-      daily: [
-        {
-          articleId: ARTICLE_ID,
-          title: 'Typed articles',
-          slug: 'typed-articles',
-          date: '2026-01-02',
-          sourceCategory: 'Search',
-          viewCount: 7,
-          engagedViewCount: 3,
-        },
-      ],
-    });
-
-    expect(reactionTotal).toBe(2);
-  });
-
   it('loads tree without tag filters', () => {
     let firstFolder: string | undefined;
 

@@ -9,6 +9,7 @@ describe('adminPanelRoutes', () => {
       '',
       'articles',
       'article-folders',
+      'article-statistics',
       'articles/:slug',
       'matrix-questions',
       'matrix-structure',
@@ -35,6 +36,11 @@ describe('adminPanelRoutes', () => {
     await expect(
       adminPanelRoutes[0].children
         ?.find((route) => route.path === 'article-folders')
+        ?.loadComponent?.(),
+    ).resolves.toBeDefined();
+    await expect(
+      adminPanelRoutes[0].children
+        ?.find((route) => route.path === 'article-statistics')
         ?.loadComponent?.(),
     ).resolves.toBeDefined();
     await expect(

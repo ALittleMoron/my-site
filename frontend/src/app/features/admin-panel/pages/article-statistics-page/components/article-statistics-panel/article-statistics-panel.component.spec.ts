@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
-import { ArticlesStatsPanelComponent } from './articles-stats-panel.component';
+import { AdminArticleStatisticsPanelComponent } from './article-statistics-panel.component';
 
-describe('ArticlesStatsPanelComponent', () => {
-  let fixture: ComponentFixture<ArticlesStatsPanelComponent>;
+describe('AdminArticleStatisticsPanelComponent', () => {
+  let fixture: ComponentFixture<AdminArticleStatisticsPanelComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ArticlesStatsPanelComponent],
+      imports: [AdminArticleStatisticsPanelComponent],
       providers: [provideI18nTesting()],
     }).compileComponents();
-    fixture = TestBed.createComponent(ArticlesStatsPanelComponent);
+    fixture = TestBed.createComponent(AdminArticleStatisticsPanelComponent);
     fixture.componentRef.setInput('dateFrom', '2026-01-01');
     fixture.componentRef.setInput('dateTo', '2026-01-31');
     fixture.componentRef.setInput('dateLocale', 'ru-RU');
@@ -61,7 +61,7 @@ describe('ArticlesStatsPanelComponent', () => {
     dateInput.value = '02/01/2026';
     dateInput.dispatchEvent(new Event('input'));
     fixture.debugElement
-      .query(By.css('[data-testid="articles-stats-refresh"]'))
+      .query(By.css('[data-testid="admin-article-statistics-refresh"]'))
       .nativeElement.click();
 
     expect(dateFromChange).toHaveBeenCalledWith('2026-01-02');
@@ -75,11 +75,11 @@ describe('ArticlesStatsPanelComponent', () => {
     fixture.detectChanges();
 
     fixture.debugElement
-      .query(By.css('[data-testid="articles-stats-refresh"]'))
+      .query(By.css('[data-testid="admin-article-statistics-refresh"]'))
       .nativeElement.click();
     fixture.detectChanges();
 
-    const dateFromInput = fixture.debugElement.query(By.css('#articlesStatsDateFrom'))
+    const dateFromInput = fixture.debugElement.query(By.css('#adminArticleStatsDateFrom'))
       .nativeElement as HTMLInputElement;
 
     expect(refresh).not.toHaveBeenCalled();

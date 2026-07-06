@@ -2,8 +2,6 @@ import { LanguageCode } from '../../../core/i18n/i18n.model';
 
 export type ArticlePublishStatus = 'Draft' | 'Published';
 export type ArticleReactionKind = 'heart' | 'fire' | 'thinking' | 'neutral' | 'poop';
-export type ArticleViewSourceCategory =
-  'Direct' | 'Internal' | 'Search' | 'Social' | 'External' | 'Unknown';
 
 export interface ArticleReactionCountsDto {
   heart: number;
@@ -110,39 +108,6 @@ export interface ArticleTreeDto {
 
 export interface TagsDto {
   tags: ArticleTagDto[];
-}
-
-export interface ArticleStatsTotalsDto {
-  viewCount: number;
-  engagedViewCount: number;
-  reactionCount: number;
-}
-
-export interface ArticleStatsArticleDto {
-  articleId: string;
-  title: string;
-  slug: string;
-  viewCount: number;
-  engagedViewCount: number;
-  reactionCounts: ArticleReactionCountsDto;
-}
-
-export interface ArticleStatsDailyDto {
-  articleId: string;
-  title: string;
-  slug: string;
-  date: string;
-  sourceCategory: ArticleViewSourceCategory;
-  viewCount: number;
-  engagedViewCount: number;
-}
-
-export interface ArticleStatsDto {
-  dateFrom: string;
-  dateTo: string;
-  totals: ArticleStatsTotalsDto;
-  articles: ArticleStatsArticleDto[];
-  daily: ArticleStatsDailyDto[];
 }
 
 export interface ArticleTag {
@@ -274,45 +239,6 @@ export interface ArticleReactionPayload {
   clientToken: string;
 }
 
-export interface ArticleStatsParams {
-  dateFrom: string;
-  dateTo: string;
-  language: LanguageCode;
-}
-
-export interface ArticleStatsTotals {
-  viewCount: number;
-  engagedViewCount: number;
-  reactionCount: number;
-}
-
-export interface ArticleStatsArticle {
-  articleId: string;
-  title: string;
-  slug: string;
-  viewCount: number;
-  engagedViewCount: number;
-  reactionCounts: ArticleReactionCounts;
-}
-
-export interface ArticleStatsDaily {
-  articleId: string;
-  title: string;
-  slug: string;
-  date: string;
-  sourceCategory: ArticleViewSourceCategory;
-  viewCount: number;
-  engagedViewCount: number;
-}
-
-export interface ArticleStats {
-  dateFrom: string;
-  dateTo: string;
-  totals: ArticleStatsTotals;
-  articles: ArticleStatsArticle[];
-  daily: ArticleStatsDaily[];
-}
-
 export interface ArticleListParams {
   page: number;
   pageSize: number;
@@ -416,23 +342,6 @@ export function mapPublicStatsCollectionDto(
       },
     ]),
   );
-}
-
-export function mapArticleStatsDto(dto: ArticleStatsDto): ArticleStats {
-  return {
-    dateFrom: dto.dateFrom,
-    dateTo: dto.dateTo,
-    totals: { ...dto.totals },
-    articles: dto.articles.map((article) => ({
-      articleId: article.articleId,
-      title: article.title,
-      slug: article.slug,
-      viewCount: article.viewCount,
-      engagedViewCount: article.engagedViewCount,
-      reactionCounts: mapReactionCountsDto(article.reactionCounts),
-    })),
-    daily: dto.daily.map((item) => ({ ...item })),
-  };
 }
 
 function getRequiredPublicStats(

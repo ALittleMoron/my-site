@@ -11,16 +11,12 @@ import {
   ArticlePublicStats,
   ArticlePublicStatsCollectionDto,
   ArticleReactionPayload,
-  ArticleStats,
-  ArticleStatsDto,
-  ArticleStatsParams,
   ArticleTag,
   ArticleTree,
   ArticleTreeDto,
   TagsDto,
   mapArticleDetailDto,
   mapArticleListDto,
-  mapArticleStatsDto,
   mapArticleTreeDto,
   mapPublicStatsCollectionDto,
   mapTagDto,
@@ -101,16 +97,6 @@ export class ArticlesService {
     language: LanguageCode,
   ): Observable<void> {
     return this.api.post<void>(`/api/articles/detail/${slug}/reaction`, payload, { language });
-  }
-
-  getAdminStats(params: ArticleStatsParams): Observable<ArticleStats> {
-    return this.api
-      .get<ArticleStatsDto>('/api/admin/articles/stats', {
-        dateFrom: params.dateFrom,
-        dateTo: params.dateTo,
-        language: params.language,
-      })
-      .pipe(map(mapArticleStatsDto));
   }
 
   getPublicTree(language: LanguageCode): Observable<ArticleTree> {

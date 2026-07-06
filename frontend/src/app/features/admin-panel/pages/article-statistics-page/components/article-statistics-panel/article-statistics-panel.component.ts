@@ -5,10 +5,10 @@ import { EmptyStateComponent } from '../../../../../../shared/ui/empty-state/emp
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LocalizedDatePickerComponent } from '../../../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { ArticleStats } from '../../../../models/articles.model';
+import { AdminArticleStats } from '../../../../models/article-workspace.model';
 
 @Component({
-  selector: 'app-articles-stats-panel',
+  selector: 'app-admin-article-statistics-panel',
   standalone: true,
   imports: [
     EmptyStateComponent,
@@ -18,10 +18,10 @@ import { ArticleStats } from '../../../../models/articles.model';
     TranslatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './articles-stats-panel.component.html',
+  templateUrl: './article-statistics-panel.component.html',
 })
-export class ArticlesStatsPanelComponent {
-  readonly stats = input<ArticleStats | null>(null);
+export class AdminArticleStatisticsPanelComponent {
+  readonly stats = input<AdminArticleStats | null>(null);
   readonly loading = input(false);
   readonly error = input<ApiError | null>(null);
   readonly dateFrom = input.required<string>();

@@ -383,6 +383,11 @@ export type AdminArticleFolder = ArticleFolder;
 export type AdminArticleFolderPayload = ArticleFolderPayload;
 export type AdminArticleTagPayload = TagPayload;
 export type AdminArticleListParams = ArticleListParams;
+export type AdminArticleStatsParams = ArticleStatsParams;
+export type AdminArticleStatsTotals = ArticleStatsTotals;
+export type AdminArticleStatsArticle = ArticleStatsArticle;
+export type AdminArticleStatsDaily = ArticleStatsDaily;
+export type AdminArticleStats = ArticleStats;
 
 export function mapTagDto(dto: ArticleTagDto): ArticleTag {
   return {

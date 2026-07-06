@@ -14,7 +14,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { AuthService } from '../../../../core/auth/auth.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -30,14 +29,12 @@ import {
   ArticleDetail,
   ArticleList,
   ArticleReactionKind,
-  ArticleStats,
   ArticleTag,
   ArticleTree,
 } from '../../models/articles.model';
 import { ArticlesService } from '../../services/articles.service';
 import { ArticleDetailComponent } from './components/article-detail/article-detail.component';
 import { ArticleListComponent } from './components/article-list/article-list.component';
-import { ArticlesStatsPanelComponent } from './components/articles-stats-panel/articles-stats-panel.component';
 import { ArticlesSidePanelComponent } from './components/articles-side-panel/articles-side-panel.component';
 
 const PAGE_SIZE = 10;
@@ -61,7 +58,6 @@ interface EngagedViewState {
     ArticleDetailComponent,
     LocalizedDatePickerComponent,
     ArticleListComponent,
-    ArticlesStatsPanelComponent,
     ArticlesSidePanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,7 +66,6 @@ interface EngagedViewState {
 })
 export class ArticlesPageComponent implements OnInit {
   private readonly articlesService = inject(ArticlesService);
-  private readonly authService = inject(AuthService);
   private readonly i18n = inject(I18nService);
   private readonly seoService = inject(SeoService);
   private readonly notifications = inject(NotificationService);
@@ -86,7 +81,6 @@ export class ArticlesPageComponent implements OnInit {
   private readonly trackedEngagedViewSlugs = new Set<string>();
   private languageReloadInitialized = false;
 
-  readonly canViewStats = this.authService.canManageContent;
   readonly sidePanelOpen = signal(this.readSidePanelPreference());
   readonly currentSlug = signal<string | null>(null);
   readonly activeTagSlug = signal<string | null>(null);
@@ -106,13 +100,6 @@ export class ArticlesPageComponent implements OnInit {
   readonly listError = signal<ApiError | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal<ApiError | null>(null);
-
-  readonly statsVisible = signal(false);
-  readonly stats = signal<ArticleStats | null>(null);
-  readonly statsLoading = signal(false);
-  readonly statsError = signal<ApiError | null>(null);
-  readonly statsDateFrom = signal(formatDateInput(daysBefore(new Date(), 30)));
-  readonly statsDateTo = signal(formatDateInput(new Date()));
 
   readonly activeTags = computed(() =>
     [...this.tags()].filter((tag) => tag.deletedAt === null).sort(compareTags),
@@ -323,59 +310,6 @@ export class ArticlesPageComponent implements OnInit {
       });
   }
 
-  toggleStats(): void {
-    this.statsVisible.update((visible) => {
-      const next = !visible;
-      if (next && this.stats() === null) {
-        this.loadStats();
-      }
-      return next;
-    });
-  }
-
-  setStatsDateFrom(value: string): void {
-    this.statsDateFrom.set(value);
-  }
-
-  setStatsDateTo(value: string): void {
-    this.statsDateTo.set(value);
-  }
-
-  loadStats(): void {
-    this.statsLoading.set(true);
-    this.statsError.set(null);
-    this.articlesService
-      .getAdminStats({
-        dateFrom: this.statsDateFrom(),
-        dateTo: this.statsDateTo(),
-        language: this.currentLanguage(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (stats) => {
-          this.stats.set(stats);
-          this.statsLoading.set(false);
-        },
-        error: (err: ApiError) => {
-          this.statsError.set(err);
-          this.statsLoading.set(false);
-        },
-      });
-  }
-
-  exportStatsCsv(): void {
-    if (!this.isBrowser) return;
-    const stats = this.stats();
-    if (!stats) return;
-    const csv = buildStatsCsv(stats);
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    const link = this.document.createElement('a');
-    link.href = url;
-    link.download = `articles-stats-${stats.dateFrom}-${stats.dateTo}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
   loadArticles(): void {
     this.listLoading.set(true);
     this.listError.set(null);
@@ -537,9 +471,6 @@ export class ArticlesPageComponent implements OnInit {
       this.loadDetail(slug);
     } else {
       this.loadArticles();
-    }
-    if (this.statsVisible()) {
-      this.loadStats();
     }
   }
 
@@ -706,36 +637,4 @@ function applyReactionChange(params: {
     reactionCounts[params.nextReaction] += 1;
   }
   return { ...params.article, reactionCounts };
-}
-
-function daysBefore(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() - days);
-  return result;
-}
-
-function formatDateInput(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function buildStatsCsv(stats: ArticleStats): string {
-  const rows = [
-    ['title', 'slug', 'views', 'engaged_views', 'heart', 'fire', 'thinking', 'neutral', 'poop'],
-    ...stats.articles.map((article) => [
-      article.title,
-      article.slug,
-      String(article.viewCount),
-      String(article.engagedViewCount),
-      String(article.reactionCounts.heart),
-      String(article.reactionCounts.fire),
-      String(article.reactionCounts.thinking),
-      String(article.reactionCounts.neutral),
-      String(article.reactionCounts.poop),
-    ]),
-  ];
-  return rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
-}
-
-function escapeCsvCell(value: string): string {
-  return `"${value.replaceAll('"', '""')}"`;
 }

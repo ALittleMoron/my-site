@@ -89,7 +89,7 @@
 
       @if (calendarMode() === 'days') {
         <div class="localized-date-picker-grid localized-date-picker-weekdays mb-1">
-          @for (weekday of weekdayLabels(); track weekday) {
+          @for (weekday of weekdayLabels(); track $index) {
             <div class="text-body-secondary small text-center">{{ weekday }}</div>
           }
         </div>

@@ -13,7 +13,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { AnonymousReactionService } from '../../../../core/privacy/anonymous-reaction.service';
 import { SeoService } from '../../../../core/seo/seo.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
-import { ArticleDetail, ArticleList, ArticleStats, ArticleTree } from '../../models/articles.model';
+import { ArticleDetail, ArticleList, ArticleTree } from '../../models/articles.model';
 import { ArticlesService } from '../../services/articles.service';
 import { ArticlesPageComponent } from './articles-page.component';
 
@@ -67,7 +67,7 @@ describe('ArticlesPageComponent', () => {
       trackPublicView: jest.fn().mockReturnValue(of(undefined)),
       trackPublicEngagedView: jest.fn().mockReturnValue(of(undefined)),
       setPublicReaction: jest.fn().mockReturnValue(of(undefined)),
-      getAdminStats: jest.fn().mockReturnValue(of(articleStats())),
+      getAdminStats: jest.fn().mockReturnValue(of(undefined)),
     };
     anonymousReactionService = {
       getOrCreateClientToken: jest.fn().mockReturnValue('client-token'),
@@ -405,21 +405,6 @@ describe('ArticlesPageComponent', () => {
     expect(to.placeholder).toBe('mm/dd/yyyy');
   });
 
-  it('wraps the statistics panel in an animated shell when visible', () => {
-    canManageContent = true;
-    paramMap.next(convertToParamMap({}));
-    fixture.detectChanges();
-
-    fixture.componentInstance.toggleStats();
-    fixture.detectChanges();
-
-    const shell = fixture.nativeElement.querySelector(
-      '[data-testid="articles-stats-panel-shell"]',
-    ) as HTMLElement;
-    expect(shell).toBeTruthy();
-    expect(shell.classList).toContain('articles-stats-panel-shell');
-  });
-
   it('keeps article authoring controls out of public article routes for content managers', () => {
     canManageContent = true;
     paramMap.next(convertToParamMap({}));
@@ -428,8 +413,13 @@ describe('ArticlesPageComponent', () => {
     const text = fixture.nativeElement.textContent as string;
 
     expect(text).not.toContain('Добавить статью');
+    expect(text).not.toContain('Статистика');
     expect(fixture.nativeElement.querySelector('app-article-form')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="articles-stats-panel-shell"]')).toBe(
+      null,
+    );
     expect(fixture.nativeElement.querySelector('#articlesOnlyPublishedToggle')).toBeNull();
+    expect(articlesService.getAdminStats).not.toHaveBeenCalled();
   });
 
   it('reloads localized content when language changes', () => {
@@ -572,14 +562,4 @@ function setDocumentVisibility(visibilityState: DocumentVisibilityState): void {
     configurable: true,
     value: visibilityState,
   });
-}
-
-function articleStats(): ArticleStats {
-  return {
-    dateFrom: '2026-01-01',
-    dateTo: '2026-01-31',
-    totals: { viewCount: 0, engagedViewCount: 0, reactionCount: 0 },
-    articles: [],
-    daily: [],
-  };
 }

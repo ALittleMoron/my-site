@@ -39,6 +39,13 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         badgeTextKey: null,
         adminOnly: false,
       },
+      {
+        key: 'article-statistics',
+        labelKey: 'articles.stats.button',
+        route: '/admin-panel/article-statistics',
+        badgeTextKey: null,
+        adminOnly: false,
+      },
     ],
   },
   {
