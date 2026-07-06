@@ -223,21 +223,17 @@
             @if (importFileSelectionErrorKey(); as errorKey) {
               <div class="alert alert-danger py-2 mb-2">{{ errorKey | t }}</div>
             }
-            @if (importError(); as error) {
+            @if (importError()) {
               <div
                 class="alert alert-danger mb-0"
                 data-testid="matrix-queue-import-error"
                 role="alert"
               >
-                @if (importNestedErrorMessages().length > 0) {
-                  <ul class="mb-0 ps-3">
-                    @for (message of importNestedErrorMessages(); track $index) {
-                      <li>{{ message }}</li>
-                    }
-                  </ul>
-                } @else {
-                  <p class="mb-0">{{ error.message }}</p>
-                }
+                <ul class="mb-0 ps-3">
+                  @for (message of importErrorMessages(); track $index) {
+                    <li>{{ message }}</li>
+                  }
+                </ul>
               </div>
             }
           }

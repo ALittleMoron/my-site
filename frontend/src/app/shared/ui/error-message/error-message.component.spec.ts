@@ -23,6 +23,29 @@ describe('ErrorMessageComponent', () => {
     expect(el.querySelector('ul')).toBeNull();
   });
 
+  it('renders the parent message with readable attr context', () => {
+    fixture.componentRef.setInput('error', {
+      message: 'Title is required.',
+      attr: 'payload.title',
+    });
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('payload / title: Title is required.');
+    expect(el.querySelector('ul')).toBeNull();
+  });
+
+  it('uses location context when attr is not available', () => {
+    fixture.componentRef.setInput('error', {
+      message: 'Payload is invalid.',
+      location: 'body',
+      attr: null,
+    });
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('body: Payload is invalid.');
+    expect(el.querySelector('ul')).toBeNull();
+  });
+
   it('renders only flattened nested messages when nested errors are present', () => {
     fixture.componentRef.setInput('error', {
       message: 'Multiple errors occurred. Please check list for nested_errors.',
@@ -45,6 +68,23 @@ describe('ErrorMessageComponent', () => {
       'Cell A2 is blank.',
       'Row 3: question must be text.',
     ]);
+  });
+
+  it('renders flattened nested messages with readable attr context', () => {
+    fixture.componentRef.setInput('error', {
+      message: 'Question queue import file is invalid.',
+      nested_errors: [
+        {
+          message: 'Row 2 question must not be blank.',
+          location: 'body',
+          attr: 'file.row.2',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const items = Array.from(el.querySelectorAll('li')).map((item) => item.textContent?.trim());
+    expect(items).toEqual(['file / row 2: Row 2 question must not be blank.']);
   });
 
   it('emits retry events from the retry button', () => {

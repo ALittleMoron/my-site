@@ -42,6 +42,64 @@ describe('errorInterceptor', () => {
     });
   });
 
+  it('preserves backend error context and nested errors', (done) => {
+    const req = new HttpRequest('POST', '/api/admin/queue/import');
+    const next: HttpHandlerFn = () =>
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            error: {
+              code: 'client_error',
+              type: 'bad_request',
+              message: 'Question queue import file is invalid.',
+              location: 'body',
+              attr: 'file',
+              nested_errors: [
+                {
+                  code: 'client_error',
+                  type: 'bad_request',
+                  message: 'Row 2 question must not be blank.',
+                  location: 'body',
+                  attr: 'file.row.2',
+                },
+              ],
+            },
+          }),
+      );
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthTokenService, useValue: { clearToken: jest.fn() } },
+        { provide: AuthModalService, useValue: { openLogin: jest.fn() } },
+        { provide: AuthSessionService, useValue: { clear: jest.fn() } },
+      ],
+    });
+
+    TestBed.runInInjectionContext(() => errorInterceptor(req, next)).subscribe({
+      error: (err: unknown) => {
+        expect(err).toEqual({
+          code: 'client_error',
+          type: 'bad_request',
+          message: 'Question queue import file is invalid.',
+          status: 400,
+          location: 'body',
+          attr: 'file',
+          nested_errors: [
+            {
+              code: 'client_error',
+              type: 'bad_request',
+              message: 'Row 2 question must not be blank.',
+              location: 'body',
+              attr: 'file.row.2',
+            },
+          ],
+        });
+        done();
+      },
+    });
+  });
+
   it('opens login flow and clears local session on 401 responses', (done) => {
     const clearToken = jest.fn();
     const clearSession = jest.fn();

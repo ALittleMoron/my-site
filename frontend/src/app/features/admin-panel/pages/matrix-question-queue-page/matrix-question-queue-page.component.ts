@@ -15,7 +15,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import {
   ErrorMessageComponent,
-  flattenNestedErrorMessages,
+  errorDisplayMessages,
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
@@ -81,16 +81,15 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (file === null) return null;
     return this.i18n.translate('adminMatrixQueue.importSelectedFile', { filename: file.name });
   });
-  readonly importNestedErrorMessages = computed(() => {
+  readonly importErrorMessages = computed(() => {
     const error = this.importError();
     if (error === null) return [];
-    return flattenNestedErrorMessages(error);
+    return errorDisplayMessages(error);
   });
   readonly formErrorMessages = computed(() => {
     const error = this.formError();
     if (error === null) return [];
-    const nestedMessages = flattenNestedErrorMessages(error);
-    return nestedMessages.length > 0 ? nestedMessages : [error.message];
+    return errorDisplayMessages(error);
   });
   readonly selectedQuestionInitialValue = computed<AdminMatrixQuestionCreateInitialValue | null>(
     () => {

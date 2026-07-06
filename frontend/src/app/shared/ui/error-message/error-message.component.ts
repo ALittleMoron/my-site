@@ -2,7 +2,20 @@ import { Component, ChangeDetectionStrategy, computed, input, output } from '@an
 
 export interface ErrorDisplay {
   message: string;
+  location?: string | null;
+  attr?: string | null;
   nested_errors?: readonly ErrorDisplay[];
+}
+
+export function errorDisplayMessages(error: ErrorDisplay): readonly string[] {
+  const nestedMessages = flattenNestedErrorMessages(error);
+  return nestedMessages.length > 0 ? nestedMessages : [formatErrorMessage(error)];
+}
+
+export function formatErrorMessage(error: ErrorDisplay): string {
+  const context = readableErrorContext(error.attr ?? error.location ?? null);
+  if (context === null) return error.message;
+  return `${context}: ${error.message}`;
 }
 
 export function flattenNestedErrorMessages(error: ErrorDisplay): readonly string[] {
@@ -13,9 +26,27 @@ export function flattenNestedErrorMessages(error: ErrorDisplay): readonly string
 
 function appendNestedErrorMessages(errors: readonly ErrorDisplay[], messages: string[]): void {
   for (const error of errors) {
-    messages.push(error.message);
+    messages.push(formatErrorMessage(error));
     appendNestedErrorMessages(error.nested_errors ?? [], messages);
   }
+}
+
+function readableErrorContext(context: string | null): string | null {
+  if (context === null || context.trim() === '') return null;
+
+  const segments = context.split('.').filter((segment) => segment !== '');
+  if (segments.length === 0) return null;
+
+  const readableSegments: string[] = [];
+  for (const segment of segments) {
+    if (/^\d+$/.test(segment) && readableSegments.length > 0) {
+      const lastIndex = readableSegments.length - 1;
+      readableSegments[lastIndex] = `${readableSegments[lastIndex]} ${segment}`;
+      continue;
+    }
+    readableSegments.push(segment);
+  }
+  return readableSegments.join(' / ');
 }
 
 @Component({
@@ -32,7 +63,7 @@ function appendNestedErrorMessages(errors: readonly ErrorDisplay[], messages: st
             }
           </ul>
         } @else {
-          <span>{{ error().message }}</span>
+          <span>{{ topLevelMessage() }}</span>
         }
       </div>
       <button type="button" class="btn btn-sm btn-outline-danger ms-3" (click)="retry.emit()">
@@ -46,4 +77,5 @@ export class ErrorMessageComponent {
   readonly retryLabel = input.required<string>();
   readonly retry = output<void>();
   readonly nestedMessages = computed(() => flattenNestedErrorMessages(this.error()));
+  readonly topLevelMessage = computed(() => formatErrorMessage(this.error()));
 }

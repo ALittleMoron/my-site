@@ -362,7 +362,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
           message: 'Row 2: question must not be empty.',
           status: 400,
           location: 'body',
-          attr: 'row_2',
+          attr: 'file.row.2',
         },
       ],
     };
@@ -382,7 +382,9 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain(
       'Question queue import file is invalid.',
     );
-    expect(fixture.nativeElement.textContent).toContain('Row 2: question must not be empty.');
+    expect(fixture.nativeElement.textContent).toContain(
+      'file / row 2: Row 2: question must not be empty.',
+    );
   });
 
   it('opens a shared create modal from a full-width queued question card', () => {
@@ -457,8 +459,8 @@ describe('MatrixQuestionQueuePageComponent', () => {
       type: 'bad_request',
       message: 'Failed',
       status: 400,
-      location: null,
-      attr: null,
+      location: 'body',
+      attr: 'payload.slug',
     };
     queueService.createQuestionFromQueue.mockReturnValue(throwError(() => error));
     openCreateModalFromQueue();
@@ -468,7 +470,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось создать вопрос из очереди.');
     expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Failed');
+    expect(fixture.nativeElement.textContent).toContain('payload / slug: Failed');
   });
 
   function openAddModal(): void {
