@@ -53,6 +53,11 @@ Never violate these boundaries:
   Keep legacy unprefixed routes only for compatibility/protected SPA access, not canonical SEO.
 - Do not hardcode user-facing interface strings in Angular templates or components. Use
   `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
+- Grouped navigation item labels should not repeat the parent section domain when the section
+  heading already provides that context. For example, under an Articles section use "Folders"
+  rather than "Article folders", and under a Competency matrix section use "Questions" or
+  "Structure" rather than repeating "matrix" in each item. Keep the domain in the item label only
+  when removing it would make the label ambiguous or unnatural.
 - Persist only supported language codes returned by the backend. Do not introduce frontend-only
   languages or language fallbacks that bypass the backend enum/catalog.
 - Articles and article tags localise content through the articles API, not through the UI i18n bundle. Pass

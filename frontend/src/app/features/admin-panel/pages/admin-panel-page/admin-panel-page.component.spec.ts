@@ -50,10 +50,14 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
-    expect(fixture.nativeElement.textContent).toContain('Папки статей');
-    expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
-    expect(fixture.nativeElement.textContent).toContain('Структура матрицы');
-    expect(fixture.nativeElement.textContent).toContain('Очередь вопросов матрицы');
+    expect(fixture.nativeElement.textContent).toContain('Папки');
+    expect(fixture.nativeElement.textContent).toContain('Вопросы');
+    expect(fixture.nativeElement.textContent).toContain('Структура');
+    expect(fixture.nativeElement.textContent).toContain('Очередь вопросов');
+    expect(fixture.nativeElement.textContent).not.toContain('Папки статей');
+    expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
+    expect(fixture.nativeElement.textContent).not.toContain('Структура матрицы');
+    expect(fixture.nativeElement.textContent).not.toContain('Очередь вопросов матрицы');
   });
 
   it('places workspace navigation first in the side panel', () => {
@@ -76,7 +80,8 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).not.toContain('Команда');
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
-    expect(fixture.nativeElement.textContent).toContain('Вопросы матрицы');
+    expect(fixture.nativeElement.textContent).toContain('Вопросы');
+    expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
   });
 
   it('shows workspace navigation for owners without exact admin access', () => {

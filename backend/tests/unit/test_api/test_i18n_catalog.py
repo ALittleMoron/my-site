@@ -52,6 +52,19 @@ class TestI18nCatalog:
         assert russian_messages["shell.footer.email"] == "Эл. почта"
         assert english_messages["shell.footer.email"] == "Email"
 
+    def test_admin_panel_navigation_item_labels_omit_repeated_section_domain(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["adminPanel.section.articleFolders"] == "Папки"
+        assert russian_messages["adminPanel.section.matrixQuestions"] == "Вопросы"
+        assert russian_messages["adminPanel.section.matrixStructure"] == "Структура"
+        assert russian_messages["adminPanel.section.matrixQuestionQueue"] == "Очередь вопросов"
+        assert english_messages["adminPanel.section.articleFolders"] == "Folders"
+        assert english_messages["adminPanel.section.matrixQuestions"] == "Questions"
+        assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
+        assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"
+
     def test_site_build_case_study_catalog_describes_public_engineering_page(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
