@@ -204,6 +204,16 @@ export interface AdminMatrixQuestionPayload {
   resources: AdminMatrixResourceAttachmentPayload[];
 }
 
+export interface AdminMatrixQuestionCreateInitialValue {
+  slug: string;
+  subsectionId: string | null;
+  preferredSheetKey: string | null;
+  grade: AdminMatrixGrade | null;
+  interviewFrequency: AdminMatrixInterviewFrequency | null;
+  publishStatus: AdminMatrixPublishStatus;
+  translations: AdminMatrixQuestionTranslations;
+}
+
 export interface AdminMatrixStructureNameTranslation {
   name: string;
 }

@@ -2,9 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client.service';
 import { LanguageCode } from '../../../core/i18n/i18n.model';
+import { AdminMatrixQuestionPayload } from '../models/matrix-question-workspace.model';
 import {
   AdminMatrixItemDetailDto,
-  AdminMatrixItemPayload,
   QueuedMatrixQuestion,
   QueuedMatrixQuestionDto,
   QueuedMatrixQuestionsDto,
@@ -47,7 +47,7 @@ export class MatrixQuestionQueueService {
 
   createQuestionFromQueue(
     questionId: string,
-    payload: AdminMatrixItemPayload,
+    payload: AdminMatrixQuestionPayload,
     language: LanguageCode,
   ): Observable<AdminMatrixItemDetailDto> {
     return this.api.post<AdminMatrixItemDetailDto>(

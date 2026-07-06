@@ -63,6 +63,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture = TestBed.createComponent(MatrixQuestionFormComponent);
     fixture.componentRef.setInput('mode', 'create');
     fixture.componentRef.setInput('question', null);
+    fixture.componentRef.setInput('createInitialValue', null);
     fixture.componentRef.setInput('submitting', false);
     fixture.componentInstance.questionSave.subscribe((payload) => emittedPayloads.push(payload));
     fixture.detectChanges();
@@ -168,6 +169,39 @@ describe('MatrixQuestionFormComponent', () => {
         resources: [],
       }),
     );
+  });
+
+  it('prefills create form from explicit initial value', () => {
+    fixture.componentRef.setInput('createInitialValue', {
+      slug: 'queued-question-0007',
+      subsectionId: null,
+      preferredSheetKey: 'python',
+      grade: 'Junior',
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: '',
+          interviewExpectedAnswer: '',
+        },
+        en: {
+          question: 'What is PEP 8?',
+          answer: '',
+          interviewExpectedAnswer: '',
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    expect(inputValue('#matrix-form-slug')).toBe('queued-question-0007');
+    expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8?');
+    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
+    expect(selectValue('#matrix-form-grade')).toBe('Junior');
+    expect(
+      fixture.debugElement.query(By.directive(MatrixStructurePickerStubComponent)).componentInstance
+        .preferredSheetKey,
+    ).toBe('python');
   });
 
   it('blocks invalid slug and long answer text before emitting', () => {
@@ -424,6 +458,11 @@ describe('MatrixQuestionFormComponent', () => {
   function inputValue(selector: string): string {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     return input.value;
+  }
+
+  function selectValue(selector: string): string {
+    const select = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
+    return select.value;
   }
 
   function fieldColumn(selector: string): HTMLElement {

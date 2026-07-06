@@ -23,6 +23,7 @@ import { slugify } from '../../../../shared/utils/slugify';
 import {
   AdminMatrixGrade,
   AdminMatrixInterviewFrequency,
+  AdminMatrixQuestionCreateInitialValue,
   AdminMatrixMissingField,
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
@@ -107,6 +108,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
 
   @Input({ required: true }) mode!: 'create' | 'edit';
   @Input({ required: true }) question!: AdminMatrixQuestionDetailDto | null;
+  @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
 
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();
@@ -147,7 +149,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
   });
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['question'] || changes['mode']) {
+    if (changes['question'] || changes['mode'] || changes['createInitialValue']) {
       this.resetFromQuestion();
     }
   }
@@ -349,6 +351,10 @@ export class MatrixQuestionFormComponent implements OnChanges {
     return this.i18n.translate(`enum.publishStatus.${status}`);
   }
 
+  get preferredSheetKey(): string | null {
+    return this.question === null ? (this.createInitialValue?.preferredSheetKey ?? null) : null;
+  }
+
   missingFieldLabel(field: string): string {
     return this.i18n.translate(`adminMatrixWorkspace.missing.${field}`);
   }
@@ -369,18 +375,19 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.formSubmitted.set(false);
     this.publishError.set(null);
     if (this.question === null) {
+      const initialValue = this.createInitialValue;
       this.questionForm.reset({
-        slug: '',
-        subsectionId: null,
-        grade: '',
-        interviewFrequency: '',
-        publishStatus: 'Draft',
-        questionRu: '',
-        questionEn: '',
-        answerRu: '',
-        answerEn: '',
-        expectedAnswerRu: '',
-        expectedAnswerEn: '',
+        slug: initialValue?.slug ?? '',
+        subsectionId: initialValue?.subsectionId ?? null,
+        grade: initialValue?.grade ?? '',
+        interviewFrequency: initialValue?.interviewFrequency ?? '',
+        publishStatus: initialValue?.publishStatus ?? 'Draft',
+        questionRu: initialValue?.translations.ru.question ?? '',
+        questionEn: initialValue?.translations.en.question ?? '',
+        answerRu: initialValue?.translations.ru.answer ?? '',
+        answerEn: initialValue?.translations.en.answer ?? '',
+        expectedAnswerRu: initialValue?.translations.ru.interviewExpectedAnswer ?? '',
+        expectedAnswerEn: initialValue?.translations.en.interviewExpectedAnswer ?? '',
       });
       this.resetResourceDrafts();
       return;

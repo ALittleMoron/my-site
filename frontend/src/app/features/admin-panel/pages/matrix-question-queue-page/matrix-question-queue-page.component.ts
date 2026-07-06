@@ -7,8 +7,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { AbstractControl, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NonNullableFormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -20,23 +18,15 @@ import {
   flattenNestedErrorMessages,
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
-import { MatrixStructurePickerComponent } from '../../components/matrix-structure-picker/matrix-structure-picker.component';
-import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
+import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
+import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
 import {
-  AdminMatrixGrade,
-  AdminMatrixItemPayload,
-  QueuedMatrixQuestion,
-} from '../../models/matrix-question-queue.model';
+  AdminMatrixQuestionCreateInitialValue,
+  AdminMatrixQuestionPayload,
+} from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
-import {
-  ADMIN_VALIDATION_LIMITS,
-  controlInvalid,
-  slugValidator,
-  trimRequired,
-  validationMessage,
-} from '../../utils/admin-validation';
+import { ADMIN_VALIDATION_LIMITS } from '../../utils/admin-validation';
 
-const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 const IMPORT_FILE_ACCEPT =
   '.txt,.csv,.xlsx,.xlsm,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12';
@@ -47,13 +37,11 @@ type QueueAddMode = 'manual' | 'import';
   selector: 'app-matrix-question-queue-page',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
     TranslatePipe,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
-    MatrixStructurePickerComponent,
-    AdminControlValidationStateDirective,
+    MatrixQuestionFormComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
@@ -62,15 +50,14 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly queueService = inject(MatrixQuestionQueueService);
   private readonly notifications = inject(NotificationService);
   readonly i18n = inject(I18nService);
-  private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly grades = GRADES;
   readonly questions = signal<QueuedMatrixQuestion[]>([]);
   readonly loading = signal(false);
   readonly error = signal<ApiError | null>(null);
   readonly selectedQuestion = signal<QueuedMatrixQuestion | null>(null);
   readonly submitting = signal(false);
+  readonly formError = signal<ApiError | null>(null);
   readonly rejectingQuestionId = signal<string | null>(null);
   readonly manualAddVisible = signal(false);
   readonly addMode = signal<QueueAddMode>('manual');
@@ -99,29 +86,38 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (error === null) return [];
     return flattenNestedErrorMessages(error);
   });
-
-  readonly form = this.formBuilder.group({
-    slug: [
-      '',
-      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
-    ],
-    subsectionId: new FormControl<string | null>(null, { validators: Validators.required }),
-    grade: this.formBuilder.control<AdminMatrixGrade>('Junior', {
-      validators: Validators.required,
-    }),
-    questionRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
-    questionEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
-    answerRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)]],
-    answerEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)]],
-    expectedAnswerRu: [
-      '',
-      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
-    ],
-    expectedAnswerEn: [
-      '',
-      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
-    ],
+  readonly formErrorMessages = computed(() => {
+    const error = this.formError();
+    if (error === null) return [];
+    const nestedMessages = flattenNestedErrorMessages(error);
+    return nestedMessages.length > 0 ? nestedMessages : [error.message];
   });
+  readonly selectedQuestionInitialValue = computed<AdminMatrixQuestionCreateInitialValue | null>(
+    () => {
+      const question = this.selectedQuestion();
+      if (question === null) return null;
+      return {
+        slug: `queued-question-${question.id}`,
+        subsectionId: null,
+        preferredSheetKey: question.sheet,
+        grade: question.grade,
+        interviewFrequency: null,
+        publishStatus: 'Draft',
+        translations: {
+          ru: {
+            question: question.question,
+            answer: '',
+            interviewExpectedAnswer: '',
+          },
+          en: {
+            question: question.question,
+            answer: '',
+            interviewExpectedAnswer: '',
+          },
+        },
+      };
+    },
+  );
 
   ngOnInit(): void {
     this.loadQueue();
@@ -148,17 +144,14 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   selectQuestion(question: QueuedMatrixQuestion): void {
     this.selectedQuestion.set(question);
-    this.form.reset({
-      slug: `queued-question-${question.id}`,
-      subsectionId: null,
-      grade: question.grade ?? 'Junior',
-      questionRu: question.question,
-      questionEn: question.question,
-      answerRu: '',
-      answerEn: '',
-      expectedAnswerRu: '',
-      expectedAnswerEn: '',
-    });
+    this.formError.set(null);
+    this.submitting.set(false);
+  }
+
+  closeCreateModal(): void {
+    if (this.submitting()) return;
+    this.selectedQuestion.set(null);
+    this.formError.set(null);
   }
 
   openManualAdd(): void {
@@ -294,6 +287,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.rejectingQuestionId.set(null);
           if (this.selectedQuestion()?.id === question.id) {
             this.selectedQuestion.set(null);
+            this.formError.set(null);
           }
           this.notifications.success(this.i18n.translate('adminMatrixQueue.rejected'));
           this.loadQueue();
@@ -305,25 +299,28 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       });
   }
 
-  createQuestion(): void {
+  createQuestion(payload: AdminMatrixQuestionPayload): void {
     const question = this.selectedQuestion();
-    if (question === null || this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (question === null) {
+      this.notifications.error(this.i18n.translate('adminMatrixQueue.createError'));
       return;
     }
     this.submitting.set(true);
+    this.formError.set(null);
     this.queueService
-      .createQuestionFromQueue(question.id, this.toPayload(), this.currentLanguage())
+      .createQuestionFromQueue(question.id, payload, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.submitting.set(false);
           this.selectedQuestion.set(null);
+          this.formError.set(null);
           this.notifications.success(this.i18n.translate('adminMatrixQueue.created'));
           this.loadQueue();
         },
-        error: () => {
+        error: (err: ApiError) => {
           this.submitting.set(false);
+          this.formError.set(err);
           this.notifications.error(this.i18n.translate('adminMatrixQueue.createError'));
         },
       });
@@ -333,20 +330,6 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     return [question.grade, question.sheet, question.section, question.subsection]
       .filter((value) => value !== null && value !== '')
       .join(' / ');
-  }
-
-  selectQuestionSubsection(subsectionId: string | null): void {
-    this.form.controls.subsectionId.setValue(subsectionId);
-    this.form.controls.subsectionId.markAsTouched();
-    this.form.controls.subsectionId.markAsDirty();
-  }
-
-  queueFieldInvalid(control: AbstractControl<unknown>): boolean {
-    return controlInvalid(control, true);
-  }
-
-  queueFieldMessage(control: AbstractControl<unknown>): string | null {
-    return validationMessage(control, this.i18n);
   }
 
   manualAddErrorMessage(): string | null {
@@ -359,32 +342,6 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       });
     }
     return this.i18n.translate(errorKey);
-  }
-
-  private toPayload(): AdminMatrixItemPayload {
-    const value = this.form.getRawValue();
-    if (value.subsectionId === null) {
-      throw new Error('Matrix question subsection is required');
-    }
-    return {
-      slug: value.slug,
-      subsectionId: value.subsectionId,
-      grade: value.grade,
-      publishStatus: 'Draft',
-      translations: {
-        ru: {
-          question: value.questionRu,
-          answer: value.answerRu,
-          interviewExpectedAnswer: value.expectedAnswerRu,
-        },
-        en: {
-          question: value.questionEn,
-          answer: value.answerEn,
-          interviewExpectedAnswer: value.expectedAnswerEn,
-        },
-      },
-      resources: [],
-    };
   }
 
   currentLanguage(): 'ru' | 'en' {

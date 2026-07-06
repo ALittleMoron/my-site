@@ -6,6 +6,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import {
+  AdminMatrixQuestionCreateInitialValue,
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
 } from '../../models/matrix-question-workspace.model';
@@ -139,6 +140,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
 class MatrixQuestionFormStubComponent {
   @Input({ required: true }) mode!: 'create' | 'edit';
   @Input({ required: true }) question!: AdminMatrixQuestionDetailDto | null;
+  @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();
   @Output() readonly formCancel = new EventEmitter<void>();

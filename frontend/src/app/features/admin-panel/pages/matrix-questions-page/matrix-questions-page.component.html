@@ -420,6 +420,7 @@
           <app-admin-matrix-question-form
             mode="create"
             [question]="null"
+            [createInitialValue]="null"
             [submitting]="formSubmitting()"
             (questionSave)="saveQuestion($event)"
             (formCancel)="closeForm()"

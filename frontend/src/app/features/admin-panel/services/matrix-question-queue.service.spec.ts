@@ -149,7 +149,8 @@ describe('MatrixQuestionQueueService', () => {
         {
           slug: 'pep-8',
           subsectionId: SUBSECTION_ID,
-          grade: 'Junior',
+          grade: null,
+          interviewFrequency: null,
           publishStatus: 'Draft',
           translations: {
             ru: {
@@ -178,6 +179,8 @@ describe('MatrixQuestionQueueService', () => {
     expect(req.request.params.get('language')).toBe('en');
     expect(req.request.body.slug).toBe('pep-8');
     expect(req.request.body.subsectionId).toBe(SUBSECTION_ID);
+    expect(req.request.body.grade).toBeNull();
+    expect(req.request.body.interviewFrequency).toBeNull();
     expect(req.request.body.sheetKey).toBeUndefined();
     expect(req.request.body.translations.en.section).toBeUndefined();
     req.flush({ id: '10', slug: 'pep-8', question: 'What is PEP 8?' });

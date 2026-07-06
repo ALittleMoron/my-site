@@ -52,6 +52,7 @@
     <app-admin-matrix-question-form
       mode="edit"
       [question]="currentQuestion"
+      [createInitialValue]="null"
       [submitting]="submitting()"
       (questionSave)="saveQuestion($event)"
       (formCancel)="goBack()"

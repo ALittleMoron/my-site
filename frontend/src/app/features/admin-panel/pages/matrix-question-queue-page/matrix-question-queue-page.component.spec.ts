@@ -3,7 +3,10 @@ import { of, throwError } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
-import { AdminMatrixStructure } from '../../models/matrix-question-workspace.model';
+import {
+  AdminMatrixQuestionPayload,
+  AdminMatrixStructure,
+} from '../../models/matrix-question-workspace.model';
 import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
@@ -68,14 +71,6 @@ const matrixStructure: AdminMatrixStructure = {
 };
 
 const INVALID_SHORT_TEXT = 'x'.repeat(256);
-const INVALID_MATRIX_TEXT = 'x'.repeat(20_001);
-
-interface QueueCreateValidationCase {
-  description: string;
-  selector: string;
-  expectedMessage: string;
-  setInvalidValue: () => void;
-}
 
 describe('MatrixQuestionQueuePageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionQueuePageComponent>;
@@ -92,7 +87,9 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
   beforeEach(async () => {
     queueService = {
-      listQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion])),
+      listQueuedQuestions: jest
+        .fn()
+        .mockReturnValue(of([queuedQuestion, queuedQuestionWithMissingSheet])),
       createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
       importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
@@ -103,6 +100,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       createSheet: jest.fn(),
       createSection: jest.fn(),
       createSubsection: jest.fn(),
+      searchResources: jest.fn().mockReturnValue(of([])),
     } as unknown as jest.Mocked<MatrixQuestionWorkspaceService>;
     notificationService = {
       success: jest.fn(),
@@ -387,19 +385,23 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Row 2: question must not be empty.');
   });
 
-  it('prefills create form from selected queued question', () => {
-    component.selectQuestion(queuedQuestion);
-    fixture.detectChanges();
+  it('opens a shared create modal from a full-width queued question card', () => {
+    expect(fixture.nativeElement.querySelector('.col-xl-5')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.col-xl-7')).toBeNull();
 
-    expect(component.form.getRawValue().questionRu).toBe('What is PEP 8?');
-    expect(component.form.getRawValue().subsectionId).toBeNull();
+    openCreateModalFromQueue();
+
+    expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
+    expect(inputValue('#matrix-form-slug')).toBe(`queued-question-${QUESTION_ID}`);
+    expect(inputValue('#matrix-form-question-ru')).toBe('What is PEP 8?');
+    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SHEET_ID);
   });
 
-  it('highlights a missing queued sheet key and pre-fills sheet creation', () => {
-    component.selectQuestion(queuedQuestionWithMissingSheet);
-    fixture.detectChanges();
+  it('highlights a missing queued sheet key in the shared create modal', () => {
+    openCreateModalFromQueue(MISSING_SHEET_QUESTION_ID);
 
+    expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
     expect(fixture.nativeElement.textContent).toContain(
       'Лист с ключом sql не найден. Создайте лист и заполните названия RU/EN.',
@@ -409,32 +411,8 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(inputValue('[data-testid="matrix-structure-sheet-en"]')).toBe('');
   });
 
-  it('lays out queue create fields for the narrow queue column', () => {
-    component.selectQuestion(queuedQuestion);
-    fixture.detectChanges();
-
-    expect(fieldColumn('#queue-question-slug').classList).toContain('col-12');
-    expect(fieldColumn('#queue-question-slug').classList).toContain('col-md-8');
-    expect(fieldColumn('#queue-question-grade').classList).toContain('col-12');
-    expect(fieldColumn('#queue-question-grade').classList).toContain('col-md-4');
-
-    for (const selector of [
-      '#queue-question-ru',
-      '#queue-question-en',
-      '#queue-answer-ru',
-      '#queue-answer-en',
-      '#queue-expected-answer-ru',
-      '#queue-expected-answer-en',
-    ]) {
-      const column = fieldColumn(selector);
-      expect(column.classList).toContain('col-12');
-      expect(column.classList).not.toContain('col-md-6');
-    }
-  });
-
-  it('marks selected queue question with green active styling', () => {
-    component.selectQuestion(queuedQuestion);
-    fixture.detectChanges();
+  it('marks selected queue question while its create modal is open', () => {
+    openCreateModalFromQueue();
 
     const selectedButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
       `[data-testid="matrix-queue-question-${QUESTION_ID}"]`,
@@ -455,24 +433,17 @@ describe('MatrixQuestionQueuePageComponent', () => {
   });
 
   it('creates matrix question from selected queue entry', () => {
-    component.selectQuestion(queuedQuestion);
-    component.form.patchValue({
-      slug: 'pep-8',
-      subsectionId: SUBSECTION_ID,
-      answerRu: 'Ответ',
-      answerEn: 'Answer',
-      expectedAnswerRu: 'Ожидаемый ответ',
-      expectedAnswerEn: 'Expected answer',
-    });
+    openCreateModalFromQueue();
 
-    component.createQuestion();
+    component.createQuestion(minimumQuestionPayload());
 
     expect(queueService.createQuestionFromQueue).toHaveBeenCalledWith(
       QUESTION_ID,
       expect.objectContaining({
         slug: 'pep-8',
         subsectionId: SUBSECTION_ID,
-        grade: 'Junior',
+        grade: null,
+        interviewFrequency: null,
         publishStatus: 'Draft',
         resources: [],
       }),
@@ -480,87 +451,24 @@ describe('MatrixQuestionQueuePageComponent', () => {
     );
   });
 
-  it('blocks invalid queue create payload before calling the service', () => {
-    component.selectQuestion(queuedQuestion);
-    component.form.patchValue({
-      slug: 'Invalid Slug',
-      subsectionId: SUBSECTION_ID,
-      answerRu: 'Ответ',
-      answerEn: 'Answer',
-      expectedAnswerRu: 'Ожидаемый ответ',
-      expectedAnswerEn: 'Expected answer',
-    });
+  it('keeps create modal open and shows feedback when queue item creation fails', () => {
+    const error: ApiError = {
+      code: 'bad_request',
+      type: 'bad_request',
+      message: 'Failed',
+      status: 400,
+      location: null,
+      attr: null,
+    };
+    queueService.createQuestionFromQueue.mockReturnValue(throwError(() => error));
+    openCreateModalFromQueue();
 
-    component.createQuestion();
-
-    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
-  });
-
-  it.each<QueueCreateValidationCase>([
-    {
-      description: 'slug pattern',
-      selector: '#queue-question-slug',
-      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
-      setInvalidValue: () => setInput('#queue-question-slug', 'Invalid Slug'),
-    },
-    {
-      description: 'subsection required',
-      selector: '[data-testid="matrix-structure-subsection"]',
-      expectedMessage: 'Выберите подраздел.',
-      setInvalidValue: () => component.form.controls.subsectionId.setValue(null),
-    },
-    {
-      description: 'grade required',
-      selector: '#queue-question-grade',
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => component.form.controls.grade.setValue('' as AdminMatrixGrade),
-    },
-    {
-      description: 'question RU required text',
-      selector: '#queue-question-ru',
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => setInput('#queue-question-ru', '   '),
-    },
-    {
-      description: 'question EN max length',
-      selector: '#queue-question-en',
-      expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () => setInput('#queue-question-en', INVALID_SHORT_TEXT),
-    },
-    {
-      description: 'answer RU required text',
-      selector: '#queue-answer-ru',
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => setInput('#queue-answer-ru', '   '),
-    },
-    {
-      description: 'answer EN max length',
-      selector: '#queue-answer-en',
-      expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setInput('#queue-answer-en', INVALID_MATRIX_TEXT),
-    },
-    {
-      description: 'expected answer RU required text',
-      selector: '#queue-expected-answer-ru',
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => setInput('#queue-expected-answer-ru', '   '),
-    },
-    {
-      description: 'expected answer EN max length',
-      selector: '#queue-expected-answer-en',
-      expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setInput('#queue-expected-answer-en', INVALID_MATRIX_TEXT),
-    },
-  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
-    fillValidQueueCreateForm();
-    validationCase.setInvalidValue();
+    component.createQuestion(minimumQuestionPayload());
     fixture.detectChanges();
 
-    component.createQuestion();
-    fixture.detectChanges();
-
-    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
-    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось создать вопрос из очереди.');
+    expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Failed');
   });
 
   function openAddModal(): void {
@@ -602,29 +510,34 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.detectChanges();
   }
 
-  function fillValidQueueCreateForm(): void {
-    component.selectQuestion(queuedQuestion);
-    fixture.detectChanges();
-    component.form.patchValue({
-      slug: 'pep-8',
-      subsectionId: SUBSECTION_ID,
-      grade: 'Junior',
-      questionRu: 'Что такое PEP 8?',
-      questionEn: 'What is PEP 8?',
-      answerRu: 'Ответ',
-      answerEn: 'Answer',
-      expectedAnswerRu: 'Ожидаемый ответ',
-      expectedAnswerEn: 'Expected answer',
-    });
+  function openCreateModalFromQueue(questionId = QUESTION_ID): void {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-queue-question-${questionId}"]`)!
+      .click();
     fixture.detectChanges();
   }
 
-  function setInput(selector: string, value: string): void {
-    const input = fixture.nativeElement.querySelector(selector) as
-      HTMLInputElement | HTMLTextAreaElement;
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
+  function minimumQuestionPayload(): AdminMatrixQuestionPayload {
+    return {
+      slug: 'pep-8',
+      subsectionId: SUBSECTION_ID,
+      grade: null,
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: '',
+          interviewExpectedAnswer: '',
+        },
+        en: {
+          question: 'What is PEP 8?',
+          answer: '',
+          interviewExpectedAnswer: '',
+        },
+      },
+      resources: [],
+    };
   }
 
   function inputValue(selector: string): string {
@@ -649,17 +562,5 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(element?.classList).toContain('is-invalid');
     expect(element?.getAttribute('aria-invalid')).toBe('true');
     expect(fixture.nativeElement.textContent).toContain(expectedMessage);
-  }
-
-  function fieldColumn(selector: string): HTMLElement {
-    const field = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
-    if (field === null) {
-      throw new Error(`Missing queue create form field: ${selector}`);
-    }
-    const column = field.closest<HTMLElement>('.col-12, .col-md-4, .col-md-6, .col-md-8');
-    if (column === null) {
-      throw new Error(`Missing queue create form column for: ${selector}`);
-    }
-    return column;
   }
 });

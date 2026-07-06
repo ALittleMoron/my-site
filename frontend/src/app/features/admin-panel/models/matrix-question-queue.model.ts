@@ -1,7 +1,4 @@
-import { LanguageCode } from '../../../core/i18n/i18n.model';
-
 export type AdminMatrixGrade = 'Junior' | 'Junior+' | 'Middle' | 'Middle+' | 'Senior';
-export type AdminMatrixPublishStatus = 'Draft' | 'Published';
 
 export interface QueuedMatrixQuestionDto {
   id: string;
@@ -27,21 +24,6 @@ export interface QueuedMatrixQuestion {
   subsection: string | null;
   suggestedByUsername: string | null;
   createdAt: string;
-}
-
-export interface AdminMatrixItemTranslationPayload {
-  question: string;
-  answer: string;
-  interviewExpectedAnswer: string;
-}
-
-export interface AdminMatrixItemPayload {
-  slug: string;
-  subsectionId: string;
-  grade: AdminMatrixGrade;
-  publishStatus: AdminMatrixPublishStatus;
-  translations: Record<LanguageCode, AdminMatrixItemTranslationPayload>;
-  resources: [];
 }
 
 export interface AdminMatrixItemDetailDto {
