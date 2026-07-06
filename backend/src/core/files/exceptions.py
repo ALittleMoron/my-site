@@ -37,6 +37,10 @@ class FileNameInvalidError(InvalidFileDataError):
     message = "File name is invalid."
 
 
+class FileImageOptimizationError(InvalidFileDataError):
+    message = "File image data is invalid."
+
+
 class FileClientInternalError(DomainError):
     message = "File client error"
 

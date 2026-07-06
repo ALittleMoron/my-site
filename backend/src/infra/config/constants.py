@@ -62,6 +62,16 @@ class _FilesConstants:
     attachment_mime_types: frozenset[str] = frozenset({"*/*"})
     article_content_image_max_size_bytes: int = 5 * 1024 * 1024
     article_cover_image_max_size_bytes: int = 5 * 1024 * 1024
+    cover_image_max_width_px: int = 1600
+    cover_image_max_height_px: int = 900
+    cover_image_webp_quality: int = 82
+    cover_image_webp_method: int = 6
+    cover_image_min_savings_ratio: float = 0.10
+    content_image_max_width_px: int = 1920
+    content_image_max_height_px: int = 1920
+    content_image_jpeg_webp_quality: int = 88
+    content_image_webp_method: int = 6
+    content_image_min_savings_ratio: float = 0.10
     attachment_max_size_bytes: int = 20 * 1024 * 1024
     rules: FileRules = FileRules(
         values={

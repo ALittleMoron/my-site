@@ -1,3 +1,4 @@
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -7,6 +8,7 @@ from core.files.clients import FileClient
 from core.files.enums import FilePurpose
 from core.files.exceptions import FileInUseError, FilePurposeNotAllowedError
 from core.files.file_name_generators import FileNameGenerator
+from core.files.processors import FileContentProcessor
 from core.files.schemas import (
     FileRead,
     FileRules,
@@ -23,6 +25,7 @@ class FileService:
     file_client: FileClient
     file_storage: FileStorage
     file_name_generator: FileNameGenerator
+    file_content_processor: FileContentProcessor
     namespace: Namespace
     rules: FileRules
     now_factory: Callable[[], datetime]
@@ -32,29 +35,41 @@ class FileService:
         params.validate_name()
         params.validate_mime_type(allowed_mime_types=rule.allowed_mime_types)
         params.validate_size(max_size_bytes=rule.max_size_bytes)
+        original_sha256 = hashlib.sha256(params.content).hexdigest()
+        duplicate = await self.file_storage.find_file_by_original_sha256(
+            namespace=self.namespace,
+            purpose=params.purpose,
+            original_sha256=original_sha256,
+        )
+        if duplicate is not None:
+            return self._to_read(file=duplicate)
+
+        upload_params = self.file_content_processor.process(params=params)
+        upload_params.validate_size(max_size_bytes=rule.max_size_bytes)
         relative_path = self.file_name_generator(
             folder=rule.folder,
-            file_extension=params.file_extension,
+            file_extension=upload_params.file_extension,
         )
         now = self.now_factory()
         file = StoredFile(
-            id=params.id,
-            purpose=params.purpose,
+            id=upload_params.id,
+            purpose=upload_params.purpose,
             namespace=self.namespace,
             relative_path=relative_path,
-            mime_type=params.mime_type,
-            size_bytes=params.size_bytes,
-            name=params.name,
-            original_name=params.original_name,
+            mime_type=upload_params.mime_type,
+            size_bytes=upload_params.size_bytes,
+            name=upload_params.name,
+            original_name=upload_params.original_name,
+            original_sha256=original_sha256,
             created_at=now,
             updated_at=now,
         )
         file = await self.file_storage.create_file(file=file)
         await self.file_client.upload_file(
-            file_data=BytesIO(params.content),
+            file_data=BytesIO(upload_params.content),
             object_name=relative_path,
             namespace=self.namespace,
-            content_type=params.mime_type,
+            content_type=upload_params.mime_type,
         )
         return self._to_read(file=file)
 

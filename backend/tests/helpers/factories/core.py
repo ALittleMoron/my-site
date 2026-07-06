@@ -889,6 +889,7 @@ class CoreFactoryHelper:
         size_bytes: int = 4,
         name: str = "Inline image",
         original_name: str = "original.png",
+        original_sha256: str | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> StoredFile:
@@ -902,6 +903,7 @@ class CoreFactoryHelper:
             size_bytes=size_bytes,
             name=name,
             original_name=original_name,
+            original_sha256=original_sha256,
             created_at=created_at or now,
             updated_at=updated_at or now,
         )

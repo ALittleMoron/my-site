@@ -439,7 +439,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "конфигурацию и readiness сервисов. Эти проверки остаются release evidence "
             "в CI, а деплой запускается отдельным ручным workflow; такой подход даёт "
             "guardrails на нескольких уровнях, от кода до nginx routing, и снижает число "
-            "слепых зон перед переключением трафика."
+            "слепых зон перед переключением трафика. Доставка публичных ассетов опирается "
+            "на immutable caching для fingerprinted CSS/JS, а изображения статей оптимизируются "
+            "в WebP при загрузке без миграции уже опубликованных объектов."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
@@ -1172,7 +1174,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "cover SSR, performance, backend smoke, SQL plans, configuration, and service "
             "readiness. Those checks stay as CI release evidence, while deploy runs as a "
             "separate manual workflow; that gives the project guardrails at several layers, "
-            "from code to nginx routing, and reduces blind spots before traffic is switched."
+            "from code to nginx routing, and reduces blind spots before traffic is switched. "
+            "Public asset delivery uses immutable caching for fingerprinted CSS/JS, and "
+            "article images are optimized to WebP at upload time without migrating already "
+            "published objects."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

@@ -43,6 +43,11 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
         String(length=255),
         doc="Original uploaded file name",
     )
+    original_sha256: Mapped[str | None] = mapped_column(
+        String(length=64),
+        nullable=True,
+        doc="SHA-256 hash of the original uploaded bytes, before processing",
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -51,6 +56,12 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
             name="files_file_namespace_relative_path_uniq",
         ),
         Index("files_file_purpose_created_id_idx", "purpose", "created_at", "id"),
+        Index(
+            "files_file_namespace_purpose_original_sha256_idx",
+            "namespace",
+            "purpose",
+            "original_sha256",
+        ),
     )
 
     @classmethod
@@ -64,6 +75,7 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
             size_bytes=file.size_bytes,
             name=file.name,
             original_name=file.original_name,
+            original_sha256=file.original_sha256,
             created_at=file.created_at,
             updated_at=file.updated_at,
         )
@@ -78,6 +90,7 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
             size_bytes=self.size_bytes,
             name=self.name,
             original_name=self.original_name,
+            original_sha256=self.original_sha256,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )

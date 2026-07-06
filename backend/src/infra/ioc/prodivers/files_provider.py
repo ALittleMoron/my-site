@@ -11,11 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from types_aiobotocore_s3.client import S3Client
 
 from core.files.clients import FileClient
+from core.files.enums import FilePurpose
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
+from core.files.processors import FileContentProcessor
 from core.files.services import FileService
 from core.files.storages import FileStorage
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.files.processors import (
+    ArticleContentImageContentProcessor,
+    ArticleCoverImageContentProcessor,
+    AttachmentContentProcessor,
+    PillowImageProcessor,
+    PurposeFileContentProcessor,
+)
 from infra.postgresql.storages.files import FilesDatabaseStorage
 from infra.s3.clients import S3ClientBundle, S3FileClient
 
@@ -26,6 +35,31 @@ class FilesProvider(Provider):
         return TimestampFileNameGenerator(
             random_suffix_length=4,
             random_generator=secrets.token_hex,
+        )
+
+    @provide(scope=Scope.APP)
+    async def provide_file_content_processor(self) -> FileContentProcessor:
+        image_processor = PillowImageProcessor()
+        return PurposeFileContentProcessor(
+            processors={
+                FilePurpose.ARTICLE_COVER_IMAGE: ArticleCoverImageContentProcessor(
+                    image_processor=image_processor,
+                    max_width_px=constants.files.cover_image_max_width_px,
+                    max_height_px=constants.files.cover_image_max_height_px,
+                    webp_quality=constants.files.cover_image_webp_quality,
+                    webp_method=constants.files.cover_image_webp_method,
+                    min_savings_ratio=constants.files.cover_image_min_savings_ratio,
+                ),
+                FilePurpose.ARTICLE_CONTENT_IMAGE: ArticleContentImageContentProcessor(
+                    image_processor=image_processor,
+                    max_width_px=constants.files.content_image_max_width_px,
+                    max_height_px=constants.files.content_image_max_height_px,
+                    jpeg_webp_quality=constants.files.content_image_jpeg_webp_quality,
+                    webp_method=constants.files.content_image_webp_method,
+                    min_savings_ratio=constants.files.content_image_min_savings_ratio,
+                ),
+                FilePurpose.ATTACHMENT: AttachmentContentProcessor(),
+            },
         )
 
     @provide(scope=Scope.APP)
@@ -81,11 +115,13 @@ class FilesProvider(Provider):
         file_client: FileClient,
         file_storage: FileStorage,
         file_name_generator: FileNameGenerator,
+        file_content_processor: FileContentProcessor,
     ) -> FileService:
         return FileService(
             file_client=file_client,
             file_storage=file_storage,
             file_name_generator=file_name_generator,
+            file_content_processor=file_content_processor,
             namespace=constants.minio_buckets.media,
             rules=constants.files.rules,
             now_factory=lambda: datetime.now(tz=UTC),

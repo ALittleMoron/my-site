@@ -8,6 +8,7 @@ from core.exceptions import EntryNotFoundError
 from core.files.enums import FilePurpose
 from core.files.schemas import StoredFile, StoredFiles
 from core.files.storages import FileStorage
+from core.files.types import Namespace
 from infra.postgresql.models import ArticleFileUsageModel, ArticleModel, FileModel
 
 
@@ -37,6 +38,27 @@ class FilesDatabaseStorage(FileStorage):
         return StoredFiles(
             values=[file_model.to_domain_schema() for file_model in file_models],
         )
+
+    async def find_file_by_original_sha256(
+        self,
+        namespace: Namespace,
+        purpose: FilePurpose,
+        original_sha256: str,
+    ) -> StoredFile | None:
+        query = (
+            select(FileModel)
+            .where(
+                FileModel.namespace == namespace,
+                FileModel.purpose == purpose,
+                FileModel.original_sha256 == original_sha256,
+            )
+            .order_by(FileModel.created_at, FileModel.id)
+            .limit(1)
+        )
+        file_model = await self.session.scalar(query)
+        if file_model is None:
+            return None
+        return file_model.to_domain_schema()
 
     async def update_file_name(
         self,

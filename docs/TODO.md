@@ -236,7 +236,7 @@
 ### Frontend
 
 - [x] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
-- [ ] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
+- [x] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [x] Cookie consent
 - [x] Fix question search on the frontend: empty sections should also be removed
 - [x] Make text selection colour match the site theme
@@ -361,14 +361,15 @@
   - [x] Warn when wiki links point to missing targets available in the admin target registry
 - [ ] Extend managed `FileModel` metadata when the next file workflow needs it:
   - [ ] lifecycle status (`uploading`, `ready`, `deleteFailed`, `processingFailed`)
-  - [ ] integrity metadata (`sha256`, S3 `etag`)
+  - [x] original upload integrity metadata (`original_sha256`) for purpose-scoped dedupe
+  - [ ] storage integrity metadata such as S3 `etag`
   - [ ] backend identifier (`storage_backend`) for future S3/local/CDN switching
   - [ ] ownership/audit metadata (`uploaded_by_username`)
   - [ ] image metadata (`width_px`, `height_px`) for cover/content image validation
   - [ ] processing metadata (`original_mime_type`, `original_size_bytes`, `processing_status`) for WebP conversion/compression
   - [ ] attachment safety metadata (`scan_status`, `scanned_at`) before broader attachment workflows
   - [ ] separate file variants table instead of adding variant columns to `FileModel`
-- [ ] Add backend file-content signature checks during upload so duplicate files are not uploaded
+- [x] Add backend file-content signature checks during upload so duplicate files are not uploaded
   repeatedly; compute a stable signature such as `sha256`, return or link to an existing matching
   managed file when appropriate, and upload a new object only when no reusable file exists.
 - [x] SEO Foundation release

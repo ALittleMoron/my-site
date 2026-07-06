@@ -39,6 +39,7 @@ class StoredFile:
     size_bytes: int
     name: str
     original_name: str
+    original_sha256: str | None
     created_at: datetime
     updated_at: datetime
 

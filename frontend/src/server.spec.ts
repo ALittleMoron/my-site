@@ -1,5 +1,8 @@
-import { createServer, get } from 'node:http';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer, get, IncomingHttpHeaders } from 'node:http';
 import { AddressInfo } from 'node:net';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { AngularSsrEngine, AngularSsrResponseWriter, createExpressApp } from './server-app';
 
 describe('SSR Express server', () => {
@@ -130,11 +133,76 @@ describe('SSR Express server', () => {
       await closeServer(server);
     }
   });
+
+  it('serves hashed JavaScript and CSS with immutable cache headers', async () => {
+    const browserDistFolder = mkdtempSync(join(tmpdir(), 'my-site-browser-dist-'));
+    writeFileSync(join(browserDistFolder, 'main-ABCDEFGH.js'), 'console.log("ok");');
+    writeFileSync(join(browserDistFolder, 'styles-ABCDEFGH.css'), 'body{}');
+    const angularApp: AngularSsrEngine = {
+      handle: jest.fn().mockRejectedValue(new Error('Angular should not handle static assets')),
+    };
+    const responseWriter: AngularSsrResponseWriter = jest.fn();
+    const app = createExpressApp({
+      browserDistFolder,
+      angularApp,
+      responseWriter,
+    });
+    const server = createServer(app);
+
+    try {
+      await new Promise<void>((resolve) => {
+        server.listen(0, '127.0.0.1', resolve);
+      });
+      const address = server.address() as AddressInfo;
+
+      const scriptResponse = await request(`http://127.0.0.1:${address.port}/main-ABCDEFGH.js`);
+      const styleResponse = await request(`http://127.0.0.1:${address.port}/styles-ABCDEFGH.css`);
+
+      expect(scriptResponse.headers['cache-control']).toBe('public, max-age=31536000, immutable');
+      expect(styleResponse.headers['cache-control']).toBe('public, max-age=31536000, immutable');
+      expect(angularApp.handle).not.toHaveBeenCalled();
+      expect(responseWriter).not.toHaveBeenCalled();
+    } finally {
+      await closeServer(server);
+      rmSync(browserDistFolder, { recursive: true, force: true });
+    }
+  });
+
+  it('serves stable public asset filenames with bounded non-immutable cache headers', async () => {
+    const browserDistFolder = mkdtempSync(join(tmpdir(), 'my-site-browser-dist-'));
+    writeFileSync(join(browserDistFolder, 'logo-192x192.webp'), 'image');
+    const angularApp: AngularSsrEngine = {
+      handle: jest.fn().mockRejectedValue(new Error('Angular should not handle static assets')),
+    };
+    const responseWriter: AngularSsrResponseWriter = jest.fn();
+    const app = createExpressApp({
+      browserDistFolder,
+      angularApp,
+      responseWriter,
+    });
+    const server = createServer(app);
+
+    try {
+      await new Promise<void>((resolve) => {
+        server.listen(0, '127.0.0.1', resolve);
+      });
+      const address = server.address() as AddressInfo;
+      const response = await request(`http://127.0.0.1:${address.port}/logo-192x192.webp`);
+
+      expect(response.headers['cache-control']).toBe('public, max-age=15552000');
+      expect(angularApp.handle).not.toHaveBeenCalled();
+      expect(responseWriter).not.toHaveBeenCalled();
+    } finally {
+      await closeServer(server);
+      rmSync(browserDistFolder, { recursive: true, force: true });
+    }
+  });
 });
 
 interface HttpResponse {
   readonly status: number | undefined;
   readonly body: string;
+  readonly headers: IncomingHttpHeaders;
 }
 
 function request(url: string): Promise<HttpResponse> {
@@ -146,7 +214,7 @@ function request(url: string): Promise<HttpResponse> {
         body += chunk;
       });
       response.on('end', () => {
-        resolve({ status: response.statusCode, body });
+        resolve({ status: response.statusCode, body, headers: response.headers });
       });
     }).on('error', reject);
   });

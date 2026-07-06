@@ -7,6 +7,10 @@ import {
 } from './server-seo';
 import type { PublicSeoRoute } from './server-seo';
 
+const HASHED_JAVASCRIPT_OR_CSS_PATTERN = /-[a-z0-9]{8,}\.(?:css|js)$/i;
+const IMMUTABLE_STATIC_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+const STABLE_STATIC_CACHE_CONTROL = 'public, max-age=15552000';
+
 export interface AngularSsrEngine {
   handle(req: express.Request): Promise<Response | null>;
 }
@@ -28,9 +32,10 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
 
   app.use(
     express.static(options.browserDistFolder, {
-      maxAge: '1y',
+      maxAge: 0,
       index: false,
       redirect: false,
+      setHeaders: setStaticCacheHeaders,
     }),
   );
 
@@ -57,6 +62,13 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
   });
 
   return app;
+}
+
+function setStaticCacheHeaders(res: express.Response, filePath: string): void {
+  const cacheControl = HASHED_JAVASCRIPT_OR_CSS_PATTERN.test(filePath)
+    ? IMMUTABLE_STATIC_CACHE_CONTROL
+    : STABLE_STATIC_CACHE_CONTROL;
+  res.setHeader('Cache-Control', cacheControl);
 }
 
 async function runPublicSeoPreflight(

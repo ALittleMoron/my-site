@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import cast
 
 import pytest
 import pytest_asyncio
@@ -6,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from core.exceptions import EntryNotFoundError
 from core.files.enums import FilePurpose
+from core.files.types import Namespace
 from infra.postgresql.storages.files import FilesDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -103,6 +105,82 @@ class TestFilesDatabaseStorage(StorageTestCase):
         assert await self.storage.file_has_usages(file_id=cover.id)
         assert await self.storage.file_has_usages(file_id=content.id)
         assert not await self.storage.file_has_usages(file_id=unused.id)
+
+    async def test_find_file_by_original_sha256_is_scoped_by_namespace_and_purpose(self) -> None:
+        original_sha256 = "a" * 64
+        other_namespace = cast("Namespace", "other-media")
+        matching = self.factory.core.stored_file(
+            file_id=30,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            namespace="media",
+            relative_path="article-content-images/matching.png",
+            name="Matching",
+            original_name="matching.png",
+            original_sha256=original_sha256,
+            created_at=datetime(2026, 7, 3, 9, 0, tzinfo=UTC),
+            updated_at=datetime(2026, 7, 3, 9, 0, tzinfo=UTC),
+        )
+        same_hash_cover = self.factory.core.stored_file(
+            file_id=31,
+            purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+            namespace="media",
+            relative_path="article-cover-images/cover.png",
+            name="Cover",
+            original_name="cover.png",
+            original_sha256=original_sha256,
+        )
+        same_hash_other_namespace = self.factory.core.stored_file(
+            file_id=32,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            namespace=other_namespace,
+            relative_path="article-content-images/other.png",
+            name="Other namespace",
+            original_name="other.png",
+            original_sha256=original_sha256,
+        )
+        null_hash = self.factory.core.stored_file(
+            file_id=33,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            namespace="media",
+            relative_path="article-content-images/null.png",
+            name="No hash",
+            original_name="null.png",
+            original_sha256=None,
+        )
+        await self.storage.create_file(file=matching)
+        await self.storage.create_file(file=same_hash_cover)
+        await self.storage.create_file(file=same_hash_other_namespace)
+        await self.storage.create_file(file=null_hash)
+
+        assert (
+            await self.storage.find_file_by_original_sha256(
+                namespace="media",
+                purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+                original_sha256=original_sha256,
+            )
+        ) == matching
+        assert (
+            await self.storage.find_file_by_original_sha256(
+                namespace="media",
+                purpose=FilePurpose.ARTICLE_COVER_IMAGE,
+                original_sha256=original_sha256,
+            )
+        ) == same_hash_cover
+        assert (
+            await self.storage.find_file_by_original_sha256(
+                namespace=other_namespace,
+                purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+                original_sha256=original_sha256,
+            )
+        ) == same_hash_other_namespace
+        assert (
+            await self.storage.find_file_by_original_sha256(
+                namespace="media",
+                purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+                original_sha256="b" * 64,
+            )
+            is None
+        )
 
     async def test_delete_file_is_restricted_by_article_foreign_keys(self) -> None:
         cover = self.factory.core.stored_file(
