@@ -11,6 +11,7 @@ describe('ArticleFoldersPageComponent', () => {
   let fixture: ComponentFixture<ArticleFoldersPageComponent>;
   let articlesService: {
     getFolders: jest.Mock;
+    createFolder: jest.Mock;
     updateFolderPriorities: jest.Mock;
   };
   let notifications: {
@@ -21,6 +22,7 @@ describe('ArticleFoldersPageComponent', () => {
   beforeEach(async () => {
     articlesService = {
       getFolders: jest.fn().mockReturnValue(of([folder('folder-1', 'Engineering', 1)])),
+      createFolder: jest.fn().mockReturnValue(of(folder('folder-2', 'Architecture', 2))),
       updateFolderPriorities: jest.fn().mockReturnValue(of(undefined)),
     };
     notifications = {
@@ -82,6 +84,88 @@ describe('ArticleFoldersPageComponent', () => {
     expect(notifications.error).toHaveBeenCalledWith('Не удалось сохранить порядок папок.');
     expect(articlesService.getFolders).toHaveBeenCalledTimes(3);
   });
+
+  it('creates a folder from the modal and reloads the list', () => {
+    articlesService.getFolders.mockReturnValueOnce(
+      of([folder('folder-1', 'Engineering', 1), folder('folder-2', 'Architecture', 2)]),
+    );
+
+    click('[data-testid="article-folders-open-create"]');
+    setInput('[data-testid="article-folders-create-key"]', ' architecture ');
+    setInput('[data-testid="article-folders-create-name-ru"]', ' Архитектура ');
+    setInput('[data-testid="article-folders-create-name-en"]', ' Architecture ');
+    submit('[data-testid="article-folders-create-form"]');
+    fixture.detectChanges();
+
+    expect(articlesService.createFolder).toHaveBeenCalledWith(
+      {
+        key: 'architecture',
+        translations: {
+          ru: { name: 'Архитектура' },
+          en: { name: 'Architecture' },
+        },
+      },
+      'ru',
+    );
+    expect(articlesService.getFolders).toHaveBeenCalledTimes(2);
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-folders-create-dialog"]'),
+    ).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Architecture');
+    expect(notifications.success).toHaveBeenCalledWith('Папка создана.');
+  });
+
+  it('keeps the create modal open and reports validation errors', () => {
+    click('[data-testid="article-folders-open-create"]');
+
+    submit('[data-testid="article-folders-create-form"]');
+    fixture.detectChanges();
+
+    expect(articlesService.createFolder).not.toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-folders-create-dialog"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Заполните поле.');
+    expect(notifications.error).toHaveBeenCalledWith('Проверьте поля папки.');
+  });
+
+  it('keeps the create modal open when folder creation fails', () => {
+    articlesService.createFolder.mockReturnValue(throwError(() => new Error('Nope')));
+
+    click('[data-testid="article-folders-open-create"]');
+    setInput('[data-testid="article-folders-create-key"]', 'architecture');
+    setInput('[data-testid="article-folders-create-name-ru"]', 'Архитектура');
+    setInput('[data-testid="article-folders-create-name-en"]', 'Architecture');
+    submit('[data-testid="article-folders-create-form"]');
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-folders-create-dialog"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-error-message')).toBeTruthy();
+    expect(notifications.error).toHaveBeenCalledWith('Не удалось создать папку.');
+  });
+
+  function click(selector: string): void {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLButtonElement | null;
+    expect(element).not.toBeNull();
+    element?.click();
+    fixture.detectChanges();
+  }
+
+  function submit(selector: string): void {
+    const form = fixture.nativeElement.querySelector(selector) as HTMLFormElement | null;
+    expect(form).not.toBeNull();
+    form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  }
+
+  function setInput(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
+    expect(input).not.toBeNull();
+    if (input === null) return;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  }
 });
 
 function dropEvent(previousIndex: number, currentIndex: number): CdkDragDrop<ArticleFolder[]> {

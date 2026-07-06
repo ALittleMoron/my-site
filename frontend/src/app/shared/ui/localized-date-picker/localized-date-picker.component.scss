@@ -20,11 +20,8 @@
 }
 
 .localized-date-picker-calendar {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  left: 0;
-  z-index: 1050;
-  width: min(18rem, 90vw);
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .localized-date-picker-grid {

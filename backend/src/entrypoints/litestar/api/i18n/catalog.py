@@ -320,7 +320,22 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Ожидаемый ответ EN",
         "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
         "adminMatrixStructure.createError": "Не удалось создать элемент структуры матрицы.",
+        "adminMatrixStructure.validationError": "Проверьте поля элемента структуры.",
         "adminMatrixStructure.title": "Структура матрицы",
+        "adminMatrixStructure.addSheet": "Добавить лист",
+        "adminMatrixStructure.addSection": "Добавить раздел",
+        "adminMatrixStructure.addSubsection": "Добавить подраздел",
+        "adminMatrixStructure.createSheetTitle": "Новый лист",
+        "adminMatrixStructure.createSectionTitle": "Новый раздел",
+        "adminMatrixStructure.createSubsectionTitle": "Новый подраздел",
+        "adminMatrixStructure.createParent": "Родитель:",
+        "adminMatrixStructure.createSubmit": "Создать",
+        "adminMatrixStructure.sheetKey": "Ключ листа",
+        "adminMatrixStructure.nameRu": "Название RU",
+        "adminMatrixStructure.nameEn": "Название EN",
+        "adminMatrixStructure.sheetCreated": "Лист создан.",
+        "adminMatrixStructure.sectionCreated": "Раздел создан.",
+        "adminMatrixStructure.subsectionCreated": "Подраздел создан.",
         "adminMatrixStructure.empty": "Структура матрицы пока не создана.",
         "adminMatrixStructure.emptySections": "В этом листе пока нет разделов.",
         "adminMatrixStructure.emptySubsections": "В этом разделе пока нет подразделов.",
@@ -411,19 +426,20 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent или сторонних идентификаторов."
         ),
         "siteBuild.decision.deployManifest": (
-            "Деплой оформлен как управляемый release process: runtime-конфигурация "
-            "собирается из manifest, кандидат релиза проходит smoke/security checks и "
-            "ручное подтверждение, а blue/green переключение с health checks снижает "
-            "риск релиза."
+            "Деплой оформлен как управляемый release process с ручным запуском: "
+            "runtime-конфигурация собирается из manifest, CI quality gates отделены "
+            "от deploy workflow, ручное подтверждение production environment остаётся "
+            "явным, а blue/green переключение с health checks снижает риск релиза."
         ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
             "Качество не сводится к одному набору тестов: быстрые проверки дают ранний "
             "feedback по стилю, типам, безопасности и регрессиям, а production-facing "
             "контур покрывает SSR, производительность, backend smoke, SQL-планы, "
-            "конфигурацию и readiness сервисов. Такой подход даёт guardrails на нескольких "
-            "уровнях, от кода до nginx routing, и снижает число слепых зон перед "
-            "переключением трафика."
+            "конфигурацию и readiness сервисов. Эти проверки остаются release evidence "
+            "в CI, а деплой запускается отдельным ручным workflow; такой подход даёт "
+            "guardrails на нескольких уровнях, от кода до nginx routing, и снижает число "
+            "слепых зон перед переключением трафика."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
@@ -629,6 +645,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.folders.nameEn": "Название EN",
         "articles.folders.loadError": "Не удалось загрузить папки статей.",
         "articles.folders.createError": "Не удалось создать папку.",
+        "articles.folders.validationError": "Проверьте поля папки.",
+        "articles.folders.add": "Добавить папку",
+        "articles.folders.createTitle": "Новая папка",
+        "articles.folders.createSubmit": "Создать",
+        "articles.folders.created": "Папка создана.",
         "articles.folders.empty": "Папки статей пока не созданы.",
         "articles.folders.priority": "Приоритет",
         "articles.folders.saving": "Сохранение",
@@ -1029,7 +1050,22 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Expected answer EN",
         "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
         "adminMatrixStructure.createError": "Failed to create the matrix structure item.",
+        "adminMatrixStructure.validationError": "Check the structure item fields.",
         "adminMatrixStructure.title": "Matrix structure",
+        "adminMatrixStructure.addSheet": "Add sheet",
+        "adminMatrixStructure.addSection": "Add section",
+        "adminMatrixStructure.addSubsection": "Add subsection",
+        "adminMatrixStructure.createSheetTitle": "New sheet",
+        "adminMatrixStructure.createSectionTitle": "New section",
+        "adminMatrixStructure.createSubsectionTitle": "New subsection",
+        "adminMatrixStructure.createParent": "Parent:",
+        "adminMatrixStructure.createSubmit": "Create",
+        "adminMatrixStructure.sheetKey": "Sheet key",
+        "adminMatrixStructure.nameRu": "Name RU",
+        "adminMatrixStructure.nameEn": "Name EN",
+        "adminMatrixStructure.sheetCreated": "Sheet created.",
+        "adminMatrixStructure.sectionCreated": "Section created.",
+        "adminMatrixStructure.subsectionCreated": "Subsection created.",
         "adminMatrixStructure.empty": "The matrix structure has not been created yet.",
         "adminMatrixStructure.emptySections": "This sheet has no sections yet.",
         "adminMatrixStructure.emptySubsections": "This section has no subsections yet.",
@@ -1120,18 +1156,20 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "user-agent strings, or third-party identifiers."
         ),
         "siteBuild.decision.deployManifest": (
-            "Deployment is treated as a controlled release process: runtime configuration "
-            "is rendered from a manifest, release candidates pass smoke/security checks "
-            "and manual approval, and blue/green switching with health checks lowers "
-            "rollout risk."
+            "Deployment is treated as a controlled release process with a manual trigger: "
+            "runtime configuration is rendered from a manifest, CI quality gates are "
+            "decoupled from the deploy workflow, manual approval on the production "
+            "environment remains explicit, and blue/green switching with health checks "
+            "lowers rollout risk."
         ),
         "siteBuild.quality.title": "Quality and operations",
         "siteBuild.quality.body": (
             "Quality is not treated as a single test stage: fast checks give early feedback "
             "on style, types, security, and regressions, while production-facing checks "
             "cover SSR, performance, backend smoke, SQL plans, configuration, and service "
-            "readiness. That gives the project guardrails at several layers, from code "
-            "to nginx routing, and reduces blind spots before traffic is switched."
+            "readiness. Those checks stay as CI release evidence, while deploy runs as a "
+            "separate manual workflow; that gives the project guardrails at several layers, "
+            "from code to nginx routing, and reduces blind spots before traffic is switched."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (
@@ -1333,6 +1371,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.folders.nameEn": "Name EN",
         "articles.folders.loadError": "Failed to load article folders.",
         "articles.folders.createError": "Failed to create the folder.",
+        "articles.folders.validationError": "Check the folder fields.",
+        "articles.folders.add": "Add folder",
+        "articles.folders.createTitle": "New folder",
+        "articles.folders.createSubmit": "Create",
+        "articles.folders.created": "Folder created.",
         "articles.folders.empty": "No article folders have been created yet.",
         "articles.folders.priority": "Priority",
         "articles.folders.saving": "Saving",

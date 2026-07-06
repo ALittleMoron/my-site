@@ -1,14 +1,25 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
   <h2 class="h4 mb-0">{{ 'adminMatrixStructure.title' | t }}</h2>
-  <button
-    type="button"
-    class="btn btn-outline-secondary btn-sm"
-    data-testid="matrix-structure-reload"
-    [disabled]="loading() || saving()"
-    (click)="loadStructure()"
-  >
-    {{ 'shared.update' | t }}
-  </button>
+  <div class="d-flex flex-wrap gap-2">
+    <button
+      type="button"
+      class="btn btn-success btn-sm"
+      data-testid="matrix-structure-open-sheet-create"
+      [disabled]="loading() || saving() || createSubmitting()"
+      (click)="openSheetCreateDialog()"
+    >
+      {{ 'adminMatrixStructure.addSheet' | t }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      data-testid="matrix-structure-reload"
+      [disabled]="loading() || saving() || createSubmitting()"
+      (click)="loadStructure()"
+    >
+      {{ 'shared.update' | t }}
+    </button>
+  </div>
 </div>
 
 @if (loading()) {
@@ -54,6 +65,15 @@
         @if (saving()) {
           <span class="badge text-bg-secondary">{{ 'adminMatrixStructure.saving' | t }}</span>
         }
+        <button
+          type="button"
+          class="btn btn-outline-success btn-sm ms-auto"
+          data-testid="matrix-structure-open-section-create"
+          [disabled]="saving() || createSubmitting()"
+          (click)="openSectionCreateDialog()"
+        >
+          {{ 'adminMatrixStructure.addSection' | t }}
+        </button>
       </div>
 
       <div
@@ -77,6 +97,15 @@
                   {{ 'adminMatrixStructure.priority' | t }} {{ section.priority }}
                 </span>
               </div>
+              <button
+                type="button"
+                class="btn btn-outline-success btn-sm ms-auto"
+                data-testid="matrix-structure-open-subsection-create"
+                [disabled]="saving() || createSubmitting()"
+                (click)="openSubsectionCreateDialog(section)"
+              >
+                {{ 'adminMatrixStructure.addSubsection' | t }}
+              </button>
             </header>
 
             <div
@@ -111,4 +140,180 @@
       </div>
     </div>
   }
+}
+
+@if (createDialog(); as dialog) {
+  <div
+    class="modal d-block bg-dark bg-opacity-50"
+    role="dialog"
+    aria-modal="true"
+    data-testid="matrix-structure-create-dialog"
+    [attr.aria-label]="createDialogTitleKey() | t"
+    (click)="closeCreateDialog()"
+    (keyup.escape)="closeCreateDialog()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <form
+        class="modal-content"
+        [attr.data-testid]="'matrix-structure-create-' + dialog.kind + '-form'"
+        [formGroup]="dialog.kind === 'sheet' ? sheetCreateForm : nameCreateForm"
+        (ngSubmit)="submitCreateDialog()"
+      >
+        <div class="modal-header">
+          <h2 class="h5 modal-title">{{ createDialogTitleKey() | t }}</h2>
+          <button
+            type="button"
+            class="btn-close"
+            [disabled]="createSubmitting()"
+            [attr.aria-label]="'shared.close' | t"
+            (click)="closeCreateDialog()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          @if (createError()) {
+            <app-error-message
+              [error]="createError()!"
+              [retryLabel]="'shared.retry' | t"
+              (retry)="retryCreateDialog()"
+            />
+          }
+          @if (dialog.parentName) {
+            <p class="small text-body-secondary mb-3">
+              {{ 'adminMatrixStructure.createParent' | t }} {{ dialog.parentName }}
+            </p>
+          }
+
+          @if (dialog.kind === 'sheet') {
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="matrix-structure-create-sheet-key">
+                  {{ 'adminMatrixStructure.sheetKey' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="matrix-structure-create-sheet-key"
+                  class="form-control"
+                  appAdminControlValidationState
+                  data-testid="matrix-structure-create-sheet-key"
+                  formControlName="key"
+                  [attr.maxlength]="validationLimits.shortText"
+                  [disabled]="createSubmitting()"
+                />
+                @if (sheetCreateFieldInvalid('key') && sheetCreateFieldMessage('key'); as message) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="matrix-structure-create-sheet-ru">
+                  {{ 'adminMatrixStructure.nameRu' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="matrix-structure-create-sheet-ru"
+                  class="form-control"
+                  appAdminControlValidationState
+                  data-testid="matrix-structure-create-sheet-ru"
+                  formControlName="nameRu"
+                  [attr.maxlength]="validationLimits.shortText"
+                  [disabled]="createSubmitting()"
+                />
+                @if (
+                  sheetCreateFieldInvalid('nameRu') && sheetCreateFieldMessage('nameRu');
+                  as message
+                ) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="matrix-structure-create-sheet-en">
+                  {{ 'adminMatrixStructure.nameEn' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="matrix-structure-create-sheet-en"
+                  class="form-control"
+                  appAdminControlValidationState
+                  data-testid="matrix-structure-create-sheet-en"
+                  formControlName="nameEn"
+                  [attr.maxlength]="validationLimits.shortText"
+                  [disabled]="createSubmitting()"
+                />
+                @if (
+                  sheetCreateFieldInvalid('nameEn') && sheetCreateFieldMessage('nameEn');
+                  as message
+                ) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="matrix-structure-create-name-ru">
+                  {{ 'adminMatrixStructure.nameRu' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="matrix-structure-create-name-ru"
+                  class="form-control"
+                  appAdminControlValidationState
+                  data-testid="matrix-structure-create-name-ru"
+                  formControlName="nameRu"
+                  [attr.maxlength]="validationLimits.shortText"
+                  [disabled]="createSubmitting()"
+                />
+                @if (
+                  nameCreateFieldInvalid('nameRu') && nameCreateFieldMessage('nameRu');
+                  as message
+                ) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="matrix-structure-create-name-en">
+                  {{ 'adminMatrixStructure.nameEn' | t }}
+                  <span class="required-marker" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="matrix-structure-create-name-en"
+                  class="form-control"
+                  appAdminControlValidationState
+                  data-testid="matrix-structure-create-name-en"
+                  formControlName="nameEn"
+                  [attr.maxlength]="validationLimits.shortText"
+                  [disabled]="createSubmitting()"
+                />
+                @if (
+                  nameCreateFieldInvalid('nameEn') && nameCreateFieldMessage('nameEn');
+                  as message
+                ) {
+                  <div class="invalid-feedback d-block">{{ message }}</div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="createSubmitting()"
+            (click)="closeCreateDialog()"
+          >
+            {{ 'shared.cancel' | t }}
+          </button>
+          <button type="submit" class="btn btn-success" [disabled]="createSubmitting()">
+            {{ 'adminMatrixStructure.createSubmit' | t }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 }

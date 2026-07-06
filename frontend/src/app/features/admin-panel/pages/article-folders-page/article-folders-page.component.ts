@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -17,8 +18,18 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import { ArticleFolder } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
+import {
+  ADMIN_VALIDATION_LIMITS,
+  controlInvalid,
+  slugValidator,
+  trimRequired,
+  validationMessage,
+} from '../../utils/admin-validation';
+
+type ArticleFolderCreateField = 'key' | 'nameRu' | 'nameEn';
 
 @Component({
   selector: 'app-article-folders-page',
@@ -26,10 +37,12 @@ import { ArticleWorkspaceService } from '../../services/article-workspace.servic
   imports: [
     CdkDrag,
     CdkDropList,
+    ReactiveFormsModule,
     TranslatePipe,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-folders-page.component.html',
@@ -39,13 +52,28 @@ export class ArticleFoldersPageComponent implements OnInit {
   private readonly articlesService = inject(ArticleWorkspaceService);
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
+  private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly folders = signal<ArticleFolder[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<ApiError | null>(null);
+  readonly createDialogOpen = signal(false);
+  readonly createSubmitting = signal(false);
+  readonly createFormSubmitted = signal(false);
+  readonly createError = signal<ApiError | null>(null);
   readonly isEmpty = computed(() => !this.loading() && this.folders().length === 0);
+  readonly validationLimits = ADMIN_VALIDATION_LIMITS;
+
+  readonly createForm = this.formBuilder.group({
+    key: [
+      '',
+      [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText), slugValidator],
+    ],
+    nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+    nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
+  });
 
   ngOnInit(): void {
     this.loadFolders();
@@ -72,6 +100,73 @@ export class ArticleFoldersPageComponent implements OnInit {
 
   dropFolders(event: CdkDragDrop<ArticleFolder[]>): void {
     this.reorderFolders(event.previousIndex, event.currentIndex);
+  }
+
+  openCreateDialog(): void {
+    this.createForm.reset({ key: '', nameRu: '', nameEn: '' });
+    this.createError.set(null);
+    this.createSubmitting.set(false);
+    this.createFormSubmitted.set(false);
+    this.createDialogOpen.set(true);
+  }
+
+  closeCreateDialog(): void {
+    if (this.createSubmitting()) return;
+    this.createDialogOpen.set(false);
+    this.createError.set(null);
+    this.createFormSubmitted.set(false);
+  }
+
+  createFolder(): void {
+    this.createFormSubmitted.set(true);
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      this.notifications.error(this.i18n.translate('articles.folders.validationError'));
+      return;
+    }
+    const language = this.currentLanguage();
+    const value = this.createForm.getRawValue();
+    this.createSubmitting.set(true);
+    this.createError.set(null);
+    this.articlesService
+      .createFolder(
+        {
+          key: value.key.trim(),
+          translations: {
+            ru: { name: value.nameRu.trim() },
+            en: { name: value.nameEn.trim() },
+          },
+        },
+        language,
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.createSubmitting.set(false);
+          this.createDialogOpen.set(false);
+          this.createFormSubmitted.set(false);
+          this.createForm.reset({ key: '', nameRu: '', nameEn: '' });
+          this.notifications.success(this.i18n.translate('articles.folders.created'));
+          this.loadFolders();
+        },
+        error: (err: ApiError) => {
+          this.createSubmitting.set(false);
+          this.createError.set(err);
+          this.notifications.error(this.i18n.translate('articles.folders.createError'));
+        },
+      });
+  }
+
+  retryCreateFolder(): void {
+    this.createFolder();
+  }
+
+  createFieldInvalid(field: ArticleFolderCreateField): boolean {
+    return controlInvalid(this.createForm.controls[field], this.createFormSubmitted());
+  }
+
+  createFieldMessage(field: ArticleFolderCreateField): string | null {
+    return validationMessage(this.createForm.controls[field], this.i18n);
   }
 
   private reorderFolders(previousIndex: number, currentIndex: number): void {

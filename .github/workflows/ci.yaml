@@ -1,4 +1,4 @@
-name: "test, lint and publish"
+name: "test, lint and security"
 
 on:
   push:
@@ -152,16 +152,3 @@ jobs:
       - frontend-ssr-smoke
       - frontend-lighthouse
     uses: ./.github/workflows/_infra_security.yaml
-
-  deploy:
-    name: "Deploy to production (manual approval)"
-    if: github.ref == 'refs/heads/main'
-    needs:
-      - dockerfile-lint
-      - trivy-config-scan
-      - backend-docker-image-security
-      - frontend-docker-image-security
-      - nginx-docker-image-security
-      - infra-security
-    uses: ./.github/workflows/_deploy.yaml
-    secrets: inherit

@@ -1,6 +1,6 @@
 # Production Deploy
 
-Production deploy is a CI-gated server-build deploy:
+Production deploy is a manual server-build deploy:
 
 1. The root CI workflow is an orchestration graph: each job delegates its implementation to a
    private reusable workflow under `.github/workflows/_*.yaml`.
@@ -10,18 +10,23 @@ Production deploy is a CI-gated server-build deploy:
 5. Frontend SSR smoke and Lighthouse CI run as separate jobs after frontend tests.
 6. Dockerfile lint, Trivy config scan, per-image Docker build/image scans, and infrastructure
    security checks run in parallel after the smoke gates.
-7. The deploy job is part of the same **test, lint and publish** workflow and depends on every
-   post-smoke security job.
-8. The deploy job targets the protected `production` environment, so GitHub waits for the
+7. Deploy is a separate **Deploy to production** workflow triggered only by
+   `workflow_dispatch`.
+8. The deploy workflow has no CI `needs` graph and does not run tests, linters, smoke checks,
+   Docker/image scans, or infrastructure security checks.
+9. The deploy workflow calls the private reusable `.github/workflows/_deploy.yaml` workflow.
+10. The deploy job targets the protected `production` environment, so GitHub waits for the
    **Review deployments** / **Approve and deploy** action before running deploy steps.
-9. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
-10. GitHub Actions syncs source/config to the server.
-11. The server runs `make run`, which builds images locally and switches the healthy blue/green slot.
+11. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
+12. GitHub Actions syncs source/config to the server.
+13. The server runs `make run`, which builds images locally and switches the healthy blue/green
+    slot.
 
-Deploy is manual through the `production` environment review inside the **test, lint and publish**
-workflow. The repository environment must restrict production deployments to `main` and require
-reviewer approval. Without those GitHub Environment protection rules, GitHub Actions will start the
-deploy job automatically after its `needs` succeed.
+Start deploy from **Actions** -> **Deploy to production** -> **Run workflow** on `main`. The
+repository environment must restrict production deployments to `main` and require reviewer
+approval. Without those GitHub Environment protection rules, the workflow remains manual, but
+production deploys would no longer have the environment approval and branch protections described
+here.
 
 ## GitHub Environment
 
@@ -113,9 +118,9 @@ CORS setup through `PutBucketCors`.
 
 ## TLS
 
-Certificate issuance is no longer part of the CI deploy path. The deployed host already owns its
-certificate lifecycle, while the deploy startup script still syncs certbot-owned certificates into
-`infra/nginx/certs/` for the unprivileged nginx container.
+Certificate issuance is no longer part of the GitHub Actions deploy path. The deployed host already
+owns its certificate lifecycle, while the deploy startup script still syncs certbot-owned
+certificates into `infra/nginx/certs/` for the unprivileged nginx container.
 
 If certificates must be issued again on the server, run the maintenance target directly on the
 host while port `80/tcp` is free:
@@ -139,5 +144,5 @@ make certbot-sync
 ## Server Expectations
 
 The remote host needs Docker with the Compose plugin, `make`, `curl`, and SSH access for the
-configured deploy user. The CI deploy job syncs `Makefile`, `docker-compose.yml`, `backend/`,
+configured deploy user. The manual deploy job syncs `Makefile`, `docker-compose.yml`, `backend/`,
 `frontend/`, `infra/`, and generated `.env`.

@@ -5,15 +5,26 @@
       <span class="badge text-bg-secondary">{{ 'articles.folders.saving' | t }}</span>
     }
   </div>
-  <button
-    type="button"
-    class="btn btn-outline-secondary btn-sm"
-    data-testid="article-folders-reload"
-    [disabled]="loading() || saving()"
-    (click)="loadFolders()"
-  >
-    {{ 'shared.update' | t }}
-  </button>
+  <div class="d-flex flex-wrap gap-2">
+    <button
+      type="button"
+      class="btn btn-success btn-sm"
+      data-testid="article-folders-open-create"
+      [disabled]="loading() || saving() || createSubmitting()"
+      (click)="openCreateDialog()"
+    >
+      {{ 'articles.folders.add' | t }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      data-testid="article-folders-reload"
+      [disabled]="loading() || saving() || createSubmitting()"
+      (click)="loadFolders()"
+    >
+      {{ 'shared.update' | t }}
+    </button>
+  </div>
 </div>
 
 @if (loading()) {
@@ -47,5 +58,122 @@
         </span>
       </div>
     }
+  </div>
+}
+
+@if (createDialogOpen()) {
+  <div
+    class="modal d-block bg-dark bg-opacity-50"
+    role="dialog"
+    aria-modal="true"
+    data-testid="article-folders-create-dialog"
+    [attr.aria-label]="'articles.folders.createTitle' | t"
+    (click)="closeCreateDialog()"
+    (keyup.escape)="closeCreateDialog()"
+    tabindex="0"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered"
+      role="document"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <form
+        class="modal-content"
+        data-testid="article-folders-create-form"
+        [formGroup]="createForm"
+        (ngSubmit)="createFolder()"
+      >
+        <div class="modal-header">
+          <h2 class="h5 modal-title">{{ 'articles.folders.createTitle' | t }}</h2>
+          <button
+            type="button"
+            class="btn-close"
+            [disabled]="createSubmitting()"
+            [attr.aria-label]="'shared.close' | t"
+            (click)="closeCreateDialog()"
+          ></button>
+        </div>
+        <div class="modal-body">
+          @if (createError()) {
+            <app-error-message
+              [error]="createError()!"
+              [retryLabel]="'shared.retry' | t"
+              (retry)="retryCreateFolder()"
+            />
+          }
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="article-folders-create-key">
+                {{ 'articles.folders.key' | t }}
+                <span class="required-marker" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="article-folders-create-key"
+                class="form-control"
+                appAdminControlValidationState
+                data-testid="article-folders-create-key"
+                formControlName="key"
+                [attr.maxlength]="validationLimits.shortText"
+                [disabled]="createSubmitting()"
+              />
+              @if (createFieldInvalid('key') && createFieldMessage('key'); as message) {
+                <div class="invalid-feedback d-block">{{ message }}</div>
+              }
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="article-folders-create-name-ru">
+                {{ 'articles.folders.nameRu' | t }}
+                <span class="required-marker" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="article-folders-create-name-ru"
+                class="form-control"
+                appAdminControlValidationState
+                data-testid="article-folders-create-name-ru"
+                formControlName="nameRu"
+                [attr.maxlength]="validationLimits.shortText"
+                [disabled]="createSubmitting()"
+              />
+              @if (createFieldInvalid('nameRu') && createFieldMessage('nameRu'); as message) {
+                <div class="invalid-feedback d-block">{{ message }}</div>
+              }
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="article-folders-create-name-en">
+                {{ 'articles.folders.nameEn' | t }}
+                <span class="required-marker" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="article-folders-create-name-en"
+                class="form-control"
+                appAdminControlValidationState
+                data-testid="article-folders-create-name-en"
+                formControlName="nameEn"
+                [attr.maxlength]="validationLimits.shortText"
+                [disabled]="createSubmitting()"
+              />
+              @if (createFieldInvalid('nameEn') && createFieldMessage('nameEn'); as message) {
+                <div class="invalid-feedback d-block">{{ message }}</div>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="createSubmitting()"
+            (click)="closeCreateDialog()"
+          >
+            {{ 'shared.cancel' | t }}
+          </button>
+          <button type="submit" class="btn btn-success" [disabled]="createSubmitting()">
+            {{ 'articles.folders.createSubmit' | t }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 }

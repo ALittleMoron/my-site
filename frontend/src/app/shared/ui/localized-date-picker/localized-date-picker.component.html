@@ -49,6 +49,13 @@
       [id]="calendarId"
       class="localized-date-picker-calendar border rounded bg-body shadow-sm p-2"
       data-testid="date-picker-calendar"
+      [style.position]="calendarOverlayPosition() === null ? null : 'fixed'"
+      [style.top.px]="calendarOverlayPosition()?.top"
+      [style.bottom.px]="calendarOverlayPosition()?.bottom"
+      [style.left.px]="calendarOverlayPosition()?.left"
+      [style.width.px]="calendarOverlayPosition()?.width"
+      [style.max-height.px]="calendarOverlayPosition()?.maxHeight"
+      [style.z-index]="calendarOverlayPosition() === null ? null : calendarOverlayZIndex"
     >
       <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
         <button

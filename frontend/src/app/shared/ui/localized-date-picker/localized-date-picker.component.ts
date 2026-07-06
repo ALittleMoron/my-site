@@ -1,9 +1,12 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -24,9 +27,22 @@ interface MonthOption {
   selected: boolean;
 }
 
+interface CalendarOverlayPosition {
+  bottom: number | null;
+  left: number;
+  maxHeight: number;
+  top: number | null;
+  width: number;
+}
+
 type CalendarMode = 'days' | 'monthYear';
 
 const DATE_SEPARATOR_PATTERN = /[./-]/;
+const CALENDAR_OVERLAY_WIDTH_PX = 288;
+const CALENDAR_OVERLAY_Z_INDEX = 1055;
+const CALENDAR_VIEWPORT_PADDING_PX = 8;
+const CALENDAR_VERTICAL_GAP_PX = 4;
+const CALENDAR_MIN_HEIGHT_BEFORE_FLIP_PX = 240;
 let nextCalendarId = 0;
 
 @Component({
@@ -37,6 +53,9 @@ let nextCalendarId = 0;
   styleUrl: './localized-date-picker.component.scss',
 })
 export class LocalizedDatePickerComponent {
+  private readonly document = inject(DOCUMENT);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
   readonly inputId = input.required<string>();
   readonly value = input.required<string>();
   readonly dateLocale = input.required<string>();
@@ -54,10 +73,12 @@ export class LocalizedDatePickerComponent {
 
   readonly calendarOpen = signal(false);
   readonly calendarMode = signal<CalendarMode>('days');
+  readonly calendarOverlayPosition = signal<CalendarOverlayPosition | null>(null);
   readonly displayValue = signal('');
   readonly visibleMonth = signal(startOfMonth(new Date()));
   readonly calendarId = `localizedDatePicker${nextCalendarId++}`;
   readonly monthYearPanelId = `${this.calendarId}MonthYear`;
+  readonly calendarOverlayZIndex = CALENDAR_OVERLAY_Z_INDEX;
   readonly monthLabel = computed(() =>
     new Intl.DateTimeFormat(this.dateLocale(), { month: 'long', year: 'numeric' }).format(
       this.visibleMonth(),
@@ -89,12 +110,12 @@ export class LocalizedDatePickerComponent {
   });
 
   toggleCalendar(): void {
-    this.calendarOpen.update((open) => {
-      if (open) {
-        this.calendarMode.set('days');
-      }
-      return !open;
-    });
+    if (this.calendarOpen()) {
+      this.closeCalendar();
+      return;
+    }
+    this.positionCalendar();
+    this.calendarOpen.set(true);
   }
 
   showPreviousMonth(): void {
@@ -125,8 +146,7 @@ export class LocalizedDatePickerComponent {
   selectDate(iso: string): void {
     this.valueChange.emit(iso);
     this.displayValue.set(formatDateForLocale(iso, this.dateLocale()));
-    this.calendarOpen.set(false);
-    this.calendarMode.set('days');
+    this.closeCalendar();
   }
 
   onTextInput(event: Event): void {
@@ -145,10 +165,57 @@ export class LocalizedDatePickerComponent {
     }
   }
 
-  @HostListener('keydown.escape')
+  @HostListener('document:keydown.escape')
   closeCalendar(): void {
     this.calendarOpen.set(false);
     this.calendarMode.set('days');
+    this.calendarOverlayPosition.set(null);
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onViewportChange(): void {
+    if (this.calendarOpen()) {
+      this.closeCalendar();
+    }
+  }
+
+  private positionCalendar(): void {
+    const view = this.document.defaultView;
+    const field = this.elementRef.nativeElement.querySelector('.input-group');
+    if (view === null || !(field instanceof HTMLElement)) {
+      this.calendarOverlayPosition.set(null);
+      return;
+    }
+
+    const rect = field.getBoundingClientRect();
+    const overlayWidth = Math.min(
+      CALENDAR_OVERLAY_WIDTH_PX,
+      Math.max(0, view.innerWidth - CALENDAR_VIEWPORT_PADDING_PX * 2),
+    );
+    const maxLeft = Math.max(
+      CALENDAR_VIEWPORT_PADDING_PX,
+      view.innerWidth - CALENDAR_VIEWPORT_PADDING_PX - overlayWidth,
+    );
+    const left = clamp(rect.left, CALENDAR_VIEWPORT_PADDING_PX, maxLeft);
+    const spaceBelow = Math.max(
+      0,
+      view.innerHeight - rect.bottom - CALENDAR_VERTICAL_GAP_PX - CALENDAR_VIEWPORT_PADDING_PX,
+    );
+    const spaceAbove = Math.max(
+      0,
+      rect.top - CALENDAR_VERTICAL_GAP_PX - CALENDAR_VIEWPORT_PADDING_PX,
+    );
+    const shouldOpenAbove =
+      spaceBelow < CALENDAR_MIN_HEIGHT_BEFORE_FLIP_PX && spaceAbove > spaceBelow;
+
+    this.calendarOverlayPosition.set({
+      bottom: shouldOpenAbove ? view.innerHeight - rect.top + CALENDAR_VERTICAL_GAP_PX : null,
+      left,
+      maxHeight: shouldOpenAbove ? spaceAbove : spaceBelow,
+      top: shouldOpenAbove ? null : rect.bottom + CALENDAR_VERTICAL_GAP_PX,
+      width: overlayWidth,
+    });
   }
 }
 
@@ -277,6 +344,10 @@ function datePartsToIso(year: number, monthIndex: number, day: number): string {
 
 function isEnglishLocale(dateLocale: string): boolean {
   return dateLocale.toLowerCase().startsWith('en');
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max));
 }
 
 function padDatePart(value: number): string {
