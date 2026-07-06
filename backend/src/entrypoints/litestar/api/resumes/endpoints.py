@@ -5,12 +5,12 @@ from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.di import NamedDependency, Provide
-from litestar.params import Body, FromPath
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.resumes.schemas import ResumeFilters
 from core.resumes.use_cases import ResumesUseCase
+from entrypoints.litestar.api.parameters import ResumeIdPath, api_json_body
 from entrypoints.litestar.api.resumes.dependencies import provide_resume_filters
 from entrypoints.litestar.api.resumes.responses import ResumeExportResponse
 from entrypoints.litestar.api.resumes.schemas import (
@@ -50,7 +50,37 @@ class AdminResumesApiController(Controller):
     )
     async def create_resume(
         self,
-        data: Annotated[ResumeRequestSchema, Body()],
+        data: Annotated[
+            ResumeRequestSchema,
+            api_json_body(
+                title="Resume request",
+                description="Structured resume workspace payload.",
+                examples=(
+                    {
+                        "title": "Backend Engineer",
+                        "language": "en",
+                        "content": {
+                            "profile": {
+                                "fullName": "Dmitriy Lunev",
+                                "headline": "Backend Engineer",
+                                "location": "Moscow",
+                                "email": "example@mail.ru",
+                                "phone": "",
+                                "telegram": "@alm_dmitriy_dev",
+                                "website": "https://example.com",
+                            },
+                            "summary": {"text": "Builds reliable backend systems."},
+                            "skills": [],
+                            "experience": [],
+                            "education": [],
+                            "languages": [],
+                            "certifications": [],
+                            "additionalSections": [],
+                        },
+                    },
+                ),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
@@ -67,7 +97,7 @@ class AdminResumesApiController(Controller):
     )
     async def get_resume(
         self,
-        resume_id: FromPath[str],
+        resume_id: ResumeIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
@@ -85,8 +115,38 @@ class AdminResumesApiController(Controller):
     )
     async def update_resume(
         self,
-        resume_id: FromPath[str],
-        data: Annotated[ResumeRequestSchema, Body()],
+        resume_id: ResumeIdPath,
+        data: Annotated[
+            ResumeRequestSchema,
+            api_json_body(
+                title="Resume request",
+                description="Structured resume workspace payload.",
+                examples=(
+                    {
+                        "title": "Backend Engineer",
+                        "language": "en",
+                        "content": {
+                            "profile": {
+                                "fullName": "Dmitriy Lunev",
+                                "headline": "Backend Engineer",
+                                "location": "Moscow",
+                                "email": "example@mail.ru",
+                                "phone": "",
+                                "telegram": "@alm_dmitriy_dev",
+                                "website": "https://example.com",
+                            },
+                            "summary": {"text": "Builds reliable backend systems."},
+                            "skills": [],
+                            "experience": [],
+                            "education": [],
+                            "languages": [],
+                            "certifications": [],
+                            "additionalSections": [],
+                        },
+                    },
+                ),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeResponseSchema:
@@ -105,8 +165,39 @@ class AdminResumesApiController(Controller):
     )
     async def export_resume(
         self,
-        resume_id: FromPath[str],
-        data: Annotated[ResumeExportRequestSchema, Body()],
+        resume_id: ResumeIdPath,
+        data: Annotated[
+            ResumeExportRequestSchema,
+            api_json_body(
+                title="Resume export request",
+                description="Structured resume payload plus requested export format.",
+                examples=(
+                    {
+                        "title": "Backend Engineer",
+                        "language": "en",
+                        "format": "docx",
+                        "content": {
+                            "profile": {
+                                "fullName": "Dmitriy Lunev",
+                                "headline": "Backend Engineer",
+                                "location": "Moscow",
+                                "email": "example@mail.ru",
+                                "phone": "",
+                                "telegram": "@alm_dmitriy_dev",
+                                "website": "https://example.com",
+                            },
+                            "summary": {"text": "Builds reliable backend systems."},
+                            "skills": [],
+                            "experience": [],
+                            "education": [],
+                            "languages": [],
+                            "certifications": [],
+                            "additionalSections": [],
+                        },
+                    },
+                ),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> ResumeExportResponse:
@@ -128,7 +219,7 @@ class AdminResumesApiController(Controller):
     )
     async def delete_resume(
         self,
-        resume_id: FromPath[str],
+        resume_id: ResumeIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
     ) -> None:

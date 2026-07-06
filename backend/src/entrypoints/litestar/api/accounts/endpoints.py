@@ -5,7 +5,6 @@ from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.di import NamedDependency, Provide
-from litestar.params import Body, FromPath
 
 from core.account.schemas import ManagedAccountFilters
 from core.account.use_cases import AccountsUseCase
@@ -19,6 +18,7 @@ from entrypoints.litestar.api.accounts.schemas import (
     ManagedAccountRoleUpdateRequestSchema,
     ManagedAccountsResponseSchema,
 )
+from entrypoints.litestar.api.parameters import UsernamePath, api_json_body
 from entrypoints.litestar.guards import team_manager_guard
 
 
@@ -50,7 +50,21 @@ class AdminAccountsApiController(Controller):
     )
     async def create_account(
         self,
-        data: Annotated[ManagedAccountCreateRequestSchema, Body()],
+        data: Annotated[
+            ManagedAccountCreateRequestSchema,
+            api_json_body(
+                title="Managed account creation request",
+                description="Admin or moderator account creation payload.",
+                examples=(
+                    {
+                        "username": "moderator",
+                        "password": "string",
+                        "role": "moderator",
+                        "isActive": True,
+                    },
+                ),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
@@ -68,7 +82,7 @@ class AdminAccountsApiController(Controller):
     )
     async def get_account(
         self,
-        username: FromPath[str],
+        username: UsernamePath,
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.get_account(username=username)
@@ -82,8 +96,15 @@ class AdminAccountsApiController(Controller):
     )
     async def update_role(
         self,
-        username: FromPath[str],
-        data: Annotated[ManagedAccountRoleUpdateRequestSchema, Body()],
+        username: UsernamePath,
+        data: Annotated[
+            ManagedAccountRoleUpdateRequestSchema,
+            api_json_body(
+                title="Managed account role update request",
+                description="Role assigned to the managed account.",
+                examples=({"role": "moderator"},),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
@@ -102,8 +123,15 @@ class AdminAccountsApiController(Controller):
     )
     async def update_password(
         self,
-        username: FromPath[str],
-        data: Annotated[ManagedAccountPasswordUpdateRequestSchema, Body()],
+        username: UsernamePath,
+        data: Annotated[
+            ManagedAccountPasswordUpdateRequestSchema,
+            api_json_body(
+                title="Managed account password update request",
+                description="Replacement password for the managed account.",
+                examples=({"password": "string"},),
+            ),
+        ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
@@ -122,7 +150,7 @@ class AdminAccountsApiController(Controller):
     )
     async def activate_account(
         self,
-        username: FromPath[str],
+        username: UsernamePath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
@@ -140,7 +168,7 @@ class AdminAccountsApiController(Controller):
     )
     async def deactivate_account(
         self,
-        username: FromPath[str],
+        username: UsernamePath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
@@ -158,7 +186,7 @@ class AdminAccountsApiController(Controller):
     )
     async def delete_account(
         self,
-        username: FromPath[str],
+        username: UsernamePath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> None:

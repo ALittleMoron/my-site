@@ -1,17 +1,10 @@
-from datetime import UTC, date, datetime
-from typing import Annotated
+from datetime import UTC, datetime
 
 from litestar import Request
 from litestar.datastructures import State
-from litestar.params import FromPath, QueryParameter
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.competency_matrix.enums import (
-    CompetencyMatrixWorkspaceSortEnum,
-    GradeEnum,
-    InterviewFrequencyEnum,
-)
 from core.competency_matrix.schemas import (
     CompetencyMatrixItemBySlugGetParams,
     CompetencyMatrixItemGetParams,
@@ -21,14 +14,34 @@ from core.competency_matrix.schemas import (
     QuestionSuggestionLimitParams,
 )
 from core.enums import PublishStatusEnum
-from core.i18n.enums import LanguageEnum
 from core.types import SearchName
+from entrypoints.litestar.api.parameters import (
+    EntityPkPath,
+    HasMissingFieldsQuery,
+    LanguageQuery,
+    MatrixGradesQuery,
+    MatrixInterviewFrequenciesQuery,
+    MatrixItemSlugPath,
+    MatrixSectionsQuery,
+    MatrixSheetKeysQuery,
+    MatrixSubsectionsQuery,
+    MatrixWorkspaceSortQuery,
+    OnlyPublishedQuery,
+    PageQuery,
+    PageSizeQuery,
+    PublishedFromQuery,
+    PublishedToQuery,
+    PublishStatusesQuery,
+    SearchLimitQuery,
+    SearchNameQuery,
+    SearchQueryFilter,
+)
 
 
 def provide_competency_matrix_resource_search_params(
-    search_name: Annotated[str, QueryParameter(name="searchName")],
-    limit: Annotated[int, QueryParameter(name="limit", ge=1, le=50)],
-    language: Annotated[LanguageEnum, QueryParameter(name="language")],
+    search_name: SearchNameQuery,
+    limit: SearchLimitQuery,
+    language: LanguageQuery,
 ) -> CompetencyMatrixResourceSearchParams:
     return CompetencyMatrixResourceSearchParams(
         search_name=SearchName(search_name),
@@ -38,8 +51,8 @@ def provide_competency_matrix_resource_search_params(
 
 
 def provide_competency_matrix_item_get_params(
-    pk: FromPath[str],
-    only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
+    pk: EntityPkPath,
+    only_published: OnlyPublishedQuery,
 ) -> CompetencyMatrixItemGetParams:
     return CompetencyMatrixItemGetParams(
         item_id=pk,
@@ -48,7 +61,7 @@ def provide_competency_matrix_item_get_params(
 
 
 def provide_competency_matrix_public_item_get_params(
-    slug: FromPath[str],
+    slug: MatrixItemSlugPath,
 ) -> CompetencyMatrixItemBySlugGetParams:
     return CompetencyMatrixItemBySlugGetParams(
         slug=slug,
@@ -57,7 +70,7 @@ def provide_competency_matrix_public_item_get_params(
 
 
 def provide_competency_matrix_item_draft_status_params(
-    pk: FromPath[str],
+    pk: EntityPkPath,
 ) -> CompetencyMatrixItemPublishStatusSwitchParams:
     return CompetencyMatrixItemPublishStatusSwitchParams(
         item_id=pk,
@@ -66,7 +79,7 @@ def provide_competency_matrix_item_draft_status_params(
 
 
 def provide_competency_matrix_item_published_status_params(
-    pk: FromPath[str],
+    pk: EntityPkPath,
 ) -> CompetencyMatrixItemPublishStatusSwitchParams:
     return CompetencyMatrixItemPublishStatusSwitchParams(
         item_id=pk,
@@ -75,29 +88,20 @@ def provide_competency_matrix_item_published_status_params(
 
 
 def provide_competency_matrix_workspace_filters(  # noqa: PLR0913
-    page: Annotated[int, QueryParameter(name="page", ge=1)],
-    page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
-    language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    sort: Annotated[CompetencyMatrixWorkspaceSortEnum, QueryParameter(name="sort")],
-    search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
-    sheet_keys: Annotated[list[str] | None, QueryParameter(name="sheetKeys")] = None,
-    grades: Annotated[list[GradeEnum] | None, QueryParameter(name="grades")] = None,
-    interview_frequencies: Annotated[
-        list[InterviewFrequencyEnum] | None,
-        QueryParameter(name="interviewFrequencies"),
-    ] = None,
-    sections: Annotated[list[str] | None, QueryParameter(name="sections")] = None,
-    subsections: Annotated[list[str] | None, QueryParameter(name="subsections")] = None,
-    publish_statuses: Annotated[
-        list[PublishStatusEnum] | None,
-        QueryParameter(name="publishStatuses"),
-    ] = None,
-    published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
-    published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
-    has_missing_fields: Annotated[
-        bool | None,
-        QueryParameter(name="hasMissingFields"),
-    ] = None,
+    page: PageQuery,
+    page_size: PageSizeQuery,
+    language: LanguageQuery,
+    sort: MatrixWorkspaceSortQuery,
+    search_query: SearchQueryFilter = None,
+    sheet_keys: MatrixSheetKeysQuery = None,
+    grades: MatrixGradesQuery = None,
+    interview_frequencies: MatrixInterviewFrequenciesQuery = None,
+    sections: MatrixSectionsQuery = None,
+    subsections: MatrixSubsectionsQuery = None,
+    publish_statuses: PublishStatusesQuery = None,
+    published_from: PublishedFromQuery = None,
+    published_to: PublishedToQuery = None,
+    has_missing_fields: HasMissingFieldsQuery = None,
 ) -> CompetencyMatrixWorkspaceFilters:
     normalized_search_query = (
         search_query.strip() if search_query is not None and search_query.strip() else None

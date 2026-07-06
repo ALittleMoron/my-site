@@ -3,12 +3,12 @@ from typing import Annotated
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, post, status_codes
-from litestar.params import Body
 
 from core.auth.enums import RoleEnum
 from core.auth.types import Token
 from core.auth.use_cases import AuthUseCase
 from entrypoints.litestar.api.auth.schemas import AccessTokenResponseSchema, LoginRequestSchema
+from entrypoints.litestar.api.parameters import api_json_body
 
 
 class AuthApiController(Controller):
@@ -26,7 +26,14 @@ class AuthApiController(Controller):
     )
     async def login(
         self,
-        data: Annotated[LoginRequestSchema, Body()],
+        data: Annotated[
+            LoginRequestSchema,
+            api_json_body(
+                title="Login request",
+                description="Username and password used to create a PASETO access token.",
+                examples=({"username": "moderator", "password": "string"},),
+            ),
+        ],
         use_case: FromDishka[AuthUseCase],
     ) -> AccessTokenResponseSchema:
         token = await use_case.login(

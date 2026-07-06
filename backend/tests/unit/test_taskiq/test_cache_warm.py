@@ -25,11 +25,7 @@ from entrypoints.taskiq.cache_warm.targets import (
     I18nCacheWarmTargetCollector,
     ResponseCacheWarmTargetCollector,
 )
-from entrypoints.taskiq.cache_warm.writer import (
-    ResponseCacheKeyBuilder,
-    ResponseCachePayloadCodec,
-    ResponseCacheWarmWriter,
-)
+from entrypoints.taskiq.cache_warm.writer import ResponseCacheWarmWriter
 from infra.config.constants import constants
 from infra.config.settings import settings
 from tests.helpers.factory import FactoryHelper
@@ -279,16 +275,12 @@ class TestCacheWarmWriter(TestCase):
             query=(("language", "en"),),
             response=response,
         )
-        key_builder = ResponseCacheKeyBuilder()
-        payload_codec = ResponseCachePayloadCodec()
 
         await ResponseCacheWarmWriter(
             store=store,
-            key_builder=key_builder,
-            payload_codec=payload_codec,
         ).write_target(target)
 
-        assert key_builder.build(target=target) == (
+        assert target.build_cache_key() == (
             "articles:GET/api/articles/detail/first-articlelanguage=en"
         )
         assert articles_store.set_calls[0][0] == "GET/api/articles/detail/first-articlelanguage=en"
@@ -307,6 +299,20 @@ class TestCacheWarmWriter(TestCase):
                 "body": response.model_dump_json(by_alias=True).encode(),
             },
         ]
+
+    def test_cache_warm_target_uses_schema_owned_payload_encoding(self) -> None:
+        response = ArticleDetailResponseSchema.from_domain_schema(
+            schema=self.factory.core.article(slug="first-article"),
+            language=LanguageEnum.EN,
+        )
+        target = CacheWarmTarget(
+            domain=ResponseCacheDomain.ARTICLES,
+            path="/api/articles/detail/first-article",
+            query=(("language", "en"),),
+            response=response,
+        )
+
+        assert target.response_cache_payload() == response.response_cache_payload()
 
     async def test_cache_disabled_summary_skips_without_use_case_work(
         self,
@@ -330,8 +336,6 @@ class TestCacheWarmWriter(TestCase):
         )
         writer = ResponseCacheWarmWriter(
             store=store,
-            key_builder=ResponseCacheKeyBuilder(),
-            payload_codec=ResponseCachePayloadCodec(),
         )
         service = ResponseCacheWarmService(
             target_collector=target_collector,

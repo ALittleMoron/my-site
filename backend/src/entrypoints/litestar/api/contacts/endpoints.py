@@ -3,12 +3,12 @@ from typing import Annotated
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, post
-from litestar.params import Body
 from verbose_http_exceptions import status
 
 from core.contacts.use_cases import ContactsUseCase
 from core.generators import HexUuidIdGenerator
 from entrypoints.litestar.api.contacts.schemas import ContactMeRequest
+from entrypoints.litestar.api.parameters import api_json_body
 from infra.config.settings import settings
 
 
@@ -24,7 +24,21 @@ class ContactsApiController(Controller):
     async def contact_me_request(
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
-        data: Annotated[ContactMeRequest, Body()],
+        data: Annotated[
+            ContactMeRequest,
+            api_json_body(
+                title="Contact request",
+                description="Public contact form payload.",
+                examples=(
+                    {
+                        "name": "Dmitriy Lunev",
+                        "email": "example@mail.ru",
+                        "telegram": "@alm_dmitriy_dev",
+                        "message": "I would like to discuss a project.",
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[ContactsUseCase],
     ) -> None:
         if not settings.app.contact_requests_enabled:

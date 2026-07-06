@@ -100,12 +100,14 @@ blue/green backend/frontend slots with a graceful nginx reload.
 
 ## ⚙️ Endpoints
 
-- Frontend: `http://localhost`
-- API: `http://localhost/api`
-- API liveness: `http://localhost/api/healthcheck`
-- API readiness: `http://localhost/api/healthcheck/ready`
-- API docs: `http://localhost/api/docs`
-- OpenAPI spec: `http://localhost/api/docs/openapi.json`
+Local edge nginx redirects HTTP to HTTPS, so use the HTTPS URLs in the browser.
+
+- Frontend: `https://localhost`
+- API: `https://localhost/api`
+- API liveness: `https://localhost/api/healthcheck`
+- API readiness: `https://localhost/api/healthcheck/ready`
+- API docs: `https://localhost/api/docs`
+- OpenAPI spec: `https://localhost/api/docs/openapi.json`
 
 Internal web panels are available only through host-level WireGuard and nginx
 ports bound to `VPN_BIND_ADDRESS`:

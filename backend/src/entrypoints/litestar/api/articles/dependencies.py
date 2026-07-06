@@ -1,20 +1,24 @@
-from datetime import date
-from typing import Annotated
-
-from litestar.params import QueryParameter
-
 from core.articles.schemas import ArticleFilters
-from core.i18n.enums import LanguageEnum
+from entrypoints.litestar.api.parameters import (
+    LanguageQuery,
+    OnlyPublishedQuery,
+    PageQuery,
+    PageSizeQuery,
+    PublishedFromQuery,
+    PublishedToQuery,
+    SearchQueryFilter,
+    TagSlugQuery,
+)
 
 
 def provide_public_article_filters(  # noqa: PLR0913
-    page: Annotated[int, QueryParameter(name="page", ge=1)],
-    page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
-    language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    tag_slug: Annotated[str | None, QueryParameter(name="tagSlug")] = None,
-    published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
-    published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
-    search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
+    page: PageQuery,
+    page_size: PageSizeQuery,
+    language: LanguageQuery,
+    tag_slug: TagSlugQuery = None,
+    published_from: PublishedFromQuery = None,
+    published_to: PublishedToQuery = None,
+    search_query: SearchQueryFilter = None,
 ) -> ArticleFilters:
     normalized_search_query = (
         search_query.strip() if search_query is not None and search_query.strip() else None
@@ -33,14 +37,14 @@ def provide_public_article_filters(  # noqa: PLR0913
 
 
 def provide_article_filters(  # noqa: PLR0913
-    page: Annotated[int, QueryParameter(name="page", ge=1)],
-    page_size: Annotated[int, QueryParameter(name="pageSize", ge=1, le=100)],
-    only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
-    language: Annotated[LanguageEnum, QueryParameter(name="language")],
-    tag_slug: Annotated[str | None, QueryParameter(name="tagSlug")] = None,
-    published_from: Annotated[date | None, QueryParameter(name="publishedFrom")] = None,
-    published_to: Annotated[date | None, QueryParameter(name="publishedTo")] = None,
-    search_query: Annotated[str | None, QueryParameter(name="searchQuery")] = None,
+    page: PageQuery,
+    page_size: PageSizeQuery,
+    only_published: OnlyPublishedQuery,
+    language: LanguageQuery,
+    tag_slug: TagSlugQuery = None,
+    published_from: PublishedFromQuery = None,
+    published_to: PublishedToQuery = None,
+    search_query: SearchQueryFilter = None,
 ) -> ArticleFilters:
     normalized_search_query = (
         search_query.strip() if search_query is not None and search_query.strip() else None

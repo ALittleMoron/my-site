@@ -1,12 +1,9 @@
-from typing import Annotated
-
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, get, status_codes
-from litestar.params import QueryParameter
 
-from core.i18n.enums import LanguageEnum
 from core.wiki_links.use_cases import WikiLinksUseCase
+from entrypoints.litestar.api.parameters import LanguageQuery
 from entrypoints.litestar.api.wiki_links.schemas import WikiLinkTargetsResponseSchema
 from entrypoints.litestar.guards import content_manager_guard
 
@@ -25,7 +22,7 @@ class WikiLinksApiController(Controller):
     async def list_wiki_link_targets(
         self,
         use_case: FromDishka[WikiLinksUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> WikiLinkTargetsResponseSchema:
         targets = await use_case.list_targets(language=language)
         return WikiLinkTargetsResponseSchema.from_domain_schema(schema=targets)

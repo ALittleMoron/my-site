@@ -1,11 +1,9 @@
-from datetime import date
 from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.di import NamedDependency, Provide
-from litestar.params import Body, FromPath, QueryParameter
 
 from core.articles.enums import ArticleViewSourceCategory
 from core.articles.schemas import ArticleFilters
@@ -14,7 +12,6 @@ from core.auth.schemas import JwtUser
 from core.auth.types import Token
 from core.enums import PublishStatusEnum
 from core.generators import HexUuidIdGenerator
-from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.articles.dependencies import (
     provide_article_filters,
     provide_public_article_filters,
@@ -34,6 +31,19 @@ from entrypoints.litestar.api.articles.schemas import (
     TagRequestSchema,
     TagResponseSchema,
     TagsResponseSchema,
+)
+from entrypoints.litestar.api.parameters import (
+    ArticleIdsQuery,
+    ArticleSlugPath,
+    DateFromQuery,
+    DateToQuery,
+    IncludeDeletedQuery,
+    LanguageQuery,
+    OnlyPublishedQuery,
+    SearchLimitQuery,
+    SearchNameQuery,
+    TagIdPath,
+    api_json_body,
 )
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
@@ -78,7 +88,7 @@ class PublicArticlesApiController(Controller):
     )
     async def list_articles_tree(
         self,
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleTreeResponseSchema:
         tree = await use_case.list_tree(only_published=True, language=language)
@@ -94,9 +104,9 @@ class PublicArticlesApiController(Controller):
     )
     async def get_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         use_case: FromDishka[ArticlesUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> ArticleDetailResponseSchema:
         article = await use_case.get_article(slug=slug, only_published=True)
         return ArticleDetailResponseSchema.from_domain_schema(
@@ -112,7 +122,7 @@ class PublicArticlesApiController(Controller):
     )
     async def get_public_stats(
         self,
-        article_ids: Annotated[list[str], QueryParameter(name="articleIds", min_items=1)],
+        article_ids: ArticleIdsQuery,
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
     ) -> ArticlePublicStatsCollectionResponseSchema:
         stats = await analytics_use_case.get_public_stats(article_ids=article_ids)
@@ -126,11 +136,11 @@ class PublicArticlesApiController(Controller):
     )
     async def track_public_view(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        _language: LanguageQuery,
     ) -> None:
         if request.user.can_manage_content:
             return
@@ -148,10 +158,10 @@ class PublicArticlesApiController(Controller):
     )
     async def track_engaged_view(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        _language: LanguageQuery,
     ) -> None:
         if request.user.can_manage_content:
             return
@@ -168,10 +178,17 @@ class PublicArticlesApiController(Controller):
     )
     async def set_reaction(
         self,
-        slug: FromPath[str],
-        data: Annotated[ArticleReactionRequestSchema, Body()],
+        slug: ArticleSlugPath,
+        data: Annotated[
+            ArticleReactionRequestSchema,
+            api_json_body(
+                title="Article reaction request",
+                description="Anonymous article reaction state for one browser-scoped client.",
+                examples=({"reactionKind": "heart", "clientToken": "article-client-token"},),
+            ),
+        ],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
-        _language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        _language: LanguageQuery,
     ) -> None:
         await analytics_use_case.set_reaction(
             slug=slug,
@@ -189,7 +206,7 @@ class PublicArticlesApiController(Controller):
     )
     async def list_tags(
         self,
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.list_tags(include_deleted=False, language=language)
@@ -229,8 +246,37 @@ class AdminArticlesApiController(Controller):
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        data: Annotated[ArticleRequestSchema, Body()],
+        language: LanguageQuery,
+        data: Annotated[
+            ArticleRequestSchema,
+            api_json_body(
+                title="Article request",
+                description=(
+                    "Article authoring payload with fixed RU/EN translations and SEO metadata."
+                ),
+                examples=(
+                    {
+                        "slug": "how-this-site-is-built",
+                        "folderId": "00000000000000000000000000000001",
+                        "publishStatus": "Draft",
+                        "tagIds": ["00000000000000000000000000000002"],
+                        "translations": {
+                            "ru": {"title": "Как устроен этот сайт", "content": "Текст статьи"},
+                            "en": {"title": "How this site is built", "content": "Article text"},
+                        },
+                        "metadata": {
+                            "seoTitleRu": "Как устроен этот сайт",
+                            "seoTitleEn": "How this site is built",
+                            "seoDescriptionRu": "Технический разбор сайта.",
+                            "seoDescriptionEn": "Technical site case study.",
+                            "coverImageFileId": "00000000000000000000000000000003",
+                            "coverImageAltRu": "Схема сайта",
+                            "coverImageAltEn": "Site diagram",
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.create_article(
@@ -256,7 +302,7 @@ class AdminArticlesApiController(Controller):
     )
     async def list_articles_tree(
         self,
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleTreeResponseSchema:
         tree = await use_case.list_tree(only_published=False, language=language)
@@ -270,7 +316,7 @@ class AdminArticlesApiController(Controller):
     )
     async def list_folders(
         self,
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleFoldersResponseSchema:
         folders = await use_case.list_folders(language=language)
@@ -289,8 +335,23 @@ class AdminArticlesApiController(Controller):
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        data: Annotated[ArticleFolderRequestSchema, Body()],
+        language: LanguageQuery,
+        data: Annotated[
+            ArticleFolderRequestSchema,
+            api_json_body(
+                title="Article folder request",
+                description="Localized article folder payload.",
+                examples=(
+                    {
+                        "key": "engineering",
+                        "translations": {
+                            "ru": {"name": "Инженерия"},
+                            "en": {"name": "Engineering"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleFolderResponseSchema:
         folder = await use_case.create_folder(
@@ -314,7 +375,14 @@ class AdminArticlesApiController(Controller):
     async def update_folder_priorities(
         self,
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[ArticleFolderPriorityUpdateRequestSchema, Body()],
+        data: Annotated[
+            ArticleFolderPriorityUpdateRequestSchema,
+            api_json_body(
+                title="Article folder priority request",
+                description="Full ordered list of article folder identifiers.",
+                examples=({"orderedIds": ["00000000000000000000000000000001"]},),
+            ),
+        ],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
         await use_case.update_folder_priorities(params=data.to_schema())
@@ -331,10 +399,10 @@ class AdminArticlesApiController(Controller):
     )
     async def get_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         use_case: FromDishka[ArticlesUseCase],
-        only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        only_published: OnlyPublishedQuery,
+        language: LanguageQuery,
     ) -> ArticleDetailResponseSchema:
         article = await use_case.get_article(slug=slug, only_published=only_published)
         return ArticleDetailResponseSchema.from_domain_schema(
@@ -351,9 +419,9 @@ class AdminArticlesApiController(Controller):
     async def get_stats(
         self,
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
-        date_from: Annotated[date, QueryParameter(name="dateFrom")],
-        date_to: Annotated[date, QueryParameter(name="dateTo")],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        date_from: DateFromQuery,
+        date_to: DateToQuery,
+        language: LanguageQuery,
     ) -> ArticleAnalyticsStatsResponseSchema:
         stats = await analytics_use_case.get_stats(
             date_from=date_from,
@@ -370,10 +438,39 @@ class AdminArticlesApiController(Controller):
     )
     async def update_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[ArticleRequestSchema, Body()],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        data: Annotated[
+            ArticleRequestSchema,
+            api_json_body(
+                title="Article request",
+                description=(
+                    "Article authoring payload with fixed RU/EN translations and SEO metadata."
+                ),
+                examples=(
+                    {
+                        "slug": "how-this-site-is-built",
+                        "folderId": "00000000000000000000000000000001",
+                        "publishStatus": "Draft",
+                        "tagIds": ["00000000000000000000000000000002"],
+                        "translations": {
+                            "ru": {"title": "Как устроен этот сайт", "content": "Текст статьи"},
+                            "en": {"title": "How this site is built", "content": "Article text"},
+                        },
+                        "metadata": {
+                            "seoTitleRu": "Как устроен этот сайт",
+                            "seoTitleEn": "How this site is built",
+                            "seoDescriptionRu": "Технический разбор сайта.",
+                            "seoDescriptionEn": "Technical site case study.",
+                            "coverImageFileId": "00000000000000000000000000000003",
+                            "coverImageAltRu": "Схема сайта",
+                            "coverImageAltEn": "Site diagram",
+                        },
+                    },
+                ),
+            ),
+        ],
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.update_article(
@@ -397,7 +494,7 @@ class AdminArticlesApiController(Controller):
     )
     async def delete_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
@@ -415,7 +512,7 @@ class AdminArticlesApiController(Controller):
     )
     async def set_draft_status_to_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
@@ -436,7 +533,7 @@ class AdminArticlesApiController(Controller):
     )
     async def set_published_status_to_article(
         self,
-        slug: FromPath[str],
+        slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
@@ -457,8 +554,8 @@ class AdminArticlesApiController(Controller):
     )
     async def list_tags(
         self,
-        include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        include_deleted: IncludeDeletedQuery,
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.list_tags(include_deleted=include_deleted, language=language)
@@ -472,10 +569,10 @@ class AdminArticlesApiController(Controller):
     )
     async def search_tags(
         self,
-        search_name: Annotated[str, QueryParameter(name="searchName")],
-        include_deleted: Annotated[bool, QueryParameter(name="includeDeleted")],
-        limit: Annotated[int, QueryParameter(name="limit", ge=1, le=50)],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        search_name: SearchNameQuery,
+        include_deleted: IncludeDeletedQuery,
+        limit: SearchLimitQuery,
+        language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.search_tags(
@@ -496,8 +593,23 @@ class AdminArticlesApiController(Controller):
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        data: Annotated[TagRequestSchema, Body()],
+        language: LanguageQuery,
+        data: Annotated[
+            TagRequestSchema,
+            api_json_body(
+                title="Article tag request",
+                description="Localized article tag payload.",
+                examples=(
+                    {
+                        "slug": "python",
+                        "translations": {
+                            "ru": {"name": "Python"},
+                            "en": {"name": "Python"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.create_tag(
@@ -517,10 +629,25 @@ class AdminArticlesApiController(Controller):
     )
     async def update_tag(
         self,
-        tag_id: FromPath[str],
+        tag_id: TagIdPath,
         request: Request[JwtUser, Token | None, State],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
-        data: Annotated[TagRequestSchema, Body()],
+        language: LanguageQuery,
+        data: Annotated[
+            TagRequestSchema,
+            api_json_body(
+                title="Article tag request",
+                description="Localized article tag payload.",
+                examples=(
+                    {
+                        "slug": "python",
+                        "translations": {
+                            "ru": {"name": "Python"},
+                            "en": {"name": "Python"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagResponseSchema:
         tag = await use_case.update_tag(
@@ -541,7 +668,7 @@ class AdminArticlesApiController(Controller):
     )
     async def delete_tag(
         self,
-        tag_id: FromPath[str],
+        tag_id: TagIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
@@ -559,7 +686,7 @@ class AdminArticlesApiController(Controller):
     )
     async def restore_tag(
         self,
-        tag_id: FromPath[str],
+        tag_id: TagIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:

@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
-
-from pydantic import BaseModel
+from urllib.parse import urlencode
 
 from core.articles.schemas import Article, ArticleFilters, Articles, ArticleTree, Tags
 from core.articles.use_cases import ArticlesUseCase
@@ -31,7 +30,9 @@ from entrypoints.litestar.api.i18n.schemas import (
     LanguageResponseSchema,
     LanguagesResponseSchema,
 )
+from entrypoints.litestar.api.schemas import CamelCaseSchema
 from entrypoints.litestar.response_cache import ResponseCacheDomain
+from infra.config.constants import constants
 from infra.config.settings import settings
 
 
@@ -40,7 +41,18 @@ class CacheWarmTarget:
     domain: ResponseCacheDomain
     path: str
     query: tuple[tuple[str, str], ...]
-    response: BaseModel
+    response: CamelCaseSchema
+
+    def build_cache_key(self) -> str:
+        query_string = urlencode(sorted(self.query), doseq=True)
+        return (
+            f"{self.domain.value}"
+            f"{constants.response_cache.domain_key_separator}"
+            f"GET{self.path}{query_string}"
+        )
+
+    def response_cache_payload(self) -> bytes:
+        return self.response.response_cache_payload()
 
 
 @dataclass(frozen=True, slots=True)

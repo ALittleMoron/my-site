@@ -2,9 +2,7 @@ from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
 from litestar import Controller, delete, get, post, put, status_codes
-from litestar.params import FromPath, MultipartBody, QueryParameter
 
-from core.files.enums import FilePurpose
 from core.files.exceptions import InvalidFileDataError
 from core.files.schemas import FileUpdateParams, FileUploadParams
 from core.files.services import FileService
@@ -14,6 +12,12 @@ from entrypoints.litestar.api.files.schemas import (
     FilesResponseSchema,
     FileUpdateRequestSchema,
     FileUploadRequestSchema,
+)
+from entrypoints.litestar.api.parameters import (
+    FileIdPath,
+    FilePurposeQuery,
+    api_json_body,
+    api_multipart_body,
 )
 from entrypoints.litestar.guards import content_manager_guard
 
@@ -31,7 +35,20 @@ class FilesApiController(Controller):
     )
     async def upload_file(
         self,
-        data: MultipartBody[FileUploadRequestSchema],
+        data: Annotated[
+            FileUploadRequestSchema,
+            api_multipart_body(
+                title="File upload request",
+                description="Multipart upload payload for a managed file.",
+                examples=(
+                    {
+                        "purpose": "articleCoverImage",
+                        "name": "Article cover",
+                        "file": "cover.png",
+                    },
+                ),
+            ),
+        ],
         file_service: FromDishka[FileService],
         id_generator: FromDishka[HexUuidIdGenerator],
     ) -> FileResponseSchema:
@@ -56,7 +73,7 @@ class FilesApiController(Controller):
     )
     async def list_files(
         self,
-        purpose: Annotated[FilePurpose, QueryParameter(name="purpose")],
+        purpose: FilePurposeQuery,
         file_service: FromDishka[FileService],
     ) -> FilesResponseSchema:
         return FilesResponseSchema.from_domain_schema(
@@ -70,7 +87,7 @@ class FilesApiController(Controller):
     )
     async def get_file(
         self,
-        file_id: FromPath[str],
+        file_id: FileIdPath,
         file_service: FromDishka[FileService],
     ) -> FileResponseSchema:
         return FileResponseSchema.from_domain_schema(
@@ -84,8 +101,15 @@ class FilesApiController(Controller):
     )
     async def update_file(
         self,
-        file_id: FromPath[str],
-        data: FileUpdateRequestSchema,
+        file_id: FileIdPath,
+        data: Annotated[
+            FileUpdateRequestSchema,
+            api_json_body(
+                title="File metadata update request",
+                description="Managed file metadata replacement payload.",
+                examples=({"name": "Article cover"},),
+            ),
+        ],
         file_service: FromDishka[FileService],
     ) -> FileResponseSchema:
         return FileResponseSchema.from_domain_schema(
@@ -103,7 +127,7 @@ class FilesApiController(Controller):
     )
     async def delete_file(
         self,
-        file_id: FromPath[str],
+        file_id: FileIdPath,
         file_service: FromDishka[FileService],
     ) -> None:
         await file_service.delete_file(file_id=file_id)

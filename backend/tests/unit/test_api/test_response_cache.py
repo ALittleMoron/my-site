@@ -295,7 +295,7 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
         assert events == ["invalidate"]
 
 
-class TestResponseCacheKeyBuilder:
+class TestResponseCacheDomainKeyBuilder:
     def test_builds_domain_prefixed_sorted_litestar_key(self) -> None:
         cache_key_builder = ResponseCacheDomain.ARTICLES.cache_key_builder
 

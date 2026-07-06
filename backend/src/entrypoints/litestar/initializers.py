@@ -24,6 +24,7 @@ from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
 )
+from entrypoints.litestar.openapi_metadata import install_openapi_request_body_metadata
 from entrypoints.litestar.public.endpoints import public_router
 from entrypoints.litestar.response_cache import ResponseCacheDomain, ResponseCacheDomainStore
 from infra.config import loggers
@@ -138,7 +139,7 @@ def create_litestar_app(
     extra_plugins: Sequence[PluginProtocol],
     extra_middlewares: Sequence[Middleware],
 ) -> Litestar:
-    return Litestar(
+    app = Litestar(
         route_handlers=create_routers(),
         lifespan=lifespan,
         debug=settings.app.debug,
@@ -153,3 +154,5 @@ def create_litestar_app(
         plugins=[*create_plugins(), *extra_plugins],
         openapi_config=create_openapi_config(),
     )
+    install_openapi_request_body_metadata()
+    return app

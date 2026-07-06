@@ -7,7 +7,6 @@ from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.datastructures.upload_file import UploadFile
 from litestar.di import NamedDependency, Provide
-from litestar.params import Body, FromPath, MultipartBody, QueryParameter
 
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
@@ -24,7 +23,6 @@ from core.competency_matrix.schemas import (
 )
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.generators import HexUuidIdGenerator
-from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_competency_matrix_item_draft_status_params,
     provide_competency_matrix_item_get_params,
@@ -56,6 +54,16 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     QueuedQuestionResponseSchema,
     QueuedQuestionsResponseSchema,
 )
+from entrypoints.litestar.api.parameters import (
+    EntityPkPath,
+    LanguageQuery,
+    OnlyPublishedQuery,
+    SectionIdPath,
+    SheetIdPath,
+    SheetKeyQuery,
+    api_json_body,
+    api_multipart_body,
+)
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
@@ -85,7 +93,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_sheet(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.list_sheets()
         return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(
@@ -103,9 +111,9 @@ class PublicCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_items(
         self,
-        sheet_key: Annotated[str, QueryParameter(name="sheetKey")],
+        sheet_key: SheetKeyQuery,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> PublicCompetencyMatrixItemsListResponseSchema:
         filters = CompetencyMatrixItemFilters(sheet_key=sheet_key, only_published=True)
         items = await use_case.list_items(filters=filters)
@@ -133,7 +141,7 @@ class PublicCompetencyMatrixApiController(Controller):
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
         params: NamedDependency[CompetencyMatrixItemBySlugGetParams],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> PublicCompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item_by_slug(params=params)
         return PublicCompetencyMatrixItemDetailResponseSchema.from_domain_schema(
@@ -155,7 +163,16 @@ class PublicCompetencyMatrixApiController(Controller):
     )
     async def suggest_competency_matrix_question(
         self,
-        data: Annotated[QuestionSuggestionRequestSchema, Body()],
+        data: Annotated[
+            QuestionSuggestionRequestSchema,
+            api_json_body(
+                title="Question suggestion request",
+                description="Anonymous competency matrix question suggestion.",
+                examples=(
+                    {"question": "How does asyncio.gather handle errors?", "sheet": "python"},
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
         limit: NamedDependency[QuestionSuggestionLimitParams],
     ) -> None:
@@ -176,7 +193,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_sheet(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixSheetsListResponseSchema:
         sheets = await use_case.list_sheets()
         return CompetencyMatrixSheetsListResponseSchema.from_domain_schema(
@@ -193,7 +210,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_structure(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> MatrixStructureResponseSchema:
         structure = await use_case.list_structure()
         return MatrixStructureResponseSchema.from_domain_schema(
@@ -209,9 +226,24 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def create_competency_matrix_sheet(
         self,
-        data: Annotated[MatrixSheetCreateRequestSchema, Body()],
+        data: Annotated[
+            MatrixSheetCreateRequestSchema,
+            api_json_body(
+                title="Competency matrix sheet request",
+                description="Language-neutral sheet key plus localized names.",
+                examples=(
+                    {
+                        "key": "python",
+                        "translations": {
+                            "ru": {"name": "Python"},
+                            "en": {"name": "Python"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> MatrixStructureSheetResponseSchema:
         sheet = await use_case.create_sheet(params=data.to_schema())
         return MatrixStructureSheetResponseSchema.from_domain_schema(
@@ -227,10 +259,24 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def create_competency_matrix_section(
         self,
-        sheet_id: FromPath[str],
-        data: Annotated[MatrixSectionCreateRequestSchema, Body()],
+        sheet_id: SheetIdPath,
+        data: Annotated[
+            MatrixSectionCreateRequestSchema,
+            api_json_body(
+                title="Competency matrix section request",
+                description="Localized section names for one sheet.",
+                examples=(
+                    {
+                        "translations": {
+                            "ru": {"name": "Асинхронность"},
+                            "en": {"name": "Async"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> MatrixStructureSectionResponseSchema:
         section = await use_case.create_section(
             params=data.to_schema(sheet_id=sheet_id),
@@ -248,10 +294,24 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def create_competency_matrix_subsection(
         self,
-        section_id: FromPath[str],
-        data: Annotated[MatrixSubsectionCreateRequestSchema, Body()],
+        section_id: SectionIdPath,
+        data: Annotated[
+            MatrixSubsectionCreateRequestSchema,
+            api_json_body(
+                title="Competency matrix subsection request",
+                description="Localized subsection names for one section.",
+                examples=(
+                    {
+                        "translations": {
+                            "ru": {"name": "Event loop"},
+                            "en": {"name": "Event loop"},
+                        },
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> MatrixStructureSubsectionResponseSchema:
         subsection = await use_case.create_subsection(
             params=data.to_schema(section_id=section_id),
@@ -270,7 +330,14 @@ class AdminCompetencyMatrixApiController(Controller):
     async def update_competency_matrix_sheet_priorities(
         self,
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        data: Annotated[
+            MatrixStructurePriorityUpdateRequestSchema,
+            api_json_body(
+                title="Competency matrix priority request",
+                description="Full ordered list of structure identifiers.",
+                examples=({"orderedIds": ["00000000000000000000000000000001"]},),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.update_sheet_priorities(params=data.to_sheet_schema())
@@ -287,9 +354,16 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def update_competency_matrix_section_priorities(
         self,
-        sheet_id: FromPath[str],
+        sheet_id: SheetIdPath,
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        data: Annotated[
+            MatrixStructurePriorityUpdateRequestSchema,
+            api_json_body(
+                title="Competency matrix priority request",
+                description="Full ordered list of structure identifiers.",
+                examples=({"orderedIds": ["00000000000000000000000000000002"]},),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.update_section_priorities(
@@ -308,9 +382,16 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def update_competency_matrix_subsection_priorities(
         self,
-        section_id: FromPath[str],
+        section_id: SectionIdPath,
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[MatrixStructurePriorityUpdateRequestSchema, Body()],
+        data: Annotated[
+            MatrixStructurePriorityUpdateRequestSchema,
+            api_json_body(
+                title="Competency matrix priority request",
+                description="Full ordered list of structure identifiers.",
+                examples=({"orderedIds": ["00000000000000000000000000000003"]},),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.update_subsection_priorities(
@@ -365,7 +446,16 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def create_queued_competency_matrix_question(
         self,
-        data: Annotated[QuestionSuggestionRequestSchema, Body()],
+        data: Annotated[
+            QuestionSuggestionRequestSchema,
+            api_json_body(
+                title="Queued question request",
+                description="Manual competency matrix question queue payload.",
+                examples=(
+                    {"question": "How does asyncio.gather handle errors?", "sheet": "python"},
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionResponseSchema:
         question = await use_case.suggest_question(params=data.to_schema(limit=None))
@@ -379,7 +469,14 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def import_queued_competency_matrix_questions(
         self,
-        data: MultipartBody[QueuedQuestionsImportRequestSchema],
+        data: Annotated[
+            QueuedQuestionsImportRequestSchema,
+            api_multipart_body(
+                title="Queued question import request",
+                description="Multipart file upload with queued competency matrix questions.",
+                examples=({"file": "questions.xlsx"},),
+            ),
+        ],
         parser: FromDishka[QuestionQueueImportParser],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionsResponseSchema:
@@ -400,7 +497,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def delete_queued_competency_matrix_question(
         self,
-        pk: FromPath[str],
+        pk: EntityPkPath,
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:
         await use_case.delete_queued_question(question_id=pk)
@@ -413,12 +510,42 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def create_competency_matrix_item_from_queue(  # noqa: PLR0913
         self,
-        pk: FromPath[str],
+        pk: EntityPkPath,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
+        data: Annotated[
+            CompetencyMatrixItemRequestSchema,
+            api_json_body(
+                title="Competency matrix question request",
+                description=(
+                    "Competency matrix question payload with structure, translations and resources."
+                ),
+                examples=(
+                    {
+                        "slug": "python-asyncio-gather-errors",
+                        "subsectionId": "00000000000000000000000000000001",
+                        "grade": "Middle",
+                        "interviewFrequency": "often",
+                        "publishStatus": "Draft",
+                        "translations": {
+                            "ru": {
+                                "question": "Как asyncio.gather обрабатывает ошибки?",
+                                "answer": "Ответ",
+                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                            },
+                            "en": {
+                                "question": "How does asyncio.gather handle errors?",
+                                "answer": "Answer",
+                                "interviewExpectedAnswer": "Expected answer",
+                            },
+                        },
+                        "resources": [],
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item_from_queue(
             params=data.to_create_from_queue_schema(
@@ -465,7 +592,7 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_competency_matrix_workspace_filter_options(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixFilterOptionsResponseSchema:
         options = await use_case.list_workspace_filter_options(language=language)
         return CompetencyMatrixFilterOptionsResponseSchema.from_domain_schema(schema=options)
@@ -478,10 +605,10 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def list_competency_matrix_items(
         self,
-        sheet_key: Annotated[str, QueryParameter(name="sheetKey")],
+        sheet_key: SheetKeyQuery,
         use_case: FromDishka[CompetencyMatrixUseCase],
-        only_published: Annotated[bool, QueryParameter(name="onlyPublished")],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        only_published: OnlyPublishedQuery,
+        language: LanguageQuery,
     ) -> CompetencyMatrixItemsListResponseSchema:
         filters = CompetencyMatrixItemFilters(
             sheet_key=sheet_key,
@@ -504,9 +631,39 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
+        data: Annotated[
+            CompetencyMatrixItemRequestSchema,
+            api_json_body(
+                title="Competency matrix question request",
+                description=(
+                    "Competency matrix question payload with structure, translations and resources."
+                ),
+                examples=(
+                    {
+                        "slug": "python-asyncio-gather-errors",
+                        "subsectionId": "00000000000000000000000000000001",
+                        "grade": "Middle",
+                        "interviewFrequency": "often",
+                        "publishStatus": "Draft",
+                        "translations": {
+                            "ru": {
+                                "question": "Как asyncio.gather обрабатывает ошибки?",
+                                "answer": "Ответ",
+                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                            },
+                            "en": {
+                                "question": "How does asyncio.gather handle errors?",
+                                "answer": "Answer",
+                                "interviewExpectedAnswer": "Expected answer",
+                            },
+                        },
+                        "resources": [],
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
             params=data.to_create_schema(
@@ -539,7 +696,7 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
         params: NamedDependency[CompetencyMatrixItemGetParams],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.get_item(params=params)
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
@@ -555,12 +712,42 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def update_competency_matrix_item(  # noqa: PLR0913
         self,
-        pk: FromPath[str],
+        pk: EntityPkPath,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
-        data: Annotated[CompetencyMatrixItemRequestSchema, Body()],
+        data: Annotated[
+            CompetencyMatrixItemRequestSchema,
+            api_json_body(
+                title="Competency matrix question request",
+                description=(
+                    "Competency matrix question payload with structure, translations and resources."
+                ),
+                examples=(
+                    {
+                        "slug": "python-asyncio-gather-errors",
+                        "subsectionId": "00000000000000000000000000000001",
+                        "grade": "Middle",
+                        "interviewFrequency": "often",
+                        "publishStatus": "Draft",
+                        "translations": {
+                            "ru": {
+                                "question": "Как asyncio.gather обрабатывает ошибки?",
+                                "answer": "Ответ",
+                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                            },
+                            "en": {
+                                "question": "How does asyncio.gather handle errors?",
+                                "answer": "Answer",
+                                "interviewExpectedAnswer": "Expected answer",
+                            },
+                        },
+                        "resources": [],
+                    },
+                ),
+            ),
+        ],
         use_case: FromDishka[CompetencyMatrixUseCase],
-        language: Annotated[LanguageEnum, QueryParameter(name="language")],
+        language: LanguageQuery,
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.update_item(
             params=data.to_update_schema(
@@ -585,7 +772,7 @@ class AdminCompetencyMatrixApiController(Controller):
     )
     async def delete_competency_matrix_item(
         self,
-        pk: FromPath[str],
+        pk: EntityPkPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> None:

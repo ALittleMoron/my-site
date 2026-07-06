@@ -12,11 +12,7 @@ from entrypoints.taskiq.cache_warm.targets import (
     I18nCacheWarmTargetCollector,
     ResponseCacheWarmTargetCollector,
 )
-from entrypoints.taskiq.cache_warm.writer import (
-    ResponseCacheKeyBuilder,
-    ResponseCachePayloadCodec,
-    ResponseCacheWarmWriter,
-)
+from entrypoints.taskiq.cache_warm.writer import ResponseCacheWarmWriter
 from infra.config.settings import settings
 
 
@@ -30,8 +26,6 @@ class ResponseCacheWarmProvider(Provider):
         CompetencyMatrixCacheWarmTargetCollector,
     )
     response_cache_warm_target_collector = provide(ResponseCacheWarmTargetCollector)
-    response_cache_key_builder = provide(ResponseCacheKeyBuilder)
-    response_cache_payload_codec = provide(ResponseCachePayloadCodec)
     response_cache_warm_writer = provide(ResponseCacheWarmWriter)
 
     @provide

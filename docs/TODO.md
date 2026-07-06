@@ -76,7 +76,7 @@
   - [x] After deployment, log in to internal services over WireGuard and verify auth
     - [x] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [x] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
-  - [ ] Load the real competency matrix content from the current Google Docs source into the database before first deployment.
+  - [x] Load the real competency matrix content from the current Google Docs source into the database before first deployment.
   - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
 ### Security and Infrastructure
@@ -467,12 +467,6 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Technologies
 - [ ] Export Obsidian vault to knowledge database
 
-### Flashcards
-
-- [ ] Create flashcards from competency matrix (stateless — no persistence, restart = new set)
-- [ ] Create custom flashcards
-- [ ] Export user flashcards to .apkg format
-
 ### Auth and Users
 
 - [ ] User authentication improvements (possibly via OAuth2)
@@ -507,6 +501,14 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Session invalidation on logout
   - [ ] Expired sessions actually deleted / not accepted
 
+### Flashcards
+
+Flashcards should be implemented strictly after auth implementation for common users.
+
+- [ ] Create flashcards from competency matrix (stateless — no persistence, restart = new set)
+- [ ] Create custom flashcards
+- [ ] Export user flashcards to .apkg format
+
 ### Competency Matrix Improvements
 
 - [x] Content localisation for competency matrix
@@ -514,7 +516,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Localise sheets, sections, subsections, questions, answers, expected answers, resource names, and resource context
 - [x] Move sheet, section, subsection to separated tables
 - [x] Priority for matrix sheets, sections, and subsections with drag-and-drop admin ordering
-- [ ] Add a queue list for questions I want to add to the matrix
+- [x] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix
 - [x] Add moderation inbox for suggested matrix questions.
 - [ ] Ability to report a typo in the competency matrix
@@ -599,9 +601,8 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 
 ## Documentation
 
-- [ ] Add parameter details to the API and include examples and other fields.
+- [x] Add parameter details to the API and include examples and other fields.
 - [ ] Add public architecture, quality, and security articles as engineering documentation.
-- [ ] Add ADRs for major platform choices.
 
 ## Refactoring
 
@@ -613,7 +614,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [x] Unite use-cases into a single class (separated by domain).
 - [ ] Unite all repositories to the "unit of work" pattern.
 - [ ] Fix taskiq not used imports of tasks from subpackages.
-- [ ] Move ResponseCacheKeyBuilder.build to target.
-- [ ] Move ResponseCachePayloadCodec to BaseModel.
+- [x] Move ResponseCacheKeyBuilder.build to target.
+- [x] Move ResponseCachePayloadCodec to BaseModel.
 - [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
   `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
