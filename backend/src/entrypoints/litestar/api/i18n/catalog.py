@@ -472,6 +472,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.questionEn": "Вопрос EN",
         "matrix.form.slug": "Slug",
         "matrix.form.sheetKey": "Ключ листа",
+        "matrix.form.missingSheetKey": (
+            "Лист с ключом {key} не найден. Создайте лист и заполните названия RU/EN."
+        ),
         "matrix.form.sheet": "Лист",
         "matrix.form.sheetRu": "Лист RU",
         "matrix.form.sheetEn": "Лист EN",
@@ -1202,6 +1205,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.questionEn": "Question EN",
         "matrix.form.slug": "Slug",
         "matrix.form.sheetKey": "Sheet key",
+        "matrix.form.missingSheetKey": (
+            "Sheet with key {key} was not found. Create the sheet and fill in the RU/EN names."
+        ),
         "matrix.form.sheet": "Sheet",
         "matrix.form.sheetRu": "Sheet RU",
         "matrix.form.sheetEn": "Sheet EN",

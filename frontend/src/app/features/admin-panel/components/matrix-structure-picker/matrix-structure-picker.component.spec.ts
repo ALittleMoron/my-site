@@ -73,6 +73,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture = TestBed.createComponent(MatrixStructurePickerComponent);
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
+    fixture.componentRef.setInput('preferredSheetKey', null);
     fixture.detectChanges();
   });
 
@@ -111,6 +112,29 @@ describe('MatrixStructurePickerComponent', () => {
     expect(emit).toHaveBeenLastCalledWith(SUBSECTION_ID);
   });
 
+  it('selects the preferred sheet by key when no subsection is selected', () => {
+    fixture.componentRef.setInput('preferredSheetKey', 'PYTHON');
+    fixture.detectChanges();
+
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SHEET_ID);
+    expect(select('[data-testid="matrix-structure-section"]').disabled).toBe(false);
+    expect(select('[data-testid="matrix-structure-subsection"]').disabled).toBe(true);
+    expect(fixture.nativeElement.textContent).not.toContain('Создайте лист');
+  });
+
+  it('highlights a missing preferred sheet key and pre-fills sheet creation', () => {
+    fixture.componentRef.setInput('preferredSheetKey', 'SQL');
+    fixture.detectChanges();
+
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Лист с ключом sql не найден. Создайте лист и заполните названия RU/EN.',
+    );
+    expect(inputValue('[data-testid="matrix-structure-sheet-key"]')).toBe('sql');
+    expect(inputValue('[data-testid="matrix-structure-sheet-ru"]')).toBe('');
+    expect(inputValue('[data-testid="matrix-structure-sheet-en"]')).toBe('');
+  });
+
   it('reloads structure and selects newly created sheet', () => {
     const updatedStructure: AdminMatrixStructure = {
       sheets: [
@@ -141,6 +165,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture = TestBed.createComponent(MatrixStructurePickerComponent);
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
+    fixture.componentRef.setInput('preferredSheetKey', null);
     fixture.detectChanges();
 
     setInput('[data-testid="matrix-structure-sheet-key"]', 'sql');
@@ -195,6 +220,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture = TestBed.createComponent(MatrixStructurePickerComponent);
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
+    fixture.componentRef.setInput('preferredSheetKey', null);
     fixture.detectChanges();
     choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
@@ -369,6 +395,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture = TestBed.createComponent(MatrixStructurePickerComponent);
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
+    fixture.componentRef.setInput('preferredSheetKey', null);
     fixture.detectChanges();
     const emit = jest.spyOn(fixture.componentInstance.selectedSubsectionIdChange, 'emit');
     choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
@@ -411,6 +438,14 @@ describe('MatrixStructurePickerComponent', () => {
     input.value = value;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+  }
+
+  function inputValue(selector: string): string {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
+    if (input === null) {
+      throw new Error(`Missing matrix structure input: ${selector}`);
+    }
+    return input.value;
   }
 
   function selectExistingSection(): void {

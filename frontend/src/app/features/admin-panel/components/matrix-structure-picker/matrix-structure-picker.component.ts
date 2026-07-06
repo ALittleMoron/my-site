@@ -58,6 +58,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
 
   @Input({ required: true }) language!: LanguageCode;
   @Input({ required: true }) selectedSubsectionId!: string | null;
+  @Input({ required: true }) preferredSheetKey!: string | null;
   @Input() disabled = false;
   @Input() invalid = false;
 
@@ -67,6 +68,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   readonly loading = signal(false);
   readonly creating = signal(false);
   readonly errorKey = signal<string | null>(null);
+  readonly missingPreferredSheetKey = signal<string | null>(null);
   readonly selectedSheetId = signal<string | null>(null);
   readonly selectedSectionId = signal<string | null>(null);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
@@ -108,12 +110,16 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
       this.loadStructure();
       return;
     }
-    if (changes['selectedSubsectionId'] && !changes['selectedSubsectionId'].firstChange) {
-      this.alignSelectionToSubsection(this.selectedSubsectionId);
+    if (
+      (changes['selectedSubsectionId'] && !changes['selectedSubsectionId'].firstChange) ||
+      (changes['preferredSheetKey'] && !changes['preferredSheetKey'].firstChange)
+    ) {
+      this.alignSelectionToCurrentInputs();
     }
   }
 
   onSheetChange(value: string): void {
+    this.missingPreferredSheetKey.set(null);
     this.selectedSheetId.set(optionalString(value));
     this.selectedSectionId.set(null);
     this.selectedSubsectionIdChange.emit(null);
@@ -166,6 +172,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
           this.structure.set(structure);
           this.selectedSheetId.set(sheet.id);
           this.selectedSectionId.set(null);
+          this.missingPreferredSheetKey.set(null);
           this.selectedSubsectionIdChange.emit(null);
           this.sheetForm.reset();
         },
@@ -249,16 +256,46 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
       .subscribe({
         next: (structure) => {
           this.structure.set(structure);
-          this.alignSelectionToSubsection(this.selectedSubsectionId);
+          this.alignSelectionToCurrentInputs();
         },
         error: () => this.errorKey.set('adminMatrixStructure.loadError'),
       });
+  }
+
+  private alignSelectionToCurrentInputs(): void {
+    if (this.selectedSubsectionId !== null) {
+      this.alignSelectionToSubsection(this.selectedSubsectionId);
+      return;
+    }
+    this.alignSelectionToPreferredSheetKey();
   }
 
   private alignSelectionToSubsection(subsectionId: string | null): void {
     const path = subsectionId === null ? null : findSubsectionPath(this.structure(), subsectionId);
     this.selectedSheetId.set(path?.sheet.id ?? null);
     this.selectedSectionId.set(path?.section.id ?? null);
+    this.missingPreferredSheetKey.set(null);
+  }
+
+  private alignSelectionToPreferredSheetKey(): void {
+    const sheetKey = normalizeSheetKey(this.preferredSheetKey);
+    if (sheetKey === null) {
+      this.selectedSheetId.set(null);
+      this.selectedSectionId.set(null);
+      this.missingPreferredSheetKey.set(null);
+      return;
+    }
+    const sheet = findSheetByKey(this.structure(), sheetKey);
+    if (sheet === null) {
+      this.selectedSheetId.set(null);
+      this.selectedSectionId.set(null);
+      this.missingPreferredSheetKey.set(sheetKey);
+      this.sheetForm.reset({ key: sheetKey, nameRu: '', nameEn: '' });
+      return;
+    }
+    this.selectedSheetId.set(sheet.id);
+    this.selectedSectionId.set(null);
+    this.missingPreferredSheetKey.set(null);
   }
 }
 
@@ -274,6 +311,19 @@ function translationsFromForm(value: MatrixStructureCreateFormValue): {
 
 function optionalString(value: string): string | null {
   return value === '' ? null : value;
+}
+
+function normalizeSheetKey(value: string | null): string | null {
+  const normalized = value?.trim().toLowerCase() ?? '';
+  if (normalized.length === 0) return null;
+  return normalized;
+}
+
+function findSheetByKey(
+  structure: AdminMatrixStructure,
+  sheetKey: string,
+): AdminMatrixStructureSheet | null {
+  return structure.sheets.find((sheet) => normalizeSheetKey(sheet.key) === sheetKey) ?? null;
 }
 
 function findSubsectionPath(

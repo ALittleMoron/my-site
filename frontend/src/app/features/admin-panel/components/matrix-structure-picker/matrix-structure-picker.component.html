@@ -5,6 +5,18 @@
     </div>
   }
 
+  @if (missingPreferredSheetKey(); as sheetKey) {
+    <div class="col-12">
+      <div
+        class="alert alert-warning py-2 mb-0"
+        data-testid="matrix-structure-missing-sheet-key"
+        role="status"
+      >
+        {{ 'matrix.form.missingSheetKey' | t: { key: sheetKey } }}
+      </div>
+    </div>
+  }
+
   <div class="col-12 col-md-4">
     <label class="form-label" for="matrix-structure-sheet">
       {{ 'matrix.form.sheet' | t }}

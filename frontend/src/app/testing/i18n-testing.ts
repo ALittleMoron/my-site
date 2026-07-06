@@ -343,6 +343,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.suggestion.error': 'Не удалось отправить вопрос.',
   'matrix.suggestion.quotaExceeded': 'Лимит предложений на сегодня исчерпан.',
   'matrix.form.sheetKey': 'Ключ листа',
+  'matrix.form.missingSheetKey':
+    'Лист с ключом {key} не найден. Создайте лист и заполните названия RU/EN.',
   'matrix.form.grade': 'Грейд',
   'matrix.form.interviewFrequency': 'Как часто спрашивают',
   'matrix.form.draft': 'Черновик',

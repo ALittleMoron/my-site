@@ -35,6 +35,7 @@
       <app-matrix-structure-picker
         [language]="currentLanguage()"
         [selectedSubsectionId]="questionForm.controls.subsectionId.value"
+        [preferredSheetKey]="null"
         [disabled]="submitting"
         [invalid]="fieldInvalid('subsectionId')"
         (selectedSubsectionIdChange)="selectQuestionSubsection($event)"

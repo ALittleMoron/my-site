@@ -11,6 +11,7 @@ import { MatrixQuestionQueuePageComponent } from './matrix-question-queue-page.c
 
 const QUESTION_ID = '00000000000000000000000000000007';
 const IMPORTED_QUESTION_ID = '00000000000000000000000000000008';
+const MISSING_SHEET_QUESTION_ID = '00000000000000000000000000000009';
 const SHEET_ID = '00000000000000000000000000000001';
 const SECTION_ID = '00000000000000000000000000000002';
 const SUBSECTION_ID = '00000000000000000000000000000003';
@@ -19,7 +20,7 @@ const queuedQuestion: QueuedMatrixQuestion = {
   id: QUESTION_ID,
   question: 'What is PEP 8?',
   grade: 'Junior',
-  sheet: 'Python',
+  sheet: 'python',
   section: 'Core',
   subsection: 'Style',
   suggestedByUsername: null,
@@ -30,6 +31,12 @@ const importedQuestion: QueuedMatrixQuestion = {
   ...queuedQuestion,
   id: IMPORTED_QUESTION_ID,
   question: 'What is Black?',
+};
+
+const queuedQuestionWithMissingSheet: QueuedMatrixQuestion = {
+  ...queuedQuestion,
+  id: MISSING_SHEET_QUESTION_ID,
+  sheet: 'sql',
 };
 
 const matrixStructure: AdminMatrixStructure = {
@@ -382,9 +389,24 @@ describe('MatrixQuestionQueuePageComponent', () => {
 
   it('prefills create form from selected queued question', () => {
     component.selectQuestion(queuedQuestion);
+    fixture.detectChanges();
 
     expect(component.form.getRawValue().questionRu).toBe('What is PEP 8?');
     expect(component.form.getRawValue().subsectionId).toBeNull();
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SHEET_ID);
+  });
+
+  it('highlights a missing queued sheet key and pre-fills sheet creation', () => {
+    component.selectQuestion(queuedQuestionWithMissingSheet);
+    fixture.detectChanges();
+
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Лист с ключом sql не найден. Создайте лист и заполните названия RU/EN.',
+    );
+    expect(inputValue('[data-testid="matrix-structure-sheet-key"]')).toBe('sql');
+    expect(inputValue('[data-testid="matrix-structure-sheet-ru"]')).toBe('');
+    expect(inputValue('[data-testid="matrix-structure-sheet-en"]')).toBe('');
   });
 
   it('lays out queue create fields for the narrow queue column', () => {
@@ -603,6 +625,22 @@ describe('MatrixQuestionQueuePageComponent', () => {
     input.value = value;
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+  }
+
+  function inputValue(selector: string): string {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
+    if (input === null) {
+      throw new Error(`Missing queue form input: ${selector}`);
+    }
+    return input.value;
+  }
+
+  function select(selector: string): HTMLSelectElement {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLSelectElement | null;
+    if (element === null) {
+      throw new Error(`Missing queue form select: ${selector}`);
+    }
+    return element;
   }
 
   function expectInvalidControl(selector: string, expectedMessage: string): void {

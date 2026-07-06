@@ -445,6 +445,7 @@ describe('MatrixQuestionFormComponent', () => {
 class MatrixStructurePickerStubComponent {
   @Input({ required: true }) language!: 'ru' | 'en';
   @Input({ required: true }) selectedSubsectionId!: string | null;
+  @Input({ required: true }) preferredSheetKey!: string | null;
   @Input() disabled = false;
   @Input() invalid = false;
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
