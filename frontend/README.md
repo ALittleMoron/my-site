@@ -11,7 +11,8 @@ In the full application stack, infrastructure nginx remains the public edge prox
 
 ## Development server
 
-Use Node.js 24.16.0 for local frontend commands (`.nvmrc` matches CI and the Docker builder).
+Use Node.js 24.16.0 for local frontend commands (`.nvmrc` matches CI). The production Docker
+image uses its own pinned Node.js runtime documented below.
 
 To start a local development server, run:
 
@@ -51,13 +52,13 @@ Reports are written to `performance/reports/lighthouse/`.
 Build the frontend image from this directory:
 
 ```bash
-docker build -t my_site_frontend:latest .
+docker build -t "my_site_frontend:${IMAGE_TAG:?set IMAGE_TAG}" .
 ```
 
 The image uses:
 
-- `node:26.3.0-alpine` to install dependencies and run the Angular production build.
-- `node:26.3.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
+- `node:26.4.0-alpine` to install dependencies and run the Angular production build.
+- `node:26.4.0-alpine` as the production runtime for `dist/my-site-frontend/server/server.mjs`.
 - Production dependencies are installed in the runtime stage, then npm/npx and the npm cache are removed from the final image because the server runtime only needs `node`.
 - Explicit runtime environment: `PORT`, `SSR_API_ORIGIN`, `APP_URL_SCHEMA`, `APP_DOMAIN`, and optionally `SSR_PUBLIC_ORIGIN` / `NG_ALLOWED_HOSTS`.
 

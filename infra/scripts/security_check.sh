@@ -54,6 +54,49 @@ require_file_not_contains() {
     fi
 }
 
+require_compose_service_contains() {
+    local compose_file="$1"
+    local service_name="$2"
+    local pattern="$3"
+    local description="$4"
+
+    if ! awk -v service_line="  ${service_name}:" -v pattern="$pattern" '
+        $0 == service_line {
+            in_service = 1
+            next
+        }
+        in_service && $0 ~ /^  [A-Za-z0-9_-]+:$/ {
+            exit
+        }
+        in_service && index($0, pattern) > 0 {
+            found = 1
+            exit
+        }
+        END {
+            exit found ? 0 : 1
+        }
+    ' "$compose_file"; then
+        echo "Missing ${description} for Compose service ${service_name}: ${pattern}" >&2
+        exit 1
+    fi
+}
+
+require_no_latest_image_tags() {
+    local file_path
+    local failed=0
+
+    for file_path in "$@"; do
+        if grep -En '(^|[[:space:]-])[[:alnum:]_./-]+:latest([[:space:]]|$)' "$file_path"; then
+            echo "Unexpected Docker latest image tag in ${file_path}." >&2
+            failed=1
+        fi
+    done
+
+    if [ "$failed" -ne 0 ]; then
+        exit 1
+    fi
+}
+
 require_file_exists() {
     local file_path="$1"
     local description="$2"
@@ -264,7 +307,15 @@ run_deploy_env_configuration_check() {
 
     require_file_not_contains "$compose_file" "\${DOCKER_REGISTRY}" "runtime Docker registry interpolation"
     require_file_not_contains "$compose_file" "\${DOCKER_USERNAME}" "runtime Docker username interpolation"
-    require_file_contains "$compose_file" "image: my_site_application:\${IMAGE_TAG:-latest}" "local backend image tag"
+    require_file_contains "$compose_file" 'image: "my_site_application:${IMAGE_TAG:?IMAGE_TAG must be set}"' "required local backend image tag"
+    require_file_contains "$compose_file" 'image: "my_site_frontend:${IMAGE_TAG:?IMAGE_TAG must be set}"' "required local frontend image tag"
+    require_file_contains "$compose_file" 'image: "my_site_minio:${IMAGE_TAG:?IMAGE_TAG must be set}"' "required local MinIO image tag"
+    require_file_contains "$compose_file" 'image: "my_site_nginx:${IMAGE_TAG:?IMAGE_TAG must be set}"' "required local nginx image tag"
+    require_no_latest_image_tags \
+        "$compose_file" \
+        "$backend_image_workflow" \
+        "$frontend_image_workflow" \
+        "$nginx_image_workflow"
 
     rendered_env="$(mktemp)"
     (
@@ -406,6 +457,15 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" 'user: "70:70"' "Postgres explicit non-root UID/GID"
     require_file_contains "$compose_file" 'user: "999:999"' "Valkey explicit non-root UID/GID"
     require_file_contains "$compose_file" 'user: "10002:10002"' "MinIO explicit non-root UID/GID"
+    require_compose_service_contains "$compose_file" "backend-blue" "restart: unless-stopped" "backend blue restart policy"
+    require_compose_service_contains "$compose_file" "backend-green" "restart: unless-stopped" "backend green restart policy"
+    require_compose_service_contains "$compose_file" "taskiq-worker" "restart: unless-stopped" "TaskIQ worker restart policy"
+    require_compose_service_contains "$compose_file" "taskiq-scheduler" "restart: unless-stopped" "TaskIQ scheduler restart policy"
+    require_compose_service_contains "$compose_file" "valkey" "restart: unless-stopped" "Valkey restart policy"
+    require_compose_service_contains "$compose_file" "postgres" "restart: unless-stopped" "PostgreSQL restart policy"
+    require_compose_service_contains "$compose_file" "minio" "restart: unless-stopped" "MinIO restart policy"
+    require_compose_service_contains "$compose_file" "nginx" "restart: unless-stopped" "nginx restart policy"
+    require_compose_service_contains "$compose_file" "databasus" "restart: unless-stopped" "Databasus restart policy"
     require_file_contains "$compose_file" "dockerfile: infra/minio/Dockerfile" "MinIO non-root wrapper Dockerfile"
     require_file_contains "$compose_file" 'command: ["server", "/data", "--console-address", ":9001"]' "MinIO exec-form command"
     require_file_contains "$compose_file" "read_only: true" "app-owned read-only root filesystems"
@@ -468,10 +528,14 @@ run_healthcheck_configuration_check() {
 run_runtime_container_security_check() {
     local compose_file="${repo_dir}/docker-compose.yml"
     local docker_lint_script="${repo_dir}/infra/scripts/docker_lint.sh"
+    local root_dockerignore="${repo_dir}/.dockerignore"
     local nginx_conf="${repo_dir}/infra/nginx/nginx.conf"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
 
     require_file_contains "$docker_lint_script" "infra/minio/Dockerfile" "MinIO Dockerfile lint coverage"
+    require_file_contains "$root_dockerignore" ".deploy-state" "deploy secret state excluded from root Docker build context"
+    require_file_contains "$root_dockerignore" ".deploy-payload" "deploy payload excluded from root Docker build context"
+    require_file_contains "$root_dockerignore" "infra/nginx/certs" "runtime TLS material excluded from root Docker build context"
     require_no_inspect_visible_secret_environment "$compose_file"
     require_no_unapproved_network_literals \
         "hardcoded IP literal outside Docker resolver or self-healthchecks" \

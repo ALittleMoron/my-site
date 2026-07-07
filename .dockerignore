@@ -5,6 +5,9 @@ pre-commit-config.yaml
 .env
 .env.test
 .env.example
+.deploy-state
+.deploy-payload
+infra/nginx/certs
 .coverage
 coverage.xml
 .vscode

@@ -22,6 +22,11 @@ Production deploy is a manual server-build deploy:
 13. The server runs `make run`, which builds images locally and switches the healthy blue/green
     slot.
 
+Locally built runtime images use the GitHub commit SHA from the required `IMAGE_TAG` runtime
+environment entry. `docker-compose.yml` intentionally has no `latest` fallback for the backend,
+frontend, nginx, or MinIO wrapper images, so a production start fails early if the deploy renderer
+does not provide the tag.
+
 Start deploy from **Actions** -> **Deploy to production** -> **Run workflow** on `main`. The
 repository environment must restrict production deployments to `main` and require reviewer
 approval. Without those GitHub Environment protection rules, the workflow remains manual, but

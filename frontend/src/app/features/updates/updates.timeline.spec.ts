@@ -107,12 +107,24 @@ describe('updates timeline', () => {
     expect(entry?.tagIds).toEqual(['content', 'frontend', 'backend', 'seo']);
   });
 
-  it('renders the changelog milestone before broader July polish', () => {
+  it('includes the July full security audit milestone', () => {
+    const entry = UPDATES_TIMELINE_ENTRIES.find((item) => item.id === 'full-security-audit');
+
+    expect(entry?.month).toBe('2026-07');
+    expect(entry?.title.ru).toContain('аудит безопасности');
+    expect(entry?.title.en).toContain('security audit');
+    expect(entry?.summary.ru).toContain('модель угроз');
+    expect(entry?.summary.en).toContain('threat model');
+    expect(entry?.tagIds).toEqual(['security', 'infra', 'backend', 'frontend', 'quality']);
+  });
+
+  it('renders July milestones in editorial order', () => {
     const julyGroup = groupUpdateEntries(UPDATES_TIMELINE_ENTRIES, 'ru', 'ru-RU').find(
       (group) => group.datetime === '2026-07',
     );
 
     expect(julyGroup?.entries.map((entry) => entry.id)).toEqual([
+      'full-security-audit',
       'public-updates-page',
       'release-workflow',
     ]);
@@ -134,6 +146,13 @@ describe('updates timeline', () => {
       'quality',
       'admin',
       'infra',
+    ]);
+    expect(tagIdsByEntry.get('full-security-audit')).toEqual([
+      'security',
+      'infra',
+      'backend',
+      'frontend',
+      'quality',
     ]);
     expect(tagIdsByEntry.get('public-seo-layer')).toEqual([
       'seo',

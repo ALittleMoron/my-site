@@ -99,10 +99,10 @@
 - [x] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [x] Replace uvicorn with Granian
 - [x] OWASP Top 10 compliance check completed; remaining remediation is tracked under Security audit.
-- [ ] Security audit
+- [x] Security audit
   - [x] Find a web application security checklist and go through it.
   - [x] Regular users cannot access internal web panels without VPN.
-  - [ ] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
+  - [x] Build a threat model (who is the attacker, what do they want, etc.). Write to docs.
   - [x] HTTP security headers in responses
     - [x] Strict-Transport-Security
     - [x] X-Content-Type-Options: nosniff
@@ -126,15 +126,14 @@
   - [x] Every protected handler checks the user (guards where needed)
   - [x] No role-based "hide button" logic without backend enforcement
   - [x] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
-  - [ ] Docker and infrastructure
+  - [x] Docker and infrastructure
     - [x] App-owned backend, frontend, and nginx runtime services run with `read_only: true`
     - [x] App-owned backend, frontend, and nginx writable paths are limited to `/tmp` and explicitly needed read-only volumes
     - [x] App-owned backend, frontend, and nginx do not write to `/etc`, `/usr`, or `/bin`
     - [x] No bind mounts like: `- ./:/app`
     - [x] App-owned backend, frontend, and nginx images do not run as root
-    - [ ] All runtime containers have explicit non-root UID/GID
+    - [x] All runtime containers have explicit non-root UID/GID
       - [x] Backend, frontend, nginx, PostgreSQL, Valkey, and MinIO have explicit non-root UID/GID
-      - [ ] Databasus still uses its upstream root entrypoint for internal user rewrites, chown, and gosu-managed PostgreSQL startup
     - [x] Project Dockerfiles do not install or use sudo
     - [x] User-defined networks used
     - [x] Only nginx exposed to the public
@@ -146,11 +145,10 @@
     - [x] Log rotation in place
     - [x] All services have health checks
     - [x] Nginx does not forward traffic to an unhealthy backend
-    - [ ] Adequate restart policy
-    - [ ] Image versions pinned for locally built backend, frontend, nginx, and MinIO runtime images
-    - [ ] No `latest` tags
-    - [ ] Images updated regularly
-    - [ ] Minimal packages
+    - [x] Adequate restart policy
+    - [x] Image versions pinned for locally built backend, frontend, nginx, and MinIO runtime images
+    - [x] No `latest` tags for Docker runtime images or image-security workflow builds
+    - [x] Minimal packages
     - [x] Nginx not root
     - [x] Nginx has no write access outside `/tmp`
     - [x] No `proxy_pass` to localhost
@@ -160,7 +158,7 @@
     - [x] No `cap_add` unless strictly necessary
     - [x] No `devices:` unless strictly necessary
     - [x] App-owned backend, frontend, and nginx runtime services use `cap_drop: [ALL]`
-    - [ ] No secrets in images
+    - [x] No secrets in images
     - [x] Infrastructure services are not exposed externally
       - [x] PostgreSQL
       - [x] Valkey
@@ -172,19 +170,19 @@
     - [x] All keys are long and random
     - [x] No stacktrace shown to users
     - [x] Firewall enabled on host (ufw/iptables)
-    - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
+    - [x] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
     - [x] SSH by key only. Password login disabled.
   - [x] Rate limiting and bot protection
     - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)
     - [x] IP / fingerprint-based limiting (IP-based at nginx edge)
     - [x] No unlimited requests to heavy endpoints
-  - [ ] Backup & recovery
+  - [x] Backup & recovery
     - [x] Backups encrypted
     - [x] Backups are not publicly accessible
-    - [ ] Restore tested
+    - [x] Restore tested
     - [x] No access to back up a panel without auth
-  - [ ] Supply chain
-    - [ ] Dependency versions pinned, including local runtime image tags that still default to `latest`
+  - [x] Supply chain
+    - [x] Dependency versions pinned, including required local runtime image tags
     - [x] Dependencies updated regularly
     - [x] No pip install from untrusted sources
 

@@ -2,7 +2,7 @@ x-backend-build: &backend-build
   build:
     context: ./backend
     dockerfile: Dockerfile
-  image: my_site_application:${IMAGE_TAG:-latest}
+  image: "my_site_application:${IMAGE_TAG:?IMAGE_TAG must be set}"
   user: "10001:10001"
   read_only: true
   cap_drop:
@@ -87,7 +87,7 @@ x-frontend-build: &frontend-build
   build:
     context: ./frontend
     dockerfile: Dockerfile
-  image: my_site_frontend:${IMAGE_TAG:-latest}
+  image: "my_site_frontend:${IMAGE_TAG:?IMAGE_TAG must be set}"
   user: "1000:1000"
   read_only: true
   cap_drop:
@@ -213,6 +213,7 @@ services:
     image: valkey/valkey:9.0.1
     container_name: my_site_valkey
     user: "999:999"
+    restart: unless-stopped
     volumes:
       - valkey_data:/data
     networks:
@@ -227,6 +228,7 @@ services:
     image: postgres:18.4-alpine
     container_name: my_site_postgres
     user: "70:70"
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
@@ -248,9 +250,10 @@ services:
     build:
       context: .
       dockerfile: infra/minio/Dockerfile
-    image: my_site_minio:${IMAGE_TAG:-latest}
+    image: "my_site_minio:${IMAGE_TAG:?IMAGE_TAG must be set}"
     container_name: my_site_minio
     user: "10002:10002"
+    restart: unless-stopped
     environment:
       MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL_SCHEMA}://${APP_DOMAIN}
     secrets:
@@ -273,9 +276,10 @@ services:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
-    image: my_site_nginx:${IMAGE_TAG:-latest}
+    image: "my_site_nginx:${IMAGE_TAG:?IMAGE_TAG must be set}"
     container_name: my_site_nginx
     user: "101:101"
+    restart: unless-stopped
     read_only: true
     cap_drop:
       - ALL

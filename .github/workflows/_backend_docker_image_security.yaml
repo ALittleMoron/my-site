@@ -27,9 +27,7 @@ jobs:
           load: true
           cache-from: type=gha,scope=my_site_application
           cache-to: type=gha,scope=my_site_application,mode=max,ignore-error=true
-          tags: |
-            my_site_application:latest
-            my_site_application:${{ env.IMAGE_TAG }}
+          tags: my_site_application:${{ env.IMAGE_TAG }}
 
       - name: Lint Docker image
         run: make lint-docker-images DOCKLE_IMAGE_REFS="${IMAGE_NAME}:${IMAGE_TAG}"

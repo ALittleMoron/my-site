@@ -106,6 +106,17 @@ Do not allow `18081/tcp` or `18082/tcp` on the public interface. Docker also
 binds those ports to `VPN_BIND_ADDRESS`, so they should not listen on the
 server's public IP.
 
+Because Docker publishes ports by adding host firewall/NAT rules, host-level
+firewall policy remains part of the security boundary. On hosts with IPv4
+forwarding enabled, verify from a network that is not connected to WireGuard
+that `18081/tcp` and `18082/tcp` fail to connect on the public address. If they
+connect, add explicit public-interface drops in the host firewall before the
+Docker accept path, for example through UFW rules that deny those ports on the
+public interface or equivalent `DOCKER-USER` chain rules managed by the host.
+Keep SSH restricted to trusted admin source addresses or move it behind a
+separate access path; a globally reachable `22/tcp` does not satisfy the
+public-ingress contract above.
+
 ## Deployment
 
 Set the GitHub Actions Environment `production` variable `VPN_BIND_ADDRESS` to

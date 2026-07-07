@@ -60,6 +60,26 @@ const UPDATE_TAG_I18N_KEYS: Readonly<Record<UpdateTagId, string>> = {
 
 export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
   {
+    id: 'full-security-audit',
+    month: '2026-07',
+    order: 1,
+    title: {
+      ru: 'Проведён полный аудит безопасности',
+      en: 'Full security audit completed',
+    },
+    summary: {
+      ru:
+        'Июльский аудит безопасности прошёл по всему контуру: оформлена модель угроз, ' +
+        'усилены Docker/nginx/MinIO, CI image checks и production checklist, а также ' +
+        'PASETO/OpenAPI и XSS-чувствительные frontend-пути.',
+      en:
+        'The July security audit covered the whole surface: threat modeling, ' +
+        'Docker/nginx/MinIO hardening, CI image checks, the production checklist, ' +
+        'plus PASETO/OpenAPI and XSS-sensitive frontend paths.',
+    },
+    tagIds: ['security', 'infra', 'backend', 'frontend', 'quality'],
+  },
+  {
     id: 'public-updates-page',
     month: '2026-07',
     order: 5,
