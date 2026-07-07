@@ -216,11 +216,6 @@ const RESUME_EXPORT_FORMAT_OPTIONS: readonly ResumeExportFormatOption[] = [
   { value: 'docx', labelKey: 'adminResumeWorkspace.exportFormatDocx' },
 ];
 
-const INLINE_LIST_INPUT_MIN_TEXT_WIDTH_CH = 5;
-const INLINE_LIST_INPUT_MAX_TEXT_WIDTH_CH = 32;
-const INLINE_LIST_INPUT_EXTRA_TEXT_WIDTH_CH = 1;
-const INLINE_LIST_INPUT_ACTION_WIDTH_REM = 3;
-
 @Component({
   selector: 'app-admin-resume-detail-page',
   standalone: true,
@@ -683,16 +678,6 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   tabValidationIssueCount(tab: ResumeEditorTab): number {
     return this.validationIssues().filter((issue) => issue.tab === tab).length;
-  }
-
-  inlineListInputWidth(control: TextControl): string {
-    const textWidth =
-      cleanText(control.getRawValue()).length + INLINE_LIST_INPUT_EXTRA_TEXT_WIDTH_CH;
-    const width = Math.min(
-      Math.max(textWidth, INLINE_LIST_INPUT_MIN_TEXT_WIDTH_CH),
-      INLINE_LIST_INPUT_MAX_TEXT_WIDTH_CH,
-    );
-    return `calc(${width}ch + ${INLINE_LIST_INPUT_ACTION_WIDTH_REM}rem)`;
   }
 
   hasSummary(content: ResumeContent): boolean {

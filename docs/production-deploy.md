@@ -100,6 +100,21 @@ Runtime secrets:
 - `MINIO_SECRET_KEY`
 - `SENTRY_DSN`
 
+The deploy renderer still writes these values into the host-side runtime `.env`, but
+the Compose helper materializes them as read-only files under `.deploy-state/compose-secrets/`
+before Docker Compose starts. The secret directory is host-user-only, while the files keep a read bit
+for non-root container UIDs because local Compose file-backed secrets are bind mounts.
+`docker-compose.yml` grants those files to containers through Compose secrets. Backend processes
+read the matching `/run/secrets/*` files at startup, PostgreSQL uses `POSTGRES_PASSWORD_FILE`, and
+MinIO loads root credentials from secret files in its non-root wrapper image. Do not move these
+values back into service `environment` entries or `env_file`, because those values are visible in
+`docker inspect`.
+
+MinIO runs as UID/GID `10002:10002`. During `make run`, the deploy script runs a transient
+maintenance container as root to repair ownership on the `minio_data` volume before starting the
+non-root MinIO runtime container. This keeps upgrades from older root-owned MinIO volumes working
+without granting root to the long-running MinIO service.
+
 Use `SSL_CERT=/certs/fullchain.pem` and `SSL_KEY=/certs/privkey.pem` for the compose-managed
 certificate sync path. Keep deploy-only values such as `REMOTE_HOST`, `REMOTE_USER`,
 `REMOTE_PATH`, `SSH_PRIVATE_KEY`, and registry passwords out of runtime `.env`.

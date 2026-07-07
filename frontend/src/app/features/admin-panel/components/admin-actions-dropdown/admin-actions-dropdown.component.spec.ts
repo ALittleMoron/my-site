@@ -43,30 +43,16 @@ describe('AdminActionsDropdownComponent', () => {
     expect(menu.classList).not.toContain('show');
   });
 
-  it('positions the open menu under the trigger as a viewport overlay', () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+  it('opens the menu with stylesheet-owned positioning for strict style-src-attr CSP', () => {
     const toggle = dropdownToggle();
-    jest.spyOn(toggle, 'getBoundingClientRect').mockReturnValue({
-      bottom: 132,
-      height: 32,
-      left: 512,
-      right: 648,
-      top: 100,
-      width: 136,
-      x: 512,
-      y: 100,
-      toJSON: () => ({}),
-    });
 
     toggle.click();
     fixture.detectChanges();
     const menu = dropdownMenu();
 
     expect(menu.getAttribute('data-bs-popper')).toBe('static');
-    expect(menu.style.position).toBe('fixed');
-    expect(menu.style.top).toBe('132px');
-    expect(menu.style.right).toBe('376px');
-    expect(menu.style.zIndex).toBe('1055');
+    expect(menu.classList).toContain('dropdown-menu');
+    expect(menu.getAttribute('style')).toBeNull();
   });
 
   it('emits the selected action and marks destructive actions', () => {

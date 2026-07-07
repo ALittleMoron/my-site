@@ -546,12 +546,9 @@
                             track $index;
                             let itemIndex = $index
                           ) {
-                            <div
-                              class="resume-inline-list-item mw-100 position-relative"
-                              [style.width]="inlineListInputWidth(itemControl)"
-                            >
+                            <div class="resume-inline-list-item mw-100 position-relative">
                               <input
-                                class="form-control resume-inline-list-input pe-5"
+                                class="form-control resume-inline-list-input w-auto pe-5"
                                 [class.is-invalid]="fieldInvalid(itemControl)"
                                 [id]="'resume-skill-' + index + '-item-' + itemIndex"
                                 [attr.data-testid]="'resume-skill-' + index + '-item-' + itemIndex"
@@ -822,12 +819,9 @@
                             track $index;
                             let itemIndex = $index
                           ) {
-                            <div
-                              class="resume-inline-list-item mw-100 position-relative"
-                              [style.width]="inlineListInputWidth(technologyControl)"
-                            >
+                            <div class="resume-inline-list-item mw-100 position-relative">
                               <input
-                                class="form-control resume-inline-list-input pe-5"
+                                class="form-control resume-inline-list-input w-auto pe-5"
                                 [class.is-invalid]="fieldInvalid(technologyControl)"
                                 [id]="'resume-experience-' + index + '-technology-' + itemIndex"
                                 [attr.data-testid]="
@@ -1122,10 +1116,9 @@
                                       ) {
                                         <div
                                           class="resume-inline-list-item mw-100 position-relative"
-                                          [style.width]="inlineListInputWidth(technologyControl)"
                                         >
                                           <input
-                                            class="form-control resume-inline-list-input pe-5"
+                                            class="form-control resume-inline-list-input w-auto pe-5"
                                             [class.is-invalid]="fieldInvalid(technologyControl)"
                                             [id]="
                                               'resume-experience-' +

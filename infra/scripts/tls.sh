@@ -5,6 +5,9 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/../.." && pwd)"
 cd "$repo_dir"
 
+# shellcheck source=compose_secrets.sh
+. "$script_dir/compose_secrets.sh"
+
 require_command() {
     local command_name="$1"
 
@@ -79,6 +82,7 @@ if ! docker compose version >/dev/null 2>&1; then
     exit 1
 fi
 load_environment
+prepare_compose_secret_files
 
 case "$action" in
     issue)

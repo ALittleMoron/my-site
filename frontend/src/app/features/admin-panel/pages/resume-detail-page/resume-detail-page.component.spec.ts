@@ -332,7 +332,7 @@ describe('AdminResumeDetailPageComponent', () => {
     );
   });
 
-  it('sizes inline inputs compactly while reserving space for the embedded remove action', () => {
+  it('renders inline inputs compactly without inline width styles', () => {
     fixture.componentInstance.setActiveTab('skills');
     fixture.detectChanges();
     setInputValue('resume-skill-0-item-0', 'gRPC');
@@ -341,7 +341,8 @@ describe('AdminResumeDetailPageComponent', () => {
     const skillItemShell = skillItem.closest('.resume-inline-list-item') as HTMLElement | null;
 
     expect(skillItemShell).not.toBeNull();
-    expect(skillItemShell?.style.width).toBe('calc(5ch + 3rem)');
+    expect(skillItemShell?.classList).toContain('resume-inline-list-item');
+    expect(skillItemShell?.getAttribute('style')).toBeNull();
 
     fixture.componentInstance.setActiveTab('experience');
     fixture.detectChanges();
@@ -351,7 +352,8 @@ describe('AdminResumeDetailPageComponent', () => {
     const technologyShell = technology.closest('.resume-inline-list-item') as HTMLElement | null;
 
     expect(technologyShell).not.toBeNull();
-    expect(technologyShell?.style.width).toBe('calc(26ch + 3rem)');
+    expect(technologyShell?.classList).toContain('resume-inline-list-item');
+    expect(technologyShell?.getAttribute('style')).toBeNull();
   });
 
   it('renders additional item add action after the section fields', () => {

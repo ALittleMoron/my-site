@@ -5,6 +5,9 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/../.." && pwd)"
 cd "$repo_dir"
 
+# shellcheck source=compose_secrets.sh
+. "$script_dir/compose_secrets.sh"
+
 readonly COMPOSE_WAIT_TIMEOUT_SECONDS=180
 readonly DEPLOY_DRAIN_SECONDS=10
 readonly DEPLOY_STATE_DIR="${repo_dir}/.deploy-state"
@@ -24,6 +27,16 @@ require_env() {
     local message="${2:-${variable_name} must be set in .env.}"
 
     if [ -z "${!variable_name:-}" ]; then
+        echo "$message" >&2
+        exit 1
+    fi
+}
+
+require_env_set() {
+    local variable_name="$1"
+    local message="${2:-${variable_name} must be set in .env.}"
+
+    if [ "${!variable_name+x}" != "x" ]; then
         echo "$message" >&2
         exit 1
     fi
@@ -86,6 +99,10 @@ require_environment() {
             require_env "$variable_name" "VPN_BIND_ADDRESS must be set in .env."
             continue
         fi
+        if [ "$variable_name" = "SENTRY_DSN" ]; then
+            require_env_set "$variable_name"
+            continue
+        fi
         require_env "$variable_name"
     done
 }
@@ -124,6 +141,17 @@ service_is_running() {
 
 compose_up_wait() {
     docker compose up --wait --build -d --wait-timeout "$COMPOSE_WAIT_TIMEOUT_SECONDS" "$@"
+}
+
+prepare_minio_volume_permissions() {
+    docker compose build minio
+    docker compose run \
+        --rm \
+        --no-deps \
+        --user 0:0 \
+        --entrypoint sh \
+        minio \
+        -c 'mkdir -p /data && chown -R 10002:10002 /data'
 }
 
 run_backend_init() {
@@ -215,6 +243,7 @@ set -a
 set +a
 
 require_environment
+prepare_compose_secret_files
 
 previous_slot="$(read_active_slot)"
 if [ -z "$previous_slot" ]; then
@@ -227,6 +256,7 @@ export ACTIVE_DEPLOY_SLOT="$target_slot"
 export ACTIVE_BACKEND_SLOT="backend-${target_slot}"
 export ACTIVE_FRONTEND_SLOT="frontend-${target_slot}"
 
+prepare_minio_volume_permissions
 compose_up_wait postgres valkey minio databasus
 run_backend_init
 compose_up_wait "$ACTIVE_BACKEND_SLOT" "$ACTIVE_FRONTEND_SLOT" taskiq-worker taskiq-scheduler

@@ -99,7 +99,6 @@
 - [x] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [x] Replace uvicorn with Granian
 - [x] OWASP Top 10 compliance check completed; remaining remediation is tracked under Security audit.
-- [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
   - [x] Find a web application security checklist and go through it.
   - [x] Regular users cannot access internal web panels without VPN.
@@ -115,18 +114,18 @@
     - [x] TLS ≥ 1.2
     - [x] Certbot auto-renews
     - [x] No internal services are exposed to the public
-  - [ ] XSS
-    - [ ] All user-supplied data is escaped
+  - [x] XSS
+    - [x] All user-supplied data is escaped
     - [x] No `| safe` without 100% certainty
-    - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
+    - [x] Cannot save `<script>` to DB and render it. Check DB for such entries.
     - [x] CSP in place
     - [x] Main Angular SSR scripts use nonce-based CSP; Swagger UI docs keep a route-scoped inline/CDN exception.
-    - [ ] Remove remaining `style-src-attr 'unsafe-inline'` by refactoring Angular style bindings and overlay positioning.
+    - [x] Remove remaining `style-src-attr 'unsafe-inline'` by refactoring Angular style bindings and overlay positioning.
   - [x] Passwords never logged
   - [x] Hashing: unique salt used
-  - [ ] Every protected handler checks the user (guards where needed)
-  - [ ] No role-based "hide button" logic without backend enforcement
-  - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
+  - [x] Every protected handler checks the user (guards where needed)
+  - [x] No role-based "hide button" logic without backend enforcement
+  - [x] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
   - [ ] Docker and infrastructure
     - [x] App-owned backend, frontend, and nginx runtime services run with `read_only: true`
     - [x] App-owned backend, frontend, and nginx writable paths are limited to `/tmp` and explicitly needed read-only volumes
@@ -134,19 +133,21 @@
     - [x] No bind mounts like: `- ./:/app`
     - [x] App-owned backend, frontend, and nginx images do not run as root
     - [ ] All runtime containers have explicit non-root UID/GID
+      - [x] Backend, frontend, nginx, PostgreSQL, Valkey, and MinIO have explicit non-root UID/GID
+      - [ ] Databasus still uses its upstream root entrypoint for internal user rewrites, chown, and gosu-managed PostgreSQL startup
     - [x] Project Dockerfiles do not install or use sudo
     - [x] User-defined networks used
     - [x] Only nginx exposed to the public
-    - [ ] No hardcoded cross-service public/private IPs outside Docker-required resolver/self-healthchecks
+    - [x] No hardcoded cross-service public/private IPs outside Docker-required resolver/self-healthchecks
     - [x] Services accessible only by network name
-    - [ ] No localhost references between services
-    - [ ] No sensitive data in `docker inspect`
-    - [ ] Logs aren’t written to files inside containers
+    - [x] No localhost references between services
+    - [x] No sensitive data in `docker inspect`
+    - [x] Logs aren’t written to files inside containers
     - [x] Log rotation in place
     - [x] All services have health checks
     - [x] Nginx does not forward traffic to an unhealthy backend
     - [ ] Adequate restart policy
-    - [ ] Image versions pinned for locally built backend, frontend, and nginx runtime images
+    - [ ] Image versions pinned for locally built backend, frontend, nginx, and MinIO runtime images
     - [ ] No `latest` tags
     - [ ] Images updated regularly
     - [ ] Minimal packages
@@ -168,7 +169,7 @@
     - [x] Databasus protected by auth
     - [x] `.env` not in git
     - [x] No secrets in logs
-    - [ ] All keys are long and random
+    - [x] All keys are long and random
     - [x] No stacktrace shown to users
     - [x] Firewall enabled on host (ufw/iptables)
     - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.

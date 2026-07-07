@@ -103,6 +103,27 @@ describe('SeoService', () => {
     expect(document.head.querySelector('script[type="application/ld+json"]')).toBeNull();
   });
 
+  it('setMeta() escapes JSON-LD so user content cannot close the script element', () => {
+    service.setMeta({
+      title: 'Typed articles',
+      description: 'Description.',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: '</script><script>alert(1)</script>',
+      },
+    });
+
+    const script = document.head.querySelector<HTMLScriptElement>(
+      'script[type="application/ld+json"]',
+    );
+
+    expect(script?.textContent).toContain(
+      '"headline":"\\u003C/script\\u003E\\u003Cscript\\u003Ealert(1)\\u003C/script\\u003E"',
+    );
+    expect(document.head.innerHTML).not.toContain('</script><script>alert(1)</script>');
+  });
+
   it('setMeta() can mark a page as noindex', () => {
     service.setMeta({ title: '404', description: 'Not found.', robots: 'noindex, follow' });
 

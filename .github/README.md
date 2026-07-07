@@ -94,10 +94,11 @@ Production Let's Encrypt issuance and renewal are handled through the compose-ba
 make run
 ```
 
-`make run` validates the required `.env` values before Compose starts services. It brings
-PostgreSQL, Valkey, MinIO, Databasus, backend, frontend, and nginx up through Docker
-health checks, runs one-shot backend initialization, and switches public traffic between
-blue/green backend/frontend slots with a graceful nginx reload.
+`make run` validates the required `.env` values and materializes runtime secrets as local
+`.deploy-state/compose-secrets/` files before Compose starts services. It brings PostgreSQL,
+Valkey, MinIO, Databasus, backend, frontend, and nginx up through Docker health checks, runs
+one-shot backend initialization, and switches public traffic between blue/green backend/frontend
+slots with a graceful nginx reload.
 
 ## ⚙️ Endpoints
 

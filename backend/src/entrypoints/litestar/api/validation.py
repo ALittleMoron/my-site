@@ -66,6 +66,21 @@ def validate_blankable_email(value: str) -> str:
     return trimmed_value
 
 
+def validate_optional_email(value: str | None) -> str | None:
+    if value is None:
+        return None
+    trimmed_value = value.strip()
+    if not trimmed_value:
+        msg = "value must not be blank"
+        raise ValueError(msg)
+    try:
+        _email_adapter.validate_python(trimmed_value)
+    except ValidationError as error:
+        msg = "value must be a valid email address"
+        raise ValueError(msg) from error
+    return trimmed_value
+
+
 def validate_http_url_format(value: str) -> None:
     try:
         _http_url_adapter.validate_python(value)
@@ -138,6 +153,14 @@ BlankableEmailString = Annotated[
     str,
     Field(max_length=constants.admin_validation.email_max_length),
     AfterValidator(validate_blankable_email),
+]
+OptionalEmailString = Annotated[
+    str | None,
+    Field(
+        min_length=1,
+        max_length=constants.admin_validation.email_max_length,
+    ),
+    AfterValidator(validate_optional_email),
 ]
 MatrixLongText = Annotated[
     str,

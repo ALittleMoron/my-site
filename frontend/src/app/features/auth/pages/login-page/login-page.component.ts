@@ -12,6 +12,7 @@ import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
   imports: [ReactiveFormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login-page.component.html',
+  styleUrl: './login-page.component.scss',
 })
 export class LoginPageComponent {
   private readonly authService = inject(AuthService);

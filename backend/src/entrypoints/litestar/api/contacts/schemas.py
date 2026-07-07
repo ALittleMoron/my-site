@@ -4,6 +4,7 @@ from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from core.contacts.schemas import ContactMe
 from entrypoints.litestar.api.schemas import CamelCaseSchema
+from entrypoints.litestar.api.validation import OptionalEmailString
 
 
 class ContactMeRequest(CamelCaseSchema):
@@ -17,10 +18,8 @@ class ContactMeRequest(CamelCaseSchema):
         ),
     ]
     email: Annotated[
-        str | None,
+        OptionalEmailString,
         Field(
-            min_length=1,
-            max_length=255,
             description="User email address.",
             examples=["example@mail.ru"],
         ),

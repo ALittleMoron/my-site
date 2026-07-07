@@ -68,80 +68,15 @@ describe('LocalizedDatePickerComponent', () => {
     expect(fixture.debugElement.query(By.css('[data-testid="date-picker-calendar"]'))).toBe(null);
   });
 
-  it('positions the open calendar under the field as a viewport overlay', () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+  it('opens the calendar with stylesheet-owned positioning for strict style-src-attr CSP', () => {
     fixture.detectChanges();
-    mockFieldRect({
-      bottom: 132,
-      height: 32,
-      left: 80,
-      right: 320,
-      top: 100,
-      width: 240,
-      x: 80,
-      y: 100,
-      toJSON: () => ({}),
-    });
 
     fixture.debugElement.query(By.css('[data-testid="date-picker-toggle"]')).nativeElement.click();
     fixture.detectChanges();
 
     const calendar = openCalendar();
-    expect(calendar.style.position).toBe('fixed');
-    expect(calendar.style.top).toBe('136px');
-    expect(calendar.style.left).toBe('80px');
-    expect(calendar.style.width).toBe('288px');
-    expect(calendar.style.maxHeight).toBe('624px');
-  });
-
-  it('opens the calendar above the field when the viewport has more room above than below', () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 260 });
-    fixture.detectChanges();
-    mockFieldRect({
-      bottom: 242,
-      height: 32,
-      left: 40,
-      right: 280,
-      top: 210,
-      width: 240,
-      x: 40,
-      y: 210,
-      toJSON: () => ({}),
-    });
-
-    fixture.debugElement.query(By.css('[data-testid="date-picker-toggle"]')).nativeElement.click();
-    fixture.detectChanges();
-
-    const calendar = openCalendar();
-    expect(calendar.style.top).toBe('');
-    expect(calendar.style.bottom).toBe('54px');
-    expect(calendar.style.maxHeight).toBe('198px');
-  });
-
-  it('clamps the calendar horizontally inside narrow viewports', () => {
-    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 300 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 });
-    fixture.detectChanges();
-    mockFieldRect({
-      bottom: 100,
-      height: 32,
-      left: 260,
-      right: 300,
-      top: 68,
-      width: 40,
-      x: 260,
-      y: 68,
-      toJSON: () => ({}),
-    });
-
-    fixture.debugElement.query(By.css('[data-testid="date-picker-toggle"]')).nativeElement.click();
-    fixture.detectChanges();
-
-    const calendar = openCalendar();
-    expect(calendar.style.left).toBe('8px');
-    expect(calendar.style.width).toBe('284px');
+    expect(calendar.classList).toContain('localized-date-picker-calendar');
+    expect(calendar.getAttribute('style')).toBeNull();
   });
 
   it('changes visible month and year inside the calendar before selecting a day', () => {
@@ -202,12 +137,6 @@ describe('LocalizedDatePickerComponent', () => {
 
     expect(valueChange).toHaveBeenCalledWith('2026-03-31');
   });
-
-  function mockFieldRect(rect: DOMRect): void {
-    const field = fixture.nativeElement.querySelector('.input-group') as HTMLElement | null;
-    expect(field).not.toBeNull();
-    jest.spyOn(field as HTMLElement, 'getBoundingClientRect').mockReturnValue(rect);
-  }
 
   function openCalendar(): HTMLElement {
     const calendar = fixture.debugElement.query(By.css('[data-testid="date-picker-calendar"]'))

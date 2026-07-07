@@ -37,6 +37,14 @@ export interface TranslatedSeoMeta {
 const SITE_NAME_KEY = 'app.siteName';
 const DEFAULT_OG_IMAGE = '/images/personal.jpg';
 const SEO_MANAGED_BY = 'seo-service';
+const JSON_SCRIPT_ESCAPE_PATTERN = /[<>&\u2028\u2029]/g;
+const JSON_SCRIPT_ESCAPES: Record<string, string> = {
+  '<': '\\u003C',
+  '>': '\\u003E',
+  '&': '\\u0026',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029',
+};
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
@@ -168,7 +176,7 @@ export class SeoService {
     const script = this.document.createElement('script');
     script.setAttribute('type', 'application/ld+json');
     script.setAttribute('data-managed-by', SEO_MANAGED_BY);
-    script.textContent = JSON.stringify(data);
+    script.textContent = serializeJsonForInlineScript(data);
     this.document.head.appendChild(script);
   }
 
@@ -179,4 +187,11 @@ export class SeoService {
     }
     this.meta.removeTag('name="robots"');
   }
+}
+
+function serializeJsonForInlineScript(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(
+    JSON_SCRIPT_ESCAPE_PATTERN,
+    (character) => JSON_SCRIPT_ESCAPES[character],
+  );
 }

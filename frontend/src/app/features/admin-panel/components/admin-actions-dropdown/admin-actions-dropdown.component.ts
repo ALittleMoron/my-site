@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,17 +17,15 @@ export interface AdminAction {
   disabled: boolean;
 }
 
-interface AdminActionsDropdownPosition {
-  top: number;
-  right: number;
-}
-
-const DROPDOWN_OVERLAY_Z_INDEX = 1055;
-
 @Component({
   selector: 'app-admin-actions-dropdown',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    .dropdown-menu {
+      z-index: 1055;
+    }
+  `,
   template: `
     @if (availableActions().length > 0) {
       <div class="dropdown">
@@ -38,7 +35,7 @@ const DROPDOWN_OVERLAY_Z_INDEX = 1055;
           [attr.aria-expanded]="open()"
           [attr.aria-label]="ariaLabel()"
           [attr.data-testid]="testId() + '-toggle'"
-          (click)="toggle($event.currentTarget)"
+          (click)="toggle()"
         >
           {{ buttonLabel() }}
         </button>
@@ -47,10 +44,6 @@ const DROPDOWN_OVERLAY_Z_INDEX = 1055;
           [class.show]="open()"
           data-bs-popper="static"
           [attr.data-testid]="testId() + '-menu'"
-          [style.position]="open() ? 'fixed' : null"
-          [style.top.px]="menuPosition()?.top"
-          [style.right.px]="menuPosition()?.right"
-          [style.z-index]="open() ? dropdownOverlayZIndex : null"
         >
           @for (action of availableActions(); track action.id) {
             <li>
@@ -75,7 +68,6 @@ const DROPDOWN_OVERLAY_Z_INDEX = 1055;
 })
 export class AdminActionsDropdownComponent {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly document = inject(DOCUMENT);
 
   readonly actions = input.required<readonly AdminAction[]>();
   readonly buttonLabel = input.required<string>();
@@ -85,8 +77,6 @@ export class AdminActionsDropdownComponent {
   readonly actionSelected = output<string>();
   readonly availableActions = computed(() => this.actions().filter((action) => !action.disabled));
   readonly open = signal(false);
-  readonly menuPosition = signal<AdminActionsDropdownPosition | null>(null);
-  readonly dropdownOverlayZIndex = DROPDOWN_OVERLAY_Z_INDEX;
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -107,38 +97,21 @@ export class AdminActionsDropdownComponent {
     this.close();
   }
 
-  toggle(trigger: EventTarget | null): void {
+  toggle(): void {
     if (this.open()) {
       this.close();
       return;
     }
-    if (!(trigger instanceof HTMLElement)) {
-      return;
-    }
-    this.positionMenu(trigger);
     this.open.set(true);
   }
 
   close(): void {
     this.open.set(false);
-    this.menuPosition.set(null);
   }
 
   select(action: AdminAction): void {
     if (action.disabled) return;
     this.close();
     this.actionSelected.emit(action.id);
-  }
-
-  private positionMenu(trigger: HTMLElement): void {
-    const view = this.document.defaultView;
-    if (view === null) {
-      return;
-    }
-    const rect = trigger.getBoundingClientRect();
-    this.menuPosition.set({
-      top: rect.bottom,
-      right: Math.max(0, view.innerWidth - rect.right),
-    });
   }
 }

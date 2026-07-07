@@ -3,10 +3,18 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/../.." && pwd)"
+minio_check_image_tag=""
+minio_check_temp_dir=""
 nginx_check_temp_dir=""
 nginx_check_image_tag=""
 
-cleanup_nginx_syntax_check() {
+cleanup_security_check_images() {
+    if [ -n "$minio_check_image_tag" ]; then
+        docker image rm "$minio_check_image_tag" >/dev/null 2>&1 || true
+    fi
+    if [ -n "$minio_check_temp_dir" ]; then
+        rm -rf "$minio_check_temp_dir"
+    fi
     if [ -n "$nginx_check_image_tag" ]; then
         docker image rm "$nginx_check_image_tag" >/dev/null 2>&1 || true
     fi
@@ -84,6 +92,83 @@ require_file_not_exists() {
 
     if [ -f "$file_path" ]; then
         echo "Unexpected ${description}: ${file_path}" >&2
+        exit 1
+    fi
+}
+
+require_no_unapproved_network_literals() {
+    local description="$1"
+    local pattern="$2"
+    shift 2
+
+    local file_path
+    local line
+    local failed=0
+
+    for file_path in "$@"; do
+        while IFS= read -r line; do
+            case "$line" in
+                *"127.0.0.11"*) ;;
+                *"127.0.0.1:8080/api/healthcheck/ready"*) ;;
+                *"127.0.0.1:4000/healthz"*) ;;
+                *"127.0.0.1:8080/nginx-healthz"*) ;;
+                *"localhost:9000/minio/health/live"*) ;;
+                *)
+                    echo "Unexpected ${description} in ${line}" >&2
+                    failed=1
+                    ;;
+            esac
+        done < <(grep -En "$pattern" "$file_path" || true)
+    done
+
+    if [ "$failed" -ne 0 ]; then
+        exit 1
+    fi
+}
+
+require_no_inspect_visible_secret_environment() {
+    local compose_file="$1"
+    local secret_patterns=(
+        "APP_SECRET_KEY:"
+        "AUTH_PRIVATE_KEY:"
+        "DB_PASSWORD:"
+        "MINIO_ACCESS_KEY:"
+        "MINIO_SECRET_KEY:"
+        "MINIO_ROOT_PASSWORD:"
+        "MINIO_ROOT_USER:"
+        "OWNER_INIT_PASSWORD:"
+        "POSTGRES_PASSWORD:"
+        "SENTRY_DSN:"
+    )
+    local pattern
+
+    require_file_not_contains "$compose_file" "env_file:" "inspect-visible environment file"
+
+    for pattern in "${secret_patterns[@]}"; do
+        require_file_not_contains "$compose_file" "$pattern" "inspect-visible secret environment"
+    done
+}
+
+require_no_container_file_logs() {
+    local file_path
+    local line
+    local failed=0
+
+    for file_path in "$@"; do
+        while IFS= read -r line; do
+            case "$line" in
+                *"access_log off;"*) ;;
+                *"access_log /dev/stdout;"*) ;;
+                *"error_log /dev/stderr"*) ;;
+                *)
+                    echo "Unexpected container file logging directive in ${line}" >&2
+                    failed=1
+                    ;;
+            esac
+        done < <(grep -En "(access_log|error_log|/var/log|FileHandler|RotatingFileHandler|--log-file|log_file)" "$file_path" || true)
+    done
+
+    if [ "$failed" -ne 0 ]; then
         exit 1
     fi
 }
@@ -238,7 +323,9 @@ run_healthcheck_configuration_check() {
     local deploy_workflow="${repo_dir}/.github/workflows/_deploy.yaml"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
     local run_script="${repo_dir}/infra/scripts/run.sh"
+    local backend_start_script="${repo_dir}/backend/start_application.sh"
     local frontend_server="${repo_dir}/frontend/src/server-app.ts"
+    local compose_secret_script="${repo_dir}/infra/scripts/compose_secrets.sh"
 
     require_command docker
     if ! docker compose version >/dev/null 2>&1; then
@@ -247,19 +334,60 @@ run_healthcheck_configuration_check() {
     fi
 
     (
+        export APP_CONTACT_REQUESTS_ENABLED="false"
+        export APP_DEBUG="false"
         export APP_DOMAIN="example.test"
+        export APP_SECRET_KEY="app-secret"
         export APP_URL_SCHEMA="https"
+        export APP_USE_CACHE="true"
+        export AUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----"
+        export AUTH_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----"
+        export AUTH_TOKEN_EXPIRE_SECONDS="172800"
+        export AUTH_TOKEN_HEADER_NAME="Authorization"
+        export AUTH_TOKEN_PREFIX="Bearer"
+        export CACHE_WARM_ARTICLES_PAGE_SIZE="10"
+        export COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT="10"
+        export DB_DRIVER="postgresql+psycopg"
+        export DB_EXPIRE_ON_COMMIT="false"
+        export DB_HOST="postgres"
+        export DB_LOG_QUERY_METRICS="false"
+        export DB_MAX_OVERFLOW="20"
         export DB_NAME="my_site_database"
         export DB_PASSWORD="postgres-password"
+        export DB_POOL_PRE_PING="true"
+        export DB_POOL_SIZE="10"
+        export DB_PORT="5432"
+        export DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH="1000"
+        export DB_SLOW_QUERY_LOG_THRESHOLD_MS="250"
         export DB_USER="my_site"
         export IMAGE_TAG="security-check-sha"
+        export I18N_DEFAULT_LANGUAGE="ru"
         export LE_EMAIL="ops@example.test"
         export MINIO_ACCESS_KEY="minio-access"
+        export MINIO_CORS_MAX_AGE_SECONDS="300"
+        export MINIO_HOST="minio"
+        export MINIO_PORT="9000"
         export MINIO_PUBLIC_URL="https://s3.example.test"
+        export MINIO_REGION="us-east-1"
+        export MINIO_SECURE="false"
         export MINIO_SECRET_KEY="minio-secret"
+        export OWNER_INIT_LOGIN="owner"
+        export OWNER_INIT_PASSWORD="owner-password"
+        export SENTRY_DSN=""
+        export SENTRY_USE="false"
         export SSL_CERT="/certs/fullchain.pem"
         export SSL_KEY="/certs/privkey.pem"
+        export TASKIQ_CACHE_WARM_INTERVAL_SECONDS="3600"
+        export TASKIQ_RESULT_EXPIRE_SECONDS="3600"
+        export VALKEY_HOST="valkey"
+        export VALKEY_PORT="6379"
         export VPN_BIND_ADDRESS="10.77.0.1"
+        export COMPOSE_SECRETS_DIR
+        COMPOSE_SECRETS_DIR="$(mktemp -d)"
+        trap 'rm -rf "$COMPOSE_SECRETS_DIR"' EXIT
+        # shellcheck source=compose_secrets.sh
+        . "$compose_secret_script"
+        prepare_compose_secret_files
         docker compose -f "$compose_file" config >/dev/null
     )
 
@@ -275,6 +403,11 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" 'user: "10001:10001"' "backend explicit non-root UID/GID"
     require_file_contains "$compose_file" 'user: "1000:1000"' "frontend explicit non-root UID/GID"
     require_file_contains "$compose_file" 'user: "101:101"' "nginx explicit non-root UID/GID"
+    require_file_contains "$compose_file" 'user: "70:70"' "Postgres explicit non-root UID/GID"
+    require_file_contains "$compose_file" 'user: "999:999"' "Valkey explicit non-root UID/GID"
+    require_file_contains "$compose_file" 'user: "10002:10002"' "MinIO explicit non-root UID/GID"
+    require_file_contains "$compose_file" "dockerfile: infra/minio/Dockerfile" "MinIO non-root wrapper Dockerfile"
+    require_file_contains "$compose_file" 'command: ["server", "/data", "--console-address", ":9001"]' "MinIO exec-form command"
     require_file_contains "$compose_file" "read_only: true" "app-owned read-only root filesystems"
     require_file_contains "$compose_file" "cap_drop:" "runtime Linux capability drop"
     require_file_contains "$compose_file" "no-new-privileges:true" "runtime no-new-privileges"
@@ -284,13 +417,28 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" "command: bash start_application.sh taskiq-worker" "TaskIQ worker read-only-compatible entrypoint"
     require_file_contains "$compose_file" "command: bash start_application.sh taskiq-scheduler" "TaskIQ scheduler read-only-compatible entrypoint"
     require_file_contains "$compose_file" "./infra/nginx/certs:/certs:ro" "nginx read-only certificate volume"
+    require_file_contains "$compose_file" "APP_SECRET_KEY_FILE: /run/secrets/app_secret_key" "backend app secret file"
+    require_file_contains "$compose_file" "AUTH_PRIVATE_KEY_FILE: /run/secrets/auth_private_key" "backend private key secret file"
+    require_file_contains "$compose_file" "DB_PASSWORD_FILE: /run/secrets/db_password" "backend database secret file"
+    require_file_contains "$compose_file" "POSTGRES_PASSWORD_FILE: /run/secrets/db_password" "Postgres password secret file"
+    require_file_contains "$compose_file" "MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key" "backend MinIO access key secret file"
+    require_file_contains "$compose_file" "MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key" "backend MinIO secret key secret file"
+    require_file_contains "$compose_file" "OWNER_INIT_PASSWORD_FILE: /run/secrets/owner_init_password" "backend owner password secret file"
+    require_file_contains "$compose_file" "SENTRY_DSN_FILE: /run/secrets/sentry_dsn" "backend Sentry DSN secret file"
+    require_file_contains "$compose_file" "file: \${COMPOSE_APP_SECRET_KEY_FILE:?" "Compose app secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_AUTH_PRIVATE_KEY_FILE:?" "Compose private key secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_DB_PASSWORD_FILE:?" "Compose database password secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_MINIO_ACCESS_KEY_FILE:?" "Compose MinIO access key secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_MINIO_SECRET_KEY_FILE:?" "Compose MinIO secret key secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_OWNER_INIT_PASSWORD_FILE:?" "Compose owner password secret file source"
+    require_file_contains "$compose_file" "file: \${COMPOSE_SENTRY_DSN_FILE:?" "Compose Sentry DSN secret file source"
 
     require_file_contains "$nginx_template" "resolver 127.0.0.11" "Docker DNS resolver"
     require_file_contains "$nginx_template" "server \${ACTIVE_BACKEND_SLOT}:8080 resolve;" "active backend slot"
     require_file_contains "$nginx_template" "server \${ACTIVE_FRONTEND_SLOT}:4000 resolve;" "active frontend slot"
     require_file_contains "$nginx_template" "connect-src 'self' \${MINIO_PUBLIC_URL}" "public MinIO file CSP"
     require_file_contains "$nginx_template" "img-src 'self' data: \${MINIO_PUBLIC_URL}; font-src 'self' data:;" "main site CSP without Swagger CDN origins"
-    require_file_contains "$nginx_template" "style-src 'self' 'nonce-\$request_id'; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-\$request_id'; script-src-attr 'none'" "main site nonce CSP"
+    require_file_contains "$nginx_template" "style-src 'self' 'nonce-\$request_id'; script-src 'self' 'nonce-\$request_id'; script-src-attr 'none'" "main site nonce CSP without inline style attributes"
     require_file_contains "$nginx_template" "proxy_set_header X-CSP-Nonce" "frontend CSP nonce proxy header"
     require_frontend_location_has_no_proxy_headers "$nginx_template"
     require_file_contains "$nginx_template" "location ^~ /api/docs" "public API docs CSP location"
@@ -306,9 +454,44 @@ run_healthcheck_configuration_check() {
     require_file_contains "$run_script" "nginx -s reload" "graceful nginx reload"
     require_file_contains "$run_script" "docker compose up --wait" "health-gated compose startup"
     require_file_contains "$run_script" "backend-init" "backend init deploy step"
+    require_file_contains "$run_script" "prepare_minio_volume_permissions" "MinIO non-root volume ownership preparation"
+    require_file_contains "$run_script" "chown -R 10002:10002 /data" "MinIO volume ownership repair"
+    require_file_contains "$run_script" "prepare_compose_secret_files" "host-side Compose secret file preparation"
+    require_file_contains "$compose_secret_script" "COMPOSE_SENTRY_DSN_FILE allow-empty" "empty Sentry DSN secret file support"
+    require_file_contains "$compose_secret_script" "chmod 444 \"\$secret_file_path\"" "non-root-readable Compose secret files"
+    require_file_contains "$backend_start_script" "AUTH_PRIVATE_KEY AUTH_PUBLIC_KEY" "runtime key newline normalization"
 
     require_file_contains "$frontend_server" "app.get('/healthz'" "frontend health endpoint"
     require_file_contains "$deploy_workflow" "frontend/" "frontend deploy sync"
+}
+
+run_runtime_container_security_check() {
+    local compose_file="${repo_dir}/docker-compose.yml"
+    local docker_lint_script="${repo_dir}/infra/scripts/docker_lint.sh"
+    local nginx_conf="${repo_dir}/infra/nginx/nginx.conf"
+    local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
+
+    require_file_contains "$docker_lint_script" "infra/minio/Dockerfile" "MinIO Dockerfile lint coverage"
+    require_no_inspect_visible_secret_environment "$compose_file"
+    require_no_unapproved_network_literals \
+        "hardcoded IP literal outside Docker resolver or self-healthchecks" \
+        "([0-9]{1,3}\.){3}[0-9]{1,3}" \
+        "$compose_file" \
+        "$nginx_template"
+    require_no_unapproved_network_literals \
+        "localhost reference outside self-healthchecks" \
+        "localhost" \
+        "$compose_file" \
+        "$nginx_template"
+    require_no_container_file_logs \
+        "$compose_file" \
+        "$nginx_conf" \
+        "$nginx_template" \
+        "${repo_dir}/backend/Dockerfile" \
+        "${repo_dir}/backend/start_application.sh" \
+        "${repo_dir}/frontend/Dockerfile" \
+        "${repo_dir}/infra/minio/Dockerfile" \
+        "${repo_dir}/infra/nginx/Dockerfile"
 }
 
 run_certbot_configuration_check() {
@@ -337,6 +520,37 @@ run_certbot_configuration_check() {
     require_file_not_contains "$deploy_workflow" "make certbot-issue" "deploy-time certificate issue step"
 }
 
+run_minio_image_check() {
+    require_command docker
+
+    minio_check_image_tag="my-site-minio-security-check:$(date +%s)-$$"
+    minio_check_temp_dir="$(mktemp -d)"
+    trap cleanup_security_check_images EXIT
+
+    mkdir -p "${minio_check_temp_dir}/secrets"
+    printf '%s' "minioadmin" >"${minio_check_temp_dir}/secrets/minio_access_key"
+    printf '%s' "minioadminsecret" >"${minio_check_temp_dir}/secrets/minio_secret_key"
+
+    docker build \
+        -f "${repo_dir}/infra/minio/Dockerfile" \
+        -t "$minio_check_image_tag" \
+        "$repo_dir"
+
+    docker run --rm \
+        --user 10002:10002 \
+        -v "${minio_check_temp_dir}/secrets:/run/secrets:ro" \
+        "$minio_check_image_tag" \
+        server --help >"${minio_check_temp_dir}/minio-help.txt"
+
+    require_file_contains "${minio_check_temp_dir}/minio-help.txt" "NAME:" "MinIO server help output"
+
+    docker run --rm \
+        --user 10002:10002 \
+        --entrypoint sh \
+        "$minio_check_image_tag" \
+        -c 'test "$(id -u):$(id -g)" = "10002:10002" && test -w /data'
+}
+
 run_nginx_syntax_check() {
     local cert_dir
 
@@ -347,7 +561,7 @@ run_nginx_syntax_check() {
     cert_dir="${nginx_check_temp_dir}/certs"
     nginx_check_image_tag="my-site-nginx-security-check:$(date +%s)-$$"
     mkdir -p "$cert_dir"
-    trap cleanup_nginx_syntax_check EXIT
+    trap cleanup_security_check_images EXIT
 
     openssl req \
         -x509 \
@@ -392,5 +606,7 @@ run_nginx_syntax_check() {
 run_deploy_env_configuration_check
 run_private_panel_configuration_check
 run_healthcheck_configuration_check
+run_runtime_container_security_check
 run_certbot_configuration_check
+run_minio_image_check
 run_nginx_syntax_check

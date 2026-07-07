@@ -39,6 +39,18 @@ describe('LoginPageComponent', () => {
     expect(compiled.querySelector('#password')).not.toBeNull();
   });
 
+  it('renders the modal without inline styles for strict style-src-attr CSP', () => {
+    const modal = fixture.nativeElement.querySelector('#login-modal') as HTMLElement | null;
+    const modalContent = fixture.nativeElement.querySelector(
+      '.modal-content',
+    ) as HTMLElement | null;
+
+    expect(modal).not.toBeNull();
+    expect(modal?.getAttribute('style')).toBeNull();
+    expect(modalContent).not.toBeNull();
+    expect(modalContent?.getAttribute('style')).toBeNull();
+  });
+
   it('uses a fullscreen dialog on narrow public screens', () => {
     const dialog = fixture.nativeElement.querySelector('.modal-dialog') as HTMLElement | null;
 

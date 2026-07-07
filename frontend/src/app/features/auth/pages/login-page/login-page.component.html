@@ -1,15 +1,11 @@
-<div
-  id="login-modal"
-  class="modal force-display-block"
-  style="background-color: rgba(0, 0, 0, 0.5)"
->
+<div id="login-modal" class="modal force-display-block login-modal-backdrop">
   <form
     class="modal-dialog modal-fullscreen-sm-down"
     [formGroup]="form"
     (ngSubmit)="login()"
     novalidate
   >
-    <div class="modal-content" style="z-index: 1067">
+    <div class="modal-content login-modal-content">
       <div class="modal-header">
         <h5 class="modal-title">{{ 'auth.login.title' | t }}</h5>
         <button

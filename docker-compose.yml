@@ -3,8 +3,6 @@ x-backend-build: &backend-build
     context: ./backend
     dockerfile: Dockerfile
   image: my_site_application:${IMAGE_TAG:-latest}
-  env_file:
-    - .env
   user: "10001:10001"
   read_only: true
   cap_drop:
@@ -15,6 +13,65 @@ x-backend-build: &backend-build
     - /tmp:mode=1777,uid=10001,gid=10001
   networks:
     - app-network
+  environment: &backend-environment
+    APP_CONTACT_REQUESTS_ENABLED: ${APP_CONTACT_REQUESTS_ENABLED}
+    APP_DEBUG: ${APP_DEBUG}
+    APP_DOMAIN: ${APP_DOMAIN}
+    APP_SECRET_KEY_FILE: /run/secrets/app_secret_key
+    APP_URL_SCHEMA: ${APP_URL_SCHEMA}
+    APP_USE_CACHE: ${APP_USE_CACHE}
+    AUTH_PRIVATE_KEY_FILE: /run/secrets/auth_private_key
+    AUTH_PUBLIC_KEY: ${AUTH_PUBLIC_KEY}
+    AUTH_TOKEN_EXPIRE_SECONDS: ${AUTH_TOKEN_EXPIRE_SECONDS}
+    AUTH_TOKEN_HEADER_NAME: ${AUTH_TOKEN_HEADER_NAME}
+    AUTH_TOKEN_PREFIX: ${AUTH_TOKEN_PREFIX}
+    CACHE_WARM_ARTICLES_PAGE_SIZE: ${CACHE_WARM_ARTICLES_PAGE_SIZE}
+    COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT: ${COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT}
+    DB_DRIVER: ${DB_DRIVER}
+    DB_EXPIRE_ON_COMMIT: ${DB_EXPIRE_ON_COMMIT}
+    DB_HOST: ${DB_HOST}
+    DB_LOG_QUERY_METRICS: ${DB_LOG_QUERY_METRICS}
+    DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW}
+    DB_NAME: ${DB_NAME}
+    DB_PASSWORD_FILE: /run/secrets/db_password
+    DB_POOL_PRE_PING: ${DB_POOL_PRE_PING}
+    DB_POOL_SIZE: ${DB_POOL_SIZE}
+    DB_PORT: ${DB_PORT}
+    DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH: ${DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH}
+    DB_SLOW_QUERY_LOG_THRESHOLD_MS: ${DB_SLOW_QUERY_LOG_THRESHOLD_MS}
+    DB_USER: ${DB_USER}
+    I18N_DEFAULT_LANGUAGE: ${I18N_DEFAULT_LANGUAGE}
+    MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key
+    MINIO_CORS_MAX_AGE_SECONDS: ${MINIO_CORS_MAX_AGE_SECONDS}
+    MINIO_HOST: ${MINIO_HOST}
+    MINIO_PORT: ${MINIO_PORT}
+    MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+    MINIO_REGION: ${MINIO_REGION}
+    MINIO_SECRET_KEY_FILE: /run/secrets/minio_secret_key
+    MINIO_SECURE: ${MINIO_SECURE}
+    OWNER_INIT_LOGIN: ${OWNER_INIT_LOGIN}
+    OWNER_INIT_PASSWORD_FILE: /run/secrets/owner_init_password
+    SENTRY_DSN_FILE: /run/secrets/sentry_dsn
+    SENTRY_USE: ${SENTRY_USE}
+    TASKIQ_CACHE_WARM_INTERVAL_SECONDS: ${TASKIQ_CACHE_WARM_INTERVAL_SECONDS}
+    TASKIQ_RESULT_EXPIRE_SECONDS: ${TASKIQ_RESULT_EXPIRE_SECONDS}
+    VALKEY_HOST: ${VALKEY_HOST}
+    VALKEY_PORT: ${VALKEY_PORT}
+  secrets: &backend-secrets
+    - source: app_secret_key
+      target: app_secret_key
+    - source: auth_private_key
+      target: auth_private_key
+    - source: db_password
+      target: db_password
+    - source: minio_access_key
+      target: minio_access_key
+    - source: minio_secret_key
+      target: minio_secret_key
+    - source: owner_init_password
+      target: owner_init_password
+    - source: sentry_dsn
+      target: sentry_dsn
 
 x-backend-healthcheck: &backend-healthcheck
   test:
@@ -155,6 +212,7 @@ services:
   valkey:
     image: valkey/valkey:9.0.1
     container_name: my_site_valkey
+    user: "999:999"
     volumes:
       - valkey_data:/data
     networks:
@@ -168,10 +226,14 @@ services:
   postgres:
     image: postgres:18.4-alpine
     container_name: my_site_postgres
+    user: "70:70"
     environment:
       POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: ${DB_NAME}
+    secrets:
+      - source: db_password
+        target: db_password
     volumes:
       - postgres_data:/var/lib/postgresql
     networks:
@@ -183,15 +245,22 @@ services:
       retries: 12
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    build:
+      context: .
+      dockerfile: infra/minio/Dockerfile
+    image: my_site_minio:${IMAGE_TAG:-latest}
     container_name: my_site_minio
+    user: "10002:10002"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
       MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL_SCHEMA}://${APP_DOMAIN}
+    secrets:
+      - source: minio_access_key
+        target: minio_access_key
+      - source: minio_secret_key
+        target: minio_secret_key
     volumes:
       - minio_data:/data
-    command: server /data --console-address ":9001"
+    command: ["server", "/data", "--console-address", ":9001"]
     networks:
       - app-network
     healthcheck:
@@ -323,3 +392,19 @@ volumes:
   valkey_data:
   letsencrypt:
   certbot-www:
+
+secrets:
+  app_secret_key:
+    file: ${COMPOSE_APP_SECRET_KEY_FILE:?COMPOSE_APP_SECRET_KEY_FILE must be set by infra/scripts/compose_secrets.sh}
+  auth_private_key:
+    file: ${COMPOSE_AUTH_PRIVATE_KEY_FILE:?COMPOSE_AUTH_PRIVATE_KEY_FILE must be set by infra/scripts/compose_secrets.sh}
+  db_password:
+    file: ${COMPOSE_DB_PASSWORD_FILE:?COMPOSE_DB_PASSWORD_FILE must be set by infra/scripts/compose_secrets.sh}
+  minio_access_key:
+    file: ${COMPOSE_MINIO_ACCESS_KEY_FILE:?COMPOSE_MINIO_ACCESS_KEY_FILE must be set by infra/scripts/compose_secrets.sh}
+  minio_secret_key:
+    file: ${COMPOSE_MINIO_SECRET_KEY_FILE:?COMPOSE_MINIO_SECRET_KEY_FILE must be set by infra/scripts/compose_secrets.sh}
+  owner_init_password:
+    file: ${COMPOSE_OWNER_INIT_PASSWORD_FILE:?COMPOSE_OWNER_INIT_PASSWORD_FILE must be set by infra/scripts/compose_secrets.sh}
+  sentry_dsn:
+    file: ${COMPOSE_SENTRY_DSN_FILE:?COMPOSE_SENTRY_DSN_FILE must be set by infra/scripts/compose_secrets.sh}
