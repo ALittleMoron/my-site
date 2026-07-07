@@ -81,6 +81,8 @@ jobs:
           python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
         uses: astral-sh/setup-uv@v8.2.0
+        with:
+          cache-suffix: "backend-performance-smoke"
       - name: "Run Locust smoke profile"
         run: make performance-smoke
       - name: "Upload performance reports"

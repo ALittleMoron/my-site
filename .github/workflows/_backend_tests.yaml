@@ -33,6 +33,8 @@ jobs:
           python-version-file: "backend/pyproject.toml"
       - name: "Install UV"
         uses: astral-sh/setup-uv@v8.2.0
+        with:
+          cache-suffix: "backend-tests"
       - name: "Run backend tests with coverage"
         run: make tests-coverage
       - name: "Coverage Badge"
