@@ -270,6 +270,10 @@ describe('SiteHeaderComponent', () => {
     expect(rewriteLanguagePrefixedUrl('/how-this-site-is-built', 'ru')).toBe(
       '/ru/how-this-site-is-built',
     );
+    expect(rewriteLanguagePrefixedUrl('/ru/updates?from=footer', 'en')).toBe(
+      '/en/updates?from=footer',
+    );
+    expect(rewriteLanguagePrefixedUrl('/updates', 'ru')).toBe('/ru/updates');
     expect(rewriteLanguagePrefixedUrl('/about-me', 'ru')).toBe('/about-me');
   });
 });

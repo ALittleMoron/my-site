@@ -15,6 +15,7 @@ export class SiteFooterComponent {
   private readonly i18n = inject(I18nService);
 
   readonly siteBuildLink = computed(() => `/${this.currentLanguage()}/how-this-site-is-built`);
+  readonly updatesLink = computed(() => `/${this.currentLanguage()}/updates`);
 
   private currentLanguage(): LanguageCode {
     const language = this.i18n.language();

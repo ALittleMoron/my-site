@@ -33,6 +33,17 @@ describe('routes', () => {
     expect(legacyRoutes[0]?.loadChildren).toBeDefined();
   });
 
+  it('registers localized and legacy public routes for updates', () => {
+    const russianRoutes = routes.find((route) => route.path === 'ru')?.children ?? [];
+    const englishRoutes = routes.find((route) => route.path === 'en')?.children ?? [];
+    const legacyRoutes = routes.filter((route) => route.path === 'updates');
+
+    expect(russianRoutes.find((route) => route.path === 'updates')).toBeDefined();
+    expect(englishRoutes.find((route) => route.path === 'updates')).toBeDefined();
+    expect(legacyRoutes).toHaveLength(1);
+    expect(legacyRoutes[0]?.loadChildren).toBeDefined();
+  });
+
   it('does not register localized or legacy about routes', () => {
     const russianRoutes = routes.find((route) => route.path === 'ru')?.children ?? [];
     const englishRoutes = routes.find((route) => route.path === 'en')?.children ?? [];

@@ -53,6 +53,15 @@ Never violate these boundaries:
   Keep legacy unprefixed routes only for compatibility/protected SPA access, not canonical SEO.
 - Do not hardcode user-facing interface strings in Angular templates or components. Use
   `TranslatePipe` in templates and `I18nService.translate()` in TypeScript code.
+- The public updates page is static authored content, not UI catalog content. Keep accumulating
+  changelog entries in `features/updates/updates.timeline.ts` as typed objects with `id`, `month`,
+  `order`, localized RU/EN `title` and `summary`, and finite `tagIds`. Do not add
+  `updates.month.*` or `updates.entry.*` keys to backend i18n; backend i18n for updates stays
+  limited to page chrome, SEO text, footer label, and finite tag labels.
+- For sufficiently large user-visible, architectural, security, operations, or delivery changes,
+  ask whether they should be added to the public updates page. Skip routine refactors, small fixes,
+  incidental cleanup, dependency churn, and implementation-only details; group related work under a
+  larger milestone when that is more natural.
 - Grouped navigation item labels should not repeat the parent section domain when the section
   heading already provides that context. For example, under an Articles section use "Folders"
   rather than "Article folders", and under a Competency matrix section use "Questions" or
@@ -125,6 +134,7 @@ features/<name>/
 | `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                           |
 | `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, and tags                                                   |
 | `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public home and engineering case-study page; unprefixed compatibility route remains                                    |
+| `updates`         | `/ru/updates`, `/en/updates`                                                                                                       | SSR public static updates/changelog page; unprefixed compatibility route remains                                           |
 | `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                            |
 | `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                   |
 | `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                          |
@@ -135,7 +145,7 @@ features/<name>/
 - `/` redirects to the localized site-build case study using the initialized backend-driven UI
   language; keep shared public-home URL construction in `core/routing/`.
 - Public canonical routes are language-prefixed. Keep `/ru/articles/:slug`, `/en/articles/:slug`,
-  `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`,
+  `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`, `/ru/updates`, `/en/updates`,
   `/ru/competency-matrix/questions/:slug`, and `/en/competency-matrix/questions/:slug` as SSR
   routes, and render internal article/wiki links with the active language prefix.
 - Protected CSR routes such as `/admin-panel` stay unprefixed and use runtime i18n state.

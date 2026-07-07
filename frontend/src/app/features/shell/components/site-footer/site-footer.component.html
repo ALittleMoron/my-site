@@ -27,6 +27,12 @@
         </a>
       </li>
       <li class="nav-item me-2" aria-hidden="true">|</li>
+      <li class="nav-item me-2">
+        <a [routerLink]="updatesLink()" class="nav-link p-0 text-body-secondary">
+          <small>{{ 'shell.footer.updates' | t }}</small>
+        </a>
+      </li>
+      <li class="nav-item me-2" aria-hidden="true">|</li>
       <li class="nav-item">
         <a routerLink="/sitemap" class="nav-link p-0 text-body-secondary">
           <small>{{ 'shell.footer.sitemap' | t }}</small>

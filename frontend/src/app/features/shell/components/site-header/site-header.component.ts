@@ -114,6 +114,7 @@ function isPublicRouteSegment(segment: string | undefined): boolean {
     segment === 'competency-matrix' ||
     segment === 'how-this-site-is-built' ||
     segment === 'articles' ||
+    segment === 'updates' ||
     segment === 'sitemap'
   );
 }

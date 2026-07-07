@@ -68,6 +68,12 @@ Portfolio and articles site with a knowledge database
     public case-study highlights. The case-study page should mention only decisions that are
     genuinely distinctive, risky, educational, or important to the product's architecture,
     security, operations, UX, or quality story.
+  - For sufficiently large user-visible, architectural, security, operations, or delivery changes,
+    ask whether the change should be added to the public updates/changelog page. Do not ask for
+    routine refactoring, small fixes, incidental cleanup, dependency churn, or implementation-only
+    details. Prefer grouping related changes under an existing larger milestone, such as auth,
+    matrix, deployment, quality, localization, or content workflows, instead of creating a separate
+    updates entry for every task.
   - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
@@ -140,7 +146,7 @@ Portfolio and articles site with a knowledge database
   `[[matrix:<slug>]]`, with optional labels such as `[[matrix:<slug>|Custom label]]`; unprefixed
   `[[article-slug]]` syntax is not supported.
 - Article analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only article-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, and matrix question routes and hydrates interactive CSR/content-authoring areas.
+- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, updates, and matrix question routes and hydrates interactive CSR/content-authoring areas.
 - Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
   backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
   identity-aware or business-quota design requires application-level limits by user, account, API

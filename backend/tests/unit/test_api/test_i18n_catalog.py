@@ -117,3 +117,26 @@ class TestI18nCatalog:
         assert "SSR/Lighthouse" not in russian_messages["siteBuild.quality.body"]
         assert "performance budgets" not in english_messages["siteBuild.quality.body"]
         assert "performance budgets" not in english_messages["siteBuild.next.body"]
+        assert "changelog" not in english_messages["siteBuild.next.body"].lower()
+        assert "changelog" not in russian_messages["siteBuild.next.body"].lower()
+
+    def test_updates_catalog_describes_public_updates_page(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["shell.footer.updates"] == "Обновления"
+        assert english_messages["shell.footer.updates"] == "Updates"
+        assert "публичный журнал" in russian_messages["updates.seo.description"].lower()
+        assert "public changelog" in english_messages["updates.seo.description"].lower()
+        assert "Major changes" in english_messages["updates.hero.lead"]
+        assert "месяцам" in russian_messages["updates.hero.lead"]
+        assert russian_messages["updates.tag.backend"] == "Backend"
+        assert english_messages["updates.tag.backend"] == "Backend"
+        assert russian_messages["updates.tag.delivery"] == "Доставка"
+        assert english_messages["updates.tag.delivery"] == "Delivery"
+        assert not any(key.startswith("updates.month.") for key in russian_messages)
+        assert not any(key.startswith("updates.month.") for key in english_messages)
+        assert not any(key.startswith("updates.entry.") for key in russian_messages)
+        assert not any(key.startswith("updates.entry.") for key in english_messages)
+        assert "выдум" not in russian_messages["updates.hero.lead"].lower()
+        assert "точност" not in russian_messages["updates.hero.lead"].lower()

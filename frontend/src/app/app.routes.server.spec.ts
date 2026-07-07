@@ -19,6 +19,8 @@ describe('serverRoutes', () => {
         { path: 'en/competency-matrix/questions/:slug', renderMode: RenderMode.Server },
         { path: 'ru/how-this-site-is-built', renderMode: RenderMode.Server },
         { path: 'en/how-this-site-is-built', renderMode: RenderMode.Server },
+        { path: 'ru/updates', renderMode: RenderMode.Server },
+        { path: 'en/updates', renderMode: RenderMode.Server },
       ]),
     );
     expect(serverRoutes.find((route) => route.path === 'ru/competency-matrix')).toBeUndefined();

@@ -291,6 +291,7 @@ function buildRobotsTxt(origin) {
     + 'Disallow: /api/\n'
     + 'Disallow: /login\n'
     + 'Disallow: /how-this-site-is-built\n'
+    + 'Disallow: /updates\n'
     + 'Disallow: /articles\n'
     + 'Disallow: /competency-matrix\n'
     + 'Disallow: /sitemap\n'
@@ -302,6 +303,8 @@ function buildSitemapXml(origin) {
   const urls = [
     '/ru/how-this-site-is-built',
     '/en/how-this-site-is-built',
+    '/ru/updates',
+    '/en/updates',
     '/ru/articles/typed-articles',
     '/en/articles/typed-articles',
     '/ru/competency-matrix/questions/how-to-write-function',
@@ -498,6 +501,7 @@ function buildMessages() {
     'shell.auth.login': 'Login',
     'shell.footer.sourceCode': 'Source code',
     'shell.footer.siteBuild': 'How this site is built',
+    'shell.footer.updates': 'Updates',
     'shell.footer.email': 'Email',
     'shell.footer.githubProfile': 'GitHub',
     'shell.footer.telegramProfile': 'Telegram',
@@ -527,8 +531,27 @@ function buildMessages() {
     'siteBuild.quality.body':
       'Layered quality checks cover fast feedback, production readiness, and rollout risk.',
     'siteBuild.next.title': 'Next',
-    'siteBuild.next.body': 'Feeds, roadmap, and deployment hardening.',
+    'siteBuild.next.body': 'Feeds, public roadmap, and deployment hardening.',
     'siteBuild.next.articlesLink': 'Go to articles',
+    'updates.seo.title': 'Updates',
+    'updates.seo.description': 'Public changelog for the knowledge base.',
+    'updates.hero.kicker': 'Changelog',
+    'updates.hero.title': 'Updates',
+    'updates.hero.lead':
+      'Major changes to the site and knowledge base, grouped by month: public content, admin workflows, quality, security, and infrastructure.',
+    'updates.tag.frontend': 'Frontend',
+    'updates.tag.backend': 'Backend',
+    'updates.tag.content': 'Content',
+    'updates.tag.seo': 'SEO',
+    'updates.tag.analytics': 'Analytics',
+    'updates.tag.matrix': 'Matrix',
+    'updates.tag.infra': 'Infrastructure',
+    'updates.tag.admin': 'Admin',
+    'updates.tag.auth': 'Auth',
+    'updates.tag.localization': 'Localization',
+    'updates.tag.quality': 'Quality',
+    'updates.tag.security': 'Security',
+    'updates.tag.delivery': 'Delivery',
     'articles.title': 'Articles',
     'articles.views': '{count} views',
     'articles.filters.search': 'Search',

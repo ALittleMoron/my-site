@@ -9,6 +9,7 @@ try {
   await assertBrowserApiProxy(frontendPort);
   await assertBrowserAnalyticsProxy(frontendPort);
   await assertSiteBuildCaseStudyHtml(frontendPort, requests);
+  await assertUpdatesHtml(frontendPort, requests);
   await assertPublishedArticleHtml(frontendPort, requests);
   await assertMissingArticleNoindex(frontendPort, requests);
   await assertPublishedMatrixQuestionHtml(frontendPort, requests);
@@ -52,6 +53,7 @@ async function assertDiscoveryEndpoints(frontendPort) {
       sitemapText.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'),
     ],
     ['sitemap canonical route', sitemapText.includes(`${origin}/ru/how-this-site-is-built`)],
+    ['sitemap updates route', sitemapText.includes(`${origin}/ru/updates`)],
     ['sitemap excludes removed about page', !sitemapText.includes('/about-me')],
   ];
   assertExpected(expected, `${robotsText}\n${sitemapText}`, 'LHCI discovery endpoints');
@@ -103,6 +105,31 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
     ['no noindex on case study', !html.includes('name="robots" content="noindex')],
   ];
   assertExpected(expected, html, 'site-build case study SSR');
+}
+
+async function assertUpdatesHtml(frontendPort, requests) {
+  const requestStart = requests.length;
+  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/updates`);
+  const html = await response.text();
+  const pageRequests = requests.slice(requestStart);
+  const expected = [
+    ['status 200', response.status === 200],
+    ['title', html.includes('Updates - My site')],
+    ['hero', html.includes('Major changes to the site and knowledge base')],
+    ['month', html.includes('Июль 2026')],
+    ['history month', html.includes('Сентябрь 2024')],
+    ['milestone', html.includes('Публичный SEO-контур вышел в SSR')],
+    ['canonical', html.includes(`href="http://127.0.0.1:${frontendPort}/ru/updates"`)],
+    ['hreflang ru', html.includes('hreflang="ru"')],
+    ['hreflang en', html.includes('hreflang="en"')],
+    ['no article API request', pageRequests.every((entry) => !entry.includes('/api/articles/'))],
+    [
+      'no matrix API request',
+      pageRequests.every((entry) => !entry.includes('/api/competency-matrix/')),
+    ],
+    ['no noindex on updates', !html.includes('name="robots" content="noindex')],
+  ];
+  assertExpected(expected, html, 'updates SSR');
 }
 
 async function assertPublishedArticleHtml(frontendPort, requests) {

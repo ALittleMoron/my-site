@@ -26,6 +26,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'ru/updates',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'en/updates',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Client,
   },

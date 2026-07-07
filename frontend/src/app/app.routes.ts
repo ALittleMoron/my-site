@@ -47,6 +47,10 @@ function publicRoutes(): Routes {
       loadChildren: () => import('./features/sitemap/sitemap.routes').then((m) => m.sitemapRoutes),
     },
     {
+      path: 'updates',
+      loadChildren: () => import('./features/updates/updates.routes').then((m) => m.updatesRoutes),
+    },
+    {
       path: 'how-this-site-is-built',
       loadChildren: () =>
         import('./features/site-case-study/site-case-study.routes').then(

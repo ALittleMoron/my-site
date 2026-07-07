@@ -563,7 +563,7 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [ ] Evaluate/migrate TaskIQ results to a durable backend when durable task history/auditing is needed.
 - [ ] Filestorage service for files in MinIO with moderators(and admins)-only access
 - [x] docker infra should be hotswap: no 502 errors caused by service restart lag (change docker-compose if its not possible)
-- [ ] Add public changelog/updates page.
+- [x] Add public changelog/updates page.
 - [ ] Add RSS/Atom feeds for published articles and matrix updates.
 - [ ] Add lightweight subscription channel for new articles, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.

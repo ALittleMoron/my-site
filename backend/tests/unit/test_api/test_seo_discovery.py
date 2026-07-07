@@ -49,6 +49,8 @@ class TestSeoDiscoveryAPI(ApiTestCase):
         assert "http://localhost:8000/en/about-me" not in sitemap
         assert "<loc>http://localhost:8000/ru/how-this-site-is-built</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/how-this-site-is-built</loc>" in sitemap
+        assert "<loc>http://localhost:8000/ru/updates</loc>" in sitemap
+        assert "<loc>http://localhost:8000/en/updates</loc>" in sitemap
         assert "<loc>http://localhost:8000/ru/articles/typed-articles</loc>" in sitemap
         assert "<loc>http://localhost:8000/en/articles/typed-articles</loc>" in sitemap
         assert (
@@ -116,6 +118,7 @@ class TestSeoDiscoveryAPI(ApiTestCase):
             "Disallow: /api/\n"
             "Disallow: /login\n"
             "Disallow: /how-this-site-is-built\n"
+            "Disallow: /updates\n"
             "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"

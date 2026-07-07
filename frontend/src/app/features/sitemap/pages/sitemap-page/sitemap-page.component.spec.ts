@@ -64,4 +64,15 @@ describe('SitemapPageComponent', () => {
     expect(fixture.nativeElement.querySelector('a[href="/ru/about-me"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Обо мне');
   });
+
+  it('renders a localized link to updates', () => {
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      'a[href="/ru/updates"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(link).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Обновления');
+  });
 });

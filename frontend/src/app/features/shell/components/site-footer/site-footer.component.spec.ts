@@ -15,6 +15,7 @@ describe('SiteFooterComponent', () => {
         provideI18nTesting({
           'shell.footer.sourceCode': 'Исходный код',
           'shell.footer.siteBuild': 'Как устроен сайт',
+          'shell.footer.updates': 'Обновления',
           'shell.footer.email': 'Эл. почта',
           'shell.footer.githubProfile': 'Профиль GitHub',
           'shell.footer.telegramProfile': 'Профиль Telegram',
@@ -43,6 +44,13 @@ describe('SiteFooterComponent', () => {
 
     expect(link).not.toBeNull();
     expect(link?.textContent?.trim()).toBe('Как устроен сайт');
+  });
+
+  it('renders localized link to updates', () => {
+    const link = el.querySelector('a[href="/ru/updates"]');
+
+    expect(link).not.toBeNull();
+    expect(link?.textContent?.trim()).toBe('Обновления');
   });
 
   it('uses wrapping footer link groups for narrow screens', () => {

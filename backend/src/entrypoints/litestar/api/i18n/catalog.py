@@ -40,6 +40,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.footer.docs": "Документация",
         "shell.footer.sourceCode": "Исходный код",
         "shell.footer.siteBuild": "Как устроен сайт",
+        "shell.footer.updates": "Обновления",
         "shell.footer.sitemap": "Карта сайта",
         "shell.footer.email": "Эл. почта",
         "shell.footer.githubProfile": "Профиль GitHub",
@@ -445,10 +446,31 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
-            "Ближайшие направления: RSS/Atom, changelog, публичный roadmap и дальнейшая "
+            "Ближайшие направления: RSS/Atom, публичный roadmap и дальнейшая "
             "работа над наблюдаемостью, производительностью и качеством контента."
         ),
         "siteBuild.next.articlesLink": "Перейти к статьям",
+        "updates.seo.title": "Обновления",
+        "updates.seo.description": "Публичный журнал изменений этой базы знаний.",
+        "updates.hero.kicker": "Журнал изменений",
+        "updates.hero.title": "Обновления сайта",
+        "updates.hero.lead": (
+            "Крупные изменения сайта и базы знаний, сгруппированные по месяцам: "
+            "публичный контент, админка, качество, безопасность и инфраструктура."
+        ),
+        "updates.tag.frontend": "Frontend",
+        "updates.tag.backend": "Backend",
+        "updates.tag.content": "Контент",
+        "updates.tag.seo": "SEO",
+        "updates.tag.analytics": "Аналитика",
+        "updates.tag.matrix": "Матрица",
+        "updates.tag.infra": "Инфраструктура",
+        "updates.tag.admin": "Админка",
+        "updates.tag.auth": "Auth",
+        "updates.tag.localization": "Локализация",
+        "updates.tag.quality": "Качество",
+        "updates.tag.security": "Безопасность",
+        "updates.tag.delivery": "Доставка",
         "matrix.seo.title": "Матрица компетенций",
         "matrix.seo.description": "Матрица компетенций Junior/Middle/Senior разработчика.",
         "matrix.title": "Матрица компетенций",
@@ -781,6 +803,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "shell.footer.docs": "Documentation",
         "shell.footer.sourceCode": "Source code",
         "shell.footer.siteBuild": "How this site is built",
+        "shell.footer.updates": "Updates",
         "shell.footer.sitemap": "Sitemap",
         "shell.footer.email": "Email",
         "shell.footer.githubProfile": "GitHub profile",
@@ -1181,10 +1204,31 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (
-            "Near-term work includes RSS/Atom, changelog, a public roadmap, and continued "
+            "Near-term work includes RSS/Atom, a public roadmap, and continued "
             "work on observability, performance, and content quality."
         ),
         "siteBuild.next.articlesLink": "Go to articles",
+        "updates.seo.title": "Updates",
+        "updates.seo.description": "Public changelog for this knowledge base.",
+        "updates.hero.kicker": "Changelog",
+        "updates.hero.title": "Updates",
+        "updates.hero.lead": (
+            "Major changes to the site and knowledge base, grouped by month: public "
+            "content, admin workflows, quality, security, and infrastructure."
+        ),
+        "updates.tag.frontend": "Frontend",
+        "updates.tag.backend": "Backend",
+        "updates.tag.content": "Content",
+        "updates.tag.seo": "SEO",
+        "updates.tag.analytics": "Analytics",
+        "updates.tag.matrix": "Matrix",
+        "updates.tag.infra": "Infrastructure",
+        "updates.tag.admin": "Admin",
+        "updates.tag.auth": "Auth",
+        "updates.tag.localization": "Localization",
+        "updates.tag.quality": "Quality",
+        "updates.tag.security": "Security",
+        "updates.tag.delivery": "Delivery",
         "matrix.seo.title": "Competency matrix",
         "matrix.seo.description": "Competency matrix for Junior/Middle/Senior developers.",
         "matrix.title": "Competency matrix",

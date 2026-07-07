@@ -20,8 +20,8 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Both generated in separate CI jobs.
 
-A knowledge base with an engineering case-study page, a competency matrix, localized articles, and
-protected owner/admin/moderator workspaces.
+A knowledge base with an engineering case-study page, a public updates page, a competency matrix,
+localized articles, and protected owner/admin/moderator workspaces.
 
 ## 📖 Documentation
 
@@ -51,6 +51,7 @@ my-site/
 - Protected owner/admin/moderator panel for creating, editing, publishing, and unpublishing articles and matrix questions, plus owner/admin team governance where admins manage moderators and the single owner has full team access
 - Privacy-safe article analytics with public view counters, engaged views, source categories, and anonymous reactions
 - Public "how this site is built" case-study page covering architecture, quality, and operations
+- Public updates page for milestone-level site changes
 - Russian/English UI and content localization driven by the backend
 - PASETO-protected owner/admin/moderator authentication with inactive-account enforcement
 
@@ -134,7 +135,7 @@ make test-backend-integration   # backend integration tests, auto test DB
 make tests-coverage             # backend coverage report
 make tests-coverage-frontend    # frontend coverage report
 make test-frontend              # frontend only (jest)
-make -C frontend ssr-smoke      # production SSR build + public article, case-study, and matrix question HTML smoke
+make -C frontend ssr-smoke      # production SSR build + public article, updates, case-study, and matrix question HTML smoke
 make performance-smoke          # auto local backend + seeded short Locust smoke profile
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-balanced       # auto test DB, storage-wide SQL capture + EXPLAIN ANALYZE gate

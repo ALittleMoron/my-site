@@ -5,7 +5,7 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 ## Stack
 
 - Angular 22, standalone components only
-- Angular hybrid rendering with `@angular/ssr`: public article, site-build case-study, and competency matrix question routes use SSR, interactive protected routes remain CSR/hydrated Angular.
+- Angular hybrid rendering with `@angular/ssr`: public article, site-build case-study, updates, and competency matrix question routes use SSR, interactive protected routes remain CSR/hydrated Angular.
 - Keep Angular framework packages, Angular CLI/build tooling, and `angular-eslint` on the same Angular major.
 - SCSS for styles
 - Bootstrap 5 via `styles/main.scss`

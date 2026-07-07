@@ -34,7 +34,8 @@ class PublicDiscoveryUrls:
 
     def build(self) -> list[PublicUrl]:
         urls = [
-            PublicUrl(path=f"/{language.value}/how-this-site-is-built", updated_at=None)
+            PublicUrl(path=f"/{language.value}/{path}", updated_at=None)
+            for path in ("how-this-site-is-built", "updates")
             for language in LanguageEnum
         ]
         urls.extend(
@@ -108,6 +109,7 @@ class RobotsTxt:
             "Disallow: /api/\n"
             "Disallow: /login\n"
             "Disallow: /how-this-site-is-built\n"
+            "Disallow: /updates\n"
             "Disallow: /articles\n"
             "Disallow: /competency-matrix\n"
             "Disallow: /sitemap\n"

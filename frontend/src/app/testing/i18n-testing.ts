@@ -41,6 +41,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'enum.role.owner': 'Владелец',
   'shell.footer.sourceCode': 'Исходный код',
   'shell.footer.siteBuild': 'Как устроен сайт',
+  'shell.footer.updates': 'Обновления',
   'shell.footer.email': 'Эл. почта',
   'shell.footer.githubProfile': 'Профиль GitHub',
   'shell.footer.telegramProfile': 'Профиль Telegram',

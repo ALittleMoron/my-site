@@ -20,8 +20,8 @@
 > [!NOTE]
 > Backend coverage — pytest (Python). Frontend coverage — Jest (TypeScript). Оба генерируются в отдельных CI job-ах.
 
-База знаний с инженерной case-study страницей, матрицей компетенций, локализованными статьями
-и защищёнными рабочими областями админки.
+База знаний с инженерной case-study страницей, публичными обновлениями, матрицей компетенций,
+локализованными статьями и защищёнными рабочими областями админки.
 
 ## 📖 Документация
 
@@ -51,6 +51,7 @@ my-site/
 - Защищённая панель владельца/администратора/модератора: создание, редактирование, публикация и снятие с публикации статей и вопросов матрицы, плюс управление командой, где администраторы управляют модераторами, а единственный владелец имеет полный доступ к команде
 - Приватная аналитика статей: публичные счётчики просмотров, вовлечённые просмотры, категории источников и анонимные реакции
 - Публичная case-study страница «как устроен сайт» про архитектуру, качество и эксплуатацию
+- Публичная страница обновлений с milestone-изменениями сайта
 - Локализация интерфейса и контента на русском и английском языках
 - PASETO-аутентификация для защищённого режима владельца/администратора/модератора с блокировкой неактивных аккаунтов
 
@@ -135,7 +136,7 @@ make test-backend-integration   # интеграционные тесты backen
 make tests-coverage             # отчёт покрытия backend
 make tests-coverage-frontend    # отчёт покрытия frontend
 make test-frontend              # только frontend (jest)
-make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, case-study и вопроса матрицы
+make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, обновлений, case-study и вопроса матрицы
 make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-balanced       # test DB, storage-wide SQL capture и EXPLAIN ANALYZE gate
