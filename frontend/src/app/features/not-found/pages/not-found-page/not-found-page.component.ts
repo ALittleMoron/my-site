@@ -12,6 +12,7 @@ import { SeoService } from '../../../../core/seo/seo.service';
   imports: [RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './not-found-page.component.html',
+  styleUrl: './not-found-page.component.scss',
 })
 export class NotFoundPageComponent implements OnInit {
   private readonly seoService = inject(SeoService);
