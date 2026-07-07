@@ -60,10 +60,33 @@ class PasetoTokenHandler(TokenHandler):
             raise UnauthorizedError
         return payload_dict
 
+    def _read_expires_at(self, payload_dict: dict[str, Any]) -> datetime.datetime | None:
+        expires_at_raw = payload_dict.get("exp")
+        if not isinstance(expires_at_raw, str):
+            return None
+        try:
+            expires_at = datetime.datetime.fromisoformat(expires_at_raw)
+        except ValueError:
+            logger.warning(event="Token exp claim is invalid")
+            return None
+        if expires_at.tzinfo is None:
+            return expires_at.replace(tzinfo=ZoneInfo("Etc/UTC"))
+        return expires_at
+
+    def _require_unexpired_payload(self, payload_dict: dict[str, Any]) -> None:
+        expires_at = self._read_expires_at(payload_dict)
+        if expires_at is None:
+            logger.warning(event="Token exp claim is missing or invalid")
+            raise UnauthorizedError
+        if expires_at <= datetime.datetime.now(tz=ZoneInfo("Etc/UTC")):
+            logger.warning(event="Token exp claim is expired")
+            raise UnauthorizedError
+
     def decode_token(self, token: Token) -> JwtUser:
         payload_dict = self._decode_payload_dict(token)
         validation_result = self.validate_payload_dict(payload_dict)
         if validation_result.is_valid:
+            self._require_unexpired_payload(payload_dict)
             return JwtUser.from_dict(payload_dict)
         logger.error(event=validation_result.message)
         raise UnauthorizedError
@@ -78,16 +101,9 @@ class PasetoTokenHandler(TokenHandler):
 
     def get_token_remaining_seconds(self, token: Token) -> int | None:
         payload_dict = self._decode_payload_dict(token)
-        expires_at_raw = payload_dict.get("exp")
-        if not isinstance(expires_at_raw, str):
+        expires_at = self._read_expires_at(payload_dict)
+        if expires_at is None:
             return None
-        try:
-            expires_at = datetime.datetime.fromisoformat(expires_at_raw)
-        except ValueError:
-            logger.warning(event="Token exp claim is invalid")
-            return None
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=ZoneInfo("Etc/UTC"))
         remaining_seconds = math.ceil(
             (expires_at - datetime.datetime.now(tz=ZoneInfo("Etc/UTC"))).total_seconds(),
         )

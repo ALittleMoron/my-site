@@ -98,7 +98,7 @@
 - [x] Add architecture-boundary checks so core code cannot import infrastructure/framework modules directly.
 - [x] Move DB migration out of app_lifespan into a separate task (possible in docker-compose)
 - [x] Replace uvicorn with Granian
-- [ ] OWASP Top 10 compliance check
+- [x] OWASP Top 10 compliance check completed; remaining remediation is tracked under Security audit.
 - [ ] Check for AI-based vulnerability scanning tools. Try one.
 - [ ] Security audit
   - [x] Find a web application security checklist and go through it.
@@ -110,85 +110,82 @@
     - [x] X-Frame-Options: DENY
     - [x] Referrer-Policy: no-referrer
     - [x] Content-Security-Policy
-  - [ ] CSRF (deferred until cookie-based auth; current admin auth uses Authorization bearer tokens)
-    - [ ] All POST/PUT/PATCH/DELETE is protected from CSRF
-    - [ ] CSRF token in cookie + header
-    - [ ] CSRF verified on server
-  - [ ] HTTPS and TLS
-    - [ ] Everything redirects to HTTPS
-    - [ ] Public HTTP redirects to HTTPS; internal VPN panels may use HTTP over WireGuard.
-    - [ ] TLS ≥ 1.2
-    - [ ] Certbot auto-renews
-    - [ ] No internal services are exposed to the public
+  - [x] HTTPS and TLS
+    - [x] Public HTTP redirects to HTTPS; internal VPN panels may use HTTP over WireGuard.
+    - [x] TLS ≥ 1.2
+    - [x] Certbot auto-renews
+    - [x] No internal services are exposed to the public
   - [ ] XSS
     - [ ] All user-supplied data is escaped
-    - [ ] No `| safe` without 100% certainty
+    - [x] No `| safe` without 100% certainty
     - [ ] Cannot save `<script>` to DB and render it. Check DB for such entries.
     - [x] CSP in place
-  - [ ] Passwords never logged
-  - [ ] Hashing: unique salt used
+    - [x] Main Angular SSR scripts use nonce-based CSP; Swagger UI docs keep a route-scoped inline/CDN exception.
+    - [ ] Remove remaining `style-src-attr 'unsafe-inline'` by refactoring Angular style bindings and overlay positioning.
+  - [x] Passwords never logged
+  - [x] Hashing: unique salt used
   - [ ] Every protected handler checks the user (guards where needed)
   - [ ] No role-based "hide button" logic without backend enforcement
   - [ ] All validation exists on the backend. Frontend can duplicate it, but never be the only layer.
   - [ ] Docker and infrastructure
-    - [ ] App runs with `read_only: true`
-    - [ ] Writable only for `/tmp` and explicitly needed `volumes:`
-    - [ ] No writes to `/etc`, `/usr`, `/bin`
-    - [ ] No bind mounts like: `- ./:/app`
-    - [ ] Containers do not run as root
-    - [ ] UID/GID not 0
-    - [ ] No sudo inside containers
-    - [ ] User-defined networks used
-    - [ ] Only nginx exposed to the public
-    - [ ] No hardcoded IPs
-    - [ ] Services accessible only by network name
+    - [x] App-owned backend, frontend, and nginx runtime services run with `read_only: true`
+    - [x] App-owned backend, frontend, and nginx writable paths are limited to `/tmp` and explicitly needed read-only volumes
+    - [x] App-owned backend, frontend, and nginx do not write to `/etc`, `/usr`, or `/bin`
+    - [x] No bind mounts like: `- ./:/app`
+    - [x] App-owned backend, frontend, and nginx images do not run as root
+    - [ ] All runtime containers have explicit non-root UID/GID
+    - [x] Project Dockerfiles do not install or use sudo
+    - [x] User-defined networks used
+    - [x] Only nginx exposed to the public
+    - [ ] No hardcoded cross-service public/private IPs outside Docker-required resolver/self-healthchecks
+    - [x] Services accessible only by network name
     - [ ] No localhost references between services
     - [ ] No sensitive data in `docker inspect`
     - [ ] Logs aren’t written to files inside containers
-    - [ ] Log rotation in place
+    - [x] Log rotation in place
     - [x] All services have health checks
     - [x] Nginx does not forward traffic to an unhealthy backend
     - [ ] Adequate restart policy
-    - [ ] Image versions pinned
+    - [ ] Image versions pinned for locally built backend, frontend, and nginx runtime images
     - [ ] No `latest` tags
     - [ ] Images updated regularly
     - [ ] Minimal packages
     - [x] Nginx not root
-    - [ ] Nginx has no write access
-    - [ ] No `proxy_pass` to localhost
-    - [ ] No `network_mode: host`
-    - [ ] No `privileged: true`
-    - [ ] No `/var/run/docker.sock` bind mount
-    - [ ] No `cap_add` unless strictly necessary
-    - [ ] No `devices:` unless strictly necessary
-    - [ ] `cap_drop: [ALL]` where possible
+    - [x] Nginx has no write access outside `/tmp`
+    - [x] No `proxy_pass` to localhost
+    - [x] No `network_mode: host`
+    - [x] No `privileged: true`
+    - [x] No `/var/run/docker.sock` bind mount
+    - [x] No `cap_add` unless strictly necessary
+    - [x] No `devices:` unless strictly necessary
+    - [x] App-owned backend, frontend, and nginx runtime services use `cap_drop: [ALL]`
     - [ ] No secrets in images
-    - [ ] Infrastructure services are not exposed externally
-      - [ ] PostgreSQL
-      - [ ] Valkey
-    - [ ] Postgres, Valkey, MinIO have no `ports`
-    - [ ] MinIO protected by auth
-    - [ ] Databasus protected by auth
-    - [ ] `.env` not in git
-    - [ ] No secrets in logs
+    - [x] Infrastructure services are not exposed externally
+      - [x] PostgreSQL
+      - [x] Valkey
+    - [x] Postgres, Valkey, MinIO have no `ports`
+    - [x] MinIO Console protected by VPN-only access; public MinIO object endpoint remains intentionally public for files.
+    - [x] Databasus protected by auth
+    - [x] `.env` not in git
+    - [x] No secrets in logs
     - [ ] All keys are long and random
-    - [ ] No stacktrace shown to users
-    - [ ] Firewall enabled on host (ufw/iptables)
+    - [x] No stacktrace shown to users
+    - [x] Firewall enabled on host (ufw/iptables)
     - [ ] Only `80/tcp`, `443/tcp`, and the chosen WireGuard UDP port are open publicly.
-    - [ ] SSH by key only. Password login disabled.
+    - [x] SSH by key only. Password login disabled.
   - [x] Rate limiting and bot protection
     - [x] Rate limit on login, registration, and password reset (registration/password reset are not implemented)
     - [x] IP / fingerprint-based limiting (IP-based at nginx edge)
     - [x] No unlimited requests to heavy endpoints
   - [ ] Backup & recovery
-    - [ ] Backups encrypted
-    - [ ] Backups are not publicly accessible
+    - [x] Backups encrypted
+    - [x] Backups are not publicly accessible
     - [ ] Restore tested
-    - [ ] No access to back up a panel without auth
+    - [x] No access to back up a panel without auth
   - [ ] Supply chain
-    - [ ] Dependency versions pinned
+    - [ ] Dependency versions pinned, including local runtime image tags that still default to `latest`
     - [x] Dependencies updated regularly
-    - [ ] No pip install from untrusted sources
+    - [x] No pip install from untrusted sources
 
 ### Tracing and Monitoring
 

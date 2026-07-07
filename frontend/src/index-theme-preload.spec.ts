@@ -35,13 +35,15 @@ function extractThemeScript(html: string): { text: string; index: number } {
   const markerIndex = html.indexOf('chosenTheme');
   expect(markerIndex).toBeGreaterThanOrEqual(0);
 
-  const scriptStart = html.lastIndexOf('<script>', markerIndex);
+  const scriptStart = html.lastIndexOf('<script', markerIndex);
   const scriptEnd = html.indexOf('</script>', markerIndex);
+  const scriptTagEnd = html.indexOf('>', scriptStart);
   expect(scriptStart).toBeGreaterThanOrEqual(0);
+  expect(scriptTagEnd).toBeGreaterThan(scriptStart);
   expect(scriptEnd).toBeGreaterThan(scriptStart);
 
   return {
-    text: html.slice(scriptStart + '<script>'.length, scriptEnd),
+    text: html.slice(scriptTagEnd + 1, scriptEnd),
     index: scriptStart,
   };
 }

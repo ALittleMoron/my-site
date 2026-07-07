@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer, get, IncomingHttpHeaders } from 'node:http';
+import { createServer, get, IncomingHttpHeaders, OutgoingHttpHeaders } from 'node:http';
 import { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -48,6 +48,7 @@ describe('SSR Express server', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toBe('');
+      expect(response.headers['x-powered-by']).toBeUndefined();
       expect(angularApp.handle).not.toHaveBeenCalled();
       expect(responseWriter).not.toHaveBeenCalled();
     } finally {
@@ -134,6 +135,59 @@ describe('SSR Express server', () => {
     }
   });
 
+  it('replaces SSR CSP nonce placeholders with the edge nonce header', async () => {
+    const restoreFetchPrimitives = installFetchResponseTestPrimitives();
+    const nonce = '0123456789abcdef0123456789abcdef';
+    const angularResponse = new Response(
+      '<!doctype html><html><head><script nonce="__CSP_NONCE__"></script></head>' +
+        '<body><app-root ngCspNonce="__CSP_NONCE__"></app-root></body></html>',
+      {
+        status: 200,
+        headers: {
+          'content-type': 'text/html',
+          'content-length': '999',
+        },
+      },
+    );
+    const angularApp: AngularSsrEngine = {
+      handle: jest.fn().mockResolvedValue(angularResponse),
+    };
+    const responseWriter: AngularSsrResponseWriter = async (response, res) => {
+      res
+        .status(response.status)
+        .type('html')
+        .send({
+          body: await response.text(),
+          contentLength: response.headers.get('content-length'),
+        });
+    };
+    const app = createExpressApp({
+      browserDistFolder: '/tmp/non-existent-browser-dist',
+      angularApp,
+      responseWriter,
+    });
+    const server = createServer(app);
+
+    try {
+      await new Promise<void>((resolve) => {
+        server.listen(0, '127.0.0.1', resolve);
+      });
+      const address = server.address() as AddressInfo;
+      const response = await request(`http://127.0.0.1:${address.port}/`, {
+        'x-csp-nonce': nonce,
+      });
+      const payload = JSON.parse(response.body) as { body: string; contentLength: string | null };
+
+      expect(payload.body).toContain(`nonce="${nonce}"`);
+      expect(payload.body).toContain(`ngCspNonce="${nonce}"`);
+      expect(payload.body).not.toContain('__CSP_NONCE__');
+      expect(payload.contentLength).toBeNull();
+    } finally {
+      restoreFetchPrimitives();
+      await closeServer(server);
+    }
+  });
+
   it('serves hashed JavaScript and CSS with immutable cache headers', async () => {
     const browserDistFolder = mkdtempSync(join(tmpdir(), 'my-site-browser-dist-'));
     writeFileSync(join(browserDistFolder, 'main-ABCDEFGH.js'), 'console.log("ok");');
@@ -205,9 +259,9 @@ interface HttpResponse {
   readonly headers: IncomingHttpHeaders;
 }
 
-function request(url: string): Promise<HttpResponse> {
+function request(url: string, headers: OutgoingHttpHeaders = {}): Promise<HttpResponse> {
   return new Promise((resolve, reject) => {
-    get(url, (response) => {
+    get(url, { headers }, (response) => {
       let body = '';
       response.setEncoding('utf8');
       response.on('data', (chunk: string) => {
@@ -230,4 +284,98 @@ function closeServer(server: ReturnType<typeof createServer>): Promise<void> {
       resolve();
     });
   });
+}
+
+function installFetchResponseTestPrimitives(): () => void {
+  const originalResponse = globalThis.Response;
+  const originalHeaders = globalThis.Headers;
+  const hadResponse = Object.prototype.hasOwnProperty.call(globalThis, 'Response');
+  const hadHeaders = Object.prototype.hasOwnProperty.call(globalThis, 'Headers');
+
+  Object.defineProperty(globalThis, 'Headers', {
+    configurable: true,
+    writable: true,
+    value: TestHeaders,
+  });
+  Object.defineProperty(globalThis, 'Response', {
+    configurable: true,
+    writable: true,
+    value: TestResponse,
+  });
+
+  return () => {
+    restoreGlobal('Response', hadResponse, originalResponse);
+    restoreGlobal('Headers', hadHeaders, originalHeaders);
+  };
+}
+
+function restoreGlobal(name: 'Headers' | 'Response', existed: boolean, value: unknown): void {
+  if (!existed) {
+    Reflect.deleteProperty(globalThis, name);
+    return;
+  }
+  Object.defineProperty(globalThis, name, {
+    configurable: true,
+    writable: true,
+    value,
+  });
+}
+
+class TestHeaders {
+  private readonly values = new Map<string, string>();
+
+  constructor(init?: HeadersInit | TestHeaders) {
+    if (init instanceof TestHeaders) {
+      init.forEach((value, key) => this.set(key, value));
+      return;
+    }
+    if (Array.isArray(init)) {
+      for (const [key, value] of init) {
+        this.set(key, value);
+      }
+      return;
+    }
+    if (init) {
+      for (const [key, value] of Object.entries(init)) {
+        this.set(key, value);
+      }
+    }
+  }
+
+  get(name: string): string | null {
+    return this.values.get(name.toLowerCase()) ?? null;
+  }
+
+  set(name: string, value: string): void {
+    this.values.set(name.toLowerCase(), value);
+  }
+
+  delete(name: string): void {
+    this.values.delete(name.toLowerCase());
+  }
+
+  forEach(callback: (value: string, key: string) => void): void {
+    for (const [key, value] of this.values) {
+      callback(value, key);
+    }
+  }
+}
+
+class TestResponse {
+  readonly headers: TestHeaders;
+  readonly status: number;
+  readonly statusText: string;
+
+  constructor(
+    private readonly body: string,
+    init: ResponseInit = {},
+  ) {
+    this.headers = new TestHeaders(init.headers);
+    this.status = init.status ?? 200;
+    this.statusText = init.statusText ?? '';
+  }
+
+  async text(): Promise<string> {
+    return this.body;
+  }
 }

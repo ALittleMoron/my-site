@@ -441,7 +441,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "в CI, а деплой запускается отдельным ручным workflow; такой подход даёт "
             "guardrails на нескольких уровнях, от кода до nginx routing, и снижает число "
             "слепых зон перед переключением трафика. Доставка публичных ассетов опирается "
-            "на immutable caching для fingerprinted CSS/JS, а изображения статей оптимизируются "
+            "на request-scoped nonce для Angular SSR CSP, app-owned runtime контейнеры "
+            "запускаются read-only с отброшенными Linux capabilities, а fingerprinted CSS/JS "
+            "кэшируются immutable. Изображения статей оптимизируются "
             "в WebP при загрузке без миграции уже опубликованных объектов."
         ),
         "siteBuild.next.title": "Что дальше",
@@ -1198,9 +1200,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "readiness. Those checks stay as CI release evidence, while deploy runs as a "
             "separate manual workflow; that gives the project guardrails at several layers, "
             "from code to nginx routing, and reduces blind spots before traffic is switched. "
-            "Public asset delivery uses immutable caching for fingerprinted CSS/JS, and "
-            "article images are optimized to WebP at upload time without migrating already "
-            "published objects."
+            "Public asset delivery now pairs request-scoped nonces for Angular SSR CSP with "
+            "read-only app-owned runtime containers that drop Linux capabilities; "
+            "fingerprinted CSS/JS uses immutable caching, and article images are optimized "
+            "to WebP at upload time without migrating already published objects."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

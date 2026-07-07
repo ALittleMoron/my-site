@@ -142,13 +142,13 @@ render_and_reload_nginx() {
         -e "ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT}" \
         -e "MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}" \
         nginx \
-        sh -c 'cat > /tmp/site.conf.template && envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /tmp/site.conf.template > /etc/nginx/conf.d/site.conf && nginx -s reload' \
+        sh -c 'mkdir -p /tmp/nginx-conf.d && cat > /tmp/site.conf.template && envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /tmp/site.conf.template > /tmp/nginx-conf.d/site.conf && nginx -s reload' \
         <infra/nginx/templates/site.conf.template
 }
 
 switch_nginx() {
     if service_is_running nginx \
-        && docker compose exec -T nginx sh -c "grep -q ACTIVE_BACKEND_SLOT /etc/nginx/templates/site.conf.template"; then
+        && docker compose exec -T nginx sh -c "grep -q ACTIVE_BACKEND_SLOT /etc/nginx/runtime-templates/site.conf.template"; then
         render_and_reload_nginx
         return
     fi

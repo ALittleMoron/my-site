@@ -12,7 +12,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Мой сайт" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <script>
+    <script nonce="__CSP_NONCE__">
       (() => {
         try {
           const theme = window.localStorage.getItem('chosenTheme');
@@ -24,6 +24,6 @@
     </script>
   </head>
   <body>
-    <app-root></app-root>
+    <app-root ngCspNonce="__CSP_NONCE__"></app-root>
   </body>
 </html>

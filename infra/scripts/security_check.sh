@@ -56,6 +56,28 @@ require_file_exists() {
     fi
 }
 
+require_frontend_location_has_no_proxy_headers() {
+    local file_path="$1"
+
+    if awk '
+        $0 ~ /^[[:space:]]*location \/ \{/ {
+            in_frontend_location = 1
+            next
+        }
+        in_frontend_location && $0 ~ /^[[:space:]]*\}/ {
+            in_frontend_location = 0
+            next
+        }
+        in_frontend_location && $0 ~ /proxy_set_header/ {
+            found = 1
+        }
+        END { exit found ? 0 : 1 }
+    ' "$file_path"; then
+        echo "Frontend location must inherit server-level proxy headers; move location-level proxy_set_header directives to the server block." >&2
+        exit 1
+    fi
+}
+
 require_file_not_exists() {
     local file_path="$1"
     local description="$2"
@@ -218,6 +240,29 @@ run_healthcheck_configuration_check() {
     local run_script="${repo_dir}/infra/scripts/run.sh"
     local frontend_server="${repo_dir}/frontend/src/server-app.ts"
 
+    require_command docker
+    if ! docker compose version >/dev/null 2>&1; then
+        echo "docker compose plugin could not be found." >&2
+        exit 2
+    fi
+
+    (
+        export APP_DOMAIN="example.test"
+        export APP_URL_SCHEMA="https"
+        export DB_NAME="my_site_database"
+        export DB_PASSWORD="postgres-password"
+        export DB_USER="my_site"
+        export IMAGE_TAG="security-check-sha"
+        export LE_EMAIL="ops@example.test"
+        export MINIO_ACCESS_KEY="minio-access"
+        export MINIO_PUBLIC_URL="https://s3.example.test"
+        export MINIO_SECRET_KEY="minio-secret"
+        export SSL_CERT="/certs/fullchain.pem"
+        export SSL_KEY="/certs/privkey.pem"
+        export VPN_BIND_ADDRESS="10.77.0.1"
+        docker compose -f "$compose_file" config >/dev/null
+    )
+
     require_file_contains "$compose_file" "backend-blue:" "blue backend service"
     require_file_contains "$compose_file" "backend-green:" "green backend service"
     require_file_contains "$compose_file" "frontend-blue:" "blue frontend service"
@@ -227,11 +272,28 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" "/healthz" "frontend healthcheck"
     require_file_contains "$compose_file" "/nginx-healthz" "nginx healthcheck"
     require_file_contains "$compose_file" "MINIO_API_CORS_ALLOW_ORIGIN: \${APP_URL_SCHEMA}://\${APP_DOMAIN}" "MinIO public file CORS origin"
+    require_file_contains "$compose_file" 'user: "10001:10001"' "backend explicit non-root UID/GID"
+    require_file_contains "$compose_file" 'user: "1000:1000"' "frontend explicit non-root UID/GID"
+    require_file_contains "$compose_file" 'user: "101:101"' "nginx explicit non-root UID/GID"
+    require_file_contains "$compose_file" "read_only: true" "app-owned read-only root filesystems"
+    require_file_contains "$compose_file" "cap_drop:" "runtime Linux capability drop"
+    require_file_contains "$compose_file" "no-new-privileges:true" "runtime no-new-privileges"
+    require_file_contains "$compose_file" "/tmp:mode=1777,uid=10001,gid=10001" "backend writable tmpfs"
+    require_file_contains "$compose_file" "/tmp:mode=1777,uid=1000,gid=1000" "frontend writable tmpfs"
+    require_file_contains "$compose_file" "/tmp:mode=1777,uid=101,gid=101" "nginx writable tmpfs"
+    require_file_contains "$compose_file" "command: bash start_application.sh taskiq-worker" "TaskIQ worker read-only-compatible entrypoint"
+    require_file_contains "$compose_file" "command: bash start_application.sh taskiq-scheduler" "TaskIQ scheduler read-only-compatible entrypoint"
+    require_file_contains "$compose_file" "./infra/nginx/certs:/certs:ro" "nginx read-only certificate volume"
 
     require_file_contains "$nginx_template" "resolver 127.0.0.11" "Docker DNS resolver"
     require_file_contains "$nginx_template" "server \${ACTIVE_BACKEND_SLOT}:8080 resolve;" "active backend slot"
     require_file_contains "$nginx_template" "server \${ACTIVE_FRONTEND_SLOT}:4000 resolve;" "active frontend slot"
     require_file_contains "$nginx_template" "connect-src 'self' \${MINIO_PUBLIC_URL}" "public MinIO file CSP"
+    require_file_contains "$nginx_template" "img-src 'self' data: \${MINIO_PUBLIC_URL}; font-src 'self' data:;" "main site CSP without Swagger CDN origins"
+    require_file_contains "$nginx_template" "style-src 'self' 'nonce-\$request_id'; style-src-attr 'unsafe-inline'; script-src 'self' 'nonce-\$request_id'; script-src-attr 'none'" "main site nonce CSP"
+    require_file_contains "$nginx_template" "proxy_set_header X-CSP-Nonce" "frontend CSP nonce proxy header"
+    require_frontend_location_has_no_proxy_headers "$nginx_template"
+    require_file_contains "$nginx_template" "location ^~ /api/docs" "public API docs CSP location"
     require_file_contains "$nginx_template" "img-src 'self' data: \${MINIO_PUBLIC_URL} https://cdn.jsdelivr.net" "Swagger UI image CSP"
     require_file_contains "$nginx_template" "font-src 'self' data: https://cdn.jsdelivr.net" "Swagger UI font CSP"
     require_file_contains "$nginx_template" "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" "Swagger UI script CSP"
@@ -240,6 +302,7 @@ run_healthcheck_configuration_check() {
 
     require_file_contains "$run_script" "ACTIVE_DEPLOY_SLOT" "active deploy slot tracking"
     require_file_contains "$run_script" "infra/nginx/templates/site.conf.template" "host nginx template render"
+    require_file_contains "$run_script" "/tmp/nginx-conf.d/site.conf" "read-only-compatible nginx runtime config"
     require_file_contains "$run_script" "nginx -s reload" "graceful nginx reload"
     require_file_contains "$run_script" "docker compose up --wait" "health-gated compose startup"
     require_file_contains "$run_script" "backend-init" "backend init deploy step"
@@ -302,6 +365,11 @@ run_nginx_syntax_check() {
         "$repo_dir"
 
     docker run --rm \
+        --read-only \
+        --cap-drop ALL \
+        --security-opt no-new-privileges \
+        --tmpfs /tmp:mode=1777,uid=101,gid=101 \
+        --user 101:101 \
         --add-host backend:127.0.0.1 \
         --add-host backend-blue:127.0.0.1 \
         --add-host backend-green:127.0.0.1 \
@@ -318,7 +386,7 @@ run_nginx_syntax_check() {
         -e MINIO_PUBLIC_URL=https://s3.example.test \
         -v "${cert_dir}:/certs:ro" \
         "$nginx_check_image_tag" \
-        nginx -t
+        sh -ec 'mkdir -p /tmp/nginx-conf.d && envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /etc/nginx/runtime-templates/site.conf.template > /tmp/nginx-conf.d/site.conf && nginx -t'
 }
 
 run_deploy_env_configuration_check

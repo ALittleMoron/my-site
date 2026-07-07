@@ -18,11 +18,12 @@ FROM ghcr.io/astral-sh/uv:0.11.25-python3.14-trixie-slim
 ENV CUSTOM_USER=python-user
 ENV APP_PATH=/project
 ENV UV_CACHE_DIR=/project/.cache/uv
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=$APP_PATH/src
 ENV PATH=$APP_PATH/.venv/bin:${PATH}
 
-RUN groupadd $CUSTOM_USER \
- && useradd -g $CUSTOM_USER $CUSTOM_USER \
+RUN groupadd --gid 10001 $CUSTOM_USER \
+ && useradd --uid 10001 --gid 10001 $CUSTOM_USER \
  && mkdir -p $APP_PATH /project/.cache/uv \
  && chown -R $CUSTOM_USER:$CUSTOM_USER $APP_PATH /project/.cache
 
@@ -32,7 +33,7 @@ COPY --from=builder --chown=$CUSTOM_USER:$CUSTOM_USER /project/.venv /project/.v
 COPY --chown=$CUSTOM_USER:$CUSTOM_USER . ./
 RUN chmod 755 start_application.sh
 
-USER $CUSTOM_USER:$CUSTOM_USER
+USER 10001:10001
 
 EXPOSE 8080
 CMD ["bash", "./start_application.sh", "run"]

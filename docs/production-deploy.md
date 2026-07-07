@@ -121,6 +121,9 @@ CORS setup through `PutBucketCors`.
 Certificate issuance is no longer part of the GitHub Actions deploy path. The deployed host already
 owns its certificate lifecycle, while the deploy startup script still syncs certbot-owned
 certificates into `infra/nginx/certs/` for the unprivileged nginx container.
+In production, keep renewal host-owned too: a systemd timer or equivalent scheduler should run
+`make certbot-renew` from the deployed project directory and let the target resync certificates and
+reload nginx.
 
 If certificates must be issued again on the server, run the maintenance target directly on the
 host while port `80/tcp` is free:

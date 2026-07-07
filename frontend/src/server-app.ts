@@ -10,12 +10,18 @@ import type { PublicSeoRoute } from './server-seo';
 const HASHED_JAVASCRIPT_OR_CSS_PATTERN = /-[a-z0-9]{8,}\.(?:css|js)$/i;
 const IMMUTABLE_STATIC_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const STABLE_STATIC_CACHE_CONTROL = 'public, max-age=15552000';
+const CSP_NONCE_HEADER = 'x-csp-nonce';
+const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE__';
+const CSP_NONCE_PATTERN = /^[A-Za-z0-9+/_-]{16,128}={0,2}$/;
 
 export interface AngularSsrEngine {
   handle(req: express.Request): Promise<Response | null>;
 }
 
-export type AngularSsrResponseWriter = (response: Response, res: express.Response) => void;
+export type AngularSsrResponseWriter = (
+  response: Response,
+  res: express.Response,
+) => Promise<void> | void;
 
 interface CreateExpressAppOptions {
   readonly browserDistFolder: string;
@@ -25,6 +31,7 @@ interface CreateExpressAppOptions {
 
 export function createExpressApp(options: CreateExpressAppOptions): express.Express {
   const app = express();
+  app.disable('x-powered-by');
 
   app.get('/healthz', (_req, res) => {
     res.status(200).type('text/plain').send('');
@@ -57,11 +64,49 @@ export function createExpressApp(options: CreateExpressAppOptions): express.Expr
   app.use((req, res, next) => {
     options.angularApp
       .handle(req)
-      .then((response) => (response ? options.responseWriter(response, res) : next()))
+      .then((response) => {
+        if (!response) {
+          next();
+          return undefined;
+        }
+        return writeAngularResponse(req, response, res, options.responseWriter);
+      })
       .catch(next);
   });
 
   return app;
+}
+
+async function writeAngularResponse(
+  req: express.Request,
+  response: Response,
+  res: express.Response,
+  responseWriter: AngularSsrResponseWriter,
+): Promise<void> {
+  const nonce = readCspNonce(req);
+  const responseWithNonce =
+    nonce === null ? response : await replaceCspNoncePlaceholders(response, nonce);
+  await responseWriter(responseWithNonce, res);
+}
+
+function readCspNonce(req: express.Request): string | null {
+  const nonce = req.get(CSP_NONCE_HEADER);
+  if (!nonce || !CSP_NONCE_PATTERN.test(nonce)) return null;
+  return nonce;
+}
+
+async function replaceCspNoncePlaceholders(response: Response, nonce: string): Promise<Response> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().includes('text/html')) return response;
+
+  const body = (await response.text()).replaceAll(CSP_NONCE_PLACEHOLDER, nonce);
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  return new Response(body, {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
 }
 
 function setStaticCacheHeaders(res: express.Response, filePath: string): void {

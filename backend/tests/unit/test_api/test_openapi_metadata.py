@@ -5,6 +5,13 @@ from litestar import Litestar
 
 
 class TestOpenApiMetadata:
+    def test_public_openapi_schema_excludes_admin_routes(self, app: Litestar) -> None:
+        schema = app.openapi_schema.to_schema()
+        admin_paths = sorted(path for path in schema["paths"] if path.startswith("/api/admin"))
+
+        assert admin_paths == []
+        assert "/api/auth/login" in schema["paths"]
+
     def test_visible_parameters_include_descriptions_and_examples(self, app: Litestar) -> None:
         schema = app.openapi_schema.to_schema()
         missing_metadata = [

@@ -12,6 +12,12 @@ case "$action" in
     run)
         granian --interface asgi --factory --host 0.0.0.0 --port 8080 main:create_app
         ;;
+    taskiq-worker)
+        taskiq worker entrypoints.taskiq.worker:broker
+        ;;
+    taskiq-scheduler)
+        taskiq scheduler entrypoints.taskiq.worker:scheduler
+        ;;
     *)
         echo "Unknown application action: ${action}" >&2
         exit 2

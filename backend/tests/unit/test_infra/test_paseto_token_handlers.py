@@ -59,15 +59,41 @@ class TestPasetoTokenHandler:
             self.auth_handler.decode_token(Token(token))
 
     def test_decode_token_returns_domain_user_payload(self) -> None:
+        expires_at = datetime.datetime.now(tz=ZoneInfo("Etc/UTC")) + datetime.timedelta(minutes=1)
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
-            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+            payload={
+                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                "exp": expires_at.isoformat(),
+            },
         )
         decoded_token = self.auth_handler.decode_token(Token(token))
         assert decoded_token.to_dict() == {
             "username": "TEST",
             "role": RoleEnum.ADMIN,
         }
+
+    def test_decode_token_rejects_payload_without_expiration(self) -> None:
+        token = pyseto.encode(
+            key=self.auth_handler._create_secret_key(),
+            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+        )
+
+        with pytest.raises(UnauthorizedError):
+            self.auth_handler.decode_token(Token(token))
+
+    def test_decode_token_rejects_expired_token(self) -> None:
+        expired_at = datetime.datetime.now(tz=ZoneInfo("Etc/UTC")) - datetime.timedelta(seconds=1)
+        token = pyseto.encode(
+            key=self.auth_handler._create_secret_key(),
+            payload={
+                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                "exp": expired_at.isoformat(),
+            },
+        )
+
+        with pytest.raises(UnauthorizedError):
+            self.auth_handler.decode_token(Token(token))
 
     def test_get_token_remaining_seconds_returns_positive_lifetime(self) -> None:
         token = self.auth_handler.encode_token(

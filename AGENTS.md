@@ -45,6 +45,13 @@ Portfolio and articles site with a knowledge database
   Admin UI flows must not reuse public routes when they need privileged data, privileged controls,
   or behavior that may diverge later; duplicate the transport handler instead and keep shared
   schemas/use cases below the HTTP boundary.
+- Privileged behavior must be enforced by backend guards and/or use cases, not only by hiding or
+  disabling frontend controls. When a UI hides actions based on role or auth state, keep a matching
+  backend authorization check and cover the protected path with an API/use-case test.
+- If auth ever moves from explicit `Authorization` bearer tokens to browser-sent credentials such
+  as cookies or sessions, design CSRF protection before adding state-changing handlers: define the
+  token/header or Fetch Metadata strategy, SameSite/Secure cookie policy, and server-side
+  verification tests in the same change. Do not introduce auth cookies as a frontend-only change.
 - Do not add default values in real production code. API parameters, schemas, dataclasses, settings, helpers, services, and infrastructure-facing code should require callers or environment configuration to pass values explicitly. Filter dataclasses may define defaults for omitted filters, pagination, relationship-loading switches, and list-mode switches when the default means "do not apply this filter" or preserves the normal list behavior; tests, test helpers, and factories may keep defaults when they make test setup clearer.
 - Avoid `None`/`null` in production schemas, DTOs, and persisted structured content when a truthful
   non-null representation exists. Prefer empty strings for intentionally blank text, empty
@@ -145,8 +152,15 @@ Portfolio and articles site with a knowledge database
   Wiki-style content links use typed prefixes, currently `[[articles:<slug>]]` and
   `[[matrix:<slug>]]`, with optional labels such as `[[matrix:<slug>|Custom label]]`; unprefixed
   `[[article-slug]]` syntax is not supported.
+- User-authored Markdown or HTML must render only through the centralized sanitized renderer. Do
+  not bind raw authored content to `[innerHTML]`, use `bypassSecurityTrustHtml`, or add a new
+  Markdown renderer without XSS regression tests for `<script>`, event-handler attributes, and
+  unsafe URL schemes.
 - Article analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only article-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, updates, and matrix question routes and hydrates interactive CSR/content-authoring areas.
+- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, updates, and matrix question routes and hydrates interactive CSR/content-authoring areas. Do not add new public `ports`, `network_mode: host`, `privileged: true`, Docker socket mounts, broad `cap_add`, or root runtime users unless the task explicitly requires it and the security tradeoff is documented.
+- Keep security headers and CSP at the nginx edge. When adding frontend assets, external origins,
+  Swagger/UI dependencies, upload previews, or MinIO access paths, update CSP narrowly for the
+  exact source needed and avoid wildcard origins or broader inline-script/style allowances.
 - Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
   backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
   identity-aware or business-quota design requires application-level limits by user, account, API

@@ -29,6 +29,7 @@ admin_api_router = Router(
         wiki_links_admin_router,
     ],
     tags=["admin api"],
+    include_in_schema=False,
 )
 
 api_router = Router(
