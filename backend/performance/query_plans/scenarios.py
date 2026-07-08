@@ -272,6 +272,13 @@ async def run_get_auth_session_by_id(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).get_session_by_id(session_id=hex_id(1))
 
 
+async def run_extend_auth_session_expiry(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).extend_session_expiry(
+        session_id=hex_id(1),
+        expires_at=SEED_NOW + timedelta(days=31),
+    )
+
+
 async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).revoke_session_by_secret_hash(
         secret_hash=seeded_auth_session_hash(2),
@@ -1089,6 +1096,16 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_get_auth_session_by_id,
+    ),
+    scenario(
+        name="auth_session_extend_expiry",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="extend_session_expiry",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth__auth_session_model_pkey",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_extend_auth_session_expiry,
     ),
     scenario(
         name="auth_session_revoke_by_secret_hash",

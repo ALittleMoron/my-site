@@ -126,6 +126,39 @@ class TestAuthSessionStorage(StorageTestCase):
             is_revoked=True,
         )
 
+    async def test_extend_session_expiry(self) -> None:
+        session = AuthSessionCreate(
+            username="admin",
+            secret_hash=SessionSecretHash(
+                "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            ),
+            expires_at=self.now + timedelta(days=30),
+            is_revoked=False,
+        )
+        created = await self.storage.create_session(session=session)
+        new_expires_at = self.now + timedelta(days=45)
+
+        await self.storage.extend_session_expiry(
+            session_id=created.id,
+            expires_at=new_expires_at,
+        )
+
+        stored = await self.storage.get_session_by_id(session_id=created.id)
+        assert stored == AuthSession(
+            id=created.id,
+            username=session.username,
+            secret_hash=session.secret_hash,
+            expires_at=new_expires_at,
+            is_revoked=False,
+        )
+
+    async def test_extend_session_expiry_not_found(self) -> None:
+        with pytest.raises(AuthSessionNotFoundError):
+            await self.storage.extend_session_expiry(
+                session_id="10000000000040008000000000000001",
+                expires_at=self.now + timedelta(days=45),
+            )
+
     async def test_revoke_user_sessions_case_insensitively(self) -> None:
         admin_session = AuthSessionCreate(
             username="admin",

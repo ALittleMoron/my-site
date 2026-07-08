@@ -13,6 +13,8 @@ from core.auth.schemas import (
     AuthLoginResult,
     AuthLogoutParams,
     AuthRefreshAccessTokenParams,
+    AuthRefreshAccessTokenResult,
+    AuthSessionCredentials,
 )
 from core.auth.types import SessionSecret, Token
 from core.auth.use_cases import AuthUseCase
@@ -54,17 +56,34 @@ def create_access_token_response(
     )
 
 
-def create_login_response(*, result: AuthLoginResult) -> Response[AccessTokenResponseSchema]:
-    response = create_access_token_response(result=result.access_token)
+def set_session_cookie(
+    *,
+    response: Response[AccessTokenResponseSchema],
+    session: AuthSessionCredentials,
+) -> None:
     response.set_cookie(
         key=constants.auth.session_cookie_name,
-        value=result.session.secret,
-        max_age=result.session.expires_in_seconds,
+        value=session.secret,
+        max_age=session.expires_in_seconds,
         path=constants.auth.session_cookie_path,
         secure=True,
         httponly=True,
         samesite="lax",
     )
+
+
+def create_login_response(*, result: AuthLoginResult) -> Response[AccessTokenResponseSchema]:
+    response = create_access_token_response(result=result.access_token)
+    set_session_cookie(response=response, session=result.session)
+    return response
+
+
+def create_refresh_response(
+    *,
+    result: AuthRefreshAccessTokenResult,
+) -> Response[AccessTokenResponseSchema]:
+    response = create_access_token_response(result=result.access_token)
+    set_session_cookie(response=response, session=result.session)
     return response
 
 
@@ -136,7 +155,7 @@ class AuthApiController(Controller):
                 current_datetime=current_datetime,
             ),
         )
-        return create_access_token_response(result=result)
+        return create_refresh_response(result=result)
 
     @post(
         "/logout",

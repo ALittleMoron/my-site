@@ -20,6 +20,7 @@ from core.auth.schemas import (
     AuthLoginResult,
     AuthLogoutParams,
     AuthRefreshAccessTokenParams,
+    AuthRefreshAccessTokenResult,
     AuthSessionCreate,
     AuthSessionCredentials,
     AuthUseCaseConfig,
@@ -124,7 +125,7 @@ class AuthUseCase:
         self,
         *,
         params: AuthRefreshAccessTokenParams,
-    ) -> AccessTokenResult:
+    ) -> AuthRefreshAccessTokenResult:
         try:
             session = await self.auth_session_storage.get_session_by_secret_hash(
                 secret_hash=self.auth_session_secret_generator.hash_secret(
@@ -149,8 +150,24 @@ class AuthUseCase:
         if not user.is_active:
             self.event_reporter.report_authentication_inactive_user(username=user.username)
             raise UnauthorizedError
-        return self._issue_access_token(
-            payload=AccessTokenPayload(username=user.username, session_id=session.id),
+        new_session_expires_at = params.current_datetime + timedelta(
+            seconds=self.config.session_expires_in_seconds,
+        )
+        try:
+            await self.auth_session_storage.extend_session_expiry(
+                session_id=session.id,
+                expires_at=new_session_expires_at,
+            )
+        except AuthSessionNotFoundError as exc:
+            raise UnauthorizedError from exc
+        return AuthRefreshAccessTokenResult(
+            access_token=self._issue_access_token(
+                payload=AccessTokenPayload(username=user.username, session_id=session.id),
+            ),
+            session=AuthSessionCredentials(
+                secret=params.session_secret,
+                expires_in_seconds=self.config.session_expires_in_seconds,
+            ),
         )
 
     async def logout(self, *, params: AuthLogoutParams) -> None:

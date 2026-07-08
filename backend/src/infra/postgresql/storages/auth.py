@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,6 +60,17 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
         if model is None:
             raise AuthSessionNotFoundError
         return model.to_domain_schema()
+
+    async def extend_session_expiry(self, *, session_id: str, expires_at: datetime) -> None:
+        statement = (
+            update(AuthSessionModel)
+            .values(expires_at=expires_at)
+            .where(AuthSessionModel.id == session_id)
+            .returning(AuthSessionModel.id)
+        )
+        stored_session_id = await self.session.scalar(statement)
+        if stored_session_id is None:
+            raise AuthSessionNotFoundError
 
     async def revoke_session_by_secret_hash(self, *, secret_hash: SessionSecretHash) -> None:
         statement = (

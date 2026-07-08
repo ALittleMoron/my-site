@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from core.auth.schemas import AuthSession, AuthSessionCreate
 from core.auth.types import SessionSecretHash, Token
@@ -31,6 +32,10 @@ class AuthSessionStorage(ABC):
 
     @abstractmethod
     async def get_session_by_id(self, *, session_id: str) -> AuthSession:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def extend_session_expiry(self, *, session_id: str, expires_at: datetime) -> None:
         raise NotImplementedError
 
     @abstractmethod

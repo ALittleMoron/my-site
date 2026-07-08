@@ -6,7 +6,12 @@ import pytest
 
 from core.auth.enums import RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
-from core.auth.exceptions import ForbiddenError, UnauthorizedError
+from core.auth.exceptions import (
+    AuthSessionNotFoundError,
+    ForbiddenError,
+    UnauthorizedError,
+    UserNotFoundError,
+)
 from core.auth.generators import AuthSessionSecretGenerator
 from core.auth.schemas import (
     AccessTokenPayload,
@@ -16,6 +21,7 @@ from core.auth.schemas import (
     AuthLoginResult,
     AuthLogoutParams,
     AuthRefreshAccessTokenParams,
+    AuthRefreshAccessTokenResult,
     AuthSession,
     AuthSessionCreate,
     AuthSessionCredentials,
@@ -129,6 +135,7 @@ class TestAuthSessionUseCase(TestCase):
             )
 
         self.token_handler.encode_token.assert_not_called()
+        self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_revoked_session(self) -> None:
         self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
@@ -149,6 +156,7 @@ class TestAuthSessionUseCase(TestCase):
             )
 
         self.token_handler.encode_token.assert_not_called()
+        self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_session_user_without_required_role(self) -> None:
         self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
@@ -173,7 +181,58 @@ class TestAuthSessionUseCase(TestCase):
                 ),
             )
 
-    async def test_refresh_returns_new_access_token_for_active_session(self) -> None:
+        self.session_storage.extend_session_expiry.assert_not_called()
+
+    async def test_refresh_rejects_missing_session_user_without_extending_session(self) -> None:
+        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
+            id="10000000000040008000000000000001",
+            username="missing",
+            secret_hash=SessionSecretHash("session-secret-hash"),
+            expires_at=self.now + timedelta(days=1),
+            is_revoked=False,
+        )
+        self.user_storage.get_user_by_username.side_effect = UserNotFoundError
+
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.refresh_access_token(
+                params=AuthRefreshAccessTokenParams(
+                    session_secret=SessionSecret("session-secret"),
+                    required_role=RoleEnum.MODERATOR,
+                    current_datetime=self.now,
+                ),
+            )
+
+        self.session_storage.extend_session_expiry.assert_not_called()
+
+    async def test_refresh_rejects_inactive_session_user_without_extending_session(self) -> None:
+        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
+            id="10000000000040008000000000000001",
+            username="inactive",
+            secret_hash=SessionSecretHash("session-secret-hash"),
+            expires_at=self.now + timedelta(days=1),
+            is_revoked=False,
+        )
+        self.user_storage.get_user_by_username.return_value = self.factory.core.user(
+            username="inactive",
+            password_hash="hash",
+            role=RoleEnum.MODERATOR,
+            is_active=False,
+        )
+
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.refresh_access_token(
+                params=AuthRefreshAccessTokenParams(
+                    session_secret=SessionSecret("session-secret"),
+                    required_role=RoleEnum.MODERATOR,
+                    current_datetime=self.now,
+                ),
+            )
+
+        self.session_storage.extend_session_expiry.assert_not_called()
+
+    async def test_refresh_extends_session_and_returns_new_access_token_for_active_session(
+        self,
+    ) -> None:
         self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
             id="10000000000040008000000000000001",
             username="moderator",
@@ -196,9 +255,19 @@ class TestAuthSessionUseCase(TestCase):
             ),
         )
 
-        assert result == AccessTokenResult(token=Token(b"NEW_ACCESS"), expires_in_seconds=900)
+        assert result == AuthRefreshAccessTokenResult(
+            access_token=AccessTokenResult(token=Token(b"NEW_ACCESS"), expires_in_seconds=900),
+            session=AuthSessionCredentials(
+                secret=SessionSecret("session-secret"),
+                expires_in_seconds=2_592_000,
+            ),
+        )
         self.session_secret_generator.hash_secret.assert_called_once_with(
             secret=SessionSecret("session-secret"),
+        )
+        self.session_storage.extend_session_expiry.assert_called_once_with(
+            session_id="10000000000040008000000000000001",
+            expires_at=self.now + timedelta(seconds=2_592_000),
         )
         self.token_handler.encode_token.assert_called_once_with(
             payload=AccessTokenPayload(
@@ -206,6 +275,32 @@ class TestAuthSessionUseCase(TestCase):
                 session_id="10000000000040008000000000000001",
             ),
         )
+
+    async def test_refresh_rejects_session_removed_before_extension(self) -> None:
+        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
+            id="10000000000040008000000000000001",
+            username="moderator",
+            secret_hash=SessionSecretHash("session-secret-hash"),
+            expires_at=self.now + timedelta(days=1),
+            is_revoked=False,
+        )
+        self.user_storage.get_user_by_username.return_value = self.factory.core.user(
+            username="moderator",
+            password_hash="hash",
+            role=RoleEnum.MODERATOR,
+        )
+        self.session_storage.extend_session_expiry.side_effect = AuthSessionNotFoundError
+
+        with pytest.raises(UnauthorizedError):
+            await self.use_case.refresh_access_token(
+                params=AuthRefreshAccessTokenParams(
+                    session_secret=SessionSecret("session-secret"),
+                    required_role=RoleEnum.MODERATOR,
+                    current_datetime=self.now,
+                ),
+            )
+
+        self.token_handler.encode_token.assert_not_called()
 
     async def test_authenticate_rejects_token_when_session_is_not_active(self) -> None:
         token = Token(b"ACCESS")

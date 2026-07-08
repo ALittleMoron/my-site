@@ -123,6 +123,12 @@ class AuthLoginResult:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AuthRefreshAccessTokenResult:
+    access_token: AccessTokenResult
+    session: AuthSessionCredentials
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AuthUseCaseConfig:
     access_token_expires_in_seconds: int
     session_expires_in_seconds: int

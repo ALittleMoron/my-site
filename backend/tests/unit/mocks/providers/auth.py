@@ -8,6 +8,7 @@ from core.auth.schemas import (
     AccessTokenPayload,
     AccessTokenResult,
     AuthLoginResult,
+    AuthRefreshAccessTokenResult,
     AuthSessionCredentials,
     JwtUser,
 )
@@ -91,9 +92,15 @@ class MockAuthProvider(Provider):
                 expires_in_seconds=2_592_000,
             ),
         )
-        mock.refresh_access_token.return_value = AccessTokenResult(
-            token=Token(b"TOKEN"),
-            expires_in_seconds=900,
+        mock.refresh_access_token.return_value = AuthRefreshAccessTokenResult(
+            access_token=AccessTokenResult(
+                token=Token(b"TOKEN"),
+                expires_in_seconds=900,
+            ),
+            session=AuthSessionCredentials(
+                secret=SessionSecret("session-secret"),
+                expires_in_seconds=2_592_000,
+            ),
         )
         mock.authenticate.return_value = self.user
         return mock

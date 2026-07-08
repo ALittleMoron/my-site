@@ -617,3 +617,4 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
   `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
 - [ ] Remove application-level id generators and rely on database-generated identifiers.
+- [ ] Move functions from endooints (to response classes or to other classes)
