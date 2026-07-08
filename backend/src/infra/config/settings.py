@@ -164,6 +164,7 @@ class _CompetencyMatrixSettings(_ProjectBaseSettings):
 class _TaskiqSettings(_ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="TASKIQ_")
 
+    auth_session_prune_interval_seconds: PositiveInt
     cache_warm_interval_seconds: PositiveInt
     result_expire_seconds: PositiveInt
 

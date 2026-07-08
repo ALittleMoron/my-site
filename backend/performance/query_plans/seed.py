@@ -192,7 +192,10 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
                     deterministic_hex_from_int(value=func.concat(literal("session-a-"), value)),
                     deterministic_hex_from_int(value=func.concat(literal("session-b-"), value)),
                 ),
-                literal(SEED_NOW + timedelta(days=30)),
+                case(
+                    (value % 10 == 0, literal(SEED_NOW - timedelta(days=1))),
+                    else_=literal(SEED_NOW + timedelta(days=30)),
+                ),
                 literal(value=False),
             ).select_from(series),
         ),

@@ -159,6 +159,45 @@ class TestAuthSessionStorage(StorageTestCase):
                 expires_at=self.now + timedelta(days=45),
             )
 
+    async def test_delete_expired_sessions(self) -> None:
+        expired_session = AuthSessionCreate(
+            username="admin",
+            secret_hash=SessionSecretHash(
+                "1111111111111111111111111111111111111111111111111111111111111111",
+            ),
+            expires_at=self.now,
+            is_revoked=False,
+        )
+        active_session = AuthSessionCreate(
+            username="admin",
+            secret_hash=SessionSecretHash(
+                "2222222222222222222222222222222222222222222222222222222222222222",
+            ),
+            expires_at=self.now + timedelta(seconds=1),
+            is_revoked=False,
+        )
+        revoked_active_session = AuthSessionCreate(
+            username="moderator",
+            secret_hash=SessionSecretHash(
+                "3333333333333333333333333333333333333333333333333333333333333333",
+            ),
+            expires_at=self.now + timedelta(days=1),
+            is_revoked=True,
+        )
+        created_expired_session = await self.storage.create_session(session=expired_session)
+        created_active_session = await self.storage.create_session(session=active_session)
+        created_revoked_active_session = await self.storage.create_session(
+            session=revoked_active_session,
+        )
+
+        deleted_count = await self.storage.delete_expired_sessions(expires_at=self.now)
+
+        assert deleted_count == 1
+        with pytest.raises(AuthSessionNotFoundError):
+            await self.storage.get_session_by_id(session_id=created_expired_session.id)
+        assert await self.storage.get_session_by_id(session_id=created_active_session.id)
+        assert await self.storage.get_session_by_id(session_id=created_revoked_active_session.id)
+
     async def test_revoke_user_sessions_case_insensitively(self) -> None:
         admin_session = AuthSessionCreate(
             username="admin",

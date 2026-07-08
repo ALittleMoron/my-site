@@ -112,6 +112,7 @@ Important boundaries:
 - Admin API authorization uses explicit short-lived bearer access tokens. A separate HttpOnly,
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
   refresh the session's idle expiration, and revoke the current session on logout.
+- Expired server-side auth sessions are physically pruned by a scheduled TaskIQ cleanup task.
 - Runtime secrets are mounted as Compose secret files instead of service environment values where
   the application stack needs secrets.
 - Deploy requires the manual GitHub production workflow and the protected `production` environment.
@@ -127,12 +128,14 @@ Important boundaries:
    with `X-CSRF-Guard: 1`; the backend rejects cross-site Fetch Metadata, verifies the server-side
    session, reloads the current user, extends the session idle expiration, reissues the session
    cookie with the refreshed lifetime, and returns a fresh short-lived PASETO access token.
-4. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
+4. Auth session cleanup: the TaskIQ scheduler enqueues the internal cleanup task, which deletes
+   sessions whose `expires_at` is at or before the scheduler-provided current time.
+5. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
    middleware authenticates the access token and active session, route guards enforce content/team
    permissions, and use cases update PostgreSQL or file storage.
-5. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
+6. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
    through the centralized sanitized renderer before binding HTML.
-6. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
+7. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
    adapter; published Markdown can reference computed public object URLs from MinIO.
 7. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
    aggregate counts and article-scoped derived reaction identifiers without raw IPs, raw user agents,
@@ -149,7 +152,7 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, 15-minute PASETO access tokens, 30-day sliding-idle server-side sessions stored as SHA-256 hashes, session revocation on logout/account changes, and access-token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS until they expire. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
+| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, 15-minute PASETO access tokens, 30-day sliding-idle server-side sessions stored as SHA-256 hashes, session revocation on logout/account changes, daily expired-session pruning, and access-token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS until they expire. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
 | Attacker forges or tampers with auth tokens. | PASETO v4 public signing/verification with explicit private/public keys and expiration validation. Access tokens carry only username and stable session id; backend authentication re-loads the active server session and current user role from storage. | Private-key exposure would allow token issuance. Keep key material in secret files and out of logs, images, and `docker inspect`. |
 | Attacker reaches internal panels as if they were an internal user. | MinIO Console and Databasus are routed only through WireGuard-bound nginx listeners; old public panel virtual hosts are absent; public firewall baseline allows only web and WireGuard ingress. | A compromised maintainer device or VPN key can still access panel login surfaces. Revoke WireGuard peers promptly and keep panel auth enabled. |
 
@@ -208,7 +211,8 @@ Important boundaries:
   session.
 - Auth/account flows use explicit `Authorization` bearer tokens for admin APIs. The `/api/auth`
   session cookie is scoped to access-token refresh, sliding idle-session renewal, and logout; those
-  cookie-authenticated endpoints are protected by CSRF guard checks.
+  cookie-authenticated endpoints are protected by CSRF guard checks. Expired server-side auth
+  sessions are cleaned up by the scheduled TaskIQ worker path and are not a login activity signal.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.

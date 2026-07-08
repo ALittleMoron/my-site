@@ -21,6 +21,8 @@ from core.auth.schemas import (
     AuthLogoutParams,
     AuthRefreshAccessTokenParams,
     AuthRefreshAccessTokenResult,
+    AuthSessionCleanupParams,
+    AuthSessionCleanupResult,
     AuthSessionCreate,
     AuthSessionCredentials,
     AuthUseCaseConfig,
@@ -201,3 +203,18 @@ class AuthUseCase:
             token=token,
             expires_in_seconds=self.config.access_token_expires_in_seconds,
         )
+
+
+@dataclass(kw_only=True, slots=True, frozen=True)
+class AuthSessionCleanupUseCase:
+    auth_session_storage: AuthSessionStorage
+
+    async def prune_expired_sessions(
+        self,
+        *,
+        params: AuthSessionCleanupParams,
+    ) -> AuthSessionCleanupResult:
+        deleted_count = await self.auth_session_storage.delete_expired_sessions(
+            expires_at=params.current_datetime,
+        )
+        return AuthSessionCleanupResult(deleted_count=deleted_count)

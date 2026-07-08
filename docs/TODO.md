@@ -496,8 +496,22 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [x] Admin auth refresh based on an HttpOnly, Secure, SameSite=Lax session cookie
   - [x] Session invalidation on logout, password change, deactivation, and account deletion
   - [x] Expired sessions are rejected
+  - [ ] Add identity-aware brute-force defenses: per-account/username failed-login counters,
+        temporary soft lockout or backoff after repeated failures, and generic blocked-login
+        responses that do not expose account existence.
+  - [ ] Add a durable auth audit trail for login, refresh, logout, session revocation, step-up
+        re-auth, role/password/account changes, suspicious events, and blocked attempts without
+        storing raw passwords, tokens, raw user agents, or raw IP addresses.
+  - [ ] Add an absolute session lifetime cap on top of the sliding idle lifetime so refresh cannot
+        extend a session beyond its original maximum age.
+  - [ ] Add PASETO key rotation with an active signing key, accepted verification keyring, `kid`
+        metadata, and an overlap period for tokens signed by retiring keys.
+  - [ ] Add step-up re-auth for sensitive actions such as own password changes, account deletion,
+        and team/role/password management.
+  - [ ] Add explicit device/session management: list sessions, revoke one, revoke all or others,
+        privacy-safe user-agent display, current-session marker, and last-used timestamp.
   - [ ] Session rotation / refresh-token-family reuse detection for broader user accounts
-  - [ ] Expired sessions are physically pruned by a scheduled cleanup task
+  - [x] Expired sessions are physically pruned by a scheduled cleanup task
 
 ### Flashcards
 

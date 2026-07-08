@@ -42,6 +42,7 @@
     { "name": "SENTRY_USE", "allowEmpty": false },
     { "name": "SSL_CERT", "allowEmpty": false },
     { "name": "SSL_KEY", "allowEmpty": false },
+    { "name": "TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS", "allowEmpty": false },
     { "name": "TASKIQ_CACHE_WARM_INTERVAL_SECONDS", "allowEmpty": false },
     { "name": "TASKIQ_RESULT_EXPIRE_SECONDS", "allowEmpty": false },
     { "name": "VALKEY_HOST", "allowEmpty": false },

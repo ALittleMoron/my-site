@@ -39,6 +39,10 @@ class AuthSessionStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def delete_expired_sessions(self, *, expires_at: datetime) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
     async def revoke_session_by_secret_hash(self, *, secret_hash: SessionSecretHash) -> None:
         raise NotImplementedError
 

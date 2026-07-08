@@ -129,6 +129,19 @@ class AuthRefreshAccessTokenResult:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCleanupParams:
+    current_datetime: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCleanupResult:
+    deleted_count: int
+
+    def as_dict(self) -> dict[str, int]:
+        return {"deletedCount": self.deleted_count}
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AuthUseCaseConfig:
     access_token_expires_in_seconds: int
     session_expires_in_seconds: int

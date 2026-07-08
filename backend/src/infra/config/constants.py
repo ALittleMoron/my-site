@@ -53,6 +53,7 @@ class _TaskiqConstants:
     result_prefix: Literal["my_site_taskiq_results"] = "my_site_taskiq_results"
     cache_warm_all_task_name: Literal["cache_warm_all"] = "cache_warm_all"
     cache_warm_domain_task_name: Literal["cache_warm_domain"] = "cache_warm_domain"
+    auth_session_prune_task_name: Literal["auth_session_prune"] = "auth_session_prune"
 
 
 class _FilesConstants:

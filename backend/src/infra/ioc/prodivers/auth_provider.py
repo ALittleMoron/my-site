@@ -13,7 +13,7 @@ from core.auth.schemas import AuthUseCaseConfig
 from core.auth.storages import AuthSessionStorage, AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
-from core.auth.use_cases import AuthUseCase
+from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
 from infra.auth.event_dispatchers import StructlogAuthEventReporter
 from infra.auth.password_hashers import Argon2PasswordHasher
 from infra.auth.token_handlers import PasetoTokenHandler
@@ -103,3 +103,10 @@ class AuthProvider(Provider):
             auth_session_secret_generator=auth_session_secret_generator,
             config=config,
         )
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_auth_session_cleanup_use_case(
+        self,
+        auth_session_storage: AuthSessionStorage,
+    ) -> AuthSessionCleanupUseCase:
+        return AuthSessionCleanupUseCase(auth_session_storage=auth_session_storage)

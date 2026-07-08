@@ -279,6 +279,10 @@ async def run_extend_auth_session_expiry(session: AsyncSession) -> None:
     )
 
 
+async def run_delete_expired_auth_sessions(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).delete_expired_sessions(expires_at=SEED_NOW)
+
+
 async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).revoke_session_by_secret_hash(
         secret_hash=seeded_auth_session_hash(2),
@@ -1106,6 +1110,16 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_extend_auth_session_expiry,
+    ),
+    scenario(
+        name="auth_session_delete_expired",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="delete_expired_sessions",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth_sessions_expiry_idx",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_delete_expired_auth_sessions,
     ),
     scenario(
         name="auth_session_revoke_by_secret_hash",

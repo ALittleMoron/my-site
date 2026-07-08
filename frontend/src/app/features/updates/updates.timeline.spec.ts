@@ -118,6 +118,17 @@ describe('updates timeline', () => {
     expect(entry?.tagIds).toEqual(['security', 'infra', 'backend', 'frontend', 'quality']);
   });
 
+  it('includes the July auth session hardening milestone', () => {
+    const entry = UPDATES_TIMELINE_ENTRIES.find((item) => item.id === 'auth-session-hardening');
+
+    expect(entry?.month).toBe('2026-07');
+    expect(entry?.title.ru).toContain('Авторизация');
+    expect(entry?.title.en).toContain('Authorization');
+    expect(entry?.summary.ru).toContain('скользящие');
+    expect(entry?.summary.en).toContain('sliding');
+    expect(entry?.tagIds).toEqual(['auth', 'security', 'backend']);
+  });
+
   it('renders July milestones in editorial order', () => {
     const julyGroup = groupUpdateEntries(UPDATES_TIMELINE_ENTRIES, 'ru', 'ru-RU').find(
       (group) => group.datetime === '2026-07',
@@ -125,6 +136,7 @@ describe('updates timeline', () => {
 
     expect(julyGroup?.entries.map((entry) => entry.id)).toEqual([
       'full-security-audit',
+      'auth-session-hardening',
       'public-updates-page',
       'release-workflow',
     ]);
@@ -154,6 +166,7 @@ describe('updates timeline', () => {
       'frontend',
       'quality',
     ]);
+    expect(tagIdsByEntry.get('auth-session-hardening')).toEqual(['auth', 'security', 'backend']);
     expect(tagIdsByEntry.get('public-seo-layer')).toEqual([
       'seo',
       'frontend',

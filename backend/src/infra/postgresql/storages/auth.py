@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.exceptions import AuthSessionNotFoundError, UserNotFoundError
@@ -71,6 +72,14 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
         stored_session_id = await self.session.scalar(statement)
         if stored_session_id is None:
             raise AuthSessionNotFoundError
+
+    async def delete_expired_sessions(self, *, expires_at: datetime) -> int:
+        statement = delete(AuthSessionModel).where(AuthSessionModel.expires_at <= expires_at)
+        result = await self.session.execute(statement)
+        rowcount = cast("int | None", getattr(result, "rowcount", None))
+        if rowcount is None:
+            return 0
+        return rowcount
 
     async def revoke_session_by_secret_hash(self, *, secret_hash: SessionSecretHash) -> None:
         statement = (

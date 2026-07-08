@@ -5,6 +5,7 @@ from taskiq_redis import RedisAsyncResultBackend
 
 from entrypoints.taskiq import broker as taskiq_broker_module
 from entrypoints.taskiq import worker as taskiq_worker_module
+from entrypoints.taskiq.auth import tasks as auth_tasks_module
 from entrypoints.taskiq.cache_warm import tasks as cache_warm_tasks_module
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -54,6 +55,17 @@ class TestTaskiqScheduleConfiguration:
         ]
         assert "cron" not in schedule[0]
 
+    def test_auth_session_prune_uses_interval_schedule_without_cron(self) -> None:
+        schedule = auth_tasks_module.prune_expired_auth_sessions.labels["schedule"]
+
+        assert schedule == [
+            {
+                "schedule_id": "auth_session_prune",
+                "interval": settings.taskiq.auth_session_prune_interval_seconds,
+            },
+        ]
+        assert "cron" not in schedule[0]
+
     def test_tasks_use_dishka_taskiq_middleware(self) -> None:
         assert any(
             isinstance(middleware, dishka_taskiq.ContainerMiddleware)
@@ -70,6 +82,10 @@ class TestTaskiqScheduleConfiguration:
         assert (
             taskiq_worker_module.broker.find_task(constants.taskiq.cache_warm_domain_task_name)
             is cache_warm_tasks_module.cache_warm_domain
+        )
+        assert (
+            taskiq_worker_module.broker.find_task(constants.taskiq.auth_session_prune_task_name)
+            is auth_tasks_module.prune_expired_auth_sessions
         )
 
     def test_top_level_tasks_module_is_not_used_as_a_task_dumping_ground(self) -> None:

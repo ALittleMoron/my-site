@@ -98,6 +98,26 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['content', 'frontend', 'backend', 'seo'],
   },
   {
+    id: 'auth-session-hardening',
+    month: '2026-07',
+    order: 3,
+    title: {
+      ru: 'Авторизация стала устойчивее к долгим сессиям',
+      en: 'Authorization became steadier for long sessions',
+    },
+    summary: {
+      ru:
+        'Админская авторизация получила скользящие серверные сессии: активный ' +
+        'refresh продлевает idle lifetime, а истёкшие сессии ежедневно удаляются ' +
+        'фоновой задачей.',
+      en:
+        'Admin authorization gained sliding server-side sessions: active refresh extends ' +
+        'the idle lifetime, and expired sessions are physically pruned by a daily ' +
+        'background task.',
+    },
+    tagIds: ['auth', 'security', 'backend'],
+  },
+  {
     id: 'release-workflow',
     month: '2026-07',
     order: 10,
