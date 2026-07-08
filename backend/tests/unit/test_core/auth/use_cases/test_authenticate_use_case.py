@@ -1,4 +1,5 @@
 # ruff: noqa: S106
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
@@ -7,8 +8,15 @@ import pytest_asyncio
 from core.auth.enums import RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
-from core.auth.storages import TokenRevocationStorage
-from core.auth.types import Token
+from core.auth.generators import AuthSessionSecretGenerator
+from core.auth.schemas import (
+    AccessTokenPayload,
+    AuthAuthenticateParams,
+    AuthSession,
+    AuthUseCaseConfig,
+)
+from core.auth.storages import AuthSessionStorage, TokenRevocationStorage
+from core.auth.types import SessionSecretHash, Token
 from core.auth.use_cases import AuthUseCase
 from tests.test_cases import ContainerTestCase
 
@@ -20,14 +28,31 @@ class TestLoginUseCase(ContainerTestCase):
         self.user_storage = await self.container.get_user_storage()
         self.token_revocation_storage = Mock(spec=TokenRevocationStorage)
         self.token_revocation_storage.is_token_revoked.return_value = False
+        self.auth_session_storage = Mock(spec=AuthSessionStorage)
         self.auth_event_reporter = Mock(spec=AuthEventReporter)
+        self.now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
         self.use_case = AuthUseCase(
             hasher=await self.container.get_hasher(),
             auth_storage=await self.container.get_auth_storage(),
             token_handler=self.token_handler,
             token_revocation_storage=self.token_revocation_storage,
+            auth_session_storage=self.auth_session_storage,
             user_storage=self.user_storage,
             event_reporter=self.auth_event_reporter,
+            auth_session_secret_generator=AuthSessionSecretGenerator(byte_count=32),
+            config=AuthUseCaseConfig(
+                access_token_expires_in_seconds=900,
+                session_expires_in_seconds=2_592_000,
+            ),
+        )
+
+    def _set_active_session(self, *, username: str = "test") -> None:
+        self.auth_session_storage.get_session_by_id.return_value = AuthSession(
+            id="session-id",
+            username=username,
+            secret_hash=SessionSecretHash("session-secret-hash"),
+            expires_at=self.now + timedelta(days=1),
+            is_revoked=False,
         )
 
     async def test_authenticate_revoked_token(self) -> None:
@@ -36,8 +61,11 @@ class TestLoginUseCase(ContainerTestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.authenticate(
-                token=token,
-                required_role=RoleEnum.ADMIN,
+                params=AuthAuthenticateParams(
+                    token=token,
+                    required_role=RoleEnum.ADMIN,
+                    current_datetime=self.now,
+                ),
             )
 
         self.token_revocation_storage.is_token_revoked.assert_called_once_with(token=token)
@@ -49,8 +77,11 @@ class TestLoginUseCase(ContainerTestCase):
         self.token_handler.decode_token.side_effect = UnauthorizedError
         with pytest.raises(UnauthorizedError):
             await self.use_case.authenticate(
-                token=Token(b"invalid_token"),
-                required_role=RoleEnum.ADMIN,
+                params=AuthAuthenticateParams(
+                    token=Token(b"invalid_token"),
+                    required_role=RoleEnum.ADMIN,
+                    current_datetime=self.now,
+                ),
             )
         self.token_revocation_storage.is_token_revoked.assert_called_once_with(
             token=Token(b"invalid_token"),
@@ -59,14 +90,18 @@ class TestLoginUseCase(ContainerTestCase):
 
     async def test_authenticate_user_not_found(self) -> None:
         self.user_storage.get_user_by_username.side_effect = UserNotFoundError
-        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
+        self.token_handler.decode_token.return_value = AccessTokenPayload(
             username="test",
-            role=RoleEnum.ADMIN,
+            session_id="session-id",
         )
+        self._set_active_session()
         with pytest.raises(UnauthorizedError):
             await self.use_case.authenticate(
-                token=Token(b"valid_token"),
-                required_role=RoleEnum.ADMIN,
+                params=AuthAuthenticateParams(
+                    token=Token(b"valid_token"),
+                    required_role=RoleEnum.ADMIN,
+                    current_datetime=self.now,
+                ),
             )
         self.user_storage.get_user_by_username.assert_called_once_with(username="test")
         self.auth_event_reporter.report_authentication_user_not_found.assert_called_once_with(
@@ -79,14 +114,18 @@ class TestLoginUseCase(ContainerTestCase):
             password_hash="test",
             role=RoleEnum.USER,
         )
-        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
+        self.token_handler.decode_token.return_value = AccessTokenPayload(
             username="test",
-            role=RoleEnum.USER,
+            session_id="session-id",
         )
+        self._set_active_session()
         with pytest.raises(ForbiddenError):
             await self.use_case.authenticate(
-                token=Token(b"valid_token"),
-                required_role=RoleEnum.ADMIN,
+                params=AuthAuthenticateParams(
+                    token=Token(b"valid_token"),
+                    required_role=RoleEnum.ADMIN,
+                    current_datetime=self.now,
+                ),
             )
         self.auth_event_reporter.report_authentication_role_forbidden.assert_called_once_with(
             username="test",
@@ -100,15 +139,19 @@ class TestLoginUseCase(ContainerTestCase):
             role=RoleEnum.ADMIN,
             is_active=False,
         )
-        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
+        self.token_handler.decode_token.return_value = AccessTokenPayload(
             username="test",
-            role=RoleEnum.ADMIN,
+            session_id="session-id",
         )
+        self._set_active_session()
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.authenticate(
-                token=Token(b"valid_token"),
-                required_role=RoleEnum.ADMIN,
+                params=AuthAuthenticateParams(
+                    token=Token(b"valid_token"),
+                    required_role=RoleEnum.ADMIN,
+                    current_datetime=self.now,
+                ),
             )
 
         self.auth_event_reporter.report_authentication_inactive_user.assert_called_once_with(
@@ -121,14 +164,18 @@ class TestLoginUseCase(ContainerTestCase):
             password_hash="test",
             role=RoleEnum.ADMIN,
         )
-        self.token_handler.decode_token.return_value = self.factory.core.jwt_user(
+        self.token_handler.decode_token.return_value = AccessTokenPayload(
             username="test",
-            role=RoleEnum.ADMIN,
+            session_id="session-id",
         )
+        self._set_active_session()
         self.token_handler.encode_token.return_value = b"NEW_TOKEN"
         user = await self.use_case.authenticate(
-            token=Token(b"valid_token"),
-            required_role=RoleEnum.ADMIN,
+            params=AuthAuthenticateParams(
+                token=Token(b"valid_token"),
+                required_role=RoleEnum.ADMIN,
+                current_datetime=self.now,
+            ),
         )
         assert user == self.factory.core.user(
             username="test",

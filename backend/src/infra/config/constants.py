@@ -170,6 +170,17 @@ class _AdminValidationConstants:
     resume_long_text_max_length: int = 10_000
 
 
+class _AuthConstants:
+    session_cookie_name: Literal["__Secure-msid"] = "__Secure-msid"
+    session_cookie_path: Literal["/api/auth"] = "/api/auth"
+    csrf_guard_header_name: Literal["X-CSRF-Guard"] = "X-CSRF-Guard"
+    csrf_guard_header_value: Literal["1"] = "1"
+    fetch_metadata_site_header_name: Literal["Sec-Fetch-Site"] = "Sec-Fetch-Site"
+    fetch_metadata_cross_site_value: Literal["cross-site"] = "cross-site"
+    no_store_header_value: Literal["no-store"] = "no-store"
+    session_secret_byte_count: int = 32
+
+
 class Constants:
     path: _PathConstants = _PathConstants()
     minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
@@ -181,6 +192,7 @@ class Constants:
     search: _SearchConstants = _SearchConstants()
     question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()
     admin_validation: _AdminValidationConstants = _AdminValidationConstants()
+    auth: _AuthConstants = _AuthConstants()
 
 
 constants = Constants()

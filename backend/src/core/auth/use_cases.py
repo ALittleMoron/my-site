@@ -1,12 +1,31 @@
+from contextlib import suppress
 from dataclasses import dataclass
+from datetime import timedelta
 
 from core.account.storages import UserAccountStorage
-from core.auth.enums import RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
-from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
+from core.auth.exceptions import (
+    AuthSessionNotFoundError,
+    ForbiddenError,
+    UnauthorizedError,
+    UserNotFoundError,
+)
+from core.auth.generators import AuthSessionSecretGenerator
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import JwtUser, User
-from core.auth.storages import AuthStorage, TokenRevocationStorage
+from core.auth.schemas import (
+    AccessTokenPayload,
+    AccessTokenResult,
+    AuthAuthenticateParams,
+    AuthLoginParams,
+    AuthLoginResult,
+    AuthLogoutParams,
+    AuthRefreshAccessTokenParams,
+    AuthSessionCreate,
+    AuthSessionCredentials,
+    AuthUseCaseConfig,
+    User,
+)
+from core.auth.storages import AuthSessionStorage, AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
 
@@ -17,26 +36,29 @@ class AuthUseCase:
     token_handler: TokenHandler
     auth_storage: AuthStorage
     token_revocation_storage: TokenRevocationStorage
+    auth_session_storage: AuthSessionStorage
     user_storage: UserAccountStorage
     event_reporter: AuthEventReporter
+    auth_session_secret_generator: AuthSessionSecretGenerator
+    config: AuthUseCaseConfig
 
-    async def login(self, username: str, password: str, required_role: RoleEnum) -> Token:
+    async def login(self, *, params: AuthLoginParams) -> AuthLoginResult:
         try:
-            user = await self.user_storage.get_user_by_username(username=username)
+            user = await self.user_storage.get_user_by_username(username=params.username)
         except UserNotFoundError as exc:
-            self.event_reporter.report_login_user_not_found(username=username)
+            self.event_reporter.report_login_user_not_found(username=params.username)
             raise UnauthorizedError from exc
-        if not user.has_role(role=required_role):
+        if not user.has_role(role=params.required_role):
             self.event_reporter.report_login_role_forbidden(
                 username=user.username,
-                required_role=required_role,
+                required_role=params.required_role,
             )
             raise ForbiddenError
         if not user.is_active:
             self.event_reporter.report_login_inactive_user(username=user.username)
             raise UnauthorizedError
         verified, need_rehash = self.hasher.verify_password(
-            plain_password=password,
+            plain_password=params.password,
             hashed_password=user.password_hash.get_secret_value(),
         )
         if not verified:
@@ -44,25 +66,53 @@ class AuthUseCase:
             raise UnauthorizedError
         if need_rehash:
             await self.auth_storage.update_user_password_hash(
-                username=username,
-                password_hash=self.hasher.hash_password(password),
+                username=params.username,
+                password_hash=self.hasher.hash_password(params.password),
             )
-        return Token(self.token_handler.encode_token(payload=JwtUser.from_user(user=user)))
+        session_secret = self.auth_session_secret_generator.generate_secret()
+        session = await self.auth_session_storage.create_session(
+            session=AuthSessionCreate(
+                username=user.username,
+                secret_hash=self.auth_session_secret_generator.hash_secret(secret=session_secret),
+                expires_at=params.current_datetime
+                + timedelta(seconds=self.config.session_expires_in_seconds),
+                is_revoked=False,
+            ),
+        )
+        return AuthLoginResult(
+            access_token=self._issue_access_token(
+                payload=AccessTokenPayload(username=user.username, session_id=session.id),
+            ),
+            session=AuthSessionCredentials(
+                secret=session_secret,
+                expires_in_seconds=self.config.session_expires_in_seconds,
+            ),
+        )
 
-    async def authenticate(self, token: Token, required_role: RoleEnum) -> User:
-        if await self.token_revocation_storage.is_token_revoked(token=token):
+    async def authenticate(self, *, params: AuthAuthenticateParams) -> User:
+        if await self.token_revocation_storage.is_token_revoked(token=params.token):
             self.event_reporter.report_authentication_revoked_token_used()
             raise UnauthorizedError
-        payload = self.token_handler.decode_token(token)
+        payload = self.token_handler.decode_token(params.token)
+        try:
+            session = await self.auth_session_storage.get_session_by_id(
+                session_id=payload.session_id,
+            )
+        except AuthSessionNotFoundError as exc:
+            raise UnauthorizedError from exc
+        if not session.is_active_at(now=params.current_datetime):
+            raise UnauthorizedError
+        if session.username != payload.username:
+            raise UnauthorizedError
         try:
             user = await self.user_storage.get_user_by_username(username=payload.username)
         except UserNotFoundError as exc:
             self.event_reporter.report_authentication_user_not_found(username=payload.username)
             raise UnauthorizedError from exc
-        if not user.has_role(role=required_role):
+        if not user.has_role(role=params.required_role):
             self.event_reporter.report_authentication_role_forbidden(
                 username=user.username,
-                required_role=required_role,
+                required_role=params.required_role,
             )
             raise ForbiddenError
         if not user.is_active:
@@ -70,9 +120,49 @@ class AuthUseCase:
             raise UnauthorizedError
         return user
 
-    async def logout(self, token: Token) -> None:
+    async def refresh_access_token(
+        self,
+        *,
+        params: AuthRefreshAccessTokenParams,
+    ) -> AccessTokenResult:
         try:
-            remaining_seconds = self.token_handler.get_token_remaining_seconds(token)
+            session = await self.auth_session_storage.get_session_by_secret_hash(
+                secret_hash=self.auth_session_secret_generator.hash_secret(
+                    secret=params.session_secret,
+                ),
+            )
+        except AuthSessionNotFoundError as exc:
+            raise UnauthorizedError from exc
+        if not session.is_active_at(now=params.current_datetime):
+            raise UnauthorizedError
+        try:
+            user = await self.user_storage.get_user_by_username(username=session.username)
+        except UserNotFoundError as exc:
+            self.event_reporter.report_authentication_user_not_found(username=session.username)
+            raise UnauthorizedError from exc
+        if not user.has_role(role=params.required_role):
+            self.event_reporter.report_authentication_role_forbidden(
+                username=user.username,
+                required_role=params.required_role,
+            )
+            raise ForbiddenError
+        if not user.is_active:
+            self.event_reporter.report_authentication_inactive_user(username=user.username)
+            raise UnauthorizedError
+        return self._issue_access_token(
+            payload=AccessTokenPayload(username=user.username, session_id=session.id),
+        )
+
+    async def logout(self, *, params: AuthLogoutParams) -> None:
+        if params.session_secret is not None:
+            with suppress(AuthSessionNotFoundError):
+                await self.auth_session_storage.revoke_session_by_secret_hash(
+                    secret_hash=self.auth_session_secret_generator.hash_secret(
+                        secret=params.session_secret
+                    ),
+                )
+        try:
+            remaining_seconds = self.token_handler.get_token_remaining_seconds(params.token)
         except UnauthorizedError:
             self.event_reporter.report_logout_invalid_token()
             return
@@ -80,6 +170,17 @@ class AuthUseCase:
             self.event_reporter.report_logout_token_without_remaining_lifetime()
             return
         await self.token_revocation_storage.revoke_token(
-            token=token,
+            token=params.token,
             expires_in_seconds=remaining_seconds,
+        )
+
+    def _issue_access_token(self, *, payload: AccessTokenPayload) -> AccessTokenResult:
+        token = Token(
+            self.token_handler.encode_token(
+                payload=payload,
+            ),
+        )
+        return AccessTokenResult(
+            token=token,
+            expires_in_seconds=self.config.access_token_expires_in_seconds,
         )

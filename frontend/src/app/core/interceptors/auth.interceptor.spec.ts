@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpRequest, HttpHandlerFn, HttpResponse } from '@angular/common/http';
+import { HttpContext, HttpRequest, HttpHandlerFn, HttpResponse } from '@angular/common/http';
 import { of } from 'rxjs';
 import { authInterceptor } from './auth.interceptor';
 import { AuthTokenService } from '../auth/auth-token.service';
+import { SKIP_AUTH_HEADER } from '../auth/auth-http-context';
 
 describe('authInterceptor', () => {
   function runInterceptor(
@@ -36,5 +37,20 @@ describe('authInterceptor', () => {
     const req = new HttpRequest('GET', '/api/test');
     const result = runInterceptor(req, 'my-secret-token');
     expect(result.passedReq.headers.get('Authorization')).toBe('Bearer my-secret-token');
+  });
+
+  it('skips Authorization when request context opts out', () => {
+    const req = new HttpRequest(
+      'POST',
+      '/api/auth/refresh',
+      {},
+      {
+        context: new HttpContext().set(SKIP_AUTH_HEADER, true),
+      },
+    );
+
+    const result = runInterceptor(req, 'expired-token');
+
+    expect(result.passedReq.headers.has('Authorization')).toBe(false);
   });
 });

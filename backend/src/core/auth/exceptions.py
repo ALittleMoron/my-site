@@ -11,3 +11,7 @@ class ForbiddenError(DomainError):
 
 class UserNotFoundError(EntryNotFoundError):
     message = "User not found"
+
+
+class AuthSessionNotFoundError(EntryNotFoundError):
+    message = "Auth session not found"

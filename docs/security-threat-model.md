@@ -109,7 +109,9 @@ Important boundaries:
   `VPN_BIND_ADDRESS`.
 - PostgreSQL, Valkey, backend, frontend, MinIO, and Databasus do not publish their own public
   Docker ports.
-- Browser-sent admin authorization is an explicit bearer token, not a cookie/session credential.
+- Admin API authorization uses explicit short-lived bearer access tokens. A separate HttpOnly,
+  Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens and
+  to revoke the current session on logout.
 - Runtime secrets are mounted as Compose secret files instead of service environment values where
   the application stack needs secrets.
 - Deploy requires the manual GitHub production workflow and the protected `production` environment.
@@ -121,19 +123,22 @@ Important boundaries:
    private admin data.
 2. Public API read: browser requests `/api/*`, nginx forwards to the backend, public use cases apply
    publish/language filters, and PostgreSQL/MinIO data is projected into public response schemas.
-3. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
-   middleware authenticates the account, route guards enforce content/team permissions, and use cases
-   update PostgreSQL or file storage.
-4. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
+3. Admin auth refresh: browser sends the `/api/auth` scoped session cookie to `/api/auth/refresh`
+   with `X-CSRF-Guard: 1`; the backend rejects cross-site Fetch Metadata, verifies the server-side
+   session, reloads the current user, and returns a fresh short-lived PASETO access token.
+4. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
+   middleware authenticates the access token and active session, route guards enforce content/team
+   permissions, and use cases update PostgreSQL or file storage.
+5. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
    through the centralized sanitized renderer before binding HTML.
-5. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
+6. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
    adapter; published Markdown can reference computed public object URLs from MinIO.
-6. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
+7. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
    aggregate counts and article-scoped derived reaction identifiers without raw IPs, raw user agents,
    raw referrers, analytics cookies, or third-party analytics IDs.
-7. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
+8. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
    listeners; backups must remain encrypted and non-public.
-8. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
+9. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
    the host materializes Compose secret files, builds locally tagged images, runs initialization, and
    switches the healthy blue/green slot.
 
@@ -143,8 +148,8 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, short-lived PASETO tokens, and token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
-| Attacker forges or tampers with auth tokens. | PASETO v4 public signing/verification with explicit private/public keys and expiration validation. Backend authentication re-loads the current user and role from storage. | Private-key exposure would allow token issuance. Keep key material in secret files and out of logs, images, and `docker inspect`. |
+| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, 15-minute PASETO access tokens, 30-day server-side sessions stored as SHA-256 hashes, session revocation on logout/account changes, and access-token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS until they expire. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
+| Attacker forges or tampers with auth tokens. | PASETO v4 public signing/verification with explicit private/public keys and expiration validation. Access tokens carry only username and stable session id; backend authentication re-loads the active server session and current user role from storage. | Private-key exposure would allow token issuance. Keep key material in secret files and out of logs, images, and `docker inspect`. |
 | Attacker reaches internal panels as if they were an internal user. | MinIO Console and Databasus are routed only through WireGuard-bound nginx listeners; old public panel virtual hosts are absent; public firewall baseline allows only web and WireGuard ingress. | A compromised maintainer device or VPN key can still access panel login surfaces. Revoke WireGuard peers promptly and keep panel auth enabled. |
 
 ### Tampering
@@ -153,6 +158,7 @@ Important boundaries:
 | --- | --- | --- |
 | Unauthorized user changes articles, matrix questions, files, resumes, or team accounts. | Admin APIs live under `/api/admin/*`; guards enforce content/team boundaries; backend use cases enforce privileged behavior instead of relying on hidden UI controls. | New handlers must keep the explicit public/admin/internal classification and matching backend authorization tests. |
 | Malicious editor publishes unsafe Markdown or links. | Admin write access is role-limited; public rendering uses the centralized sanitized Markdown/wiki-link renderer; CSP blocks broad inline script execution on normal public routes. | Authorized editors can still publish misleading content or harmful external text. Treat account governance and review discipline as part of the control. |
+| Cross-site request tricks browser-sent auth cookies into refreshing or revoking a session. | Cookie-authenticated auth endpoints require `X-CSRF-Guard: 1`, reject `Sec-Fetch-Site: cross-site`, keep SameSite=Lax/Secure/HttpOnly cookies, and do not make admin APIs cookie-authenticated. | Fetch Metadata is a browser signal; keep no CORS expansion for auth endpoints and reassess CSRF controls before adding any cookie-authenticated state-changing API. |
 | Deploy or runtime config is modified unexpectedly. | Deploy is manual through GitHub `workflow_dispatch`, should be restricted to `main`, waits for protected production environment approval, and requires explicit runtime values. Locally built runtime images use the required `IMAGE_TAG`. | A compromised GitHub account, approved malicious commit, or host access can tamper with production. Keep branch/environment protections and review deploy changes carefully. |
 | Uploaded file metadata or object URLs are abused. | File operations go through admin endpoints and backend-owned metadata; public URLs are computed read-model fields, not write-payload fields. MinIO CORS is restricted to the app origin. | Public object endpoint intentionally serves published objects. Continue to validate upload types/processing when expanding file support. |
 
@@ -178,7 +184,7 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| Bots overload login, contact, suggestion, article list, admin search, or generic API routes. | nginx edge rate limits cover login, contact, matrix suggestions, public article list, admin search endpoints, and generic API traffic. Heavy read paths have narrower limits. | IP-based limits are coarse and may be bypassed by distributed traffic. Future identity-aware quotas would need an explicit design. |
+| Bots overload login, auth refresh, contact, suggestion, article list, admin search, or generic API routes. | nginx edge rate limits cover login, auth refresh, contact, matrix suggestions, public article list, admin search endpoints, and generic API traffic. Heavy read paths have narrower limits. | IP-based limits are coarse and may be bypassed by distributed traffic. Future identity-aware quotas would need an explicit design. |
 | Backend, frontend SSR, DB, Valkey, or MinIO becomes unavailable. | Docker health checks, restart policies, blue/green backend/frontend slots, nginx health endpoint, and separate readiness checks reduce single-deploy downtime. | Full production observability and alerts are future work; outages may not be detected quickly without external monitoring. |
 | Expensive queries or content growth degrade performance. | Existing performance smoke, query-plan harness, Lighthouse checks, and cache-warming support cover major regressions. | Query-count/N+1 detection, dashboards, and slow-query production thresholds are still tracked as future monitoring work. |
 
@@ -197,9 +203,10 @@ Important boundaries:
 - Public HTTP redirects to HTTPS; production TLS allows TLS 1.2 and TLS 1.3.
 - Coarse public request limiting belongs to nginx, not backend middleware.
 - Backend authentication treats missing/invalid bearer tokens as anonymous, then route guards and use
-  cases enforce protected behavior.
-- Auth/account flows use explicit `Authorization` bearer tokens; if browser-sent cookies or sessions
-  are introduced later, CSRF design and tests must land in the same change.
+  cases enforce protected behavior. Authenticated bearer tokens must point to an active server-side
+  session.
+- Auth/account flows use explicit `Authorization` bearer tokens for admin APIs. The `/api/auth`
+  session cookie is scoped to access-token refresh/logout and protected by CSRF guard checks.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.

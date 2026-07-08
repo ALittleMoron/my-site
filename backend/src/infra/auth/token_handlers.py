@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pyseto
 
 from core.auth.exceptions import UnauthorizedError
-from core.auth.schemas import JwtUser
+from core.auth.schemas import AccessTokenPayload
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
 from core.schemas import Secret
@@ -36,7 +36,7 @@ class PasetoTokenHandler(TokenHandler):
             key=self.secret_key_pem.get_secret_value(),
         )
 
-    def prepare_payload(self, payload: JwtUser) -> dict[str, Any]:
+    def prepare_payload(self, payload: AccessTokenPayload) -> dict[str, Any]:
         payload_dict = payload.to_dict()
         payload_dict["exp"] = (
             datetime.datetime.now(tz=ZoneInfo("Etc/UTC"))
@@ -82,16 +82,16 @@ class PasetoTokenHandler(TokenHandler):
             logger.warning(event="Token exp claim is expired")
             raise UnauthorizedError
 
-    def decode_token(self, token: Token) -> JwtUser:
+    def decode_token(self, token: Token) -> AccessTokenPayload:
         payload_dict = self._decode_payload_dict(token)
         validation_result = self.validate_payload_dict(payload_dict)
         if validation_result.is_valid:
             self._require_unexpired_payload(payload_dict)
-            return JwtUser.from_dict(payload_dict)
+            return AccessTokenPayload.from_dict(payload_dict)
         logger.error(event=validation_result.message)
         raise UnauthorizedError
 
-    def encode_token(self, payload: JwtUser) -> Token:
+    def encode_token(self, payload: AccessTokenPayload) -> Token:
         return Token(
             pyseto.encode(
                 key=self._create_secret_key(),

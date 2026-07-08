@@ -2,7 +2,7 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from core.auth.types import Token
+from core.auth.schemas import AccessTokenResult
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 
 PASETO_TOKEN_EXAMPLE = (
@@ -22,10 +22,21 @@ class AccessTokenResponseSchema(CamelCaseSchema):
             examples=[PASETO_TOKEN_EXAMPLE],
         ),
     ]
+    access_token_expires_in_seconds: Annotated[
+        int,
+        Field(
+            title="Access token expiration seconds",
+            description="Short-lived PASETO access token lifetime in seconds.",
+            examples=[900],
+        ),
+    ]
 
     @classmethod
-    def from_domain_schema(cls, *, schema: Token) -> Self:
-        return cls(access_token=schema.decode())
+    def from_domain_schema(cls, *, schema: AccessTokenResult) -> Self:
+        return cls(
+            access_token=schema.token.decode(),
+            access_token_expires_in_seconds=schema.expires_in_seconds,
+        )
 
 
 class LoginRequestSchema(CamelCaseSchema):

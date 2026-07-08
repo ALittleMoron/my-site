@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from core.auth.enums import RoleEnum
+from core.auth.types import SessionSecret, SessionSecretHash, Token
 from core.schemas import Secret
 
 
@@ -84,3 +86,91 @@ class JwtUser(BaseUser):
     @classmethod
     def anonymous(cls) -> JwtUser:
         return cls(username="anonymous", role=RoleEnum.ANON)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AccessTokenPayload:
+    username: str
+    session_id: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"username": self.username, "session_id": self.session_id}
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> AccessTokenPayload:
+        return cls(
+            username=payload["username"],
+            session_id=payload["session_id"],
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AccessTokenResult:
+    token: Token
+    expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCredentials:
+    secret: SessionSecret
+    expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthLoginResult:
+    access_token: AccessTokenResult
+    session: AuthSessionCredentials
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthUseCaseConfig:
+    access_token_expires_in_seconds: int
+    session_expires_in_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthLoginParams:
+    username: str
+    password: str
+    required_role: RoleEnum
+    current_datetime: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthAuthenticateParams:
+    token: Token
+    required_role: RoleEnum
+    current_datetime: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthRefreshAccessTokenParams:
+    session_secret: SessionSecret
+    required_role: RoleEnum
+    current_datetime: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthLogoutParams:
+    token: Token
+    session_secret: SessionSecret | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCreate:
+    username: str
+    secret_hash: SessionSecretHash
+    expires_at: datetime
+    is_revoked: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSession:
+    id: str
+    username: str
+    secret_hash: SessionSecretHash
+    expires_at: datetime
+    is_revoked: bool
+
+    def is_active_at(self, *, now: datetime) -> bool:
+        return not self.is_revoked and self.expires_at > now

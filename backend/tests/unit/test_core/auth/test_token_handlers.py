@@ -6,34 +6,22 @@ class TestTokenHandler:
         payload_dict = {"password": "test", "field": "test"}
         result = TokenHandler.validate_payload_dict(payload_dict)
         assert result.is_valid is False
-        assert result.message == "Token payload is missing required fields: role, username."
+        assert result.message == "Token payload is missing required fields: session_id, username."
 
     def test_valid_payload_username_not_str(self) -> None:
-        payload_dict = {"username": 25, "role": "admin"}
+        payload_dict = {"username": 25, "session_id": "session-id"}
         result = TokenHandler.validate_payload_dict(payload_dict)
         assert result.is_valid is False
         assert result.message == "Token payload field `username` must be a string."
 
-    def test_valid_payload_role_not_str(self) -> None:
-        payload_dict = {"username": "test", "role": 25}
+    def test_valid_payload_session_id_not_str(self) -> None:
+        payload_dict = {"username": "test", "session_id": 25}
         result = TokenHandler.validate_payload_dict(payload_dict)
         assert result.is_valid is False
-        assert result.message == "Token payload field `role` must be a string."
-
-    def test_valid_payload_role_not_in_role_enum(self) -> None:
-        payload_dict = {"username": "test", "role": "TEST"}
-        result = TokenHandler.validate_payload_dict(payload_dict)
-        assert result.is_valid is False
-        assert result.message == "Token payload field `role` is not supported."
+        assert result.message == "Token payload field `session_id` must be a string."
 
     def test_valid_payload(self) -> None:
-        payload_dict = {"username": "test", "role": "admin"}
-        result = TokenHandler.validate_payload_dict(payload_dict)
-        assert result.is_valid is True
-        assert result.message == "Token payload is valid."
-
-    def test_valid_payload_moderator_role(self) -> None:
-        payload_dict = {"username": "test", "role": "moderator"}
+        payload_dict = {"username": "test", "session_id": "session-id"}
         result = TokenHandler.validate_payload_dict(payload_dict)
         assert result.is_valid is True
         assert result.message == "Token payload is valid."

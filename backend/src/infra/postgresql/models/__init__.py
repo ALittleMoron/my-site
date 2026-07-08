@@ -5,6 +5,7 @@ from .articles import ArticleModel as ArticleModel
 from .articles import ArticleReactionModel as ArticleReactionModel
 from .articles import ArticleToTagSecondaryModel as ArticleToTagSecondaryModel
 from .articles import TagModel as TagModel
+from .auth import AuthSessionModel as AuthSessionModel
 from .auth import UserModel as UserModel
 from .base import BaseModel as BaseModel
 from .competency_matrix import CompetencyMatrixItemModel as CompetencyMatrixItemModel

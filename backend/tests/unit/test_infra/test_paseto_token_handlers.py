@@ -8,9 +8,8 @@ import pyseto
 import pytest
 import pytest_asyncio
 
-from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
-from core.auth.schemas import JwtUser
+from core.auth.schemas import AccessTokenPayload
 from core.auth.types import Token
 from core.schemas import Secret
 from infra.auth.token_handlers import PasetoTokenHandler
@@ -34,7 +33,7 @@ class TestPasetoTokenHandler:
         ):
             self.auth_handler.decode_token(Token(token))
         mock_logger.error.assert_called_once_with(
-            event="Token payload is missing required fields: role, username.",
+            event="Token payload is missing required fields: session_id, username.",
         )
 
     def test_decode_token_rejects_non_dict_payload_without_logging_payload(self) -> None:
@@ -53,7 +52,7 @@ class TestPasetoTokenHandler:
     def test_decode_token_rejects_pyseto_decode_errors(self, error: type[Exception]) -> None:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
-            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+            payload=AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
         )
         with patch("pyseto.decode", side_effect=error), pytest.raises(UnauthorizedError):
             self.auth_handler.decode_token(Token(token))
@@ -63,20 +62,20 @@ class TestPasetoTokenHandler:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
             payload={
-                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                **AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
                 "exp": expires_at.isoformat(),
             },
         )
         decoded_token = self.auth_handler.decode_token(Token(token))
         assert decoded_token.to_dict() == {
             "username": "TEST",
-            "role": RoleEnum.ADMIN,
+            "session_id": "session-id",
         }
 
     def test_decode_token_rejects_payload_without_expiration(self) -> None:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
-            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+            payload=AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
         )
 
         with pytest.raises(UnauthorizedError):
@@ -87,7 +86,7 @@ class TestPasetoTokenHandler:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
             payload={
-                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                **AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
                 "exp": expired_at.isoformat(),
             },
         )
@@ -97,7 +96,7 @@ class TestPasetoTokenHandler:
 
     def test_get_token_remaining_seconds_returns_positive_lifetime(self) -> None:
         token = self.auth_handler.encode_token(
-            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN),
+            payload=AccessTokenPayload(username="TEST", session_id="session-id"),
         )
 
         remaining_seconds = self.auth_handler.get_token_remaining_seconds(token)
@@ -108,7 +107,7 @@ class TestPasetoTokenHandler:
     def test_get_token_remaining_seconds_returns_none_without_exp(self) -> None:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
-            payload=JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+            payload=AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
         )
 
         remaining_seconds = self.auth_handler.get_token_remaining_seconds(Token(token))
@@ -120,7 +119,7 @@ class TestPasetoTokenHandler:
         token = pyseto.encode(
             key=self.auth_handler._create_secret_key(),
             payload={
-                **JwtUser(username="TEST", role=RoleEnum.ADMIN).to_dict(),
+                **AccessTokenPayload(username="TEST", session_id="session-id").to_dict(),
                 "exp": expired_at.isoformat(),
             },
         )

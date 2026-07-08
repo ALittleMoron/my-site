@@ -19,8 +19,14 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { GlobalErrorHandler } from './core/error/global-error-handler';
 import { I18nService } from './core/i18n/i18n.service';
 import { of } from 'rxjs';
+import { AuthService } from './core/auth/auth.service';
 
 export const SKIP_I18N_STARTUP = new InjectionToken<boolean>('SKIP_I18N_STARTUP', {
+  providedIn: 'root',
+  factory: () => false,
+});
+
+export const SKIP_AUTH_STARTUP = new InjectionToken<boolean>('SKIP_AUTH_STARTUP', {
   providedIn: 'root',
   factory: () => false,
 });
@@ -38,10 +44,18 @@ export const appConfig: ApplicationConfig = {
       withHttpTransferCacheOptions({ filter: shouldTransferCacheRequest }),
     ),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideAppInitializer(() => initializeAuth()),
     provideAppInitializer(() => initializeI18n()),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };
+
+function initializeAuth() {
+  if (inject(SKIP_AUTH_STARTUP)) {
+    return of(void 0);
+  }
+  return inject(AuthService).restoreSession();
+}
 
 function initializeI18n() {
   if (inject(SKIP_I18N_STARTUP)) {

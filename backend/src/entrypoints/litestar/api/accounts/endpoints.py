@@ -6,7 +6,13 @@ from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
 from litestar.di import NamedDependency, Provide
 
-from core.account.schemas import ManagedAccountFilters
+from core.account.schemas import (
+    ManagedAccountCreateOperationParams,
+    ManagedAccountFilters,
+    ManagedAccountPasswordUpdateOperationParams,
+    ManagedAccountRoleUpdateOperationParams,
+    ManagedAccountTargetOperationParams,
+)
 from core.account.use_cases import AccountsUseCase
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
@@ -69,8 +75,10 @@ class AdminAccountsApiController(Controller):
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.create_account(
-            params=data.to_domain_schema(),
-            current_username=request.user.username,
+            params=ManagedAccountCreateOperationParams(
+                create_params=data.to_domain_schema(),
+                current_username=request.user.username,
+            ),
         )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
@@ -109,9 +117,11 @@ class AdminAccountsApiController(Controller):
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.update_role(
-            username=username,
-            params=data.to_domain_schema(),
-            current_username=request.user.username,
+            params=ManagedAccountRoleUpdateOperationParams(
+                target_username=username,
+                role_params=data.to_domain_schema(),
+                current_username=request.user.username,
+            ),
         )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
@@ -136,9 +146,11 @@ class AdminAccountsApiController(Controller):
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.update_password(
-            username=username,
-            params=data.to_domain_schema(),
-            current_username=request.user.username,
+            params=ManagedAccountPasswordUpdateOperationParams(
+                target_username=username,
+                password_params=data.to_domain_schema(),
+                current_username=request.user.username,
+            ),
         )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
@@ -155,8 +167,10 @@ class AdminAccountsApiController(Controller):
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.activate_account(
-            username=username,
-            current_username=request.user.username,
+            params=ManagedAccountTargetOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+            ),
         )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
@@ -173,8 +187,10 @@ class AdminAccountsApiController(Controller):
         use_case: FromDishka[AccountsUseCase],
     ) -> ManagedAccountResponseSchema:
         account = await use_case.deactivate_account(
-            username=username,
-            current_username=request.user.username,
+            params=ManagedAccountTargetOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+            ),
         )
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
 
@@ -190,7 +206,12 @@ class AdminAccountsApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[AccountsUseCase],
     ) -> None:
-        await use_case.delete_account(username=username, current_username=request.user.username)
+        await use_case.delete_account(
+            params=ManagedAccountTargetOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+            ),
+        )
 
 
 admin_router = DishkaRouter("", route_handlers=[AdminAccountsApiController])

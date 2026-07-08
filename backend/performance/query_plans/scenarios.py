@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from hashlib import md5
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,8 @@ from core.account.schemas import ManagedAccountFilters
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFilters, ArticleFolder, ArticleMetadata, Tag, Tags
 from core.auth.enums import RoleEnum
+from core.auth.schemas import AuthSessionCreate
+from core.auth.types import SessionSecretHash
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
     GradeEnum,
@@ -45,7 +47,7 @@ from infra.postgresql.storages.articles import (
     ArticleAnalyticsDatabaseStorage,
     ArticlesDatabaseStorage,
 )
-from infra.postgresql.storages.auth import AuthDatabaseStorage
+from infra.postgresql.storages.auth import AuthDatabaseStorage, AuthSessionDatabaseStorage
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 from infra.postgresql.storages.resumes import ResumesDatabaseStorage
@@ -103,6 +105,12 @@ DELETABLE_QUEUED_QUESTION_ID = hex_id(101)
 SHORT_TRIGRAM_ALLOW_REASON = (
     "short search string has too few extractable trigrams for an index-selective search"
 )
+
+
+def seeded_auth_session_hash(value: int) -> SessionSecretHash:
+    first = md5(f"session-a-{value}".encode(), usedforsecurity=False).hexdigest()
+    second = md5(f"session-b-{value}".encode(), usedforsecurity=False).hexdigest()
+    return SessionSecretHash(f"{first}{second}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +247,39 @@ async def run_update_user_password_hash(session: AsyncSession) -> None:
         SEED_USERNAME,
         NEW_AUTH_HASH,
     )
+
+
+async def run_create_auth_session(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).create_session(
+        session=AuthSessionCreate(
+            username=SEED_USERNAME,
+            secret_hash=SessionSecretHash(
+                "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            ),
+            expires_at=SEED_NOW + timedelta(days=30),
+            is_revoked=False,
+        ),
+    )
+
+
+async def run_get_auth_session_by_secret_hash(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).get_session_by_secret_hash(
+        secret_hash=seeded_auth_session_hash(1),
+    )
+
+
+async def run_get_auth_session_by_id(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).get_session_by_id(session_id=hex_id(1))
+
+
+async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).revoke_session_by_secret_hash(
+        secret_hash=seeded_auth_session_hash(2),
+    )
+
+
+async def run_revoke_user_auth_sessions(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).revoke_user_sessions(username=SEED_USERNAME)
 
 
 async def run_create_contact_me_request(session: AsyncSession) -> None:
@@ -1018,6 +1059,56 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("auth__user_model",),
         allow_seq_scan_reason=None,
         run=run_update_user_password_hash,
+    ),
+    scenario(
+        name="auth_session_create",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="create_session",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_create_auth_session,
+    ),
+    scenario(
+        name="auth_session_detail_by_secret_hash",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="get_session_by_secret_hash",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("auth_sessions_secret_hash_uniq",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_auth_session_by_secret_hash,
+    ),
+    scenario(
+        name="auth_session_detail_by_id",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="get_session_by_id",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=("auth__auth_session_model_pkey",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_get_auth_session_by_id,
+    ),
+    scenario(
+        name="auth_session_revoke_by_secret_hash",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="revoke_session_by_secret_hash",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth_sessions_secret_hash_uniq",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_revoke_auth_session_by_secret_hash,
+    ),
+    scenario(
+        name="auth_session_revoke_user_sessions",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="revoke_user_sessions",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_revoke_user_auth_sessions,
     ),
     scenario(
         name="contact_create_request",

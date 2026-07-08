@@ -25,25 +25,25 @@ Never violate these boundaries:
 
 ## `core/` Contents
 
-| Path                                         | Responsibility                                                        |
-| -------------------------------------------- | --------------------------------------------------------------------- |
-| `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                             |
-| `core/interceptors/auth.interceptor.ts`      | Attaches PASETO token to outgoing requests                            |
-| `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse` -> `ApiError`                                |
-| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                 |
-| `core/editor/editor-image-upload.service.ts` | Backend multipart upload flow for editor images                       |
-| `core/auth/auth.service.ts`                  | Login/logout, role capability signals, session state                  |
-| `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                   |
-| `core/auth/auth-token.service.ts`            | SSR-safe token read/write from `localStorage`                         |
-| `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                         |
-| `core/auth/auth.guard.ts`                    | `CanActivateFn` guards for content access and stricter team areas     |
-| `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`          |
-| `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD |
-| `core/notifications/notification.service.ts` | App-wide transient success/error notifications                        |
-| `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                      |
-| `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence      |
-| `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                  |
-| `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape |
+| Path                                         | Responsibility                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------- |
+| `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                              |
+| `core/interceptors/auth.interceptor.ts`      | Attaches in-memory PASETO access token unless request context opts out |
+| `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse`, refreshes once on protected 401s             |
+| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                  |
+| `core/editor/editor-image-upload.service.ts` | Backend multipart upload flow for editor images                        |
+| `core/auth/auth.service.ts`                  | Login/logout/refresh, startup restore, role capability signals         |
+| `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                    |
+| `core/auth/auth-token.service.ts`            | In-memory access token signal; never persist auth tokens               |
+| `core/auth/auth-modal.service.ts`            | Login modal open/close signal                                          |
+| `core/auth/auth.guard.ts`                    | `CanActivateFn` guards for content access and stricter team areas      |
+| `core/layout/theme.service.ts`               | SSR-safe dark/light theme toggle, persists to `localStorage`           |
+| `core/seo/seo.service.ts`                    | Sets `<title>`, meta, canonical, alternates, social tags, and JSON-LD  |
+| `core/notifications/notification.service.ts` | App-wide transient success/error notifications                         |
+| `core/privacy/consent.service.ts`            | SSR-safe frontend-only local consent persistence                       |
+| `core/privacy/anonymous-reaction.service.ts` | Frontend-only anonymous reaction token and selection persistence       |
+| `core/error/global-error-handler.ts`         | `ErrorHandler` impl — console in dev, Sentry in prod                   |
+| `core/models/api-error.model.ts`             | `ApiError` interface matching backend `verbose_http_exceptions` shape  |
 
 ## I18n
 
@@ -160,6 +160,8 @@ Single place for all providers:
 
 - `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }))`
 - `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
+- `provideAppInitializer(() => initializeAuth())` restores admin auth from `/api/auth/refresh`;
+  keep auth refresh requests cookie + CSRF based, with no `Authorization` header.
 - `provideClientHydration(...)` with transfer cache limited to safe public GETs only. Do not transfer
   auth, account, analytics, reaction, upload, file-management, or other private/side-effect endpoints.
 - `{ provide: ErrorHandler, useClass: GlobalErrorHandler }`

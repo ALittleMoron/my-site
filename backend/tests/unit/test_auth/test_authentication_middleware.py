@@ -5,9 +5,11 @@ import pytest
 from litestar.middleware import AuthenticationResult
 
 from core.auth.enums import RoleEnum
-from core.auth.schemas import JwtUser
+from core.auth.schemas import AuthAuthenticateParams, JwtUser
+from core.auth.types import Token
 from entrypoints.litestar.auth import AuthenticationMiddleware
 from tests.test_cases import ContainerTestCase
+from tests.unit.mocks.providers.auth import test_current_datetime
 
 
 class TestAuthenticationMiddleware(ContainerTestCase):
@@ -50,6 +52,9 @@ class TestAuthenticationMiddleware(ContainerTestCase):
             auth="Bearer token",
         )
         self.use_case.authenticate.assert_called_once_with(
-            token=b"token",
-            required_role=RoleEnum.MODERATOR,
+            params=AuthAuthenticateParams(
+                token=Token(b"token"),
+                required_role=RoleEnum.MODERATOR,
+                current_datetime=test_current_datetime,
+            ),
         )

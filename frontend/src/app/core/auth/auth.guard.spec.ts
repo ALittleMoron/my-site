@@ -13,6 +13,7 @@ import { provideRouter } from '@angular/router';
 import { firstValueFrom, isObservable, of, throwError } from 'rxjs';
 import { authGuard, teamGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { AuthTokenService } from './auth-token.service';
 import { ApiClient } from '../http/api-client.service';
 import { I18nService } from '../i18n/i18n.service';
 
@@ -86,8 +87,7 @@ describe('authGuard', () => {
     expect((result as UrlTree).toString()).toBe('/ru/how-this-site-is-built');
   });
 
-  it('waits for stored-token account restore before allowing admin-panel reload', async () => {
-    localStorage.setItem('accessToken', 'existing-token');
+  it('waits for in-memory token account restore before allowing admin-panel reload', async () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -99,6 +99,7 @@ describe('authGuard', () => {
       ],
     });
     const httpMock = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthTokenService).setToken('existing-token');
 
     const result = TestBed.runInInjectionContext(() =>
       resolveGuardResult(authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)),

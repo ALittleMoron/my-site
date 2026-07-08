@@ -1,18 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from core.auth.enums import RoleEnum
-from core.auth.schemas import JwtUser, TokenPayloadValidationResult
+from core.auth.schemas import AccessTokenPayload, TokenPayloadValidationResult
 from core.auth.types import Token
 
 
 class TokenHandler(ABC):
     @abstractmethod
-    def decode_token(self, token: Token) -> JwtUser:
+    def decode_token(self, token: Token) -> AccessTokenPayload:
         raise NotImplementedError
 
     @abstractmethod
-    def encode_token(self, payload: JwtUser) -> Token:
+    def encode_token(self, payload: AccessTokenPayload) -> Token:
         raise NotImplementedError
 
     @abstractmethod
@@ -22,7 +21,7 @@ class TokenHandler(ABC):
     @staticmethod
     def validate_payload_dict(payload: dict[str, Any]) -> TokenPayloadValidationResult:
         payload_keys = set(payload.keys())
-        required_keys = {"username", "role"}
+        required_keys = {"username", "session_id"}
         missing_keys = required_keys - payload_keys
         if missing_keys != set():
             missing_key_names = ", ".join(sorted(missing_keys))
@@ -35,15 +34,10 @@ class TokenHandler(ABC):
                 is_valid=False,
                 message="Token payload field `username` must be a string.",
             )
-        if not isinstance(payload["role"], str):
+        if not isinstance(payload["session_id"], str):
             return TokenPayloadValidationResult(
                 is_valid=False,
-                message="Token payload field `role` must be a string.",
-            )
-        if payload["role"] not in RoleEnum:
-            return TokenPayloadValidationResult(
-                is_valid=False,
-                message="Token payload field `role` is not supported.",
+                message="Token payload field `session_id` must be a string.",
             )
         return TokenPayloadValidationResult(
             is_valid=True,

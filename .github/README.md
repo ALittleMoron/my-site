@@ -53,7 +53,7 @@ my-site/
 - Public "how this site is built" case-study page covering architecture, quality, and operations
 - Public updates page for milestone-level site changes
 - Russian/English UI and content localization driven by the backend
-- PASETO-protected owner/admin/moderator authentication with inactive-account enforcement
+- Short-lived PASETO owner/admin/moderator access tokens with server-side sessions and inactive-account enforcement
 
 ## 🚀 Quick Start
 

@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import datetime
 
 from dishka import AsyncContainer
 from litestar.connection import ASGIConnection
@@ -10,7 +11,7 @@ from litestar.types import ASGIApp, Method, Scopes
 
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UnauthorizedError
-from core.auth.schemas import JwtUser
+from core.auth.schemas import AuthAuthenticateParams, JwtUser
 from core.auth.types import Token
 from core.auth.use_cases import AuthUseCase
 
@@ -59,8 +60,11 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
             use_case = await request_container.get(AuthUseCase)
             try:
                 user = await use_case.authenticate(
-                    token=clear_token,
-                    required_role=RoleEnum.MODERATOR,
+                    params=AuthAuthenticateParams(
+                        token=clear_token,
+                        required_role=RoleEnum.MODERATOR,
+                        current_datetime=await request_container.get(datetime),
+                    ),
                 )
             except UnauthorizedError:
                 return anon_result

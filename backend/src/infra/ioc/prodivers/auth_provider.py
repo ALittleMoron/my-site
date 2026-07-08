@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from argon2 import PasswordHasher as CryptContext
 from dishka import Provider, Scope, provide
 from litestar import Request
@@ -5,8 +7,10 @@ from litestar.stores.valkey import ValkeyStore
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.account.storages import UserAccountStorage
+from core.auth.generators import AuthSessionSecretGenerator
 from core.auth.password_hashers import PasswordHasher
-from core.auth.storages import AuthStorage, TokenRevocationStorage
+from core.auth.schemas import AuthUseCaseConfig
+from core.auth.storages import AuthSessionStorage, AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
 from core.auth.use_cases import AuthUseCase
@@ -15,7 +19,7 @@ from infra.auth.password_hashers import Argon2PasswordHasher
 from infra.auth.token_handlers import PasetoTokenHandler
 from infra.config.constants import constants
 from infra.config.settings import settings
-from infra.postgresql.storages.auth import AuthDatabaseStorage
+from infra.postgresql.storages.auth import AuthDatabaseStorage, AuthSessionDatabaseStorage
 from infra.valkey.storages import ValkeyTokenRevocationStorage
 
 
@@ -44,6 +48,25 @@ class AuthProvider(Provider):
     async def provide_auth_storage(self, session: AsyncSession) -> AuthStorage:
         return AuthDatabaseStorage(session=session)
 
+    @provide(scope=Scope.REQUEST)
+    async def provide_auth_session_storage(self, session: AsyncSession) -> AuthSessionStorage:
+        return AuthSessionDatabaseStorage(session=session)
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_session_secret_generator(self) -> AuthSessionSecretGenerator:
+        return AuthSessionSecretGenerator(byte_count=constants.auth.session_secret_byte_count)
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_use_case_config(self) -> AuthUseCaseConfig:
+        return AuthUseCaseConfig(
+            access_token_expires_in_seconds=settings.auth.token_expire_seconds,
+            session_expires_in_seconds=settings.auth.session_expire_seconds,
+        )
+
+    @provide(scope=Scope.REQUEST, cache=False)
+    async def provide_current_datetime(self) -> datetime:
+        return datetime.now(tz=UTC)
+
     @provide(scope=Scope.APP)
     async def provide_token_revocation_storage(self) -> TokenRevocationStorage:
         return ValkeyTokenRevocationStorage(
@@ -58,19 +81,25 @@ class AuthProvider(Provider):
         )
 
     @provide(scope=Scope.REQUEST)
-    async def provide_auth_use_case(
+    async def provide_auth_use_case(  # noqa: PLR0913
         self,
         hasher: PasswordHasher,
         token_handler: TokenHandler,
         auth_storage: AuthStorage,
         token_revocation_storage: TokenRevocationStorage,
+        auth_session_storage: AuthSessionStorage,
         user_storage: UserAccountStorage,
+        auth_session_secret_generator: AuthSessionSecretGenerator,
+        config: AuthUseCaseConfig,
     ) -> AuthUseCase:
         return AuthUseCase(
             hasher=hasher,
             token_handler=token_handler,
             auth_storage=auth_storage,
             token_revocation_storage=token_revocation_storage,
+            auth_session_storage=auth_session_storage,
             user_storage=user_storage,
             event_reporter=StructlogAuthEventReporter(),
+            auth_session_secret_generator=auth_session_secret_generator,
+            config=config,
         )

@@ -472,7 +472,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Remove the owner/admin/moderator-only login warning after regular-user authorization/login is implemented
   - [ ] (FRONT) Password recovery button and form (simple confirmation email)
   - [ ] (BACK) Password recovery logic
-  - [ ] (BACK) Add session cookie (set on login/register, delete on logout)
+  - [x] (BACK/FRONT) Add admin session cookie for login/refresh/logout with short-lived access tokens
 - [ ] Privacy policy
 - [ ] Terms of service
 - [x] Personal data processing consent (frontend-only on contact form)
@@ -492,11 +492,12 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] List of devices where the account was logged in
 - [ ] Security audit
   - [ ] Users cannot interact with other users' profiles. Read-only.
-  - [ ] No tokens in localStorage
-  - [ ] Auth based on secure cookies: HttpOnly, Secure, SameSite=Lax
-  - [ ] Session rotation on login
-  - [ ] Session invalidation on logout
-  - [ ] Expired sessions actually deleted / not accepted
+  - [x] No admin access tokens in localStorage
+  - [x] Admin auth refresh based on an HttpOnly, Secure, SameSite=Lax session cookie
+  - [x] Session invalidation on logout, password change, deactivation, and account deletion
+  - [x] Expired sessions are rejected
+  - [ ] Session rotation / refresh-token-family reuse detection for broader user accounts
+  - [ ] Expired sessions are physically pruned by a scheduled cleanup task
 
 ### Flashcards
 
@@ -615,3 +616,4 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Move ResponseCachePayloadCodec to BaseModel.
 - [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
   `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
+- [ ] Remove application-level id generators and rely on database-generated identifiers.

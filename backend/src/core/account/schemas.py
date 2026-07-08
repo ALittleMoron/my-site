@@ -112,10 +112,36 @@ class ManagedAccountCreateParams:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountCreateOperationParams:
+    create_params: ManagedAccountCreateParams
+    current_username: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ManagedAccountRoleUpdateParams:
     role: RoleEnum
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountRoleUpdateOperationParams:
+    target_username: str
+    role_params: ManagedAccountRoleUpdateParams
+    current_username: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ManagedAccountPasswordUpdateParams:
     password: Secret[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountPasswordUpdateOperationParams:
+    target_username: str
+    password_params: ManagedAccountPasswordUpdateParams
+    current_username: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountTargetOperationParams:
+    target_username: str
+    current_username: str

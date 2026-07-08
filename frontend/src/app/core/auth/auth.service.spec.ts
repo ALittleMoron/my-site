@@ -4,18 +4,15 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { AuthService, AccountInfo } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
 import { ApiClient } from '../http/api-client.service';
+import { SKIP_AUTH_HEADER, SKIP_AUTH_REFRESH } from './auth-http-context';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
   let tokenService: AuthTokenService;
 
-  function setup(hasToken = false): void {
+  function setup(): void {
     localStorage.clear();
-    if (hasToken) {
-      localStorage.setItem('accessToken', 'existing-token');
-    }
-
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), ApiClient, AuthService],
     });
@@ -25,14 +22,14 @@ describe('AuthService', () => {
     tokenService = TestBed.inject(AuthTokenService);
   }
 
+  beforeEach(() => setup());
+
   afterEach(() => {
     httpMock.verify();
     localStorage.clear();
   });
 
   describe('login', () => {
-    beforeEach(() => setup());
-
     it('stores token and loads user', () => {
       const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
 
@@ -40,13 +37,15 @@ describe('AuthService', () => {
 
       const loginReq = httpMock.expectOne((req) => req.url.includes('/api/auth/login'));
       expect(loginReq.request.method).toBe('POST');
-      loginReq.flush({ accessToken: 'new-token' });
+      expect(loginReq.request.withCredentials).toBe(true);
+      loginReq.flush({ accessToken: 'new-token', accessTokenExpiresInSeconds: 900 });
 
       const accountReq = httpMock.expectOne((req) => req.url.includes('/api/account/base'));
       expect(accountReq.request.method).toBe('GET');
       accountReq.flush(mockAccount);
 
       expect(tokenService.token()).toBe('new-token');
+      expect(localStorage.getItem('accessToken')).toBeNull();
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
       expect(service.canManageContent()).toBe(true);
@@ -54,9 +53,82 @@ describe('AuthService', () => {
     });
   });
 
-  describe('logout', () => {
-    beforeEach(() => setup());
+  describe('refreshAccessToken', () => {
+    it('refreshes the in-memory access token from the session cookie', () => {
+      service.refreshAccessToken().subscribe();
 
+      const refreshReq = httpMock.expectOne((req) => req.url.includes('/api/auth/refresh'));
+      expect(refreshReq.request.method).toBe('POST');
+      expect(refreshReq.request.withCredentials).toBe(true);
+      expect(refreshReq.request.headers.get('X-CSRF-Guard')).toBe('1');
+      expect(refreshReq.request.context.get(SKIP_AUTH_REFRESH)).toBe(true);
+      expect(refreshReq.request.context.get(SKIP_AUTH_HEADER)).toBe(true);
+      refreshReq.flush({ accessToken: 'fresh-token', accessTokenExpiresInSeconds: 900 });
+
+      expect(tokenService.token()).toBe('fresh-token');
+    });
+
+    it('shares a concurrent refresh request', () => {
+      let completions = 0;
+
+      service.refreshAccessToken().subscribe(() => {
+        completions += 1;
+      });
+      service.refreshAccessToken().subscribe(() => {
+        completions += 1;
+      });
+
+      const refreshRequests = httpMock.match((req) => req.url.includes('/api/auth/refresh'));
+      expect(refreshRequests).toHaveLength(1);
+      refreshRequests[0].flush({ accessToken: 'shared-token', accessTokenExpiresInSeconds: 900 });
+
+      expect(completions).toBe(2);
+      expect(tokenService.token()).toBe('shared-token');
+    });
+  });
+
+  describe('restoreSession', () => {
+    it('restores auth state from refresh and current account on startup', () => {
+      const mockAccount: AccountInfo = { username: 'owner', role: 'owner' };
+      let completed = false;
+
+      service.restoreSession().subscribe(() => {
+        completed = true;
+      });
+
+      const refreshReq = httpMock.expectOne((req) => req.url.includes('/api/auth/refresh'));
+      refreshReq.flush({ accessToken: 'startup-token', accessTokenExpiresInSeconds: 900 });
+
+      const accountReq = httpMock.expectOne((req) => req.url.includes('/api/account/base'));
+      accountReq.flush(mockAccount);
+
+      expect(completed).toBe(true);
+      expect(tokenService.token()).toBe('startup-token');
+      expect(service.currentUser()).toEqual(mockAccount);
+      expect(service.canManageContent()).toBe(true);
+      expect(service.canManageTeam()).toBe(true);
+    });
+
+    it('clears local state and completes when startup refresh is rejected', () => {
+      tokenService.setToken('stale-token');
+      service.currentUser.set({ username: 'admin', role: 'admin' });
+      let completed = false;
+
+      service.restoreSession().subscribe(() => {
+        completed = true;
+      });
+
+      const refreshReq = httpMock.expectOne((req) => req.url.includes('/api/auth/refresh'));
+      refreshReq.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      expect(completed).toBe(true);
+      expect(tokenService.token()).toBeNull();
+      expect(service.currentUser()).toBeNull();
+      httpMock.expectNone((req) => req.url.includes('/api/account/base'));
+    });
+  });
+
+  describe('logout', () => {
     it('clears token and user', () => {
       service.currentUser.set({ username: 'admin', role: 'admin' });
       tokenService.setToken('some-token');
@@ -65,6 +137,9 @@ describe('AuthService', () => {
 
       const logoutReq = httpMock.expectOne((req) => req.url.includes('/api/auth/logout'));
       expect(logoutReq.request.method).toBe('POST');
+      expect(logoutReq.request.withCredentials).toBe(true);
+      expect(logoutReq.request.headers.get('X-CSRF-Guard')).toBe('1');
+      expect(logoutReq.request.context.get(SKIP_AUTH_REFRESH)).toBe(true);
       logoutReq.flush(null);
 
       expect(tokenService.token()).toBeNull();
@@ -89,7 +164,7 @@ describe('AuthService', () => {
       });
 
       const logoutReq = httpMock.expectOne((req) => req.url.includes('/api/auth/logout'));
-      expect(logoutReq.request.method).toBe('POST');
+      expect(logoutReq.request.headers.get('X-CSRF-Guard')).toBe('1');
       logoutReq.flush(
         { message: 'Logout failed' },
         { status: 500, statusText: 'Internal Server Error' },
@@ -98,8 +173,6 @@ describe('AuthService', () => {
   });
 
   describe('loadCurrentUser', () => {
-    beforeEach(() => setup());
-
     it('populates currentUser signal', () => {
       const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
 
@@ -116,8 +189,7 @@ describe('AuthService', () => {
   });
 
   describe('ensureCurrentUserLoaded', () => {
-    it('does not request current account when there is no stored token', () => {
-      setup();
+    it('does not request current account when there is no in-memory token', () => {
       let completed = false;
 
       service.ensureCurrentUserLoaded().subscribe(() => {
@@ -129,9 +201,9 @@ describe('AuthService', () => {
       expect(service.currentUser()).toBeNull();
     });
 
-    it('restores current user when a token is already stored', () => {
+    it('restores current user when a token is already in memory', () => {
       const mockAccount: AccountInfo = { username: 'owner', role: 'owner' };
-      setup(true);
+      tokenService.setToken('existing-token');
       let completed = false;
 
       service.ensureCurrentUserLoaded().subscribe(() => {
@@ -149,7 +221,7 @@ describe('AuthService', () => {
 
     it('shares the in-flight account restore request', () => {
       const mockAccount: AccountInfo = { username: 'admin', role: 'admin' };
-      setup(true);
+      tokenService.setToken('existing-token');
       let completions = 0;
 
       service.ensureCurrentUserLoaded().subscribe(() => {
@@ -167,7 +239,7 @@ describe('AuthService', () => {
     });
 
     it('clears the local session when account restore fails', () => {
-      setup(true);
+      tokenService.setToken('existing-token');
       let failed = false;
 
       service.ensureCurrentUserLoaded().subscribe({
@@ -181,20 +253,6 @@ describe('AuthService', () => {
       expect(failed).toBe(true);
       expect(tokenService.token()).toBeNull();
       expect(service.currentUser()).toBeNull();
-    });
-  });
-
-  describe('constructor with existing token', () => {
-    it('calls loadCurrentUser when token exists', () => {
-      setup(true);
-
-      const req = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
-      req.flush({ username: 'owner', role: 'owner' });
-
-      expect(service.currentUser()?.username).toBe('owner');
-      expect(service.isAdmin()).toBe(false);
-      expect(service.canManageContent()).toBe(true);
-      expect(service.canManageTeam()).toBe(true);
     });
   });
 });

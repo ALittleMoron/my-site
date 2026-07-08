@@ -14,17 +14,22 @@ from core.account.exceptions import (
 )
 from core.account.schemas import (
     ManagedAccount,
+    ManagedAccountCreateOperationParams,
     ManagedAccountCreateParams,
     ManagedAccountFilters,
+    ManagedAccountPasswordUpdateOperationParams,
     ManagedAccountPasswordUpdateParams,
+    ManagedAccountRoleUpdateOperationParams,
     ManagedAccountRoleUpdateParams,
     ManagedAccounts,
+    ManagedAccountTargetOperationParams,
 )
 from core.account.storages import ManagedAccountStorage
 from core.account.use_cases import AccountsUseCase
 from core.auth.enums import RoleEnum
 from core.auth.exceptions import UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
+from core.auth.storages import AuthSessionStorage
 from core.schemas import Secret
 from tests.test_cases import TestCase
 
@@ -99,9 +104,14 @@ class TestAccountsUseCase(TestCase):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
         self.storage = Mock(spec=ManagedAccountStorage)
+        self.auth_session_storage = Mock(spec=AuthSessionStorage)
         self.hasher = Mock(spec=PasswordHasher)
         self.hasher.hash_password.return_value = "hashed-password"
-        self.use_case = AccountsUseCase(storage=self.storage, hasher=self.hasher)
+        self.use_case = AccountsUseCase(
+            storage=self.storage,
+            hasher=self.hasher,
+            auth_session_storage=self.auth_session_storage,
+        )
 
     async def test_list_accounts_builds_page(self) -> None:
         filters = ManagedAccountFilters(page=2, page_size=10)
@@ -140,7 +150,12 @@ class TestAccountsUseCase(TestCase):
         )
 
         with pytest.raises(InvalidManagedAccountRoleError):
-            await self.use_case.create_account(params=params, current_username="Owner")
+            await self.use_case.create_account(
+                params=ManagedAccountCreateOperationParams(
+                    create_params=params,
+                    current_username="Owner",
+                ),
+            )
 
         self.storage.create_managed_account.assert_not_called()
 
@@ -158,7 +173,12 @@ class TestAccountsUseCase(TestCase):
         )
 
         with pytest.raises(InvalidManagedAccountRoleError):
-            await self.use_case.create_account(params=params, current_username="Owner")
+            await self.use_case.create_account(
+                params=ManagedAccountCreateOperationParams(
+                    create_params=params,
+                    current_username="Owner",
+                ),
+            )
 
         self.storage.create_managed_account.assert_not_called()
 
@@ -176,7 +196,12 @@ class TestAccountsUseCase(TestCase):
         )
 
         with pytest.raises(ManagedAccountActionForbiddenError):
-            await self.use_case.create_account(params=params, current_username="Admin")
+            await self.use_case.create_account(
+                params=ManagedAccountCreateOperationParams(
+                    create_params=params,
+                    current_username="Admin",
+                ),
+            )
 
         self.storage.create_managed_account.assert_not_called()
 
@@ -198,7 +223,12 @@ class TestAccountsUseCase(TestCase):
         )
 
         with pytest.raises(AccountUsernameAlreadyExistsError):
-            await self.use_case.create_account(params=params, current_username="Owner")
+            await self.use_case.create_account(
+                params=ManagedAccountCreateOperationParams(
+                    create_params=params,
+                    current_username="Owner",
+                ),
+            )
 
         self.storage.get_managed_account.assert_called_once_with(username="Owner")
         self.storage.get_user_by_username.assert_called_once_with(username="Admin")
@@ -224,7 +254,12 @@ class TestAccountsUseCase(TestCase):
         self.storage.get_user_by_username.side_effect = UserNotFoundError
         self.storage.create_managed_account.return_value = created_account
 
-        account = await self.use_case.create_account(params=params, current_username="Owner")
+        account = await self.use_case.create_account(
+            params=ManagedAccountCreateOperationParams(
+                create_params=params,
+                current_username="Owner",
+            ),
+        )
 
         assert account == created_account
         self.storage.create_managed_account.assert_called_once_with(
@@ -254,7 +289,12 @@ class TestAccountsUseCase(TestCase):
         self.storage.get_user_by_username.side_effect = UserNotFoundError
         self.storage.create_managed_account.return_value = created_account
 
-        account = await self.use_case.create_account(params=params, current_username="Admin")
+        account = await self.use_case.create_account(
+            params=ManagedAccountCreateOperationParams(
+                create_params=params,
+                current_username="Admin",
+            ),
+        )
 
         assert account == created_account
         self.hasher.hash_password.assert_called_once_with("password123")
@@ -274,9 +314,11 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(SelfAccountActionForbiddenError):
             await self.use_case.update_role(
-                username="Admin",
-                params=params,
-                current_username="admin",
+                params=ManagedAccountRoleUpdateOperationParams(
+                    target_username="Admin",
+                    role_params=params,
+                    current_username="admin",
+                ),
             )
 
         self.storage.update_managed_account_role.assert_not_called()
@@ -286,9 +328,11 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(InvalidManagedAccountRoleError):
             await self.use_case.update_role(
-                username="Moderator",
-                params=params,
-                current_username="Admin",
+                params=ManagedAccountRoleUpdateOperationParams(
+                    target_username="Moderator",
+                    role_params=params,
+                    current_username="Admin",
+                ),
             )
 
         self.storage.update_managed_account_role.assert_not_called()
@@ -302,9 +346,11 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(ManagedAccountActionForbiddenError):
             await self.use_case.update_role(
-                username="Moderator",
-                params=params,
-                current_username="Admin",
+                params=ManagedAccountRoleUpdateOperationParams(
+                    target_username="Moderator",
+                    role_params=params,
+                    current_username="Admin",
+                ),
             )
 
         self.storage.update_managed_account_role.assert_not_called()
@@ -318,9 +364,11 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(ManagedAccountActionForbiddenError):
             await self.use_case.update_role(
-                username="Moderator",
-                params=params,
-                current_username="Admin",
+                params=ManagedAccountRoleUpdateOperationParams(
+                    target_username="Moderator",
+                    role_params=params,
+                    current_username="Admin",
+                ),
             )
 
         self.storage.update_managed_account_role.assert_not_called()
@@ -339,9 +387,11 @@ class TestAccountsUseCase(TestCase):
         self.storage.update_managed_account_role.return_value = updated_account
 
         account = await self.use_case.update_role(
-            username="Admin",
-            params=params,
-            current_username="Owner",
+            params=ManagedAccountRoleUpdateOperationParams(
+                target_username="Admin",
+                role_params=params,
+                current_username="Owner",
+            ),
         )
 
         assert account == updated_account
@@ -364,9 +414,11 @@ class TestAccountsUseCase(TestCase):
         self.storage.update_managed_account_password.return_value = updated_account
 
         account = await self.use_case.update_password(
-            username="Admin",
-            params=params,
-            current_username="Admin",
+            params=ManagedAccountPasswordUpdateOperationParams(
+                target_username="Admin",
+                password_params=params,
+                current_username="Admin",
+            ),
         )
 
         assert account == updated_account
@@ -379,6 +431,7 @@ class TestAccountsUseCase(TestCase):
             username="Admin",
             password_hash="hashed-password",
         )
+        self.auth_session_storage.revoke_user_sessions.assert_called_once_with(username="Admin")
 
     async def test_update_password_requires_current_managed_account(self) -> None:
         params = ManagedAccountPasswordUpdateParams(password=Secret("password123"))
@@ -389,12 +442,34 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(ManagedAccountNotFoundError):
             await self.use_case.update_password(
-                username="Moderator",
-                params=params,
-                current_username="MissingAdmin",
+                params=ManagedAccountPasswordUpdateOperationParams(
+                    target_username="Moderator",
+                    password_params=params,
+                    current_username="MissingAdmin",
+                ),
             )
 
         self.storage.update_managed_account_password.assert_not_called()
+        self.auth_session_storage.revoke_user_sessions.assert_not_called()
+
+    async def test_update_password_does_not_revoke_sessions_when_storage_update_fails(self) -> None:
+        params = ManagedAccountPasswordUpdateParams(password=Secret("password123"))
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+        self.storage.update_managed_account_password.side_effect = ManagedAccountNotFoundError
+
+        with pytest.raises(ManagedAccountNotFoundError):
+            await self.use_case.update_password(
+                params=ManagedAccountPasswordUpdateOperationParams(
+                    target_username="Moderator",
+                    password_params=params,
+                    current_username="Admin",
+                ),
+            )
+
+        self.auth_session_storage.revoke_user_sessions.assert_not_called()
 
     async def test_deactivate_rejects_self_action(self) -> None:
         self.storage.get_managed_account.side_effect = [
@@ -403,7 +478,12 @@ class TestAccountsUseCase(TestCase):
         ]
 
         with pytest.raises(SelfAccountActionForbiddenError):
-            await self.use_case.deactivate_account(username="Admin", current_username="admin")
+            await self.use_case.deactivate_account(
+                params=ManagedAccountTargetOperationParams(
+                    target_username="Admin",
+                    current_username="admin",
+                ),
+            )
 
         self.storage.deactivate_managed_account.assert_not_called()
 
@@ -415,11 +495,37 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(ManagedAccountActionForbiddenError):
             await self.use_case.deactivate_account(
-                username="OtherAdmin",
-                current_username="Admin",
+                params=ManagedAccountTargetOperationParams(
+                    target_username="OtherAdmin",
+                    current_username="Admin",
+                ),
             )
 
         self.storage.deactivate_managed_account.assert_not_called()
+
+    async def test_deactivate_revokes_target_sessions_after_deactivation(self) -> None:
+        deactivated_account = ManagedAccount(
+            username="Moderator",
+            role=RoleEnum.MODERATOR,
+            is_active=False,
+        )
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+        self.storage.deactivate_managed_account.return_value = deactivated_account
+
+        account = await self.use_case.deactivate_account(
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="Admin",
+            ),
+        )
+
+        assert account == deactivated_account
+        self.auth_session_storage.revoke_user_sessions.assert_called_once_with(
+            username="Moderator",
+        )
 
     async def test_activate_delegates_to_storage(self) -> None:
         activated_account = ManagedAccount(
@@ -434,8 +540,10 @@ class TestAccountsUseCase(TestCase):
         self.storage.activate_managed_account.return_value = activated_account
 
         account = await self.use_case.activate_account(
-            username="Moderator",
-            current_username="Owner",
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="Owner",
+            ),
         )
 
         assert account == activated_account
@@ -452,7 +560,12 @@ class TestAccountsUseCase(TestCase):
         ]
 
         with pytest.raises(SelfAccountActionForbiddenError):
-            await self.use_case.activate_account(username="Admin", current_username="admin")
+            await self.use_case.activate_account(
+                params=ManagedAccountTargetOperationParams(
+                    target_username="Admin",
+                    current_username="admin",
+                ),
+            )
 
         self.storage.activate_managed_account.assert_not_called()
 
@@ -463,7 +576,12 @@ class TestAccountsUseCase(TestCase):
         ]
 
         with pytest.raises(SelfAccountActionForbiddenError):
-            await self.use_case.delete_account(username="Admin", current_username="admin")
+            await self.use_case.delete_account(
+                params=ManagedAccountTargetOperationParams(
+                    target_username="Admin",
+                    current_username="admin",
+                ),
+            )
 
         self.storage.delete_managed_account.assert_not_called()
 
@@ -475,8 +593,28 @@ class TestAccountsUseCase(TestCase):
 
         with pytest.raises(ManagedAccountActionForbiddenError):
             await self.use_case.delete_account(
-                username="OtherAdmin",
-                current_username="Admin",
+                params=ManagedAccountTargetOperationParams(
+                    target_username="OtherAdmin",
+                    current_username="Admin",
+                ),
             )
 
         self.storage.delete_managed_account.assert_not_called()
+
+    async def test_delete_revokes_target_sessions_after_delete(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+
+        await self.use_case.delete_account(
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="Admin",
+            ),
+        )
+
+        self.storage.delete_managed_account.assert_called_once_with(username="Moderator")
+        self.auth_session_storage.revoke_user_sessions.assert_called_once_with(
+            username="Moderator",
+        )

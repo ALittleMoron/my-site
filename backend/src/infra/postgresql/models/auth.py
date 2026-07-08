@@ -1,11 +1,18 @@
-from sqlalchemy import Boolean, Enum, Index, String, func
+from datetime import datetime
+from typing import Self
+
+from sqlalchemy import Boolean, Enum, ForeignKey, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy_dev_utils.mixins.audit import AuditMixin
+from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.account.schemas import ManagedAccount
 from core.auth.enums import RoleEnum
-from core.auth.schemas import User
+from core.auth.schemas import AuthSession, User
+from core.auth.types import SessionSecretHash
 from core.schemas import Secret
 from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
 class UserModel(BaseModel):
@@ -70,4 +77,54 @@ class UserModel(BaseModel):
             password_hash=schema.password_hash.get_secret_value(),
             role=schema.role,
             is_active=schema.is_active,
+        )
+
+
+class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
+    username: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("auth__user_model.username", ondelete="CASCADE"),
+        doc="Username owning this server-side auth session",
+    )
+    secret_hash: Mapped[str] = mapped_column(
+        String(length=64),
+        doc="SHA-256 hash of the browser session secret",
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        UTCDateTime(timezone=True),
+        doc="Absolute session expiration timestamp",
+    )
+    is_revoked: Mapped[bool] = mapped_column(
+        Boolean,
+        doc="Whether this auth session was explicitly revoked",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("secret_hash", name="auth_sessions_secret_hash_uniq"),
+        Index(
+            "auth_sessions_username_lower_active_expiry_idx",
+            func.lower(username).label("username_lower"),
+            is_revoked,
+            expires_at,
+        ),
+        Index("auth_sessions_expiry_idx", expires_at),
+    )
+
+    @classmethod
+    def from_domain_schema(cls, schema: AuthSession) -> Self:
+        return cls(
+            id=schema.id,
+            username=schema.username,
+            secret_hash=schema.secret_hash,
+            expires_at=schema.expires_at,
+            is_revoked=schema.is_revoked,
+        )
+
+    def to_domain_schema(self) -> AuthSession:
+        return AuthSession(
+            id=self.id,
+            username=self.username,
+            secret_hash=SessionSecretHash(self.secret_hash),
+            expires_at=self.expires_at,
+            is_revoked=self.is_revoked,
         )

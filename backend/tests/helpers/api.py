@@ -15,6 +15,19 @@ class APIHelper:
             return value
         return f"{value:032x}"
 
+    @staticmethod
+    def _headers_with_cookies(
+        *,
+        headers: dict[str, str],
+        cookies: dict[str, str] | None,
+    ) -> dict[str, str]:
+        if cookies is None:
+            return headers
+        return {
+            **headers,
+            "Cookie": "; ".join(f"{name}={value}" for name, value in cookies.items()),
+        }
+
     def get_health(self) -> Response:
         return self.client.get("/api/healthcheck")
 
@@ -640,8 +653,34 @@ class APIHelper:
     def post_login(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/auth/login", json=data)
 
-    def post_logout(self) -> Response:
-        return self.client.post("/api/auth/logout")
+    def post_refresh(
+        self,
+        *,
+        cookies: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+        csrf_guard: bool = True,
+    ) -> Response:
+        request_headers = dict(headers or {})
+        if csrf_guard:
+            request_headers["X-CSRF-Guard"] = "1"
+        return self.client.post(
+            "/api/auth/refresh",
+            headers=self._headers_with_cookies(headers=request_headers, cookies=cookies),
+        )
+
+    def post_logout(
+        self,
+        *,
+        cookies: dict[str, str] | None = None,
+        csrf_guard: bool = True,
+    ) -> Response:
+        headers: dict[str, str] = {}
+        if csrf_guard:
+            headers["X-CSRF-Guard"] = "1"
+        return self.client.post(
+            "/api/auth/logout",
+            headers=self._headers_with_cookies(headers=headers, cookies=cookies),
+        )
 
     def get_get_base_current_user_account(self) -> Response:
         return self.client.get("/api/account/base")

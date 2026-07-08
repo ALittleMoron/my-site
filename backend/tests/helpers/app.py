@@ -9,7 +9,7 @@ from core.account.storages import UserAccountStorage
 from core.account.use_cases import AccountsUseCase
 from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
-from core.auth.storages import AuthStorage
+from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.use_cases import AuthUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
@@ -78,6 +78,10 @@ class IocContainerHelper:
 
     async def get_auth_storage(self) -> Mock:
         storage = await self.container.get(AuthStorage)
+        return cast("Mock", storage)
+
+    async def get_auth_session_storage(self) -> Mock:
+        storage = await self.container.get(AuthSessionStorage)
         return cast("Mock", storage)
 
     async def get_auth_use_case(self) -> Mock:

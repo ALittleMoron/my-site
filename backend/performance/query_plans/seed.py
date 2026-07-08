@@ -29,6 +29,7 @@ from infra.postgresql.models import (
     ArticleModel,
     ArticleReactionModel,
     ArticleToTagSecondaryModel,
+    AuthSessionModel,
     CompetencyMatrixItemModel,
     CompetencyMatrixSectionModel,
     CompetencyMatrixSheetModel,
@@ -56,6 +57,7 @@ MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 MATRIX_FREQUENCY_BUCKET_RARELY = 2
 MATRIX_FREQUENCY_BUCKET_NEVER_SEEN = 3
 USER_SEED_COUNT = 10_000
+AUTH_SESSION_SEED_COUNT = 1_000
 INACTIVE_MODERATOR_SEED_INDEX = 2
 OWNER_SEED_INDEX = 3
 MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR = 100
@@ -97,6 +99,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) 
     await connection.execute(text("SET LOCAL synchronous_commit = off"))
     await clear_seeded_tables(connection=connection)
     await insert_users(connection=connection)
+    await insert_auth_sessions(connection=connection)
     await insert_tags(connection=connection, profile=profile)
     await insert_article_folders(connection=connection)
     await insert_articles(connection=connection, profile=profile)
@@ -128,6 +131,7 @@ async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
         TagModel,
         ResumeModel,
         ContactMeModel,
+        AuthSessionModel,
         UserModel,
     ):
         await connection.execute(delete(model))
@@ -167,6 +171,29 @@ async def insert_users(*, connection: AsyncConnection) -> None:
                     (value == INACTIVE_MODERATOR_SEED_INDEX, literal(value=False)),
                     else_=literal(value=True),
                 ),
+            ).select_from(series),
+        ),
+    )
+
+
+async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
+    series = generate_series_subquery(end=AUTH_SESSION_SEED_COUNT, name="auth_session_series")
+    value = sql_cast(series.c.value, Integer)
+    await connection.execute(
+        insert(AuthSessionModel.__table__).from_select(
+            ["id", "username", "secret_hash", "expires_at", "is_revoked"],
+            select(
+                hex_id_expr(value=value),
+                case(
+                    (value == 1, literal(SEED_USERNAME)),
+                    else_=func.concat(literal("benchmark-user-"), value),
+                ),
+                func.concat(
+                    deterministic_hex_from_int(value=func.concat(literal("session-a-"), value)),
+                    deterministic_hex_from_int(value=func.concat(literal("session-b-"), value)),
+                ),
+                literal(SEED_NOW + timedelta(days=30)),
+                literal(value=False),
             ).select_from(series),
         ),
     )
@@ -651,6 +678,7 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "articles__article_daily_analytics_model",
         "articles__article_reaction_model",
         "resumes__resume_model",
+        "auth__auth_session_model",
         "competency_matrix__external_resource_model",
         "competency_matrix__competency_matrix_item_model",
         "competency_matrix__resource_to_item_secondary_model",

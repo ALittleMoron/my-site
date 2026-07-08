@@ -3,10 +3,14 @@ from httpx import codes
 
 from core.account.schemas import (
     ManagedAccount,
+    ManagedAccountCreateOperationParams,
     ManagedAccountCreateParams,
     ManagedAccountFilters,
+    ManagedAccountPasswordUpdateOperationParams,
     ManagedAccountPasswordUpdateParams,
+    ManagedAccountRoleUpdateOperationParams,
     ManagedAccountRoleUpdateParams,
+    ManagedAccountTargetOperationParams,
 )
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
@@ -70,13 +74,15 @@ class TestAdminAccountsAPI(ApiTestCase):
             "isActive": True,
         }
         self.use_case.create_account.assert_called_once_with(
-            params=ManagedAccountCreateParams(
-                username="Moderator_1",
-                role=RoleEnum.MODERATOR,
-                password=Secret("password123"),
-                is_active=True,
+            params=ManagedAccountCreateOperationParams(
+                create_params=ManagedAccountCreateParams(
+                    username="Moderator_1",
+                    role=RoleEnum.MODERATOR,
+                    password=Secret("password123"),
+                    is_active=True,
+                ),
+                current_username="test",
             ),
-            current_username="test",
         )
 
     def test_get_account(self) -> None:
@@ -107,9 +113,11 @@ class TestAdminAccountsAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.json() == {"username": "Moderator", "role": "admin", "isActive": True}
         self.use_case.update_role.assert_called_once_with(
-            username="Moderator",
-            params=ManagedAccountRoleUpdateParams(role=RoleEnum.ADMIN),
-            current_username="test",
+            params=ManagedAccountRoleUpdateOperationParams(
+                target_username="Moderator",
+                role_params=ManagedAccountRoleUpdateParams(role=RoleEnum.ADMIN),
+                current_username="test",
+            ),
         )
 
     def test_update_password(self) -> None:
@@ -127,9 +135,11 @@ class TestAdminAccountsAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.json() == {"username": "test", "role": "admin", "isActive": True}
         self.use_case.update_password.assert_called_once_with(
-            username="test",
-            params=ManagedAccountPasswordUpdateParams(password=Secret("password123")),
-            current_username="test",
+            params=ManagedAccountPasswordUpdateOperationParams(
+                target_username="test",
+                password_params=ManagedAccountPasswordUpdateParams(password=Secret("password123")),
+                current_username="test",
+            ),
         )
 
     def test_activate_account(self) -> None:
@@ -144,8 +154,10 @@ class TestAdminAccountsAPI(ApiTestCase):
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.json() == {"username": "Moderator", "role": "moderator", "isActive": True}
         self.use_case.activate_account.assert_called_once_with(
-            username="Moderator",
-            current_username="test",
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="test",
+            ),
         )
 
     def test_deactivate_account(self) -> None:
@@ -164,8 +176,10 @@ class TestAdminAccountsAPI(ApiTestCase):
             "isActive": False,
         }
         self.use_case.deactivate_account.assert_called_once_with(
-            username="Moderator",
-            current_username="test",
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="test",
+            ),
         )
 
     def test_delete_account(self) -> None:
@@ -173,8 +187,10 @@ class TestAdminAccountsAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.delete_account.assert_called_once_with(
-            username="Moderator",
-            current_username="test",
+            params=ManagedAccountTargetOperationParams(
+                target_username="Moderator",
+                current_username="test",
+            ),
         )
 
     def test_create_account_validates_payload(self) -> None:
