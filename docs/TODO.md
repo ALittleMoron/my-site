@@ -504,7 +504,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Add a durable auth audit trail for login, refresh, logout, session revocation, step-up
         re-auth, role/password/account changes, suspicious events, and blocked attempts without
         storing raw passwords, tokens, raw user agents, or raw IP addresses.
-  - [ ] Add an absolute session lifetime cap on top of the sliding idle lifetime so refresh cannot
+  - [x] Add an absolute session lifetime cap on top of the sliding idle lifetime so refresh cannot
         extend a session beyond its original maximum age.
   - [ ] Add PASETO key rotation with an active signing key, accepted verification keyring, `kid`
         metadata, and an overlap period for tokens signed by retiring keys.

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import cast
 
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import delete, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.exceptions import AuthSessionNotFoundError, UserNotFoundError
@@ -39,6 +39,7 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
                 username=session.username,
                 secret_hash=session.secret_hash,
                 expires_at=session.expires_at,
+                absolute_expires_at=session.absolute_expires_at,
                 is_revoked=session.is_revoked,
                 last_used_at=session.last_used_at,
                 auth_method=session.auth_method,
@@ -68,13 +69,19 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
             raise AuthSessionNotFoundError
         return model.to_domain_schema()
 
-    async def list_user_sessions(self, *, username: str, active_at: datetime) -> list[AuthSession]:
+    async def list_user_sessions(
+        self,
+        *,
+        username: str,
+        active_at: datetime,
+    ) -> list[AuthSession]:
         statement = (
             select(AuthSessionModel)
             .where(
                 func.lower(AuthSessionModel.username) == username.lower(),
                 AuthSessionModel.is_revoked.is_(False),
                 AuthSessionModel.expires_at > active_at,
+                AuthSessionModel.absolute_expires_at > active_at,
             )
             .order_by(AuthSessionModel.last_used_at.desc(), AuthSessionModel.id)
         )
@@ -98,8 +105,17 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
         if stored_session_id is None:
             raise AuthSessionNotFoundError
 
-    async def delete_expired_sessions(self, *, expires_at: datetime) -> int:
-        statement = delete(AuthSessionModel).where(AuthSessionModel.expires_at <= expires_at)
+    async def delete_expired_sessions(
+        self,
+        *,
+        expires_at: datetime,
+    ) -> int:
+        statement = delete(AuthSessionModel).where(
+            or_(
+                AuthSessionModel.expires_at <= expires_at,
+                AuthSessionModel.absolute_expires_at <= expires_at,
+            ),
+        )
         result = await self.session.execute(statement)
         rowcount = cast("int | None", getattr(result, "rowcount", None))
         if rowcount is None:

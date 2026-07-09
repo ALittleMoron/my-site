@@ -95,6 +95,7 @@ class _AuthSettings(_ProjectBaseSettings):
     private_key: SecretStrExtended
     token_expire_seconds: int
     session_expire_seconds: int
+    session_absolute_expire_seconds: int
     token_header_name: str
     token_prefix: str
 

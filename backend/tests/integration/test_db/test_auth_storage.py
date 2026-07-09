@@ -1,4 +1,5 @@
 # ruff: noqa: S106
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -54,6 +55,7 @@ class TestAuthStorage(StorageTestCase):
 class TestAuthSessionStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self, session: AsyncSession) -> None:
+        self.session = session
         self.storage = AuthSessionDatabaseStorage(session=session)
         self.now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
         await self.storage_helper.create_users(
@@ -84,6 +86,7 @@ class TestAuthSessionStorage(StorageTestCase):
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             ),
             expires_at=self.now + timedelta(days=30),
+            absolute_expires_at=self.now + timedelta(days=30),
             is_revoked=False,
             last_used_at=self.now,
             auth_method=AuthSessionAuthMethodEnum.PASSWORD,
@@ -99,6 +102,7 @@ class TestAuthSessionStorage(StorageTestCase):
             username=session.username,
             secret_hash=session.secret_hash,
             expires_at=session.expires_at,
+            absolute_expires_at=session.absolute_expires_at,
             is_revoked=session.is_revoked,
             created_at=created.created_at,
             last_used_at=session.last_used_at,
@@ -134,14 +138,28 @@ class TestAuthSessionStorage(StorageTestCase):
             ),
         )
         await self.storage.create_session(
-            session=auth_session_create(
-                username="admin",
-                secret_hash="4" * 64,
+            session=replace(
+                auth_session_create(
+                    username="admin",
+                    secret_hash="4" * 64,
+                ),
                 is_revoked=True,
             ),
         )
+        await self.storage.create_session(
+            session=auth_session_create(
+                username="admin",
+                secret_hash="5" * 64,
+                expires_at=self.now + timedelta(days=1),
+                absolute_expires_at=self.now,
+                last_used_at=self.now + timedelta(hours=1),
+            ),
+        )
 
-        sessions = await self.storage.list_user_sessions(username="admin", active_at=self.now)
+        sessions = await self.storage.list_user_sessions(
+            username="admin",
+            active_at=self.now,
+        )
 
         assert [session.id for session in sessions] == [newest_active.id, older_active.id]
 
@@ -191,6 +209,7 @@ class TestAuthSessionStorage(StorageTestCase):
             username=session.username,
             secret_hash=session.secret_hash,
             expires_at=session.expires_at,
+            absolute_expires_at=session.absolute_expires_at,
             is_revoked=True,
             created_at=created.created_at,
             last_used_at=session.last_used_at,
@@ -219,6 +238,7 @@ class TestAuthSessionStorage(StorageTestCase):
             username=session.username,
             secret_hash=session.secret_hash,
             expires_at=new_expires_at,
+            absolute_expires_at=session.absolute_expires_at,
             is_revoked=False,
             created_at=created.created_at,
             last_used_at=new_last_used_at,
@@ -245,10 +265,12 @@ class TestAuthSessionStorage(StorageTestCase):
             secret_hash="2222222222222222222222222222222222222222222222222222222222222222",
             expires_at=self.now + timedelta(seconds=1),
         )
-        revoked_active_session = auth_session_create(
-            username="moderator",
-            secret_hash="3333333333333333333333333333333333333333333333333333333333333333",
-            expires_at=self.now + timedelta(days=1),
+        revoked_active_session = replace(
+            auth_session_create(
+                username="moderator",
+                secret_hash="3333333333333333333333333333333333333333333333333333333333333333",
+                expires_at=self.now + timedelta(days=1),
+            ),
             is_revoked=True,
         )
         created_expired_session = await self.storage.create_session(session=expired_session)
@@ -256,12 +278,25 @@ class TestAuthSessionStorage(StorageTestCase):
         created_revoked_active_session = await self.storage.create_session(
             session=revoked_active_session,
         )
+        absolute_expired_session = auth_session_create(
+            username="admin",
+            secret_hash="4444444444444444444444444444444444444444444444444444444444444444",
+            expires_at=self.now + timedelta(days=1),
+            absolute_expires_at=self.now,
+        )
+        created_absolute_expired_session = await self.storage.create_session(
+            session=absolute_expired_session,
+        )
 
         deleted_count = await self.storage.delete_expired_sessions(expires_at=self.now)
 
-        assert deleted_count == 1
+        assert deleted_count == 2
         with pytest.raises(AuthSessionNotFoundError):
             await self.storage.get_session_by_id(session_id=created_expired_session.id)
+        with pytest.raises(AuthSessionNotFoundError):
+            await self.storage.get_session_by_id(
+                session_id=created_absolute_expired_session.id,
+            )
         assert await self.storage.get_session_by_id(session_id=created_active_session.id)
         assert await self.storage.get_session_by_id(session_id=created_revoked_active_session.id)
 
@@ -292,7 +327,7 @@ def auth_session_create(
     username: str,
     secret_hash: str,
     expires_at: datetime | None = None,
-    is_revoked: bool = False,
+    absolute_expires_at: datetime | None = None,
     last_used_at: datetime | None = None,
 ) -> AuthSessionCreate:
     now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
@@ -300,7 +335,8 @@ def auth_session_create(
         username=username,
         secret_hash=SessionSecretHash(secret_hash),
         expires_at=expires_at or now + timedelta(days=30),
-        is_revoked=is_revoked,
+        absolute_expires_at=absolute_expires_at or now + timedelta(days=30),
+        is_revoked=False,
         last_used_at=last_used_at or now,
         auth_method=AuthSessionAuthMethodEnum.PASSWORD,
         client_metadata=auth_session_client(),

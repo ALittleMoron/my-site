@@ -44,6 +44,7 @@ class TestLoginUseCase(ContainerTestCase):
             config=AuthUseCaseConfig(
                 access_token_expires_in_seconds=900,
                 session_expires_in_seconds=2_592_000,
+                session_absolute_expires_in_seconds=2_592_000,
             ),
         )
 
@@ -53,6 +54,7 @@ class TestLoginUseCase(ContainerTestCase):
             username=username,
             secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
+            absolute_expires_at=self.now + timedelta(days=30),
             is_revoked=False,
             created_at=self.now,
             last_used_at=self.now,

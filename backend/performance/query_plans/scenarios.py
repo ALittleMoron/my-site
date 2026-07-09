@@ -257,6 +257,7 @@ async def run_create_auth_session(session: AsyncSession) -> None:
                 "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
             ),
             expires_at=SEED_NOW + timedelta(days=30),
+            absolute_expires_at=SEED_NOW + timedelta(days=30),
             is_revoked=False,
             last_used_at=SEED_NOW,
             auth_method=AuthSessionAuthMethodEnum.PASSWORD,
@@ -296,7 +297,9 @@ async def run_extend_auth_session_expiry(session: AsyncSession) -> None:
 
 
 async def run_delete_expired_auth_sessions(session: AsyncSession) -> None:
-    await AuthSessionDatabaseStorage(session=session).delete_expired_sessions(expires_at=SEED_NOW)
+    await AuthSessionDatabaseStorage(session=session).delete_expired_sessions(
+        expires_at=SEED_NOW,
+    )
 
 
 async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:

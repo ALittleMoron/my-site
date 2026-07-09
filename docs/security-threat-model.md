@@ -111,11 +111,14 @@ Important boundaries:
   Docker ports.
 - Admin API authorization uses explicit short-lived bearer access tokens. A separate HttpOnly,
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
-  refresh the session's idle expiration, and revoke the current session on logout.
-- Auth sessions store server-side secret hashes, expiration timestamps, last-used timestamps,
-  auth method, and coarse privacy-safe device labels derived from the request user agent. They do
-  not store raw IP addresses, raw user-agent strings, or fingerprinting fields.
-- Expired server-side auth sessions are physically pruned by a scheduled TaskIQ cleanup task.
+  refresh the session's idle expiration within the session's absolute lifetime cap, and revoke the
+  current session on logout.
+- Auth sessions store server-side secret hashes, current effective expiration timestamps, original
+  absolute expiration timestamps, last-used timestamps, auth method, and coarse privacy-safe device
+  labels derived from the request user agent. They do not store raw IP addresses, raw user-agent
+  strings, or fingerprinting fields.
+- Idle-expired and absolute-lifetime-expired server-side auth sessions are physically pruned by a
+  scheduled TaskIQ cleanup task.
 - Runtime secrets are mounted as Compose secret files instead of service environment values where
   the application stack needs secrets.
 - Deploy requires the manual GitHub production workflow and the protected `production` environment.
@@ -130,10 +133,12 @@ Important boundaries:
 3. Admin auth refresh: browser sends the `/api/auth` scoped session cookie to `/api/auth/refresh`
    with `X-CSRF-Guard: 1`; the backend rejects cross-site Fetch Metadata, verifies the server-side
    session, reloads the current user, updates the session's last-used timestamp, extends the
-   session idle expiration, reissues the session cookie with the refreshed lifetime, and returns a
-   fresh short-lived PASETO access token.
+   session idle expiration only up to the original absolute lifetime cap, reissues the session
+   cookie with the remaining effective lifetime, and returns a fresh short-lived PASETO access
+   token.
 4. Auth session cleanup: the TaskIQ scheduler enqueues the internal cleanup task, which deletes
-   sessions whose `expires_at` is at or before the scheduler-provided current time.
+   sessions whose effective `expires_at` or original `absolute_expires_at` is at or before the
+   scheduler-provided current time.
 5. Admin session management: authenticated team managers use `/api/admin/accounts/*/sessions`
    endpoints to list active sessions for accounts they may manage, revoke one session, revoke all
    sessions, or revoke only their own other sessions; responses expose current-session markers and
@@ -219,9 +224,10 @@ Important boundaries:
   cases enforce protected behavior. Authenticated bearer tokens must point to an active server-side
   session.
 - Auth/account flows use explicit `Authorization` bearer tokens for admin APIs. The `/api/auth`
-  session cookie is scoped to access-token refresh, sliding idle-session renewal, and logout; those
-  cookie-authenticated endpoints are protected by CSRF guard checks. Expired server-side auth
-  sessions are cleaned up by the scheduled TaskIQ worker path and are not a login activity signal.
+  session cookie is scoped to access-token refresh, sliding idle-session renewal capped by the
+  session's original absolute lifetime, and logout; those cookie-authenticated endpoints are
+  protected by CSRF guard checks. Expired server-side auth sessions are cleaned up by the scheduled
+  TaskIQ worker path and are not a login activity signal.
 - Admin session management stays under `/api/admin/*` and is guarded by backend team-management
   authorization. Current-session detection comes from the authenticated bearer token's session id,
   while last-used timestamps are updated only on login and successful refresh.

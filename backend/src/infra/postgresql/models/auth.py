@@ -92,7 +92,11 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
     )
     expires_at: Mapped[datetime] = mapped_column(
         UTCDateTime(timezone=True),
-        doc="Absolute session expiration timestamp",
+        doc="Current effective session expiration timestamp",
+    )
+    absolute_expires_at: Mapped[datetime] = mapped_column(
+        UTCDateTime(timezone=True),
+        doc="Original absolute session expiration timestamp",
     )
     is_revoked: Mapped[bool] = mapped_column(
         Boolean,
@@ -138,13 +142,16 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             func.lower(username).label("username_lower"),
             is_revoked,
             expires_at,
+            absolute_expires_at,
         ),
         Index("auth_sessions_expiry_idx", expires_at),
+        Index("auth_sessions_absolute_expiry_idx", absolute_expires_at),
         Index(
             "auth_sessions_username_lower_active_last_used_idx",
             func.lower(username).label("username_lower"),
             is_revoked,
             expires_at,
+            absolute_expires_at,
             last_used_at.desc(),
             "id",
         ),
@@ -157,6 +164,7 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             username=schema.username,
             secret_hash=schema.secret_hash,
             expires_at=schema.expires_at,
+            absolute_expires_at=schema.absolute_expires_at,
             is_revoked=schema.is_revoked,
             last_used_at=schema.last_used_at,
             auth_method=schema.auth_method,
@@ -172,6 +180,7 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             username=self.username,
             secret_hash=SessionSecretHash(self.secret_hash),
             expires_at=self.expires_at,
+            absolute_expires_at=self.absolute_expires_at,
             is_revoked=self.is_revoked,
             created_at=self.created_at,
             last_used_at=self.last_used_at,

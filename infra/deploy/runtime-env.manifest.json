@@ -12,6 +12,7 @@
     { "name": "AUTH_PUBLIC_KEY", "allowEmpty": false },
     { "name": "AUTH_TOKEN_EXPIRE_SECONDS", "allowEmpty": false },
     { "name": "AUTH_SESSION_EXPIRE_SECONDS", "allowEmpty": false },
+    { "name": "AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS", "allowEmpty": false },
     { "name": "AUTH_TOKEN_HEADER_NAME", "allowEmpty": false },
     { "name": "AUTH_TOKEN_PREFIX", "allowEmpty": false },
     { "name": "CACHE_WARM_ARTICLES_PAGE_SIZE", "allowEmpty": false },

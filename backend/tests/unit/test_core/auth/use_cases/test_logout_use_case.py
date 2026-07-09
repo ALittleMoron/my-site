@@ -31,6 +31,7 @@ class TestLogoutUseCase(ContainerTestCase):
             config=AuthUseCaseConfig(
                 access_token_expires_in_seconds=900,
                 session_expires_in_seconds=2_592_000,
+                session_absolute_expires_in_seconds=2_592_000,
             ),
         )
 

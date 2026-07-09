@@ -295,6 +295,7 @@ run_deploy_env_configuration_check() {
 
     require_file_contains "$manifest_file" '"CACHE_WARM_ARTICLES_PAGE_SIZE"' "cache warm articles page size manifest entry"
     require_file_contains "$manifest_file" '"TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS"' "auth session prune interval manifest entry"
+    require_file_contains "$manifest_file" '"AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS"' "auth session absolute expiry manifest entry"
     require_file_not_contains "$manifest_file" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm manifest entry"
     require_file_not_contains "$manifest_file" "REMOTE_HOST" "deploy remote host manifest entry"
     require_file_not_contains "$manifest_file" "SSH_PRIVATE_KEY" "deploy SSH key manifest entry"
@@ -321,13 +322,14 @@ run_deploy_env_configuration_check() {
     rendered_env="$(mktemp)"
     (
         export IMAGE_TAG="security-check-sha"
-        export GITHUB_ENV_VARS_JSON='{"OWNER_INIT_LOGIN":"owner","APP_CONTACT_REQUESTS_ENABLED":"false","APP_DEBUG":"false","APP_DOMAIN":"example.test","APP_URL_SCHEMA":"https","APP_USE_CACHE":"true","AUTH_PUBLIC_KEY":"-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----","AUTH_TOKEN_EXPIRE_SECONDS":"900","AUTH_SESSION_EXPIRE_SECONDS":"2592000","AUTH_TOKEN_HEADER_NAME":"Authorization","AUTH_TOKEN_PREFIX":"Bearer","CACHE_WARM_ARTICLES_PAGE_SIZE":"10","COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT":"10","DB_DRIVER":"postgresql+psycopg","DB_EXPIRE_ON_COMMIT":"false","DB_HOST":"postgres","DB_LOG_QUERY_METRICS":"false","DB_MAX_OVERFLOW":"20","DB_NAME":"my_site_database","DB_POOL_PRE_PING":"true","DB_POOL_SIZE":"10","DB_PORT":"5432","DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH":"1000","DB_SLOW_QUERY_LOG_THRESHOLD_MS":"250","DB_USER":"postgres","I18N_DEFAULT_LANGUAGE":"ru","LE_EMAIL":"ops@example.test","MINIO_CORS_MAX_AGE_SECONDS":"300","MINIO_HOST":"minio","MINIO_PORT":"9000","MINIO_REGION":"us-east-1","MINIO_PUBLIC_URL":"https://s3.example.test","MINIO_SECURE":"false","SENTRY_USE":"false","SSL_CERT":"/certs/fullchain.pem","SSL_KEY":"/certs/privkey.pem","TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS":"86400","TASKIQ_CACHE_WARM_INTERVAL_SECONDS":"3600","TASKIQ_RESULT_EXPIRE_SECONDS":"3600","VALKEY_HOST":"valkey","VALKEY_PORT":"6379","VPN_BIND_ADDRESS":"10.77.0.1"}'
+        export GITHUB_ENV_VARS_JSON='{"OWNER_INIT_LOGIN":"owner","APP_CONTACT_REQUESTS_ENABLED":"false","APP_DEBUG":"false","APP_DOMAIN":"example.test","APP_URL_SCHEMA":"https","APP_USE_CACHE":"true","AUTH_PUBLIC_KEY":"-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----","AUTH_TOKEN_EXPIRE_SECONDS":"900","AUTH_SESSION_EXPIRE_SECONDS":"2592000","AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS":"2592000","AUTH_TOKEN_HEADER_NAME":"Authorization","AUTH_TOKEN_PREFIX":"Bearer","CACHE_WARM_ARTICLES_PAGE_SIZE":"10","COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT":"10","DB_DRIVER":"postgresql+psycopg","DB_EXPIRE_ON_COMMIT":"false","DB_HOST":"postgres","DB_LOG_QUERY_METRICS":"false","DB_MAX_OVERFLOW":"20","DB_NAME":"my_site_database","DB_POOL_PRE_PING":"true","DB_POOL_SIZE":"10","DB_PORT":"5432","DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH":"1000","DB_SLOW_QUERY_LOG_THRESHOLD_MS":"250","DB_USER":"postgres","I18N_DEFAULT_LANGUAGE":"ru","LE_EMAIL":"ops@example.test","MINIO_CORS_MAX_AGE_SECONDS":"300","MINIO_HOST":"minio","MINIO_PORT":"9000","MINIO_REGION":"us-east-1","MINIO_PUBLIC_URL":"https://s3.example.test","MINIO_SECURE":"false","SENTRY_USE":"false","SSL_CERT":"/certs/fullchain.pem","SSL_KEY":"/certs/privkey.pem","TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS":"86400","TASKIQ_CACHE_WARM_INTERVAL_SECONDS":"3600","TASKIQ_RESULT_EXPIRE_SECONDS":"3600","VALKEY_HOST":"valkey","VALKEY_PORT":"6379","VPN_BIND_ADDRESS":"10.77.0.1"}'
         export GITHUB_SECRETS_JSON='{"OWNER_INIT_PASSWORD":"owner-password","APP_SECRET_KEY":"app-secret","AUTH_PRIVATE_KEY":"-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----","DB_PASSWORD":"postgres-password","MINIO_ACCESS_KEY":"minio-access","MINIO_SECRET_KEY":"minio-secret","SENTRY_DSN":""}'
         python3 "$renderer" --manifest "$manifest_file" --output "$rendered_env"
     )
     require_file_contains "$rendered_env" 'CACHE_WARM_ARTICLES_PAGE_SIZE="10"' "rendered cache warm articles page size"
     require_file_contains "$rendered_env" 'TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS="86400"' "rendered auth session prune interval"
     require_file_contains "$rendered_env" 'AUTH_SESSION_EXPIRE_SECONDS="2592000"' "rendered auth session expiry"
+    require_file_contains "$rendered_env" 'AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS="2592000"' "rendered auth session absolute expiry"
     require_file_contains "$rendered_env" 'MINIO_REGION="us-east-1"' "rendered MinIO region"
     require_file_contains "$rendered_env" 'MINIO_PUBLIC_URL="https://s3.example.test"' "rendered public MinIO URL"
     require_file_contains "$rendered_env" 'AUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nprivate\n-----END PRIVATE KEY-----"' "rendered escaped multiline private key"
@@ -398,6 +400,7 @@ run_healthcheck_configuration_check() {
         export AUTH_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\npublic\n-----END PUBLIC KEY-----"
         export AUTH_TOKEN_EXPIRE_SECONDS="900"
         export AUTH_SESSION_EXPIRE_SECONDS="2592000"
+        export AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS="2592000"
         export AUTH_TOKEN_HEADER_NAME="Authorization"
         export AUTH_TOKEN_PREFIX="Bearer"
         export CACHE_WARM_ARTICLES_PAGE_SIZE="10"
@@ -485,6 +488,7 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" "APP_SECRET_KEY_FILE: /run/secrets/app_secret_key" "backend app secret file"
     require_file_contains "$compose_file" "AUTH_PRIVATE_KEY_FILE: /run/secrets/auth_private_key" "backend private key secret file"
     require_file_contains "$compose_file" "AUTH_SESSION_EXPIRE_SECONDS: \${AUTH_SESSION_EXPIRE_SECONDS}" "backend auth session lifetime env"
+    require_file_contains "$compose_file" "AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS: \${AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS}" "backend auth session absolute lifetime env"
     require_file_contains "$compose_file" "DB_PASSWORD_FILE: /run/secrets/db_password" "backend database secret file"
     require_file_contains "$compose_file" "POSTGRES_PASSWORD_FILE: /run/secrets/db_password" "Postgres password secret file"
     require_file_contains "$compose_file" "MINIO_ACCESS_KEY_FILE: /run/secrets/minio_access_key" "backend MinIO access key secret file"

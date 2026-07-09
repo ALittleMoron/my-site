@@ -125,7 +125,9 @@ describe('updates timeline', () => {
     expect(entry?.title.ru).toContain('Авторизация');
     expect(entry?.title.en).toContain('Authorization');
     expect(entry?.summary.ru).toContain('скользящие');
+    expect(entry?.summary.ru).toContain('absolute lifetime');
     expect(entry?.summary.en).toContain('sliding');
+    expect(entry?.summary.en).toContain('absolute lifetime');
     expect(entry?.tagIds).toEqual(['auth', 'security', 'backend', 'frontend', 'admin']);
   });
 

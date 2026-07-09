@@ -186,6 +186,7 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
                 "username",
                 "secret_hash",
                 "expires_at",
+                "absolute_expires_at",
                 "is_revoked",
                 "last_used_at",
                 "auth_method",
@@ -208,6 +209,7 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
                     (value % 10 == 0, literal(SEED_NOW - timedelta(days=1))),
                     else_=literal(SEED_NOW + timedelta(days=30)),
                 ),
+                literal(SEED_NOW + timedelta(days=30)),
                 literal(value=False),
                 literal(SEED_NOW),
                 sql_cast(

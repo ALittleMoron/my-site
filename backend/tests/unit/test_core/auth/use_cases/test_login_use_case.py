@@ -49,6 +49,7 @@ class TestAuthUseCase(ContainerTestCase):
             username="test",
             secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(seconds=2_592_000),
+            absolute_expires_at=self.now + timedelta(seconds=2_592_000),
             is_revoked=False,
             created_at=self.now,
             last_used_at=self.now,
@@ -67,6 +68,7 @@ class TestAuthUseCase(ContainerTestCase):
             config=AuthUseCaseConfig(
                 access_token_expires_in_seconds=900,
                 session_expires_in_seconds=2_592_000,
+                session_absolute_expires_in_seconds=2_592_000,
             ),
         )
 
@@ -211,6 +213,7 @@ class TestAuthUseCase(ContainerTestCase):
                 username="test",
                 secret_hash=SessionSecretHash("session-secret-hash"),
                 expires_at=self.now + timedelta(seconds=2_592_000),
+                absolute_expires_at=self.now + timedelta(seconds=2_592_000),
                 is_revoked=False,
                 last_used_at=self.now,
                 auth_method=AuthSessionAuthMethodEnum.PASSWORD,

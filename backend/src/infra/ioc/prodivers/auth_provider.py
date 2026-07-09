@@ -73,10 +73,11 @@ class AuthProvider(Provider):
         return AuthSessionSecretGenerator(byte_count=constants.auth.session_secret_byte_count)
 
     @provide(scope=Scope.APP)
-    async def provide_auth_use_case_config(self) -> AuthUseCaseConfig:
+    async def provide_config(self) -> AuthUseCaseConfig:
         return AuthUseCaseConfig(
             access_token_expires_in_seconds=settings.auth.token_expire_seconds,
             session_expires_in_seconds=settings.auth.session_expire_seconds,
+            session_absolute_expires_in_seconds=settings.auth.session_absolute_expire_seconds,
         )
 
     @provide(scope=Scope.REQUEST, cache=False)

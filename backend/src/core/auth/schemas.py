@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
@@ -145,6 +145,7 @@ class AuthSessionCleanupResult:
 class AuthUseCaseConfig:
     access_token_expires_in_seconds: int
     session_expires_in_seconds: int
+    session_absolute_expires_in_seconds: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -228,6 +229,7 @@ class AuthSessionCreate:
     username: str
     secret_hash: SessionSecretHash
     expires_at: datetime
+    absolute_expires_at: datetime
     is_revoked: bool
     last_used_at: datetime
     auth_method: AuthSessionAuthMethodEnum
@@ -240,6 +242,7 @@ class AuthSession:
     username: str
     secret_hash: SessionSecretHash
     expires_at: datetime
+    absolute_expires_at: datetime
     is_revoked: bool
     created_at: datetime
     last_used_at: datetime
@@ -247,7 +250,13 @@ class AuthSession:
     client_metadata: AuthSessionClientMetadata
 
     def is_active_at(self, *, now: datetime) -> bool:
-        return not self.is_revoked and self.expires_at > now
+        return not self.is_revoked and self.expires_at > now and self.absolute_expires_at > now
+
+    def refreshed_expires_at(self, *, now: datetime, idle_expires_in_seconds: int) -> datetime:
+        return min(
+            now + timedelta(seconds=idle_expires_in_seconds),
+            self.absolute_expires_at,
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

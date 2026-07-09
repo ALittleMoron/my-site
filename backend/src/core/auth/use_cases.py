@@ -74,12 +74,19 @@ class AuthUseCase:
                 password_hash=self.hasher.hash_password(params.password),
             )
         session_secret = self.auth_session_secret_generator.generate_secret()
+        session_absolute_expires_at = params.current_datetime + timedelta(
+            seconds=self.config.session_absolute_expires_in_seconds,
+        )
+        session_expires_at = min(
+            params.current_datetime + timedelta(seconds=self.config.session_expires_in_seconds),
+            session_absolute_expires_at,
+        )
         session = await self.auth_session_storage.create_session(
             session=AuthSessionCreate(
                 username=user.username,
                 secret_hash=self.auth_session_secret_generator.hash_secret(secret=session_secret),
-                expires_at=params.current_datetime
-                + timedelta(seconds=self.config.session_expires_in_seconds),
+                expires_at=session_expires_at,
+                absolute_expires_at=session_absolute_expires_at,
                 is_revoked=False,
                 last_used_at=params.current_datetime,
                 auth_method=AuthSessionAuthMethodEnum.PASSWORD,
@@ -92,7 +99,9 @@ class AuthUseCase:
             ),
             session=AuthSessionCredentials(
                 secret=session_secret,
-                expires_in_seconds=self.config.session_expires_in_seconds,
+                expires_in_seconds=int(
+                    (session_expires_at - params.current_datetime).total_seconds(),
+                ),
             ),
         )
 
@@ -156,8 +165,9 @@ class AuthUseCase:
         if not user.is_active:
             self.event_reporter.report_authentication_inactive_user(username=user.username)
             raise UnauthorizedError
-        new_session_expires_at = params.current_datetime + timedelta(
-            seconds=self.config.session_expires_in_seconds,
+        new_session_expires_at = session.refreshed_expires_at(
+            now=params.current_datetime,
+            idle_expires_in_seconds=self.config.session_expires_in_seconds,
         )
         try:
             await self.auth_session_storage.extend_session_expiry(
@@ -173,7 +183,9 @@ class AuthUseCase:
             ),
             session=AuthSessionCredentials(
                 secret=params.session_secret,
-                expires_in_seconds=self.config.session_expires_in_seconds,
+                expires_in_seconds=int(
+                    (new_session_expires_at - params.current_datetime).total_seconds(),
+                ),
             ),
         )
 

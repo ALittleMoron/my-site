@@ -108,14 +108,16 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     summary: {
       ru:
         'Админская авторизация получила скользящие серверные сессии: активный ' +
-        'refresh продлевает idle lifetime, а истёкшие сессии ежедневно удаляются ' +
-        'фоновой задачей. В деталке участника теперь видно активные сессии с ' +
-        'безопасными device-метками и можно отзывать текущую, одну, все или другие сессии.',
+        'refresh продлевает idle lifetime только до absolute lifetime cap, а истёкшие ' +
+        'сессии ежедневно удаляются фоновой задачей. В деталке участника теперь видно ' +
+        'активные сессии с безопасными device-метками и можно отзывать текущую, одну, ' +
+        'все или другие сессии.',
       en:
         'Admin authorization gained sliding server-side sessions: active refresh extends ' +
-        'the idle lifetime, and expired sessions are physically pruned by a daily ' +
-        'background task. Team member details now show active sessions with safe device ' +
-        'labels and can revoke the current, one, all, or other sessions.',
+        'the idle lifetime only up to the absolute lifetime cap, and expired sessions are ' +
+        'physically pruned by a daily background task. Team member details now show active ' +
+        'sessions with safe device labels and can revoke the current, one, all, or other ' +
+        'sessions.',
     },
     tagIds: ['auth', 'security', 'backend', 'frontend', 'admin'],
   },

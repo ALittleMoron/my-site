@@ -754,6 +754,7 @@ def auth_session(session_id: str) -> AuthSession:
         username="Moderator",
         secret_hash=SessionSecretHash("a" * 64),
         expires_at=now + timedelta(days=30),
+        absolute_expires_at=now + timedelta(days=30),
         is_revoked=False,
         created_at=now - timedelta(days=1),
         last_used_at=now,

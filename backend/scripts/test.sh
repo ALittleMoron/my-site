@@ -26,7 +26,7 @@ cleanup_pytest_template_database() {
         return
     fi
 
-    run_with_test_env uv run python scripts/pytest_databases.py drop-template || true
+    run_with_test_env uv run python -m scripts.pytest_databases drop-template || true
     unset BACKEND_PYTEST_DB_TEMPLATE_ID
 }
 
@@ -62,6 +62,10 @@ run_pytest_integration_parallel() {
     BACKEND_PYTEST_DB_TEMPLATE_ID="$(pytest_template_run_id)"
     export BACKEND_PYTEST_DB_TEMPLATE_ID
     run_pytest_parallel tests/integration/
+}
+
+reset_base_test_database() {
+    run_with_test_env uv run python -m scripts.pytest_databases reset-base
 }
 
 run_pytest_cov_parallel() {
@@ -103,6 +107,7 @@ case "$action" in
         ensure_backend_test_db
         trap cleanup_test_resources EXIT
         run_pytest_integration_parallel
+        reset_base_test_database
         run_pytest_serial tests/migrations/
         ;;
     test-unit)
@@ -112,6 +117,7 @@ case "$action" in
         ensure_backend_test_db
         trap cleanup_test_resources EXIT
         run_pytest_integration_parallel
+        reset_base_test_database
         run_pytest_serial tests/migrations/
         ;;
     tests-coverage)
@@ -120,6 +126,7 @@ case "$action" in
         ensure_backend_test_db
         trap cleanup_test_resources EXIT
         run_pytest_cov_integration_parallel
+        reset_base_test_database
         run_pytest_cov_serial tests/migrations/
         run_with_test_env uv run coverage xml
         run_with_test_env uv run coverage report --fail-under=60

@@ -24,7 +24,7 @@ class TestRefreshAPI(ApiTestCase):
             ),
             session=AuthSessionCredentials(
                 secret=SessionSecret("session-secret"),
-                expires_in_seconds=2_592_000,
+                expires_in_seconds=60,
             ),
         )
 
@@ -60,7 +60,7 @@ class TestRefreshAPI(ApiTestCase):
         assert "Secure" in set_cookie
         assert "SameSite=lax" in set_cookie
         assert "Path=/api/auth" in set_cookie
-        assert "Max-Age=2592000" in set_cookie
+        assert "Max-Age=60" in set_cookie
         self.use_case.refresh_access_token.assert_called_once_with(
             params=AuthRefreshAccessTokenParams(
                 session_secret=SessionSecret("session-secret"),

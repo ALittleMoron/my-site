@@ -35,7 +35,12 @@ class AuthSessionStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_user_sessions(self, *, username: str, active_at: datetime) -> list[AuthSession]:
+    async def list_user_sessions(
+        self,
+        *,
+        username: str,
+        active_at: datetime,
+    ) -> list[AuthSession]:
         raise NotImplementedError
 
     @abstractmethod
@@ -49,7 +54,11 @@ class AuthSessionStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_expired_sessions(self, *, expires_at: datetime) -> int:
+    async def delete_expired_sessions(
+        self,
+        *,
+        expires_at: datetime,
+    ) -> int:
         raise NotImplementedError
 
     @abstractmethod
