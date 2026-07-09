@@ -68,4 +68,4 @@ class AuthenticationMiddleware(AbstractAuthenticationMiddleware):
                 )
             except UnauthorizedError:
                 return anon_result
-        return AuthenticationResult(user=JwtUser.from_user(user), auth=token)
+        return AuthenticationResult(user=JwtUser.from_user(user), auth=clear_token)

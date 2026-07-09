@@ -5,6 +5,7 @@ from core.account.enums import ManagedAccountActionEnum
 from core.account.exceptions import (
     AccountUsernameAlreadyExistsError,
     InvalidManagedAccountRoleError,
+    ManagedAccountActionForbiddenError,
 )
 from core.account.schemas import (
     ManagedAccount,
@@ -13,6 +14,12 @@ from core.account.schemas import (
     ManagedAccountPasswordUpdateOperationParams,
     ManagedAccountRoleUpdateOperationParams,
     ManagedAccounts,
+    ManagedAccountSession,
+    ManagedAccountSessionRevocationResult,
+    ManagedAccountSessionRevokeOperationParams,
+    ManagedAccountSessions,
+    ManagedAccountSessionsOperationParams,
+    ManagedAccountSessionsRevokeOthersOperationParams,
     ManagedAccountTargetOperationParams,
 )
 from core.account.storages import ManagedAccountStorage
@@ -38,6 +45,87 @@ class AccountsUseCase:
 
     async def get_account(self, *, username: str) -> ManagedAccount:
         return await self.storage.get_managed_account(username=username)
+
+    async def list_account_sessions(
+        self,
+        *,
+        params: ManagedAccountSessionsOperationParams,
+    ) -> ManagedAccountSessions:
+        target_account = await self.storage.get_managed_account(username=params.target_username)
+        current_account = await self.storage.get_managed_account(username=params.current_username)
+        current_account.ensure_can_manage_account(
+            target=target_account,
+            action=ManagedAccountActionEnum.MANAGE_SESSIONS,
+        )
+        sessions = await self.auth_session_storage.list_user_sessions(
+            username=params.target_username,
+            active_at=params.current_datetime,
+        )
+        return ManagedAccountSessions(
+            values=[
+                ManagedAccountSession.from_auth_session(
+                    session=session,
+                    current_session_id=params.current_session_id,
+                )
+                for session in sessions
+            ],
+        )
+
+    async def revoke_account_session(
+        self,
+        *,
+        params: ManagedAccountSessionRevokeOperationParams,
+    ) -> ManagedAccountSessionRevocationResult:
+        target_account = await self.storage.get_managed_account(username=params.target_username)
+        current_account = await self.storage.get_managed_account(username=params.current_username)
+        current_account.ensure_can_manage_account(
+            target=target_account,
+            action=ManagedAccountActionEnum.MANAGE_SESSIONS,
+        )
+        await self.auth_session_storage.revoke_user_session(
+            username=params.target_username,
+            session_id=params.target_session_id,
+        )
+        return ManagedAccountSessionRevocationResult(
+            current_session_revoked=params.target_session_id == params.current_session_id,
+        )
+
+    async def revoke_all_account_sessions(
+        self,
+        *,
+        params: ManagedAccountSessionsOperationParams,
+    ) -> ManagedAccountSessionRevocationResult:
+        target_account = await self.storage.get_managed_account(username=params.target_username)
+        current_account = await self.storage.get_managed_account(username=params.current_username)
+        current_account.ensure_can_manage_account(
+            target=target_account,
+            action=ManagedAccountActionEnum.MANAGE_SESSIONS,
+        )
+        await self.auth_session_storage.revoke_user_sessions(username=params.target_username)
+        return ManagedAccountSessionRevocationResult(
+            current_session_revoked=(
+                params.target_username.casefold() == params.current_username.casefold()
+            ),
+        )
+
+    async def revoke_other_account_sessions(
+        self,
+        *,
+        params: ManagedAccountSessionsRevokeOthersOperationParams,
+    ) -> ManagedAccountSessionRevocationResult:
+        target_account = await self.storage.get_managed_account(username=params.target_username)
+        current_account = await self.storage.get_managed_account(username=params.current_username)
+        current_account.ensure_can_manage_account(
+            target=target_account,
+            action=ManagedAccountActionEnum.MANAGE_SESSIONS,
+        )
+        if params.target_username.casefold() != params.current_username.casefold():
+            raise ManagedAccountActionForbiddenError
+        await self.auth_session_storage.revoke_user_sessions_except(
+            username=params.target_username,
+            except_session_id=params.current_session_id,
+        )
+        return ManagedAccountSessionRevocationResult(current_session_revoked=False)
 
     async def create_account(
         self,

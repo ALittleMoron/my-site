@@ -35,7 +35,17 @@ class AuthSessionStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def extend_session_expiry(self, *, session_id: str, expires_at: datetime) -> None:
+    async def list_user_sessions(self, *, username: str, active_at: datetime) -> list[AuthSession]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def extend_session_expiry(
+        self,
+        *,
+        session_id: str,
+        expires_at: datetime,
+        last_used_at: datetime,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -47,5 +57,13 @@ class AuthSessionStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def revoke_user_session(self, *, username: str, session_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     async def revoke_user_sessions(self, *, username: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def revoke_user_sessions_except(self, *, username: str, except_session_id: str) -> None:
         raise NotImplementedError

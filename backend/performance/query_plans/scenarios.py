@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.account.schemas import ManagedAccountFilters
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFilters, ArticleFolder, ArticleMetadata, Tag, Tags
-from core.auth.enums import RoleEnum
-from core.auth.schemas import AuthSessionCreate
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
+from core.auth.schemas import AuthSessionClientMetadata, AuthSessionCreate
 from core.auth.types import SessionSecretHash
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
@@ -258,6 +258,14 @@ async def run_create_auth_session(session: AsyncSession) -> None:
             ),
             expires_at=SEED_NOW + timedelta(days=30),
             is_revoked=False,
+            last_used_at=SEED_NOW,
+            auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+            client_metadata=AuthSessionClientMetadata(
+                user_agent_display="Chrome on Linux",
+                user_agent_browser="Chrome",
+                user_agent_os="Linux",
+                user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+            ),
         ),
     )
 
@@ -272,10 +280,18 @@ async def run_get_auth_session_by_id(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).get_session_by_id(session_id=hex_id(1))
 
 
+async def run_list_user_auth_sessions(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).list_user_sessions(
+        username=SEED_USERNAME,
+        active_at=SEED_NOW,
+    )
+
+
 async def run_extend_auth_session_expiry(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).extend_session_expiry(
         session_id=hex_id(1),
         expires_at=SEED_NOW + timedelta(days=31),
+        last_used_at=SEED_NOW + timedelta(minutes=1),
     )
 
 
@@ -291,6 +307,20 @@ async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:
 
 async def run_revoke_user_auth_sessions(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).revoke_user_sessions(username=SEED_USERNAME)
+
+
+async def run_revoke_user_auth_session(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).revoke_user_session(
+        username=SEED_USERNAME,
+        session_id=hex_id(1),
+    )
+
+
+async def run_revoke_other_user_auth_sessions(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).revoke_user_sessions_except(
+        username=SEED_USERNAME,
+        except_session_id=hex_id(1),
+    )
 
 
 async def run_create_contact_me_request(session: AsyncSession) -> None:
@@ -1102,6 +1132,16 @@ STORAGE_SCENARIOS = (
         run=run_get_auth_session_by_id,
     ),
     scenario(
+        name="auth_session_list_user_sessions",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="list_user_sessions",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_list_user_auth_sessions,
+    ),
+    scenario(
         name="auth_session_extend_expiry",
         storage_class="AuthSessionDatabaseStorage",
         method_name="extend_session_expiry",
@@ -1132,14 +1172,34 @@ STORAGE_SCENARIOS = (
         run=run_revoke_auth_session_by_secret_hash,
     ),
     scenario(
-        name="auth_session_revoke_user_sessions",
+        name="auth_session_revoke_user_session",
         storage_class="AuthSessionDatabaseStorage",
-        method_name="revoke_user_sessions",
+        method_name="revoke_user_session",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
+        run=run_revoke_user_auth_session,
+    ),
+    scenario(
+        name="auth_session_revoke_user_sessions",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="revoke_user_sessions",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
         run=run_revoke_user_auth_sessions,
+    ),
+    scenario(
+        name="auth_session_revoke_user_sessions_except",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="revoke_user_sessions_except",
+        group=QueryThresholdGroup.SMALL_WRITE,
+        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        forbidden_seq_scan_relations=("auth__auth_session_model",),
+        allow_seq_scan_reason=None,
+        run=run_revoke_other_user_auth_sessions,
     ),
     scenario(
         name="contact_create_request",

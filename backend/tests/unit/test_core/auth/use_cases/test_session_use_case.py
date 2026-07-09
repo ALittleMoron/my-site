@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import (
     AuthSessionNotFoundError,
@@ -23,6 +23,7 @@ from core.auth.schemas import (
     AuthRefreshAccessTokenParams,
     AuthRefreshAccessTokenResult,
     AuthSession,
+    AuthSessionClientMetadata,
     AuthSessionCreate,
     AuthSessionCredentials,
     AuthUseCaseConfig,
@@ -57,6 +58,10 @@ class TestAuthSessionUseCase(TestCase):
             secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(seconds=2_592_000),
             is_revoked=False,
+            created_at=self.now,
+            last_used_at=self.now,
+            auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+            client_metadata=auth_session_client(),
         )
         self.use_case = AuthUseCase(
             hasher=self.hasher,
@@ -88,6 +93,7 @@ class TestAuthSessionUseCase(TestCase):
                 password="password",
                 required_role=RoleEnum.MODERATOR,
                 current_datetime=self.now,
+                client_metadata=auth_session_client(),
             ),
         )
 
@@ -107,6 +113,9 @@ class TestAuthSessionUseCase(TestCase):
                 secret_hash=SessionSecretHash("session-secret-hash"),
                 expires_at=self.now + timedelta(seconds=2_592_000),
                 is_revoked=False,
+                last_used_at=self.now,
+                auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+                client_metadata=auth_session_client(),
             ),
         )
         self.token_handler.encode_token.assert_called_once_with(
@@ -117,10 +126,8 @@ class TestAuthSessionUseCase(TestCase):
         )
 
     async def test_refresh_rejects_expired_session(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
-            username="admin",
-            secret_hash=SessionSecretHash("session-secret-hash"),
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             expires_at=self.now - timedelta(seconds=1),
             is_revoked=False,
         )
@@ -138,10 +145,8 @@ class TestAuthSessionUseCase(TestCase):
         self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_revoked_session(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
-            username="admin",
-            secret_hash=SessionSecretHash("session-secret-hash"),
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             expires_at=self.now + timedelta(days=1),
             is_revoked=True,
         )
@@ -159,10 +164,9 @@ class TestAuthSessionUseCase(TestCase):
         self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_session_user_without_required_role(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             username="regular",
-            secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -184,10 +188,9 @@ class TestAuthSessionUseCase(TestCase):
         self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_missing_session_user_without_extending_session(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             username="missing",
-            secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -205,10 +208,9 @@ class TestAuthSessionUseCase(TestCase):
         self.session_storage.extend_session_expiry.assert_not_called()
 
     async def test_refresh_rejects_inactive_session_user_without_extending_session(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             username="inactive",
-            secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -233,10 +235,9 @@ class TestAuthSessionUseCase(TestCase):
     async def test_refresh_extends_session_and_returns_new_access_token_for_active_session(
         self,
     ) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             username="moderator",
-            secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -268,6 +269,7 @@ class TestAuthSessionUseCase(TestCase):
         self.session_storage.extend_session_expiry.assert_called_once_with(
             session_id="10000000000040008000000000000001",
             expires_at=self.now + timedelta(seconds=2_592_000),
+            last_used_at=self.now,
         )
         self.token_handler.encode_token.assert_called_once_with(
             payload=AccessTokenPayload(
@@ -277,10 +279,9 @@ class TestAuthSessionUseCase(TestCase):
         )
 
     async def test_refresh_rejects_session_removed_before_extension(self) -> None:
-        self.session_storage.get_session_by_secret_hash.return_value = AuthSession(
-            id="10000000000040008000000000000001",
+        self.session_storage.get_session_by_secret_hash.return_value = auth_session(
+            now=self.now,
             username="moderator",
-            secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -308,10 +309,8 @@ class TestAuthSessionUseCase(TestCase):
             username="admin",
             session_id="10000000000040008000000000000001",
         )
-        self.session_storage.get_session_by_id.return_value = AuthSession(
-            id="10000000000040008000000000000001",
-            username="admin",
-            secret_hash=SessionSecretHash("session-secret-hash"),
+        self.session_storage.get_session_by_id.return_value = auth_session(
+            now=self.now,
             expires_at=self.now + timedelta(days=1),
             is_revoked=True,
         )
@@ -335,10 +334,8 @@ class TestAuthSessionUseCase(TestCase):
             username="admin",
             session_id="10000000000040008000000000000001",
         )
-        self.session_storage.get_session_by_id.return_value = AuthSession(
-            id="10000000000040008000000000000001",
-            username="admin",
-            secret_hash=SessionSecretHash("session-secret-hash"),
+        self.session_storage.get_session_by_id.return_value = auth_session(
+            now=self.now,
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
         )
@@ -383,3 +380,32 @@ class TestAuthSessionUseCase(TestCase):
             secret_hash=SessionSecretHash("session-secret-hash"),
         )
         self.token_revocation_storage.revoke_token.assert_not_called()
+
+
+def auth_session_client() -> AuthSessionClientMetadata:
+    return AuthSessionClientMetadata(
+        user_agent_display="Firefox on Linux",
+        user_agent_browser="Firefox",
+        user_agent_os="Linux",
+        user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+    )
+
+
+def auth_session(
+    *,
+    now: datetime,
+    expires_at: datetime,
+    username: str = "admin",
+    is_revoked: bool,
+) -> AuthSession:
+    return AuthSession(
+        id="10000000000040008000000000000001",
+        username=username,
+        secret_hash=SessionSecretHash("session-secret-hash"),
+        expires_at=expires_at,
+        is_revoked=is_revoked,
+        created_at=now,
+        last_used_at=now,
+        auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+        client_metadata=auth_session_client(),
+    )

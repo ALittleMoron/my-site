@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.types import SessionSecret, SessionSecretHash, Token
-from core.schemas import Secret
+from core.schemas import Secret, ValuedDataclass
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -148,11 +148,59 @@ class AuthUseCaseConfig:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionClientMetadata:
+    user_agent_display: str
+    user_agent_browser: str
+    user_agent_os: str
+    user_agent_device: AuthSessionDeviceTypeEnum
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        browser: object,
+        operating_system: object,
+        device_type: str | None,
+    ) -> AuthSessionClientMetadata:
+        browser_label = cls._label(value=browser, unknown_label="Unknown browser")
+        os_label = cls._label(value=operating_system, unknown_label="Unknown OS")
+        return cls(
+            user_agent_display=(
+                f"{browser_label} on {os_label}"
+                if browser_label != "Unknown browser" and os_label != "Unknown OS"
+                else "Unknown device"
+            ),
+            user_agent_browser=browser_label,
+            user_agent_os=os_label,
+            user_agent_device=AuthSessionDeviceTypeEnum.from_device_type(device_type),
+        )
+
+    @classmethod
+    def empty(cls) -> AuthSessionClientMetadata:
+        return cls(
+            user_agent_display="Unknown device",
+            user_agent_browser="Unknown browser",
+            user_agent_os="Unknown OS",
+            user_agent_device=AuthSessionDeviceTypeEnum.UNKNOWN,
+        )
+
+    @classmethod
+    def _label(cls, *, value: object, unknown_label: str) -> str:
+        if not isinstance(value, str):
+            return unknown_label
+        label = value.strip()
+        if label == "" or label.casefold() in {"other", "unknown"}:
+            return unknown_label
+        return label
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AuthLoginParams:
     username: str
     password: str
     required_role: RoleEnum
     current_datetime: datetime
+    client_metadata: AuthSessionClientMetadata
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -181,6 +229,9 @@ class AuthSessionCreate:
     secret_hash: SessionSecretHash
     expires_at: datetime
     is_revoked: bool
+    last_used_at: datetime
+    auth_method: AuthSessionAuthMethodEnum
+    client_metadata: AuthSessionClientMetadata
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -190,6 +241,15 @@ class AuthSession:
     secret_hash: SessionSecretHash
     expires_at: datetime
     is_revoked: bool
+    created_at: datetime
+    last_used_at: datetime
+    auth_method: AuthSessionAuthMethodEnum
+    client_metadata: AuthSessionClientMetadata
 
     def is_active_at(self, *, now: datetime) -> bool:
         return not self.is_revoked and self.expires_at > now
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessions(ValuedDataclass[AuthSession]):
+    pass

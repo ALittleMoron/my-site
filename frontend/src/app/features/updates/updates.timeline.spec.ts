@@ -126,7 +126,7 @@ describe('updates timeline', () => {
     expect(entry?.title.en).toContain('Authorization');
     expect(entry?.summary.ru).toContain('скользящие');
     expect(entry?.summary.en).toContain('sliding');
-    expect(entry?.tagIds).toEqual(['auth', 'security', 'backend']);
+    expect(entry?.tagIds).toEqual(['auth', 'security', 'backend', 'frontend', 'admin']);
   });
 
   it('renders July milestones in editorial order', () => {
@@ -166,7 +166,13 @@ describe('updates timeline', () => {
       'frontend',
       'quality',
     ]);
-    expect(tagIdsByEntry.get('auth-session-hardening')).toEqual(['auth', 'security', 'backend']);
+    expect(tagIdsByEntry.get('auth-session-hardening')).toEqual([
+      'auth',
+      'security',
+      'backend',
+      'frontend',
+      'admin',
+    ]);
     expect(tagIdsByEntry.get('public-seo-layer')).toEqual([
       'seo',
       'frontend',

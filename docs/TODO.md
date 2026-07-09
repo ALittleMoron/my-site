@@ -489,8 +489,10 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Edit personal details
   - [ ] Notification settings
   - [ ] Saved flashcard list
-  - [ ] List of devices where the account was logged in
-- [ ] Security audit
+  - [ ] Add self-service session management to the user profile: list current account sessions,
+        show privacy-safe device labels, and revoke one/all/other sessions outside the admin
+        team-member detail flow.
+- [ ] Security audit and features
   - [ ] Users cannot interact with other users' profiles. Read-only.
   - [x] No admin access tokens in localStorage
   - [x] Admin auth refresh based on an HttpOnly, Secure, SameSite=Lax session cookie
@@ -508,7 +510,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
         metadata, and an overlap period for tokens signed by retiring keys.
   - [ ] Add step-up re-auth for sensitive actions such as own password changes, account deletion,
         and team/role/password management.
-  - [ ] Add explicit device/session management: list sessions, revoke one, revoke all or others,
+  - [x] Add explicit device/session management: list sessions, revoke one, revoke all or others,
         privacy-safe user-agent display, current-session marker, and last-used timestamp.
   - [ ] Session rotation / refresh-token-family reuse detection for broader user accounts
   - [x] Expired sessions are physically pruned by a scheduled cleanup task

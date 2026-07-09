@@ -106,6 +106,66 @@ describe('TeamWorkspaceService', () => {
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
   });
+
+  it('loads and revokes managed account sessions through admin endpoints', () => {
+    service.listAccountSessions('AdminUser').subscribe((sessions) => {
+      expect(sessions.sessions).toEqual([
+        {
+          id: '10000000000040008000000000000001',
+          userAgentDisplay: 'Firefox on Linux',
+          userAgentBrowser: 'Firefox',
+          userAgentOs: 'Linux',
+          userAgentDevice: 'desktop',
+          authMethod: 'password',
+          createdAt: '2026-07-07T11:30:00+00:00',
+          lastUsedAt: '2026-07-08T11:30:00+00:00',
+          expiresAt: '2026-08-07T11:30:00+00:00',
+          isCurrent: true,
+        },
+      ]);
+    });
+    const listReq = httpMock.expectOne((request) =>
+      request.url.endsWith('/api/admin/accounts/AdminUser/sessions'),
+    );
+    expect(listReq.request.method).toBe('GET');
+    listReq.flush({
+      sessions: [sessionDto()],
+    });
+
+    service
+      .revokeAccountSession('AdminUser', '10000000000040008000000000000001')
+      .subscribe((result) => {
+        expect(result.currentSessionRevoked).toBe(true);
+      });
+    const revokeReq = httpMock.expectOne((request) =>
+      request.url.endsWith(
+        '/api/admin/accounts/AdminUser/sessions/10000000000040008000000000000001/revoke',
+      ),
+    );
+    expect(revokeReq.request.method).toBe('POST');
+    expect(revokeReq.request.body).toEqual({});
+    revokeReq.flush({ currentSessionRevoked: true });
+
+    service.revokeAllAccountSessions('AdminUser').subscribe((result) => {
+      expect(result.currentSessionRevoked).toBe(true);
+    });
+    const revokeAllReq = httpMock.expectOne((request) =>
+      request.url.endsWith('/api/admin/accounts/AdminUser/sessions/revoke-all'),
+    );
+    expect(revokeAllReq.request.method).toBe('POST');
+    expect(revokeAllReq.request.body).toEqual({});
+    revokeAllReq.flush({ currentSessionRevoked: true });
+
+    service.revokeOtherAccountSessions('AdminUser').subscribe((result) => {
+      expect(result.currentSessionRevoked).toBe(false);
+    });
+    const revokeOthersReq = httpMock.expectOne((request) =>
+      request.url.endsWith('/api/admin/accounts/AdminUser/sessions/revoke-others'),
+    );
+    expect(revokeOthersReq.request.method).toBe('POST');
+    expect(revokeOthersReq.request.body).toEqual({});
+    revokeOthersReq.flush({ currentSessionRevoked: false });
+  });
 });
 
 function accountDto(): {
@@ -117,5 +177,31 @@ function accountDto(): {
     username: 'AdminUser',
     role: 'admin',
     isActive: true,
+  };
+}
+
+function sessionDto(): {
+  id: string;
+  userAgentDisplay: string;
+  userAgentBrowser: string;
+  userAgentOs: string;
+  userAgentDevice: 'desktop';
+  authMethod: 'password';
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+} {
+  return {
+    id: '10000000000040008000000000000001',
+    userAgentDisplay: 'Firefox on Linux',
+    userAgentBrowser: 'Firefox',
+    userAgentOs: 'Linux',
+    userAgentDevice: 'desktop',
+    authMethod: 'password',
+    createdAt: '2026-07-07T11:30:00+00:00',
+    lastUsedAt: '2026-07-08T11:30:00+00:00',
+    expiresAt: '2026-08-07T11:30:00+00:00',
+    isCurrent: true,
   };
 }

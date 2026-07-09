@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -11,10 +12,15 @@ from core.account.schemas import (
     ManagedAccountFilters,
     ManagedAccountPasswordUpdateOperationParams,
     ManagedAccountRoleUpdateOperationParams,
+    ManagedAccountSessionRevokeOperationParams,
+    ManagedAccountSessionsOperationParams,
+    ManagedAccountSessionsRevokeOthersOperationParams,
     ManagedAccountTargetOperationParams,
 )
 from core.account.use_cases import AccountsUseCase
+from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
+from core.auth.token_handlers import TokenHandler
 from core.auth.types import Token
 from entrypoints.litestar.api.accounts.dependencies import provide_managed_account_filters
 from entrypoints.litestar.api.accounts.schemas import (
@@ -22,9 +28,11 @@ from entrypoints.litestar.api.accounts.schemas import (
     ManagedAccountPasswordUpdateRequestSchema,
     ManagedAccountResponseSchema,
     ManagedAccountRoleUpdateRequestSchema,
+    ManagedAccountSessionRevocationResponseSchema,
+    ManagedAccountSessionsResponseSchema,
     ManagedAccountsResponseSchema,
 )
-from entrypoints.litestar.api.parameters import UsernamePath, api_json_body
+from entrypoints.litestar.api.parameters import SessionIdPath, UsernamePath, api_json_body
 from entrypoints.litestar.guards import team_manager_guard
 
 
@@ -95,6 +103,122 @@ class AdminAccountsApiController(Controller):
     ) -> ManagedAccountResponseSchema:
         account = await use_case.get_account(username=username)
         return ManagedAccountResponseSchema.from_domain_schema(schema=account)
+
+    @get(
+        "/{username:str}/sessions",
+        description="Get active managed account sessions.",
+        name="admin-accounts-sessions-list-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def list_account_sessions(
+        self,
+        username: UsernamePath,
+        request: Request[JwtUser, Token | None, State],
+        token_handler: FromDishka[TokenHandler],
+        current_datetime: FromDishka[datetime],
+        use_case: FromDishka[AccountsUseCase],
+    ) -> ManagedAccountSessionsResponseSchema:
+        sessions = await use_case.list_account_sessions(
+            params=ManagedAccountSessionsOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+                current_session_id=self._current_session_id(
+                    request=request,
+                    token_handler=token_handler,
+                ),
+                current_datetime=current_datetime,
+            ),
+        )
+        return ManagedAccountSessionsResponseSchema.from_domain_schema(schema=sessions)
+
+    @post(
+        "/{username:str}/sessions/{session_id:str}/revoke",
+        description="Revoke a managed account session.",
+        name="admin-accounts-session-revoke-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def revoke_account_session(
+        self,
+        username: UsernamePath,
+        session_id: SessionIdPath,
+        request: Request[JwtUser, Token | None, State],
+        token_handler: FromDishka[TokenHandler],
+        use_case: FromDishka[AccountsUseCase],
+    ) -> ManagedAccountSessionRevocationResponseSchema:
+        result = await use_case.revoke_account_session(
+            params=ManagedAccountSessionRevokeOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+                target_session_id=session_id,
+                current_session_id=self._current_session_id(
+                    request=request,
+                    token_handler=token_handler,
+                ),
+            ),
+        )
+        return ManagedAccountSessionRevocationResponseSchema.from_domain_schema(schema=result)
+
+    @post(
+        "/{username:str}/sessions/revoke-all",
+        description="Revoke all managed account sessions.",
+        name="admin-accounts-sessions-revoke-all-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def revoke_all_account_sessions(
+        self,
+        username: UsernamePath,
+        request: Request[JwtUser, Token | None, State],
+        token_handler: FromDishka[TokenHandler],
+        current_datetime: FromDishka[datetime],
+        use_case: FromDishka[AccountsUseCase],
+    ) -> ManagedAccountSessionRevocationResponseSchema:
+        result = await use_case.revoke_all_account_sessions(
+            params=ManagedAccountSessionsOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+                current_session_id=self._current_session_id(
+                    request=request,
+                    token_handler=token_handler,
+                ),
+                current_datetime=current_datetime,
+            ),
+        )
+        return ManagedAccountSessionRevocationResponseSchema.from_domain_schema(schema=result)
+
+    @post(
+        "/{username:str}/sessions/revoke-others",
+        description="Revoke other sessions for the current managed account.",
+        name="admin-accounts-sessions-revoke-others-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def revoke_other_account_sessions(
+        self,
+        username: UsernamePath,
+        request: Request[JwtUser, Token | None, State],
+        token_handler: FromDishka[TokenHandler],
+        use_case: FromDishka[AccountsUseCase],
+    ) -> ManagedAccountSessionRevocationResponseSchema:
+        result = await use_case.revoke_other_account_sessions(
+            params=ManagedAccountSessionsRevokeOthersOperationParams(
+                target_username=username,
+                current_username=request.user.username,
+                current_session_id=self._current_session_id(
+                    request=request,
+                    token_handler=token_handler,
+                ),
+            ),
+        )
+        return ManagedAccountSessionRevocationResponseSchema.from_domain_schema(schema=result)
+
+    def _current_session_id(
+        self,
+        *,
+        request: Request[JwtUser, Token | None, State],
+        token_handler: TokenHandler,
+    ) -> str:
+        if request.auth is None:
+            raise UnauthorizedError
+        return token_handler.decode_token(request.auth).session_id
 
     @put(
         "/{username:str}/role",

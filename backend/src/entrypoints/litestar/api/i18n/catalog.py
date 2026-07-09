@@ -150,6 +150,31 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminTeamWorkspace.deleteError": "Не удалось удалить участника.",
         "adminTeamWorkspace.confirmDeactivate": "Деактивировать участника?",
         "adminTeamWorkspace.confirmDelete": "Удалить участника?",
+        "adminTeamWorkspace.sessions.title": "Сессии",
+        "adminTeamWorkspace.sessions.empty": "Активных сессий нет.",
+        "adminTeamWorkspace.sessions.loadError": "Не удалось загрузить сессии.",
+        "adminTeamWorkspace.sessions.current": "Текущая",
+        "adminTeamWorkspace.sessions.device": "Устройство",
+        "adminTeamWorkspace.sessions.authMethod": "Вход",
+        "adminTeamWorkspace.sessions.createdAt": "Создана",
+        "adminTeamWorkspace.sessions.lastUsedAt": "Последний вход",
+        "adminTeamWorkspace.sessions.expiresAt": "Истекает",
+        "adminTeamWorkspace.sessions.revoke": "Отозвать",
+        "adminTeamWorkspace.sessions.revokeAll": "Отозвать все",
+        "adminTeamWorkspace.sessions.revokeOthers": "Отозвать другие",
+        "adminTeamWorkspace.sessions.revoked": "Сессия отозвана.",
+        "adminTeamWorkspace.sessions.allRevoked": "Все сессии отозваны.",
+        "adminTeamWorkspace.sessions.othersRevoked": "Другие сессии отозваны.",
+        "adminTeamWorkspace.sessions.revokeError": "Не удалось отозвать сессии.",
+        "adminTeamWorkspace.sessions.confirmRevoke": "Отозвать эту сессию?",
+        "adminTeamWorkspace.sessions.confirmRevokeAll": "Отозвать все сессии?",
+        "adminTeamWorkspace.sessions.confirmRevokeOthers": "Отозвать другие сессии?",
+        "adminTeamWorkspace.sessions.device.desktop": "Компьютер",
+        "adminTeamWorkspace.sessions.device.mobile": "Телефон",
+        "adminTeamWorkspace.sessions.device.tablet": "Планшет",
+        "adminTeamWorkspace.sessions.device.bot": "Бот",
+        "adminTeamWorkspace.sessions.device.unknown": "Неизвестно",
+        "adminTeamWorkspace.sessions.authMethod.password": "Пароль",
         "adminResumeWorkspace.title": "Резюме",
         "adminResumeWorkspace.detailTitle": "Редактирование резюме",
         "adminResumeWorkspace.create": "Создать резюме",
@@ -434,23 +459,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.quality.title": "Качество и эксплуатация",
         "siteBuild.quality.body": (
-            "Качество не сводится к одному набору тестов: быстрые проверки дают ранний "
-            "feedback по стилю, типам, безопасности и регрессиям, а production-facing "
-            "контур покрывает SSR, производительность, backend smoke, SQL-планы, "
-            "конфигурацию и readiness сервисов. Эти проверки остаются release evidence "
-            "в CI, а деплой запускается отдельным ручным workflow; такой подход даёт "
-            "guardrails на нескольких уровнях, от кода до nginx routing, и снижает число "
-            "слепых зон перед переключением трафика. Админская авторизация использует "
-            "15-минутный in-memory PASETO access token и 30-дневную server-side session cookie "
-            "только для `/api/auth/refresh`: backend проверяет активную сессию и текущую роль "
-            "пользователя, продлевает idle lifetime только при успешном refresh, а истёкшие "
-            "сессии удаляет scheduled TaskIQ cleanup. Cookie endpoints требуют CSRF guard header "
-            "и Fetch Metadata check. "
-            "Доставка публичных ассетов опирается "
-            "на request-scoped nonce для Angular SSR CSP, app-owned runtime контейнеры "
-            "запускаются read-only с отброшенными Linux capabilities, а fingerprinted CSS/JS "
-            "кэшируются immutable. Изображения статей оптимизируются "
-            "в WebP при загрузке без миграции уже опубликованных объектов."
+            "Качество держится на коротких проверках: стиль, типы, unit/integration тесты, "
+            "безопасность, SSR smoke, производительность и SQL-планы. "
+            "Они остаются CI evidence перед релизом, а production deploy запускается вручную "
+            "и переключает blue/green трафик только после health checks. В эксплуатации "
+            "фоновые задачи, кэш, файлы и runtime контейнеры разделены по ответственности; "
+            "публичные ассеты обслуживаются с CSP и immutable caching."
         ),
         "siteBuild.next.title": "Что дальше",
         "siteBuild.next.body": (
@@ -918,6 +932,31 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminTeamWorkspace.deleteError": "Failed to delete the team member.",
         "adminTeamWorkspace.confirmDeactivate": "Deactivate this team member?",
         "adminTeamWorkspace.confirmDelete": "Delete this team member?",
+        "adminTeamWorkspace.sessions.title": "Sessions",
+        "adminTeamWorkspace.sessions.empty": "No active sessions.",
+        "adminTeamWorkspace.sessions.loadError": "Failed to load sessions.",
+        "adminTeamWorkspace.sessions.current": "Current",
+        "adminTeamWorkspace.sessions.device": "Device",
+        "adminTeamWorkspace.sessions.authMethod": "Sign-in",
+        "adminTeamWorkspace.sessions.createdAt": "Created",
+        "adminTeamWorkspace.sessions.lastUsedAt": "Last used",
+        "adminTeamWorkspace.sessions.expiresAt": "Expires",
+        "adminTeamWorkspace.sessions.revoke": "Revoke",
+        "adminTeamWorkspace.sessions.revokeAll": "Revoke all",
+        "adminTeamWorkspace.sessions.revokeOthers": "Revoke others",
+        "adminTeamWorkspace.sessions.revoked": "Session revoked.",
+        "adminTeamWorkspace.sessions.allRevoked": "All sessions revoked.",
+        "adminTeamWorkspace.sessions.othersRevoked": "Other sessions revoked.",
+        "adminTeamWorkspace.sessions.revokeError": "Failed to revoke sessions.",
+        "adminTeamWorkspace.sessions.confirmRevoke": "Revoke this session?",
+        "adminTeamWorkspace.sessions.confirmRevokeAll": "Revoke all sessions?",
+        "adminTeamWorkspace.sessions.confirmRevokeOthers": "Revoke other sessions?",
+        "adminTeamWorkspace.sessions.device.desktop": "Desktop",
+        "adminTeamWorkspace.sessions.device.mobile": "Phone",
+        "adminTeamWorkspace.sessions.device.tablet": "Tablet",
+        "adminTeamWorkspace.sessions.device.bot": "Bot",
+        "adminTeamWorkspace.sessions.device.unknown": "Unknown",
+        "adminTeamWorkspace.sessions.authMethod.password": "Password",
         "adminResumeWorkspace.title": "Resumes",
         "adminResumeWorkspace.detailTitle": "Edit resume",
         "adminResumeWorkspace.create": "Create resume",
@@ -1200,21 +1239,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.quality.title": "Quality and operations",
         "siteBuild.quality.body": (
-            "Quality is not treated as a single test stage: fast checks give early feedback "
-            "on style, types, security, and regressions, while production-facing checks "
-            "cover SSR, performance, backend smoke, SQL plans, configuration, and service "
-            "readiness. Those checks stay as CI release evidence, while deploy runs as a "
-            "separate manual workflow; that gives the project guardrails at several layers, "
-            "from code to nginx routing, and reduces blind spots before traffic is switched. "
-            "Admin authorization uses a 15-minute in-memory PASETO access token and a 30-day "
-            "server-side session cookie only for `/api/auth/refresh`: the backend verifies the "
-            "active session and current user role, extends the idle lifetime only on successful "
-            "refresh, and removes expired sessions through scheduled TaskIQ cleanup. Cookie "
-            "endpoints require a CSRF guard header and Fetch Metadata check. "
-            "Public asset delivery now pairs request-scoped nonces for Angular SSR CSP with "
-            "read-only app-owned runtime containers that drop Linux capabilities; "
-            "fingerprinted CSS/JS uses immutable caching, and article images are optimized "
-            "to WebP at upload time without migrating already published objects."
+            "Quality is covered by short checks: style, types, unit/integration tests, security, "
+            "SSR smoke, performance, and SQL plans. They remain CI release evidence, while "
+            "production deploy runs manually and switches blue/green traffic only after health "
+            "checks pass. In operations, background jobs, cache, files, and runtime containers "
+            "have separate responsibilities; public assets are served with CSP and immutable "
+            "caching."
         ),
         "siteBuild.next.title": "What is next",
         "siteBuild.next.body": (

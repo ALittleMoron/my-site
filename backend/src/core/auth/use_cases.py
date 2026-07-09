@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from core.account.storages import UserAccountStorage
+from core.auth.enums import AuthSessionAuthMethodEnum
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import (
     AuthSessionNotFoundError,
@@ -80,6 +81,9 @@ class AuthUseCase:
                 expires_at=params.current_datetime
                 + timedelta(seconds=self.config.session_expires_in_seconds),
                 is_revoked=False,
+                last_used_at=params.current_datetime,
+                auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+                client_metadata=params.client_metadata,
             ),
         )
         return AuthLoginResult(
@@ -159,6 +163,7 @@ class AuthUseCase:
             await self.auth_session_storage.extend_session_expiry(
                 session_id=session.id,
                 expires_at=new_session_expires_at,
+                last_used_at=params.current_datetime,
             )
         except AuthSessionNotFoundError as exc:
             raise UnauthorizedError from exc

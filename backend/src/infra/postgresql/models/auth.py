@@ -7,8 +7,8 @@ from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.account.schemas import ManagedAccount
-from core.auth.enums import RoleEnum
-from core.auth.schemas import AuthSession, User
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
+from core.auth.schemas import AuthSession, AuthSessionClientMetadata, User
 from core.auth.types import SessionSecretHash
 from core.schemas import Secret
 from infra.postgresql.models.base import BaseModel
@@ -98,6 +98,38 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
         Boolean,
         doc="Whether this auth session was explicitly revoked",
     )
+    last_used_at: Mapped[datetime] = mapped_column(
+        UTCDateTime(timezone=True),
+        doc="Last successful login or refresh timestamp",
+    )
+    auth_method: Mapped[AuthSessionAuthMethodEnum] = mapped_column(
+        Enum(
+            AuthSessionAuthMethodEnum,
+            native_enum=True,
+            name="auth_session_auth_method_enum",
+        ),
+        doc="Authentication method that created the session",
+    )
+    user_agent_display: Mapped[str] = mapped_column(
+        String(255),
+        doc="Privacy-safe coarse user-agent display label",
+    )
+    user_agent_browser: Mapped[str] = mapped_column(
+        String(63),
+        doc="Privacy-safe browser family label",
+    )
+    user_agent_os: Mapped[str] = mapped_column(
+        String(63),
+        doc="Privacy-safe operating-system family label",
+    )
+    user_agent_device: Mapped[AuthSessionDeviceTypeEnum] = mapped_column(
+        Enum(
+            AuthSessionDeviceTypeEnum,
+            native_enum=True,
+            name="auth_session_device_type_enum",
+        ),
+        doc="Privacy-safe coarse device type",
+    )
 
     __table_args__ = (
         UniqueConstraint("secret_hash", name="auth_sessions_secret_hash_uniq"),
@@ -108,6 +140,14 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             expires_at,
         ),
         Index("auth_sessions_expiry_idx", expires_at),
+        Index(
+            "auth_sessions_username_lower_active_last_used_idx",
+            func.lower(username).label("username_lower"),
+            is_revoked,
+            expires_at,
+            last_used_at.desc(),
+            "id",
+        ),
     )
 
     @classmethod
@@ -118,6 +158,12 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             secret_hash=schema.secret_hash,
             expires_at=schema.expires_at,
             is_revoked=schema.is_revoked,
+            last_used_at=schema.last_used_at,
+            auth_method=schema.auth_method,
+            user_agent_display=schema.client_metadata.user_agent_display,
+            user_agent_browser=schema.client_metadata.user_agent_browser,
+            user_agent_os=schema.client_metadata.user_agent_os,
+            user_agent_device=schema.client_metadata.user_agent_device,
         )
 
     def to_domain_schema(self) -> AuthSession:
@@ -127,4 +173,13 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
             secret_hash=SessionSecretHash(self.secret_hash),
             expires_at=self.expires_at,
             is_revoked=self.is_revoked,
+            created_at=self.created_at,
+            last_used_at=self.last_used_at,
+            auth_method=self.auth_method,
+            client_metadata=AuthSessionClientMetadata(
+                user_agent_display=self.user_agent_display,
+                user_agent_browser=self.user_agent_browser,
+                user_agent_os=self.user_agent_os,
+                user_agent_device=self.user_agent_device,
+            ),
         )

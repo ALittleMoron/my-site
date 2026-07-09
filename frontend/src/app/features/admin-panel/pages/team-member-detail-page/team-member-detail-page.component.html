@@ -59,6 +59,95 @@
         </dd>
       </div>
     </dl>
+
+    <section class="border-top pt-4 mt-4" data-testid="team-sessions-section">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h2 class="h5 mb-0">{{ 'adminTeamWorkspace.sessions.title' | t }}</h2>
+        <div class="d-flex flex-wrap gap-2">
+          @if (canRevokeOtherSessions()) {
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              data-testid="team-sessions-revoke-others"
+              [disabled]="sessionActionSubmitting() !== null"
+              (click)="revokeOtherSessions()"
+            >
+              {{ 'adminTeamWorkspace.sessions.revokeOthers' | t }}
+            </button>
+          }
+          <button
+            type="button"
+            class="btn btn-outline-danger btn-sm"
+            data-testid="team-sessions-revoke-all"
+            [disabled]="sessionActionSubmitting() !== null || sessions().length === 0"
+            (click)="revokeAllSessions()"
+          >
+            {{ 'adminTeamWorkspace.sessions.revokeAll' | t }}
+          </button>
+        </div>
+      </div>
+
+      @if (sessionsLoading()) {
+        <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+      } @else if (sessionsError()) {
+        <app-error-message
+          [error]="sessionsError()!"
+          [retryLabel]="'shared.retry' | t"
+          (retry)="loadSessions()"
+        />
+      } @else if (sessions().length === 0) {
+        <p class="text-body-secondary mb-0" data-testid="team-sessions-empty">
+          {{ 'adminTeamWorkspace.sessions.empty' | t }}
+        </p>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'adminTeamWorkspace.sessions.device' | t }}</th>
+                <th scope="col">{{ 'adminTeamWorkspace.sessions.authMethod' | t }}</th>
+                <th scope="col">{{ 'adminTeamWorkspace.sessions.createdAt' | t }}</th>
+                <th scope="col">{{ 'adminTeamWorkspace.sessions.lastUsedAt' | t }}</th>
+                <th scope="col">{{ 'adminTeamWorkspace.sessions.expiresAt' | t }}</th>
+                <th scope="col" class="text-end">{{ 'shared.actions' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (session of sessions(); track session.id) {
+                <tr>
+                  <td>
+                    <div class="fw-medium">{{ session.userAgentDisplay }}</div>
+                    <div class="small text-body-secondary">
+                      {{ sessionDeviceLabelKey(session.userAgentDevice) | t }}
+                    </div>
+                    @if (session.isCurrent) {
+                      <span class="badge text-bg-info mt-1">
+                        {{ 'adminTeamWorkspace.sessions.current' | t }}
+                      </span>
+                    }
+                  </td>
+                  <td>{{ sessionAuthMethodLabelKey(session.authMethod) | t }}</td>
+                  <td>{{ formatSessionTimestamp(session.createdAt) }}</td>
+                  <td>{{ formatSessionTimestamp(session.lastUsedAt) }}</td>
+                  <td>{{ formatSessionTimestamp(session.expiresAt) }}</td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger btn-sm"
+                      [attr.data-testid]="'team-session-revoke-' + session.id"
+                      [disabled]="sessionActionSubmitting() !== null"
+                      (click)="revokeSession(session)"
+                    >
+                      {{ 'adminTeamWorkspace.sessions.revoke' | t }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   }
 
   @if (roleDialogOpen()) {

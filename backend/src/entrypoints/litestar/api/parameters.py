@@ -431,6 +431,15 @@ UsernamePath: TypeAlias = Annotated[
         examples=("moderator",),
     ),
 ]
+SessionIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="session_id",
+        title="Session identifier",
+        description="Hex identifier of the managed account session.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
 EntityPkPath: TypeAlias = Annotated[
     str,
     api_path_parameter(

@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql.selectable import Subquery
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.i18n.enums import LanguageEnum
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
@@ -181,7 +181,19 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(AuthSessionModel.__table__).from_select(
-            ["id", "username", "secret_hash", "expires_at", "is_revoked"],
+            [
+                "id",
+                "username",
+                "secret_hash",
+                "expires_at",
+                "is_revoked",
+                "last_used_at",
+                "auth_method",
+                "user_agent_display",
+                "user_agent_browser",
+                "user_agent_os",
+                "user_agent_device",
+            ],
             select(
                 hex_id_expr(value=value),
                 case(
@@ -197,6 +209,18 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
                     else_=literal(SEED_NOW + timedelta(days=30)),
                 ),
                 literal(value=False),
+                literal(SEED_NOW),
+                sql_cast(
+                    literal(AuthSessionAuthMethodEnum.PASSWORD.name),
+                    AuthSessionModel.__table__.c.auth_method.type,
+                ),
+                literal("Chrome on Linux"),
+                literal("Chrome"),
+                literal("Linux"),
+                sql_cast(
+                    literal(AuthSessionDeviceTypeEnum.DESKTOP.name),
+                    AuthSessionModel.__table__.c.user_agent_device.type,
+                ),
             ).select_from(series),
         ),
     )

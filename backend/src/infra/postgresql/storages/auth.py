@@ -40,6 +40,12 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
                 secret_hash=session.secret_hash,
                 expires_at=session.expires_at,
                 is_revoked=session.is_revoked,
+                last_used_at=session.last_used_at,
+                auth_method=session.auth_method,
+                user_agent_display=session.client_metadata.user_agent_display,
+                user_agent_browser=session.client_metadata.user_agent_browser,
+                user_agent_os=session.client_metadata.user_agent_os,
+                user_agent_device=session.client_metadata.user_agent_device,
             )
             .returning(AuthSessionModel)
         )
@@ -62,10 +68,29 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
             raise AuthSessionNotFoundError
         return model.to_domain_schema()
 
-    async def extend_session_expiry(self, *, session_id: str, expires_at: datetime) -> None:
+    async def list_user_sessions(self, *, username: str, active_at: datetime) -> list[AuthSession]:
+        statement = (
+            select(AuthSessionModel)
+            .where(
+                func.lower(AuthSessionModel.username) == username.lower(),
+                AuthSessionModel.is_revoked.is_(False),
+                AuthSessionModel.expires_at > active_at,
+            )
+            .order_by(AuthSessionModel.last_used_at.desc(), AuthSessionModel.id)
+        )
+        models = await self.session.scalars(statement)
+        return [model.to_domain_schema() for model in models]
+
+    async def extend_session_expiry(
+        self,
+        *,
+        session_id: str,
+        expires_at: datetime,
+        last_used_at: datetime,
+    ) -> None:
         statement = (
             update(AuthSessionModel)
-            .values(expires_at=expires_at)
+            .values(expires_at=expires_at, last_used_at=last_used_at)
             .where(AuthSessionModel.id == session_id)
             .returning(AuthSessionModel.id)
         )
@@ -92,10 +117,35 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
         if session_id is None:
             raise AuthSessionNotFoundError
 
+    async def revoke_user_session(self, *, username: str, session_id: str) -> None:
+        statement = (
+            update(AuthSessionModel)
+            .values(is_revoked=True)
+            .where(
+                AuthSessionModel.id == session_id,
+                func.lower(AuthSessionModel.username) == username.lower(),
+            )
+            .returning(AuthSessionModel.id)
+        )
+        revoked_session_id = await self.session.scalar(statement)
+        if revoked_session_id is None:
+            raise AuthSessionNotFoundError
+
     async def revoke_user_sessions(self, *, username: str) -> None:
         statement = (
             update(AuthSessionModel)
             .values(is_revoked=True)
             .where(func.lower(AuthSessionModel.username) == username.lower())
+        )
+        await self.session.execute(statement)
+
+    async def revoke_user_sessions_except(self, *, username: str, except_session_id: str) -> None:
+        statement = (
+            update(AuthSessionModel)
+            .values(is_revoked=True)
+            .where(
+                func.lower(AuthSessionModel.username) == username.lower(),
+                AuthSessionModel.id != except_session_id,
+            )
         )
         await self.session.execute(statement)

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from math import ceil
 from typing import Self
 
@@ -7,7 +8,8 @@ from core.account.exceptions import (
     ManagedAccountActionForbiddenError,
     SelfAccountActionForbiddenError,
 )
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, RoleEnum
+from core.auth.schemas import AuthSession, AuthSessionClientMetadata
 from core.schemas import Secret, ValuedDataclass
 
 SELF_FORBIDDEN_MANAGED_ACCOUNT_ACTIONS = (
@@ -145,3 +147,59 @@ class ManagedAccountPasswordUpdateOperationParams:
 class ManagedAccountTargetOperationParams:
     target_username: str
     current_username: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSessionsOperationParams:
+    target_username: str
+    current_username: str
+    current_session_id: str
+    current_datetime: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSessionRevokeOperationParams:
+    target_username: str
+    current_username: str
+    target_session_id: str
+    current_session_id: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSessionsRevokeOthersOperationParams:
+    target_username: str
+    current_username: str
+    current_session_id: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSession:
+    id: str
+    client_metadata: AuthSessionClientMetadata
+    auth_method: AuthSessionAuthMethodEnum
+    created_at: datetime
+    last_used_at: datetime
+    expires_at: datetime
+    is_current: bool
+
+    @classmethod
+    def from_auth_session(cls, *, session: AuthSession, current_session_id: str) -> Self:
+        return cls(
+            id=session.id,
+            client_metadata=session.client_metadata,
+            auth_method=session.auth_method,
+            created_at=session.created_at,
+            last_used_at=session.last_used_at,
+            expires_at=session.expires_at,
+            is_current=session.id == current_session_id,
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSessions(ValuedDataclass[ManagedAccountSession]):
+    pass
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedAccountSessionRevocationResult:
+    current_session_revoked: bool

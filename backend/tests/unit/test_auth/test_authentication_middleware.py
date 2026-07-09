@@ -49,7 +49,7 @@ class TestAuthenticationMiddleware(ContainerTestCase):
         result = await self.middleware.authenticate_request(connection=connection_mock)
         assert result == AuthenticationResult(
             user=self.factory.core.jwt_user(username="test", role=RoleEnum.MODERATOR),
-            auth="Bearer token",
+            auth=Token(b"token"),
         )
         self.use_case.authenticate.assert_called_once_with(
             params=AuthAuthenticateParams(

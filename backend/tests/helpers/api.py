@@ -516,6 +516,18 @@ class APIHelper:
     def delete_admin_account(self, username: str) -> Response:
         return self.client.delete(f"/api/admin/accounts/{username}")
 
+    def get_admin_account_sessions(self, username: str) -> Response:
+        return self.client.get(f"/api/admin/accounts/{username}/sessions")
+
+    def post_revoke_admin_account_session(self, username: str, session_id: str) -> Response:
+        return self.client.post(f"/api/admin/accounts/{username}/sessions/{session_id}/revoke")
+
+    def post_revoke_all_admin_account_sessions(self, username: str) -> Response:
+        return self.client.post(f"/api/admin/accounts/{username}/sessions/revoke-all")
+
+    def post_revoke_other_admin_account_sessions(self, username: str) -> Response:
+        return self.client.post(f"/api/admin/accounts/{username}/sessions/revoke-others")
+
     def post_create_resume(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/admin/resumes", json=data)
 
@@ -650,8 +662,12 @@ class APIHelper:
     def delete_admin_file(self, *, file_id: str) -> Response:
         return self.client.delete(f"/api/admin/files/{file_id}")
 
-    def post_login(self, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/auth/login", json=data)
+    def post_login(
+        self,
+        data: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> Response:
+        return self.client.post("/api/auth/login", json=data, headers=headers)
 
     def post_refresh(
         self,

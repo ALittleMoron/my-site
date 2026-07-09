@@ -2,10 +2,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
-import { ManagedAccount } from '../../models/team-workspace.model';
+import { ManagedAccount, ManagedAccountSession } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
 import { TeamMemberDetailPageComponent } from './team-member-detail-page.component';
 
@@ -18,6 +19,17 @@ describe('TeamMemberDetailPageComponent', () => {
     activateAccount: jest.Mock;
     deactivateAccount: jest.Mock;
     deleteAccount: jest.Mock;
+    listAccountSessions: jest.Mock;
+    revokeAccountSession: jest.Mock;
+    revokeAllAccountSessions: jest.Mock;
+    revokeOtherAccountSessions: jest.Mock;
+  };
+  let auth: {
+    currentUser: WritableSignal<AccountInfo | null>;
+    clearLocalSession: jest.Mock;
+  };
+  let authModal: {
+    openLogin: jest.Mock;
   };
   let currentUser: WritableSignal<AccountInfo | null>;
   let router: Router;
@@ -34,8 +46,19 @@ describe('TeamMemberDetailPageComponent', () => {
       activateAccount: jest.fn().mockReturnValue(of(account())),
       deactivateAccount: jest.fn().mockReturnValue(of(account({ isActive: false }))),
       deleteAccount: jest.fn().mockReturnValue(of(undefined)),
+      listAccountSessions: jest.fn().mockReturnValue(of({ sessions: sessions() })),
+      revokeAccountSession: jest.fn().mockReturnValue(of({ currentSessionRevoked: false })),
+      revokeAllAccountSessions: jest.fn().mockReturnValue(of({ currentSessionRevoked: false })),
+      revokeOtherAccountSessions: jest.fn().mockReturnValue(of({ currentSessionRevoked: false })),
     };
     currentUser = signal({ username: 'admin', role: 'admin' });
+    auth = {
+      currentUser,
+      clearLocalSession: jest.fn(),
+    };
+    authModal = {
+      openLogin: jest.fn(),
+    };
     notifications = {
       success: jest.fn(),
       error: jest.fn(),
@@ -58,12 +81,8 @@ describe('TeamMemberDetailPageComponent', () => {
         },
         { provide: TeamWorkspaceService, useValue: service },
         { provide: NotificationService, useValue: notifications },
-        {
-          provide: AuthService,
-          useValue: {
-            currentUser,
-          },
-        },
+        { provide: AuthService, useValue: auth },
+        { provide: AuthModalService, useValue: authModal },
       ],
     }).compileComponents();
 
@@ -75,10 +94,63 @@ describe('TeamMemberDetailPageComponent', () => {
 
   it('loads and renders readonly team member detail', () => {
     expect(service.getAccount).toHaveBeenCalledWith('AdminUser');
+    expect(service.listAccountSessions).toHaveBeenCalledWith('AdminUser');
     expect(fixture.nativeElement.textContent).toContain('AdminUser');
     expect(fixture.nativeElement.textContent).toContain('Администратор');
     expect(fixture.nativeElement.textContent).toContain('Активен');
+    expect(fixture.nativeElement.textContent).toContain('Firefox on Linux');
+    expect(fixture.nativeElement.textContent).toContain('Текущая');
+    expect(fixture.nativeElement.textContent).toContain('2026-07-08 11:30');
     expect(queryByTestId('team-detail-actions-toggle')).toBeNull();
+  });
+
+  it('renders empty session state', () => {
+    service.listAccountSessions.mockReturnValue(of({ sessions: [] }));
+    fixture.componentInstance.loadSessions();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Активных сессий нет.');
+  });
+
+  it('shows revoke others only while viewing self', () => {
+    expect(queryByTestId('team-sessions-revoke-others')).toBeNull();
+
+    currentUser.set({ username: 'AdminUser', role: 'admin' });
+    fixture.detectChanges();
+
+    expect(queryByTestId('team-sessions-revoke-others')).not.toBeNull();
+  });
+
+  it('revokes sessions and opens login when the current session is revoked', () => {
+    currentUser.set({ username: 'AdminUser', role: 'admin' });
+    service.revokeAccountSession.mockReturnValue(of({ currentSessionRevoked: true }));
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.detectChanges();
+
+    elementByTestId<HTMLButtonElement>(
+      'team-session-revoke-10000000000040008000000000000001',
+    ).click();
+    fixture.detectChanges();
+
+    expect(service.revokeAccountSession).toHaveBeenCalledWith(
+      'AdminUser',
+      '10000000000040008000000000000001',
+    );
+    expect(auth.clearLocalSession).toHaveBeenCalledTimes(1);
+    expect(authModal.openLogin).toHaveBeenCalledTimes(1);
+  });
+
+  it('revokes other self sessions without clearing the current session', () => {
+    currentUser.set({ username: 'AdminUser', role: 'admin' });
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.detectChanges();
+
+    elementByTestId<HTMLButtonElement>('team-sessions-revoke-others').click();
+    fixture.detectChanges();
+
+    expect(service.revokeOtherAccountSessions).toHaveBeenCalledWith('AdminUser');
+    expect(auth.clearLocalSession).not.toHaveBeenCalled();
+    expect(authModal.openLogin).not.toHaveBeenCalled();
   });
 
   it('renders owner account role labels', () => {
@@ -212,4 +284,33 @@ function account(overrides: Partial<ManagedAccount> = {}): ManagedAccount {
     isActive: true,
     ...overrides,
   };
+}
+
+function sessions(): ManagedAccountSession[] {
+  return [
+    {
+      id: '10000000000040008000000000000001',
+      userAgentDisplay: 'Firefox on Linux',
+      userAgentBrowser: 'Firefox',
+      userAgentOs: 'Linux',
+      userAgentDevice: 'desktop',
+      authMethod: 'password',
+      createdAt: '2026-07-07T11:30:00+00:00',
+      lastUsedAt: '2026-07-08T11:30:00+00:00',
+      expiresAt: '2026-08-07T11:30:00+00:00',
+      isCurrent: true,
+    },
+    {
+      id: '20000000000040008000000000000002',
+      userAgentDisplay: 'Chrome on Linux',
+      userAgentBrowser: 'Chrome',
+      userAgentOs: 'Linux',
+      userAgentDevice: 'desktop',
+      authMethod: 'password',
+      createdAt: '2026-07-06T11:30:00+00:00',
+      lastUsedAt: '2026-07-07T11:30:00+00:00',
+      expiresAt: '2026-08-06T11:30:00+00:00',
+      isCurrent: false,
+    },
+  ];
 }

@@ -3,12 +3,14 @@ from unittest.mock import Mock
 
 from dishka import BaseScope, Component, Provider, Scope, provide
 
+from core.auth.enums import AuthSessionDeviceTypeEnum
 from core.auth.password_hashers import PasswordHasher
 from core.auth.schemas import (
     AccessTokenPayload,
     AccessTokenResult,
     AuthLoginResult,
     AuthRefreshAccessTokenResult,
+    AuthSessionClientMetadata,
     AuthSessionCredentials,
     JwtUser,
 )
@@ -56,6 +58,15 @@ class MockAuthProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_current_datetime(self) -> datetime:
         return test_current_datetime
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_session_client_metadata(self) -> AuthSessionClientMetadata:
+        return AuthSessionClientMetadata(
+            user_agent_display="Firefox on Linux",
+            user_agent_browser="Firefox",
+            user_agent_os="Linux",
+            user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+        )
 
     @provide(scope=Scope.APP)
     async def provide_hasher(self) -> PasswordHasher:

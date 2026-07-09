@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 import pytest_asyncio
 
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.generators import AuthSessionSecretGenerator
@@ -15,6 +15,7 @@ from core.auth.schemas import (
     AuthLoginParams,
     AuthLoginResult,
     AuthSession,
+    AuthSessionClientMetadata,
     AuthSessionCreate,
     AuthSessionCredentials,
     AuthUseCaseConfig,
@@ -49,6 +50,10 @@ class TestAuthUseCase(ContainerTestCase):
             secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(seconds=2_592_000),
             is_revoked=False,
+            created_at=self.now,
+            last_used_at=self.now,
+            auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+            client_metadata=auth_session_client(),
         )
         self.use_case = AuthUseCase(
             hasher=self.hasher,
@@ -74,6 +79,7 @@ class TestAuthUseCase(ContainerTestCase):
                     password="test",
                     required_role=RoleEnum.ADMIN,
                     current_datetime=self.now,
+                    client_metadata=auth_session_client(),
                 ),
             )
         self.auth_event_reporter.report_login_user_not_found.assert_called_once_with(
@@ -93,6 +99,7 @@ class TestAuthUseCase(ContainerTestCase):
                     password="test",
                     required_role=RoleEnum.ADMIN,
                     current_datetime=self.now,
+                    client_metadata=auth_session_client(),
                 ),
             )
         self.auth_event_reporter.report_login_role_forbidden.assert_called_once_with(
@@ -114,6 +121,7 @@ class TestAuthUseCase(ContainerTestCase):
                     password="test",
                     required_role=RoleEnum.ADMIN,
                     current_datetime=self.now,
+                    client_metadata=auth_session_client(),
                 ),
             )
         self.auth_event_reporter.report_login_inactive_user.assert_called_once_with(
@@ -135,6 +143,7 @@ class TestAuthUseCase(ContainerTestCase):
                     password="test",
                     required_role=RoleEnum.ADMIN,
                     current_datetime=self.now,
+                    client_metadata=auth_session_client(),
                 ),
             )
         self.auth_event_reporter.report_login_password_verification_failed.assert_called_once_with(
@@ -156,6 +165,7 @@ class TestAuthUseCase(ContainerTestCase):
                 password="test",
                 required_role=RoleEnum.ADMIN,
                 current_datetime=self.now,
+                client_metadata=auth_session_client(),
             ),
         )
         assert result.access_token.token == self.factory.core.token(b"TOKEN")
@@ -178,6 +188,7 @@ class TestAuthUseCase(ContainerTestCase):
                 password="test",
                 required_role=RoleEnum.ADMIN,
                 current_datetime=self.now,
+                client_metadata=auth_session_client(),
             ),
         )
         assert result == AuthLoginResult(
@@ -201,8 +212,20 @@ class TestAuthUseCase(ContainerTestCase):
                 secret_hash=SessionSecretHash("session-secret-hash"),
                 expires_at=self.now + timedelta(seconds=2_592_000),
                 is_revoked=False,
+                last_used_at=self.now,
+                auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+                client_metadata=auth_session_client(),
             ),
         )
         self.token_handler.encode_token.assert_called_once_with(
             payload=AccessTokenPayload(username="test", session_id="session-id"),
         )
+
+
+def auth_session_client() -> AuthSessionClientMetadata:
+    return AuthSessionClientMetadata(
+        user_agent_display="Firefox on Linux",
+        user_agent_browser="Firefox",
+        user_agent_os="Linux",
+        user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+    )

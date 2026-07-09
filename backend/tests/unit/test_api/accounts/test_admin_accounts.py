@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest_asyncio
 from httpx import codes
 
@@ -10,10 +12,16 @@ from core.account.schemas import (
     ManagedAccountPasswordUpdateParams,
     ManagedAccountRoleUpdateOperationParams,
     ManagedAccountRoleUpdateParams,
+    ManagedAccountSession,
+    ManagedAccountSessionRevocationResult,
+    ManagedAccountSessionRevokeOperationParams,
+    ManagedAccountSessions,
+    ManagedAccountSessionsOperationParams,
+    ManagedAccountSessionsRevokeOthersOperationParams,
     ManagedAccountTargetOperationParams,
 )
-from core.auth.enums import RoleEnum
-from core.auth.schemas import JwtUser
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
+from core.auth.schemas import AuthSessionClientMetadata, JwtUser
 from core.schemas import Secret
 from tests.test_cases import ApiTestCase
 
@@ -193,6 +201,116 @@ class TestAdminAccountsAPI(ApiTestCase):
             ),
         )
 
+    def test_list_account_sessions(self) -> None:
+        self.use_case.list_account_sessions.return_value = ManagedAccountSessions(
+            values=[
+                managed_account_session(
+                    session_id="10000000000040008000000000000001",
+                    is_current=True,
+                ),
+                managed_account_session(
+                    session_id="20000000000040008000000000000002",
+                    is_current=False,
+                ),
+            ],
+        )
+
+        response = self.api.get_admin_account_sessions(username="Admin")
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        assert response.json() == {
+            "sessions": [
+                {
+                    "id": "10000000000040008000000000000001",
+                    "userAgentDisplay": "Firefox on Linux",
+                    "userAgentBrowser": "Firefox",
+                    "userAgentOs": "Linux",
+                    "userAgentDevice": "desktop",
+                    "authMethod": "password",
+                    "createdAt": "2026-07-07T11:30:00+00:00",
+                    "lastUsedAt": "2026-07-08T11:30:00+00:00",
+                    "expiresAt": "2026-08-07T11:30:00+00:00",
+                    "isCurrent": True,
+                },
+                {
+                    "id": "20000000000040008000000000000002",
+                    "userAgentDisplay": "Firefox on Linux",
+                    "userAgentBrowser": "Firefox",
+                    "userAgentOs": "Linux",
+                    "userAgentDevice": "desktop",
+                    "authMethod": "password",
+                    "createdAt": "2026-07-07T11:30:00+00:00",
+                    "lastUsedAt": "2026-07-08T11:30:00+00:00",
+                    "expiresAt": "2026-08-07T11:30:00+00:00",
+                    "isCurrent": False,
+                },
+            ],
+        }
+        self.use_case.list_account_sessions.assert_called_once_with(
+            params=ManagedAccountSessionsOperationParams(
+                target_username="Admin",
+                current_username="test",
+                current_session_id="10000000000040008000000000000001",
+                current_datetime=datetime(2026, 7, 8, 11, 30, tzinfo=UTC),
+            ),
+        )
+
+    def test_revoke_account_session(self) -> None:
+        self.use_case.revoke_account_session.return_value = ManagedAccountSessionRevocationResult(
+            current_session_revoked=True,
+        )
+
+        response = self.api.post_revoke_admin_account_session(
+            username="Admin",
+            session_id="10000000000040008000000000000001",
+        )
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        assert response.json() == {"currentSessionRevoked": True}
+        self.use_case.revoke_account_session.assert_called_once_with(
+            params=ManagedAccountSessionRevokeOperationParams(
+                target_username="Admin",
+                current_username="test",
+                target_session_id="10000000000040008000000000000001",
+                current_session_id="10000000000040008000000000000001",
+            ),
+        )
+
+    def test_revoke_all_account_sessions(self) -> None:
+        self.use_case.revoke_all_account_sessions.return_value = (
+            ManagedAccountSessionRevocationResult(current_session_revoked=True)
+        )
+
+        response = self.api.post_revoke_all_admin_account_sessions(username="test")
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        assert response.json() == {"currentSessionRevoked": True}
+        self.use_case.revoke_all_account_sessions.assert_called_once_with(
+            params=ManagedAccountSessionsOperationParams(
+                target_username="test",
+                current_username="test",
+                current_session_id="10000000000040008000000000000001",
+                current_datetime=datetime(2026, 7, 8, 11, 30, tzinfo=UTC),
+            ),
+        )
+
+    def test_revoke_other_account_sessions(self) -> None:
+        self.use_case.revoke_other_account_sessions.return_value = (
+            ManagedAccountSessionRevocationResult(current_session_revoked=False)
+        )
+
+        response = self.api.post_revoke_other_admin_account_sessions(username="test")
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        assert response.json() == {"currentSessionRevoked": False}
+        self.use_case.revoke_other_account_sessions.assert_called_once_with(
+            params=ManagedAccountSessionsRevokeOthersOperationParams(
+                target_username="test",
+                current_username="test",
+                current_session_id="10000000000040008000000000000001",
+            ),
+        )
+
     def test_create_account_validates_payload(self) -> None:
         response = self.api.post_create_admin_account(
             data={
@@ -270,3 +388,21 @@ class TestAdminAccountsAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_accounts.assert_not_called()
+
+
+def managed_account_session(session_id: str, *, is_current: bool) -> ManagedAccountSession:
+    now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
+    return ManagedAccountSession(
+        id=session_id,
+        client_metadata=AuthSessionClientMetadata(
+            user_agent_display="Firefox on Linux",
+            user_agent_browser="Firefox",
+            user_agent_os="Linux",
+            user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+        ),
+        auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+        created_at=now - timedelta(days=1),
+        last_used_at=now,
+        expires_at=now + timedelta(days=30),
+        is_current=is_current,
+    )

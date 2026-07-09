@@ -1,11 +1,12 @@
 # ruff: noqa: S106
 import pytest_asyncio
 
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.schemas import (
     AccessTokenResult,
     AuthLoginParams,
     AuthLoginResult,
+    AuthSessionClientMetadata,
     AuthSessionCredentials,
 )
 from core.auth.types import SessionSecret, Token
@@ -33,6 +34,12 @@ class TestLoginAPI(ApiTestCase):
                 username="USERNAME",
                 password="PASSWORD",
             ),
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+                ),
+            },
         )
 
         assert response.json() == {
@@ -52,5 +59,11 @@ class TestLoginAPI(ApiTestCase):
                 password="PASSWORD",
                 required_role=RoleEnum.MODERATOR,
                 current_datetime=test_current_datetime,
+                client_metadata=AuthSessionClientMetadata(
+                    user_agent_display="Firefox on Linux",
+                    user_agent_browser="Firefox",
+                    user_agent_os="Linux",
+                    user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+                ),
             ),
         )

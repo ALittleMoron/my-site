@@ -14,6 +14,7 @@ from core.auth.schemas import (
     AuthLogoutParams,
     AuthRefreshAccessTokenParams,
     AuthRefreshAccessTokenResult,
+    AuthSessionClientMetadata,
     AuthSessionCredentials,
 )
 from core.auth.types import SessionSecret, Token
@@ -124,6 +125,7 @@ class AuthApiController(Controller):
         ],
         use_case: FromDishka[AuthUseCase],
         current_datetime: FromDishka[datetime],
+        client_metadata: FromDishka[AuthSessionClientMetadata],
     ) -> Response[AccessTokenResponseSchema]:
         result = await use_case.login(
             params=AuthLoginParams(
@@ -131,6 +133,7 @@ class AuthApiController(Controller):
                 password=data.password,
                 required_role=RoleEnum.MODERATOR,
                 current_datetime=current_datetime,
+                client_metadata=client_metadata,
             ),
         )
         return create_login_response(result=result)

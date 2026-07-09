@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 import pytest_asyncio
 
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import ForbiddenError, UnauthorizedError, UserNotFoundError
 from core.auth.generators import AuthSessionSecretGenerator
@@ -13,6 +13,7 @@ from core.auth.schemas import (
     AccessTokenPayload,
     AuthAuthenticateParams,
     AuthSession,
+    AuthSessionClientMetadata,
     AuthUseCaseConfig,
 )
 from core.auth.storages import AuthSessionStorage, TokenRevocationStorage
@@ -53,6 +54,10 @@ class TestLoginUseCase(ContainerTestCase):
             secret_hash=SessionSecretHash("session-secret-hash"),
             expires_at=self.now + timedelta(days=1),
             is_revoked=False,
+            created_at=self.now,
+            last_used_at=self.now,
+            auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+            client_metadata=auth_session_client(),
         )
 
     async def test_authenticate_revoked_token(self) -> None:
@@ -182,3 +187,12 @@ class TestLoginUseCase(ContainerTestCase):
             password_hash="test",
             role=RoleEnum.ADMIN,
         )
+
+
+def auth_session_client() -> AuthSessionClientMetadata:
+    return AuthSessionClientMetadata(
+        user_agent_display="Firefox on Linux",
+        user_agent_browser="Firefox",
+        user_agent_os="Linux",
+        user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+    )

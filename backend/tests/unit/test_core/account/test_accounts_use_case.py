@@ -1,4 +1,5 @@
 # ruff: noqa: S106
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, call
 
 import pytest
@@ -22,14 +23,19 @@ from core.account.schemas import (
     ManagedAccountRoleUpdateOperationParams,
     ManagedAccountRoleUpdateParams,
     ManagedAccounts,
+    ManagedAccountSessionRevokeOperationParams,
+    ManagedAccountSessionsOperationParams,
+    ManagedAccountSessionsRevokeOthersOperationParams,
     ManagedAccountTargetOperationParams,
 )
 from core.account.storages import ManagedAccountStorage
 from core.account.use_cases import AccountsUseCase
-from core.auth.enums import RoleEnum
+from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.exceptions import UserNotFoundError
 from core.auth.password_hashers import PasswordHasher
+from core.auth.schemas import AuthSession, AuthSessionClientMetadata
 from core.auth.storages import AuthSessionStorage
+from core.auth.types import SessionSecretHash
 from core.schemas import Secret
 from tests.test_cases import TestCase
 
@@ -103,6 +109,7 @@ class TestManagedAccount(TestCase):
 class TestAccountsUseCase(TestCase):
     @pytest_asyncio.fixture(autouse=True, loop_scope="session")
     async def setup(self) -> None:
+        self.now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
         self.storage = Mock(spec=ManagedAccountStorage)
         self.auth_session_storage = Mock(spec=AuthSessionStorage)
         self.hasher = Mock(spec=PasswordHasher)
@@ -126,6 +133,126 @@ class TestAccountsUseCase(TestCase):
 
         assert accounts == ManagedAccounts(values=[account], total_count=11, total_pages=2)
         self.storage.list_managed_accounts.assert_called_once_with(filters=filters)
+
+    async def test_list_account_sessions_marks_current_session_after_permission_check(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+        self.auth_session_storage.list_user_sessions.return_value = [
+            auth_session(session_id="session-current"),
+            auth_session(session_id="session-other"),
+        ]
+
+        sessions = await self.use_case.list_account_sessions(
+            params=ManagedAccountSessionsOperationParams(
+                target_username="Moderator",
+                current_username="Admin",
+                current_session_id="session-current",
+                current_datetime=self.now,
+            ),
+        )
+
+        assert [session.id for session in sessions.values] == ["session-current", "session-other"]
+        assert [session.is_current for session in sessions.values] == [True, False]
+        self.auth_session_storage.list_user_sessions.assert_called_once_with(
+            username="Moderator",
+            active_at=self.now,
+        )
+
+    async def test_admin_cannot_list_other_admin_sessions(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="OtherAdmin", role=RoleEnum.ADMIN, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+
+        with pytest.raises(ManagedAccountActionForbiddenError):
+            await self.use_case.list_account_sessions(
+                params=ManagedAccountSessionsOperationParams(
+                    target_username="OtherAdmin",
+                    current_username="Admin",
+                    current_session_id="session-current",
+                    current_datetime=self.now,
+                ),
+            )
+
+        self.auth_session_storage.list_user_sessions.assert_not_called()
+
+    async def test_revoke_account_session_reports_when_current_session_was_revoked(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+
+        result = await self.use_case.revoke_account_session(
+            params=ManagedAccountSessionRevokeOperationParams(
+                target_username="Admin",
+                current_username="Admin",
+                target_session_id="session-current",
+                current_session_id="session-current",
+            ),
+        )
+
+        assert result.current_session_revoked is True
+        self.auth_session_storage.revoke_user_session.assert_called_once_with(
+            username="Admin",
+            session_id="session-current",
+        )
+
+    async def test_revoke_all_account_sessions_reports_current_session_for_self(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Owner", role=RoleEnum.OWNER, is_active=True),
+            ManagedAccount(username="Owner", role=RoleEnum.OWNER, is_active=True),
+        ]
+
+        result = await self.use_case.revoke_all_account_sessions(
+            params=ManagedAccountSessionsOperationParams(
+                target_username="Owner",
+                current_username="Owner",
+                current_session_id="session-current",
+                current_datetime=self.now,
+            ),
+        )
+
+        assert result.current_session_revoked is True
+        self.auth_session_storage.revoke_user_sessions.assert_called_once_with(username="Owner")
+
+    async def test_revoke_other_account_sessions_is_self_only(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Moderator", role=RoleEnum.MODERATOR, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+
+        with pytest.raises(ManagedAccountActionForbiddenError):
+            await self.use_case.revoke_other_account_sessions(
+                params=ManagedAccountSessionsRevokeOthersOperationParams(
+                    target_username="Moderator",
+                    current_username="Admin",
+                    current_session_id="session-current",
+                ),
+            )
+
+        self.auth_session_storage.revoke_user_sessions_except.assert_not_called()
+
+    async def test_revoke_other_account_sessions_preserves_current_session_for_self(self) -> None:
+        self.storage.get_managed_account.side_effect = [
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+            ManagedAccount(username="Admin", role=RoleEnum.ADMIN, is_active=True),
+        ]
+
+        result = await self.use_case.revoke_other_account_sessions(
+            params=ManagedAccountSessionsRevokeOthersOperationParams(
+                target_username="Admin",
+                current_username="Admin",
+                current_session_id="session-current",
+            ),
+        )
+
+        assert result.current_session_revoked is False
+        self.auth_session_storage.revoke_user_sessions_except.assert_called_once_with(
+            username="Admin",
+            except_session_id="session-current",
+        )
 
     def test_use_case_does_not_define_private_helpers(self) -> None:
         private_methods = [
@@ -618,3 +745,23 @@ class TestAccountsUseCase(TestCase):
         self.auth_session_storage.revoke_user_sessions.assert_called_once_with(
             username="Moderator",
         )
+
+
+def auth_session(session_id: str) -> AuthSession:
+    now = datetime(2026, 7, 8, 11, 30, tzinfo=UTC)
+    return AuthSession(
+        id=session_id,
+        username="Moderator",
+        secret_hash=SessionSecretHash("a" * 64),
+        expires_at=now + timedelta(days=30),
+        is_revoked=False,
+        created_at=now - timedelta(days=1),
+        last_used_at=now,
+        auth_method=AuthSessionAuthMethodEnum.PASSWORD,
+        client_metadata=AuthSessionClientMetadata(
+            user_agent_display="Firefox on Linux",
+            user_agent_browser="Firefox",
+            user_agent_os="Linux",
+            user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+        ),
+    )

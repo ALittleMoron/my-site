@@ -68,6 +68,8 @@ class TestI18nCatalog:
     def test_site_build_case_study_catalog_describes_public_engineering_page(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
+        russian_quality_body = russian_messages["siteBuild.quality.body"]
+        english_quality_body = english_messages["siteBuild.quality.body"]
 
         assert russian_messages["shell.footer.siteBuild"] == "Как устроен сайт"
         assert english_messages["shell.footer.siteBuild"] == "How this site is built"
@@ -79,20 +81,19 @@ class TestI18nCatalog:
         assert "personal" not in english_messages["siteBuild.seo.description"].lower()
         assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
-        assert "SSR" in russian_messages["siteBuild.quality.body"]
-        assert "SSR" in english_messages["siteBuild.quality.body"]
-        assert "производительность" in russian_messages["siteBuild.quality.body"]
-        assert "performance" in english_messages["siteBuild.quality.body"]
-        assert "security" in english_messages["siteBuild.quality.body"]
-        assert "безопасности" in russian_messages["siteBuild.quality.body"]
-        assert "SQL-планы" in russian_messages["siteBuild.quality.body"]
-        assert "SQL plans" in english_messages["siteBuild.quality.body"]
-        assert "guardrails" in english_messages["siteBuild.quality.body"]
-        assert "guardrails" in russian_messages["siteBuild.quality.body"]
-        assert "production-facing" in russian_messages["siteBuild.quality.body"]
-        assert "production-facing" in english_messages["siteBuild.quality.body"]
-        assert "слепых зон" in russian_messages["siteBuild.quality.body"]
-        assert "blind spots" in english_messages["siteBuild.quality.body"]
+        for expected, text in (
+            ("SSR", russian_quality_body),
+            ("SSR", english_quality_body),
+            ("производительность", russian_quality_body),
+            ("performance", english_quality_body),
+            ("security", english_quality_body),
+            ("безопасность", russian_quality_body),
+            ("SQL-планы", russian_quality_body),
+            ("SQL plans", english_quality_body),
+            ("blue/green", russian_quality_body),
+            ("blue/green", english_quality_body),
+        ):
+            assert expected in text
         assert "наблюдаемостью" in russian_messages["siteBuild.next.body"]
         assert "observability" in english_messages["siteBuild.next.body"]
         assert "release process" in russian_messages["siteBuild.decision.deployManifest"]
@@ -105,17 +106,26 @@ class TestI18nCatalog:
         assert "manual approval" in english_messages["siteBuild.decision.deployManifest"]
         assert "blue/green" in russian_messages["siteBuild.decision.deployManifest"]
         assert "blue/green" in english_messages["siteBuild.decision.deployManifest"]
-        assert "static gates" not in english_messages["siteBuild.quality.body"]
-        assert "own side" not in english_messages["siteBuild.quality.body"]
-        assert "Dockerfile lint" not in english_messages["siteBuild.quality.body"]
-        assert "Trivy config scan" not in english_messages["siteBuild.quality.body"]
-        assert (
-            "per-image Docker build/image scans" not in english_messages["siteBuild.quality.body"]
-        )
-        assert "shared CI graph" not in english_messages["siteBuild.quality.body"]
-        assert "SSR/Lighthouse" not in english_messages["siteBuild.quality.body"]
-        assert "SSR/Lighthouse" not in russian_messages["siteBuild.quality.body"]
-        assert "performance budgets" not in english_messages["siteBuild.quality.body"]
+        for stale_text, text in (
+            ("static gates", english_quality_body),
+            ("own side", english_quality_body),
+            ("guardrails", english_quality_body),
+            ("guardrails", russian_quality_body),
+            ("production-facing", russian_quality_body),
+            ("production-facing", english_quality_body),
+            ("слепых зон", russian_quality_body),
+            ("blind spots", english_quality_body),
+            ("server-side session cookie", english_quality_body),
+            ("raw user agents", english_quality_body),
+            ("Dockerfile lint", english_quality_body),
+            ("Trivy config scan", english_quality_body),
+            ("per-image Docker build/image scans", english_quality_body),
+            ("shared CI graph", english_quality_body),
+            ("SSR/Lighthouse", english_quality_body),
+            ("SSR/Lighthouse", russian_quality_body),
+            ("performance budgets", english_quality_body),
+        ):
+            assert stale_text not in text
         assert "performance budgets" not in english_messages["siteBuild.next.body"]
         assert "changelog" not in english_messages["siteBuild.next.body"].lower()
         assert "changelog" not in russian_messages["siteBuild.next.body"].lower()

@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -27,6 +28,10 @@ import {
   EditableManagedAccountRole,
   ManagedAccount,
   ManagedAccountRole,
+  ManagedAccountSession,
+  ManagedAccountSessionAuthMethod,
+  ManagedAccountSessionDevice,
+  ManagedAccountSessionRevocation,
 } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
 import {
@@ -73,6 +78,7 @@ export class TeamMemberDetailPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly auth = inject(AuthService);
+  private readonly authModal = inject(AuthModalService);
   private readonly username = this.resolveUsername();
 
   readonly account = signal<ManagedAccount | null>(null);
@@ -86,11 +92,23 @@ export class TeamMemberDetailPageComponent implements OnInit {
   readonly passwordSubmitting = signal(false);
   readonly passwordFormSubmitted = signal(false);
   readonly passwordError = signal<ApiError | null>(null);
+  readonly sessions = signal<ManagedAccountSession[]>([]);
+  readonly sessionsLoading = signal(false);
+  readonly sessionsError = signal<ApiError | null>(null);
+  readonly sessionActionSubmitting = signal<string | null>(null);
   readonly roleOptions = computed<readonly ManagedAccountRoleOption[]>(() =>
     this.currentUserRole() === 'owner'
       ? MANAGED_ACCOUNT_ROLE_OPTIONS
       : MANAGED_ACCOUNT_ROLE_OPTIONS.filter((role) => role.value === 'moderator'),
   );
+  readonly canRevokeOtherSessions = computed(() => {
+    const account = this.account();
+    return (
+      account !== null &&
+      this.isSelfAccount(account) &&
+      this.sessions().some((session) => !session.isCurrent)
+    );
+  });
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
   readonly currentUsername = computed(() => this.auth.currentUser()?.username ?? '');
   readonly currentUserRole = computed(() => this.auth.currentUser()?.role ?? 'anon');
@@ -112,6 +130,7 @@ export class TeamMemberDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAccount();
+    this.loadSessions();
   }
 
   loadAccount(): void {
@@ -129,6 +148,25 @@ export class TeamMemberDetailPageComponent implements OnInit {
           this.error.set(err);
           this.loading.set(false);
           this.notifications.error(this.i18n.translate('adminTeamWorkspace.loadDetailError'));
+        },
+      });
+  }
+
+  loadSessions(): void {
+    this.sessionsLoading.set(true);
+    this.sessionsError.set(null);
+    this.teamWorkspace
+      .listAccountSessions(this.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (sessions) => {
+          this.sessions.set(sessions.sessions);
+          this.sessionsLoading.set(false);
+        },
+        error: (err: ApiError) => {
+          this.sessionsError.set(err);
+          this.sessionsLoading.set(false);
+          this.notifications.error(this.i18n.translate('adminTeamWorkspace.sessions.loadError'));
         },
       });
   }
@@ -351,6 +389,69 @@ export class TeamMemberDetailPageComponent implements OnInit {
       });
   }
 
+  revokeSession(session: ManagedAccountSession): void {
+    const account = this.account();
+    if (account === null) return;
+    if (
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminTeamWorkspace.sessions.confirmRevoke'),
+      ) !== true
+    ) {
+      return;
+    }
+    this.sessionActionSubmitting.set(session.id);
+    this.teamWorkspace
+      .revokeAccountSession(account.username, session.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) =>
+          this.handleSessionRevocation(result, 'adminTeamWorkspace.sessions.revoked'),
+        error: () => this.handleSessionRevocationError(),
+      });
+  }
+
+  revokeAllSessions(): void {
+    const account = this.account();
+    if (account === null) return;
+    if (
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminTeamWorkspace.sessions.confirmRevokeAll'),
+      ) !== true
+    ) {
+      return;
+    }
+    this.sessionActionSubmitting.set('all');
+    this.teamWorkspace
+      .revokeAllAccountSessions(account.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) =>
+          this.handleSessionRevocation(result, 'adminTeamWorkspace.sessions.allRevoked'),
+        error: () => this.handleSessionRevocationError(),
+      });
+  }
+
+  revokeOtherSessions(): void {
+    const account = this.account();
+    if (account === null || !this.canRevokeOtherSessions()) return;
+    if (
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminTeamWorkspace.sessions.confirmRevokeOthers'),
+      ) !== true
+    ) {
+      return;
+    }
+    this.sessionActionSubmitting.set('others');
+    this.teamWorkspace
+      .revokeOtherAccountSessions(account.username)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) =>
+          this.handleSessionRevocation(result, 'adminTeamWorkspace.sessions.othersRevoked'),
+        error: () => this.handleSessionRevocationError(),
+      });
+  }
+
   roleLabelKey(role: ManagedAccountRole): string {
     if (role === 'owner') return 'enum.role.owner';
     return role === 'admin' ? 'enum.role.admin' : 'enum.role.moderator';
@@ -408,6 +509,32 @@ export class TeamMemberDetailPageComponent implements OnInit {
     return validationMessage(this.passwordForm.controls[field], this.i18n);
   }
 
+  sessionDeviceLabelKey(device: ManagedAccountSessionDevice): string {
+    switch (device) {
+      case 'desktop':
+        return 'adminTeamWorkspace.sessions.device.desktop';
+      case 'mobile':
+        return 'adminTeamWorkspace.sessions.device.mobile';
+      case 'tablet':
+        return 'adminTeamWorkspace.sessions.device.tablet';
+      case 'bot':
+        return 'adminTeamWorkspace.sessions.device.bot';
+      case 'unknown':
+        return 'adminTeamWorkspace.sessions.device.unknown';
+    }
+  }
+
+  sessionAuthMethodLabelKey(authMethod: ManagedAccountSessionAuthMethod): string {
+    switch (authMethod) {
+      case 'password':
+        return 'adminTeamWorkspace.sessions.authMethod.password';
+    }
+  }
+
+  formatSessionTimestamp(value: string): string {
+    return value.replace('T', ' ').slice(0, 16);
+  }
+
   private resolveUsername(): string {
     const username = this.route.snapshot.paramMap.get('username');
     if (username === null) {
@@ -421,6 +548,25 @@ export class TeamMemberDetailPageComponent implements OnInit {
     const actorRole = this.currentUserRole();
     if (actorRole === 'owner') return true;
     return actorRole === 'admin' && account.role === 'moderator';
+  }
+
+  private handleSessionRevocation(
+    result: ManagedAccountSessionRevocation,
+    successMessageKey: string,
+  ): void {
+    this.sessionActionSubmitting.set(null);
+    this.notifications.success(this.i18n.translate(successMessageKey));
+    if (result.currentSessionRevoked) {
+      this.auth.clearLocalSession();
+      this.authModal.openLogin();
+      return;
+    }
+    this.loadSessions();
+  }
+
+  private handleSessionRevocationError(): void {
+    this.sessionActionSubmitting.set(null);
+    this.notifications.error(this.i18n.translate('adminTeamWorkspace.sessions.revokeError'));
   }
 }
 

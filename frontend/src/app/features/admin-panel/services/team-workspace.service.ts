@@ -7,9 +7,15 @@ import {
   ManagedAccountDto,
   EditableManagedAccountRole,
   ManagedAccountListParams,
+  ManagedAccountSessionRevocation,
+  ManagedAccountSessionRevocationDto,
+  ManagedAccountSessions,
+  ManagedAccountSessionsDto,
   ManagedAccounts,
   ManagedAccountsDto,
   mapManagedAccountDto,
+  mapManagedAccountSessionRevocationDto,
+  mapManagedAccountSessionsDto,
   mapManagedAccountsDto,
 } from '../models/team-workspace.model';
 
@@ -71,5 +77,45 @@ export class TeamWorkspaceService {
 
   deleteAccount(username: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/accounts/${encodeURIComponent(username)}`);
+  }
+
+  listAccountSessions(username: string): Observable<ManagedAccountSessions> {
+    return this.api
+      .get<ManagedAccountSessionsDto>(
+        `/api/admin/accounts/${encodeURIComponent(username)}/sessions`,
+      )
+      .pipe(map(mapManagedAccountSessionsDto));
+  }
+
+  revokeAccountSession(
+    username: string,
+    sessionId: string,
+  ): Observable<ManagedAccountSessionRevocation> {
+    return this.api
+      .post<ManagedAccountSessionRevocationDto>(
+        `/api/admin/accounts/${encodeURIComponent(username)}/sessions/${encodeURIComponent(
+          sessionId,
+        )}/revoke`,
+        {},
+      )
+      .pipe(map(mapManagedAccountSessionRevocationDto));
+  }
+
+  revokeAllAccountSessions(username: string): Observable<ManagedAccountSessionRevocation> {
+    return this.api
+      .post<ManagedAccountSessionRevocationDto>(
+        `/api/admin/accounts/${encodeURIComponent(username)}/sessions/revoke-all`,
+        {},
+      )
+      .pipe(map(mapManagedAccountSessionRevocationDto));
+  }
+
+  revokeOtherAccountSessions(username: string): Observable<ManagedAccountSessionRevocation> {
+    return this.api
+      .post<ManagedAccountSessionRevocationDto>(
+        `/api/admin/accounts/${encodeURIComponent(username)}/sessions/revoke-others`,
+        {},
+      )
+      .pipe(map(mapManagedAccountSessionRevocationDto));
   }
 }

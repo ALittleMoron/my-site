@@ -46,7 +46,7 @@ Out of scope for this version:
 | --- | --- |
 | Public content | Integrity and availability of articles, competency matrix content, resume exports, sitemap, robots.txt, and the public case-study/updates pages. |
 | Admin-authored content | Integrity of unpublished drafts, article metadata, matrix structure, file metadata, and resume content. |
-| User accounts | Password hashes, account roles, active/inactive state, owner/admin/moderator boundaries, and bearer tokens. |
+| User accounts | Password hashes, account roles, active/inactive state, owner/admin/moderator boundaries, bearer tokens, server-side session state, and coarse session metadata. |
 | Database data | PostgreSQL content, auth records, analytics aggregates, file metadata, migrations, and relational integrity. |
 | Object storage | Uploaded images/files, object metadata, public object URLs, and MinIO root credentials. |
 | Backups | Backup confidentiality, integrity, availability, and restore confidence. |
@@ -112,6 +112,9 @@ Important boundaries:
 - Admin API authorization uses explicit short-lived bearer access tokens. A separate HttpOnly,
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
   refresh the session's idle expiration, and revoke the current session on logout.
+- Auth sessions store server-side secret hashes, expiration timestamps, last-used timestamps,
+  auth method, and coarse privacy-safe device labels derived from the request user agent. They do
+  not store raw IP addresses, raw user-agent strings, or fingerprinting fields.
 - Expired server-side auth sessions are physically pruned by a scheduled TaskIQ cleanup task.
 - Runtime secrets are mounted as Compose secret files instead of service environment values where
   the application stack needs secrets.
@@ -126,23 +129,28 @@ Important boundaries:
    publish/language filters, and PostgreSQL/MinIO data is projected into public response schemas.
 3. Admin auth refresh: browser sends the `/api/auth` scoped session cookie to `/api/auth/refresh`
    with `X-CSRF-Guard: 1`; the backend rejects cross-site Fetch Metadata, verifies the server-side
-   session, reloads the current user, extends the session idle expiration, reissues the session
-   cookie with the refreshed lifetime, and returns a fresh short-lived PASETO access token.
+   session, reloads the current user, updates the session's last-used timestamp, extends the
+   session idle expiration, reissues the session cookie with the refreshed lifetime, and returns a
+   fresh short-lived PASETO access token.
 4. Auth session cleanup: the TaskIQ scheduler enqueues the internal cleanup task, which deletes
    sessions whose `expires_at` is at or before the scheduler-provided current time.
-5. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
+5. Admin session management: authenticated team managers use `/api/admin/accounts/*/sessions`
+   endpoints to list active sessions for accounts they may manage, revoke one session, revoke all
+   sessions, or revoke only their own other sessions; responses expose current-session markers and
+   coarse device labels, not raw request metadata.
+6. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
    middleware authenticates the access token and active session, route guards enforce content/team
    permissions, and use cases update PostgreSQL or file storage.
-6. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
+7. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
    through the centralized sanitized renderer before binding HTML.
-7. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
+8. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
    adapter; published Markdown can reference computed public object URLs from MinIO.
-7. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
+9. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
    aggregate counts and article-scoped derived reaction identifiers without raw IPs, raw user agents,
    raw referrers, analytics cookies, or third-party analytics IDs.
-8. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
+10. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
    listeners; backups must remain encrypted and non-public.
-9. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
+11. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
    the host materializes Compose secret files, builds locally tagged images, runs initialization, and
    switches the healthy blue/green slot.
 
@@ -152,7 +160,7 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, 15-minute PASETO access tokens, 30-day sliding-idle server-side sessions stored as SHA-256 hashes, session revocation on logout/account changes, daily expired-session pruning, and access-token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS until they expire. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
+| Attacker impersonates an admin with guessed or reused credentials. | Argon2 password hashing, login rate limit at nginx, backend required-role checks, inactive-account enforcement, 15-minute PASETO access tokens, 30-day sliding-idle server-side sessions stored as SHA-256 hashes, admin-visible session management with current-session markers and revocation controls, session revocation on logout/account changes, daily expired-session pruning, and access-token revocation storage on logout. | Browser-held bearer tokens can still be stolen by endpoint compromise, malicious extensions, or successful XSS until they expire. Keep XSS controls strict and consider stronger account protections if the admin surface grows. |
 | Attacker forges or tampers with auth tokens. | PASETO v4 public signing/verification with explicit private/public keys and expiration validation. Access tokens carry only username and stable session id; backend authentication re-loads the active server session and current user role from storage. | Private-key exposure would allow token issuance. Keep key material in secret files and out of logs, images, and `docker inspect`. |
 | Attacker reaches internal panels as if they were an internal user. | MinIO Console and Databasus are routed only through WireGuard-bound nginx listeners; old public panel virtual hosts are absent; public firewall baseline allows only web and WireGuard ingress. | A compromised maintainer device or VPN key can still access panel login surfaces. Revoke WireGuard peers promptly and keep panel auth enabled. |
 
@@ -182,6 +190,7 @@ Important boundaries:
 | Private admin or unpublished content leaks through public APIs or SSR. | Public and admin routes are separated; public read APIs apply published filters; frontend transfer cache excludes private/side-effect endpoints; admin panel is protected CSR. | Every new route must preserve the public/admin contour split and avoid caching private data in SSR transfer state. |
 | Internal panels or infrastructure services become public. | nginx is the only public Compose service; PostgreSQL, Valkey, backend, frontend, MinIO, and Databasus do not publish their own ports; panel listeners bind to `VPN_BIND_ADDRESS`; `infra/scripts/security_check.sh` checks key routing invariants. | Docker and host firewall behavior must be verified after deployment because Docker port publishing can bypass naive host-firewall assumptions. |
 | User privacy is harmed by analytics. | Article analytics stores aggregates and article-scoped derived reaction identifiers; raw IPs, raw user agents, raw referrers, analytics cookies, and third-party analytics IDs are out of scope by policy. | Public counters can be gamed by bots. Keep analytics advisory and avoid using them for sensitive decisions. |
+| User privacy is harmed by session/device management. | Auth session rows store only coarse user-agent labels, auth method, timestamps, and revocation state; raw user-agent strings and raw IP addresses stay out of persistent session metadata. | Coarse labels can still hint at a user's device family. Keep labels intentionally broad and avoid adding fingerprinting fields without a privacy review. |
 | API docs expose more surface detail than needed. | API docs are under `/api/docs`; normal auth middleware excludes docs intentionally; nginx route-scopes the relaxed Swagger CSP to docs. | Public docs aid attackers in route discovery. Keep write endpoints backend-guarded and reassess docs exposure if the threat profile changes. |
 
 ### Denial Of Service
@@ -213,6 +222,9 @@ Important boundaries:
   session cookie is scoped to access-token refresh, sliding idle-session renewal, and logout; those
   cookie-authenticated endpoints are protected by CSRF guard checks. Expired server-side auth
   sessions are cleaned up by the scheduled TaskIQ worker path and are not a login activity signal.
+- Admin session management stays under `/api/admin/*` and is guarded by backend team-management
+  authorization. Current-session detection comes from the authenticated bearer token's session id,
+  while last-used timestamps are updated only on login and successful refresh.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.

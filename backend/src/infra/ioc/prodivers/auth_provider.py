@@ -5,11 +5,12 @@ from dishka import Provider, Scope, provide
 from litestar import Request
 from litestar.stores.valkey import ValkeyStore
 from sqlalchemy.ext.asyncio import AsyncSession
+from ua_parser import parse
 
 from core.account.storages import UserAccountStorage
 from core.auth.generators import AuthSessionSecretGenerator
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import AuthUseCaseConfig
+from core.auth.schemas import AuthSessionClientMetadata, AuthUseCaseConfig
 from core.auth.storages import AuthSessionStorage, AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
@@ -51,6 +52,21 @@ class AuthProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def provide_auth_session_storage(self, session: AsyncSession) -> AuthSessionStorage:
         return AuthSessionDatabaseStorage(session=session)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_auth_session_client_metadata(
+        self,
+        request: Request,
+    ) -> AuthSessionClientMetadata:
+        user_agent = request.headers.get("user-agent")
+        if user_agent is None or user_agent.strip() == "":
+            return AuthSessionClientMetadata.empty()
+        result = parse(user_agent)
+        return AuthSessionClientMetadata.create(
+            browser=result.user_agent.family if result.user_agent else None,
+            operating_system=result.os.family if result.os else None,
+            device_type=result.device.family if result.device else None,
+        )
 
     @provide(scope=Scope.APP)
     async def provide_auth_session_secret_generator(self) -> AuthSessionSecretGenerator:

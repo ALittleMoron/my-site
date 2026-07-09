@@ -160,6 +160,11 @@ class TestQueryCapture:
             ...,
         ] = (
             (query_plan_seed.insert_users, {}, ("role_enum",)),
+            (
+                query_plan_seed.insert_auth_sessions,
+                {},
+                ("auth_session_auth_method_enum", "auth_session_device_type_enum"),
+            ),
             (query_plan_seed.insert_article_folders, {}, ()),
             (query_plan_seed.insert_articles, {"profile": profile}, ("publish_status_enum",)),
             (
