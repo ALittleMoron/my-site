@@ -27,7 +27,6 @@ from core.enums import PublishStatusEnum
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_question_suggestion_limit_params,
 )
-from entrypoints.litestar.api.competency_matrix.endpoints import PublicCompetencyMatrixApiController
 from tests.test_cases import ApiTestCase
 
 
@@ -108,9 +107,6 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         assert params.client_identifier == "203.0.113.10"
         assert params.now.tzinfo is not None
-
-    def test_competency_matrix_controller_does_not_keep_client_identifier_helper(self) -> None:
-        assert "_client_identifier" not in PublicCompetencyMatrixApiController.__dict__
 
     def test_suggest_question_rejects_empty_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(question="")

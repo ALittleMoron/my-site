@@ -45,15 +45,6 @@ class TestArticlesUseCase(TestCase):
             file_client=self.file_client,
         )
 
-    def test_use_case_does_not_define_private_helpers(self) -> None:
-        private_helpers = [
-            name
-            for name, value in vars(ArticlesUseCase).items()
-            if name.startswith("_") and not name.startswith("__") and callable(value)
-        ]
-
-        assert private_helpers == []
-
     async def test_list_articles_builds_page_from_storage_rows(self) -> None:
         filters = ArticleFilters(
             page=1,

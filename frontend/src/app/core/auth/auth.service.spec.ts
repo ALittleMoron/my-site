@@ -189,16 +189,26 @@ describe('AuthService', () => {
   });
 
   describe('ensureCurrentUserLoaded', () => {
-    it('does not request current account when there is no in-memory token', () => {
+    it('restores current user from the session cookie when there is no in-memory token', () => {
+      const mockAccount: AccountInfo = { username: 'moderator', role: 'moderator' };
       let completed = false;
 
       service.ensureCurrentUserLoaded().subscribe(() => {
         completed = true;
       });
 
-      httpMock.expectNone((r) => r.url.includes('/api/account/base'));
+      const refreshReq = httpMock.expectOne((r) => r.url.includes('/api/auth/refresh'));
+      expect(refreshReq.request.method).toBe('POST');
+      expect(refreshReq.request.withCredentials).toBe(true);
+      refreshReq.flush({ accessToken: 'session-token', accessTokenExpiresInSeconds: 900 });
+
+      const accountReq = httpMock.expectOne((r) => r.url.includes('/api/account/base'));
+      expect(accountReq.request.method).toBe('GET');
+      accountReq.flush(mockAccount);
+
       expect(completed).toBe(true);
-      expect(service.currentUser()).toBeNull();
+      expect(tokenService.token()).toBe('session-token');
+      expect(service.currentUser()).toEqual(mockAccount);
     });
 
     it('restores current user when a token is already in memory', () => {

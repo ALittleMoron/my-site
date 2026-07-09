@@ -1,9 +1,7 @@
 from datetime import date
-from typing import cast
 
 import pytest_asyncio
 from httpx import codes
-from litestar.di import Provide
 
 from core.articles.schemas import ArticleFilters, ArticlePublicStatsCollection
 from core.auth.enums import RoleEnum
@@ -14,10 +12,6 @@ from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.articles.dependencies import (
     provide_article_filters,
     provide_public_article_filters,
-)
-from entrypoints.litestar.api.articles.endpoints import (
-    AdminArticlesApiController,
-    PublicArticlesApiController,
 )
 from tests.test_cases import ApiTestCase
 
@@ -31,26 +25,6 @@ class TestListArticlesAPI(ApiTestCase):
         self.analytics_use_case.get_public_stats.return_value = ArticlePublicStatsCollection(
             values=[],
         )
-
-    def test_list_articles_uses_litestar_dependency_for_filters(self) -> None:
-        handler = PublicArticlesApiController.list_articles
-        dependencies = handler.dependencies
-
-        assert dependencies is not None
-        assert "filters" in dependencies
-        provider = cast("Provide", dependencies["filters"])
-        assert provider.dependency is provide_public_article_filters
-        assert provider.sync_to_thread is False
-
-    def test_admin_list_articles_uses_litestar_dependency_for_filters(self) -> None:
-        handler = AdminArticlesApiController.list_articles
-        dependencies = handler.dependencies
-
-        assert dependencies is not None
-        assert "filters" in dependencies
-        provider = cast("Provide", dependencies["filters"])
-        assert provider.dependency is provide_article_filters
-        assert provider.sync_to_thread is False
 
     def test_provide_article_filters_builds_filters_from_query_parameters(self) -> None:
         filters = provide_article_filters(

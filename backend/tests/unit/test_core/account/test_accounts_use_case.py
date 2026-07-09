@@ -254,15 +254,6 @@ class TestAccountsUseCase(TestCase):
             except_session_id="session-current",
         )
 
-    def test_use_case_does_not_define_private_helpers(self) -> None:
-        private_methods = [
-            name
-            for name, value in AccountsUseCase.__dict__.items()
-            if name.startswith("_") and not name.startswith("__") and callable(value)
-        ]
-
-        assert private_methods == []
-
     async def test_create_account_rejects_regular_user_role(self) -> None:
         params = ManagedAccountCreateParams(
             username="Writer",

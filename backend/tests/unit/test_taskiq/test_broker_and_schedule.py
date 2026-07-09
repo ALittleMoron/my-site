@@ -1,5 +1,3 @@
-import importlib.util
-
 from dishka.integrations import taskiq as dishka_taskiq
 from taskiq_redis import RedisAsyncResultBackend
 
@@ -87,6 +85,3 @@ class TestTaskiqScheduleConfiguration:
             taskiq_worker_module.broker.find_task(constants.taskiq.auth_session_prune_task_name)
             is auth_tasks_module.prune_expired_auth_sessions
         )
-
-    def test_top_level_tasks_module_is_not_used_as_a_task_dumping_ground(self) -> None:
-        assert importlib.util.find_spec("entrypoints.taskiq.tasks") is None

@@ -1,24 +1,5 @@
-jest.mock('@angular/router', () => {
-  const actual = jest.requireActual('@angular/router') as typeof import('@angular/router');
-
-  return {
-    ...actual,
-    withInMemoryScrolling: jest.fn(actual.withInMemoryScrolling),
-  };
-});
-
 import { HttpRequest } from '@angular/common/http';
-import { withInMemoryScrolling } from '@angular/router';
-import { shouldTransferCacheRequest } from './app.config';
-
-describe('appConfig router scrolling', () => {
-  it('starts regular route navigations at the top while preserving anchor scrolling', () => {
-    expect(withInMemoryScrolling).toHaveBeenCalledWith({
-      anchorScrolling: 'enabled',
-      scrollPositionRestoration: 'enabled',
-    });
-  });
-});
+import { shouldRestoreAuthOnStartup, shouldTransferCacheRequest } from './app.config';
 
 describe('appConfig HTTP transfer cache filter', () => {
   it('allows safe public GET requests used by SSR pages', () => {
@@ -60,5 +41,21 @@ describe('appConfig HTTP transfer cache filter', () => {
         new HttpRequest('POST', '/api/articles/detail/typed-articles/reaction', {}),
       ),
     ).toBe(false);
+  });
+});
+
+describe('appConfig auth startup', () => {
+  it('skips auth restore probes on public routes', () => {
+    expect(shouldRestoreAuthOnStartup('/ru/how-this-site-is-built')).toBe(false);
+    expect(shouldRestoreAuthOnStartup('/en/articles/typed-articles')).toBe(false);
+    expect(shouldRestoreAuthOnStartup('/ru/competency-matrix')).toBe(false);
+    expect(
+      shouldRestoreAuthOnStartup('/ru/competency-matrix/questions/how-to-write-function'),
+    ).toBe(false);
+  });
+
+  it('restores auth on protected admin routes', () => {
+    expect(shouldRestoreAuthOnStartup('/admin-panel')).toBe(true);
+    expect(shouldRestoreAuthOnStartup('/admin-panel/articles')).toBe(true);
   });
 });

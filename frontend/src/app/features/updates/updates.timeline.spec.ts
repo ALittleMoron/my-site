@@ -74,162 +74,22 @@ describe('updates timeline', () => {
     ]);
   });
 
-  it('keeps public history spread across real site-history months', () => {
-    const months = new Set(UPDATES_TIMELINE_ENTRIES.map((entry) => entry.month));
+  it('keeps entries as typed localized authored content instead of backend i18n keys', () => {
+    expect(UPDATES_TIMELINE_ENTRIES.length).toBeGreaterThan(0);
 
-    expect(months.size).toBeGreaterThanOrEqual(10);
-    expect(months.has('2024-09')).toBe(true);
-    expect(months.has('2024-12')).toBe(true);
-    expect(months.has('2025-04')).toBe(true);
-    expect(months.has('2026-06')).toBe(true);
-    expect(months.has('2026-07')).toBe(true);
-  });
+    for (const entry of UPDATES_TIMELINE_ENTRIES) {
+      const entryRecord = entry as unknown as Record<string, unknown>;
 
-  it('keeps accumulating copy in typed localized content instead of backend i18n keys', () => {
-    const firstEntry = UPDATES_TIMELINE_ENTRIES[0];
-
-    expect(firstEntry?.title.ru).toBeTruthy();
-    expect(firstEntry?.title.en).toBeTruthy();
-    expect(firstEntry?.summary.ru).toBeTruthy();
-    expect(firstEntry?.summary.en).toBeTruthy();
-    expect('titleKey' in (firstEntry ?? {})).toBe(false);
-    expect('summaryKey' in (firstEntry ?? {})).toBe(false);
-  });
-
-  it('includes the public changelog milestone in the current month', () => {
-    const entry = UPDATES_TIMELINE_ENTRIES.find((item) => item.id === 'public-updates-page');
-
-    expect(entry?.month).toBe('2026-07');
-    expect(entry?.title.ru).toContain('журнал изменений');
-    expect(entry?.title.en).toContain('updates page');
-    expect(entry?.summary.ru).toContain('полной историей сайта');
-    expect(entry?.summary.en).toContain('compressed site history');
-    expect(entry?.tagIds).toEqual(['content', 'frontend', 'backend', 'seo']);
-  });
-
-  it('includes the July full security audit milestone', () => {
-    const entry = UPDATES_TIMELINE_ENTRIES.find((item) => item.id === 'full-security-audit');
-
-    expect(entry?.month).toBe('2026-07');
-    expect(entry?.title.ru).toContain('аудит безопасности');
-    expect(entry?.title.en).toContain('security audit');
-    expect(entry?.summary.ru).toContain('модель угроз');
-    expect(entry?.summary.en).toContain('threat model');
-    expect(entry?.tagIds).toEqual(['security', 'infra', 'backend', 'frontend', 'quality']);
-  });
-
-  it('includes the July auth session hardening milestone', () => {
-    const entry = UPDATES_TIMELINE_ENTRIES.find((item) => item.id === 'auth-session-hardening');
-
-    expect(entry?.month).toBe('2026-07');
-    expect(entry?.title.ru).toContain('Авторизация');
-    expect(entry?.title.en).toContain('Authorization');
-    expect(entry?.summary.ru).toContain('скользящие');
-    expect(entry?.summary.ru).toContain('absolute lifetime');
-    expect(entry?.summary.en).toContain('sliding');
-    expect(entry?.summary.en).toContain('absolute lifetime');
-    expect(entry?.tagIds).toEqual(['auth', 'security', 'backend', 'frontend', 'admin']);
-  });
-
-  it('renders July milestones in editorial order', () => {
-    const julyGroup = groupUpdateEntries(UPDATES_TIMELINE_ENTRIES, 'ru', 'ru-RU').find(
-      (group) => group.datetime === '2026-07',
-    );
-
-    expect(julyGroup?.entries.map((entry) => entry.id)).toEqual([
-      'full-security-audit',
-      'auth-session-hardening',
-      'public-updates-page',
-      'release-workflow',
-    ]);
-  });
-
-  it('assigns badges only to the areas materially touched by each milestone', () => {
-    const tagIdsByEntry = new Map(
-      UPDATES_TIMELINE_ENTRIES.map((entry) => [entry.id, entry.tagIds] as const),
-    );
-
-    expect(tagIdsByEntry.get('public-updates-page')).toEqual([
-      'content',
-      'frontend',
-      'backend',
-      'seo',
-    ]);
-    expect(tagIdsByEntry.get('release-workflow')).toEqual([
-      'delivery',
-      'quality',
-      'admin',
-      'infra',
-    ]);
-    expect(tagIdsByEntry.get('full-security-audit')).toEqual([
-      'security',
-      'infra',
-      'backend',
-      'frontend',
-      'quality',
-    ]);
-    expect(tagIdsByEntry.get('auth-session-hardening')).toEqual([
-      'auth',
-      'security',
-      'backend',
-      'frontend',
-      'admin',
-    ]);
-    expect(tagIdsByEntry.get('public-seo-layer')).toEqual([
-      'seo',
-      'frontend',
-      'backend',
-      'content',
-    ]);
-    expect(tagIdsByEntry.get('admin-workspaces')).toEqual([
-      'admin',
-      'frontend',
-      'backend',
-      'content',
-      'matrix',
-    ]);
-    expect(tagIdsByEntry.get('quality-ops')).toEqual(['quality', 'security', 'infra', 'delivery']);
-    expect(tagIdsByEntry.get('angular-knowledge-base')).toEqual([
-      'frontend',
-      'content',
-      'matrix',
-      'localization',
-      'analytics',
-    ]);
-    expect(tagIdsByEntry.get('angular-scaffold')).toEqual(['frontend', 'matrix']);
-    expect(tagIdsByEntry.get('auth-admin-foundation')).toEqual([
-      'auth',
-      'backend',
-      'admin',
-      'matrix',
-      'security',
-      'infra',
-    ]);
-    expect(tagIdsByEntry.get('editor-uploads')).toEqual([
-      'content',
-      'frontend',
-      'backend',
-      'matrix',
-      'infra',
-    ]);
-    expect(tagIdsByEntry.get('architecture-docs')).toEqual([
-      'infra',
-      'backend',
-      'security',
-      'auth',
-      'quality',
-      'localization',
-    ]);
-    expect(tagIdsByEntry.get('blog-ci')).toEqual(['content', 'delivery', 'quality', 'infra']);
-    expect(tagIdsByEntry.get('public-prototype')).toEqual(['backend', 'frontend', 'matrix', 'seo']);
-    expect(tagIdsByEntry.get('litestar-migration')).toEqual(['backend', 'frontend']);
-    expect(tagIdsByEntry.get('backend-frontend-foundation')).toEqual([
-      'backend',
-      'frontend',
-      'infra',
-      'auth',
-    ]);
-    expect(tagIdsByEntry.get('matrix-admin-prototype')).toEqual(['backend', 'matrix', 'admin']);
-    expect(tagIdsByEntry.get('repository-started')).toEqual(['infra', 'security']);
+      expect(entry.id).toMatch(/^[a-z0-9-]+$/);
+      expect(entry.month).toMatch(/^\d{4}-\d{2}$/);
+      expect(Number.isFinite(entry.order)).toBe(true);
+      expect(entry.title.ru).toBeTruthy();
+      expect(entry.title.en).toBeTruthy();
+      expect(entry.summary.ru).toBeTruthy();
+      expect(entry.summary.en).toBeTruthy();
+      expect(entry.tagIds.length).toBeGreaterThan(0);
+      expect('titleKey' in entryRecord).toBe(false);
+      expect('summaryKey' in entryRecord).toBe(false);
+    }
   });
 });

@@ -111,6 +111,34 @@ describe('authGuard', () => {
     await expect(result).resolves.toBe(true);
     httpMock.verify();
   });
+
+  it('waits for session cookie restore before allowing admin-panel reload without an in-memory token', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ApiClient,
+        AuthService,
+        { provide: I18nService, useValue: { language: signal('ru') } },
+      ],
+    });
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    const result = TestBed.runInInjectionContext(() =>
+      resolveGuardResult(authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)),
+    );
+    const refreshReq = httpMock.expectOne((req) => req.url.includes('/api/auth/refresh'));
+    expect(refreshReq.request.method).toBe('POST');
+    refreshReq.flush({ accessToken: 'restored-token', accessTokenExpiresInSeconds: 900 });
+
+    const accountReq = httpMock.expectOne((req) => req.url.includes('/api/account/base'));
+    expect(accountReq.request.method).toBe('GET');
+    accountReq.flush({ username: 'moderator', role: 'moderator' });
+
+    await expect(result).resolves.toBe(true);
+    httpMock.verify();
+  });
 });
 
 describe('teamGuard', () => {

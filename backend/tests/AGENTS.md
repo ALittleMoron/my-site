@@ -110,6 +110,11 @@ the shared base schema.
 - Do not add tests that only mirror ORM metadata/index declarations or trivial one-to-one model
   converters. They do not validate behavior; cover storage behavior through integration tests
   instead.
+- Do not add tests that pin dependency declarations, package versions, lockfile contents,
+  pyproject/package metadata, exact shell command strings, source-code text, private helper absence,
+  or other implementation trivia. If a high-risk invariant deserves automation, test the observable
+  behavior, generated schema, security boundary, migration/data result, query-plan coverage, or a
+  real Make-backed smoke path instead.
 
 ## Coverage Target
 

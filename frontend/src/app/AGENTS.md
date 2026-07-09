@@ -57,7 +57,9 @@ Never violate these boundaries:
   changelog entries in `features/updates/updates.timeline.ts` as typed objects with `id`, `month`,
   `order`, localized RU/EN `title` and `summary`, and finite `tagIds`. Do not add
   `updates.month.*` or `updates.entry.*` keys to backend i18n; backend i18n for updates stays
-  limited to page chrome, SEO text, footer label, and finite tag labels.
+  limited to page chrome, SEO text, footer label, and finite tag labels. Do not add tests that pin
+  exact milestone copy, dates, ordering, or tag assignments; tests may cover grouping/localization
+  behavior and the structural content shape.
 - For sufficiently large user-visible, architectural, security, operations, or delivery changes,
   ask whether they should be added to the public updates page. Skip routine refactors, small fixes,
   incidental cleanup, dependency churn, and implementation-only details; group related work under a
@@ -160,8 +162,10 @@ Single place for all providers:
 
 - `provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }))`
 - `provideHttpClient(withInterceptors([authInterceptor, errorInterceptor]))` — auth interceptor always first
-- `provideAppInitializer(() => initializeAuth())` restores admin auth from `/api/auth/refresh`;
-  keep auth refresh requests cookie + CSRF based, with no `Authorization` header.
+- `provideAppInitializer(() => initializeAuth())` restores admin auth from `/api/auth/refresh`
+  only for protected admin startup routes; public routes must not send anonymous refresh probes.
+  Protected guards may restore from the same session cookie when no in-memory token exists. Keep
+  auth refresh requests cookie + CSRF based, with no `Authorization` header.
 - `provideClientHydration(...)` with transfer cache limited to safe public GETs only. Do not transfer
   auth, account, analytics, reaction, upload, file-management, or other private/side-effect endpoints.
 - `{ provide: ErrorHandler, useClass: GlobalErrorHandler }`

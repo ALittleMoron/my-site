@@ -125,8 +125,11 @@ export class AuthService {
   }
 
   ensureCurrentUserLoaded(): Observable<void> {
-    if (this.currentUser() !== null || !this.tokenService.token()) {
+    if (this.currentUser() !== null) {
       return of(void 0);
+    }
+    if (!this.tokenService.token()) {
+      return this.restoreSession();
     }
     if (this.currentUserLoad$ !== null) {
       return this.currentUserLoad$;

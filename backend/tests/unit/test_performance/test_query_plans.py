@@ -44,25 +44,6 @@ from performance.query_plans.scenarios import (
 from performance.query_plans.sql import group_queries_by_scenario
 
 
-def test_query_plan_package_is_split_into_focused_modules() -> None:
-    module_names = {
-        "analysis",
-        "cli",
-        "discovery",
-        "expectations",
-        "models",
-        "reports",
-        "runtime_capture",
-        "runner",
-        "scenarios",
-        "seed",
-        "sql",
-    }
-
-    for module_name in module_names:
-        __import__(f"performance.query_plans.{module_name}")
-
-
 class TestQueryPlanAnalysis:
     def test_analyze_explain_result_accepts_expected_index_scan(self) -> None:
         analysis = analyze_explain_result(

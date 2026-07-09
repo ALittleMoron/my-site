@@ -58,35 +58,41 @@ describe('UpdatesPageComponent', () => {
     });
   });
 
-  it('renders localized public milestone entries grouped by month', () => {
+  it('renders localized public update entries grouped by month', () => {
     const text = fixture.nativeElement.textContent as string;
-    const month = fixture.nativeElement.querySelector('time[datetime="2026-07"]');
+    const months = fixture.nativeElement.querySelectorAll('.updates-page__month');
+    const entries = fixture.nativeElement.querySelectorAll('.updates-page__entry');
+    const monthLabel = fixture.nativeElement.querySelector('time');
+    const entryTitle = fixture.nativeElement.querySelector('.updates-page__entry h3');
+    const badges = fixture.nativeElement.querySelectorAll('.badge');
 
     expect(text).toContain('Обновления сайта');
     expect(text).toContain('Крупные изменения сайта и базы знаний');
-    expect(month?.textContent).toContain('Июль 2026');
-    expect(text).toContain('Июнь 2026');
-    expect(text).toContain('Сентябрь 2024');
-    expect(text).toContain('Релизы и админка стали аккуратнее');
-    expect(text).toContain('Публичный SEO-контур вышел в SSR');
-    expect(text).toContain('Angular UI заменил прототип');
-    expect(text).toContain('Репозиторий стартовал');
-    expect(text).toContain('Backend');
-    expect(text).toContain('Доставка');
-    expect(text).not.toContain('выдуманной');
+    expect(months.length).toBeGreaterThan(0);
+    expect(entries.length).toBeGreaterThan(0);
+    expect(monthLabel?.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}$/);
+    expect(monthLabel?.textContent?.trim()).toBeTruthy();
+    expect(entryTitle?.textContent?.trim()).toBeTruthy();
+    expect(badges.length).toBeGreaterThan(0);
   });
 
   it('recomputes authored update content when the language changes', () => {
+    const russianMonth = fixture.nativeElement.querySelector('time')?.textContent?.trim();
+    const russianTitle = fixture.nativeElement
+      .querySelector('.updates-page__entry h3')
+      ?.textContent?.trim();
+
     i18n.switchLanguage('en').subscribe();
     fixture.detectChanges();
 
-    const text = fixture.nativeElement.textContent as string;
-    const month = fixture.nativeElement.querySelector('time[datetime="2026-07"]');
+    const englishMonth = fixture.nativeElement.querySelector('time')?.textContent?.trim();
+    const englishTitle = fixture.nativeElement
+      .querySelector('.updates-page__entry h3')
+      ?.textContent?.trim();
 
-    expect(month?.textContent).toContain('July 2026');
-    expect(text).toContain('Release workflow and admin polish');
-    expect(text).toContain('Public SEO layer went live');
-    expect(text).toContain('Repository started');
-    expect(text).not.toContain('Релизы и админка стали аккуратнее');
+    expect(englishMonth).toBeTruthy();
+    expect(englishTitle).toBeTruthy();
+    expect(englishMonth).not.toBe(russianMonth);
+    expect(englishTitle).not.toBe(russianTitle);
   });
 });

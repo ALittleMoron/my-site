@@ -145,6 +145,9 @@ Jest via `jest-preset-angular`. No Karma, no browser. Fast, CI-friendly.
 - Angular framework internals (router wiring, DI resolution)
 - Third-party library behavior
 - Template structure unrelated to state (CSS classes, exact DOM nesting)
+- Dependency declarations, package versions, lockfile contents, and exact build-tool config trivia
+- Source-code text, component metadata, private implementation details, or exact editorial/changelog
+  content that should be handled by review instead of CI
 
 ### Patterns
 

@@ -29,8 +29,10 @@ Portfolio and articles site with a knowledge database
   nginx, Make targets, deployment scripts, and environment wiring. Add infrastructure tests only
   when there is a high risk of silently regressing a pre-deploy invariant that ordinary checks would
   not catch, such as required environment-variable coverage. Do not add tests that merely assert
-  incidental implementation details, such as the exact presence of a Dockerfile command, when a
-  direct review or a real build/run check is the meaningful validation.
+  incidental implementation details, such as dependency declarations, package versions, lockfile
+  contents, source-code string scans, private helper absence, exact script command text, or the exact
+  presence of a Dockerfile command, when a direct review or a real build/run check is the meaningful
+  validation.
 - Treat UX regressions as real bugs. When changing user-facing flows, check not only correctness but
   also whether the interaction feels stable, predictable, accessible, and respectful of the user's
   context. Bad UX includes theme flashing during navigation or page load, controls that are hard to

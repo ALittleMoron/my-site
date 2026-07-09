@@ -5,7 +5,9 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
   InjectionToken,
+  PLATFORM_ID,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   provideClientHydration,
@@ -54,6 +56,12 @@ function initializeAuth() {
   if (inject(SKIP_AUTH_STARTUP)) {
     return of(void 0);
   }
+  if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+    return of(void 0);
+  }
+  if (!shouldRestoreAuthOnStartup(inject(DOCUMENT).location.pathname)) {
+    return of(void 0);
+  }
   return inject(AuthService).restoreSession();
 }
 
@@ -75,6 +83,11 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
     pathname === '/api/articles/tree' ||
     pathname === '/api/articles'
   );
+}
+
+export function shouldRestoreAuthOnStartup(url: string): boolean {
+  const pathname = readPathname(url);
+  return pathname === '/admin-panel' || pathname.startsWith('/admin-panel/');
 }
 
 function readPathname(url: string): string {

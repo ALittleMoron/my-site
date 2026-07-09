@@ -71,15 +71,6 @@ class TestCompetencyMatrixStructurePriorityUseCase(TestCase):
             ],
         )
 
-    def test_use_case_does_not_define_private_helpers(self) -> None:
-        private_helpers = [
-            name
-            for name, value in vars(CompetencyMatrixUseCase).items()
-            if name.startswith("_") and not name.startswith("__") and callable(value)
-        ]
-
-        assert private_helpers == []
-
     async def test_updates_valid_sheet_order(self) -> None:
         params = CompetencyMatrixSheetPriorityUpdateParams(
             ordered_ids=(self.factory.core.hex_id(1),),
