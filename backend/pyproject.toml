@@ -7,7 +7,7 @@ requires-python = "==3.14.*,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
-    "granian[reload]>=2.7.7",
+    "granian[reload]>=2.7.9",
     "pydantic-settings>=2.14.2",
     "psycopg[binary]>=3.3.4",
     "verbose-http-exceptions[litestar]>=3.0.0",
