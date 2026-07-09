@@ -2,6 +2,11 @@ name: "test, lint and security"
 
 on:
   push:
+    paths-ignore:
+      - ".github/README.md"
+      - ".github/README_RU.md"
+      - ".github/badges/**"
+      - "docs/**"
   workflow_dispatch:
 
 jobs:

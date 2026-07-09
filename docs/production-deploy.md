@@ -4,22 +4,24 @@ Production deploy is a manual server-build deploy:
 
 1. The root CI workflow is an orchestration graph: each job delegates its implementation to a
    private reusable workflow under `.github/workflows/_*.yaml`.
-2. GitHub Actions runs backend and frontend quality gates in parallel.
-3. Backend tests wait only for backend gates, while frontend tests wait only for frontend gates.
-4. Backend performance smoke and query-plan smoke run after backend tests.
-5. Frontend SSR smoke and Lighthouse CI run as separate jobs after frontend tests.
-6. Dockerfile lint, Trivy config scan, per-image Docker build/image scans, and infrastructure
+2. Pushes that change only files under `docs/**`, `.github/badges/**`, `.github/README.md`,
+   and/or `.github/README_RU.md` are ignored by the root CI workflow.
+3. GitHub Actions runs backend and frontend quality gates in parallel.
+4. Backend tests wait only for backend gates, while frontend tests wait only for frontend gates.
+5. Backend performance smoke and query-plan smoke run after backend tests.
+6. Frontend SSR smoke and Lighthouse CI run as separate jobs after frontend tests.
+7. Dockerfile lint, Trivy config scan, per-image Docker build/image scans, and infrastructure
    security checks run in parallel after the smoke gates.
-7. Deploy is a separate **Deploy to production** workflow triggered only by
+8. Deploy is a separate **Deploy to production** workflow triggered only by
    `workflow_dispatch`.
-8. The deploy workflow has no CI `needs` graph and does not run tests, linters, smoke checks,
+9. The deploy workflow has no CI `needs` graph and does not run tests, linters, smoke checks,
    Docker/image scans, or infrastructure security checks.
-9. The deploy workflow calls the private reusable `.github/workflows/_deploy.yaml` workflow.
-10. The deploy job targets the protected `production` environment, so GitHub waits for the
+10. The deploy workflow calls the private reusable `.github/workflows/_deploy.yaml` workflow.
+11. The deploy job targets the protected `production` environment, so GitHub waits for the
    **Review deployments** / **Approve and deploy** action before running deploy steps.
-11. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
-12. GitHub Actions syncs source/config to the server.
-13. The server runs `make run`, which builds images locally and switches the healthy blue/green
+12. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
+13. GitHub Actions syncs source/config to the server.
+14. The server runs `make run`, which builds images locally and switches the healthy blue/green
     slot.
 
 Locally built runtime images use the GitHub commit SHA from the required `IMAGE_TAG` runtime
