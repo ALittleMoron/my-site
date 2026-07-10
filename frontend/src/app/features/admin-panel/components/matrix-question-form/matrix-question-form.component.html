@@ -115,65 +115,89 @@
       }
     </div>
     <div class="col-12">
-      <label class="form-label" for="matrix-form-answer-ru">{{ 'matrix.form.answerRu' | t }}</label>
-      <textarea
+      <div class="form-label" id="matrix-form-answer-ru-label">
+        {{ 'matrix.form.answerRu' | t }}
+      </div>
+      <div
         id="matrix-form-answer-ru"
-        class="form-control"
+        class="matrix-markdown-editor"
+        role="group"
+        aria-labelledby="matrix-form-answer-ru-label"
         [class.is-invalid]="fieldInvalid('answerRu')"
+        [class.matrix-markdown-editor-invalid]="fieldInvalid('answerRu')"
         [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
-        [attr.maxlength]="validationLimits.matrixLongText"
-        rows="5"
-        formControlName="answerRu"
-      ></textarea>
+      >
+        <app-markdown-editor
+          [value]="questionForm.controls.answerRu.value"
+          (valueChange)="setAnswerRu($event)"
+        />
+      </div>
       @if (fieldInvalid('answerRu') && fieldMessage('answerRu'); as message) {
         <div class="invalid-feedback d-block">{{ message }}</div>
       }
     </div>
     <div class="col-12">
-      <label class="form-label" for="matrix-form-answer-en">{{ 'matrix.form.answerEn' | t }}</label>
-      <textarea
+      <div class="form-label" id="matrix-form-answer-en-label">
+        {{ 'matrix.form.answerEn' | t }}
+      </div>
+      <div
         id="matrix-form-answer-en"
-        class="form-control"
+        class="matrix-markdown-editor"
+        role="group"
+        aria-labelledby="matrix-form-answer-en-label"
         [class.is-invalid]="fieldInvalid('answerEn')"
+        [class.matrix-markdown-editor-invalid]="fieldInvalid('answerEn')"
         [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
-        [attr.maxlength]="validationLimits.matrixLongText"
-        rows="5"
-        formControlName="answerEn"
-      ></textarea>
+      >
+        <app-markdown-editor
+          [value]="questionForm.controls.answerEn.value"
+          (valueChange)="setAnswerEn($event)"
+        />
+      </div>
       @if (fieldInvalid('answerEn') && fieldMessage('answerEn'); as message) {
         <div class="invalid-feedback d-block">{{ message }}</div>
       }
     </div>
     <div class="col-12">
-      <label class="form-label" for="matrix-form-expected-ru">
+      <div class="form-label" id="matrix-form-expected-ru-label">
         {{ 'matrix.form.expectedAnswerRu' | t }}
-      </label>
-      <textarea
+      </div>
+      <div
         id="matrix-form-expected-ru"
-        class="form-control"
+        class="matrix-markdown-editor"
+        role="group"
+        aria-labelledby="matrix-form-expected-ru-label"
         [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
+        [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerRu')"
         [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
-        [attr.maxlength]="validationLimits.matrixLongText"
-        rows="5"
-        formControlName="expectedAnswerRu"
-      ></textarea>
+      >
+        <app-markdown-editor
+          [value]="questionForm.controls.expectedAnswerRu.value"
+          (valueChange)="setExpectedAnswerRu($event)"
+        />
+      </div>
       @if (fieldInvalid('expectedAnswerRu') && fieldMessage('expectedAnswerRu'); as message) {
         <div class="invalid-feedback d-block">{{ message }}</div>
       }
     </div>
     <div class="col-12">
-      <label class="form-label" for="matrix-form-expected-en">
+      <div class="form-label" id="matrix-form-expected-en-label">
         {{ 'matrix.form.expectedAnswerEn' | t }}
-      </label>
-      <textarea
+      </div>
+      <div
         id="matrix-form-expected-en"
-        class="form-control"
+        class="matrix-markdown-editor"
+        role="group"
+        aria-labelledby="matrix-form-expected-en-label"
         [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
+        [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerEn')"
         [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"
-        [attr.maxlength]="validationLimits.matrixLongText"
-        rows="5"
-        formControlName="expectedAnswerEn"
-      ></textarea>
+      >
+        <app-markdown-editor
+          [value]="questionForm.controls.expectedAnswerEn.value"
+          (valueChange)="setExpectedAnswerEn($event)"
+        />
+      </div>
       @if (fieldInvalid('expectedAnswerEn') && fieldMessage('expectedAnswerEn'); as message) {
         <div class="invalid-feedback d-block">{{ message }}</div>
       }

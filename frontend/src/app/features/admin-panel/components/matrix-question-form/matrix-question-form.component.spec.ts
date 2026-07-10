@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import {
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
@@ -55,8 +56,8 @@ describe('MatrixQuestionFormComponent', () => {
       ],
     })
       .overrideComponent(MatrixQuestionFormComponent, {
-        remove: { imports: [MatrixStructurePickerComponent] },
-        add: { imports: [MatrixStructurePickerStubComponent] },
+        remove: { imports: [MatrixStructurePickerComponent, MarkdownEditorComponent] },
+        add: { imports: [MatrixStructurePickerStubComponent, MarkdownEditorStubComponent] },
       })
       .compileComponents();
 
@@ -107,25 +108,25 @@ describe('MatrixQuestionFormComponent', () => {
       description: 'answer RU max length',
       selector: '#matrix-form-answer-ru',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setTextarea('#matrix-form-answer-ru', INVALID_MATRIX_TEXT),
+      setInvalidValue: () => setMarkdownEditor('#matrix-form-answer-ru', INVALID_MATRIX_TEXT),
     },
     {
       description: 'answer EN max length',
       selector: '#matrix-form-answer-en',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setTextarea('#matrix-form-answer-en', INVALID_MATRIX_TEXT),
+      setInvalidValue: () => setMarkdownEditor('#matrix-form-answer-en', INVALID_MATRIX_TEXT),
     },
     {
       description: 'expected answer RU max length',
       selector: '#matrix-form-expected-ru',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setTextarea('#matrix-form-expected-ru', INVALID_MATRIX_TEXT),
+      setInvalidValue: () => setMarkdownEditor('#matrix-form-expected-ru', INVALID_MATRIX_TEXT),
     },
     {
       description: 'expected answer EN max length',
       selector: '#matrix-form-expected-en',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setTextarea('#matrix-form-expected-en', INVALID_MATRIX_TEXT),
+      setInvalidValue: () => setMarkdownEditor('#matrix-form-expected-en', INVALID_MATRIX_TEXT),
     },
   ])('shows invalid styling and localized feedback for $description', (validationCase) => {
     fillValidQuestionMinimum();
@@ -204,6 +205,61 @@ describe('MatrixQuestionFormComponent', () => {
     ).toBe('python');
   });
 
+  it('edits answer and expected-answer Markdown through shared editors', () => {
+    fixture.componentRef.setInput('createInitialValue', {
+      slug: 'queued-question-0007',
+      subsectionId: SUBSECTION_ID,
+      preferredSheetKey: 'python',
+      grade: 'Junior',
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: '## RU answer',
+          interviewExpectedAnswer: 'RU expected',
+        },
+        en: {
+          question: 'What is PEP 8?',
+          answer: '## EN answer',
+          interviewExpectedAnswer: 'EN expected',
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    const editors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+
+    expect(editors).toHaveLength(4);
+    expect(editors.map((editor) => editor.componentInstance.value)).toEqual([
+      '## RU answer',
+      '## EN answer',
+      'RU expected',
+      'EN expected',
+    ]);
+
+    editors[0].componentInstance.valueChange.emit('Updated RU answer');
+    editors[1].componentInstance.valueChange.emit('Updated EN answer');
+    editors[2].componentInstance.valueChange.emit('Updated RU expected');
+    editors[3].componentInstance.valueChange.emit('Updated EN expected');
+    fixture.detectChanges();
+
+    submitForm();
+
+    expect(emittedPayloads[0].translations).toEqual({
+      ru: {
+        question: 'Что такое PEP 8?',
+        answer: 'Updated RU answer',
+        interviewExpectedAnswer: 'Updated RU expected',
+      },
+      en: {
+        question: 'What is PEP 8?',
+        answer: 'Updated EN answer',
+        interviewExpectedAnswer: 'Updated EN expected',
+      },
+    });
+  });
+
   it('blocks invalid slug and long answer text before emitting', () => {
     setInput('#matrix-form-slug', 'Invalid Slug');
     selectQuestionSubsection(SUBSECTION_ID);
@@ -215,7 +271,7 @@ describe('MatrixQuestionFormComponent', () => {
     expect(emittedPayloads).toEqual([]);
 
     setInput('#matrix-form-slug', 'valid-question');
-    setTextarea('#matrix-form-answer-en', 'x'.repeat(20_001));
+    setMarkdownEditor('#matrix-form-answer-en', 'x'.repeat(20_001));
 
     submitForm();
 
@@ -426,6 +482,18 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
   }
 
+  function setMarkdownEditor(selector: string, value: string): void {
+    const editor = fixture.debugElement
+      .query(By.css(selector))
+      ?.query(By.directive(MarkdownEditorStubComponent))?.componentInstance as
+      MarkdownEditorStubComponent | undefined;
+    if (editor === undefined) {
+      throw new Error(`No Markdown editor found for ${selector}`);
+    }
+    editor.valueChange.emit(value);
+    fixture.detectChanges();
+  }
+
   function setSelect(selector: string, value: string): void {
     const select = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
     select.value = value;
@@ -488,6 +556,16 @@ class MatrixStructurePickerStubComponent {
   @Input() disabled = false;
   @Input() invalid = false;
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
+}
+
+@Component({
+  selector: 'app-markdown-editor',
+  standalone: true,
+  template: '',
+})
+class MarkdownEditorStubComponent {
+  @Input({ required: true }) value!: string;
+  @Output() readonly valueChange = new EventEmitter<string>();
 }
 
 function questionDetail(): AdminMatrixQuestionDetailDto {

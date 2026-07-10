@@ -533,7 +533,7 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Add a queue list for questions I want to add to the matrix
 - [x] Ability to suggest a question for the competency matrix
 - [x] Add moderation inbox for suggested matrix questions.
-- [ ] Add ToastUI Markdown editing to competency matrix answer and expected-answer fields in the shared matrix question form.
+- [x] Add ToastUI Markdown editing to competency matrix answer and expected-answer fields in the shared matrix question form.
 - [ ] Add RU/EN/RU+EN display modes to the shared matrix question form for localized question, answer, and expected-answer fields.
 - [ ] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.

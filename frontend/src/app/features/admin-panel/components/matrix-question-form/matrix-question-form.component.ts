@@ -17,6 +17,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { slugify } from '../../../../shared/utils/slugify';
@@ -85,6 +86,7 @@ interface AdminMatrixResourceDraft {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    MarkdownEditorComponent,
     TranslatePipe,
     MatrixStructurePickerComponent,
     AdminControlValidationStateDirective,
@@ -96,6 +98,16 @@ interface AdminMatrixResourceDraft {
       .required-marker {
         color: var(--bs-danger);
         font-weight: 700;
+      }
+
+      .matrix-markdown-editor {
+        border-radius: var(--bs-border-radius);
+      }
+
+      .matrix-markdown-editor-invalid {
+        outline: 1px solid var(--bs-danger);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.25);
       }
     `,
   ],
@@ -206,6 +218,22 @@ export class MatrixQuestionFormComponent implements OnChanges {
 
   canGenerateSlug(): boolean {
     return this.questionForm.controls.questionEn.value.trim() !== '';
+  }
+
+  setAnswerRu(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.answerRu, value);
+  }
+
+  setAnswerEn(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.answerEn, value);
+  }
+
+  setExpectedAnswerRu(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.expectedAnswerRu, value);
+  }
+
+  setExpectedAnswerEn(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.expectedAnswerEn, value);
   }
 
   searchResources(value: string): void {
@@ -444,6 +472,12 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.newResourceUrl.set('');
     this.newResourceSubmitted.set(false);
     this.nextNewResourceId = -1;
+  }
+
+  private updateMarkdownContent(control: FormControl<string>, value: string): void {
+    control.setValue(value);
+    control.markAsDirty();
+    control.markAsTouched();
   }
 
   private newResourceValue(field: NewResourceField): string {
