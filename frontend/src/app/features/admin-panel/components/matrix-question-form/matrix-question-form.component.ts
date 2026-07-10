@@ -111,6 +111,13 @@ interface AdminMatrixResourceDraft {
         outline-offset: 2px;
         box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.25);
       }
+
+      .matrix-question-form-action-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background-color: var(--bs-body-bg);
+      }
     `,
   ],
 })
@@ -124,6 +131,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
   @Input({ required: true }) question!: AdminMatrixQuestionDetailDto | null;
   @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
+  @Input({ required: true }) submitLabelKey!: string;
 
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();
   @Output() readonly formCancel = new EventEmitter<void>();

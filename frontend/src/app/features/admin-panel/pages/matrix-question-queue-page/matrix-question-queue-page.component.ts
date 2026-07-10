@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -51,6 +52,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
 
   readonly questions = signal<QueuedMatrixQuestion[]>([]);
   readonly loading = signal(false);
@@ -90,6 +92,12 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     const error = this.formError();
     if (error === null) return [];
     return errorDisplayMessages(error);
+  });
+  readonly selectedQuestionProcessing = computed(() => {
+    const questionId = this.selectedQuestion()?.id;
+    return (
+      this.submitting() || (questionId !== undefined && this.rejectingQuestionId() === questionId)
+    );
   });
   readonly selectedQuestionInitialValue = computed<AdminMatrixQuestionCreateInitialValue | null>(
     () => {
@@ -148,7 +156,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   closeCreateModal(): void {
-    if (this.submitting()) return;
+    if (this.selectedQuestionProcessing()) return;
     this.selectedQuestion.set(null);
     this.formError.set(null);
   }
@@ -277,6 +285,33 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   rejectQuestion(question: QueuedMatrixQuestion): void {
+    this.rejectQueuedQuestion(question, false);
+  }
+
+  rejectSelectedQuestionAndAdvance(): void {
+    const question = this.selectedQuestion();
+    if (question === null) {
+      this.notifications.error(this.i18n.translate('adminMatrixQueue.rejectError'));
+      return;
+    }
+    this.rejectQueuedQuestion(question, true);
+  }
+
+  skipSelectedQuestion(): void {
+    if (this.selectedQuestionProcessing()) return;
+    const question = this.selectedQuestion();
+    if (question === null) return;
+    this.selectedQuestion.set(this.nextQuestionAfter(question.id));
+    this.formError.set(null);
+  }
+
+  private rejectQueuedQuestion(question: QueuedMatrixQuestion, advance: boolean): void {
+    if (this.submitting() || this.rejectingQuestionId() !== null) return;
+    const confirmed =
+      this.document.defaultView?.confirm(this.i18n.translate('adminMatrixQueue.confirmReject')) ??
+      false;
+    if (!confirmed) return;
+    const nextQuestion = advance ? this.nextQuestionAfter(question.id) : null;
     this.rejectingQuestionId.set(question.id);
     this.queueService
       .rejectQueuedQuestion(question.id)
@@ -284,12 +319,17 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.rejectingQuestionId.set(null);
-          if (this.selectedQuestion()?.id === question.id) {
+          this.questions.update((questions) =>
+            questions.filter((queuedQuestion) => queuedQuestion.id !== question.id),
+          );
+          if (advance) {
+            this.selectedQuestion.set(nextQuestion);
+            this.formError.set(null);
+          } else if (this.selectedQuestion()?.id === question.id) {
             this.selectedQuestion.set(null);
             this.formError.set(null);
           }
           this.notifications.success(this.i18n.translate('adminMatrixQueue.rejected'));
-          this.loadQueue();
         },
         error: () => {
           this.rejectingQuestionId.set(null);
@@ -306,16 +346,19 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     }
     this.submitting.set(true);
     this.formError.set(null);
+    const nextQuestion = this.nextQuestionAfter(question.id);
     this.queueService
       .createQuestionFromQueue(question.id, payload, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.submitting.set(false);
-          this.selectedQuestion.set(null);
+          this.questions.update((questions) =>
+            questions.filter((queuedQuestion) => queuedQuestion.id !== question.id),
+          );
+          this.selectedQuestion.set(nextQuestion);
           this.formError.set(null);
           this.notifications.success(this.i18n.translate('adminMatrixQueue.created'));
-          this.loadQueue();
         },
         error: (err: ApiError) => {
           this.submitting.set(false);
@@ -349,6 +392,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       throw new Error('I18n language is not initialized');
     }
     return language;
+  }
+
+  private nextQuestionAfter(questionId: string): QueuedMatrixQuestion | null {
+    const questions = this.questions();
+    const questionIndex = questions.findIndex((question) => question.id === questionId);
+    if (questionIndex < 0) return null;
+    return questions[questionIndex + 1] ?? null;
   }
 
   private selectImportFiles(files: FileList | File[] | null): void {

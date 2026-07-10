@@ -535,11 +535,11 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Add moderation inbox for suggested matrix questions.
 - [x] Add ToastUI Markdown editing to competency matrix answer and expected-answer fields in the shared matrix question form.
 - [x] Add RU/EN/RU+EN display modes to the shared matrix question form for localized question, answer, and expected-answer fields.
-- [ ] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
+- [x] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.
 - [ ] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
 - [ ] Add a fullscreen single-question queue processing modal that keeps the shared matrix question form wide and shows queue progress/navigation.
-- [ ] Add queue-only "create and next", "reject and next", and "skip" actions around the shared matrix question form.
+- [x] Add queue-only "create and next", "reject and next", and "skip" actions around the shared matrix question form.
 - [ ] Add queue-only keyboard shortcuts for fast queued question processing.
 - [ ] Persist queue-only last-used structure, grade, and interview frequency defaults for faster repeated question creation.
 - [ ] Show duplicate/similar-question hints when processing a queued competency matrix question.

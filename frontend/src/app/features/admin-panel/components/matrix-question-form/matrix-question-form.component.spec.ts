@@ -66,8 +66,21 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.componentRef.setInput('question', null);
     fixture.componentRef.setInput('createInitialValue', null);
     fixture.componentRef.setInput('submitting', false);
+    fixture.componentRef.setInput('submitLabelKey', 'adminMatrixQueue.createAndNext');
     fixture.componentInstance.questionSave.subscribe((payload) => emittedPayloads.push(payload));
     fixture.detectChanges();
+  });
+
+  it('renders the required custom submit label in the shared action footer', () => {
+    const footer = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-form-action-footer"]',
+    );
+    const submit = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-form-save"]',
+    );
+
+    expect(footer).not.toBeNull();
+    expect(submit?.textContent?.trim()).toBe('Создать и далее');
   });
 
   it('marks required fields and clears the red border after a required value is entered', () => {

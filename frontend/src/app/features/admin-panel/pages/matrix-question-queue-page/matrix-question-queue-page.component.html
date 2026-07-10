@@ -51,7 +51,7 @@
           <button
             type="button"
             class="btn btn-outline-danger btn-sm"
-            [disabled]="rejectingQuestionId() === question.id"
+            [disabled]="rejectingQuestionId() !== null"
             (click)="rejectQuestion(question)"
           >
             {{ 'adminMatrixQueue.reject' | t }}
@@ -85,7 +85,7 @@
           <button
             type="button"
             class="btn-close"
-            [disabled]="submitting()"
+            [disabled]="selectedQuestionProcessing()"
             [attr.aria-label]="'shared.close' | t"
             (click)="closeCreateModal()"
           ></button>
@@ -104,10 +104,32 @@
             mode="create"
             [question]="null"
             [createInitialValue]="selectedQuestionInitialValue()"
-            [submitting]="submitting()"
+            [submitting]="selectedQuestionProcessing()"
+            submitLabelKey="adminMatrixQueue.createAndNext"
             (questionSave)="createQuestion($event)"
             (formCancel)="closeCreateModal()"
-          />
+          >
+            <div matrixQuestionFormActions class="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn btn-outline-danger"
+                data-testid="matrix-queue-reject-and-next"
+                [disabled]="selectedQuestionProcessing()"
+                (click)="rejectSelectedQuestionAndAdvance()"
+              >
+                {{ 'adminMatrixQueue.rejectAndNext' | t }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                data-testid="matrix-queue-skip"
+                [disabled]="selectedQuestionProcessing()"
+                (click)="skipSelectedQuestion()"
+              >
+                {{ 'adminMatrixQueue.skip' | t }}
+              </button>
+            </div>
+          </app-admin-matrix-question-form>
         </div>
       </div>
     </div>

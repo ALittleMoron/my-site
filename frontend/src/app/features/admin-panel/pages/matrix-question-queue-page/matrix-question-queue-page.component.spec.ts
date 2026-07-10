@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -39,6 +39,7 @@ const importedQuestion: QueuedMatrixQuestion = {
 const queuedQuestionWithMissingSheet: QueuedMatrixQuestion = {
   ...queuedQuestion,
   id: MISSING_SHEET_QUESTION_ID,
+  question: 'What is SQL?',
   sheet: 'sql',
 };
 
@@ -106,6 +107,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       success: jest.fn(),
       error: jest.fn(),
     };
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     await TestBed.configureTestingModule({
       imports: [MatrixQuestionQueuePageComponent],
@@ -400,6 +402,14 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SHEET_ID);
   });
 
+  it('renders queue-only actions through the shared form footer', () => {
+    openCreateModalFromQueue();
+
+    expect(buttonText('[data-testid="matrix-queue-reject-and-next"]')).toBe('Отклонить и далее');
+    expect(buttonText('[data-testid="matrix-queue-skip"]')).toBe('Пропустить');
+    expect(buttonText('[data-testid="matrix-form-save"]')).toBe('Создать и далее');
+  });
+
   it('highlights a missing queued sheet key in the shared create modal', () => {
     openCreateModalFromQueue(MISSING_SHEET_QUESTION_ID);
 
@@ -426,12 +436,24 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(selectedButton?.classList).not.toContain('list-group-item-primary');
   });
 
-  it('rejects queued question and reloads queue', () => {
+  it('confirms and removes a rejected question from the loaded queue', () => {
     component.rejectQuestion(queuedQuestion);
 
+    expect(window.confirm).toHaveBeenCalledWith('Отклонить этот вопрос из очереди?');
     expect(queueService.rejectQueuedQuestion).toHaveBeenCalledWith(QUESTION_ID);
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос отклонён.');
-    expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
+    expect(component.questions().map((question) => question.id)).toEqual([
+      MISSING_SHEET_QUESTION_ID,
+    ]);
+  });
+
+  it('keeps a queued question when rejection confirmation is cancelled', () => {
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    component.rejectQuestion(queuedQuestion);
+
+    expect(queueService.rejectQueuedQuestion).not.toHaveBeenCalled();
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
   });
 
   it('creates matrix question from selected queue entry', () => {
@@ -451,6 +473,131 @@ describe('MatrixQuestionQueuePageComponent', () => {
       }),
       'ru',
     );
+    expect(component.questions().map((question) => question.id)).toEqual([
+      MISSING_SHEET_QUESTION_ID,
+    ]);
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+  });
+
+  it('closes the create modal after creating the last visible queue entry', () => {
+    openCreateModalFromQueue(MISSING_SHEET_QUESTION_ID);
+
+    component.createQuestion(minimumQuestionPayload());
+
+    expect(component.selectedQuestion()).toBeNull();
+    expect(component.questions().map((question) => question.id)).toEqual([QUESTION_ID]);
+  });
+
+  it('rejects the selected entry and opens the next FIFO question', () => {
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-reject-and-next"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.rejectQueuedQuestion).toHaveBeenCalledWith(QUESTION_ID);
+    expect(component.questions().map((question) => question.id)).toEqual([
+      MISSING_SHEET_QUESTION_ID,
+    ]);
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+  });
+
+  it('skips to the next FIFO question without changing the queue', () => {
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
+    expect(queueService.rejectQueuedQuestion).not.toHaveBeenCalled();
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+    expect(inputValue('#matrix-form-question-ru')).toBe('What is SQL?');
+    expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
+  });
+
+  it('closes the modal when the last visible queue entry is skipped', () => {
+    openCreateModalFromQueue(MISSING_SHEET_QUESTION_ID);
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()).toBeNull();
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
+  });
+
+  it('blocks modal actions and closing while a queue create is pending', () => {
+    const createResult = new Subject<{ id: string; slug: string }>();
+    queueService.createQuestionFromQueue.mockReturnValue(createResult);
+    openCreateModalFromQueue();
+
+    component.createQuestion(minimumQuestionPayload());
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        '[data-testid="matrix-queue-reject-and-next"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')
+        ?.disabled,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-form-save"]')
+        ?.disabled,
+    ).toBe(true);
+
+    component.closeCreateModal();
+
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+  });
+
+  it('blocks modal actions and keeps the current entry while rejection is pending', () => {
+    const rejectResult = new Subject<void>();
+    queueService.rejectQueuedQuestion.mockReturnValue(rejectResult);
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-reject-and-next"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        '[data-testid="matrix-queue-reject-and-next"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')
+        ?.disabled,
+    ).toBe(true);
+
+    component.closeCreateModal();
+
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
+  });
+
+  it('keeps the current entry and form open when rejection fails', () => {
+    queueService.rejectQueuedQuestion.mockReturnValue(
+      throwError(() => ({ message: 'Failed' }) as ApiError),
+    );
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-reject-and-next"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось отклонить вопрос.');
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
   });
 
   it('keeps create modal open and shows feedback when queue item creation fails', () => {
@@ -471,6 +618,8 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(notificationService.error).toHaveBeenCalledWith('Не удалось создать вопрос из очереди.');
     expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('payload / slug: Failed');
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
   });
 
   function openAddModal(): void {
@@ -548,6 +697,10 @@ describe('MatrixQuestionQueuePageComponent', () => {
       throw new Error(`Missing queue form input: ${selector}`);
     }
     return input.value;
+  }
+
+  function buttonText(selector: string): string | undefined {
+    return fixture.nativeElement.querySelector<HTMLButtonElement>(selector)?.textContent?.trim();
   }
 
   function select(selector: string): HTMLSelectElement {

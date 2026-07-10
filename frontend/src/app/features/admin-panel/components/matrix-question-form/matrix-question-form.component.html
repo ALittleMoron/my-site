@@ -410,22 +410,28 @@
     </section>
   </div>
 
-  <div class="d-flex justify-content-end gap-2 mt-4">
-    <button
-      type="button"
-      class="btn btn-outline-secondary"
-      [disabled]="submitting"
-      (click)="formCancel.emit()"
-    >
-      {{ 'shared.cancel' | t }}
-    </button>
-    <button
-      type="submit"
-      class="btn btn-success"
-      data-testid="matrix-form-save"
-      [disabled]="submitting"
-    >
-      {{ 'adminMatrixWorkspace.save' | t }}
-    </button>
+  <div
+    class="matrix-question-form-action-footer d-flex flex-wrap align-items-center gap-2 mt-4 py-3 border-top"
+    data-testid="matrix-form-action-footer"
+  >
+    <ng-content select="[matrixQuestionFormActions]" />
+    <div class="d-flex flex-wrap justify-content-end gap-2 ms-auto">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        [disabled]="submitting"
+        (click)="formCancel.emit()"
+      >
+        {{ 'shared.cancel' | t }}
+      </button>
+      <button
+        type="submit"
+        class="btn btn-success"
+        data-testid="matrix-form-save"
+        [disabled]="submitting"
+      >
+        {{ submitLabelKey | t }}
+      </button>
+    </div>
   </div>
 </form>
