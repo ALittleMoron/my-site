@@ -80,128 +80,183 @@
         }
       </select>
     </div>
-    <div class="col-12 col-md-6">
-      <label class="form-label" for="matrix-form-question-ru">
-        {{ 'matrix.form.questionRu' | t }}
-        <span class="required-marker" aria-hidden="true">*</span>
-      </label>
-      <input
-        id="matrix-form-question-ru"
-        class="form-control"
-        [class.is-invalid]="fieldInvalid('questionRu')"
-        [attr.aria-invalid]="fieldInvalid('questionRu') ? 'true' : null"
-        [attr.maxlength]="validationLimits.shortText"
-        formControlName="questionRu"
-      />
-      @if (fieldInvalid('questionRu') && fieldMessage('questionRu'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
-    <div class="col-12 col-md-6">
-      <label class="form-label" for="matrix-form-question-en">
-        {{ 'matrix.form.questionEn' | t }}
-        <span class="required-marker" aria-hidden="true">*</span>
-      </label>
-      <input
-        id="matrix-form-question-en"
-        class="form-control"
-        [class.is-invalid]="fieldInvalid('questionEn')"
-        [attr.aria-invalid]="fieldInvalid('questionEn') ? 'true' : null"
-        [attr.maxlength]="validationLimits.shortText"
-        formControlName="questionEn"
-      />
-      @if (fieldInvalid('questionEn') && fieldMessage('questionEn'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
     <div class="col-12">
-      <div class="form-label" id="matrix-form-answer-ru-label">
-        {{ 'matrix.form.answerRu' | t }}
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="form-label mb-0" id="matrix-form-display-mode-label">
+          {{ 'matrix.form.localizedDisplayMode' | t }}
+        </span>
+        <div
+          class="btn-group btn-group-sm"
+          role="group"
+          aria-labelledby="matrix-form-display-mode-label"
+        >
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-testid="matrix-form-display-mode-ru"
+            [class.active]="localizedDisplayModeSelected('ru')"
+            [attr.aria-pressed]="localizedDisplayModeSelected('ru')"
+            (click)="setLocalizedDisplayMode('ru')"
+          >
+            {{ 'matrix.form.displayModeRu' | t }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-testid="matrix-form-display-mode-en"
+            [class.active]="localizedDisplayModeSelected('en')"
+            [attr.aria-pressed]="localizedDisplayModeSelected('en')"
+            (click)="setLocalizedDisplayMode('en')"
+          >
+            {{ 'matrix.form.displayModeEn' | t }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-testid="matrix-form-display-mode-ru-en"
+            [class.active]="localizedDisplayModeSelected('ruEn')"
+            [attr.aria-pressed]="localizedDisplayModeSelected('ruEn')"
+            (click)="setLocalizedDisplayMode('ruEn')"
+          >
+            {{ 'matrix.form.displayModeRuEn' | t }}
+          </button>
+        </div>
       </div>
-      <div
-        id="matrix-form-answer-ru"
-        class="matrix-markdown-editor"
-        role="group"
-        aria-labelledby="matrix-form-answer-ru-label"
-        [class.is-invalid]="fieldInvalid('answerRu')"
-        [class.matrix-markdown-editor-invalid]="fieldInvalid('answerRu')"
-        [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
-      >
-        <app-markdown-editor
-          [value]="questionForm.controls.answerRu.value"
-          (valueChange)="setAnswerRu($event)"
-        />
-      </div>
-      @if (fieldInvalid('answerRu') && fieldMessage('answerRu'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
     </div>
-    <div class="col-12">
-      <div class="form-label" id="matrix-form-answer-en-label">
-        {{ 'matrix.form.answerEn' | t }}
-      </div>
-      <div
-        id="matrix-form-answer-en"
-        class="matrix-markdown-editor"
-        role="group"
-        aria-labelledby="matrix-form-answer-en-label"
-        [class.is-invalid]="fieldInvalid('answerEn')"
-        [class.matrix-markdown-editor-invalid]="fieldInvalid('answerEn')"
-        [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
-      >
-        <app-markdown-editor
-          [value]="questionForm.controls.answerEn.value"
-          (valueChange)="setAnswerEn($event)"
+    @if (showRuLocalizedFields()) {
+      <div class="col-12" [class.col-md-6]="showEnLocalizedFields()">
+        <label class="form-label" for="matrix-form-question-ru">
+          {{ 'matrix.form.questionRu' | t }}
+          <span class="required-marker" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="matrix-form-question-ru"
+          class="form-control"
+          [class.is-invalid]="fieldInvalid('questionRu')"
+          [attr.aria-invalid]="fieldInvalid('questionRu') ? 'true' : null"
+          [attr.maxlength]="validationLimits.shortText"
+          formControlName="questionRu"
         />
+        @if (fieldInvalid('questionRu') && fieldMessage('questionRu'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
-      @if (fieldInvalid('answerEn') && fieldMessage('answerEn'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
-    <div class="col-12">
-      <div class="form-label" id="matrix-form-expected-ru-label">
-        {{ 'matrix.form.expectedAnswerRu' | t }}
-      </div>
-      <div
-        id="matrix-form-expected-ru"
-        class="matrix-markdown-editor"
-        role="group"
-        aria-labelledby="matrix-form-expected-ru-label"
-        [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
-        [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerRu')"
-        [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
-      >
-        <app-markdown-editor
-          [value]="questionForm.controls.expectedAnswerRu.value"
-          (valueChange)="setExpectedAnswerRu($event)"
+    }
+    @if (showEnLocalizedFields()) {
+      <div class="col-12" [class.col-md-6]="showRuLocalizedFields()">
+        <label class="form-label" for="matrix-form-question-en">
+          {{ 'matrix.form.questionEn' | t }}
+          <span class="required-marker" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="matrix-form-question-en"
+          class="form-control"
+          [class.is-invalid]="fieldInvalid('questionEn')"
+          [attr.aria-invalid]="fieldInvalid('questionEn') ? 'true' : null"
+          [attr.maxlength]="validationLimits.shortText"
+          formControlName="questionEn"
         />
+        @if (fieldInvalid('questionEn') && fieldMessage('questionEn'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
-      @if (fieldInvalid('expectedAnswerRu') && fieldMessage('expectedAnswerRu'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
-    <div class="col-12">
-      <div class="form-label" id="matrix-form-expected-en-label">
-        {{ 'matrix.form.expectedAnswerEn' | t }}
+    }
+    @if (showRuLocalizedFields()) {
+      <div class="col-12">
+        <div class="form-label" id="matrix-form-answer-ru-label">
+          {{ 'matrix.form.answerRu' | t }}
+        </div>
+        <div
+          id="matrix-form-answer-ru"
+          class="matrix-markdown-editor"
+          role="group"
+          aria-labelledby="matrix-form-answer-ru-label"
+          [class.is-invalid]="fieldInvalid('answerRu')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('answerRu')"
+          [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
+        >
+          <app-markdown-editor
+            [value]="questionForm.controls.answerRu.value"
+            (valueChange)="setAnswerRu($event)"
+          />
+        </div>
+        @if (fieldInvalid('answerRu') && fieldMessage('answerRu'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
-      <div
-        id="matrix-form-expected-en"
-        class="matrix-markdown-editor"
-        role="group"
-        aria-labelledby="matrix-form-expected-en-label"
-        [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
-        [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerEn')"
-        [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"
-      >
-        <app-markdown-editor
-          [value]="questionForm.controls.expectedAnswerEn.value"
-          (valueChange)="setExpectedAnswerEn($event)"
-        />
+    }
+    @if (showEnLocalizedFields()) {
+      <div class="col-12">
+        <div class="form-label" id="matrix-form-answer-en-label">
+          {{ 'matrix.form.answerEn' | t }}
+        </div>
+        <div
+          id="matrix-form-answer-en"
+          class="matrix-markdown-editor"
+          role="group"
+          aria-labelledby="matrix-form-answer-en-label"
+          [class.is-invalid]="fieldInvalid('answerEn')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('answerEn')"
+          [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
+        >
+          <app-markdown-editor
+            [value]="questionForm.controls.answerEn.value"
+            (valueChange)="setAnswerEn($event)"
+          />
+        </div>
+        @if (fieldInvalid('answerEn') && fieldMessage('answerEn'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
       </div>
-      @if (fieldInvalid('expectedAnswerEn') && fieldMessage('expectedAnswerEn'); as message) {
-        <div class="invalid-feedback d-block">{{ message }}</div>
-      }
-    </div>
+    }
+    @if (showRuLocalizedFields()) {
+      <div class="col-12">
+        <div class="form-label" id="matrix-form-expected-ru-label">
+          {{ 'matrix.form.expectedAnswerRu' | t }}
+        </div>
+        <div
+          id="matrix-form-expected-ru"
+          class="matrix-markdown-editor"
+          role="group"
+          aria-labelledby="matrix-form-expected-ru-label"
+          [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerRu')"
+          [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
+        >
+          <app-markdown-editor
+            [value]="questionForm.controls.expectedAnswerRu.value"
+            (valueChange)="setExpectedAnswerRu($event)"
+          />
+        </div>
+        @if (fieldInvalid('expectedAnswerRu') && fieldMessage('expectedAnswerRu'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
+      </div>
+    }
+    @if (showEnLocalizedFields()) {
+      <div class="col-12">
+        <div class="form-label" id="matrix-form-expected-en-label">
+          {{ 'matrix.form.expectedAnswerEn' | t }}
+        </div>
+        <div
+          id="matrix-form-expected-en"
+          class="matrix-markdown-editor"
+          role="group"
+          aria-labelledby="matrix-form-expected-en-label"
+          [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerEn')"
+          [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"
+        >
+          <app-markdown-editor
+            [value]="questionForm.controls.expectedAnswerEn.value"
+            (valueChange)="setExpectedAnswerEn($event)"
+          />
+        </div>
+        @if (fieldInvalid('expectedAnswerEn') && fieldMessage('expectedAnswerEn'); as message) {
+          <div class="invalid-feedback d-block">{{ message }}</div>
+        }
+      </div>
+    }
     <section class="col-12">
       <h3 class="h6">{{ 'matrix.resources.title' | t }}</h3>
       <div class="input-group input-group-sm mb-2">

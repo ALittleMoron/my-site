@@ -260,6 +260,129 @@ describe('MatrixQuestionFormComponent', () => {
     });
   });
 
+  it('shows both localized field sets by default', () => {
+    fixture.componentRef.setInput('createInitialValue', {
+      slug: 'queued-question-0007',
+      subsectionId: SUBSECTION_ID,
+      preferredSheetKey: 'python',
+      grade: 'Junior',
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: '## RU answer',
+          interviewExpectedAnswer: 'RU expected',
+        },
+        en: {
+          question: 'What is PEP 8?',
+          answer: '## EN answer',
+          interviewExpectedAnswer: 'EN expected',
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8?');
+    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
+    expect(element('#matrix-form-answer-ru')).not.toBeNull();
+    expect(element('#matrix-form-answer-en')).not.toBeNull();
+    expect(element('#matrix-form-expected-ru')).not.toBeNull();
+    expect(element('#matrix-form-expected-en')).not.toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="matrix-form-display-mode-ru-en"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      fixture.debugElement
+        .queryAll(By.directive(MarkdownEditorStubComponent))
+        .map((editor) => editor.componentInstance.value),
+    ).toEqual(['## RU answer', '## EN answer', 'RU expected', 'EN expected']);
+  });
+
+  it('switches between RU and EN localized field sets without losing values', () => {
+    fixture.componentRef.setInput('createInitialValue', {
+      slug: 'queued-question-0007',
+      subsectionId: SUBSECTION_ID,
+      preferredSheetKey: 'python',
+      grade: 'Junior',
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: '## RU answer',
+          interviewExpectedAnswer: 'RU expected',
+        },
+        en: {
+          question: 'What is PEP 8?',
+          answer: '## EN answer',
+          interviewExpectedAnswer: 'EN expected',
+        },
+      },
+    });
+    fixture.detectChanges();
+
+    clickDisplayMode('ru');
+    expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8?');
+    expect(element('#matrix-form-question-en')).toBeNull();
+    expect(element('#matrix-form-answer-ru')).not.toBeNull();
+    expect(element('#matrix-form-answer-en')).toBeNull();
+    expect(element('#matrix-form-expected-ru')).not.toBeNull();
+    expect(element('#matrix-form-expected-en')).toBeNull();
+    setInput('#matrix-form-question-ru', 'Что такое PEP 8 на практике?');
+    setMarkdownEditor('#matrix-form-answer-ru', 'Updated RU answer');
+    setMarkdownEditor('#matrix-form-expected-ru', 'Updated RU expected');
+
+    clickDisplayMode('en');
+    expect(element('#matrix-form-question-ru')).toBeNull();
+    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
+    expect(element('#matrix-form-answer-ru')).toBeNull();
+    expect(element('#matrix-form-answer-en')).not.toBeNull();
+    expect(element('#matrix-form-expected-ru')).toBeNull();
+    expect(element('#matrix-form-expected-en')).not.toBeNull();
+    setInput('#matrix-form-question-en', 'What is PEP 8 in practice?');
+    setMarkdownEditor('#matrix-form-answer-en', 'Updated EN answer');
+    setMarkdownEditor('#matrix-form-expected-en', 'Updated EN expected');
+
+    clickDisplayMode('ru-en');
+    expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8 на практике?');
+    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8 in practice?');
+
+    submitForm();
+
+    expect(emittedPayloads[0].translations).toEqual({
+      ru: {
+        question: 'Что такое PEP 8 на практике?',
+        answer: 'Updated RU answer',
+        interviewExpectedAnswer: 'Updated RU expected',
+      },
+      en: {
+        question: 'What is PEP 8 in practice?',
+        answer: 'Updated EN answer',
+        interviewExpectedAnswer: 'Updated EN expected',
+      },
+    });
+  });
+
+  it('returns to RU+EN when hidden localized fields block submission', () => {
+    fillValidQuestionMinimum();
+    setInput('#matrix-form-question-en', INVALID_SHORT_TEXT);
+    clickDisplayMode('ru');
+
+    submitForm();
+
+    expect(emittedPayloads).toEqual([]);
+    expect(element('#matrix-form-question-en')).not.toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="matrix-form-display-mode-ru-en"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    expectInvalidControl('#matrix-form-question-en', 'Максимум 255 символов.');
+  });
+
   it('blocks invalid slug and long answer text before emitting', () => {
     setInput('#matrix-form-slug', 'Invalid Slug');
     selectQuestionSubsection(SUBSECTION_ID);
@@ -515,6 +638,17 @@ describe('MatrixQuestionFormComponent', () => {
     setInput('#matrix-form-question-en', 'Question?');
   }
 
+  function clickDisplayMode(mode: 'ru' | 'en' | 'ru-en'): void {
+    const button = fixture.nativeElement.querySelector(
+      `[data-testid="matrix-form-display-mode-${mode}"]`,
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error(`No display mode button found for ${mode}`);
+    }
+    button.click();
+    fixture.detectChanges();
+  }
+
   function expectInvalidControl(selector: string, expectedMessage: string): void {
     const element = fixture.nativeElement.querySelector(selector) as HTMLElement | null;
     expect(element).not.toBeNull();
@@ -526,6 +660,10 @@ describe('MatrixQuestionFormComponent', () => {
   function inputValue(selector: string): string {
     const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     return input.value;
+  }
+
+  function element(selector: string): HTMLElement | null {
+    return fixture.nativeElement.querySelector(selector) as HTMLElement | null;
   }
 
   function selectValue(selector: string): string {

@@ -35,22 +35,15 @@ cleanup_test_resources() {
     cleanup_owned_test_db
 }
 
-pytest_parallel_args() {
-    local workers="$1"
-    local -n args_ref="$2"
-
-    args_ref=(-n "$workers")
-    if [ "$workers" -gt 0 ]; then
-        args_ref+=(--dist worksteal)
-    fi
-}
-
 run_pytest_parallel() {
     local workers
     local -a parallel_args
 
     workers="$(pytest_worker_count)"
-    pytest_parallel_args "$workers" parallel_args
+    parallel_args=(-n "$workers")
+    if [ "$workers" -gt 0 ]; then
+        parallel_args+=(--dist worksteal)
+    fi
     run_with_test_env uv run pytest --durations=10 -vvv -x "${parallel_args[@]}" "$@"
 }
 
@@ -73,7 +66,10 @@ run_pytest_cov_parallel() {
     local -a parallel_args
 
     workers="$(pytest_worker_count)"
-    pytest_parallel_args "$workers" parallel_args
+    parallel_args=(-n "$workers")
+    if [ "$workers" -gt 0 ]; then
+        parallel_args+=(--dist worksteal)
+    fi
     run_with_test_env uv run pytest \
         --cov=src \
         --cov-branch \

@@ -7,6 +7,7 @@ import {
   OnChanges,
   Output,
   SimpleChanges,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -66,6 +67,7 @@ type MatrixQuestionField =
   | 'expectedAnswerRu'
   | 'expectedAnswerEn';
 type NewResourceField = 'nameRu' | 'nameEn' | 'url';
+type MatrixQuestionDisplayMode = 'ru' | 'en' | 'ruEn';
 
 interface AdminMatrixAttachedResourceTranslations {
   ru: { name: string; context: string };
@@ -138,6 +140,9 @@ export class MatrixQuestionFormComponent implements OnChanges {
   readonly newResourceUrl = signal('');
   readonly newResourceSubmitted = signal(false);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
+  readonly localizedDisplayMode = signal<MatrixQuestionDisplayMode>('ruEn');
+  readonly showRuLocalizedFields = computed(() => this.localizedDisplayMode() !== 'en');
+  readonly showEnLocalizedFields = computed(() => this.localizedDisplayMode() !== 'ru');
 
   private nextNewResourceId = -1;
 
@@ -171,6 +176,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.publishError.set(null);
     if (this.questionForm.invalid) {
       this.questionForm.markAllAsTouched();
+      this.revealHiddenInvalidLocalizedFields();
       return;
     }
     if (this.resourceDraftsInvalid()) {
@@ -218,6 +224,14 @@ export class MatrixQuestionFormComponent implements OnChanges {
 
   canGenerateSlug(): boolean {
     return this.questionForm.controls.questionEn.value.trim() !== '';
+  }
+
+  setLocalizedDisplayMode(mode: MatrixQuestionDisplayMode): void {
+    this.localizedDisplayMode.set(mode);
+  }
+
+  localizedDisplayModeSelected(mode: MatrixQuestionDisplayMode): boolean {
+    return this.localizedDisplayMode() === mode;
   }
 
   setAnswerRu(value: string): void {
@@ -402,6 +416,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
   private resetFromQuestion(): void {
     this.formSubmitted.set(false);
     this.publishError.set(null);
+    this.localizedDisplayMode.set('ruEn');
     if (this.question === null) {
       const initialValue = this.createInitialValue;
       this.questionForm.reset({
@@ -496,6 +511,32 @@ export class MatrixQuestionFormComponent implements OnChanges {
       (draft) =>
         draft.translations.ru.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText ||
         draft.translations.en.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText,
+    );
+  }
+
+  private revealHiddenInvalidLocalizedFields(): void {
+    const mode = this.localizedDisplayMode();
+    if (
+      (mode === 'ru' && this.enLocalizedFieldsInvalid()) ||
+      (mode === 'en' && this.ruLocalizedFieldsInvalid())
+    ) {
+      this.localizedDisplayMode.set('ruEn');
+    }
+  }
+
+  private ruLocalizedFieldsInvalid(): boolean {
+    return (
+      this.questionForm.controls.questionRu.invalid ||
+      this.questionForm.controls.answerRu.invalid ||
+      this.questionForm.controls.expectedAnswerRu.invalid
+    );
+  }
+
+  private enLocalizedFieldsInvalid(): boolean {
+    return (
+      this.questionForm.controls.questionEn.invalid ||
+      this.questionForm.controls.answerEn.invalid ||
+      this.questionForm.controls.expectedAnswerEn.invalid
     );
   }
 }
