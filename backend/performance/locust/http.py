@@ -3,7 +3,7 @@ from typing import Protocol, Self
 
 from pydantic import BaseModel
 
-from performance.locust.constants import HTTP_OK
+from performance.locust.constants import constants
 from performance.locust.contracts import validate_response_payload
 
 
@@ -55,7 +55,7 @@ class PerformanceApiClient:
         schema_type: type[ResponseSchemaT],
     ) -> ResponseSchemaT | None:
         with self.client.get(path, name=name, catch_response=True) as response:
-            if response.status_code != HTTP_OK:
+            if response.status_code != constants.http.ok:
                 response.failure(f"{name} returned {response.status_code}")
                 return None
             try:

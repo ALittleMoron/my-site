@@ -3,7 +3,7 @@ from typing import Any
 from locust import HttpUser, between, events, task
 
 from infra.config.loggers import logger
-from performance.locust import constants
+from performance.locust.constants import constants
 from performance.locust.scenario import PublicSiteScenario
 from performance.locust.settings import settings
 from performance.locust.thresholds import (
@@ -35,7 +35,7 @@ def enforce_performance_thresholds(environment: Any, **_kwargs: object) -> None:
 
 
 class PublicSiteUser(HttpUser):
-    wait_time = between(constants.WAIT_TIME_MIN_SECONDS, constants.WAIT_TIME_MAX_SECONDS)
+    wait_time = between(constants.wait_time.min_seconds, constants.wait_time.max_seconds)
     scenario: PublicSiteScenario
 
     def on_start(self) -> None:
@@ -44,46 +44,46 @@ class PublicSiteUser(HttpUser):
             settings=settings.scenario,
         )
 
-    @task(constants.TASK_WEIGHT_HEALTHCHECK)
+    @task(constants.task_weights.healthcheck)
     def healthcheck(self) -> None:
         self.scenario.healthcheck()
 
-    @task(constants.TASK_WEIGHT_I18N_LANGUAGES)
+    @task(constants.task_weights.i18n_languages)
     def i18n_languages(self) -> None:
         self.scenario.i18n_languages()
 
-    @task(constants.TASK_WEIGHT_I18N_BUNDLE)
+    @task(constants.task_weights.i18n_bundle)
     def i18n_bundle(self) -> None:
         self.scenario.i18n_bundle()
 
-    @task(constants.TASK_WEIGHT_ARTICLES_LIST)
+    @task(constants.task_weights.articles_list)
     def articles_list(self) -> None:
         self.scenario.articles_list()
 
-    @task(constants.TASK_WEIGHT_ARTICLES_TREE)
+    @task(constants.task_weights.articles_tree)
     def articles_tree(self) -> None:
         self.scenario.articles_tree()
 
-    @task(constants.TASK_WEIGHT_ARTICLE_DETAIL)
+    @task(constants.task_weights.article_detail)
     def article_detail(self) -> None:
         self.scenario.article_detail()
 
-    @task(constants.TASK_WEIGHT_MATRIX_SHEETS)
+    @task(constants.task_weights.matrix_sheets)
     def matrix_sheets(self) -> None:
         self.scenario.matrix_sheets_task()
 
-    @task(constants.TASK_WEIGHT_MATRIX_ITEMS)
+    @task(constants.task_weights.matrix_items)
     def matrix_items(self) -> None:
         self.scenario.matrix_items()
 
-    @task(constants.TASK_WEIGHT_MATRIX_ITEM_DETAIL)
+    @task(constants.task_weights.matrix_item_detail)
     def matrix_item_detail(self) -> None:
         self.scenario.matrix_item_detail()
 
-    @task(constants.TASK_WEIGHT_MATRIX_QUESTION_SUGGESTION)
+    @task(constants.task_weights.matrix_question_suggestion)
     def matrix_question_suggestion(self) -> None:
         self.scenario.matrix_question_suggestion()
 
-    @task(constants.TASK_WEIGHT_SPA_ROOT)
+    @task(constants.task_weights.spa_root)
     def spa_root(self) -> None:
         self.scenario.spa_root()

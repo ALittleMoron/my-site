@@ -15,7 +15,7 @@ from entrypoints.litestar.api.i18n.schemas import (
     I18nBundleResponseSchema,
     LanguagesResponseSchema,
 )
-from performance.locust import constants
+from performance.locust.constants import constants
 from performance.locust.http import LocustHttpClient, PerformanceApiClient
 from performance.locust.settings import LocustScenarioSettings
 
@@ -50,7 +50,7 @@ class PublicSiteDiscovery:
     def discover_article_slugs(self) -> list[str]:
         schema = self.api_client.get_validated(
             "/api/articles"
-            f"?page=1&pageSize={constants.DISCOVERY_ARTICLES_PAGE_SIZE}"
+            f"?page=1&pageSize={constants.articles.discovery_page_size}"
             f"&language={self.language.value}",
             name="GET /api/articles",
             schema_type=ArticleListResponseSchema,
@@ -92,9 +92,7 @@ class PublicSiteScenario:
         self.discovery = PublicSiteDiscovery(
             api_client=self.api_client,
             language=self.language,
-            matrix_sheet_key_prefix=(
-                constants.SEEDED_ENTITY_PREFIX if settings.seed_data else None
-            ),
+            matrix_sheet_key_prefix=constants.seed.entity_prefix if settings.seed_data else None,
         )
         self.matrix_sheets = self.discovery.discover_matrix_sheets()
         self.article_slugs = self.discovery.discover_article_slugs()
@@ -122,7 +120,7 @@ class PublicSiteScenario:
     def articles_list(self) -> None:
         self.api_client.get(
             "/api/articles"
-            f"?page=1&pageSize={constants.ARTICLES_LIST_PAGE_SIZE}"
+            f"?page=1&pageSize={constants.articles.list_page_size}"
             f"&language={self.language.value}",
             name="GET /api/articles",
             schema_type=ArticleListResponseSchema,
@@ -188,14 +186,14 @@ class PublicSiteScenario:
             name="POST /api/competency-matrix/question-suggestions",
             json={
                 "question": (
-                    f"{constants.MATRIX_QUESTION_SUGGESTION_PREFIX} "
+                    f"{constants.matrix_question_suggestion.prefix} "
                     f"{self.language.value}-{self.matrix_suggestion_number}"
                 ),
                 "sheet": choice(self.matrix_sheets),
             },
             catch_response=True,
         ) as response:
-            if response.status_code in constants.MATRIX_QUESTION_SUGGESTION_SUCCESS_STATUSES:
+            if response.status_code in constants.matrix_question_suggestion.success_statuses:
                 return
             response.failure(
                 f"POST /api/competency-matrix/question-suggestions returned {response.status_code}",
