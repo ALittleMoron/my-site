@@ -11,11 +11,4 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
       - name: Trivy infrastructure config scan
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          format: table
-          exit-code: "1"
-          severity: "HIGH,CRITICAL"
-          hide-progress: true
+        run: make security-trivy-config

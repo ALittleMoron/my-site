@@ -130,6 +130,27 @@ lint-dockerfiles:
 lint-docker-images:
 	bash infra/scripts/docker_lint.sh dockle $(DOCKLE_IMAGE_REFS)
 
+TRIVY_IMAGE := docker.io/aquasec/trivy:0.70.0@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e
+
+.PHONY: security-trivy-config
+security-trivy-config:
+	bash infra/scripts/trivy_scan.sh config "$(TRIVY_IMAGE)"
+
+.PHONY: security-backend-docker-image
+security-backend-docker-image:
+	bash infra/scripts/docker_image_security.sh \
+		my_site_application "$(IMAGE_TAG)" backend/Dockerfile backend "$(TRIVY_IMAGE)"
+
+.PHONY: security-frontend-docker-image
+security-frontend-docker-image:
+	bash infra/scripts/docker_image_security.sh \
+		my_site_frontend "$(IMAGE_TAG)" frontend/Dockerfile frontend "$(TRIVY_IMAGE)"
+
+.PHONY: security-nginx-docker-image
+security-nginx-docker-image:
+	bash infra/scripts/docker_image_security.sh \
+		my_site_nginx "$(IMAGE_TAG)" infra/nginx/Dockerfile . "$(TRIVY_IMAGE)"
+
 .PHONY: security-infra
 security-infra:
 	bash infra/scripts/security_check.sh

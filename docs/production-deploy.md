@@ -24,6 +24,18 @@ Production deploy is a manual server-build deploy:
 14. The server runs `make run`, which builds images locally and switches the healthy blue/green
     slot.
 
+The post-smoke container security jobs use the same Make targets in CI and locally:
+
+```bash
+make security-trivy-config
+make security-backend-docker-image IMAGE_TAG=local-security-check
+make security-frontend-docker-image IMAGE_TAG=local-security-check
+make security-nginx-docker-image IMAGE_TAG=local-security-check
+```
+
+Each image target builds from the current checkout, runs Dockle and Trivy, and removes only the
+temporary image tag it created. Use an image tag that does not already exist locally.
+
 Locally built runtime images use the GitHub commit SHA from the required `IMAGE_TAG` runtime
 environment entry. `docker-compose.yml` intentionally has no `latest` fallback for the backend,
 frontend, nginx, or MinIO wrapper images, so a production start fails early if the deploy renderer
