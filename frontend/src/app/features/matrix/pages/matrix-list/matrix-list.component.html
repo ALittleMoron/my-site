@@ -138,12 +138,27 @@
             type="text"
             id="matrix-question-suggestion"
             class="form-control form-bordered"
+            [class.is-invalid]="suggestionDuplicate()"
+            [attr.aria-invalid]="suggestionDuplicate()"
+            [attr.aria-describedby]="
+              suggestionDuplicate() ? 'matrix-question-suggestion-duplicate' : null
+            "
             maxlength="255"
             [placeholder]="'matrix.suggestion.placeholder' | t"
             [value]="suggestionQuestion()"
             [disabled]="suggestionSubmitting()"
             (input)="onQuestionSuggestionInput($event)"
           />
+          @if (suggestionDuplicate()) {
+            <div
+              id="matrix-question-suggestion-duplicate"
+              class="invalid-feedback d-block"
+              role="alert"
+              data-testid="matrix-question-suggestion-duplicate"
+            >
+              {{ 'matrix.suggestion.duplicate' | t }}
+            </div>
+          }
         </div>
         <div class="modal-footer">
           <button

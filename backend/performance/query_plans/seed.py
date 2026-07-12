@@ -22,6 +22,7 @@ from sqlalchemy.sql.selectable import Subquery
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
+from core.competency_matrix.schemas import CompetencyMatrixQuestionFingerprint
 from core.i18n.enums import LanguageEnum
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
@@ -587,6 +588,8 @@ async def insert_competency_matrix_items(
                 "slug",
                 "question_ru",
                 "question_en",
+                "question_ru_fingerprint",
+                "question_en_fingerprint",
                 "answer_ru",
                 "answer_en",
                 "interview_expected_answer_ru",
@@ -603,6 +606,18 @@ async def insert_competency_matrix_items(
                 func.concat(literal("matrix-question-"), value),
                 func.concat(literal("Вопрос матрицы "), value),
                 func.concat(literal("Matrix question "), value),
+                func.sha256(
+                    func.convert_to(
+                        func.concat(literal("вопрос матрицы "), value),
+                        literal("UTF8"),
+                    ),
+                ),
+                func.sha256(
+                    func.convert_to(
+                        func.concat(literal("matrix question "), value),
+                        literal("UTF8"),
+                    ),
+                ),
                 func.concat(literal("Ответ матрицы "), value),
                 case(
                     (missing_answer_en, literal("")),
@@ -668,6 +683,9 @@ async def insert_queued_competency_matrix_questions(*, connection: AsyncConnecti
             {
                 "id": hex_id(value),
                 "question": f"Queued matrix question {value}",
+                "question_fingerprint": CompetencyMatrixQuestionFingerprint.from_question(
+                    question=f"Queued matrix question {value}",
+                ).digest,
                 "grade": "JUNIOR" if value % 5 == 0 else None,
                 "sheet": "Python" if value % 7 == 0 else None,
                 "section": "Basics" if value % 7 == 0 else None,

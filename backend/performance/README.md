@@ -109,8 +109,9 @@ The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
 - `PERFORMANCE_SEED_DATA`: set to `true` only for local test-database runs. It seeds published
   articles, article detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and
   resources before Locust starts. Seeded slugs and matrix sheet keys use the `perf-seed-*` prefix so
-  local runs can coexist with other test datasets. The seed runner rejects remote targets, remote
-  databases, and database names that do not contain `test`.
+  local runs can coexist with other test datasets; seeded matrix discovery is restricted to that
+  prefix so unrelated query-plan or developer data cannot distort the load profile. The seed runner
+  rejects remote targets, remote databases, and database names that do not contain `test`.
 - `PERFORMANCE_USERS`, `PERFORMANCE_SPAWN_RATE`, `PERFORMANCE_RUN_TIME`: smoke profile shape.
 - `PERFORMANCE_BASELINE_USERS`, `PERFORMANCE_BASELINE_SPAWN_RATE`, `PERFORMANCE_BASELINE_RUN_TIME`: baseline profile shape.
 - `LOCUST_MAX_FAILURE_RATIO`, `LOCUST_MAX_AVG_RESPONSE_MS`, `LOCUST_MAX_P95_RESPONSE_MS`: soft-gate thresholds.

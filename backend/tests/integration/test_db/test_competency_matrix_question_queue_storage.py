@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.competency_matrix.enums import GradeEnum
 from core.competency_matrix.exceptions import QueuedCompetencyMatrixQuestionNotFoundError
 from core.competency_matrix.schemas import (
+    CompetencyMatrixQuestionFingerprint,
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
 )
+from core.enums import PublishStatusEnum
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -84,6 +86,58 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         assert question.section is None
         assert question.subsection is None
         assert question.suggested_by_username == "anon"
+
+    async def test_question_suggestion_exists_matches_queue_case_and_whitespace(self) -> None:
+        await self.storage.create_queued_question(
+            params=QueuedCompetencyMatrixQuestionCreateParams(
+                question="  STRA\u00dfe   questions  ",
+                sheet="python",
+                grade=None,
+            ),
+            suggested_by_username="anon",
+        )
+
+        exists = await self.storage.question_suggestion_exists(
+            fingerprint=CompetencyMatrixQuestionFingerprint(value="strasse questions"),
+        )
+
+        assert exists is True
+
+    @pytest.mark.parametrize(
+        ("question_field", "publish_status"),
+        [
+            ("question_ru", PublishStatusEnum.DRAFT),
+            ("question_en", PublishStatusEnum.PUBLISHED),
+        ],
+    )
+    async def test_question_suggestion_exists_matches_matrix_languages_and_statuses(
+        self,
+        question_field: str,
+        publish_status: PublishStatusEnum,
+    ) -> None:
+        item = self.factory.core.competency_matrix_item(
+            item_id=50,
+            publish_status=publish_status,
+            question_ru="Что такое GIL?",
+            question_en="What is the GIL?",
+        )
+        await self.storage_helper.create_competency_matrix_items(items=[item])
+        question = getattr(item, question_field)
+
+        exists = await self.storage.question_suggestion_exists(
+            fingerprint=CompetencyMatrixQuestionFingerprint.from_question(question=question),
+        )
+
+        assert exists is True
+
+    async def test_question_suggestion_exists_returns_false_for_new_question(self) -> None:
+        exists = await self.storage.question_suggestion_exists(
+            fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question="How does structured concurrency work?",
+            ),
+        )
+
+        assert exists is False
 
     async def test_create_queued_questions_returns_persisted_questions_in_input_order(self) -> None:
         questions = await self.storage.create_queued_questions(

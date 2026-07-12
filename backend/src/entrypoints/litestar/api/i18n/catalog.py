@@ -538,6 +538,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.submitting": "Отправка...",
         "matrix.suggestion.sent": "Вопрос отправлен на рассмотрение.",
         "matrix.suggestion.error": "Не удалось отправить вопрос.",
+        "matrix.suggestion.duplicate": (
+            "Такой вопрос уже есть в матрице или ожидает рассмотрения."
+        ),
         "matrix.suggestion.quotaExceeded": "Лимит предложений на сегодня исчерпан.",
         "matrix.modal.create": "Добавление вопроса",
         "matrix.modal.edit": "Редактирование вопроса",
@@ -1363,6 +1366,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.submitting": "Sending...",
         "matrix.suggestion.sent": "Question sent for review.",
         "matrix.suggestion.error": "Failed to send the question.",
+        "matrix.suggestion.duplicate": (
+            "This question is already in the matrix or awaiting review."
+        ),
         "matrix.suggestion.quotaExceeded": "Today's suggestion limit has been reached.",
         "matrix.modal.create": "Add question",
         "matrix.modal.edit": "Edit question",

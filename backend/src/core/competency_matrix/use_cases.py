@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
-from core.competency_matrix.exceptions import CompetencyMatrixItemNotFoundError
+from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemNotFoundError,
+    QuestionSuggestionAlreadyExistsError,
+)
 from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixItem,
@@ -11,6 +14,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemPublishStatusSwitchParams,
     CompetencyMatrixItems,
     CompetencyMatrixItemUpdateParams,
+    CompetencyMatrixQuestionFingerprint,
     CompetencyMatrixResourceSearchParams,
     CompetencyMatrixSectionCreateParams,
     CompetencyMatrixSectionPriorityUpdateParams,
@@ -277,6 +281,12 @@ class CompetencyMatrixUseCase:
         *,
         params: QuestionSuggestionCreateParams,
     ) -> QueuedCompetencyMatrixQuestion:
+        if params.reject_duplicates:
+            fingerprint = CompetencyMatrixQuestionFingerprint.from_question(
+                question=params.question.question,
+            )
+            if await self.storage.question_suggestion_exists(fingerprint=fingerprint):
+                raise QuestionSuggestionAlreadyExistsError
         if params.limit is not None:
             await self.question_suggestion_limiter.check_create_allowed(params=params.limit)
         return await self.storage.create_queued_question(

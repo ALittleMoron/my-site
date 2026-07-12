@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Self
 
-from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, func, text
+from sqlalchemy import Enum, ForeignKey, Index, LargeBinary, String, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
@@ -11,6 +11,7 @@ from core.competency_matrix.schemas import (
     AttachedExternalResources,
     CompetencyMatrixItem,
     CompetencyMatrixItemStructure,
+    CompetencyMatrixQuestionFingerprint,
     CompetencyMatrixStructureSection,
     CompetencyMatrixStructureSheet,
     CompetencyMatrixStructureSubsection,
@@ -234,6 +235,14 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         String(length=255),
         doc="English question",
     )
+    question_ru_fingerprint: Mapped[bytes] = mapped_column(
+        LargeBinary(length=32),
+        doc="Normalized Russian question digest",
+    )
+    question_en_fingerprint: Mapped[bytes] = mapped_column(
+        LargeBinary(length=32),
+        doc="Normalized English question digest",
+    )
     answer_ru: Mapped[str] = mapped_column(
         String(),
         doc="Russian answer",
@@ -333,6 +342,14 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             postgresql_using="gin",
             postgresql_ops={"workspace_question_en_lower": "gin_trgm_ops"},
         ),
+        Index(
+            "cmi_question_ru_fingerprint_idx",
+            question_ru_fingerprint,
+        ),
+        Index(
+            "cmi_question_en_fingerprint_idx",
+            question_en_fingerprint,
+        ),
     )
 
     def __str__(self) -> str:
@@ -350,6 +367,12 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             slug=item.slug,
             question_ru=item.question_ru,
             question_en=item.question_en,
+            question_ru_fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question=item.question_ru,
+            ).digest,
+            question_en_fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question=item.question_en,
+            ).digest,
             answer_ru=item.answer_ru,
             answer_en=item.answer_en,
             publish_status=item.publish_status,
@@ -372,6 +395,12 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         self.slug = item.slug
         self.question_ru = item.question_ru
         self.question_en = item.question_en
+        self.question_ru_fingerprint = CompetencyMatrixQuestionFingerprint.from_question(
+            question=item.question_ru,
+        ).digest
+        self.question_en_fingerprint = CompetencyMatrixQuestionFingerprint.from_question(
+            question=item.question_en,
+        ).digest
         self.answer_ru = item.answer_ru
         self.answer_en = item.answer_en
         self.publish_status = item.publish_status
@@ -414,6 +443,10 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
         String(length=255),
         doc="Suggested or imported raw competency matrix question",
     )
+    question_fingerprint: Mapped[bytes] = mapped_column(
+        LargeBinary(length=32),
+        doc="Normalized queued question digest",
+    )
     grade: Mapped[GradeEnum | None] = mapped_column(
         Enum(GradeEnum, native_enum=True, name="grade_enum"),
         doc="Optional competency grade",
@@ -442,6 +475,7 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
     __table_args__ = (
         Index("cm_queued_question_fifo_idx", created_at),
         Index("cm_queued_question_suggested_by_idx", suggested_by_username),
+        Index("cm_queued_question_fingerprint_idx", question_fingerprint),
     )
 
     @classmethod
@@ -454,6 +488,9 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
     ) -> Self:
         return cls(
             question=params.question,
+            question_fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question=params.question,
+            ).digest,
             grade=params.grade,
             sheet=params.sheet,
             section=None,
@@ -467,6 +504,9 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
         return cls(
             id=schema.id,
             question=schema.question,
+            question_fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question=schema.question,
+            ).digest,
             grade=schema.grade,
             sheet=schema.sheet,
             section=schema.section,

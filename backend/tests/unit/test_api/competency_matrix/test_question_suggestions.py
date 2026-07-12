@@ -18,6 +18,7 @@ from core.competency_matrix.enums import (
     QuestionQueueImportIssueSeverityEnum,
 )
 from core.competency_matrix.exceptions import (
+    QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
@@ -71,6 +72,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
         assert call_params.limit is not None
         assert call_params.suggested_by_username == "anon"
+        assert call_params.reject_duplicates is True
         assert call_params.limit.client_identifier != ""
         assert call_params.limit.now.tzinfo is not None
 
@@ -107,6 +109,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             ),
             limit=call_params.limit,
             suggested_by_username="anon",
+            reject_duplicates=True,
         )
         assert call_params.limit is not None
         assert call_params.limit.client_identifier == "203.0.113.10"
@@ -156,6 +159,17 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             response=response,
             expected_status=codes.TOO_MANY_REQUESTS,
             expected_message="Question suggestion daily quota exceeded",
+        )
+
+    def test_suggest_question_returns_409_when_question_already_exists(self) -> None:
+        self.use_case.suggest_question.side_effect = QuestionSuggestionAlreadyExistsError
+
+        response = self.no_auth_api.post_question_suggestion(question="What is PEP 8?")
+
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.CONFLICT,
+            expected_message="Question already exists in the competency matrix or suggestion queue",
         )
 
     def test_content_manager_can_list_queue_in_fifo_order(self) -> None:
@@ -258,6 +272,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             ),
             limit=None,
             suggested_by_username="test",
+            reject_duplicates=False,
         )
 
     def test_content_manager_can_import_txt_queued_questions(self) -> None:

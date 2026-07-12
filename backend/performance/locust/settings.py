@@ -18,6 +18,7 @@ class LocustScenarioSettings(_LocustBaseSettings):
     include_spa: bool
     include_matrix_suggestions: bool
     validate_responses: bool
+    seed_data: bool
 
 
 class LocustThresholdSettings(_LocustBaseSettings):

@@ -5,9 +5,11 @@ import pytest
 
 from core.competency_matrix.enums import GradeEnum, QuestionQueueImportIssueCodeEnum
 from core.competency_matrix.exceptions import (
+    QuestionSuggestionAlreadyExistsError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
+    CompetencyMatrixQuestionFingerprint,
     QuestionQueueImportPreview,
     QuestionQueueImportPreviewRow,
     QuestionSuggestionCreateParams,
@@ -32,12 +34,21 @@ class TestQuestionSuggestionsUseCase(TestCase):
             self.factory.core.competency_matrix_item_structure()
         )
         self.question_suggestion_limiter = Mock(spec=QuestionSuggestionLimiter)
+        self.storage.question_suggestion_exists.return_value = False
         self.use_case = CompetencyMatrixUseCase(
             storage=self.storage,
             question_suggestion_limiter=self.question_suggestion_limiter,
         )
 
-    async def test_suggest_question_delegates_limit_check_before_creating(self) -> None:
+    def test_question_fingerprint_normalizes_whitespace_and_unicode_case(self) -> None:
+        assert (
+            CompetencyMatrixQuestionFingerprint.from_question(
+                question="  STRA\u00dfe\n\tquestions  ",
+            ).value
+            == "strasse questions"
+        )
+
+    async def test_suggest_question_checks_duplicate_before_quota_and_creation(self) -> None:
         now = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
         self.storage.create_queued_question.return_value = QueuedCompetencyMatrixQuestion(
             id=self.factory.core.hex_id(1),
@@ -61,10 +72,17 @@ class TestQuestionSuggestionsUseCase(TestCase):
                 now=now,
             ),
             suggested_by_username="anon",
+            reject_duplicates=True,
         )
+        calls = Mock()
+        calls.attach_mock(self.storage.question_suggestion_exists, "exists")
+        calls.attach_mock(self.question_suggestion_limiter.check_create_allowed, "quota")
+        calls.attach_mock(self.storage.create_queued_question, "create")
         created_question = await self.use_case.suggest_question(params=params)
 
         assert created_question.question == "What is PEP 8?"
+        fingerprint = CompetencyMatrixQuestionFingerprint(value="what is pep 8?")
+        self.storage.question_suggestion_exists.assert_called_once_with(fingerprint=fingerprint)
         self.question_suggestion_limiter.check_create_allowed.assert_called_once_with(
             params=params.limit,
         )
@@ -76,6 +94,38 @@ class TestQuestionSuggestionsUseCase(TestCase):
             ),
             suggested_by_username="anon",
         )
+        assert calls.mock_calls == [
+            call.exists(fingerprint=fingerprint),
+            call.quota(params=params.limit),
+            call.create(
+                params=params.question,
+                suggested_by_username="anon",
+            ),
+        ]
+
+    async def test_suggest_question_rejects_duplicate_without_consuming_quota(self) -> None:
+        self.storage.question_suggestion_exists.return_value = True
+        params = QuestionSuggestionCreateParams(
+            question=QueuedCompetencyMatrixQuestionCreateParams(
+                question=" What   is PEP 8? ",
+                grade=None,
+                sheet="python",
+            ),
+            limit=QuestionSuggestionLimitParams(
+                client_identifier="203.0.113.10",
+                now=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+            ),
+            suggested_by_username="anon",
+            reject_duplicates=True,
+        )
+
+        with pytest.raises(QuestionSuggestionAlreadyExistsError):
+            await self.use_case.suggest_question(params=params)
+
+        fingerprint = CompetencyMatrixQuestionFingerprint(value="what is pep 8?")
+        self.storage.question_suggestion_exists.assert_called_once_with(fingerprint=fingerprint)
+        self.question_suggestion_limiter.check_create_allowed.assert_not_called()
+        self.storage.create_queued_question.assert_not_called()
 
     async def test_suggest_question_skips_quota_limiter_when_limit_is_absent(self) -> None:
         now = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
@@ -97,6 +147,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             ),
             limit=None,
             suggested_by_username="alice",
+            reject_duplicates=False,
         )
         self.storage.create_queued_question.return_value = queued_question
 
@@ -104,6 +155,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
         assert created_question == queued_question
         self.question_suggestion_limiter.check_create_allowed.assert_not_called()
+        self.storage.question_suggestion_exists.assert_not_called()
         self.storage.create_queued_question.assert_called_once_with(
             params=params.question,
             suggested_by_username="alice",

@@ -182,6 +182,7 @@ class PublicCompetencyMatrixApiController(Controller):
             params=data.to_schema(
                 limit=limit,
                 suggested_by_username=suggested_by_username,
+                reject_duplicates=True,
             ),
         )
 
@@ -476,6 +477,7 @@ class AdminCompetencyMatrixApiController(Controller):
             params=data.to_schema(
                 limit=None,
                 suggested_by_username=suggested_by_username,
+                reject_duplicates=False,
             ),
         )
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)

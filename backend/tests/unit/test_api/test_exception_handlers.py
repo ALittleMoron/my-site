@@ -6,6 +6,7 @@ from litestar.testing import TestClient
 from litestar.types import ControllerRouterHandler
 from verbose_http_exceptions import (
     BadRequestHTTPException,
+    ConflictHTTPException,
     ForbiddenHTTPException,
     InternalServerErrorHTTPException,
     NotFoundHTTPException,
@@ -30,6 +31,7 @@ from core.competency_matrix.exceptions import (
     CompetencyMatrixStructurePriorityInvalidError,
     QuestionQueueImportInvalidError,
     QuestionQueueImportIssue,
+    QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
@@ -57,6 +59,11 @@ def raise_forbidden() -> None:
 @get("/question-quota", sync_to_thread=False)
 def raise_question_quota() -> None:
     raise QuestionSuggestionQuotaExceededError
+
+
+@get("/question-duplicate", sync_to_thread=False)
+def raise_question_duplicate() -> None:
+    raise QuestionSuggestionAlreadyExistsError
 
 
 @get("/question-import", sync_to_thread=False)
@@ -110,6 +117,13 @@ def test_quota_domain_error_returns_verbose_429() -> None:
     assert response.json()["message"] == QuestionSuggestionQuotaExceededError.message
 
 
+def test_duplicate_question_domain_error_returns_verbose_409() -> None:
+    response = get_response("/question-duplicate")
+
+    assert response.status_code == codes.CONFLICT
+    assert response.json()["message"] == QuestionSuggestionAlreadyExistsError.message
+
+
 def test_import_domain_error_returns_verbose_400_with_nested_errors() -> None:
     response = get_response("/question-import")
 
@@ -160,6 +174,7 @@ def test_domain_error_verbose_exception_mapping() -> None:
         CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
         CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,
         QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
+        QuestionSuggestionAlreadyExistsError: ConflictHTTPException,
         QuestionQueueImportInvalidError: BadRequestHTTPException,
         AccountUsernameAlreadyExistsError: BadRequestHTTPException,
         InvalidManagedAccountRoleError: BadRequestHTTPException,
@@ -186,6 +201,7 @@ def exception_route_handlers() -> Sequence[ControllerRouterHandler]:
         raise_unauthorized,
         raise_forbidden,
         raise_question_quota,
+        raise_question_duplicate,
         raise_question_import,
         raise_python_error,
         raise_readiness_check_error,

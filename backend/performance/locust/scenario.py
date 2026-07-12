@@ -21,9 +21,16 @@ from performance.locust.settings import LocustScenarioSettings
 
 
 class PublicSiteDiscovery:
-    def __init__(self, *, api_client: PerformanceApiClient, language: LanguageEnum) -> None:
+    def __init__(
+        self,
+        *,
+        api_client: PerformanceApiClient,
+        language: LanguageEnum,
+        matrix_sheet_key_prefix: str | None,
+    ) -> None:
         self.api_client = api_client
         self.language = language
+        self.matrix_sheet_key_prefix = matrix_sheet_key_prefix
 
     def discover_matrix_sheets(self) -> list[str]:
         schema = self.api_client.get_validated(
@@ -33,7 +40,12 @@ class PublicSiteDiscovery:
         )
         if schema is None:
             return []
-        return [sheet.key for sheet in schema.sheets]
+        return [
+            sheet.key
+            for sheet in schema.sheets
+            if self.matrix_sheet_key_prefix is None
+            or sheet.key.startswith(self.matrix_sheet_key_prefix)
+        ]
 
     def discover_article_slugs(self) -> list[str]:
         schema = self.api_client.get_validated(
@@ -80,6 +92,9 @@ class PublicSiteScenario:
         self.discovery = PublicSiteDiscovery(
             api_client=self.api_client,
             language=self.language,
+            matrix_sheet_key_prefix=(
+                constants.SEEDED_ENTITY_PREFIX if settings.seed_data else None
+            ),
         )
         self.matrix_sheets = self.discovery.discover_matrix_sheets()
         self.article_slugs = self.discovery.discover_article_slugs()

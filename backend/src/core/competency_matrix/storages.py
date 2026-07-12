@@ -5,6 +5,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
+    CompetencyMatrixQuestionFingerprint,
     CompetencyMatrixSectionCreateParams,
     CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
@@ -179,6 +180,14 @@ class CompetencyMatrixStorage(ABC):
 
     @abstractmethod
     async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def question_suggestion_exists(
+        self,
+        *,
+        fingerprint: CompetencyMatrixQuestionFingerprint,
+    ) -> bool:
         raise NotImplementedError
 
     @abstractmethod

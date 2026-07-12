@@ -529,6 +529,48 @@ describe('MatrixListComponent', () => {
     );
   });
 
+  it('keeps duplicate suggestion open with localized inline feedback until edited', () => {
+    const duplicateError: ApiError = {
+      code: 'client_error',
+      type: 'conflict',
+      message: 'Question already exists in the competency matrix or suggestion queue',
+      status: 409,
+      location: null,
+      attr: null,
+    };
+    matrixService.suggestQuestion.mockReturnValue(throwError(() => duplicateError));
+
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    component.setQuestionSuggestion('What is PEP 8?');
+    component.sendQuestionSuggestion();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector<HTMLInputElement>(
+      '#matrix-question-suggestion',
+    );
+    const feedback = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-question-suggestion-duplicate"]',
+    );
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeTruthy();
+    expect(input?.value).toBe('What is PEP 8?');
+    expect(input?.getAttribute('aria-invalid')).toBe('true');
+    expect(feedback?.textContent).toContain(
+      'Такой вопрос уже есть в матрице или ожидает рассмотрения.',
+    );
+    expect(notificationService.error).toHaveBeenCalledWith(
+      'Такой вопрос уже есть в матрице или ожидает рассмотрения.',
+    );
+
+    component.setQuestionSuggestion('How does mypy help?');
+    fixture.detectChanges();
+
+    expect(input?.getAttribute('aria-invalid')).toBe('false');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-question-suggestion-duplicate"]'),
+    ).toBeNull();
+  });
+
   it('renders question suggestion as a one-line input', () => {
     fixture.detectChanges();
     component.openQuestionSuggestion();

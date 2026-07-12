@@ -118,6 +118,7 @@ export class MatrixListComponent implements OnInit {
       !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
   readonly canSubmitSuggestion = computed(() => this.suggestionQuestion().trim().length > 0);
+  readonly suggestionDuplicate = computed(() => this.suggestionError()?.status === 409);
   readonly readonlyMatrixLabels = computed(() => {
     this.i18n.language();
     return {
@@ -295,7 +296,11 @@ export class MatrixListComponent implements OnInit {
           this.suggestionSubmitting.set(false);
           this.suggestionError.set(err);
           const messageKey =
-            err.status === 429 ? 'matrix.suggestion.quotaExceeded' : 'matrix.suggestion.error';
+            err.status === 409
+              ? 'matrix.suggestion.duplicate'
+              : err.status === 429
+                ? 'matrix.suggestion.quotaExceeded'
+                : 'matrix.suggestion.error';
           this.notifications.error(this.i18n.translate(messageKey));
         },
       });

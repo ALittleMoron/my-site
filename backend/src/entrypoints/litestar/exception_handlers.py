@@ -3,6 +3,7 @@ from typing import Any
 from litestar import Request, Response
 from verbose_http_exceptions import (
     BadRequestHTTPException,
+    ConflictHTTPException,
     ForbiddenHTTPException,
     InternalServerErrorHTTPException,
     NotFoundHTTPException,
@@ -33,6 +34,7 @@ from core.competency_matrix.exceptions import (
     CompetencyMatrixStructureAlreadyExistsError,
     CompetencyMatrixStructurePriorityInvalidError,
     QuestionQueueImportInvalidError,
+    QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
@@ -50,6 +52,7 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     CompetencyMatrixStructureAlreadyExistsError: BadRequestHTTPException,
     CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,
     QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
+    QuestionSuggestionAlreadyExistsError: ConflictHTTPException,
     QuestionQueueImportInvalidError: BadRequestHTTPException,
     AccountUsernameAlreadyExistsError: BadRequestHTTPException,
     InvalidManagedAccountRoleError: BadRequestHTTPException,

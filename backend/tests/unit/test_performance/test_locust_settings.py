@@ -36,6 +36,7 @@ class TestLocustSettings:
         monkeypatch.setenv("PERFORMANCE_INCLUDE_SPA", "false")
         monkeypatch.setenv("PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS", "true")
         monkeypatch.setenv("PERFORMANCE_VALIDATE_RESPONSES", "true")
+        monkeypatch.setenv("PERFORMANCE_SEED_DATA", "true")
 
         settings = LocustScenarioSettings(
             _env_file=None,
@@ -45,6 +46,7 @@ class TestLocustSettings:
         assert settings.include_spa is False
         assert settings.include_matrix_suggestions is True
         assert settings.validate_responses is True
+        assert settings.seed_data is True
 
     def test_threshold_settings_require_explicit_values(
         self,

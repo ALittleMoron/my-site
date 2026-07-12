@@ -32,6 +32,7 @@ class FakeHttpClient:
         self.calls: list[dict[str, Any]] = []
         self.post_status_code = 204
         self.responses: list[FakeResponse] = []
+        self.matrix_sheet_keys = ["python", "backend"]
 
     def get(self, path: str, **kwargs: object) -> FakeResponse:
         self.calls.append({"path": path, **kwargs})
@@ -47,10 +48,7 @@ class FakeHttpClient:
         payload: object = {}
         if path.startswith("/api/competency-matrix/sheets"):
             payload = {
-                "sheets": [
-                    {"key": "python", "name": "Python"},
-                    {"key": "backend", "name": "Backend"},
-                ],
+                "sheets": [{"key": key, "name": key.title()} for key in self.matrix_sheet_keys],
             }
         elif path.startswith("/api/articles/detail/"):
             payload = article_detail_payload(slug="seeded-article")
@@ -193,7 +191,25 @@ class TestPublicSiteScenario:
             include_spa=False,
             include_matrix_suggestions=include_matrix_suggestions,
             validate_responses=True,
+            seed_data=False,
         )
+
+    def test_seeded_discovery_ignores_unrelated_matrix_sheets(self) -> None:
+        client = FakeHttpClient()
+        client.matrix_sheet_keys = ["sheet-1", "perf-seed-python", "sheet-2"]
+        scenario = PublicSiteScenario(
+            client=client,
+            settings=LocustScenarioSettings(
+                _env_file=None,
+                language=LanguageEnum.EN,
+                include_spa=False,
+                include_matrix_suggestions=False,
+                validate_responses=True,
+                seed_data=True,
+            ),
+        )
+
+        assert scenario.matrix_sheets == ["perf-seed-python"]
 
     def test_matrix_requests_include_required_language_and_sheet_key(
         self,

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import RoleEnum
 from core.competency_matrix.enums import InterviewFrequencyEnum
+from core.competency_matrix.schemas import CompetencyMatrixQuestionFingerprint
 from core.enums import PublishStatusEnum
 from infra.config.loggers import logger
 from infra.postgresql.meta import sessionmaker
@@ -413,11 +414,19 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
     sheet_index = (item_index - 1) // SEED_MATRIX_ITEMS_PER_SHEET
     _sheet_key, sheet_ru, sheet_en, _section_ru, _section_en = MATRIX_SHEETS[sheet_index]
     question_number = ((item_index - 1) % SEED_MATRIX_ITEMS_PER_SHEET) + 1
+    question_ru = f"{sheet_ru}: как проверить performance сценарий {question_number}?"
+    question_en = f"{sheet_en}: how do you verify performance scenario {question_number}?"
     return {
         "id": matrix_item_id(item_index),
         "slug": matrix_slug_for_index(item_index=item_index),
-        "question_ru": f"{sheet_ru}: как проверить performance сценарий {question_number}?",
-        "question_en": f"{sheet_en}: how do you verify performance scenario {question_number}?",
+        "question_ru": question_ru,
+        "question_en": question_en,
+        "question_ru_fingerprint": CompetencyMatrixQuestionFingerprint.from_question(
+            question=question_ru,
+        ).digest,
+        "question_en_fingerprint": CompetencyMatrixQuestionFingerprint.from_question(
+            question=question_en,
+        ).digest,
         "answer_ru": (
             "Нужно назвать реальные данные, warm/cold cache, p95, average и критерий отката. "
             f"Связанная статья: [[articles:{article_slug(article_index=question_number)}]]."

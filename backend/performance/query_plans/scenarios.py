@@ -22,6 +22,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
+    CompetencyMatrixQuestionFingerprint,
     CompetencyMatrixSectionCreateParams,
     CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
@@ -747,6 +748,14 @@ async def run_update_competency_matrix_item_publish_status(session: AsyncSession
 
 async def run_list_queued_questions(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).list_queued_questions()
+
+
+async def run_question_suggestion_exists(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).question_suggestion_exists(
+        fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+            question="Queued question 100",
+        ),
+    )
 
 
 async def run_get_queued_question(session: AsyncSession) -> None:
@@ -1766,6 +1775,23 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("competency_matrix__competency_matrix_item_model",),
         allow_seq_scan_reason=None,
         run=run_update_competency_matrix_item_publish_status,
+    ),
+    scenario(
+        name="matrix_question_suggestion_exists",
+        storage_class="CompetencyMatrixDatabaseStorage",
+        method_name="question_suggestion_exists",
+        group=QueryThresholdGroup.POINT_READ,
+        expected_index_names=(
+            "cm_queued_question_fingerprint_idx",
+            "cmi_question_ru_fingerprint_idx",
+            "cmi_question_en_fingerprint_idx",
+        ),
+        forbidden_seq_scan_relations=(
+            "competency_matrix__queued_question_model",
+            "competency_matrix__competency_matrix_item_model",
+        ),
+        allow_seq_scan_reason=None,
+        run=run_question_suggestion_exists,
     ),
     scenario(
         name="matrix_queue_list_fifo",

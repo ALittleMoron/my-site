@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from enum import StrEnum
+from hashlib import sha256
 from math import ceil
 
 from core.competency_matrix.enums import (
@@ -226,6 +227,19 @@ class QueuedCompetencyMatrixQuestions(ValuedDataclass[QueuedCompetencyMatrixQues
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixQuestionFingerprint:
+    value: str
+
+    @classmethod
+    def from_question(cls, *, question: str) -> CompetencyMatrixQuestionFingerprint:
+        return cls(value=" ".join(question.split()).casefold())
+
+    @property
+    def digest(self) -> bytes:
+        return sha256(self.value.encode()).digest()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class QueuedCompetencyMatrixQuestionCreateParams:
     question: str
     sheet: str | None
@@ -292,7 +306,9 @@ class QuestionQueueImportPreviewRow:
     def question_fingerprint(self) -> str | None:
         if self.params is None:
             return None
-        return " ".join(self.params.question.split()).casefold()
+        return CompetencyMatrixQuestionFingerprint.from_question(
+            question=self.params.question,
+        ).value
 
     def with_issue(
         self,
@@ -312,7 +328,8 @@ class QuestionQueueImportPreview:
         queued_questions: QueuedCompetencyMatrixQuestions,
     ) -> QuestionQueueImportPreview:
         queued_fingerprints = {
-            " ".join(question.question.split()).casefold() for question in queued_questions
+            CompetencyMatrixQuestionFingerprint.from_question(question=question.question).value
+            for question in queued_questions
         }
         first_rows_by_fingerprint: dict[str, int] = {}
         preview_rows: list[QuestionQueueImportPreviewRow] = []
@@ -404,6 +421,7 @@ class QuestionSuggestionCreateParams:
     question: QueuedCompetencyMatrixQuestionCreateParams
     limit: QuestionSuggestionLimitParams | None
     suggested_by_username: str
+    reject_duplicates: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

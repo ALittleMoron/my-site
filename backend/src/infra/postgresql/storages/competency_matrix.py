@@ -15,7 +15,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, defer, selectinload
 from sqlalchemy.sql.elements import ColumnElement
 
 from core.competency_matrix.enums import (
@@ -36,6 +36,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
     CompetencyMatrixMissingFieldEnum,
+    CompetencyMatrixQuestionFingerprint,
     CompetencyMatrixSectionCreateParams,
     CompetencyMatrixSectionPriorityUpdateParams,
     CompetencyMatrixSheetCreateParams,
@@ -382,6 +383,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.id == item_id)
             .options(
+                *self._item_domain_load_options(),
                 *self._item_structure_load_options(),
                 selectinload(CompetencyMatrixItemModel.resource_links).selectinload(
                     ResourceToItemSecondaryModel.resource,
@@ -398,6 +400,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             select(CompetencyMatrixItemModel)
             .where(CompetencyMatrixItemModel.slug == slug)
             .options(
+                *self._item_domain_load_options(),
                 *self._item_structure_load_options(),
                 selectinload(CompetencyMatrixItemModel.resource_links).selectinload(
                     ResourceToItemSecondaryModel.resource,
@@ -463,6 +466,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         load_resource_links: bool,
     ) -> CompetencyMatrixItemModel:
         stmt = select(CompetencyMatrixItemModel).where(CompetencyMatrixItemModel.id == item_id)
+        stmt = stmt.options(*self._item_domain_load_options())
         if load_resource_links:
             stmt = stmt.options(selectinload(CompetencyMatrixItemModel.resource_links))
         item_model = await self.session.scalar(stmt)
@@ -494,7 +498,14 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
 
     def _select_items_with_structure(self) -> Select[tuple[CompetencyMatrixItemModel]]:
         return self._join_structure(select(CompetencyMatrixItemModel)).options(
+            *self._item_domain_load_options(),
             *self._item_structure_load_options(),
+        )
+
+    def _item_domain_load_options(self) -> tuple[Any, ...]:
+        return (
+            defer(CompetencyMatrixItemModel.question_ru_fingerprint),
+            defer(CompetencyMatrixItemModel.question_en_fingerprint),
         )
 
     def _join_structure(self, stmt: Select[Any]) -> Select[Any]:
@@ -1039,9 +1050,13 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
-        stmt = select(QueuedQuestionModel).order_by(
-            QueuedQuestionModel.created_at,
-            QueuedQuestionModel.id,
+        stmt = (
+            select(QueuedQuestionModel)
+            .options(*self._queued_question_domain_load_options())
+            .order_by(
+                QueuedQuestionModel.created_at,
+                QueuedQuestionModel.id,
+            )
         )
         questions = await self.session.scalars(stmt)
         return QueuedCompetencyMatrixQuestions(
@@ -1051,6 +1066,33 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
     async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
         question = await self._get_queued_question_model(question_id=question_id)
         return question.to_domain_schema()
+
+    async def question_suggestion_exists(
+        self,
+        *,
+        fingerprint: CompetencyMatrixQuestionFingerprint,
+    ) -> bool:
+        fingerprint_digest = fingerprint.digest
+        queued_question_exists = (
+            select(QueuedQuestionModel.id)
+            .where(QueuedQuestionModel.question_fingerprint == fingerprint_digest)
+            .exists()
+        )
+        matrix_question_exists = (
+            select(CompetencyMatrixItemModel.id)
+            .where(
+                or_(
+                    CompetencyMatrixItemModel.question_ru_fingerprint == fingerprint_digest,
+                    CompetencyMatrixItemModel.question_en_fingerprint == fingerprint_digest,
+                ),
+            )
+            .exists()
+        )
+        return bool(
+            await self.session.scalar(
+                select(queued_question_exists | matrix_question_exists),
+            ),
+        )
 
     async def create_queued_question(
         self,
@@ -1094,11 +1136,18 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         await self.session.flush()
 
     async def _get_queued_question_model(self, question_id: str) -> QueuedQuestionModel:
-        stmt = select(QueuedQuestionModel).where(QueuedQuestionModel.id == question_id)
+        stmt = (
+            select(QueuedQuestionModel)
+            .where(QueuedQuestionModel.id == question_id)
+            .options(*self._queued_question_domain_load_options())
+        )
         question = await self.session.scalar(stmt)
         if question is None:
             raise QueuedCompetencyMatrixQuestionNotFoundError
         return question
+
+    def _queued_question_domain_load_options(self) -> tuple[Any, ...]:
+        return (defer(QueuedQuestionModel.question_fingerprint),)
 
     def _resource_name_column(
         self,

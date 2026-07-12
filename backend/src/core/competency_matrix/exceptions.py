@@ -45,6 +45,10 @@ class QuestionSuggestionQuotaExceededError(DomainError):
     message = "Question suggestion daily quota exceeded"
 
 
+class QuestionSuggestionAlreadyExistsError(DomainError):
+    message = "Question already exists in the competency matrix or suggestion queue"
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class QuestionQueueImportIssue:
     message: str
