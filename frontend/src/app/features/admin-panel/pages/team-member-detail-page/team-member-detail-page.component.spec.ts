@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { ManagedAccount, ManagedAccountSession } from '../../models/team-workspace.model';
@@ -101,8 +102,30 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Активен');
     expect(fixture.nativeElement.textContent).toContain('Firefox on Linux');
     expect(fixture.nativeElement.textContent).toContain('Текущая');
-    expect(fixture.nativeElement.textContent).toContain('2026-07-08 11:30');
+    expect(fixture.nativeElement.textContent).toContain(
+      formatExpectedDateTime(sessions()[0]!.lastUsedAt, 'ru-RU'),
+    );
+    expect(fixture.nativeElement.textContent).not.toContain(sessions()[0]!.lastUsedAt);
     expect(queryByTestId('team-detail-actions-toggle')).toBeNull();
+  });
+
+  it('renders session timestamps in the selected language and preserves ISO values', () => {
+    const timestamps = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLTimeElement>('[data-testid="team-session-time"]'),
+    );
+
+    expect(timestamps).toHaveLength(6);
+    expect(timestamps[0]?.dateTime).toBe(sessions()[0]!.createdAt);
+    expect(timestamps[0]?.textContent?.trim()).toBe(
+      formatExpectedDateTime(sessions()[0]!.createdAt, 'ru-RU'),
+    );
+
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    expect(timestamps[0]?.textContent?.trim()).toBe(
+      formatExpectedDateTime(sessions()[0]!.createdAt, 'en-US'),
+    );
   });
 
   it('renders empty session state', () => {
@@ -338,4 +361,11 @@ function sessions(): ManagedAccountSession[] {
       isCurrent: false,
     },
   ];
+}
+
+function formatExpectedDateTime(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
 }

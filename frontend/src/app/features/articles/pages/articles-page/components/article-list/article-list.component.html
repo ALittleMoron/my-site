@@ -30,7 +30,11 @@
           class="text-start text-sm-end small text-body-secondary align-self-sm-start"
           data-testid="article-list-metadata"
         >
-          <div>{{ articleDate(article) }}</div>
+          <div>
+            <time [attr.datetime]="articleDateValue(article)" data-testid="article-list-date">{{
+              articleDate(article)
+            }}</time>
+          </div>
           <div>{{ article.authorUsername }}</div>
           <div>{{ 'articles.views' | t: { count: article.viewCount } }}</div>
         </div>

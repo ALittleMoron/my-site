@@ -5,6 +5,7 @@ import { ApiError } from '../../../../../../core/models/api-error.model';
 import { WikiLinkRendererService } from '../../../../../../core/wiki-links/wiki-link-renderer.service';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { formatLocalizedDate } from '../../../../../../shared/utils/localized-date';
 import { ArticleDetail, ArticleReactionKind } from '../../../../models/articles.model';
 
 interface ReactionOption {
@@ -54,9 +55,13 @@ export class ArticleDetailComponent {
   readonly isPublished = computed(() => this.article()?.publishStatus === 'Published');
 
   articleDate(): string {
+    const value = this.articleDateValue();
+    return value === '' ? '' : formatLocalizedDate(value, this.dateLocale(), 'date');
+  }
+
+  articleDateValue(): string {
     const article = this.article();
-    if (!article) return '';
-    return formatDate(article.publishedAt ?? article.updatedAt, this.dateLocale());
+    return article?.publishedAt ?? article?.updatedAt ?? '';
   }
 
   reactionCount(kind: ArticleReactionKind): number {
@@ -64,8 +69,4 @@ export class ArticleDetailComponent {
     if (!article) return 0;
     return article.reactionCounts[kind];
   }
-}
-
-function formatDate(value: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 }

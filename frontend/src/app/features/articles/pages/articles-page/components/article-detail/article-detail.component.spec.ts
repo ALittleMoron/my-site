@@ -73,6 +73,22 @@ describe('ArticleDetailComponent', () => {
     expect(text).toContain('5');
   });
 
+  it('renders a localized article date and preserves the ISO value', () => {
+    const timestamp = fixture.nativeElement.querySelector<HTMLTimeElement>(
+      '[data-testid="article-detail-date"]',
+    );
+    const publishedAt = fixture.componentInstance.article()!.publishedAt!;
+
+    expect(timestamp?.dateTime).toBe(publishedAt);
+    expect(timestamp?.textContent?.trim()).toBe(formatExpectedDate(publishedAt, 'ru-RU'));
+    expect(fixture.nativeElement.textContent).not.toContain(publishedAt);
+
+    fixture.componentRef.setInput('dateLocale', 'en-US');
+    fixture.detectChanges();
+
+    expect(timestamp?.textContent?.trim()).toBe(formatExpectedDate(publishedAt, 'en-US'));
+  });
+
   it('does not render authoring SEO analysis on the public article detail', () => {
     const text = fixture.nativeElement.textContent as string;
 
@@ -123,3 +139,7 @@ describe('ArticleDetailComponent', () => {
     expect(text).not.toContain('Черновик');
   });
 });
+
+function formatExpectedDate(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
+}

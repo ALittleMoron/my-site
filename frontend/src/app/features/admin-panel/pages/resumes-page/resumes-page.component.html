@@ -51,8 +51,16 @@
                   {{ resume.content.profile.fullName.trim() || ('shared.notSet' | t) }}
                 </span>
               </td>
-              <td>{{ formatDate(resume.updatedAt) }}</td>
-              <td>{{ formatDate(resume.createdAt) }}</td>
+              <td>
+                <time [attr.datetime]="resume.updatedAt" data-testid="resume-date">
+                  {{ formatDate(resume.updatedAt) }}
+                </time>
+              </td>
+              <td>
+                <time [attr.datetime]="resume.createdAt" data-testid="resume-date">
+                  {{ formatDate(resume.createdAt) }}
+                </time>
+              </td>
               <td>{{ completedSections(resume) }}/5</td>
             </tr>
           }

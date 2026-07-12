@@ -16,6 +16,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import {
   Resume,
   ResumeLanguage,
@@ -213,7 +214,7 @@ export class AdminResumesPageComponent implements OnInit {
   }
 
   formatDate(value: string): string {
-    return value.slice(0, 10);
+    return formatLocalizedDate(value, this.i18n.dateLocale(), 'date');
   }
 
   createFieldInvalid(field: RequiredCreateField): boolean {

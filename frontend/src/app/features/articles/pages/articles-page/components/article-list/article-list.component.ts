@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
+import { formatLocalizedDate } from '../../../../../../shared/utils/localized-date';
 import { ArticleSummary } from '../../../../models/articles.model';
 
 @Component({
@@ -23,7 +24,11 @@ export class ArticleListComponent {
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
   articleDate(article: ArticleSummary): string {
-    return formatDate(article.publishedAt ?? article.updatedAt, this.dateLocale());
+    return formatLocalizedDate(this.articleDateValue(article), this.dateLocale(), 'date');
+  }
+
+  articleDateValue(article: ArticleSummary): string {
+    return article.publishedAt ?? article.updatedAt;
   }
 
   previousPage(): void {
@@ -37,8 +42,4 @@ export class ArticleListComponent {
       this.pageChange.emit(this.page() + 1);
     }
   }
-}
-
-function formatDate(value: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 }

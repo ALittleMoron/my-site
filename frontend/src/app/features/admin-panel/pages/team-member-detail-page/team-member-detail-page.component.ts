@@ -19,6 +19,7 @@ import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import {
   AdminAction,
   AdminActionsDropdownComponent,
@@ -570,7 +571,7 @@ export class TeamMemberDetailPageComponent implements OnInit {
   }
 
   formatSessionTimestamp(value: string): string {
-    return value.replace('T', ' ').slice(0, 16);
+    return formatLocalizedDate(value, this.i18n.dateLocale(), 'dateTime');
   }
 
   private resolveUsername(): string {

@@ -146,20 +146,22 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     month: '2026-07',
     order: 10,
     title: {
-      ru: 'Релизы и админка стали аккуратнее',
-      en: 'Release workflow and admin polish',
+      ru: 'Релизы и интерфейс стали аккуратнее',
+      en: 'Release workflow and interface polish',
     },
     summary: {
       ru:
         'CI/CD quality, smoke и deploy jobs разделены понятнее, релиз снова требует ' +
-        'ручного подтверждения, а файлы, статистика, мобильные сценарии и защита ' +
-        'несохранённых изменений во всех формах админки получили июльскую полировку.',
+        'ручного подтверждения, а файлы, статистика, мобильные сценарии, локализованные ' +
+        'даты и защита несохранённых изменений во всех формах админки получили июльскую ' +
+        'полировку.',
       en:
         'CI/CD quality, smoke, and deploy jobs are easier to follow, production deploys ' +
         'require manual approval again, while file handling, statistics, mobile admin flows, ' +
-        'and unsaved-change protection across admin forms received July polish.',
+        'locale-aware dates, and unsaved-change protection across admin forms received July ' +
+        'polish.',
     },
-    tagIds: ['delivery', 'quality', 'admin', 'infra'],
+    tagIds: ['delivery', 'quality', 'admin', 'infra', 'frontend', 'localization'],
   },
   {
     id: 'public-seo-layer',

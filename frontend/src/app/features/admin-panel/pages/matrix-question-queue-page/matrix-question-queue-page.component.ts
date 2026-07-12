@@ -20,6 +20,7 @@ import {
   errorDisplayMessages,
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
 import {
   QueuedMatrixImportIssue,
@@ -215,6 +216,10 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.notifications.error(this.i18n.translate('adminMatrixQueue.loadError'));
         },
       });
+  }
+
+  formatCreatedAt(value: string): string {
+    return formatLocalizedDate(value, this.i18n.dateLocale(), 'dateTime');
   }
 
   selectQuestion(question: QueuedMatrixQuestion): void {

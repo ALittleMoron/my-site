@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -177,6 +178,25 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(queueService.listQueuedQuestions).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('What is PEP 8?');
     expect(fixture.nativeElement.textContent).toContain('Кто предложил: Анонимный');
+  });
+
+  it('renders queued timestamps in the selected language and preserves the ISO value', () => {
+    const timestamp = fixture.nativeElement.querySelector<HTMLTimeElement>(
+      '[data-testid="matrix-queue-created-at"]',
+    );
+
+    expect(timestamp?.dateTime).toBe(queuedQuestion.createdAt);
+    expect(timestamp?.textContent?.trim()).toBe(
+      formatExpectedDateTime(queuedQuestion.createdAt, 'ru-RU'),
+    );
+    expect(fixture.nativeElement.textContent).not.toContain(queuedQuestion.createdAt);
+
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    expect(timestamp?.textContent?.trim()).toBe(
+      formatExpectedDateTime(queuedQuestion.createdAt, 'en-US'),
+    );
   });
 
   it('renders a real suggester username without localization', () => {
@@ -1019,3 +1039,10 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(expectedMessage);
   }
 });
+
+function formatExpectedDateTime(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}

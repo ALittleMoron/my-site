@@ -127,9 +127,21 @@
                     }
                   </td>
                   <td>{{ sessionAuthMethodLabelKey(session.authMethod) | t }}</td>
-                  <td>{{ formatSessionTimestamp(session.createdAt) }}</td>
-                  <td>{{ formatSessionTimestamp(session.lastUsedAt) }}</td>
-                  <td>{{ formatSessionTimestamp(session.expiresAt) }}</td>
+                  <td>
+                    <time [attr.datetime]="session.createdAt" data-testid="team-session-time">
+                      {{ formatSessionTimestamp(session.createdAt) }}
+                    </time>
+                  </td>
+                  <td>
+                    <time [attr.datetime]="session.lastUsedAt" data-testid="team-session-time">
+                      {{ formatSessionTimestamp(session.lastUsedAt) }}
+                    </time>
+                  </td>
+                  <td>
+                    <time [attr.datetime]="session.expiresAt" data-testid="team-session-time">
+                      {{ formatSessionTimestamp(session.expiresAt) }}
+                    </time>
+                  </td>
                   <td class="text-end">
                     <button
                       type="button"

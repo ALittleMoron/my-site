@@ -3,6 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ApiError } from '../../../../core/models/api-error.model';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { Resume, Resumes, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
@@ -53,8 +54,32 @@ describe('AdminResumesPageComponent', () => {
     expect(service.listResumes).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
     expect(fixture.nativeElement.textContent).toContain('Backend resume');
     expect(fixture.nativeElement.textContent).toContain('EN');
-    expect(fixture.nativeElement.textContent).toContain('2026-01-02');
-    expect(fixture.nativeElement.textContent).toContain('2026-01-01');
+    expect(fixture.nativeElement.textContent).toContain(
+      formatExpectedDate(resume().updatedAt, 'ru-RU'),
+    );
+    expect(fixture.nativeElement.textContent).toContain(
+      formatExpectedDate(resume().createdAt, 'ru-RU'),
+    );
+    expect(fixture.nativeElement.textContent).not.toContain(resume().updatedAt);
+  });
+
+  it('renders resume dates in the selected language and preserves ISO values', () => {
+    const timestamps = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLTimeElement>('[data-testid="resume-date"]'),
+    );
+
+    expect(timestamps).toHaveLength(2);
+    expect(timestamps[0]?.dateTime).toBe(resume().updatedAt);
+    expect(timestamps[0]?.textContent?.trim()).toBe(
+      formatExpectedDate(resume().updatedAt, 'ru-RU'),
+    );
+
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    expect(timestamps[0]?.textContent?.trim()).toBe(
+      formatExpectedDate(resume().updatedAt, 'en-US'),
+    );
   });
 
   it('shows an empty state', () => {
@@ -297,4 +322,8 @@ function apiError(): ApiError {
     location: null,
     attr: null,
   };
+}
+
+function formatExpectedDate(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 }

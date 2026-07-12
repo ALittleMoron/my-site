@@ -35,7 +35,10 @@
         >
           <span class="d-block fw-semibold">{{ question.question }}</span>
           <span class="d-block small">
-            {{ 'adminMatrixQueue.createdAt' | t }}: {{ question.createdAt }}
+            {{ 'adminMatrixQueue.createdAt' | t }}:
+            <time [attr.datetime]="question.createdAt" data-testid="matrix-queue-created-at">{{
+              formatCreatedAt(question.createdAt)
+            }}</time>
           </span>
           <span class="d-block small">
             {{ 'adminMatrixQueue.suggestedBy' | t }}:

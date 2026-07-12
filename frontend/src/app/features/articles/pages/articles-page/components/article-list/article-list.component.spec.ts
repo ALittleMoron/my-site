@@ -47,6 +47,22 @@ describe('ArticleListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('42 просмотров');
   });
 
+  it('renders localized article dates and preserves ISO values', () => {
+    const timestamp = fixture.nativeElement.querySelector<HTMLTimeElement>(
+      '[data-testid="article-list-date"]',
+    );
+    const publishedAt = '2026-01-02T03:04:05+00:00';
+
+    expect(timestamp?.dateTime).toBe(publishedAt);
+    expect(timestamp?.textContent?.trim()).toBe(formatExpectedDate(publishedAt, 'ru-RU'));
+    expect(fixture.nativeElement.textContent).not.toContain(publishedAt);
+
+    fixture.componentRef.setInput('dateLocale', 'en-US');
+    fixture.detectChanges();
+
+    expect(timestamp?.textContent?.trim()).toBe(formatExpectedDate(publishedAt, 'en-US'));
+  });
+
   it('uses a stackable article summary layout for narrow screens', () => {
     const articleSummary = fixture.nativeElement.querySelector(
       '[data-testid="article-list-summary"]',
@@ -99,3 +115,7 @@ describe('ArticleListComponent', () => {
     expect(tagSelected).toHaveBeenCalledWith('python');
   });
 });
+
+function formatExpectedDate(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
+}

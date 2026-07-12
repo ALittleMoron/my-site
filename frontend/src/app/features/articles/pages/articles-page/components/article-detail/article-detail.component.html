@@ -14,7 +14,9 @@
     <div
       class="d-flex flex-wrap gap-2 align-items-center text-body-secondary small mb-3 text-break"
     >
-      <span>{{ articleDate() }}</span>
+      <time [attr.datetime]="articleDateValue()" data-testid="article-detail-date">{{
+        articleDate()
+      }}</time>
       <span>{{ article()!.authorUsername }}</span>
       <span>{{ article()!.folder }}</span>
       <span>{{ 'articles.views' | t: { count: article()!.viewCount } }}</span>
