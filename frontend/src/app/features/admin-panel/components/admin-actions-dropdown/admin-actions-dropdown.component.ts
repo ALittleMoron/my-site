@@ -4,10 +4,10 @@ import {
   ElementRef,
   HostListener,
   computed,
-  inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 
 export interface AdminAction {
@@ -22,8 +22,28 @@ export interface AdminAction {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .dropdown-menu {
+    :host {
+      display: inline-block;
+    }
+
+    .dropdown-menu[popover] {
+      position: fixed;
+      inset: auto;
       z-index: 1055;
+      margin: var(--bs-dropdown-spacer) 0;
+      max-inline-size: calc(100vw - 2rem);
+      max-block-size: calc(100vh - 2rem);
+      max-block-size: calc(100dvh - 2rem);
+      overflow-y: auto;
+      position-area: block-end span-inline-start;
+      position-try-fallbacks:
+        flip-block,
+        flip-inline,
+        flip-block flip-inline;
+    }
+
+    .dropdown-menu[popover]:popover-open {
+      display: block;
     }
   `,
   template: `
@@ -34,16 +54,19 @@ export interface AdminAction {
           class="btn btn-outline-secondary btn-sm dropdown-toggle"
           [attr.aria-expanded]="open()"
           [attr.aria-label]="ariaLabel()"
+          [attr.popovertarget]="menuId()"
+          popovertargetaction="toggle"
           [attr.data-testid]="testId() + '-toggle'"
-          (click)="toggle()"
         >
           {{ buttonLabel() }}
         </button>
         <ul
+          #menu
+          [id]="menuId()"
+          popover="auto"
           class="dropdown-menu dropdown-menu-end"
-          [class.show]="open()"
-          data-bs-popper="static"
           [attr.data-testid]="testId() + '-menu'"
+          (toggle)="onToggle($event)"
         >
           @for (action of availableActions(); track action.id) {
             <li>
@@ -67,7 +90,7 @@ export interface AdminAction {
   `,
 })
 export class AdminActionsDropdownComponent {
-  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly menu = viewChild<ElementRef<HTMLElement>>('menu');
 
   readonly actions = input.required<readonly AdminAction[]>();
   readonly buttonLabel = input.required<string>();
@@ -76,20 +99,8 @@ export class AdminActionsDropdownComponent {
   readonly testId = input.required<string>();
   readonly actionSelected = output<string>();
   readonly availableActions = computed(() => this.actions().filter((action) => !action.disabled));
+  readonly menuId = computed(() => `${this.testId()}-menu`);
   readonly open = signal(false);
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    const target = event.target;
-    if (target instanceof Node && !this.elementRef.nativeElement.contains(target)) {
-      this.close();
-    }
-  }
-
-  @HostListener('document:keydown.escape')
-  onDocumentEscape(): void {
-    this.close();
-  }
 
   @HostListener('window:resize')
   @HostListener('window:scroll')
@@ -97,15 +108,15 @@ export class AdminActionsDropdownComponent {
     this.close();
   }
 
-  toggle(): void {
-    if (this.open()) {
-      this.close();
-      return;
-    }
-    this.open.set(true);
+  onToggle(event: ToggleEvent): void {
+    this.open.set(event.newState === 'open');
   }
 
   close(): void {
+    const menu = this.menu()?.nativeElement;
+    if (this.open() && typeof menu?.hidePopover === 'function') {
+      menu.hidePopover();
+    }
     this.open.set(false);
   }
 
