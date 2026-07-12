@@ -323,6 +323,19 @@ class TestPublicSiteScenario:
 
         assert client.calls == []
 
+    def test_matrix_question_suggestion_is_skipped_without_public_sheets(self) -> None:
+        client = FakeHttpClient()
+        client.matrix_sheet_keys = []
+        scenario = PublicSiteScenario(
+            client=client,
+            settings=self.scenario_settings(include_matrix_suggestions=True),
+        )
+        client.calls.clear()
+
+        scenario.matrix_question_suggestion()
+
+        assert client.calls == []
+
     def test_matrix_question_suggestion_posts_when_enabled(
         self,
         monkeypatch: pytest.MonkeyPatch,

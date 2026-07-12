@@ -99,6 +99,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
         exists = await self.storage.question_suggestion_exists(
             fingerprint=CompetencyMatrixQuestionFingerprint(value="strasse questions"),
+            sheet_key="python",
         )
 
         assert exists is True
@@ -126,6 +127,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
         exists = await self.storage.question_suggestion_exists(
             fingerprint=CompetencyMatrixQuestionFingerprint.from_question(question=question),
+            sheet_key=item.sheet_key,
         )
 
         assert exists is True
@@ -135,6 +137,37 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
             fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
                 question="How does structured concurrency work?",
             ),
+            sheet_key="python",
+        )
+
+        assert exists is False
+
+    async def test_question_suggestion_exists_ignores_same_question_in_other_sheet(self) -> None:
+        await self.storage.create_queued_question(
+            params=QueuedCompetencyMatrixQuestionCreateParams(
+                question="What is a function?",
+                sheet="python",
+                grade=None,
+            ),
+            suggested_by_username="anon",
+        )
+        item = self.factory.core.competency_matrix_item(
+            item_id=51,
+            sheet_id=51,
+            section_id=51,
+            subsection_id=51,
+            sheet_key="javascript",
+            sheet="JavaScript",
+            question_ru="Что такое функция?",
+            question_en="What is a function?",
+        )
+        await self.storage_helper.create_competency_matrix_items(items=[item])
+
+        exists = await self.storage.question_suggestion_exists(
+            fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
+                question="What is a function?",
+            ),
+            sheet_key="go",
         )
 
         assert exists is False

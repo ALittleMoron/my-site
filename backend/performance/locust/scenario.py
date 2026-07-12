@@ -180,7 +180,7 @@ class PublicSiteScenario:
         )
 
     def matrix_question_suggestion(self) -> None:
-        if not self.include_matrix_suggestions:
+        if not self.include_matrix_suggestions or not self.matrix_sheets:
             return
         self.matrix_suggestion_number += 1
         with self.api_client.client.post(
@@ -191,7 +191,7 @@ class PublicSiteScenario:
                     f"{constants.MATRIX_QUESTION_SUGGESTION_PREFIX} "
                     f"{self.language.value}-{self.matrix_suggestion_number}"
                 ),
-                "sheet": choice(self.matrix_sheets) if self.matrix_sheets else None,
+                "sheet": choice(self.matrix_sheets),
             },
             catch_response=True,
         ) as response:

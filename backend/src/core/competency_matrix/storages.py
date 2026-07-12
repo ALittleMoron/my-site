@@ -187,6 +187,7 @@ class CompetencyMatrixStorage(ABC):
         self,
         *,
         fingerprint: CompetencyMatrixQuestionFingerprint,
+        sheet_key: str,
     ) -> bool:
         raise NotImplementedError
 

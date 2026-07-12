@@ -195,7 +195,7 @@ class APIHelper:
     def post_question_suggestion(
         self,
         question: str,
-        sheet: str | None = None,
+        sheet: str = "python",
         headers: dict[str, str] | None = None,
     ) -> Response:
         return self.client.post(

@@ -36,6 +36,7 @@ from core.competency_matrix.exceptions import (
     QuestionQueueImportInvalidError,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
+    QuestionSuggestionSheetUnavailableError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
@@ -53,6 +54,7 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,
     QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
     QuestionSuggestionAlreadyExistsError: ConflictHTTPException,
+    QuestionSuggestionSheetUnavailableError: BadRequestHTTPException,
     QuestionQueueImportInvalidError: BadRequestHTTPException,
     AccountUsernameAlreadyExistsError: BadRequestHTTPException,
     InvalidManagedAccountRoleError: BadRequestHTTPException,

@@ -49,6 +49,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     MatrixSubsectionCreateRequestSchema,
     PublicCompetencyMatrixItemDetailResponseSchema,
     PublicCompetencyMatrixItemsListResponseSchema,
+    PublicQuestionSuggestionRequestSchema,
     QuestionSuggestionRequestSchema,
     QueuedQuestionResponseSchema,
     QueuedQuestionsImportConfirmationRequestSchema,
@@ -165,7 +166,7 @@ class PublicCompetencyMatrixApiController(Controller):
     async def suggest_competency_matrix_question(
         self,
         data: Annotated[
-            QuestionSuggestionRequestSchema,
+            PublicQuestionSuggestionRequestSchema,
             api_json_body(
                 title="Question suggestion request",
                 description="Competency matrix question suggestion.",
@@ -183,6 +184,7 @@ class PublicCompetencyMatrixApiController(Controller):
                 limit=limit,
                 suggested_by_username=suggested_by_username,
                 reject_duplicates=True,
+                validate_public_sheet=True,
             ),
         )
 
@@ -478,6 +480,7 @@ class AdminCompetencyMatrixApiController(Controller):
                 limit=None,
                 suggested_by_username=suggested_by_username,
                 reject_duplicates=False,
+                validate_public_sheet=False,
             ),
         )
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)

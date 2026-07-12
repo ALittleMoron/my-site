@@ -117,7 +117,9 @@ export class MatrixListComponent implements OnInit {
     () =>
       !this.loading() && !this.error() && (this.filteredQuestions()?.sections.length ?? 0) === 0,
   );
-  readonly canSubmitSuggestion = computed(() => this.suggestionQuestion().trim().length > 0);
+  readonly canSubmitSuggestion = computed(
+    () => this.suggestionQuestion().trim().length > 0 && this.suggestionSheetKey() !== null,
+  );
   readonly suggestionDuplicate = computed(() => this.suggestionError()?.status === 409);
   readonly readonlyMatrixLabels = computed(() => {
     this.i18n.language();
@@ -236,6 +238,10 @@ export class MatrixListComponent implements OnInit {
   }
 
   openQuestionSuggestion(): void {
+    if (this.sheets().length === 0) {
+      this.notifications.error(this.i18n.translate('matrix.suggestion.noSheets'));
+      return;
+    }
     this.suggestionVisible.set(true);
     this.suggestionQuestion.set('');
     this.suggestionSheetKey.set(this.selectedSheetKey());
@@ -279,10 +285,15 @@ export class MatrixListComponent implements OnInit {
   sendQuestionSuggestion(): void {
     const trimmedQuestion = normalizeSuggestionQuestion(this.suggestionQuestion()).trim();
     if (!trimmedQuestion) return;
+    const sheetKey = this.suggestionSheetKey();
+    if (sheetKey === null) {
+      this.notifications.error(this.i18n.translate('matrix.suggestion.sheetRequired'));
+      return;
+    }
     this.suggestionSubmitting.set(true);
     this.suggestionError.set(null);
     this.matrixService
-      .suggestQuestion(trimmedQuestion, this.suggestionSheetKey() ?? this.selectedSheetKey())
+      .suggestQuestion(trimmedQuestion, sheetKey)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

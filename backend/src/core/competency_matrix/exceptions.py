@@ -49,6 +49,10 @@ class QuestionSuggestionAlreadyExistsError(DomainError):
     message = "Question already exists in the competency matrix or suggestion queue"
 
 
+class QuestionSuggestionSheetUnavailableError(DomainError):
+    message = "Selected competency matrix sheet is not publicly available"
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class QuestionQueueImportIssue:
     message: str

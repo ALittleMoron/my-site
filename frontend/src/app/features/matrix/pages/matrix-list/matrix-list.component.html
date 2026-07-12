@@ -12,6 +12,7 @@
 
   <app-matrix-filter-bar
     [search]="search()"
+    [canSuggestQuestion]="sheets().length > 0"
     (searchChange)="setSearch($event)"
     (suggestQuestion)="openQuestionSuggestion()"
   />
@@ -119,6 +120,7 @@
           <select
             id="matrix-question-suggestion-sheet"
             class="form-select form-bordered mb-3"
+            required
             [value]="suggestionSheetKey() ?? ''"
             [disabled]="suggestionSubmitting() || sheets().length === 0"
             (change)="onQuestionSuggestionSheetChange($event)"

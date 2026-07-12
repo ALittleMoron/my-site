@@ -541,6 +541,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.duplicate": (
             "Такой вопрос уже есть в матрице или ожидает рассмотрения."
         ),
+        "matrix.suggestion.noSheets": (
+            "Нет публичных листов, для которых можно предложить вопрос."
+        ),
+        "matrix.suggestion.sheetRequired": "Выберите публичный лист для вопроса.",
         "matrix.suggestion.quotaExceeded": "Лимит предложений на сегодня исчерпан.",
         "matrix.modal.create": "Добавление вопроса",
         "matrix.modal.edit": "Редактирование вопроса",
@@ -1369,6 +1373,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.suggestion.duplicate": (
             "This question is already in the matrix or awaiting review."
         ),
+        "matrix.suggestion.noSheets": (
+            "There are no public sheets available for question suggestions."
+        ),
+        "matrix.suggestion.sheetRequired": "Select a public sheet for the question.",
         "matrix.suggestion.quotaExceeded": "Today's suggestion limit has been reached.",
         "matrix.modal.create": "Add question",
         "matrix.modal.edit": "Edit question",

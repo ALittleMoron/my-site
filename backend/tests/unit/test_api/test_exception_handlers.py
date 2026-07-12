@@ -33,6 +33,7 @@ from core.competency_matrix.exceptions import (
     QuestionQueueImportIssue,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
+    QuestionSuggestionSheetUnavailableError,
 )
 from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
@@ -64,6 +65,11 @@ def raise_question_quota() -> None:
 @get("/question-duplicate", sync_to_thread=False)
 def raise_question_duplicate() -> None:
     raise QuestionSuggestionAlreadyExistsError
+
+
+@get("/question-sheet-unavailable", sync_to_thread=False)
+def raise_question_sheet_unavailable() -> None:
+    raise QuestionSuggestionSheetUnavailableError
 
 
 @get("/question-import", sync_to_thread=False)
@@ -124,6 +130,13 @@ def test_duplicate_question_domain_error_returns_verbose_409() -> None:
     assert response.json()["message"] == QuestionSuggestionAlreadyExistsError.message
 
 
+def test_unavailable_question_sheet_domain_error_returns_verbose_400() -> None:
+    response = get_response("/question-sheet-unavailable")
+
+    assert response.status_code == codes.BAD_REQUEST
+    assert response.json()["message"] == QuestionSuggestionSheetUnavailableError.message
+
+
 def test_import_domain_error_returns_verbose_400_with_nested_errors() -> None:
     response = get_response("/question-import")
 
@@ -175,6 +188,7 @@ def test_domain_error_verbose_exception_mapping() -> None:
         CompetencyMatrixStructurePriorityInvalidError: BadRequestHTTPException,
         QuestionSuggestionQuotaExceededError: TooManyRequestsHTTPException,
         QuestionSuggestionAlreadyExistsError: ConflictHTTPException,
+        QuestionSuggestionSheetUnavailableError: BadRequestHTTPException,
         QuestionQueueImportInvalidError: BadRequestHTTPException,
         AccountUsernameAlreadyExistsError: BadRequestHTTPException,
         InvalidManagedAccountRoleError: BadRequestHTTPException,
@@ -202,6 +216,7 @@ def exception_route_handlers() -> Sequence[ControllerRouterHandler]:
         raise_forbidden,
         raise_question_quota,
         raise_question_duplicate,
+        raise_question_sheet_unavailable,
         raise_question_import,
         raise_python_error,
         raise_readiness_check_error,

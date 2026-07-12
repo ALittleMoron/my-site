@@ -396,6 +396,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.suggestion.sent': 'Вопрос отправлен на рассмотрение.',
   'matrix.suggestion.error': 'Не удалось отправить вопрос.',
   'matrix.suggestion.duplicate': 'Такой вопрос уже есть в матрице или ожидает рассмотрения.',
+  'matrix.suggestion.noSheets': 'Нет публичных листов, для которых можно предложить вопрос.',
+  'matrix.suggestion.sheetRequired': 'Выберите публичный лист для вопроса.',
   'matrix.suggestion.quotaExceeded': 'Лимит предложений на сегодня исчерпан.',
   'matrix.form.sheetKey': 'Ключ листа',
   'matrix.form.missingSheetKey':

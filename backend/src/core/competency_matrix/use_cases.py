@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
     QuestionSuggestionAlreadyExistsError,
+    QuestionSuggestionSheetUnavailableError,
 )
 from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
@@ -281,11 +282,21 @@ class CompetencyMatrixUseCase:
         *,
         params: QuestionSuggestionCreateParams,
     ) -> QueuedCompetencyMatrixQuestion:
+        sheet_key = params.question.sheet
+        if params.validate_public_sheet and (
+            sheet_key is None or not (await self.storage.list_sheets()).has_key(key=sheet_key)
+        ):
+            raise QuestionSuggestionSheetUnavailableError
         if params.reject_duplicates:
+            if sheet_key is None:
+                raise QuestionSuggestionSheetUnavailableError
             fingerprint = CompetencyMatrixQuestionFingerprint.from_question(
                 question=params.question.question,
             )
-            if await self.storage.question_suggestion_exists(fingerprint=fingerprint):
+            if await self.storage.question_suggestion_exists(
+                fingerprint=fingerprint,
+                sheet_key=sheet_key,
+            ):
                 raise QuestionSuggestionAlreadyExistsError
         if params.limit is not None:
             await self.question_suggestion_limiter.check_create_allowed(params=params.limit)

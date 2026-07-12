@@ -1071,16 +1071,24 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self,
         *,
         fingerprint: CompetencyMatrixQuestionFingerprint,
+        sheet_key: str,
     ) -> bool:
         fingerprint_digest = fingerprint.digest
         queued_question_exists = (
             select(QueuedQuestionModel.id)
-            .where(QueuedQuestionModel.question_fingerprint == fingerprint_digest)
+            .where(
+                QueuedQuestionModel.question_fingerprint == fingerprint_digest,
+                QueuedQuestionModel.sheet == sheet_key,
+            )
             .exists()
         )
         matrix_question_exists = (
             select(CompetencyMatrixItemModel.id)
+            .join(CompetencyMatrixItemModel.subsection)
+            .join(CompetencyMatrixSubsectionModel.section)
+            .join(CompetencyMatrixSectionModel.sheet)
             .where(
+                CompetencyMatrixSheetModel.key == sheet_key,
                 or_(
                     CompetencyMatrixItemModel.question_ru_fingerprint == fingerprint_digest,
                     CompetencyMatrixItemModel.question_en_fingerprint == fingerprint_digest,

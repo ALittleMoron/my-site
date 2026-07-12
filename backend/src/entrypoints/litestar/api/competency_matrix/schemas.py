@@ -289,6 +289,7 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
         limit: QuestionSuggestionLimitParams | None,
         suggested_by_username: str,
         reject_duplicates: bool,
+        validate_public_sheet: bool,
     ) -> QuestionSuggestionCreateParams:
         return QuestionSuggestionCreateParams(
             question=QueuedCompetencyMatrixQuestionCreateParams(
@@ -299,7 +300,12 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
             limit=limit,
             suggested_by_username=suggested_by_username,
             reject_duplicates=reject_duplicates,
+            validate_public_sheet=validate_public_sheet,
         )
+
+
+class PublicQuestionSuggestionRequestSchema(QuestionSuggestionRequestSchema):
+    sheet: Annotated[RequiredShortText, Field(title="Sheet")]
 
 
 class QueuedQuestionResponseSchema(CamelCaseSchema):

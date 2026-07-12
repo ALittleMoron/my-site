@@ -20,6 +20,7 @@ describe('MatrixFilterBarComponent', () => {
 
     fixture = TestBed.createComponent(MatrixFilterBarComponent);
     fixture.componentRef.setInput('search', '');
+    fixture.componentRef.setInput('canSuggestQuestion', true);
     fixture.detectChanges();
     el = fixture.nativeElement as HTMLElement;
   });
@@ -68,5 +69,15 @@ describe('MatrixFilterBarComponent', () => {
     el.querySelector<HTMLButtonElement>('[data-testid="matrix-filter-suggest-question"]')!.click();
 
     expect(emitted.length).toBe(1);
+  });
+
+  it('should disable question suggestion when no public sheet is available', () => {
+    fixture.componentRef.setInput('canSuggestQuestion', false);
+    fixture.detectChanges();
+
+    const button = el.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-filter-suggest-question"]',
+    );
+    expect(button?.disabled).toBe(true);
   });
 });

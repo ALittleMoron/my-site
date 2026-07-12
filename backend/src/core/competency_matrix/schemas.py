@@ -51,7 +51,9 @@ class Sheet:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class Sheets(ValuedDataclass[Sheet]): ...
+class Sheets(ValuedDataclass[Sheet]):
+    def has_key(self, *, key: str) -> bool:
+        return any(sheet.key == key for sheet in self)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -422,6 +424,7 @@ class QuestionSuggestionCreateParams:
     limit: QuestionSuggestionLimitParams | None
     suggested_by_username: str
     reject_duplicates: bool
+    validate_public_sheet: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -10,6 +10,7 @@ import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
 })
 export class MatrixFilterBarComponent {
   readonly search = input.required<string>();
+  readonly canSuggestQuestion = input.required<boolean>();
 
   readonly searchChange = output<string>();
   readonly suggestQuestion = output<void>();

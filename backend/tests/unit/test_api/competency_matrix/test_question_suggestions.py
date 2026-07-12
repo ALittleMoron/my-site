@@ -20,6 +20,7 @@ from core.competency_matrix.enums import (
 from core.competency_matrix.exceptions import (
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
+    QuestionSuggestionSheetUnavailableError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
@@ -73,22 +74,18 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         assert call_params.limit is not None
         assert call_params.suggested_by_username == "anon"
         assert call_params.reject_duplicates is True
+        assert call_params.validate_public_sheet is True
         assert call_params.limit.client_identifier != ""
         assert call_params.limit.now.tzinfo is not None
 
-    def test_anonymous_user_can_suggest_question_without_sheet_key(self) -> None:
+    def test_anonymous_user_cannot_suggest_question_without_sheet_key(self) -> None:
         response = self.no_auth_api.client.post(
             "/api/competency-matrix/question-suggestions",
             json={"question": "What is PEP 8?"},
         )
 
-        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
-        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
-        assert call_params.question == QueuedCompetencyMatrixQuestionCreateParams(
-            question="What is PEP 8?",
-            sheet=None,
-            grade=None,
-        )
+        self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
+        self.use_case.suggest_question.assert_not_called()
 
     def test_anonymous_suggestion_uses_forwarded_client_identifier(self) -> None:
         response = self.no_auth_api.post_question_suggestion(
@@ -104,12 +101,13 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         assert call_params == QuestionSuggestionCreateParams(
             question=QueuedCompetencyMatrixQuestionCreateParams(
                 question="What is PEP 8?",
-                sheet=None,
+                sheet="python",
                 grade=None,
             ),
             limit=call_params.limit,
             suggested_by_username="anon",
             reject_duplicates=True,
+            validate_public_sheet=True,
         )
         assert call_params.limit is not None
         assert call_params.limit.client_identifier == "203.0.113.10"
@@ -170,6 +168,20 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             response=response,
             expected_status=codes.CONFLICT,
             expected_message="Question already exists in the competency matrix or suggestion queue",
+        )
+
+    def test_suggest_question_returns_400_when_sheet_is_not_public(self) -> None:
+        self.use_case.suggest_question.side_effect = QuestionSuggestionSheetUnavailableError
+
+        response = self.no_auth_api.post_question_suggestion(
+            question="What is PEP 8?",
+            sheet="private-sheet",
+        )
+
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.BAD_REQUEST,
+            expected_message="Selected competency matrix sheet is not publicly available",
         )
 
     def test_content_manager_can_list_queue_in_fifo_order(self) -> None:
@@ -273,6 +285,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             limit=None,
             suggested_by_username="test",
             reject_duplicates=False,
+            validate_public_sheet=False,
         )
 
     def test_content_manager_can_import_txt_queued_questions(self) -> None:

@@ -755,6 +755,7 @@ async def run_question_suggestion_exists(session: AsyncSession) -> None:
         fingerprint=CompetencyMatrixQuestionFingerprint.from_question(
             question="Queued question 100",
         ),
+        sheet_key="sheet-1",
     )
 
 

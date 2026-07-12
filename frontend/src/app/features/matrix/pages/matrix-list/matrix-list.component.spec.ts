@@ -596,6 +596,7 @@ describe('MatrixListComponent', () => {
     );
 
     expect(select).toBeTruthy();
+    expect(select?.required).toBe(true);
     expect(select?.value).toBe('javascript');
     expect(Array.from(select?.options ?? []).map((option) => option.value)).toEqual([
       'javascript',
@@ -623,6 +624,42 @@ describe('MatrixListComponent', () => {
     component.sendQuestionSuggestion();
 
     expect(matrixService.suggestQuestion).toHaveBeenCalledWith('What is PEP 8?', 'python');
+  });
+
+  it('disables suggestions when no public sheet is available', () => {
+    matrixService.getPublicSheets.mockReturnValue(of([]));
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-filter-suggest-question"]',
+    );
+    expect(button?.disabled).toBe(true);
+
+    component.openQuestionSuggestion();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(notificationService.error).toHaveBeenCalledWith(
+      'Нет публичных листов, для которых можно предложить вопрос.',
+    );
+  });
+
+  it('does not submit a suggestion without a selected public sheet', () => {
+    fixture.detectChanges();
+    component.openQuestionSuggestion();
+    component.setQuestionSuggestion('What is PEP 8?');
+    component.setQuestionSuggestionSheet('');
+    fixture.detectChanges();
+
+    const submit = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-question-suggestion-submit"]',
+    );
+    expect(submit?.disabled).toBe(true);
+
+    component.sendQuestionSuggestion();
+
+    expect(matrixService.suggestQuestion).not.toHaveBeenCalled();
+    expect(notificationService.error).toHaveBeenCalledWith('Выберите публичный лист для вопроса.');
   });
 
   it('normalizes multiline pasted suggestion text before sending it', () => {
