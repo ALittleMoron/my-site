@@ -463,6 +463,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .join(' / ');
   }
 
+  suggestedByLabel(question: QueuedMatrixQuestion): string {
+    if (question.suggestedByUsername === 'anon') {
+      return this.i18n.translate('enum.role.anon');
+    }
+    return question.suggestedByUsername;
+  }
+
   manualAddErrorMessage(): string | null {
     if (!this.manualAddSubmitted()) return null;
     const errorKey = this.manualAddQuestionError();

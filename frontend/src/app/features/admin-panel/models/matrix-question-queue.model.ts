@@ -7,7 +7,7 @@ export interface QueuedMatrixQuestionDto {
   sheet: string | null;
   section: string | null;
   subsection: string | null;
-  suggestedByUsername: string | null;
+  suggestedByUsername: string;
   createdAt: string;
 }
 
@@ -54,7 +54,7 @@ export interface QueuedMatrixQuestion {
   sheet: string | null;
   section: string | null;
   subsection: string | null;
-  suggestedByUsername: string | null;
+  suggestedByUsername: string;
   createdAt: string;
 }
 

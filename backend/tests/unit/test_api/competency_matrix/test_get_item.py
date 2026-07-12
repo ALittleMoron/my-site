@@ -40,6 +40,7 @@ class TestGetItemAPI(ApiTestCase):
             question_ru="Как написать свою функцию?",
             question_en="How to write a function?",
             publish_status=PublishStatusEnum.PUBLISHED,
+            suggested_by_username="alice",
             answer_ru="Просто берёшь и пишешь!",
             answer_en="Just write it.",
             interview_expected_answer_ru="Пиши!",
@@ -84,6 +85,7 @@ class TestGetItemAPI(ApiTestCase):
             "sheet": "Python",
             "interviewFrequency": "constantly",
             "publishStatus": "Published",
+            "suggestedByUsername": "alice",
             "translations": {
                 "ru": {
                     "question": "Как написать свою функцию?",
@@ -122,6 +124,7 @@ class TestGetItemAPI(ApiTestCase):
             slug="large-id-question",
             question_en="Question with large id?",
             publish_status=PublishStatusEnum.PUBLISHED,
+            suggested_by_username="anon",
             answer_en="Answer.",
             interview_expected_answer_en="Expected answer.",
             grade=GradeEnum.JUNIOR,
@@ -166,6 +169,7 @@ class TestGetItemAPI(ApiTestCase):
             sheet_ru="Питон",
             sheet_en="Python",
             interview_frequency=InterviewFrequencyEnum.NEVER_SEEN,
+            suggested_by_username="anon",
         )
         response = self.no_auth_api.get_public_competency_matrix_item(
             slug="how-to-write-function",
@@ -177,6 +181,7 @@ class TestGetItemAPI(ApiTestCase):
         assert body["slug"] == "how-to-write-function"
         assert body["question"] == "How to write a function?"
         assert body["interviewFrequency"] == "neverSeen"
+        assert body["suggestedByUsername"] == "anon"
         self.use_case.get_item_by_slug.assert_called_once_with(
             params=CompetencyMatrixItemBySlugGetParams(
                 slug="how-to-write-function",

@@ -147,3 +147,9 @@ def provide_question_suggestion_limit_params(
         client_identifier=request.client.host if request.client is not None else "",
         now=datetime.now(tz=UTC),
     )
+
+
+def provide_suggested_by_username(
+    request: Request[JwtUser, Token | None, State],
+) -> str:
+    return request.user.role.value if request.user.is_anon else request.user.username

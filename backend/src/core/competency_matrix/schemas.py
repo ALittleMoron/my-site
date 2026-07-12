@@ -217,7 +217,7 @@ class QueuedCompetencyMatrixQuestion:
     sheet: str | None
     section: str | None
     subsection: str | None
-    suggested_by_username: str | None
+    suggested_by_username: str
     created_at: datetime
 
 
@@ -403,6 +403,7 @@ class QuestionSuggestionLimitParams:
 class QuestionSuggestionCreateParams:
     question: QueuedCompetencyMatrixQuestionCreateParams
     limit: QuestionSuggestionLimitParams | None
+    suggested_by_username: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -526,6 +527,7 @@ class BaseCompetencyMatrixItem:
     structure: CompetencyMatrixItemStructure
     grade: GradeEnum | None
     interview_frequency: InterviewFrequencyEnum | None
+    suggested_by_username: str
 
     def is_available(self) -> bool:
         return (
@@ -666,6 +668,7 @@ class CompetencyMatrixItemWriteParams:
         resources: ExternalResources,
         structure: CompetencyMatrixItemStructure,
         published_at: datetime | None,
+        suggested_by_username: str,
     ) -> CompetencyMatrixItem:
         resources_by_id = {resource.id: resource for resource in resources}
         attached_existing_resources = [
@@ -697,6 +700,7 @@ class CompetencyMatrixItemWriteParams:
             structure=structure,
             grade=self.grade,
             interview_frequency=self.interview_frequency,
+            suggested_by_username=suggested_by_username,
             resources=AttachedExternalResources(
                 values=[*attached_existing_resources, *attached_new_resources],
             ),

@@ -594,6 +594,7 @@ async def insert_competency_matrix_items(
                 "subsection_id",
                 "grade",
                 "interview_frequency",
+                "suggested_by_username",
                 "published_at",
                 "publish_status",
             ],
@@ -633,6 +634,7 @@ async def insert_competency_matrix_items(
                     ),
                     CompetencyMatrixItemModel.__table__.c.interview_frequency.type,
                 ),
+                literal(SEED_USERNAME),
                 case((draft_item, literal(None)), else_=literal(SEED_NOW)),
                 sql_cast(
                     case((draft_item, literal("DRAFT")), else_=literal("PUBLISHED")),
@@ -670,7 +672,7 @@ async def insert_queued_competency_matrix_questions(*, connection: AsyncConnecti
                 "sheet": "Python" if value % 7 == 0 else None,
                 "section": "Basics" if value % 7 == 0 else None,
                 "subsection": "Functions" if value % 7 == 0 else None,
-                "suggested_by_username": SEED_USERNAME if value % 10 == 0 else None,
+                "suggested_by_username": SEED_USERNAME if value % 10 == 0 else "anon",
                 "created_at": SEED_NOW + timedelta(seconds=value),
             }
             for value in range(1, QUEUED_QUESTION_SEED_COUNT + 1)

@@ -109,6 +109,7 @@ const mockDetail: MatrixQuestionDetail = {
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
+  suggestedByUsername: 'anon',
   translations: {
     ru: {
       question: 'Что такое замыкание?',

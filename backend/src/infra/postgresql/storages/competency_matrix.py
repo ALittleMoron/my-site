@@ -1056,10 +1056,12 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self,
         *,
         params: QueuedCompetencyMatrixQuestionCreateParams,
+        suggested_by_username: str,
     ) -> QueuedCompetencyMatrixQuestion:
         question = QueuedQuestionModel.from_create_params(
             params=params,
             created_at=datetime.now(tz=UTC),
+            suggested_by_username=suggested_by_username,
         )
         self.session.add(question)
         await self.session.flush()
@@ -1069,10 +1071,15 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         self,
         *,
         params: QueuedCompetencyMatrixQuestionsCreateParams,
+        suggested_by_username: str,
     ) -> QueuedCompetencyMatrixQuestions:
         created_at = datetime.now(tz=UTC)
         questions = [
-            QueuedQuestionModel.from_create_params(params=question, created_at=created_at)
+            QueuedQuestionModel.from_create_params(
+                params=question,
+                created_at=created_at,
+                suggested_by_username=suggested_by_username,
+            )
             for question in params.questions
         ]
         self.session.add_all(questions)

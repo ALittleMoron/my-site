@@ -39,7 +39,7 @@
           </span>
           <span class="d-block small">
             {{ 'adminMatrixQueue.suggestedBy' | t }}:
-            {{ question.suggestedByUsername ?? ('shared.notSet' | t) }}
+            {{ suggestedByLabel(question) }}
           </span>
           @if (questionStructure(question)) {
             <span class="d-block small">

@@ -186,6 +186,7 @@ class CompetencyMatrixStorage(ABC):
         self,
         *,
         params: QueuedCompetencyMatrixQuestionCreateParams,
+        suggested_by_username: str,
     ) -> QueuedCompetencyMatrixQuestion:
         raise NotImplementedError
 
@@ -194,6 +195,7 @@ class CompetencyMatrixStorage(ABC):
         self,
         *,
         params: QueuedCompetencyMatrixQuestionsCreateParams,
+        suggested_by_username: str,
     ) -> QueuedCompetencyMatrixQuestions:
         raise NotImplementedError
 

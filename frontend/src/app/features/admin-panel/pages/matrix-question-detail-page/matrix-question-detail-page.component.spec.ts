@@ -176,6 +176,7 @@ function readyQuestion(publishStatus: 'Draft' | 'Published'): AdminMatrixQuestio
     section: 'Core',
     subsection: 'Syntax',
     publishStatus,
+    suggestedByUsername: 'owner',
     translations: {
       ru: {
         question: 'Готовый вопрос?',

@@ -17,6 +17,7 @@ const mockDetail: MatrixQuestionDetail = {
   section: 'Core',
   subsection: 'Syntax',
   publishStatus: 'Published',
+  suggestedByUsername: 'anon',
   translations: {
     ru: {
       question: 'Что такое замыкание?',
@@ -102,6 +103,17 @@ describe('MatrixQuestionDetailComponent', () => {
     fixture.componentRef.setInput('error', null);
     fixture.detectChanges();
     expect(el.textContent).toContain('What is a closure?');
+    expect(el.textContent).toContain('Кто предложил: Анонимный');
+  });
+
+  it('should render a real suggester username without localization', () => {
+    fixture.componentRef.setInput('question', {
+      ...mockDetail,
+      suggestedByUsername: 'alice',
+    });
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Кто предложил: alice');
   });
 
   it('does not render the public question page link inside detail content', () => {

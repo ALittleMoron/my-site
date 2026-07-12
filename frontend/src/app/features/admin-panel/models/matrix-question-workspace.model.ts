@@ -146,6 +146,7 @@ export interface AdminMatrixQuestionDetailDto {
   section: string;
   subsection: string;
   publishStatus: AdminMatrixPublishStatus;
+  suggestedByUsername: string;
   translations: AdminMatrixQuestionTranslations;
   resources: AdminMatrixAttachedResourceDto[];
 }

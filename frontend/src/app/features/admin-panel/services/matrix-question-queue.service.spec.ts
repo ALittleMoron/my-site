@@ -47,7 +47,7 @@ describe('MatrixQuestionQueueService', () => {
           sheet: null,
           section: null,
           subsection: null,
-          suggestedByUsername: null,
+          suggestedByUsername: 'anon',
           createdAt: '2026-06-07T12:00:00+00:00',
         },
       ],
@@ -91,7 +91,7 @@ describe('MatrixQuestionQueueService', () => {
       sheet: null,
       section: null,
       subsection: null,
-      suggestedByUsername: null,
+      suggestedByUsername: 'test',
       createdAt: '2026-06-07T12:00:00+00:00',
     });
 
@@ -153,7 +153,7 @@ describe('MatrixQuestionQueueService', () => {
           sheet: null,
           section: null,
           subsection: null,
-          suggestedByUsername: null,
+          suggestedByUsername: 'test',
           createdAt: '2026-06-07T12:00:00+00:00',
         },
         {
@@ -163,7 +163,7 @@ describe('MatrixQuestionQueueService', () => {
           sheet: null,
           section: null,
           subsection: null,
-          suggestedByUsername: null,
+          suggestedByUsername: 'test',
           createdAt: '2026-06-07T12:01:00+00:00',
         },
       ],

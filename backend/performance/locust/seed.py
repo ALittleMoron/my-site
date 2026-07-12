@@ -431,6 +431,7 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
             "Expected answer gives a concrete baseline comparison plan."
         ),
         "subsection_id": matrix_subsection_id(sheet_index),
+        "suggested_by_username": SEED_AUTHOR_USERNAME,
         "grade": grade_for_index(item_index=item_index),
         "interview_frequency": interview_frequency_for_index(item_index=item_index),
         "published_at": SEED_START + timedelta(hours=item_index),

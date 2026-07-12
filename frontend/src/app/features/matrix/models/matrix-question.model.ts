@@ -62,6 +62,7 @@ export interface MatrixItemDetailDto extends MatrixItemDto {
   section: string;
   subsection: string;
   publishStatus: MatrixPublishStatus;
+  suggestedByUsername: string;
   translations: MatrixItemTranslationsDto;
   resources: MatrixAttachedResourceDto[];
 }
@@ -165,6 +166,7 @@ export interface MatrixQuestionDetail extends MatrixQuestion {
   section: string;
   subsection: string;
   publishStatus: MatrixPublishStatus;
+  suggestedByUsername: string;
   translations: MatrixItemTranslations;
   resources: MatrixAttachedResource[];
 }
@@ -268,6 +270,7 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
     section: dto.section,
     subsection: dto.subsection,
     publishStatus: dto.publishStatus,
+    suggestedByUsername: dto.suggestedByUsername,
     translations: dto.translations,
     resources: dto.resources.map((resource) => ({
       id: resource.id,

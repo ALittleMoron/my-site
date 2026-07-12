@@ -40,4 +40,9 @@ export class MatrixQuestionDetailComponent {
     if (frequency === null) return null;
     return this.i18n.translate(this.i18n.enumInterviewFrequencyKey(frequency));
   });
+  readonly suggestedByLabel = computed<string>(() => {
+    const username = this.question()?.suggestedByUsername ?? '';
+    if (username === 'anon') return this.i18n.translate('enum.role.anon');
+    return username;
+  });
 }

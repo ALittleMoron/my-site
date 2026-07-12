@@ -762,6 +762,7 @@ async def run_create_queued_question(session: AsyncSession) -> None:
             sheet="query-plan-sheet",
             grade=GradeEnum.JUNIOR,
         ),
+        suggested_by_username=SEED_USERNAME,
     )
 
 
@@ -781,6 +782,7 @@ async def run_create_queued_questions(session: AsyncSession) -> None:
                 ),
             ],
         ),
+        suggested_by_username=SEED_USERNAME,
     )
 
 
@@ -965,6 +967,7 @@ def write_matrix_item(*, item_id: str, slug: str) -> CompetencyMatrixItem:
         ),
         grade=GradeEnum.JUNIOR,
         interview_frequency=InterviewFrequencyEnum.OFTEN,
+        suggested_by_username=SEED_USERNAME,
         resources=AttachedExternalResources(
             values=[
                 AttachedExternalResource(

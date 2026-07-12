@@ -101,6 +101,7 @@ const savedQuestion: AdminMatrixQuestionDetailDto = {
   section: '',
   subsection: '',
   publishStatus: 'Draft',
+  suggestedByUsername: 'owner',
   translations: {
     ru: {
       question: 'Новый вопрос?',

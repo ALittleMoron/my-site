@@ -87,9 +87,11 @@ describe('MatrixService', () => {
 
   it('loads public localized question detail by slug', () => {
     let resultSlug: string | undefined;
+    let suggestedByUsername: string | undefined;
 
     service.getPublicQuestionBySlug('how-to-write-function', 'ru').subscribe((question) => {
       resultSlug = question.slug;
+      suggestedByUsername = question.suggestedByUsername;
     });
 
     const req = httpMock.expectOne((r) =>
@@ -101,6 +103,7 @@ describe('MatrixService', () => {
     req.flush(matrixDetailDto({ slug: 'how-to-write-function' }));
 
     expect(resultSlug).toBe('how-to-write-function');
+    expect(suggestedByUsername).toBe('anon');
   });
 
   it('suggestQuestion posts anonymous question suggestion', () => {
@@ -134,6 +137,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
     section: 'Core',
     subsection: 'Style',
     publishStatus: 'Published',
+    suggestedByUsername: 'anon',
     translations: {
       ru: {
         question: 'Что такое PEP8?',

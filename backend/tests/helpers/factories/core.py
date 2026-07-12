@@ -201,6 +201,7 @@ class CoreFactoryHelper:
         subsection_ru: str | None = None,
         subsection_en: str | None = None,
         resources: list[AttachedExternalResource] | None = None,
+        suggested_by_username: str = "owner",
     ) -> CompetencyMatrixItem:
         question_en_value = cls._fallback(question_en, question)
         return CompetencyMatrixItem(
@@ -238,6 +239,7 @@ class CoreFactoryHelper:
             ),
             grade=grade,
             interview_frequency=interview_frequency,
+            suggested_by_username=suggested_by_username,
             resources=AttachedExternalResources(values=resources or []),
         )
 
@@ -440,7 +442,7 @@ class CoreFactoryHelper:
         sheet: str | None = None,
         section: str | None = None,
         subsection: str | None = None,
-        suggested_by_username: str | None = None,
+        suggested_by_username: str = "anon",
         created_at: datetime | None = None,
     ) -> QueuedCompetencyMatrixQuestion:
         return QueuedCompetencyMatrixQuestion(

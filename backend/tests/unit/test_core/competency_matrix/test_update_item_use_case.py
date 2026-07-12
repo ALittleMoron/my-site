@@ -28,6 +28,12 @@ class TestCompetencyMatrixUseCase(TestCase):
         )
 
     async def test_update_item_rejects_missing_existing_resource(self) -> None:
+        self.storage.get_competency_matrix_item.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=2,
+                suggested_by_username="original-author",
+            )
+        )
         self.storage.get_resources_by_ids.return_value = self.factory.core.external_resources(
             values=[
                 self.factory.core.external_resource(
@@ -58,6 +64,12 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.update_competency_matrix_item.assert_not_called()
 
     async def test_update_item_rejects_published_item_with_missing_public_fields(self) -> None:
+        self.storage.get_competency_matrix_item.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=2,
+                suggested_by_username="original-author",
+            )
+        )
         params = self.factory.core.competency_matrix_item_update_params(
             item_id=2,
             publish_status=PublishStatusEnum.PUBLISHED,
@@ -70,6 +82,12 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.update_competency_matrix_item.assert_not_called()
 
     async def test_update_item(self) -> None:
+        self.storage.get_competency_matrix_item.return_value = (
+            self.factory.core.competency_matrix_item(
+                item_id=2,
+                suggested_by_username="original-author",
+            )
+        )
         self.storage.get_resources_by_ids.return_value = self.factory.core.external_resources(
             values=[
                 self.factory.core.external_resource(
@@ -116,6 +134,7 @@ class TestCompetencyMatrixUseCase(TestCase):
                 question="2",
                 publish_status=PublishStatusEnum.DRAFT,
                 grade=GradeEnum.JUNIOR,
+                suggested_by_username="original-author",
                 resources=[
                     self.factory.core.attached_external_resource(
                         resource_id=1,

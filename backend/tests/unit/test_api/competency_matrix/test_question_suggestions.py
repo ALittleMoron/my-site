@@ -70,6 +70,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             grade=None,
         )
         assert call_params.limit is not None
+        assert call_params.suggested_by_username == "anon"
         assert call_params.limit.client_identifier != ""
         assert call_params.limit.now.tzinfo is not None
 
@@ -105,10 +106,20 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 grade=None,
             ),
             limit=call_params.limit,
+            suggested_by_username="anon",
         )
         assert call_params.limit is not None
         assert call_params.limit.client_identifier == "203.0.113.10"
         assert call_params.limit.now.tzinfo is not None
+        assert call_params.suggested_by_username == "anon"
+
+    def test_authenticated_public_suggestion_uses_username_and_keeps_ip_quota(self) -> None:
+        response = self.api.post_question_suggestion(question="What is PEP 8?")
+
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
+        call_params = self.use_case.suggest_question.call_args.kwargs["params"]
+        assert call_params.suggested_by_username == "test"
+        assert call_params.limit is not None
 
     def test_question_suggestion_limit_dependency_uses_forwarded_client_identifier(self) -> None:
         request = cast(
@@ -182,7 +193,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                         "sheet": None,
                         "section": None,
                         "subsection": None,
-                        "suggestedByUsername": None,
+                        "suggestedByUsername": "anon",
                         "createdAt": "2026-06-07T12:00:00+00:00",
                     },
                     {
@@ -216,6 +227,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             self.factory.core.queued_competency_matrix_question(
                 question_id=3,
                 question="What is PEP 8?",
+                suggested_by_username="test",
                 created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
             )
         )
@@ -232,7 +244,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "sheet": None,
                 "section": None,
                 "subsection": None,
-                "suggestedByUsername": None,
+                "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
             },
         )
@@ -245,6 +257,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 grade=None,
             ),
             limit=None,
+            suggested_by_username="test",
         )
 
     def test_content_manager_can_import_txt_queued_questions(self) -> None:
@@ -253,11 +266,13 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 self.factory.core.queued_competency_matrix_question(
                     question_id=3,
                     question="What is PEP 8?",
+                    suggested_by_username="test",
                     created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
                 ),
                 self.factory.core.queued_competency_matrix_question(
                     question_id=4,
                     question="How does mypy help?",
+                    suggested_by_username="test",
                     created_at=datetime(2026, 6, 7, 12, 3, tzinfo=UTC),
                 ),
             ],
@@ -280,7 +295,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "sheet": None,
                 "section": None,
                 "subsection": None,
-                "suggestedByUsername": None,
+                "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
             },
             {
@@ -290,12 +305,18 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "sheet": None,
                 "section": None,
                 "subsection": None,
-                "suggestedByUsername": None,
+                "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
             },
         ]
-        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        self.use_case.import_queued_questions.assert_called_once_with(
+            params=ANY,
+            suggested_by_username="test",
+        )
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
+        assert self.use_case.import_queued_questions.call_args.kwargs["suggested_by_username"] == (
+            "test"
+        )
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8?",
             "How does mypy help?",
@@ -419,7 +440,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
-        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        self.use_case.import_queued_questions.assert_called_once_with(
+            params=ANY,
+            suggested_by_username="test",
+        )
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "Что такое PEP 8?",
@@ -448,7 +472,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
-        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        self.use_case.import_queued_questions.assert_called_once_with(
+            params=ANY,
+            suggested_by_username="test",
+        )
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8? How should it be used?",
@@ -473,7 +500,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
-        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        self.use_case.import_queued_questions.assert_called_once_with(
+            params=ANY,
+            suggested_by_username="test",
+        )
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8?",
@@ -498,7 +528,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
-        self.use_case.import_queued_questions.assert_called_once_with(params=ANY)
+        self.use_case.import_queued_questions.assert_called_once_with(
+            params=ANY,
+            suggested_by_username="test",
+        )
         call_params = self.use_case.import_queued_questions.call_args.kwargs["params"]
         assert self.collections.pluck(items=call_params.questions, attr="question") == [
             "What is PEP 8?",

@@ -175,6 +175,7 @@ class CompetencyMatrixUseCase:
         self,
         *,
         params: CompetencyMatrixItemCreateParams,
+        suggested_by_username: str,
     ) -> CompetencyMatrixItem:
         resource_ids_to_assign = params.get_resource_ids_to_assign()
         resources = (
@@ -187,7 +188,12 @@ class CompetencyMatrixUseCase:
         structure = await self.storage.get_item_structure_by_subsection_id(
             subsection_id=params.subsection_id,
         )
-        item = params.to_item(resources=resources, structure=structure, published_at=None)
+        item = params.to_item(
+            resources=resources,
+            structure=structure,
+            published_at=None,
+            suggested_by_username=suggested_by_username,
+        )
         if item.publish_status == PublishStatusEnum.PUBLISHED:
             item.ensure_public_ready()
         return await self.storage.create_competency_matrix_item(item=item)
@@ -197,7 +203,9 @@ class CompetencyMatrixUseCase:
         *,
         params: QueuedCompetencyMatrixQuestionCreateItemParams,
     ) -> CompetencyMatrixItem:
-        await self.storage.get_queued_question(question_id=params.queued_question_id)
+        queued_question = await self.storage.get_queued_question(
+            question_id=params.queued_question_id,
+        )
         resource_ids_to_assign = params.item.get_resource_ids_to_assign()
         resources = (
             await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
@@ -209,7 +217,12 @@ class CompetencyMatrixUseCase:
         structure = await self.storage.get_item_structure_by_subsection_id(
             subsection_id=params.item.subsection_id,
         )
-        item = params.item.to_item(resources=resources, structure=structure, published_at=None)
+        item = params.item.to_item(
+            resources=resources,
+            structure=structure,
+            published_at=None,
+            suggested_by_username=queued_question.suggested_by_username,
+        )
         if item.publish_status == PublishStatusEnum.PUBLISHED:
             item.ensure_public_ready()
         created_item = await self.storage.create_competency_matrix_item(item=item)
@@ -232,7 +245,13 @@ class CompetencyMatrixUseCase:
         structure = await self.storage.get_item_structure_by_subsection_id(
             subsection_id=params.subsection_id,
         )
-        item = params.to_item(resources=resources, structure=structure, published_at=None)
+        existing_item = await self.storage.get_competency_matrix_item(item_id=params.id)
+        item = params.to_item(
+            resources=resources,
+            structure=structure,
+            published_at=None,
+            suggested_by_username=existing_item.suggested_by_username,
+        )
         if item.publish_status == PublishStatusEnum.PUBLISHED:
             item.ensure_public_ready()
         return await self.storage.update_competency_matrix_item(item=item)
@@ -260,7 +279,10 @@ class CompetencyMatrixUseCase:
     ) -> QueuedCompetencyMatrixQuestion:
         if params.limit is not None:
             await self.question_suggestion_limiter.check_create_allowed(params=params.limit)
-        return await self.storage.create_queued_question(params=params.question)
+        return await self.storage.create_queued_question(
+            params=params.question,
+            suggested_by_username=params.suggested_by_username,
+        )
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
         return await self.storage.list_queued_questions()
@@ -277,8 +299,12 @@ class CompetencyMatrixUseCase:
         self,
         *,
         params: QueuedCompetencyMatrixQuestionsCreateParams,
+        suggested_by_username: str,
     ) -> QueuedCompetencyMatrixQuestions:
-        return await self.storage.create_queued_questions(params=params)
+        return await self.storage.create_queued_questions(
+            params=params,
+            suggested_by_username=suggested_by_username,
+        )
 
     async def delete_queued_question(self, *, question_id: str) -> None:
         await self.storage.delete_queued_question(question_id=question_id)

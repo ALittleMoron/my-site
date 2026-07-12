@@ -46,7 +46,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             sheet=None,
             section=None,
             subsection=None,
-            suggested_by_username=None,
+            suggested_by_username="anon",
             created_at=now,
         )
 
@@ -60,6 +60,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
                 client_identifier="203.0.113.10",
                 now=now,
             ),
+            suggested_by_username="anon",
         )
         created_question = await self.use_case.suggest_question(params=params)
 
@@ -73,6 +74,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
                 grade=None,
                 sheet="python",
             ),
+            suggested_by_username="anon",
         )
 
     async def test_suggest_question_skips_quota_limiter_when_limit_is_absent(self) -> None:
@@ -84,7 +86,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             sheet=None,
             section=None,
             subsection=None,
-            suggested_by_username=None,
+            suggested_by_username="alice",
             created_at=now,
         )
         params = QuestionSuggestionCreateParams(
@@ -94,6 +96,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
                 sheet=None,
             ),
             limit=None,
+            suggested_by_username="alice",
         )
         self.storage.create_queued_question.return_value = queued_question
 
@@ -101,7 +104,10 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
         assert created_question == queued_question
         self.question_suggestion_limiter.check_create_allowed.assert_not_called()
-        self.storage.create_queued_question.assert_called_once_with(params=params.question)
+        self.storage.create_queued_question.assert_called_once_with(
+            params=params.question,
+            suggested_by_username="alice",
+        )
 
     async def test_import_queued_questions_creates_questions_without_quota_limiter(self) -> None:
         params = QueuedCompetencyMatrixQuestionsCreateParams(
@@ -134,11 +140,17 @@ class TestQuestionSuggestionsUseCase(TestCase):
         )
         self.storage.create_queued_questions.return_value = queued_questions
 
-        created_questions = await self.use_case.import_queued_questions(params=params)
+        created_questions = await self.use_case.import_queued_questions(
+            params=params,
+            suggested_by_username="importer",
+        )
 
         assert created_questions == queued_questions
         self.question_suggestion_limiter.check_create_allowed.assert_not_called()
-        self.storage.create_queued_questions.assert_called_once_with(params=params)
+        self.storage.create_queued_questions.assert_called_once_with(
+            params=params,
+            suggested_by_username="importer",
+        )
 
     async def test_preview_import_marks_file_and_queue_duplicates(self) -> None:
         first_params = QueuedCompetencyMatrixQuestionCreateParams(
@@ -201,7 +213,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             sheet="Python",
             section="Core",
             subsection="Style",
-            suggested_by_username=None,
+            suggested_by_username="alice",
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
         )
         params = self.factory.core.competency_matrix_item_create_params(
@@ -232,6 +244,8 @@ class TestQuestionSuggestionsUseCase(TestCase):
             question_id=self.factory.core.hex_id(7)
         )
         self.storage.create_competency_matrix_item.assert_called_once()
+        created_item = self.storage.create_competency_matrix_item.call_args.kwargs["item"]
+        assert created_item.suggested_by_username == "alice"
         self.storage.delete_queued_question.assert_called_once_with(
             question_id=self.factory.core.hex_id(7)
         )

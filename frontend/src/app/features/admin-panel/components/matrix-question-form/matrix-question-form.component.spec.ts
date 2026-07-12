@@ -734,6 +734,7 @@ function questionDetail(): AdminMatrixQuestionDetailDto {
     section: 'Core',
     subsection: 'Syntax',
     publishStatus: 'Draft',
+    suggestedByUsername: 'owner',
     translations: {
       ru: { question: 'Существующий вопрос?', answer: '', interviewExpectedAnswer: '' },
       en: { question: 'Existing question?', answer: '', interviewExpectedAnswer: '' },

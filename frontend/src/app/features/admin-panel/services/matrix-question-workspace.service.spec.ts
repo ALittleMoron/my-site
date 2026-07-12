@@ -189,6 +189,7 @@ describe('MatrixQuestionWorkspaceService', () => {
       section: 'Core',
       subsection: 'Syntax',
       publishStatus: 'Draft',
+      suggestedByUsername: 'owner',
       translations: {
         ru: { question: 'Большой id?', answer: '', interviewExpectedAnswer: '' },
         en: { question: 'Large id?', answer: '', interviewExpectedAnswer: '' },

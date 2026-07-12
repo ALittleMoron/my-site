@@ -266,6 +266,10 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         ),
         doc="How often the question appears in interviews",
     )
+    suggested_by_username: Mapped[str] = mapped_column(
+        String(length=255),
+        doc="Immutable username snapshot that suggested the question",
+    )
 
     resource_links: Mapped[list[ResourceToItemSecondaryModel]] = relationship(
         back_populates="item",
@@ -355,6 +359,7 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             subsection_id=item.subsection_id,
             grade=item.grade,
             interview_frequency=item.interview_frequency,
+            suggested_by_username=item.suggested_by_username,
             resource_links=[
                 ResourceToItemSecondaryModel.from_domain_schema(schema=resource)
                 for resource in item.resources
@@ -393,6 +398,7 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             structure=self.subsection.to_item_structure(),
             grade=self.grade,
             interview_frequency=self.interview_frequency,
+            suggested_by_username=self.suggested_by_username,
             resources=AttachedExternalResources(
                 values=(
                     [link.to_domain_schema() for link in self.resource_links]
@@ -424,10 +430,9 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
         String(length=255),
         doc="Optional subsection",
     )
-    suggested_by_username: Mapped[str | None] = mapped_column(
+    suggested_by_username: Mapped[str] = mapped_column(
         String(length=255),
-        ForeignKey("auth__user_model.username", ondelete="SET NULL"),
-        doc="Username that suggested the question",
+        doc="Immutable username snapshot that suggested the question",
     )
     created_at: Mapped[datetime] = mapped_column(
         UTCDateTime(timezone=True),
@@ -445,6 +450,7 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
         *,
         params: QueuedCompetencyMatrixQuestionCreateParams,
         created_at: datetime,
+        suggested_by_username: str,
     ) -> Self:
         return cls(
             question=params.question,
@@ -452,7 +458,7 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
             sheet=params.sheet,
             section=None,
             subsection=None,
-            suggested_by_username=None,
+            suggested_by_username=suggested_by_username,
             created_at=created_at,
         )
 

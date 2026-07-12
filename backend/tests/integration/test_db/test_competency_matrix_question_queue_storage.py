@@ -33,7 +33,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet="Python",
                     section="Core",
                     subsection="Syntax",
-                    suggested_by_username=None,
+                    suggested_by_username="anon",
                     created_at=first_created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
@@ -43,7 +43,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet=None,
                     section=None,
                     subsection=None,
-                    suggested_by_username=None,
+                    suggested_by_username="alice",
                     created_at=second_created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
@@ -53,7 +53,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet=None,
                     section=None,
                     subsection=None,
-                    suggested_by_username=None,
+                    suggested_by_username="owner",
                     created_at=third_created_at,
                 ),
             ],
@@ -74,6 +74,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                 sheet="python",
                 grade=GradeEnum.JUNIOR,
             ),
+            suggested_by_username="anon",
         )
 
         self.asserts.hex_id(question.id)
@@ -82,7 +83,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         assert question.sheet == "python"
         assert question.section is None
         assert question.subsection is None
-        assert question.suggested_by_username is None
+        assert question.suggested_by_username == "anon"
 
     async def test_create_queued_questions_returns_persisted_questions_in_input_order(self) -> None:
         questions = await self.storage.create_queued_questions(
@@ -100,6 +101,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     ),
                 ],
             ),
+            suggested_by_username="importer",
         )
 
         assert [question.question for question in questions] == [
@@ -114,6 +116,10 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
         self.asserts.hex_id(questions.values[1].id)
         assert questions.values[0].id != questions.values[1].id
         assert questions.values[0].created_at == questions.values[1].created_at
+        assert [question.suggested_by_username for question in questions] == [
+            "importer",
+            "importer",
+        ]
 
     async def test_list_queued_questions_breaks_fifo_ties_by_id(self) -> None:
         created_at = datetime(2026, 6, 7, 12, 0, tzinfo=UTC)
@@ -126,7 +132,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet=None,
                     section=None,
                     subsection=None,
-                    suggested_by_username=None,
+                    suggested_by_username="anon",
                     created_at=created_at,
                 ),
                 QueuedCompetencyMatrixQuestion(
@@ -136,7 +142,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet=None,
                     section=None,
                     subsection=None,
-                    suggested_by_username=None,
+                    suggested_by_username="anon",
                     created_at=created_at,
                 ),
             ],
@@ -163,7 +169,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     sheet=None,
                     section=None,
                     subsection=None,
-                    suggested_by_username=None,
+                    suggested_by_username="anon",
                     created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
                 ),
             ],

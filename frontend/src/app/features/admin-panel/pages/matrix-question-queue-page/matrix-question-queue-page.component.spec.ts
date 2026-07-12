@@ -29,7 +29,7 @@ const queuedQuestion: QueuedMatrixQuestion = {
   sheet: 'python',
   section: 'Core',
   subsection: 'Style',
-  suggestedByUsername: null,
+  suggestedByUsername: 'anon',
   createdAt: '2026-06-07T12:00:00+00:00',
 };
 
@@ -176,6 +176,18 @@ describe('MatrixQuestionQueuePageComponent', () => {
   it('renders queued questions from service', () => {
     expect(queueService.listQueuedQuestions).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('What is PEP 8?');
+    expect(fixture.nativeElement.textContent).toContain('Кто предложил: Анонимный');
+  });
+
+  it('renders a real suggester username without localization', () => {
+    queueService.listQueuedQuestions.mockReturnValue(
+      of([{ ...queuedQuestion, suggestedByUsername: 'alice' }]),
+    );
+
+    component.loadQueue();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Кто предложил: alice');
   });
 
   it('renders manual add button next to refresh button', () => {

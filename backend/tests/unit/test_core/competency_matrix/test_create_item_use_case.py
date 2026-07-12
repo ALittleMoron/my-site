@@ -38,7 +38,7 @@ class TestCompetencyMatrixUseCase(TestCase):
                 ),
             ],
         )
-        await self.use_case.create_item(params=params)
+        await self.use_case.create_item(params=params, suggested_by_username="alice")
         self.storage.get_resources_by_ids.assert_not_called()
         self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
             subsection_id=self.factory.core.hex_id(1),
@@ -46,6 +46,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         self.storage.create_competency_matrix_item.assert_called_once_with(
             item=self.factory.core.competency_matrix_item(
                 item_id=2,
+                suggested_by_username="alice",
                 resources=[
                     self.factory.core.attached_external_resource(
                         resource_id=3,
@@ -65,7 +66,7 @@ class TestCompetencyMatrixUseCase(TestCase):
         )
 
         with pytest.raises(CompetencyMatrixItemNotPublicReadyError):
-            await self.use_case.create_item(params=params)
+            await self.use_case.create_item(params=params, suggested_by_username="alice")
 
         self.storage.get_item_structure_by_subsection_id.assert_called_once_with(
             subsection_id=self.factory.core.hex_id(1),
@@ -96,7 +97,7 @@ class TestCompetencyMatrixUseCase(TestCase):
             ],
         )
         with pytest.raises(CompetencyMatrixItemNotFoundError):
-            await self.use_case.create_item(params=params)
+            await self.use_case.create_item(params=params, suggested_by_username="alice")
         self.storage.get_resources_by_ids.assert_called_once_with(
             resource_ids=[self.factory.core.hex_id(1), self.factory.core.hex_id(2)],
         )

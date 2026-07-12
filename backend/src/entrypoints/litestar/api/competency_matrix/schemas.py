@@ -287,6 +287,7 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
         self,
         *,
         limit: QuestionSuggestionLimitParams | None,
+        suggested_by_username: str,
     ) -> QuestionSuggestionCreateParams:
         return QuestionSuggestionCreateParams(
             question=QueuedCompetencyMatrixQuestionCreateParams(
@@ -295,6 +296,7 @@ class QuestionSuggestionRequestSchema(CamelCaseSchema):
                 grade=None,
             ),
             limit=limit,
+            suggested_by_username=suggested_by_username,
         )
 
 
@@ -305,7 +307,7 @@ class QueuedQuestionResponseSchema(CamelCaseSchema):
     sheet: Annotated[str | None, Field(title="Sheet")]
     section: Annotated[str | None, Field(title="Section")]
     subsection: Annotated[str | None, Field(title="Subsection")]
-    suggested_by_username: Annotated[str | None, Field(title="Suggested by")]
+    suggested_by_username: Annotated[str, Field(title="Suggested by")]
     created_at: Annotated[str, Field(title="Creation date")]
 
     @classmethod
@@ -609,6 +611,7 @@ class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemR
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     resources: Annotated[list[AttachedResourceResponseSchema], Field(title="Resources")]
     translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Translations")]
+    suggested_by_username: Annotated[str, Field(title="Suggested by")]
 
     @classmethod
     def from_domain_schema(
@@ -633,6 +636,7 @@ class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemR
             section=schema.localized_section(language=language),
             subsection=schema.localized_subsection(language=language),
             publish_status=schema.publish_status,
+            suggested_by_username=schema.suggested_by_username,
             resources=[
                 AttachedResourceResponseSchema.from_domain_schema(
                     schema=resource,
@@ -656,6 +660,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
     publish_status: Annotated[PublishStatusEnum, Field(title="Publication status")]
     resources: Annotated[list[AttachedResourceResponseSchema], Field(title="Resources")]
     translations: Annotated[CompetencyMatrixItemTranslationsSchema, Field(title="Translations")]
+    suggested_by_username: Annotated[str, Field(title="Suggested by")]
 
     @classmethod
     def from_domain_schema(
@@ -681,6 +686,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
             section=schema.localized_section(language=language),
             subsection=schema.localized_subsection(language=language),
             publish_status=schema.publish_status,
+            suggested_by_username=schema.suggested_by_username,
             resources=[
                 AttachedResourceResponseSchema.from_domain_schema(
                     schema=resource,

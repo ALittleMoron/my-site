@@ -440,6 +440,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.detail.answer': 'Ответ:',
   'matrix.detail.expectedAnswer': 'Ответ, который ожидается на собеседовании:',
   'matrix.detail.interviewFrequency': 'Как часто спрашивают:',
+  'matrix.detail.suggestedBy': 'Кто предложил:',
   'matrix.detail.resources': 'Внешние ресурсы:',
   'matrix.detail.openQuestion': 'К вопросу',
   'matrix.question.notFoundTitle': 'Вопрос не найден',

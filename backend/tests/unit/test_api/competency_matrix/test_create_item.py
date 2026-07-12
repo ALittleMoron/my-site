@@ -34,6 +34,7 @@ class TestCreateItemAPI(ApiTestCase):
             subsection_ru="Функции",
             subsection_en="Functions",
             publish_status=PublishStatusEnum.DRAFT,
+            suggested_by_username="test",
             resources=[
                 self.factory.core.attached_external_resource(
                     resource_id=1,
@@ -109,6 +110,7 @@ class TestCreateItemAPI(ApiTestCase):
                     ),
                 ],
             ),
+            suggested_by_username="test",
         )
         assert response.status_code == codes.CREATED, response.json()
         assert response.json() == {
@@ -125,6 +127,7 @@ class TestCreateItemAPI(ApiTestCase):
             "section": "Basics",
             "subsection": "Functions",
             "publishStatus": PublishStatusEnum.DRAFT.value,
+            "suggestedByUsername": "test",
             "translations": {
                 "ru": {
                     "question": "вопрос 1",
@@ -366,4 +369,5 @@ class TestCreateItemAPI(ApiTestCase):
                 subsection_en="",
                 publish_status=PublishStatusEnum.DRAFT,
             ),
+            suggested_by_username="test",
         )

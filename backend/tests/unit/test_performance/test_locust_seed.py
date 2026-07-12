@@ -12,6 +12,7 @@ from performance.locust.seed import (
     article_tag_indexes,
     clear_seeded_data,
     insert_seed_user,
+    matrix_item_row,
     validate_seed_config,
 )
 from performance.locust.settings import (
@@ -151,6 +152,11 @@ class TestLocustPerformanceSeed:
             "name_en": "Performance",
             "priority": 1,
         }
+
+    def test_matrix_item_seed_rows_include_required_suggestion_attribution(self) -> None:
+        row = matrix_item_row(item_index=1)
+
+        assert row["suggested_by_username"] == "performance-seed-admin"
 
     async def test_seed_user_is_created_as_active_admin(self) -> None:
         session = AsyncMock()

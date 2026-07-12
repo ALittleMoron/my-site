@@ -29,6 +29,7 @@ from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_competency_matrix_resource_search_params,
     provide_competency_matrix_workspace_filters,
     provide_question_suggestion_limit_params,
+    provide_suggested_by_username,
 )
 from entrypoints.litestar.api.competency_matrix.schemas import (
     CompetencyMatrixFilterOptionsResponseSchema,
@@ -147,12 +148,16 @@ class PublicCompetencyMatrixApiController(Controller):
 
     @post(
         "/question-suggestions",
-        description="Suggest an anonymous competency matrix question.",
+        description="Suggest a competency matrix question.",
         name="public-competency-matrix-question-suggestion-create-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
         dependencies={
             "limit": Provide(
                 provide_question_suggestion_limit_params,
+                sync_to_thread=False,
+            ),
+            "suggested_by_username": Provide(
+                provide_suggested_by_username,
                 sync_to_thread=False,
             ),
         },
@@ -163,7 +168,7 @@ class PublicCompetencyMatrixApiController(Controller):
             QuestionSuggestionRequestSchema,
             api_json_body(
                 title="Question suggestion request",
-                description="Anonymous competency matrix question suggestion.",
+                description="Competency matrix question suggestion.",
                 examples=(
                     {"question": "How does asyncio.gather handle errors?", "sheet": "python"},
                 ),
@@ -171,8 +176,14 @@ class PublicCompetencyMatrixApiController(Controller):
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
         limit: NamedDependency[QuestionSuggestionLimitParams],
+        suggested_by_username: NamedDependency[str],
     ) -> None:
-        await use_case.suggest_question(params=data.to_schema(limit=limit))
+        await use_case.suggest_question(
+            params=data.to_schema(
+                limit=limit,
+                suggested_by_username=suggested_by_username,
+            ),
+        )
 
 
 class AdminCompetencyMatrixApiController(Controller):
@@ -439,6 +450,12 @@ class AdminCompetencyMatrixApiController(Controller):
         description="Manually add a competency matrix question to the queue.",
         name="admin-competency-matrix-queued-question-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
+        dependencies={
+            "suggested_by_username": Provide(
+                provide_suggested_by_username,
+                sync_to_thread=False,
+            ),
+        },
     )
     async def create_queued_competency_matrix_question(
         self,
@@ -453,8 +470,14 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        suggested_by_username: NamedDependency[str],
     ) -> QueuedQuestionResponseSchema:
-        question = await use_case.suggest_question(params=data.to_schema(limit=None))
+        question = await use_case.suggest_question(
+            params=data.to_schema(
+                limit=None,
+                suggested_by_username=suggested_by_username,
+            ),
+        )
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)
 
     @post(
@@ -490,6 +513,12 @@ class AdminCompetencyMatrixApiController(Controller):
         description="Import confirmed queued competency matrix questions from a file.",
         name="admin-competency-matrix-queued-questions-import-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
+        dependencies={
+            "suggested_by_username": Provide(
+                provide_suggested_by_username,
+                sync_to_thread=False,
+            ),
+        },
     )
     async def import_queued_competency_matrix_questions(
         self,
@@ -503,6 +532,7 @@ class AdminCompetencyMatrixApiController(Controller):
         ],
         parser: FromDishka[QuestionQueueImportParser],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        suggested_by_username: NamedDependency[str],
     ) -> QueuedQuestionsResponseSchema:
         params = parser.parse_selected(
             file=QuestionQueueImportFile(
@@ -511,7 +541,10 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
             selected_row_numbers=data.selected_row_numbers,
         )
-        questions = await use_case.import_queued_questions(params=params)
+        questions = await use_case.import_queued_questions(
+            params=params,
+            suggested_by_username=suggested_by_username,
+        )
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
 
     @delete(
@@ -651,8 +684,14 @@ class AdminCompetencyMatrixApiController(Controller):
         description="Create a competency matrix question.",
         name="admin-competency-matrix-item-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
+        dependencies={
+            "suggested_by_username": Provide(
+                provide_suggested_by_username,
+                sync_to_thread=False,
+            ),
+        },
     )
-    async def create_competency_matrix_item(
+    async def create_competency_matrix_item(  # noqa: PLR0913
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
@@ -689,12 +728,14 @@ class AdminCompetencyMatrixApiController(Controller):
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: LanguageQuery,
+        suggested_by_username: NamedDependency[str],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
             params=data.to_create_schema(
                 item_id_generator=id_generator,
                 resource_id_generator=id_generator,
             ),
+            suggested_by_username=suggested_by_username,
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
