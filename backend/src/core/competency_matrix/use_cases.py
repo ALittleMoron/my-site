@@ -26,6 +26,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixWorkspaceFilters,
     ExternalResources,
     PublishedCompetencyMatrixItemsForSeo,
+    QuestionQueueImportPreview,
     QuestionSuggestionCreateParams,
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateItemParams,
@@ -263,6 +264,14 @@ class CompetencyMatrixUseCase:
 
     async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
         return await self.storage.list_queued_questions()
+
+    async def preview_queued_questions_import(
+        self,
+        *,
+        preview: QuestionQueueImportPreview,
+    ) -> QuestionQueueImportPreview:
+        queued_questions = await self.storage.list_queued_questions()
+        return preview.with_duplicate_warnings(queued_questions=queued_questions)
 
     async def import_queued_questions(
         self,

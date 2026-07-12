@@ -223,9 +223,25 @@ class APIHelper:
         filename: str,
         content: bytes,
         content_type: str,
+        selected_row_numbers: list[int],
     ) -> Response:
         return self.client.post(
             "/api/admin/competency-matrix/queued-questions/import",
+            files={"file": (filename, content, content_type)},
+            data={
+                "selectedRowNumbers": [str(row_number) for row_number in selected_row_numbers],
+            },
+        )
+
+    def post_preview_queued_matrix_questions(
+        self,
+        *,
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> Response:
+        return self.client.post(
+            "/api/admin/competency-matrix/queued-questions/import/preview",
             files={"file": (filename, content, content_type)},
         )
 

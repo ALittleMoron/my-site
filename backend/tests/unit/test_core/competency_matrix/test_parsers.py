@@ -1,6 +1,6 @@
 import pytest
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, QuestionQueueImportIssueCodeEnum
 from core.competency_matrix.exceptions import QuestionQueueImportInvalidError
 from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.readers import QuestionQueueImportExcelReader
@@ -34,6 +34,71 @@ class FakeExcelReader(QuestionQueueImportExcelReader):
 
 
 class TestQuestionQueueImportParser:
+    def test_preview_rejects_empty_text_file(self) -> None:
+        parser = parser_with_excel_rows([])
+
+        with pytest.raises(QuestionQueueImportInvalidError) as exc_info:
+            parser.preview(
+                file=QuestionQueueImportFile(
+                    filename="questions.txt",
+                    content=b"",
+                ),
+            )
+
+        assert [issue.message for issue in exc_info.value.issues] == [
+            "Import file must contain at least one question.",
+        ]
+
+    def test_preview_keeps_valid_and_invalid_rows_for_confirmation(self) -> None:
+        parser = parser_with_excel_rows([])
+
+        preview = parser.preview(
+            file=QuestionQueueImportFile(
+                filename="questions.csv",
+                content=b"question,sheet,grade\nWhat is PEP 8?,python,Junior\n,python,Lead",
+            ),
+        )
+
+        assert [row.row_number for row in preview.rows] == [2, 3]
+        assert preview.rows[0].params is not None
+        assert preview.rows[0].params.question == "What is PEP 8?"
+        assert preview.rows[0].params.grade == GradeEnum.JUNIOR
+        assert preview.rows[1].params is None
+        assert [issue.code for issue in preview.rows[1].issues] == [
+            QuestionQueueImportIssueCodeEnum.QUESTION_BLANK,
+            QuestionQueueImportIssueCodeEnum.GRADE_INVALID,
+        ]
+
+    def test_parse_selected_imports_only_valid_selected_rows_in_file_order(self) -> None:
+        parser = parser_with_excel_rows([])
+        file = QuestionQueueImportFile(
+            filename="questions.txt",
+            content=b"First question\n\nThird question",
+        )
+
+        params = parser.parse_selected(file=file, selected_row_numbers=[3, 1])
+
+        assert [question.question for question in params.questions] == [
+            "First question",
+            "Third question",
+        ]
+
+    @pytest.mark.parametrize("selected_row_numbers", [[], [1, 1], [2], [404]])
+    def test_parse_selected_rejects_invalid_selection(
+        self,
+        selected_row_numbers: list[int],
+    ) -> None:
+        parser = parser_with_excel_rows([])
+
+        with pytest.raises(QuestionQueueImportInvalidError):
+            parser.parse_selected(
+                file=QuestionQueueImportFile(
+                    filename="questions.txt",
+                    content=b"Valid question\n",
+                ),
+                selected_row_numbers=selected_row_numbers,
+            )
+
     def test_txt_import_preserves_duplicates(self) -> None:
         parser = parser_with_excel_rows([])
 

@@ -20,7 +20,12 @@ import {
 } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
-import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
+import {
+  QueuedMatrixImportIssue,
+  QueuedMatrixImportIssueCode,
+  QueuedMatrixImportPreview,
+  QueuedMatrixQuestion,
+} from '../../models/matrix-question-queue.model';
 import {
   AdminMatrixQuestionCreateInitialValue,
   AdminMatrixQuestionPayload,
@@ -34,6 +39,17 @@ const IMPORT_FILE_ACCEPT =
 
 type QueueAddMode = 'manual' | 'import';
 
+const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
+  questionNotText: 'adminMatrixQueue.importIssue.questionNotText',
+  questionBlank: 'adminMatrixQueue.importIssue.questionBlank',
+  questionTooLong: 'adminMatrixQueue.importIssue.questionTooLong',
+  sheetNotText: 'adminMatrixQueue.importIssue.sheetNotText',
+  gradeNotText: 'adminMatrixQueue.importIssue.gradeNotText',
+  gradeInvalid: 'adminMatrixQueue.importIssue.gradeInvalid',
+  duplicateInFile: 'adminMatrixQueue.importIssue.duplicateInFile',
+  duplicateInQueue: 'adminMatrixQueue.importIssue.duplicateInQueue',
+};
+
 @Component({
   selector: 'app-matrix-question-queue-page',
   standalone: true,
@@ -46,6 +62,7 @@ type QueueAddMode = 'manual' | 'import';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
+  styleUrl: './matrix-question-queue-page.component.scss',
 })
 export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly queueService = inject(MatrixQuestionQueueService);
@@ -68,9 +85,28 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly manualAddSubmitting = signal(false);
   readonly importFileAccept = IMPORT_FILE_ACCEPT;
   readonly selectedImportFile = signal<File | null>(null);
+  readonly importPreview = signal<QueuedMatrixImportPreview | null>(null);
+  readonly selectedImportRowNumbers = signal<ReadonlySet<number>>(new Set<number>());
+  readonly importPreviewSubmitting = signal(false);
   readonly importSubmitting = signal(false);
   readonly importError = signal<ApiError | null>(null);
   readonly importFileSelectionErrorKey = signal<string | null>(null);
+  readonly importBusy = computed(() => this.importPreviewSubmitting() || this.importSubmitting());
+  readonly importSelectedCount = computed(() => this.selectedImportRowNumbers().size);
+  readonly importValidCount = computed(
+    () => this.importPreview()?.rows.filter((row) => row.canImport).length ?? 0,
+  );
+  readonly importInvalidCount = computed(
+    () => this.importPreview()?.rows.filter((row) => !row.canImport).length ?? 0,
+  );
+  readonly importDuplicateCount = computed(
+    () =>
+      this.importPreview()?.rows.filter((row) =>
+        row.issues.some(
+          (issue) => issue.code === 'duplicateInFile' || issue.code === 'duplicateInQueue',
+        ),
+      ).length ?? 0,
+  );
   readonly hasQuestions = computed(() => this.questions().length > 0);
   readonly manualAddQuestionError = computed(() => {
     const question = this.manualAddQuestion().trim();
@@ -171,7 +207,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   closeManualAdd(): void {
-    if (this.manualAddSubmitting() || this.importSubmitting()) return;
+    if (this.manualAddSubmitting() || this.importBusy()) return;
     this.manualAddVisible.set(false);
     this.manualAddQuestion.set('');
     this.manualAddSubmitted.set(false);
@@ -183,6 +219,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.addMode.set(mode);
     this.importError.set(null);
     this.importFileSelectionErrorKey.set(null);
+    if (mode === 'manual') this.resetImportState();
   }
 
   setManualAddQuestion(value: string): void {
@@ -210,7 +247,11 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       this.createQueuedQuestion();
       return;
     }
-    this.importQueuedQuestions();
+    if (this.importPreview() === null) {
+      this.previewQueuedQuestions();
+      return;
+    }
+    this.confirmQueuedQuestionsImport();
   }
 
   createQueuedQuestion(): void {
@@ -251,17 +292,47 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.selectImportFiles(event.dataTransfer?.files ?? null);
   }
 
-  importQueuedQuestions(): void {
+  previewQueuedQuestions(): void {
     const file = this.selectedImportFile();
     if (file === null) {
       this.importFileSelectionErrorKey.set('adminMatrixQueue.importOneFileOnly');
       return;
     }
-    this.importSubmitting.set(true);
+    this.importPreviewSubmitting.set(true);
     this.importError.set(null);
     this.importFileSelectionErrorKey.set(null);
     this.queueService
-      .importQueuedQuestions(file)
+      .previewQueuedQuestions(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (preview) => {
+          this.importPreviewSubmitting.set(false);
+          this.importPreview.set(preview);
+          this.selectedImportRowNumbers.set(
+            new Set(
+              preview.rows.filter((row) => row.selectedByDefault).map((row) => row.rowNumber),
+            ),
+          );
+        },
+        error: (err: ApiError) => {
+          this.importPreviewSubmitting.set(false);
+          this.importError.set(err);
+          this.notifications.error(this.i18n.translate('adminMatrixQueue.importError'));
+        },
+      });
+  }
+
+  confirmQueuedQuestionsImport(): void {
+    const file = this.selectedImportFile();
+    const preview = this.importPreview();
+    if (file === null || preview === null || this.importSelectedCount() === 0) return;
+    const selectedRows = preview.rows
+      .filter((row) => this.selectedImportRowNumbers().has(row.rowNumber))
+      .map((row) => row.rowNumber);
+    this.importSubmitting.set(true);
+    this.importError.set(null);
+    this.queueService
+      .importQueuedQuestions(file, selectedRows)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (questions) => {
@@ -282,6 +353,24 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.notifications.error(this.i18n.translate('adminMatrixQueue.importError'));
         },
       });
+  }
+
+  onImportRowSelectionChange(rowNumber: number, event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    if (target === null) return;
+    this.selectedImportRowNumbers.update((selectedRows) => {
+      const updatedRows = new Set(selectedRows);
+      if (target.checked) updatedRows.add(rowNumber);
+      else updatedRows.delete(rowNumber);
+      return updatedRows;
+    });
+  }
+
+  importIssueMessage(issue: QueuedMatrixImportIssue): string {
+    return this.i18n.translate(IMPORT_ISSUE_KEY[issue.code], {
+      max: String(ADMIN_VALIDATION_LIMITS.shortText),
+      rows: issue.relatedRowNumbers.join(', '),
+    });
   }
 
   rejectQuestion(question: QueuedMatrixQuestion): void {
@@ -404,6 +493,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private selectImportFiles(files: FileList | File[] | null): void {
     const selectedFiles = files === null ? [] : Array.from(files);
     this.importError.set(null);
+    this.clearImportPreview();
     if (selectedFiles.length !== 1) {
       this.selectedImportFile.set(null);
       this.importFileSelectionErrorKey.set('adminMatrixQueue.importOneFileOnly');
@@ -415,9 +505,16 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   private resetImportState(): void {
     this.selectedImportFile.set(null);
+    this.clearImportPreview();
+    this.importPreviewSubmitting.set(false);
     this.importSubmitting.set(false);
     this.importError.set(null);
     this.importFileSelectionErrorKey.set(null);
+  }
+
+  private clearImportPreview(): void {
+    this.importPreview.set(null);
+    this.selectedImportRowNumbers.set(new Set<number>());
   }
 }
 

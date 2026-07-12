@@ -147,7 +147,8 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered"
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+      [class.modal-xl]="importPreview() !== null"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -159,7 +160,7 @@
           <button
             type="button"
             class="btn-close"
-            [disabled]="manualAddSubmitting() || importSubmitting()"
+            [disabled]="manualAddSubmitting() || importBusy()"
             [attr.aria-label]="'shared.close' | t"
             (click)="closeManualAdd()"
           ></button>
@@ -176,7 +177,7 @@
               data-testid="matrix-queue-manual-mode"
               [class.active]="addMode() === 'manual'"
               [attr.aria-pressed]="addMode() === 'manual'"
-              [disabled]="manualAddSubmitting() || importSubmitting()"
+              [disabled]="manualAddSubmitting() || importBusy()"
               (click)="setAddMode('manual')"
             >
               {{ 'adminMatrixQueue.addModeManual' | t }}
@@ -187,7 +188,7 @@
               data-testid="matrix-queue-import-mode"
               [class.active]="addMode() === 'import'"
               [attr.aria-pressed]="addMode() === 'import'"
-              [disabled]="manualAddSubmitting() || importSubmitting()"
+              [disabled]="manualAddSubmitting() || importBusy()"
               (click)="setAddMode('import')"
             >
               {{ 'adminMatrixQueue.addModeImport' | t }}
@@ -221,24 +222,114 @@
               class="visually-hidden"
               data-testid="matrix-queue-import-file-input"
               [accept]="importFileAccept"
-              [disabled]="importSubmitting()"
+              [disabled]="importBusy()"
               (change)="onImportFileInputChange($event)"
             />
-            <label
-              class="d-block border rounded-2 p-4 text-center"
-              for="matrix-queue-import-file"
-              data-testid="matrix-queue-import-drop-zone"
-              (dragover)="onImportDragOver($event)"
-              (drop)="onImportDrop($event)"
-            >
-              <span class="d-block fw-semibold">
-                {{ 'adminMatrixQueue.importDrop' | t }}
-              </span>
-              <span class="btn btn-outline-secondary btn-sm mt-3">
-                {{ 'adminMatrixQueue.importChooseFile' | t }}
-              </span>
-            </label>
-            <p class="form-text mb-2">{{ 'adminMatrixQueue.importHelp' | t }}</p>
+            @if (importPreview() === null) {
+              <label
+                class="d-block border rounded-2 p-4 text-center"
+                for="matrix-queue-import-file"
+                data-testid="matrix-queue-import-drop-zone"
+                (dragover)="onImportDragOver($event)"
+                (drop)="onImportDrop($event)"
+              >
+                <span class="d-block fw-semibold">
+                  {{ 'adminMatrixQueue.importDrop' | t }}
+                </span>
+                <span class="btn btn-outline-secondary btn-sm mt-3">
+                  {{ 'adminMatrixQueue.importChooseFile' | t }}
+                </span>
+              </label>
+              <p class="form-text mb-2">{{ 'adminMatrixQueue.importHelp' | t }}</p>
+            } @else {
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div class="small">
+                  {{
+                    'adminMatrixQueue.importPreviewSummary'
+                      | t
+                        : {
+                            valid: importValidCount(),
+                            invalid: importInvalidCount(),
+                            duplicates: importDuplicateCount(),
+                            selected: importSelectedCount(),
+                          }
+                  }}
+                </div>
+                <label class="btn btn-outline-secondary btn-sm" for="matrix-queue-import-file">
+                  {{ 'adminMatrixQueue.importChooseAnotherFile' | t }}
+                </label>
+              </div>
+              <table
+                class="table table-sm align-middle matrix-import-preview-table"
+                data-testid="matrix-queue-import-preview-table"
+              >
+                <colgroup>
+                  <col class="matrix-import-preview-select-column" />
+                  <col class="matrix-import-preview-row-column" />
+                  <col class="matrix-import-preview-question-column" />
+                  <col class="matrix-import-preview-sheet-column" />
+                  <col class="matrix-import-preview-grade-column" />
+                  <col class="matrix-import-preview-issues-column" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col">{{ 'adminMatrixQueue.importSelect' | t }}</th>
+                    <th scope="col">{{ 'adminMatrixQueue.importRow' | t }}</th>
+                    <th scope="col">{{ 'adminMatrixQueue.importQuestion' | t }}</th>
+                    <th scope="col">{{ 'adminMatrixQueue.importSheet' | t }}</th>
+                    <th scope="col">{{ 'adminMatrixQueue.importGrade' | t }}</th>
+                    <th scope="col">{{ 'adminMatrixQueue.importIssues' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of importPreview()!.rows; track row.rowNumber) {
+                    <tr
+                      [class.table-danger]="!row.canImport"
+                      [class.table-warning]="row.canImport && row.issues.length > 0"
+                    >
+                      <td>
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          [attr.data-testid]="'matrix-queue-import-row-' + row.rowNumber"
+                          [checked]="selectedImportRowNumbers().has(row.rowNumber)"
+                          [disabled]="!row.canImport || importBusy()"
+                          [attr.aria-label]="
+                            'adminMatrixQueue.importSelectRow' | t: { row: row.rowNumber }
+                          "
+                          (change)="onImportRowSelectionChange(row.rowNumber, $event)"
+                        />
+                      </td>
+                      <th scope="row">{{ row.rowNumber }}</th>
+                      <td
+                        class="matrix-import-preview-question"
+                        [attr.data-testid]="'matrix-queue-import-question-' + row.rowNumber"
+                      >
+                        {{ row.question || ('shared.notSet' | t) }}
+                      </td>
+                      <td>{{ row.sheet || ('shared.notSet' | t) }}</td>
+                      <td>{{ row.grade || ('shared.notSet' | t) }}</td>
+                      <td>
+                        @if (row.issues.length === 0) {
+                          <span class="text-success">{{ 'adminMatrixQueue.importReady' | t }}</span>
+                        } @else {
+                          <ul class="mb-0 ps-3">
+                            @for (issue of row.issues; track issue.code) {
+                              <li>{{ importIssueMessage(issue) }}</li>
+                            }
+                          </ul>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (importSelectedCount() === 0) {
+                <div class="alert alert-warning py-2 mb-2" role="status">
+                  {{ 'adminMatrixQueue.importSelectAtLeastOne' | t }}
+                </div>
+              }
+            }
             @if (selectedImportFileLabel(); as selectedFileLabel) {
               <p class="mb-2 small fw-semibold">{{ selectedFileLabel }}</p>
             }
@@ -264,7 +355,7 @@
           <button
             type="button"
             class="btn btn-outline-secondary"
-            [disabled]="manualAddSubmitting() || importSubmitting()"
+            [disabled]="manualAddSubmitting() || importBusy()"
             (click)="closeManualAdd()"
           >
             {{ 'shared.cancel' | t }}
@@ -282,17 +373,30 @@
                 {{ 'adminMatrixQueue.addToQueue' | t }}
               }
             </button>
-          } @else {
+          } @else if (importPreview() === null) {
             <button
               type="submit"
               class="btn btn-success"
               data-testid="matrix-queue-import-submit"
-              [disabled]="importSubmitting()"
+              [disabled]="importBusy()"
+            >
+              @if (importPreviewSubmitting()) {
+                {{ 'adminMatrixQueue.importPreviewSubmitting' | t }}
+              } @else {
+                {{ 'adminMatrixQueue.importPreviewSubmit' | t }}
+              }
+            </button>
+          } @else {
+            <button
+              type="submit"
+              class="btn btn-success"
+              data-testid="matrix-queue-import-confirm"
+              [disabled]="importBusy() || importSelectedCount() === 0"
             >
               @if (importSubmitting()) {
                 {{ 'adminMatrixQueue.importSubmitting' | t }}
               } @else {
-                {{ 'adminMatrixQueue.importSubmit' | t }}
+                {{ 'adminMatrixQueue.importConfirm' | t }}
               }
             </button>
           }

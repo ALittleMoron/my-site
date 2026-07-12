@@ -545,7 +545,7 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [ ] Show duplicate/similar-question hints when processing a queued competency matrix question.
 - [ ] Add search, filters, and sorting to the competency matrix question queue.
 - [ ] Add the ability to split one queued competency matrix question into multiple queued questions.
-- [ ] Add import preview/confirmation for competency matrix question queue imports with duplicate/validation warnings.
+- [x] Add import preview/confirmation for competency matrix question queue imports with duplicate/validation warnings.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
 - [x] Add owner/admin/moderator content workspace for matrix questions with richer filters, public preview, edit detail route, and dropdown actions.

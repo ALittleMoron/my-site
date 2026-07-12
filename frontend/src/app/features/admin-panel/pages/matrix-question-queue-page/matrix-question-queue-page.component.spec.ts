@@ -7,7 +7,10 @@ import {
   AdminMatrixQuestionPayload,
   AdminMatrixStructure,
 } from '../../models/matrix-question-workspace.model';
-import { QueuedMatrixQuestion } from '../../models/matrix-question-queue.model';
+import {
+  QueuedMatrixImportPreview,
+  QueuedMatrixQuestion,
+} from '../../models/matrix-question-queue.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
 import { MatrixQuestionQueuePageComponent } from './matrix-question-queue-page.component';
@@ -41,6 +44,50 @@ const queuedQuestionWithMissingSheet: QueuedMatrixQuestion = {
   id: MISSING_SHEET_QUESTION_ID,
   question: 'What is SQL?',
   sheet: 'sql',
+};
+
+const importPreview: QueuedMatrixImportPreview = {
+  rows: [
+    {
+      rowNumber: 1,
+      question: 'What is PEP 8?',
+      sheet: 'python',
+      grade: 'Junior',
+      canImport: true,
+      selectedByDefault: true,
+      issues: [],
+    },
+    {
+      rowNumber: 2,
+      question: 'What is PEP 8?',
+      sheet: 'python',
+      grade: 'Junior',
+      canImport: true,
+      selectedByDefault: false,
+      issues: [
+        {
+          code: 'duplicateInFile',
+          severity: 'warning',
+          relatedRowNumbers: [1],
+        },
+      ],
+    },
+    {
+      rowNumber: 3,
+      question: '',
+      sheet: 'python',
+      grade: 'Lead',
+      canImport: false,
+      selectedByDefault: false,
+      issues: [
+        {
+          code: 'questionBlank',
+          severity: 'error',
+          relatedRowNumbers: [],
+        },
+      ],
+    },
+  ],
 };
 
 const matrixStructure: AdminMatrixStructure = {
@@ -79,6 +126,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   let queueService: {
     listQueuedQuestions: jest.Mock;
     createQueuedQuestion: jest.Mock;
+    previewQueuedQuestions: jest.Mock;
     importQueuedQuestions: jest.Mock;
     rejectQueuedQuestion: jest.Mock;
     createQuestionFromQueue: jest.Mock;
@@ -92,6 +140,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
         .fn()
         .mockReturnValue(of([queuedQuestion, queuedQuestionWithMissingSheet])),
       createQueuedQuestion: jest.fn().mockReturnValue(of(queuedQuestion)),
+      previewQueuedQuestions: jest.fn().mockReturnValue(of(importPreview)),
       importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
       createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: QUESTION_ID, slug: 'pep-8' })),
@@ -331,7 +380,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(submitButton?.disabled).toBe(false);
   });
 
-  it('closes import modal, reloads queue, and shows imported count after success', () => {
+  it('previews import rows with recommended selection and validation states', () => {
     openImportMode();
     const file = new File(['question'], 'questions.txt', { type: 'text/plain' });
     chooseImportFile(file);
@@ -341,12 +390,118 @@ describe('MatrixQuestionQueuePageComponent', () => {
       .click();
     fixture.detectChanges();
 
-    expect(queueService.importQueuedQuestions).toHaveBeenCalledWith(file);
+    expect(queueService.previewQueuedQuestions).toHaveBeenCalledWith(file);
+    expect(
+      fixture.nativeElement.querySelector<HTMLInputElement>(
+        '[data-testid="matrix-queue-import-row-1"]',
+      )?.checked,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLInputElement>(
+        '[data-testid="matrix-queue-import-row-2"]',
+      )?.checked,
+    ).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector<HTMLInputElement>(
+        '[data-testid="matrix-queue-import-row-3"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Повтор строки 1 в выбранном файле.');
+    expect(fixture.nativeElement.textContent).toContain('Вопрос не должен быть пустым.');
+  });
+
+  it('keeps the preview table within the modal and wraps long question text', () => {
+    const longQuestion = 'unbroken-question-text-'.repeat(20);
+    queueService.previewQueuedQuestions.mockReturnValue(
+      of({
+        rows: [
+          {
+            ...importPreview.rows[0],
+            question: longQuestion,
+          },
+        ],
+      }),
+    );
+
+    openImportPreview();
+
+    const table = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-queue-import-preview-table"]',
+    )!;
+    const questionCell = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-queue-import-question-1"]',
+    )!;
+
+    expect(questionCell.textContent).toContain(longQuestion);
+    expect(table.closest('.table-responsive')).toBeNull();
+    expect(table.querySelectorAll('col')).toHaveLength(6);
+  });
+
+  it('allows selecting a duplicate before confirming import', () => {
+    openImportPreview();
+
+    fixture.nativeElement
+      .querySelector<HTMLInputElement>('[data-testid="matrix-queue-import-row-2"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedImportRowNumbers()).toEqual(new Set([1, 2]));
+  });
+
+  it('closes import modal, reloads queue, and shows imported count after confirmation', () => {
+    const file = openImportPreview();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-confirm"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.importQueuedQuestions).toHaveBeenCalledWith(file, [1]);
     expect(notificationService.success).toHaveBeenCalledWith('Импортировано вопросов: 2.');
     expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
     expect(
       fixture.nativeElement.querySelector('[data-testid="matrix-queue-import-file-input"]'),
     ).toBeNull();
+  });
+
+  it('keeps preview and selection available when confirmation fails', () => {
+    const error: ApiError = {
+      code: 'bad_request',
+      type: 'bad_request',
+      message: 'Failed',
+      status: 400,
+      location: 'body',
+      attr: 'selectedRowNumbers',
+    };
+    queueService.importQueuedQuestions.mockReturnValue(throwError(() => error));
+    openImportPreview();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-confirm"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(notificationService.error).toHaveBeenCalledWith('Не удалось импортировать вопросы.');
+    expect(component.importPreview()).toEqual(importPreview);
+    expect(component.selectedImportRowNumbers()).toEqual(new Set([1]));
+    expect(
+      fixture.nativeElement.querySelector<HTMLInputElement>(
+        '[data-testid="matrix-queue-import-row-1"]',
+      )?.checked,
+    ).toBe(true);
+  });
+
+  it('resets preview and selection when another file is chosen', () => {
+    openImportPreview();
+
+    chooseImportFile(new File(['another'], 'another.txt', { type: 'text/plain' }));
+
+    expect(component.importPreview()).toBeNull();
+    expect(component.selectedImportRowNumbers()).toEqual(new Set());
+    expect(fixture.nativeElement.textContent).toContain('Выбран файл: another.txt');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-queue-import-drop-zone"]'),
+    ).toBeTruthy();
   });
 
   it('keeps import modal open and renders backend nested errors when import fails', () => {
@@ -368,7 +523,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
         },
       ],
     };
-    queueService.importQueuedQuestions.mockReturnValue(throwError(() => error));
+    queueService.previewQueuedQuestions.mockReturnValue(throwError(() => error));
     openImportMode();
     chooseImportFile(new File(['question'], 'questions.txt', { type: 'text/plain' }));
 
@@ -635,6 +790,17 @@ describe('MatrixQuestionQueuePageComponent', () => {
       .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-mode"]')!
       .click();
     fixture.detectChanges();
+  }
+
+  function openImportPreview(): File {
+    openImportMode();
+    const file = new File(['question'], 'questions.txt', { type: 'text/plain' });
+    chooseImportFile(file);
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-submit"]')!
+      .click();
+    fixture.detectChanges();
+    return file;
   }
 
   function chooseImportFile(file: File): void {

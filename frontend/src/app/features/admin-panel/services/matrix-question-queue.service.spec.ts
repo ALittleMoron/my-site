@@ -98,11 +98,42 @@ describe('MatrixQuestionQueueService', () => {
     expect(createdQuestion).toBe('What is PEP 8?');
   });
 
-  it('imports queued questions from file upload form data', () => {
+  it('previews queued questions from file upload form data', () => {
+    let previewedRows: number[] | undefined;
+    const file = new File(['What is PEP 8?'], 'questions.txt', { type: 'text/plain' });
+
+    service.previewQueuedQuestions(file).subscribe((preview) => {
+      previewedRows = preview.rows.map((row) => row.rowNumber);
+    });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/queued-questions/import/preview'),
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeInstanceOf(FormData);
+    expect((req.request.body as FormData).get('file')).toBe(file);
+    req.flush({
+      rows: [
+        {
+          rowNumber: 1,
+          question: 'What is PEP 8?',
+          sheet: '',
+          grade: '',
+          canImport: true,
+          selectedByDefault: true,
+          issues: [],
+        },
+      ],
+    });
+
+    expect(previewedRows).toEqual([1]);
+  });
+
+  it('imports selected queued question rows from file upload form data', () => {
     let importedQuestions: string[] | undefined;
     const file = new File(['What is PEP 8?'], 'questions.txt', { type: 'text/plain' });
 
-    service.importQueuedQuestions(file).subscribe((questions) => {
+    service.importQueuedQuestions(file, [1, 3]).subscribe((questions) => {
       importedQuestions = questions.map((question) => question.question);
     });
 
@@ -112,6 +143,7 @@ describe('MatrixQuestionQueueService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toBeInstanceOf(FormData);
     expect((req.request.body as FormData).get('file')).toBe(file);
+    expect((req.request.body as FormData).getAll('selectedRowNumbers')).toEqual(['1', '3']);
     req.flush({
       questions: [
         {

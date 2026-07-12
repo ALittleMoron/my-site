@@ -122,6 +122,26 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['auth', 'security', 'backend', 'frontend', 'admin'],
   },
   {
+    id: 'matrix-question-queue-workflow',
+    month: '2026-07',
+    order: 7,
+    title: {
+      ru: 'Обработка очереди вопросов матрицы ускорилась',
+      en: 'Matrix question queue processing became faster',
+    },
+    summary: {
+      ru:
+        'Очередь получила общий RU/EN Markdown-form со sticky actions, сценарии ' +
+        '«создать/отклонить и далее» и «пропустить», а импорт из txt/csv/xlsx теперь ' +
+        'показывает предпросмотр, ошибки валидации и точные дубли до подтверждения.',
+      en:
+        'The queue gained a shared RU/EN Markdown form with sticky actions, create/reject-and-next ' +
+        'and skip flows, while txt/csv/xlsx imports now show a preview, validation errors, and ' +
+        'exact duplicates before confirmation.',
+    },
+    tagIds: ['admin', 'frontend', 'backend', 'matrix', 'content', 'localization'],
+  },
+  {
     id: 'release-workflow',
     month: '2026-07',
     order: 10,

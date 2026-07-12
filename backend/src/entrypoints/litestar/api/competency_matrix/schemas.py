@@ -2,9 +2,15 @@ from collections.abc import Iterable
 from itertools import groupby
 from typing import Annotated, Self
 
-from pydantic import Field, field_validator, model_validator
+from litestar.datastructures.upload_file import UploadFile
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
-from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
+from core.competency_matrix.enums import (
+    GradeEnum,
+    InterviewFrequencyEnum,
+    QuestionQueueImportIssueCodeEnum,
+    QuestionQueueImportIssueSeverityEnum,
+)
 from core.competency_matrix.schemas import (
     AttachedExternalResource,
     CompetencyMatrixFilterOption,
@@ -33,6 +39,9 @@ from core.competency_matrix.schemas import (
     ExternalResource,
     ExternalResources,
     NewExternalResourceAttachment,
+    QuestionQueueImportPreview,
+    QuestionQueueImportPreviewIssue,
+    QuestionQueueImportPreviewRow,
     QuestionSuggestionCreateParams,
     QuestionSuggestionLimitParams,
     QueuedCompetencyMatrixQuestion,
@@ -322,6 +331,98 @@ class QueuedQuestionsResponseSchema(CamelCaseSchema):
             questions=[
                 QueuedQuestionResponseSchema.from_domain_schema(schema=question)
                 for question in schema
+            ],
+        )
+
+
+class QueuedQuestionsImportPreviewRequestSchema(CamelCaseSchema):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    file: Annotated[UploadFile, Field(title="Import file")]
+
+
+class QueuedQuestionsImportConfirmationRequestSchema(CamelCaseSchema):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    file: Annotated[UploadFile, Field(title="Import file")]
+    selected_row_numbers: Annotated[
+        list[int],
+        Field(title="Selected row numbers", min_length=1),
+    ]
+
+    @field_validator("selected_row_numbers", mode="before")
+    @classmethod
+    def normalize_single_selected_row(cls, value: object) -> object:
+        if isinstance(value, list):
+            return value
+        return [value]
+
+
+class QueuedQuestionsImportPreviewIssueResponseSchema(CamelCaseSchema):
+    code: Annotated[QuestionQueueImportIssueCodeEnum, Field(title="Issue code")]
+    severity: Annotated[
+        QuestionQueueImportIssueSeverityEnum,
+        Field(title="Issue severity"),
+    ]
+    related_row_numbers: Annotated[list[int], Field(title="Related row numbers")]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: QuestionQueueImportPreviewIssue,
+    ) -> Self:
+        return cls(
+            code=schema.code,
+            severity=schema.severity,
+            related_row_numbers=list(schema.related_row_numbers),
+        )
+
+
+class QueuedQuestionsImportPreviewRowResponseSchema(CamelCaseSchema):
+    row_number: Annotated[int, Field(title="Source row number")]
+    question: Annotated[str, Field(title="Question")]
+    sheet: Annotated[str, Field(title="Sheet")]
+    grade: Annotated[str, Field(title="Grade")]
+    can_import: Annotated[bool, Field(title="Whether the row can be imported")]
+    selected_by_default: Annotated[bool, Field(title="Whether the row is selected by default")]
+    issues: Annotated[
+        list[QueuedQuestionsImportPreviewIssueResponseSchema],
+        Field(title="Validation errors and duplicate warnings"),
+    ]
+
+    @classmethod
+    def from_domain_schema(
+        cls,
+        *,
+        schema: QuestionQueueImportPreviewRow,
+    ) -> Self:
+        return cls(
+            row_number=schema.row_number,
+            question=schema.question,
+            sheet=schema.sheet,
+            grade=schema.grade,
+            can_import=schema.can_import,
+            selected_by_default=schema.selected_by_default,
+            issues=[
+                QueuedQuestionsImportPreviewIssueResponseSchema.from_domain_schema(schema=issue)
+                for issue in schema.issues
+            ],
+        )
+
+
+class QueuedQuestionsImportPreviewResponseSchema(CamelCaseSchema):
+    rows: Annotated[
+        list[QueuedQuestionsImportPreviewRowResponseSchema],
+        Field(title="Import preview rows"),
+    ]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: QuestionQueueImportPreview) -> Self:
+        return cls(
+            rows=[
+                QueuedQuestionsImportPreviewRowResponseSchema.from_domain_schema(schema=row)
+                for row in schema.rows
             ],
         )
 

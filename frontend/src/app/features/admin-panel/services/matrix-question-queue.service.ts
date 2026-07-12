@@ -5,6 +5,7 @@ import { LanguageCode } from '../../../core/i18n/i18n.model';
 import { AdminMatrixQuestionPayload } from '../models/matrix-question-workspace.model';
 import {
   AdminMatrixItemDetailDto,
+  QueuedMatrixImportPreview,
   QueuedMatrixQuestion,
   QueuedMatrixQuestionDto,
   QueuedMatrixQuestionsDto,
@@ -30,9 +31,24 @@ export class MatrixQuestionQueueService {
       .pipe(map(mapQueuedMatrixQuestionDto));
   }
 
-  importQueuedQuestions(file: File): Observable<QueuedMatrixQuestion[]> {
+  previewQueuedQuestions(file: File): Observable<QueuedMatrixImportPreview> {
     const formData = new FormData();
     formData.append('file', file);
+    return this.api.post<QueuedMatrixImportPreview>(
+      '/api/admin/competency-matrix/queued-questions/import/preview',
+      formData,
+    );
+  }
+
+  importQueuedQuestions(
+    file: File,
+    selectedRowNumbers: number[],
+  ): Observable<QueuedMatrixQuestion[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+    for (const rowNumber of selectedRowNumbers) {
+      formData.append('selectedRowNumbers', String(rowNumber));
+    }
     return this.api
       .post<QueuedMatrixQuestionsDto>(
         '/api/admin/competency-matrix/queued-questions/import',

@@ -12,12 +12,19 @@ from openpyxl import Workbook
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import (
+    GradeEnum,
+    QuestionQueueImportIssueCodeEnum,
+    QuestionQueueImportIssueSeverityEnum,
+)
 from core.competency_matrix.exceptions import (
     QuestionSuggestionQuotaExceededError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
+    QuestionQueueImportPreview,
+    QuestionQueueImportPreviewIssue,
+    QuestionQueueImportPreviewRow,
     QuestionSuggestionCreateParams,
     QueuedCompetencyMatrixQuestionCreateItemParams,
     QueuedCompetencyMatrixQuestionCreateParams,
@@ -27,6 +34,11 @@ from core.enums import PublishStatusEnum
 from entrypoints.litestar.api.competency_matrix.dependencies import (
     provide_question_suggestion_limit_params,
 )
+from entrypoints.litestar.api.competency_matrix.schemas import (
+    QueuedQuestionsImportConfirmationRequestSchema,
+    QueuedQuestionsImportPreviewRequestSchema,
+)
+from entrypoints.litestar.api.schemas import CamelCaseSchema
 from tests.test_cases import ApiTestCase
 
 
@@ -35,6 +47,10 @@ class TestQuestionSuggestionsApi(ApiTestCase):
     async def setup(self) -> None:
         self.authentication_use_case = await self.container.get_auth_use_case()
         self.use_case = await self.container.get_competency_matrix_use_case()
+
+    def test_import_request_schemas_are_pydantic_api_schemas(self) -> None:
+        assert issubclass(QueuedQuestionsImportPreviewRequestSchema, CamelCaseSchema)
+        assert issubclass(QueuedQuestionsImportConfirmationRequestSchema, CamelCaseSchema)
 
     def test_anonymous_user_can_suggest_question(self) -> None:
         response = self.no_auth_api.post_question_suggestion(
@@ -251,6 +267,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.txt",
             content=b"What is PEP 8?\nHow does mypy help?",
             content_type="text/plain",
+            selected_row_numbers=[1, 2],
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
@@ -284,6 +301,103 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             "How does mypy help?",
         ]
 
+    def test_content_manager_can_preview_valid_invalid_and_duplicate_rows(self) -> None:
+        valid_params = QueuedCompetencyMatrixQuestionCreateParams(
+            question="What is PEP 8?",
+            grade=None,
+            sheet="python",
+        )
+        self.use_case.preview_queued_questions_import.return_value = QuestionQueueImportPreview(
+            rows=[
+                QuestionQueueImportPreviewRow(
+                    row_number=2,
+                    question="What is PEP 8?",
+                    sheet="python",
+                    grade="",
+                    params=valid_params,
+                    issues=(
+                        QuestionQueueImportPreviewIssue(
+                            code=QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_QUEUE,
+                            severity=QuestionQueueImportIssueSeverityEnum.WARNING,
+                            related_row_numbers=(),
+                        ),
+                    ),
+                ),
+                QuestionQueueImportPreviewRow(
+                    row_number=3,
+                    question="",
+                    sheet="python",
+                    grade="Lead",
+                    params=None,
+                    issues=(
+                        QuestionQueueImportPreviewIssue(
+                            code=QuestionQueueImportIssueCodeEnum.QUESTION_BLANK,
+                            severity=QuestionQueueImportIssueSeverityEnum.ERROR,
+                            related_row_numbers=(),
+                        ),
+                    ),
+                ),
+            ],
+        )
+
+        response = self.api.post_preview_queued_matrix_questions(
+            filename="questions.csv",
+            content=b"question,sheet,grade\nWhat is PEP 8?,python,\n,python,Lead",
+            content_type="text/csv",
+        )
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        assert response.json() == {
+            "rows": [
+                {
+                    "rowNumber": 2,
+                    "question": "What is PEP 8?",
+                    "sheet": "python",
+                    "grade": "",
+                    "canImport": True,
+                    "selectedByDefault": False,
+                    "issues": [
+                        {
+                            "code": "duplicateInQueue",
+                            "severity": "warning",
+                            "relatedRowNumbers": [],
+                        },
+                    ],
+                },
+                {
+                    "rowNumber": 3,
+                    "question": "",
+                    "sheet": "python",
+                    "grade": "Lead",
+                    "canImport": False,
+                    "selectedByDefault": False,
+                    "issues": [
+                        {
+                            "code": "questionBlank",
+                            "severity": "error",
+                            "relatedRowNumbers": [],
+                        },
+                    ],
+                },
+            ],
+        }
+        self.use_case.preview_queued_questions_import.assert_called_once_with(preview=ANY)
+
+    def test_regular_user_cannot_preview_queued_questions(self) -> None:
+        self.authentication_use_case.authenticate.return_value = JwtUser(
+            username="user",
+            role=RoleEnum.USER,
+        )
+
+        response = self.api.post_preview_queued_matrix_questions(
+            filename="questions.txt",
+            content=b"What is PEP 8?",
+            content_type="text/plain",
+        )
+
+        self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
+        self.use_case.preview_queued_questions_import.assert_not_called()
+
     def test_content_manager_can_import_csv_queued_questions(self) -> None:
         self.use_case.import_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
             values=[
@@ -301,6 +415,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.csv",
             content="question;sheet;grade\nЧто такое PEP 8?;python;Junior".encode(),
             content_type="text/csv",
+            selected_row_numbers=[2],
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
@@ -329,6 +444,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.csv",
             content=b'question\n"What is PEP 8?\nHow should it be used?"',
             content_type="text/csv",
+            selected_row_numbers=[2],
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
@@ -353,6 +469,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.xlsx",
             content=xlsx_bytes([["questions"], ["What is PEP 8?"]]),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            selected_row_numbers=[2],
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
@@ -377,6 +494,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.xlsm",
             content=xlsx_bytes([["What is PEP 8?"]]),
             content_type="application/vnd.ms-excel.sheet.macroEnabled.12",
+            selected_row_numbers=[1],
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
@@ -396,6 +514,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.txt",
             content=b"What is PEP 8?",
             content_type="text/plain",
+            selected_row_numbers=[1],
         )
 
         self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
@@ -406,6 +525,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.csv",
             content=b"title\nWhat is PEP 8?",
             content_type="text/csv",
+            selected_row_numbers=[1],
         )
 
         body = self.asserts.error_message(
@@ -423,6 +543,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.xls",
             content=b"not an xls file",
             content_type="application/vnd.ms-excel",
+            selected_row_numbers=[1],
         )
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
@@ -435,11 +556,12 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.txt",
             content=b"What is PEP 8?\n\nHow does mypy help?",
             content_type="text/plain",
+            selected_row_numbers=[2],
         )
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         body = response.json()
-        assert body["nested_errors"][0]["message"] == "Row 2 question must not be blank."
+        assert body["nested_errors"][0]["message"] == "Selected import row 2 is invalid."
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_import_rejects_long_questions_without_creating_questions(self) -> None:
@@ -447,13 +569,12 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.txt",
             content=("x" * 256).encode(),
             content_type="text/plain",
+            selected_row_numbers=[1],
         )
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         body = response.json()
-        assert body["nested_errors"][0]["message"] == (
-            "Row 1 question must be at most 255 characters."
-        )
+        assert body["nested_errors"][0]["message"] == "Selected import row 1 is invalid."
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_import_rejects_non_text_excel_cells_without_creating_questions(self) -> None:
@@ -461,11 +582,12 @@ class TestQuestionSuggestionsApi(ApiTestCase):
             filename="questions.xlsx",
             content=xlsx_bytes([["questions"], [42]]),
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            selected_row_numbers=[2],
         )
 
         self.asserts.status(response=response, expected_status=codes.BAD_REQUEST)
         body = response.json()
-        assert body["nested_errors"][0]["message"] == "Row 2 question must be text."
+        assert body["nested_errors"][0]["message"] == "Selected import row 2 is invalid."
         self.use_case.import_queued_questions.assert_not_called()
 
     def test_regular_user_cannot_create_queued_question(self) -> None:

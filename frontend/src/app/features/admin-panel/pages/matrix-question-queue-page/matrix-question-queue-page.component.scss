@@ -1,0 +1,32 @@
+.matrix-import-preview-table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.matrix-import-preview-table :where(th, td) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.matrix-import-preview-select-column,
+.matrix-import-preview-row-column {
+  width: 7%;
+}
+
+.matrix-import-preview-question-column {
+  width: 34%;
+}
+
+.matrix-import-preview-sheet-column {
+  width: 14%;
+}
+
+.matrix-import-preview-grade-column {
+  width: 12%;
+}
+
+.matrix-import-preview-issues-column {
+  width: 26%;
+}

@@ -3,11 +3,13 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import GradeEnum, QuestionQueueImportIssueCodeEnum
 from core.competency_matrix.exceptions import (
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
+    QuestionQueueImportPreview,
+    QuestionQueueImportPreviewRow,
     QuestionSuggestionCreateParams,
     QuestionSuggestionLimitParams,
     QueuedCompetencyMatrixQuestion,
@@ -137,6 +139,59 @@ class TestQuestionSuggestionsUseCase(TestCase):
         assert created_questions == queued_questions
         self.question_suggestion_limiter.check_create_allowed.assert_not_called()
         self.storage.create_queued_questions.assert_called_once_with(params=params)
+
+    async def test_preview_import_marks_file_and_queue_duplicates(self) -> None:
+        first_params = QueuedCompetencyMatrixQuestionCreateParams(
+            question="What   is PEP 8?",
+            grade=None,
+            sheet=None,
+        )
+        second_params = QueuedCompetencyMatrixQuestionCreateParams(
+            question="what is pep 8?",
+            grade=None,
+            sheet=None,
+        )
+        preview = QuestionQueueImportPreview(
+            rows=[
+                QuestionQueueImportPreviewRow(
+                    row_number=1,
+                    question=first_params.question,
+                    sheet="",
+                    grade="",
+                    params=first_params,
+                    issues=(),
+                ),
+                QuestionQueueImportPreviewRow(
+                    row_number=2,
+                    question=second_params.question,
+                    sheet="",
+                    grade="",
+                    params=second_params,
+                    issues=(),
+                ),
+            ],
+        )
+        self.storage.list_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=10,
+                    question=" WHAT IS PEP 8? ",
+                    created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+                ),
+            ],
+        )
+
+        result = await self.use_case.preview_queued_questions_import(preview=preview)
+
+        assert [issue.code for issue in result.rows[0].issues] == [
+            QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_QUEUE,
+        ]
+        assert [issue.code for issue in result.rows[1].issues] == [
+            QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_FILE,
+            QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_QUEUE,
+        ]
+        assert result.rows[0].selected_by_default is False
+        assert result.rows[1].selected_by_default is False
 
     async def test_create_item_from_queue_creates_item_then_removes_queue_entry(self) -> None:
         queued_question = QueuedCompetencyMatrixQuestion(

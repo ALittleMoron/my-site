@@ -15,6 +15,38 @@ export interface QueuedMatrixQuestionsDto {
   questions: QueuedMatrixQuestionDto[];
 }
 
+export type QueuedMatrixImportIssueCode =
+  | 'questionNotText'
+  | 'questionBlank'
+  | 'questionTooLong'
+  | 'sheetNotText'
+  | 'gradeNotText'
+  | 'gradeInvalid'
+  | 'duplicateInFile'
+  | 'duplicateInQueue';
+
+export type QueuedMatrixImportIssueSeverity = 'error' | 'warning';
+
+export interface QueuedMatrixImportIssue {
+  code: QueuedMatrixImportIssueCode;
+  severity: QueuedMatrixImportIssueSeverity;
+  relatedRowNumbers: number[];
+}
+
+export interface QueuedMatrixImportPreviewRow {
+  rowNumber: number;
+  question: string;
+  sheet: string;
+  grade: string;
+  canImport: boolean;
+  selectedByDefault: boolean;
+  issues: QueuedMatrixImportIssue[];
+}
+
+export interface QueuedMatrixImportPreview {
+  rows: QueuedMatrixImportPreviewRow[];
+}
+
 export interface QueuedMatrixQuestion {
   id: string;
   question: string;

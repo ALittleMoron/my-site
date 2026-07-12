@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from typing import Annotated
 
 from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, Request, delete, get, post, put, status_codes
 from litestar.datastructures import State
-from litestar.datastructures.upload_file import UploadFile
 from litestar.di import NamedDependency, Provide
 
 from core.auth.schemas import JwtUser
@@ -52,6 +50,9 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
     PublicCompetencyMatrixItemsListResponseSchema,
     QuestionSuggestionRequestSchema,
     QueuedQuestionResponseSchema,
+    QueuedQuestionsImportConfirmationRequestSchema,
+    QueuedQuestionsImportPreviewRequestSchema,
+    QueuedQuestionsImportPreviewResponseSchema,
     QueuedQuestionsResponseSchema,
 )
 from entrypoints.litestar.api.parameters import (
@@ -71,11 +72,6 @@ from entrypoints.litestar.response_cache import (
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
-
-
-@dataclass(frozen=True, slots=True)
-class QueuedQuestionsImportRequestSchema:
-    file: UploadFile
 
 
 class PublicCompetencyMatrixApiController(Controller):
@@ -462,29 +458,58 @@ class AdminCompetencyMatrixApiController(Controller):
         return QueuedQuestionResponseSchema.from_domain_schema(schema=question)
 
     @post(
+        "/queued-questions/import/preview",
+        description="Preview queued competency matrix questions from a file.",
+        name="admin-competency-matrix-queued-questions-import-preview-api-handler",
+        status_code=status_codes.HTTP_200_OK,
+    )
+    async def preview_queued_competency_matrix_questions_import(
+        self,
+        data: Annotated[
+            QueuedQuestionsImportPreviewRequestSchema,
+            api_multipart_body(
+                title="Queued question import preview request",
+                description="Multipart file upload for queued question import preview.",
+                examples=({"file": "questions.xlsx"},),
+            ),
+        ],
+        parser: FromDishka[QuestionQueueImportParser],
+        use_case: FromDishka[CompetencyMatrixUseCase],
+    ) -> QueuedQuestionsImportPreviewResponseSchema:
+        parsed_preview = parser.preview(
+            file=QuestionQueueImportFile(
+                filename=data.file.filename,
+                content=await data.file.read(),
+            ),
+        )
+        preview = await use_case.preview_queued_questions_import(preview=parsed_preview)
+        return QueuedQuestionsImportPreviewResponseSchema.from_domain_schema(schema=preview)
+
+    @post(
         "/queued-questions/import",
-        description="Import queued competency matrix questions from a file.",
+        description="Import confirmed queued competency matrix questions from a file.",
         name="admin-competency-matrix-queued-questions-import-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
     async def import_queued_competency_matrix_questions(
         self,
         data: Annotated[
-            QueuedQuestionsImportRequestSchema,
+            QueuedQuestionsImportConfirmationRequestSchema,
             api_multipart_body(
                 title="Queued question import request",
-                description="Multipart file upload with queued competency matrix questions.",
-                examples=({"file": "questions.xlsx"},),
+                description="Multipart file upload with selected queued question rows.",
+                examples=({"file": "questions.xlsx", "selectedRowNumbers": [2, 3]},),
             ),
         ],
         parser: FromDishka[QuestionQueueImportParser],
         use_case: FromDishka[CompetencyMatrixUseCase],
     ) -> QueuedQuestionsResponseSchema:
-        params = parser.parse(
+        params = parser.parse_selected(
             file=QuestionQueueImportFile(
                 filename=data.file.filename,
                 content=await data.file.read(),
             ),
+            selected_row_numbers=data.selected_row_numbers,
         )
         questions = await use_case.import_queued_questions(params=params)
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)

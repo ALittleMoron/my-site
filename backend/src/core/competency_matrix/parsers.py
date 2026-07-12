@@ -6,7 +6,11 @@ from io import StringIO
 from pathlib import PurePath
 from typing import NoReturn, cast
 
-from core.competency_matrix.enums import GradeEnum
+from core.competency_matrix.enums import (
+    GradeEnum,
+    QuestionQueueImportIssueCodeEnum,
+    QuestionQueueImportIssueSeverityEnum,
+)
 from core.competency_matrix.exceptions import (
     QuestionQueueImportInvalidError,
     QuestionQueueImportIssue,
@@ -15,6 +19,9 @@ from core.competency_matrix.readers import QuestionQueueImportExcelReader
 from core.competency_matrix.schemas import (
     ParsedQuestionRow,
     QuestionQueueImportFile,
+    QuestionQueueImportPreview,
+    QuestionQueueImportPreviewIssue,
+    QuestionQueueImportPreviewRow,
     QuestionQueueImportRules,
     QueuedCompetencyMatrixQuestionCreateParams,
     QueuedCompetencyMatrixQuestionsCreateParams,
@@ -33,11 +40,7 @@ class QuestionQueueImportParser:
     rules: QuestionQueueImportRules
     excel_reader: QuestionQueueImportExcelReader
 
-    def parse(
-        self,
-        *,
-        file: QuestionQueueImportFile,
-    ) -> QueuedCompetencyMatrixQuestionsCreateParams:
+    def preview(self, *, file: QuestionQueueImportFile) -> QuestionQueueImportPreview:
         extension = PurePath(file.filename).suffix.lower()
         if extension in self.rules.unsupported_legacy_excel_extensions:
             self.raise_invalid(
@@ -55,21 +58,137 @@ class QuestionQueueImportParser:
                     ),
                 ],
             )
-
         rows = self.parse_rows(file=file, extension=extension)
-        issues = self.validate_rows(rows=rows)
+        if not rows:
+            self.raise_invalid(
+                [self.issue(message="Import file must contain at least one question.", row=None)],
+            )
+        return QuestionQueueImportPreview(rows=[self.preview_row(row=row) for row in rows])
+
+    def parse_selected(
+        self,
+        *,
+        file: QuestionQueueImportFile,
+        selected_row_numbers: list[int],
+    ) -> QueuedCompetencyMatrixQuestionsCreateParams:
+        return self.preview(file=file).selected_questions(row_numbers=selected_row_numbers)
+
+    def preview_row(self, *, row: ParsedQuestionRow) -> QuestionQueueImportPreviewRow:
+        issues: list[QuestionQueueImportPreviewIssue] = []
+        if not isinstance(row.question, str):
+            issues.append(
+                self.preview_issue(code=QuestionQueueImportIssueCodeEnum.QUESTION_NOT_TEXT),
+            )
+        else:
+            question = self.normalize_question_text(value=row.question).strip()
+            if not question:
+                issues.append(
+                    self.preview_issue(code=QuestionQueueImportIssueCodeEnum.QUESTION_BLANK),
+                )
+            elif len(question) > self.rules.question_max_length:
+                issues.append(
+                    self.preview_issue(code=QuestionQueueImportIssueCodeEnum.QUESTION_TOO_LONG),
+                )
+        if row.sheet is not None and not isinstance(row.sheet, str):
+            issues.append(
+                self.preview_issue(code=QuestionQueueImportIssueCodeEnum.SHEET_NOT_TEXT),
+            )
+        if row.grade is not None:
+            if not isinstance(row.grade, str):
+                issues.append(
+                    self.preview_issue(code=QuestionQueueImportIssueCodeEnum.GRADE_NOT_TEXT),
+                )
+            elif self.normalize_optional_text(value=row.grade) is not None:
+                grade = self.normalize_optional_text(value=row.grade)
+                if grade not in {item.value for item in GradeEnum}:
+                    issues.append(
+                        self.preview_issue(code=QuestionQueueImportIssueCodeEnum.GRADE_INVALID),
+                    )
+        params = None
+        if not issues:
+            params = QueuedCompetencyMatrixQuestionCreateParams(
+                question=self.normalize_question_text(value=cast("str", row.question)).strip(),
+                sheet=self.normalize_optional_text(value=cast("str | None", row.sheet)),
+                grade=self.normalize_optional_grade(value=cast("str | None", row.grade)),
+            )
+        return QuestionQueueImportPreviewRow(
+            row_number=row.row_number,
+            question=self.display_value(value=row.question, normalize=True),
+            sheet=self.display_value(value=row.sheet, normalize=True),
+            grade=self.display_value(value=row.grade, normalize=True),
+            params=params,
+            issues=tuple(issues),
+        )
+
+    def preview_issue(
+        self,
+        *,
+        code: QuestionQueueImportIssueCodeEnum,
+    ) -> QuestionQueueImportPreviewIssue:
+        return QuestionQueueImportPreviewIssue(
+            code=code,
+            severity=QuestionQueueImportIssueSeverityEnum.ERROR,
+            related_row_numbers=(),
+        )
+
+    def display_value(self, *, value: object | None, normalize: bool) -> str:
+        if value is None:
+            return ""
+        text = value if isinstance(value, str) else str(value)
+        if normalize:
+            return self.normalize_question_text(value=text).strip()
+        return text
+
+    def parse(
+        self,
+        *,
+        file: QuestionQueueImportFile,
+    ) -> QueuedCompetencyMatrixQuestionsCreateParams:
+        preview = self.preview(file=file)
+        issues = [
+            QuestionQueueImportIssue(
+                message=self.preview_issue_message(code=issue.code, row_number=row.row_number),
+                row_number=row.row_number,
+            )
+            for row in preview.rows
+            for issue in row.issues
+            if issue.severity == QuestionQueueImportIssueSeverityEnum.ERROR
+        ]
         if issues:
             self.raise_invalid(issues)
         return QueuedCompetencyMatrixQuestionsCreateParams(
-            questions=[
-                QueuedCompetencyMatrixQuestionCreateParams(
-                    question=self.normalize_question_text(value=cast("str", row.question)).strip(),
-                    sheet=self.normalize_optional_text(value=cast("str | None", row.sheet)),
-                    grade=self.normalize_optional_grade(value=cast("str | None", row.grade)),
-                )
-                for row in rows
-            ],
+            questions=[row.params for row in preview.rows if row.params is not None],
         )
+
+    def preview_issue_message(
+        self,
+        *,
+        code: QuestionQueueImportIssueCodeEnum,
+        row_number: int,
+    ) -> str:
+        messages = {
+            QuestionQueueImportIssueCodeEnum.QUESTION_NOT_TEXT: (
+                f"Row {row_number} question must be text."
+            ),
+            QuestionQueueImportIssueCodeEnum.QUESTION_BLANK: (
+                f"Row {row_number} question must not be blank."
+            ),
+            QuestionQueueImportIssueCodeEnum.QUESTION_TOO_LONG: (
+                f"Row {row_number} question must be at most "
+                f"{self.rules.question_max_length} characters."
+            ),
+            QuestionQueueImportIssueCodeEnum.SHEET_NOT_TEXT: (
+                f"Row {row_number} sheet must be text."
+            ),
+            QuestionQueueImportIssueCodeEnum.GRADE_NOT_TEXT: (
+                f"Row {row_number} grade must be text."
+            ),
+            QuestionQueueImportIssueCodeEnum.GRADE_INVALID: (
+                f"Row {row_number} grade must be one of: "
+                f"{', '.join(grade.value for grade in GradeEnum)}."
+            ),
+        }
+        return messages[code]
 
     def supported_extensions(self) -> frozenset[str]:
         return self.rules.supported_text_extensions | self.rules.supported_excel_extensions
@@ -221,48 +340,6 @@ class QuestionQueueImportParser:
         if index is None or index >= len(row):
             return missing_value
         return row[index]
-
-    def validate_rows(self, *, rows: list[ParsedQuestionRow]) -> list[QuestionQueueImportIssue]:
-        issues: list[QuestionQueueImportIssue] = []
-        for row in rows:
-            if not isinstance(row.question, str):
-                issues.append(self.issue(message="Row {row} question must be text.", row=row))
-                continue
-            question = self.normalize_question_text(value=row.question).strip()
-            if not question:
-                issues.append(self.issue(message="Row {row} question must not be blank.", row=row))
-            elif len(question) > self.rules.question_max_length:
-                issues.append(
-                    self.issue(
-                        message=(
-                            "Row {row} question must be at most "
-                            f"{self.rules.question_max_length} characters."
-                        ),
-                        row=row,
-                    ),
-                )
-            if row.sheet is not None and not isinstance(row.sheet, str):
-                issues.append(self.issue(message="Row {row} sheet must be text.", row=row))
-            if row.grade is not None:
-                if not isinstance(row.grade, str):
-                    issues.append(self.issue(message="Row {row} grade must be text.", row=row))
-                elif self.normalize_optional_text(value=row.grade) is not None:
-                    grade = self.normalize_optional_text(value=row.grade)
-                    if grade not in {item.value for item in GradeEnum}:
-                        issues.append(
-                            self.issue(
-                                message=(
-                                    "Row {row} grade must be one of: "
-                                    f"{', '.join(grade.value for grade in GradeEnum)}."
-                                ),
-                                row=row,
-                            ),
-                        )
-        if len(rows) == 0:
-            issues.append(
-                self.issue(message="Import file must contain at least one question.", row=None),
-            )
-        return issues
 
     def normalize_question_text(self, *, value: str) -> str:
         return value.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from enum import StrEnum
 from math import ceil
@@ -10,11 +10,15 @@ from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
     GradeEnum,
     InterviewFrequencyEnum,
+    QuestionQueueImportIssueCodeEnum,
+    QuestionQueueImportIssueSeverityEnum,
 )
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
     CompetencyMatrixStructureNotFoundError,
     CompetencyMatrixStructurePriorityInvalidError,
+    QuestionQueueImportInvalidError,
+    QuestionQueueImportIssue,
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
@@ -259,6 +263,134 @@ class ParsedQuestionRow:
     question: object
     sheet: object | None
     grade: object | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportPreviewIssue:
+    code: QuestionQueueImportIssueCodeEnum
+    severity: QuestionQueueImportIssueSeverityEnum
+    related_row_numbers: tuple[int, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportPreviewRow:
+    row_number: int
+    question: str
+    sheet: str
+    grade: str
+    params: QueuedCompetencyMatrixQuestionCreateParams | None
+    issues: tuple[QuestionQueueImportPreviewIssue, ...]
+
+    @property
+    def can_import(self) -> bool:
+        return self.params is not None
+
+    @property
+    def selected_by_default(self) -> bool:
+        return self.can_import and not self.issues
+
+    def question_fingerprint(self) -> str | None:
+        if self.params is None:
+            return None
+        return " ".join(self.params.question.split()).casefold()
+
+    def with_issue(
+        self,
+        *,
+        issue: QuestionQueueImportPreviewIssue,
+    ) -> QuestionQueueImportPreviewRow:
+        return replace(self, issues=(*self.issues, issue))
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionQueueImportPreview:
+    rows: list[QuestionQueueImportPreviewRow]
+
+    def with_duplicate_warnings(
+        self,
+        *,
+        queued_questions: QueuedCompetencyMatrixQuestions,
+    ) -> QuestionQueueImportPreview:
+        queued_fingerprints = {
+            " ".join(question.question.split()).casefold() for question in queued_questions
+        }
+        first_rows_by_fingerprint: dict[str, int] = {}
+        preview_rows: list[QuestionQueueImportPreviewRow] = []
+        for row in self.rows:
+            preview_row = row
+            fingerprint = preview_row.question_fingerprint()
+            if fingerprint is None:
+                preview_rows.append(preview_row)
+                continue
+            first_row_number = first_rows_by_fingerprint.get(fingerprint)
+            if first_row_number is None:
+                first_rows_by_fingerprint[fingerprint] = preview_row.row_number
+            else:
+                preview_row = preview_row.with_issue(
+                    issue=QuestionQueueImportPreviewIssue(
+                        code=QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_FILE,
+                        severity=QuestionQueueImportIssueSeverityEnum.WARNING,
+                        related_row_numbers=(first_row_number,),
+                    ),
+                )
+            if fingerprint in queued_fingerprints:
+                preview_row = preview_row.with_issue(
+                    issue=QuestionQueueImportPreviewIssue(
+                        code=QuestionQueueImportIssueCodeEnum.DUPLICATE_IN_QUEUE,
+                        severity=QuestionQueueImportIssueSeverityEnum.WARNING,
+                        related_row_numbers=(),
+                    ),
+                )
+            preview_rows.append(preview_row)
+        return QuestionQueueImportPreview(rows=preview_rows)
+
+    def selected_questions(
+        self,
+        *,
+        row_numbers: list[int],
+    ) -> QueuedCompetencyMatrixQuestionsCreateParams:
+        issues: list[QuestionQueueImportIssue] = []
+        if not row_numbers:
+            issues.append(
+                QuestionQueueImportIssue(
+                    message="Select at least one valid import row.",
+                    row_number=None,
+                ),
+            )
+        if len(set(row_numbers)) != len(row_numbers):
+            issues.append(
+                QuestionQueueImportIssue(
+                    message="Selected import row numbers must be unique.",
+                    row_number=None,
+                ),
+            )
+        rows_by_number = {row.row_number: row for row in self.rows}
+        for row_number in dict.fromkeys(row_numbers):
+            row = rows_by_number.get(row_number)
+            if row is None:
+                issues.append(
+                    QuestionQueueImportIssue(
+                        message=f"Selected import row {row_number} does not exist.",
+                        row_number=row_number,
+                    ),
+                )
+            elif not row.can_import:
+                issues.append(
+                    QuestionQueueImportIssue(
+                        message=f"Selected import row {row_number} is invalid.",
+                        row_number=row_number,
+                    ),
+                )
+        if issues:
+            raise QuestionQueueImportInvalidError(issues=issues)
+        selected_row_numbers = set(row_numbers)
+        return QueuedCompetencyMatrixQuestionsCreateParams(
+            questions=[
+                row.params
+                for row in self.rows
+                if row.row_number in selected_row_numbers and row.params is not None
+            ],
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

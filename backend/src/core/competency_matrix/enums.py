@@ -25,3 +25,19 @@ class InterviewFrequencyEnum(StrEnum):
     OFTEN = "often"
     RARELY = "rarely"
     NEVER_SEEN = "neverSeen"
+
+
+class QuestionQueueImportIssueCodeEnum(StrEnum):
+    QUESTION_NOT_TEXT = "questionNotText"
+    QUESTION_BLANK = "questionBlank"
+    QUESTION_TOO_LONG = "questionTooLong"
+    SHEET_NOT_TEXT = "sheetNotText"
+    GRADE_NOT_TEXT = "gradeNotText"
+    GRADE_INVALID = "gradeInvalid"
+    DUPLICATE_IN_FILE = "duplicateInFile"
+    DUPLICATE_IN_QUEUE = "duplicateInQueue"
+
+
+class QuestionQueueImportIssueSeverityEnum(StrEnum):
+    ERROR = "error"
+    WARNING = "warning"

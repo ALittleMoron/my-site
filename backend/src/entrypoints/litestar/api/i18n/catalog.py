@@ -391,11 +391,38 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "sheet и grade необязательны."
         ),
         "adminMatrixQueue.importSelectedFile": "Выбран файл: {filename}",
-        "adminMatrixQueue.importSubmit": "Импортировать",
+        "adminMatrixQueue.importPreviewSubmit": "Проверить файл",
+        "adminMatrixQueue.importPreviewSubmitting": "Проверка...",
+        "adminMatrixQueue.importConfirm": "Импортировать выбранные",
         "adminMatrixQueue.importSubmitting": "Импорт...",
         "adminMatrixQueue.importAdded": "Импортировано вопросов: {count}.",
         "adminMatrixQueue.importError": "Не удалось импортировать вопросы.",
         "adminMatrixQueue.importOneFileOnly": "Выберите один файл.",
+        "adminMatrixQueue.importChooseAnotherFile": "Выбрать другой файл",
+        "adminMatrixQueue.importPreviewSummary": (
+            "Валидных: {valid}; ошибок: {invalid}; дублей: {duplicates}; выбрано: {selected}."
+        ),
+        "adminMatrixQueue.importSelect": "Выбрать",
+        "adminMatrixQueue.importRow": "Строка",
+        "adminMatrixQueue.importQuestion": "Вопрос",
+        "adminMatrixQueue.importSheet": "Лист",
+        "adminMatrixQueue.importGrade": "Грейд",
+        "adminMatrixQueue.importIssues": "Проверка",
+        "adminMatrixQueue.importSelectRow": "Выбрать строку {row}",
+        "adminMatrixQueue.importReady": "Готово к импорту",
+        "adminMatrixQueue.importSelectAtLeastOne": "Выберите хотя бы одну валидную строку.",
+        "adminMatrixQueue.importIssue.questionNotText": "Вопрос должен быть текстом.",
+        "adminMatrixQueue.importIssue.questionBlank": "Вопрос не должен быть пустым.",
+        "adminMatrixQueue.importIssue.questionTooLong": (
+            "Вопрос должен содержать не более {max} символов."
+        ),
+        "adminMatrixQueue.importIssue.sheetNotText": "Лист должен быть текстом.",
+        "adminMatrixQueue.importIssue.gradeNotText": "Грейд должен быть текстом.",
+        "adminMatrixQueue.importIssue.gradeInvalid": (
+            "Грейд должен быть одним из: Junior, Junior+, Middle, Middle+, Senior."
+        ),
+        "adminMatrixQueue.importIssue.duplicateInFile": ("Повтор строки {rows} в выбранном файле."),
+        "adminMatrixQueue.importIssue.duplicateInQueue": "Такой вопрос уже есть в очереди.",
         "adminMatrixQueue.reject": "Отклонить",
         "adminMatrixQueue.createAndNext": "Создать и далее",
         "adminMatrixQueue.rejectAndNext": "Отклонить и далее",
@@ -1178,11 +1205,42 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "sheet and grade are optional."
         ),
         "adminMatrixQueue.importSelectedFile": "Selected file: {filename}",
-        "adminMatrixQueue.importSubmit": "Import",
+        "adminMatrixQueue.importPreviewSubmit": "Preview file",
+        "adminMatrixQueue.importPreviewSubmitting": "Previewing...",
+        "adminMatrixQueue.importConfirm": "Import selected",
         "adminMatrixQueue.importSubmitting": "Importing...",
         "adminMatrixQueue.importAdded": "Imported questions: {count}.",
         "adminMatrixQueue.importError": "Failed to import questions.",
         "adminMatrixQueue.importOneFileOnly": "Choose one file.",
+        "adminMatrixQueue.importChooseAnotherFile": "Choose another file",
+        "adminMatrixQueue.importPreviewSummary": (
+            "Valid: {valid}; errors: {invalid}; duplicates: {duplicates}; selected: {selected}."
+        ),
+        "adminMatrixQueue.importSelect": "Select",
+        "adminMatrixQueue.importRow": "Row",
+        "adminMatrixQueue.importQuestion": "Question",
+        "adminMatrixQueue.importSheet": "Sheet",
+        "adminMatrixQueue.importGrade": "Grade",
+        "adminMatrixQueue.importIssues": "Validation",
+        "adminMatrixQueue.importSelectRow": "Select row {row}",
+        "adminMatrixQueue.importReady": "Ready to import",
+        "adminMatrixQueue.importSelectAtLeastOne": "Select at least one valid row.",
+        "adminMatrixQueue.importIssue.questionNotText": "Question must be text.",
+        "adminMatrixQueue.importIssue.questionBlank": "Question must not be blank.",
+        "adminMatrixQueue.importIssue.questionTooLong": (
+            "Question must contain at most {max} characters."
+        ),
+        "adminMatrixQueue.importIssue.sheetNotText": "Sheet must be text.",
+        "adminMatrixQueue.importIssue.gradeNotText": "Grade must be text.",
+        "adminMatrixQueue.importIssue.gradeInvalid": (
+            "Grade must be one of: Junior, Junior+, Middle, Middle+, Senior."
+        ),
+        "adminMatrixQueue.importIssue.duplicateInFile": (
+            "Duplicate of row {rows} in the selected file."
+        ),
+        "adminMatrixQueue.importIssue.duplicateInQueue": (
+            "The same question is already in the queue."
+        ),
         "adminMatrixQueue.reject": "Reject",
         "adminMatrixQueue.createAndNext": "Create and next",
         "adminMatrixQueue.rejectAndNext": "Reject and next",
