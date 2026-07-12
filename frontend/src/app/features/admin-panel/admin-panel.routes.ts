@@ -5,6 +5,7 @@ import { adminUnsavedChangesGuard } from './guards/admin-unsaved-changes.guard';
 export const adminPanelRoutes: Routes = [
   {
     path: '',
+    title: 'adminPanel.title',
     loadComponent: () =>
       import('./pages/admin-panel-page/admin-panel-page.component').then(
         (m) => m.AdminPanelPageComponent,
@@ -17,6 +18,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'articles',
+        title: 'articles.title',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/articles-page/articles-page.component').then(
@@ -25,6 +27,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'article-folders',
+        title: 'articles.folders.title',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/article-folders-page/article-folders-page.component').then(
@@ -33,6 +36,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'article-statistics',
+        title: 'articles.stats.button',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/article-statistics-page/article-statistics-page.component').then(
@@ -41,6 +45,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'articles/:slug',
+        title: 'articles.modal.edit',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/article-detail-page/article-detail-page.component').then(
@@ -49,6 +54,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'matrix-questions',
+        title: 'adminMatrixWorkspace.title',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/matrix-questions-page/matrix-questions-page.component').then(
@@ -57,6 +63,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'matrix-structure',
+        title: 'adminMatrixStructure.title',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/matrix-structure-page/matrix-structure-page.component').then(
@@ -65,6 +72,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'matrix-questions/:id',
+        title: 'matrix.modal.edit',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/matrix-question-detail-page/matrix-question-detail-page.component').then(
@@ -73,6 +81,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'matrix-question-queue',
+        title: 'adminMatrixQueue.title',
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
           import('./pages/matrix-question-queue-page/matrix-question-queue-page.component').then(
@@ -81,6 +90,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/team',
+        title: 'adminTeamWorkspace.title',
         canActivate: [teamGuard],
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
@@ -88,6 +98,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/team/:username',
+        title: 'adminTeamWorkspace.detailTitle',
         canActivate: [teamGuard],
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
@@ -97,6 +108,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/resumes',
+        title: 'adminResumeWorkspace.title',
         canActivate: [teamGuard],
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>
@@ -106,6 +118,7 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/resumes/:id',
+        title: 'adminResumeWorkspace.detailTitle',
         canActivate: [teamGuard],
         canDeactivate: [adminUnsavedChangesGuard],
         loadComponent: () =>

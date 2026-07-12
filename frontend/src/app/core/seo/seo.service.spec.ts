@@ -20,14 +20,28 @@ describe('SeoService', () => {
   it('setMeta() sets document title using Title service', () => {
     service.setMeta({ title: 'Как устроен сайт', description: 'Описание страницы.' });
 
-    expect(titleService.getTitle()).toBe('Как устроен сайт - Мой сайт');
+    expect(titleService.getTitle()).toBe('Как устроен сайт');
   });
 
   it('setMeta() sets og:title meta tag', () => {
     service.setMeta({ title: 'Матрица компетенций', description: 'Матрица компетенций.' });
 
     const tag = metaService.getTag('property="og:title"');
-    expect(tag?.content).toBe('Матрица компетенций - Мой сайт');
+    expect(tag?.content).toBe('Матрица компетенций');
+  });
+
+  it('setMeta() sets twitter:title without a site-name suffix', () => {
+    service.setMeta({ title: 'Матрица компетенций', description: 'Матрица компетенций.' });
+
+    const tag = metaService.getTag('name="twitter:title"');
+    expect(tag?.content).toBe('Матрица компетенций');
+  });
+
+  it('setMeta() keeps the localized site name in og:site_name', () => {
+    service.setMeta({ title: 'Матрица компетенций', description: 'Матрица компетенций.' });
+
+    const tag = metaService.getTag('property="og:site_name"');
+    expect(tag?.content).toBe('Мой сайт');
   });
 
   it('setMeta() sets description meta tag', () => {

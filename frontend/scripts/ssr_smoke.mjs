@@ -91,7 +91,7 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
   const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
-    ['title', html.includes('How this site is built - My site')],
+    ['title', html.includes('<title>How this site is built</title>')],
     ['hero', html.includes('Engineering case study of a production-minded knowledge base.')],
     ['architecture', html.includes('Angular hybrid SSR/CSR and backend-driven i18n.')],
     ['source code CTA', html.includes('href="https://github.com/ALittleMoron/my-site"')],
@@ -114,7 +114,7 @@ async function assertUpdatesHtml(frontendPort, requests) {
   const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
-    ['title', html.includes('Updates - My site')],
+    ['title', html.includes('<title>Updates</title>')],
     ['hero', html.includes('Major changes to the site and knowledge base')],
     ['month', html.includes('Июль 2026')],
     ['history month', html.includes('Сентябрь 2024')],
@@ -139,7 +139,7 @@ async function assertPublishedArticleHtml(frontendPort, requests) {
   const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
-    ['article title', html.includes('SEO Typed articles RU - My site')],
+    ['article title', html.includes('<title>SEO Typed articles RU</title>')],
     ['article body', html.includes('Rendered SSR article body')],
     ['canonical', html.includes(`href="http://127.0.0.1:${frontendPort}/ru/articles/typed-articles"`)],
     ['hreflang ru', html.includes('hreflang="ru"')],
@@ -168,7 +168,7 @@ async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
   const pageRequests = requests.slice(requestStart);
   const expected = [
     ['status 200', response.status === 200],
-    ['matrix question title', html.includes('Как написать функцию? - My site')],
+    ['matrix question title', html.includes('<title>Как написать функцию?</title>')],
     ['matrix question body', html.includes('Rendered SSR matrix answer')],
     [
       'canonical',

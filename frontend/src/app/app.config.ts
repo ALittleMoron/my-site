@@ -14,7 +14,12 @@ import {
   withEventReplay,
   withHttpTransferCacheOptions,
 } from '@angular/platform-browser';
-import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
+import {
+  provideRouter,
+  TitleStrategy,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+} from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
@@ -22,6 +27,7 @@ import { GlobalErrorHandler } from './core/error/global-error-handler';
 import { I18nService } from './core/i18n/i18n.service';
 import { of } from 'rxjs';
 import { AuthService } from './core/auth/auth.service';
+import { LocalizedTitleStrategy } from './core/seo/localized-title.strategy';
 
 export const SKIP_I18N_STARTUP = new InjectionToken<boolean>('SKIP_I18N_STARTUP', {
   providedIn: 'root',
@@ -48,6 +54,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     provideAppInitializer(() => initializeAuth()),
     provideAppInitializer(() => initializeI18n()),
+    { provide: TitleStrategy, useClass: LocalizedTitleStrategy },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

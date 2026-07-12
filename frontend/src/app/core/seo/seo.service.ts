@@ -90,23 +90,22 @@ export class SeoService {
   }
 
   private applyMeta(data: SeoMeta, siteName: string): void {
-    const fullTitle = `${data.title} - ${siteName}`;
     const image = data.ogImage ?? DEFAULT_OG_IMAGE;
     const url = data.canonicalUrl ?? this.buildCanonicalUrl(data.canonicalPath);
 
-    this.title.setTitle(fullTitle);
+    this.title.setTitle(data.title);
 
     this.meta.updateTag({ name: 'description', content: data.description });
 
     this.meta.updateTag({ property: 'og:type', content: data.ogType ?? 'website' });
     this.meta.updateTag({ property: 'og:site_name', content: siteName });
-    this.meta.updateTag({ property: 'og:title', content: fullTitle });
+    this.meta.updateTag({ property: 'og:title', content: data.title });
     this.meta.updateTag({ property: 'og:description', content: data.description });
     this.meta.updateTag({ property: 'og:url', content: url });
     this.meta.updateTag({ property: 'og:image', content: image });
 
     this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
-    this.meta.updateTag({ name: 'twitter:title', content: fullTitle });
+    this.meta.updateTag({ name: 'twitter:title', content: data.title });
     this.meta.updateTag({ name: 'twitter:description', content: data.description });
     this.meta.updateTag({ name: 'twitter:image', content: image });
 
