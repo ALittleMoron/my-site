@@ -409,6 +409,11 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.modal.create': 'Добавление вопроса',
   'matrix.modal.edit': 'Редактирование вопроса',
   'matrix.form.localizedDisplayMode': 'Показывать поля',
+  'matrix.form.viewMode': 'Режим формы',
+  'matrix.form.editMode': 'Редактирование',
+  'matrix.form.previewMode': 'Предпросмотр',
+  'matrix.form.previewLanguage': 'Язык предпросмотра',
+  'matrix.form.previewLanguageError': 'Не удалось загрузить язык предпросмотра.',
   'matrix.form.displayModeRu': 'RU',
   'matrix.form.displayModeEn': 'EN',
   'matrix.form.displayModeRuEn': 'RU+EN',
@@ -638,6 +643,12 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
 };
 
 const I18N_TEST_MESSAGES_EN: Record<string, string> = {
+  'matrix.detail.question': 'Question:',
+  'matrix.detail.answer': 'Answer:',
+  'matrix.detail.expectedAnswer': 'Expected interview answer:',
+  'matrix.detail.interviewFrequency': 'How often asked:',
+  'matrix.detail.resources': 'External resources:',
+  'enum.interviewFrequency.often': 'Often',
   'shared.datePicker.placeholder': 'mm/dd/yyyy',
   'shared.datePicker.open': 'Open calendar',
   'shared.datePicker.previousMonth': 'Previous month',

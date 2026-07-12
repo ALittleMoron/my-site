@@ -17,8 +17,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, map } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
+import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { slugify } from '../../../../shared/utils/slugify';
@@ -37,6 +39,10 @@ import {
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
+import {
+  MatrixQuestionPreviewResource,
+  MatrixQuestionPublicPreviewComponent,
+} from './matrix-question-public-preview.component';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -68,6 +74,7 @@ type MatrixQuestionField =
   | 'expectedAnswerEn';
 type NewResourceField = 'nameRu' | 'nameEn' | 'url';
 type MatrixQuestionDisplayMode = 'ru' | 'en' | 'ruEn';
+type MatrixQuestionViewMode = 'edit' | 'preview';
 
 interface AdminMatrixAttachedResourceTranslations {
   ru: { name: string; context: string };
@@ -91,6 +98,7 @@ interface AdminMatrixResourceDraft {
     MarkdownEditorComponent,
     TranslatePipe,
     MatrixStructurePickerComponent,
+    MatrixQuestionPublicPreviewComponent,
     AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -149,6 +157,11 @@ export class MatrixQuestionFormComponent implements OnChanges {
   readonly newResourceSubmitted = signal(false);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
   readonly localizedDisplayMode = signal<MatrixQuestionDisplayMode>('ruEn');
+  readonly viewMode = signal<MatrixQuestionViewMode>('edit');
+  readonly previewLanguage = signal<LanguageCode>(this.currentLanguage());
+  readonly previewLanguageLoading = signal(false);
+  readonly previewLanguageError = signal<string | null>(null);
+  readonly previewBundleVersion = signal(0);
   readonly showRuLocalizedFields = computed(() => this.localizedDisplayMode() !== 'en');
   readonly showEnLocalizedFields = computed(() => this.localizedDisplayMode() !== 'ru');
 
@@ -171,6 +184,36 @@ export class MatrixQuestionFormComponent implements OnChanges {
     answerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
     expectedAnswerRu: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
     expectedAnswerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+  });
+  private readonly questionFormValue = toSignal(
+    this.questionForm.valueChanges.pipe(map(() => this.questionForm.getRawValue())),
+    { initialValue: this.questionForm.getRawValue() },
+  );
+  readonly previewContent = computed(() => {
+    const value = this.questionFormValue();
+    const language = this.previewLanguage();
+    return language === 'ru'
+      ? {
+          question: value.questionRu,
+          answer: value.answerRu,
+          interviewExpectedAnswer: value.expectedAnswerRu,
+          interviewFrequency: value.interviewFrequency || null,
+        }
+      : {
+          question: value.questionEn,
+          answer: value.answerEn,
+          interviewExpectedAnswer: value.expectedAnswerEn,
+          interviewFrequency: value.interviewFrequency || null,
+        };
+  });
+  readonly previewResources = computed<MatrixQuestionPreviewResource[]>(() => {
+    const language = this.previewLanguage();
+    return this.resourceDrafts().map((resource) => ({
+      key: resource.id,
+      name: resource.translations[language].name,
+      url: resource.url,
+      context: resource.translations[language].context,
+    }));
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -240,6 +283,41 @@ export class MatrixQuestionFormComponent implements OnChanges {
 
   localizedDisplayModeSelected(mode: MatrixQuestionDisplayMode): boolean {
     return this.localizedDisplayMode() === mode;
+  }
+
+  setPreviewLanguage(language: LanguageCode): void {
+    if (this.previewLanguage() === language || this.previewLanguageLoading()) return;
+    this.previewLanguageLoading.set(true);
+    this.previewLanguageError.set(null);
+    this.i18n
+      .ensureLanguageBundle(language)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => {
+          this.previewLanguageLoading.set(false);
+          this.previewLanguageError.set(this.i18n.translate('matrix.form.previewLanguageError'));
+          return EMPTY;
+        }),
+      )
+      .subscribe(() => {
+        this.previewLanguage.set(language);
+        this.previewLanguageLoading.set(false);
+        this.previewBundleVersion.update((version) => version + 1);
+      });
+  }
+
+  previewLanguageSelected(language: LanguageCode): boolean {
+    return this.previewLanguage() === language;
+  }
+
+  showPreview(): void {
+    this.previewLanguageError.set(null);
+    this.previewBundleVersion.update((version) => version + 1);
+    this.viewMode.set('preview');
+  }
+
+  showEdit(): void {
+    this.viewMode.set('edit');
   }
 
   setAnswerRu(value: string): void {
@@ -425,6 +503,10 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.formSubmitted.set(false);
     this.publishError.set(null);
     this.localizedDisplayMode.set('ruEn');
+    this.viewMode.set('edit');
+    this.previewLanguage.set(this.currentLanguage());
+    this.previewLanguageLoading.set(false);
+    this.previewLanguageError.set(null);
     if (this.question === null) {
       const initialValue = this.createInitialValue;
       this.questionForm.reset({

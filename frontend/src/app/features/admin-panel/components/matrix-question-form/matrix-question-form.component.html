@@ -3,7 +3,34 @@
     <div class="alert alert-danger" role="alert">{{ publishError() }}</div>
   }
 
-  <div class="row g-3">
+  <div class="d-flex justify-content-end mb-3">
+    <div class="btn-group btn-group-sm" role="group" [attr.aria-label]="'matrix.form.viewMode' | t">
+      <button
+        type="button"
+        class="btn"
+        data-testid="matrix-form-view-edit"
+        [class.btn-secondary]="viewMode() === 'edit'"
+        [class.btn-outline-secondary]="viewMode() !== 'edit'"
+        [attr.aria-pressed]="viewMode() === 'edit'"
+        (click)="showEdit()"
+      >
+        {{ 'matrix.form.editMode' | t }}
+      </button>
+      <button
+        type="button"
+        class="btn"
+        data-testid="matrix-form-view-preview"
+        [class.btn-secondary]="viewMode() === 'preview'"
+        [class.btn-outline-secondary]="viewMode() !== 'preview'"
+        [attr.aria-pressed]="viewMode() === 'preview'"
+        (click)="showPreview()"
+      >
+        {{ 'matrix.form.previewMode' | t }}
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-3" [hidden]="viewMode() !== 'edit'">
     <div class="col-md-6">
       <label class="form-label" for="matrix-form-slug">
         {{ 'matrix.form.slug' | t }}
@@ -409,6 +436,59 @@
       }
     </section>
   </div>
+  <section
+    [hidden]="viewMode() !== 'preview'"
+    [attr.aria-label]="'adminMatrixWorkspace.previewTab' | t"
+  >
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <h3 class="h5 mb-0">{{ 'adminMatrixWorkspace.previewTab' | t }}</h3>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="small text-body-secondary" id="matrix-preview-language-label">
+          {{ 'matrix.form.previewLanguage' | t }}
+        </span>
+        <div
+          class="btn-group btn-group-sm"
+          role="group"
+          aria-labelledby="matrix-preview-language-label"
+        >
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-testid="matrix-preview-language-ru"
+            [disabled]="previewLanguageLoading()"
+            [class.active]="previewLanguageSelected('ru')"
+            [attr.aria-pressed]="previewLanguageSelected('ru')"
+            (click)="setPreviewLanguage('ru')"
+          >
+            {{ 'matrix.form.displayModeRu' | t }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            data-testid="matrix-preview-language-en"
+            [disabled]="previewLanguageLoading()"
+            [class.active]="previewLanguageSelected('en')"
+            [attr.aria-pressed]="previewLanguageSelected('en')"
+            (click)="setPreviewLanguage('en')"
+          >
+            {{ 'matrix.form.displayModeEn' | t }}
+          </button>
+        </div>
+      </div>
+    </div>
+    @if (previewLanguageError()) {
+      <div class="alert alert-danger" role="alert">{{ previewLanguageError() }}</div>
+    }
+    <app-matrix-question-public-preview
+      [question]="previewContent().question"
+      [answer]="previewContent().answer"
+      [interviewExpectedAnswer]="previewContent().interviewExpectedAnswer"
+      [interviewFrequency]="previewContent().interviewFrequency"
+      [resources]="previewResources()"
+      [language]="previewLanguage()"
+      [bundleVersion]="previewBundleVersion()"
+    />
+  </section>
 
   <div
     class="matrix-question-form-action-footer d-flex flex-wrap align-items-center gap-2 mt-4 py-3 border-top"

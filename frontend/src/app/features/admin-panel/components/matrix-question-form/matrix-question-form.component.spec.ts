@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import {
@@ -590,6 +591,87 @@ describe('MatrixQuestionFormComponent', () => {
     ]);
   });
 
+  it('previews unsaved localized Markdown and attached resources as public content', () => {
+    setInput('#matrix-form-question-ru', 'Как работает typing?');
+    setInput('#matrix-form-question-en', 'How does typing work?');
+    setMarkdownEditor(
+      '#matrix-form-answer-ru',
+      'Изучите **типы** в [[articles:python-typing|статье]].',
+    );
+    setMarkdownEditor(
+      '#matrix-form-answer-en',
+      'Learn **types** in the [[articles:python-typing|article]].',
+    );
+    setMarkdownEditor('#matrix-form-expected-ru', 'Покажите `Protocol`.');
+    setMarkdownEditor('#matrix-form-expected-en', 'Show `Protocol`.');
+    setSelect('#matrix-form-interview-frequency', 'often');
+    fixture.componentInstance.attachResource(resource);
+    fixture.detectChanges();
+    setTextarea('#matrixResourceContextRu0', 'Читать раздел typing');
+    setTextarea('#matrixResourceContextEn0', 'Read the typing section');
+
+    expect(previewSection().hidden).toBe(true);
+    clickViewMode('preview');
+    expect(previewSection().hidden).toBe(false);
+
+    const ruPreview = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-question-public-preview"]',
+    );
+    const ruWikiLink = ruPreview?.querySelector<HTMLAnchorElement>(
+      'a[href="/ru/articles/python-typing"]',
+    );
+
+    expect(ruPreview?.textContent).toContain('Как работает typing?');
+    expect(ruPreview?.querySelector('strong')?.textContent).toBe('типы');
+    expect(ruWikiLink?.textContent).toBe('статье');
+    expect(ruPreview?.textContent).toContain('Документация Python');
+    expect(ruPreview?.textContent).toContain('Читать раздел typing');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-preview-language-en"]')
+      ?.click();
+    fixture.detectChanges();
+
+    const enPreview = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-question-public-preview"]',
+    );
+    expect(enPreview?.textContent).toContain('How does typing work?');
+    expect(enPreview?.querySelector('strong')?.textContent).toBe('types');
+    expect(
+      enPreview?.querySelector<HTMLAnchorElement>('a[href="/en/articles/python-typing"]')
+        ?.textContent,
+    ).toBe('article');
+    expect(enPreview?.textContent).toContain('Python docs');
+    expect(enPreview?.textContent).toContain('Read the typing section');
+
+    clickViewMode('edit');
+    expect(previewSection().hidden).toBe(true);
+    expect(inputValue('#matrix-form-question-en')).toBe('How does typing work?');
+
+    clickViewMode('preview');
+    expect(previewSection().hidden).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('How does typing work?');
+  });
+
+  it('keeps the current preview language and shows feedback when another bundle fails', () => {
+    const i18n = TestBed.inject(I18nService);
+    jest
+      .spyOn(i18n, 'ensureLanguageBundle')
+      .mockReturnValue(throwError(() => new Error('bundle unavailable')));
+    clickViewMode('preview');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-preview-language-en"]')
+      ?.click();
+    fixture.detectChanges();
+
+    const preview = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="matrix-question-public-preview"]',
+    );
+    expect(preview?.getAttribute('lang')).toBe('ru');
+    expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить язык предпросмотра.');
+  });
+
   it('loads existing question values into the edit form', () => {
     fixture.componentRef.setInput('mode', 'edit');
     fixture.componentRef.setInput('question', questionDetail());
@@ -660,6 +742,25 @@ describe('MatrixQuestionFormComponent', () => {
     }
     button.click();
     fixture.detectChanges();
+  }
+
+  function clickViewMode(mode: 'edit' | 'preview'): void {
+    const button = fixture.nativeElement.querySelector(
+      `[data-testid="matrix-form-view-${mode}"]`,
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error(`No form view mode button found for ${mode}`);
+    }
+    button.click();
+    fixture.detectChanges();
+  }
+
+  function previewSection(): HTMLElement {
+    const section = element('[data-testid="matrix-question-public-preview"]')?.closest('section');
+    if (!(section instanceof HTMLElement)) {
+      throw new Error('No matrix question preview section found');
+    }
+    return section;
   }
 
   function expectInvalidControl(selector: string, expectedMessage: string): void {

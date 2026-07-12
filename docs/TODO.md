@@ -537,7 +537,7 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Add RU/EN/RU+EN display modes to the shared matrix question form for localized question, answer, and expected-answer fields.
 - [x] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.
-- [ ] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
+- [x] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
 - [ ] Add a fullscreen single-question queue processing modal that keeps the shared matrix question form wide and shows queue progress/navigation.
 - [x] Add queue-only "create and next", "reject and next", and "skip" actions around the shared matrix question form.
 - [ ] Add queue-only keyboard shortcuts for fast queued question processing.
