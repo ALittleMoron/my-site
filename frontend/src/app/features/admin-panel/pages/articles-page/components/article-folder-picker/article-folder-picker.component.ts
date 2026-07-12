@@ -26,6 +26,10 @@ import { AdminControlValidationStateDirective } from '../../../../directives/adm
 import { ArticleFolder } from '../../../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import {
+  AdminUnsavedChangesScope,
+  AdminUnsavedChangesSource,
+} from '../../../../services/admin-unsaved-changes.service';
+import {
   ADMIN_VALIDATION_LIMITS,
   slugValidator,
   trimRequired,
@@ -47,6 +51,7 @@ export class ArticleFolderPickerComponent implements OnInit, OnChanges {
 
   @Input({ required: true }) language!: LanguageCode;
   @Input({ required: true }) selectedFolderId!: string;
+  @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
   @Input() disabled = false;
   @Input() invalid = false;
 
@@ -67,8 +72,19 @@ export class ArticleFolderPickerComponent implements OnInit, OnChanges {
     nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
+  readonly createFormSnapshot = signal(this.createForm.getRawValue());
+  private createFormUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private readonly unsavedSourceActive = signal(true);
 
   ngOnInit(): void {
+    this.createFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.createFormSnapshot,
+      this.unsavedSourceActive,
+    );
+    this.destroyRef.onDestroy(() => this.createFormUnsavedSource?.unregister());
+    this.createForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.createFormSnapshot.set(this.createForm.getRawValue());
+    });
     this.loadFolders();
   }
 
@@ -124,9 +140,15 @@ export class ArticleFolderPickerComponent implements OnInit, OnChanges {
           this.selectedFolderIdChange.emit(folder.id);
           this.selectedFolderChange.emit(folder);
           this.createForm.reset();
+          this.createFormUnsavedSource?.commit();
         },
         error: () => this.errorKey.set('articles.folders.createError'),
       });
+  }
+
+  discardDraft(): void {
+    this.createForm.reset();
+    this.createFormUnsavedSource?.commit();
   }
 
   private loadFolders(): void {

@@ -22,6 +22,10 @@ import { AdminControlValidationStateDirective } from '../../directives/admin-con
 import { ArticleFolder } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
 import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   slugValidator,
@@ -54,6 +58,9 @@ export class ArticleFoldersPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+
+  readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
 
   readonly folders = signal<ArticleFolder[]>([]);
   readonly loading = signal(false);
@@ -65,6 +72,9 @@ export class ArticleFoldersPageComponent implements OnInit {
   readonly createError = signal<ApiError | null>(null);
   readonly isEmpty = computed(() => !this.loading() && this.folders().length === 0);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
+  readonly createFormSnapshot = signal({ key: '', nameRu: '', nameEn: '' });
+  readonly reorderPending = signal<readonly string[]>([]);
+  private readonly createFormUnsavedSource: AdminUnsavedChangesSource;
 
   readonly createForm = this.formBuilder.group({
     key: [
@@ -74,6 +84,18 @@ export class ArticleFoldersPageComponent implements OnInit {
     nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
+
+  constructor() {
+    this.createFormSnapshot.set(this.createForm.getRawValue());
+    this.createFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.createFormSnapshot,
+      this.createDialogOpen,
+    );
+    this.unsavedChangesScope.registerSource(this.reorderPending, signal(true));
+    this.createForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.createFormSnapshot.set(this.createForm.getRawValue());
+    });
+  }
 
   ngOnInit(): void {
     this.loadFolders();
@@ -112,6 +134,7 @@ export class ArticleFoldersPageComponent implements OnInit {
 
   closeCreateDialog(): void {
     if (this.createSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.createDialogOpen.set(false);
     this.createError.set(null);
     this.createFormSubmitted.set(false);
@@ -146,6 +169,7 @@ export class ArticleFoldersPageComponent implements OnInit {
           this.createDialogOpen.set(false);
           this.createFormSubmitted.set(false);
           this.createForm.reset({ key: '', nameRu: '', nameEn: '' });
+          this.createFormUnsavedSource.commit();
           this.notifications.success(this.i18n.translate('articles.folders.created'));
           this.loadFolders();
         },
@@ -177,6 +201,7 @@ export class ArticleFoldersPageComponent implements OnInit {
     moveItemInArray(next, previousIndex, currentIndex);
     renumberPriorities(next);
     this.folders.set(next);
+    this.reorderPending.set(next.map((folder) => folder.id));
     this.saveReorder(
       snapshot,
       this.articlesService.updateFolderPriorities(next.map((folder) => folder.id)),
@@ -187,11 +212,13 @@ export class ArticleFoldersPageComponent implements OnInit {
     this.saving.set(true);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.reorderPending.set([]);
         this.saving.set(false);
         this.notifications.success(this.i18n.translate('articles.folders.saved'));
       },
       error: () => {
         this.folders.set(snapshot);
+        this.reorderPending.set([]);
         this.saving.set(false);
         this.notifications.error(this.i18n.translate('articles.folders.saveError'));
         this.loadFolders();

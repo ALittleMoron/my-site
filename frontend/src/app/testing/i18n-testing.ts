@@ -70,6 +70,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminPanel.section.workspace': 'Рабочая область',
   'adminPanel.section.team': 'Команда',
   'adminPanel.section.resumes': 'Резюме',
+  'adminUnsavedChanges.confirmDiscard':
+    'Есть несохранённые изменения. Если продолжить, они будут потеряны. Продолжить?',
   'adminArticlesWorkspace.loadError': 'Не удалось загрузить статьи.',
   'adminArticlesWorkspace.confirmDelete': 'Удалить статью?',
   'adminTeamWorkspace.title': 'Команда',

@@ -50,10 +50,11 @@
       />
     }
     <app-admin-article-form
+      #articleForm
       [article]="currentArticle"
+      [unsavedChangesScope]="unsavedChangesScope"
       (articleSave)="saveArticle($event)"
       (formCancel)="goBack()"
-      (tagsChanged)="reloadCurrentArticle()"
     />
   }
 </section>

@@ -8,6 +8,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { ManagedAccount, ManagedAccountSession } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import { TeamMemberDetailPageComponent } from './team-member-detail-page.component';
 
 describe('TeamMemberDetailPageComponent', () => {
@@ -181,6 +182,30 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(service.updateAccountPassword).toHaveBeenCalledWith('AdminUser', 'new-password');
     expect(notifications.success).toHaveBeenCalledWith('Роль обновлена.');
     expect(notifications.success).toHaveBeenCalledWith('Пароль обновлён.');
+  });
+
+  it('guards changed role and password dialogs and commits successful updates', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.componentInstance.openRoleDialog();
+    fixture.componentInstance.roleForm.controls.role.setValue('moderator');
+    fixture.componentInstance.closeRoleDialog();
+    expect(fixture.componentInstance.roleDialogOpen()).toBe(true);
+    expect(unsavedChanges.hasChanges()).toBe(true);
+
+    fixture.componentInstance.updateRole();
+    expect(unsavedChanges.hasChanges()).toBe(false);
+
+    confirm.mockClear();
+    fixture.componentInstance.openPasswordDialog();
+    fixture.componentInstance.passwordForm.controls.password.setValue('new-password');
+    fixture.componentInstance.closePasswordDialog();
+    expect(fixture.componentInstance.passwordDialogOpen()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(1);
+
+    fixture.componentInstance.updatePassword();
+    expect(unsavedChanges.hasChanges()).toBe(false);
   });
 
   it('deactivates and deletes the current detail account with confirmation', () => {

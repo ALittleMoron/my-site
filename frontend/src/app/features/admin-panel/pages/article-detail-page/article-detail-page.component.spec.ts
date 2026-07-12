@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -9,6 +9,7 @@ import { AdminArticleDetail, AdminArticlePayload } from '../../models/article-wo
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
 import { ArticleFormComponent } from '../articles-page/components/article-form/article-form.component';
 import { AdminArticleDetailPageComponent } from './article-detail-page.component';
+import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
 
 describe('AdminArticleDetailPageComponent', () => {
   let fixture: ComponentFixture<AdminArticleDetailPageComponent>;
@@ -85,10 +86,13 @@ describe('AdminArticleDetailPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles', 'renamed-article'], {
       replaceUrl: true,
     });
+    expect(form?.acceptedArticle()?.slug).toBe('renamed-article');
   });
 
   it('unpublishes, confirms deletes, and returns to the article list', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
+    const form = fixture.debugElement.query(By.directive(ArticleFormStubComponent))
+      ?.componentInstance as ArticleFormStubComponent | undefined;
 
     openDetailActions();
     fixture.nativeElement
@@ -100,6 +104,7 @@ describe('AdminArticleDetailPageComponent', () => {
       ?.click();
 
     expect(service.unpublishArticle).toHaveBeenCalledWith('typed-articles');
+    expect(form?.discardAuxiliaryDrafts).toHaveBeenCalled();
     expect(window.confirm).toHaveBeenCalled();
     expect(service.deleteArticle).toHaveBeenCalledWith('typed-articles');
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/articles');
@@ -126,9 +131,16 @@ describe('AdminArticleDetailPageComponent', () => {
 })
 class ArticleFormStubComponent {
   readonly article = input<AdminArticleDetail | null>(null);
+  readonly unsavedChangesScope = input.required<AdminUnsavedChangesScope>();
   readonly articleSave = output<AdminArticlePayload>();
   readonly formCancel = output<void>();
   readonly tagsChanged = output<void>();
+  readonly acceptedArticle = signal<AdminArticleDetail | null>(null);
+  readonly discardAuxiliaryDrafts = jest.fn();
+
+  acceptSavedArticle(article: AdminArticleDetail): void {
+    this.acceptedArticle.set(article);
+  }
 }
 
 function articleDetail(slug: string, publishStatus: 'Draft' | 'Published'): AdminArticleDetail {

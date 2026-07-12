@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
+import { AdminUnsavedChangesScope } from '../../../../services/admin-unsaved-changes.service';
 import { ArticleFolderPickerComponent } from './article-folder-picker.component';
 
 describe('ArticleFolderPickerComponent', () => {
@@ -26,6 +27,13 @@ describe('ArticleFolderPickerComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ArticleFolderPickerComponent);
+    fixture.componentRef.setInput(
+      'unsavedChangesScope',
+      new AdminUnsavedChangesScope(
+        () => false,
+        () => undefined,
+      ),
+    );
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedFolderId', '');
     fixture.detectChanges();

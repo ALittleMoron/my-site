@@ -35,6 +35,10 @@ import {
 } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
 import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   trimRequired,
@@ -80,6 +84,11 @@ export class TeamMemberDetailPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly authModal = inject(AuthModalService);
   private readonly username = this.resolveUsername();
+  private readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(
+    this.destroyRef,
+  );
+  private readonly roleFormUnsavedSource: AdminUnsavedChangesSource;
+  private readonly passwordFormUnsavedSource: AdminUnsavedChangesSource;
 
   readonly account = signal<ManagedAccount | null>(null);
   readonly loading = signal(false);
@@ -96,6 +105,8 @@ export class TeamMemberDetailPageComponent implements OnInit {
   readonly sessionsLoading = signal(false);
   readonly sessionsError = signal<ApiError | null>(null);
   readonly sessionActionSubmitting = signal<string | null>(null);
+  readonly roleFormSnapshot = signal({ role: '' });
+  readonly passwordFormSnapshot = signal({ password: '' });
   readonly roleOptions = computed<readonly ManagedAccountRoleOption[]>(() =>
     this.currentUserRole() === 'owner'
       ? MANAGED_ACCOUNT_ROLE_OPTIONS
@@ -127,6 +138,25 @@ export class TeamMemberDetailPageComponent implements OnInit {
       ],
     ],
   });
+
+  constructor() {
+    this.roleFormSnapshot.set(this.roleForm.getRawValue());
+    this.passwordFormSnapshot.set(this.passwordForm.getRawValue());
+    this.roleFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.roleFormSnapshot,
+      this.roleDialogOpen,
+    );
+    this.passwordFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.passwordFormSnapshot,
+      this.passwordDialogOpen,
+    );
+    this.roleForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.roleFormSnapshot.set(this.roleForm.getRawValue());
+    });
+    this.passwordForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.passwordFormSnapshot.set(this.passwordForm.getRawValue());
+    });
+  }
 
   ngOnInit(): void {
     this.loadAccount();
@@ -241,11 +271,13 @@ export class TeamMemberDetailPageComponent implements OnInit {
     this.roleError.set(null);
     this.roleSubmitting.set(false);
     this.roleFormSubmitted.set(false);
+    this.roleFormUnsavedSource.commit();
     this.roleDialogOpen.set(true);
   }
 
   closeRoleDialog(): void {
     if (this.roleSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.roleDialogOpen.set(false);
     this.roleError.set(null);
     this.roleFormSubmitted.set(false);
@@ -270,6 +302,8 @@ export class TeamMemberDetailPageComponent implements OnInit {
         next: (updatedAccount) => {
           this.account.set(updatedAccount);
           this.roleSubmitting.set(false);
+          this.roleForm.reset({ role: updatedAccount.role });
+          this.roleFormUnsavedSource.commit();
           this.roleDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.roleUpdated'));
         },
@@ -288,11 +322,13 @@ export class TeamMemberDetailPageComponent implements OnInit {
     this.passwordError.set(null);
     this.passwordSubmitting.set(false);
     this.passwordFormSubmitted.set(false);
+    this.passwordFormUnsavedSource.commit();
     this.passwordDialogOpen.set(true);
   }
 
   closePasswordDialog(): void {
     if (this.passwordSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.passwordDialogOpen.set(false);
     this.passwordError.set(null);
     this.passwordFormSubmitted.set(false);
@@ -316,6 +352,8 @@ export class TeamMemberDetailPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.passwordSubmitting.set(false);
+          this.passwordForm.reset({ password: '' });
+          this.passwordFormUnsavedSource.commit();
           this.passwordDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.passwordUpdated'));
         },

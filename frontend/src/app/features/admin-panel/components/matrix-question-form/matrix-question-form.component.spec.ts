@@ -11,6 +11,7 @@ import {
   AdminMatrixResource,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
 import { MatrixQuestionFormComponent } from './matrix-question-form.component';
 
@@ -42,12 +43,16 @@ describe('MatrixQuestionFormComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionFormComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
   let emittedPayloads: AdminMatrixQuestionPayload[];
+  let unsavedChangesScope: AdminUnsavedChangesScope;
+  let confirmDiscard: jest.Mock<boolean, []>;
 
   beforeEach(async () => {
     service = {
       searchResources: jest.fn().mockReturnValue(of([resource])),
     } as unknown as jest.Mocked<MatrixQuestionWorkspaceService>;
     emittedPayloads = [];
+    confirmDiscard = jest.fn(() => false);
+    unsavedChangesScope = new AdminUnsavedChangesScope(confirmDiscard, () => undefined);
 
     await TestBed.configureTestingModule({
       imports: [MatrixQuestionFormComponent],
@@ -68,6 +73,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.componentRef.setInput('createInitialValue', null);
     fixture.componentRef.setInput('submitting', false);
     fixture.componentRef.setInput('submitLabelKey', 'adminMatrixQueue.createAndNext');
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.componentInstance.questionSave.subscribe((payload) => emittedPayloads.push(payload));
     fixture.detectChanges();
   });
@@ -82,6 +88,32 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(footer).not.toBeNull();
     expect(submit?.textContent?.trim()).toBe('Создать и далее');
+  });
+
+  it('tracks form, attached-resource, and unfinished new-resource changes against the baseline', () => {
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+
+    fixture.componentInstance.questionForm.controls.questionRu.setValue('Черновик');
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+
+    fixture.componentInstance.questionForm.controls.questionRu.setValue('');
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+
+    fixture.componentInstance.attachResource(resource);
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+
+    fixture.componentInstance.resourceDrafts.set([]);
+    fixture.componentInstance.newResourceNameRu.set('Новый ресурс');
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+  });
+
+  it('removes its draft source when a modal-owned form is destroyed', () => {
+    fixture.componentInstance.questionForm.controls.questionRu.setValue('Черновик');
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+
+    fixture.destroy();
+
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
   });
 
   it('marks required fields and clears the red border after a required value is entered', () => {
@@ -184,6 +216,19 @@ describe('MatrixQuestionFormComponent', () => {
         resources: [],
       }),
     );
+  });
+
+  it('does not create a question when discarding an unfinished nested draft is rejected', () => {
+    setInput('#matrix-form-slug', 'draft-question');
+    selectQuestionSubsection(SUBSECTION_ID);
+    setInput('#matrix-form-question-ru', 'Неполный вопрос?');
+    setInput('#matrix-form-question-en', 'Incomplete question?');
+    fixture.componentInstance.newResourceNameRu.set('Незавершённый ресурс');
+
+    submitForm();
+
+    expect(confirmDiscard).toHaveBeenCalled();
+    expect(emittedPayloads).toEqual([]);
   });
 
   it('prefills create form from explicit initial value', () => {
@@ -802,6 +847,7 @@ describe('MatrixQuestionFormComponent', () => {
     '<select data-testid="matrix-structure-subsection" [class.is-invalid]="invalid" [attr.aria-invalid]="invalid ? \'true\' : null"></select>',
 })
 class MatrixStructurePickerStubComponent {
+  @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
   @Input({ required: true }) language!: 'ru' | 'en';
   @Input({ required: true }) selectedSubsectionId!: string | null;
   @Input({ required: true }) preferredSheetKey!: string | null;

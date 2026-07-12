@@ -6,6 +6,7 @@ import {
   OnInit,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
@@ -28,6 +29,7 @@ import {
   missingMatrixQuestionPayloadFields,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 
 @Component({
   selector: 'app-matrix-question-detail-page',
@@ -50,6 +52,8 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(this.destroyRef);
+  private readonly questionForm = viewChild(MatrixQuestionFormComponent);
 
   readonly question = signal<AdminMatrixQuestionDetailDto | null>(null);
   readonly loading = signal(false);
@@ -59,11 +63,11 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.loadQuestion(questionIdFromParams(params));
+      this.loadQuestion(questionIdFromParams(params), false);
     });
   }
 
-  loadQuestion(id: string): void {
+  loadQuestion(id: string, discardDrafts: boolean): void {
     this.loading.set(true);
     this.error.set(null);
     this.saveError.set(null);
@@ -72,6 +76,9 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (question) => {
+          if (discardDrafts) {
+            this.questionForm()?.discardDraftsAndAcceptQuestion(question);
+          }
           this.question.set(question);
           this.loading.set(false);
         },
@@ -93,6 +100,7 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (updated) => {
+          this.questionForm()?.acceptSavedQuestion(updated);
           this.question.set(updated);
           this.submitting.set(false);
           this.notifications.success(this.i18n.translate('adminMatrixWorkspace.saved'));
@@ -106,7 +114,7 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
   }
 
   retryLoadQuestion(): void {
-    this.loadQuestion(questionIdFromParams(this.route.snapshot.paramMap));
+    this.loadQuestion(questionIdFromParams(this.route.snapshot.paramMap), false);
   }
 
   dismissSaveError(): void {
@@ -165,26 +173,28 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
       );
       return;
     }
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.workspaceService
       .publishQuestion(question.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.notifications.success(this.i18n.translate('matrix.notify.published'));
-          this.loadQuestion(question.id);
+          this.loadQuestion(question.id, true);
         },
         error: () => this.notifications.error(this.i18n.translate('matrix.notify.publishError')),
       });
   }
 
   unpublishQuestion(question: AdminMatrixQuestionDetailDto): void {
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.workspaceService
       .unpublishQuestion(question.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.notifications.success(this.i18n.translate('matrix.notify.unpublished'));
-          this.loadQuestion(question.id);
+          this.loadQuestion(question.id, true);
         },
         error: () => this.notifications.error(this.i18n.translate('matrix.notify.unpublishError')),
       });
@@ -203,6 +213,7 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.unsavedChangesScope.commit();
           this.notifications.success(this.i18n.translate('matrix.notify.deleted'));
           void this.router.navigateByUrl('/admin-panel/matrix-questions');
         },

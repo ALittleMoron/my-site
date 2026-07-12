@@ -8,6 +8,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { ManagedAccount, ManagedAccounts } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import { TeamPageComponent } from './team-page.component';
 
 describe('TeamPageComponent', () => {
@@ -118,6 +119,45 @@ describe('TeamPageComponent', () => {
     });
     expect(notifications.success).toHaveBeenCalledWith('Участник создан.');
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/team/NewAdmin');
+  });
+
+  it('guards changed create, role, and password dialogs and accepts exact reverts', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    openCreateDialog();
+    setInputValue('team-create-username', 'DraftUser');
+    fixture.componentInstance.closeCreateDialog();
+    expect(fixture.componentInstance.createDialogOpen()).toBe(true);
+
+    setInputValue('team-create-username', '');
+    fixture.componentInstance.closeCreateDialog();
+    expect(fixture.componentInstance.createDialogOpen()).toBe(false);
+
+    currentUser.set({ username: 'owner', role: 'owner' });
+    fixture.componentInstance.openRoleDialog(account());
+    fixture.componentInstance.roleForm.controls.role.setValue('moderator');
+    fixture.componentInstance.closeRoleDialog();
+    expect(fixture.componentInstance.roleDialogOpen()).toBe(true);
+
+    fixture.componentInstance.openPasswordDialog(account());
+    fixture.componentInstance.passwordForm.controls.password.setValue('new-password');
+    fixture.componentInstance.closePasswordDialog();
+    expect(fixture.componentInstance.passwordDialogOpen()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps failed modal updates dirty and commits successful updates', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    currentUser.set({ username: 'owner', role: 'owner' });
+    service.updateAccountRole.mockReturnValueOnce(throwError(() => apiError()));
+    fixture.componentInstance.openRoleDialog(account());
+    fixture.componentInstance.roleForm.controls.role.setValue('moderator');
+
+    fixture.componentInstance.updateRole();
+    expect(unsavedChanges.hasChanges()).toBe(true);
+
+    service.updateAccountRole.mockReturnValueOnce(of(account({ role: 'moderator' })));
+    fixture.componentInstance.updateRole();
+    expect(unsavedChanges.hasChanges()).toBe(false);
   });
 
   it('marks invalid usernames before calling the create endpoint', () => {

@@ -50,6 +50,10 @@ import {
 } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   emailValidator,
@@ -241,6 +245,10 @@ export class AdminResumeDetailPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly resumeId = this.resolveResumeId();
+  private readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(
+    this.destroyRef,
+  );
+  private readonly resumeFormUnsavedSource: AdminUnsavedChangesSource;
 
   readonly tabs = RESUME_EDITOR_TABS;
   readonly currentStatusOptions = RESUME_CURRENT_STATUS_OPTIONS;
@@ -290,6 +298,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   readonly formError = signal<ApiError | null>(null);
   readonly exportError = signal<ApiError | null>(null);
   readonly formVersion = signal(0);
+  readonly resumeFormSnapshot = signal<unknown>({});
   readonly validationSubmitted = signal(false);
   readonly validationIssues = computed<readonly ResumeValidationIssue[]>(() => {
     this.formVersion();
@@ -322,6 +331,14 @@ export class AdminResumeDetailPageComponent implements OnInit {
     return this.buildPayload();
   });
 
+  constructor() {
+    this.resumeFormSnapshot.set(this.resumeForm.getRawValue());
+    this.resumeFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.resumeFormSnapshot,
+      signal(true),
+    );
+  }
+
   get skills(): FormArray<FormGroup<ResumeSkillGroupForm>> {
     return this.resumeForm.controls.skills;
   }
@@ -348,6 +365,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.resumeForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.resumeFormSnapshot.set(this.resumeForm.getRawValue());
       this.formVersion.update((version) => version + 1);
     });
     this.resumeForm.controls.language.valueChanges
@@ -441,6 +459,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.deleting.set(false);
+          this.resumeFormUnsavedSource.commit();
           this.notifications.success(this.i18n.translate('adminResumeWorkspace.deleted'));
           this.router.navigateByUrl('/admin-panel/workspace/resumes');
         },
@@ -741,6 +760,8 @@ export class AdminResumeDetailPageComponent implements OnInit {
       resume.content.additionalSections.map((item) => this.createAdditionalSectionForm(item)),
     );
     this.ensurePreviewLanguageBundle(resume.language);
+    this.resumeFormSnapshot.set(this.resumeForm.getRawValue());
+    this.resumeFormUnsavedSource.commit();
     this.formVersion.update((version) => version + 1);
   }
 

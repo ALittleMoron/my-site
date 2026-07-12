@@ -6,6 +6,7 @@ import { ApiError } from '../../../../core/models/api-error.model';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { Resume, Resumes, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import { AdminResumesPageComponent } from './resumes-page.component';
 
 const RESUME_ID = '00000000000000000000000000000007';
@@ -76,6 +77,45 @@ describe('AdminResumesPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="resume-create-dialog"]')).not.toBe(
       null,
     );
+  });
+
+  it('confirms closing a changed create form but not a fully reverted form', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    fixture.componentInstance.openCreateDialog();
+    fixture.detectChanges();
+    setInputValue('resume-create-title', 'Draft');
+
+    fixture.componentInstance.closeCreateDialog();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.createDialogOpen()).toBe(true);
+
+    setInputValue('resume-create-title', '');
+    fixture.componentInstance.closeCreateDialog();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.createDialogOpen()).toBe(false);
+  });
+
+  it('keeps failed create data unsaved and commits it after success', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    service.createResume.mockReturnValueOnce(throwError(() => apiError()));
+    fixture.componentInstance.openCreateDialog();
+    fixture.componentInstance.createForm.setValue({
+      title: 'Target resume',
+      language: 'en',
+      fullName: 'Dmitriy',
+      role: 'Backend engineer',
+      summary: 'Summary',
+    });
+
+    fixture.componentInstance.createResume();
+    expect(unsavedChanges.hasChanges()).toBe(true);
+
+    service.createResume.mockReturnValueOnce(of(resume()));
+    fixture.componentInstance.createResume();
+
+    expect(unsavedChanges.hasChanges()).toBe(false);
   });
 
   it('creates a resume and navigates to detail', () => {

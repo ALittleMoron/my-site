@@ -344,6 +344,22 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(slug.classList).not.toContain('is-invalid');
   });
 
+  it('keeps a changed create modal open when discarding is cancelled', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    fixture.componentInstance.openCreate();
+    fixture.detectChanges();
+    setInput('#matrix-form-question-ru', 'Черновик');
+
+    fixture.componentInstance.closeForm();
+    fixture.detectChanges();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.formMode()).toBe('create');
+    expect(
+      (fixture.nativeElement.querySelector('#matrix-form-question-ru') as HTMLInputElement).value,
+    ).toBe('Черновик');
+  });
+
   it('saves an incomplete draft with only the minimum required fields', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();

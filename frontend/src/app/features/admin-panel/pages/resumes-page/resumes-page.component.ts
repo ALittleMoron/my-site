@@ -24,6 +24,10 @@ import {
 } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   trimRequired,
@@ -65,6 +69,10 @@ export class AdminResumesPageComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(
+    this.destroyRef,
+  );
+  private readonly createFormUnsavedSource: AdminUnsavedChangesSource;
 
   readonly page = signal(1);
   readonly resumes = signal<Resumes | null>(null);
@@ -74,6 +82,13 @@ export class AdminResumesPageComponent implements OnInit {
   readonly createSubmitting = signal(false);
   readonly createFormSubmitted = signal(false);
   readonly createError = signal<ApiError | null>(null);
+  readonly createFormSnapshot = signal({
+    title: '',
+    language: '',
+    fullName: '',
+    role: '',
+    summary: '',
+  });
   readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
@@ -84,6 +99,17 @@ export class AdminResumesPageComponent implements OnInit {
     role: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     summary: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.resumeLongText)]],
   });
+
+  constructor() {
+    this.createFormSnapshot.set(this.createForm.getRawValue());
+    this.createFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.createFormSnapshot,
+      this.createDialogOpen,
+    );
+    this.createForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.createFormSnapshot.set(this.createForm.getRawValue());
+    });
+  }
 
   ngOnInit(): void {
     this.loadResumes();
@@ -131,11 +157,13 @@ export class AdminResumesPageComponent implements OnInit {
     this.createError.set(null);
     this.createSubmitting.set(false);
     this.createFormSubmitted.set(false);
+    this.createFormUnsavedSource.commit();
     this.createDialogOpen.set(true);
   }
 
   closeCreateDialog(): void {
     if (this.createSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.createDialogOpen.set(false);
     this.createError.set(null);
     this.createFormSubmitted.set(false);
@@ -155,6 +183,7 @@ export class AdminResumesPageComponent implements OnInit {
       .subscribe({
         next: (resume) => {
           this.createSubmitting.set(false);
+          this.createFormUnsavedSource.commit();
           this.createDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminResumeWorkspace.saved'));
           this.router.navigateByUrl(`/admin-panel/workspace/resumes/${resume.id}`);

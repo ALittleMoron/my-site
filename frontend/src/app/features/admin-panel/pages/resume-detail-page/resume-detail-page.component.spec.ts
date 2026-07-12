@@ -7,6 +7,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { Resume, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import { AdminResumeDetailPageComponent } from './resume-detail-page.component';
 
 type ResumeValidationCaseSetup =
@@ -140,6 +141,46 @@ describe('AdminResumeDetailPageComponent', () => {
       }) satisfies ResumePayload,
     );
     expect(notifications.success).toHaveBeenCalledWith('Резюме сохранено.');
+  });
+
+  it('tracks the complete editor against the loaded and saved resume', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    expect(unsavedChanges.hasChanges()).toBe(false);
+
+    fixture.componentInstance.addSkillGroup();
+    expect(unsavedChanges.hasChanges()).toBe(true);
+
+    fixture.componentInstance.removeSkillGroup(fixture.componentInstance.skills.length - 1);
+    expect(unsavedChanges.hasChanges()).toBe(false);
+
+    setInputValue('resume-title', 'Updated resume');
+    fixture.componentInstance.saveResume();
+    expect(unsavedChanges.hasChanges()).toBe(false);
+  });
+
+  it('does not commit draft changes after a failed save or export', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    service.updateResume.mockReturnValueOnce(throwError(() => apiError()));
+    setInputValue('resume-title', 'Unsaved title');
+
+    fixture.componentInstance.saveResume();
+    expect(unsavedChanges.hasChanges()).toBe(true);
+
+    fixture.componentInstance.openExportModal();
+    fixture.componentInstance.selectExportFormat('pdf');
+    fixture.componentInstance.exportResume();
+    expect(unsavedChanges.hasChanges()).toBe(true);
+  });
+
+  it('commits the editor before navigating after deletion', () => {
+    const unsavedChanges = TestBed.inject(AdminUnsavedChangesService);
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    setInputValue('resume-title', 'Discarded by delete');
+
+    fixture.componentInstance.deleteResume();
+
+    expect(unsavedChanges.hasChanges()).toBe(false);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes');
   });
 
   it('renders preview from unsaved form state', () => {

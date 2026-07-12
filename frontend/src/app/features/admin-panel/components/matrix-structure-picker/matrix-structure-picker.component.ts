@@ -18,7 +18,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize, map, switchMap } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
@@ -31,6 +31,10 @@ import {
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
+import {
+  AdminUnsavedChangesScope,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
 import {
   ADMIN_VALIDATION_LIMITS,
   slugValidator,
@@ -61,6 +65,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   @Input({ required: true }) preferredSheetKey!: string | null;
   @Input() disabled = false;
   @Input() invalid = false;
+  @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
 
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
 
@@ -100,8 +105,41 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
     nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
+  private readonly sheetFormValue = toSignal(
+    this.sheetForm.valueChanges.pipe(map(() => this.sheetForm.getRawValue())),
+    { initialValue: this.sheetForm.getRawValue() },
+  );
+  private readonly sectionFormValue = toSignal(
+    this.sectionForm.valueChanges.pipe(map(() => this.sectionForm.getRawValue())),
+    { initialValue: this.sectionForm.getRawValue() },
+  );
+  private readonly subsectionFormValue = toSignal(
+    this.subsectionForm.valueChanges.pipe(map(() => this.subsectionForm.getRawValue())),
+    { initialValue: this.subsectionForm.getRawValue() },
+  );
+  private readonly draftTrackingActive = signal(true);
+  private sheetUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private sectionUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private subsectionUnsavedSource: AdminUnsavedChangesSource | null = null;
 
   ngOnInit(): void {
+    this.sheetUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.sheetFormValue,
+      this.draftTrackingActive,
+    );
+    this.sectionUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.sectionFormValue,
+      this.draftTrackingActive,
+    );
+    this.subsectionUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.subsectionFormValue,
+      this.draftTrackingActive,
+    );
+    this.destroyRef.onDestroy(() => {
+      this.sheetUnsavedSource?.unregister();
+      this.sectionUnsavedSource?.unregister();
+      this.subsectionUnsavedSource?.unregister();
+    });
     this.loadStructure();
   }
 
@@ -175,6 +213,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
           this.missingPreferredSheetKey.set(null);
           this.selectedSubsectionIdChange.emit(null);
           this.sheetForm.reset();
+          this.sheetUnsavedSource?.commit();
         },
         error: () => this.errorKey.set('adminMatrixStructure.createError'),
       });
@@ -207,6 +246,7 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
           this.selectedSectionId.set(section.id);
           this.selectedSubsectionIdChange.emit(null);
           this.sectionForm.reset();
+          this.sectionUnsavedSource?.commit();
         },
         error: () => this.errorKey.set('adminMatrixStructure.createError'),
       });
@@ -239,9 +279,19 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
           this.selectedSubsectionIdChange.emit(subsection.id);
           this.alignSelectionToSubsection(subsection.id);
           this.subsectionForm.reset();
+          this.subsectionUnsavedSource?.commit();
         },
         error: () => this.errorKey.set('adminMatrixStructure.createError'),
       });
+  }
+
+  discardDrafts(): void {
+    this.sheetForm.reset();
+    this.sectionForm.reset();
+    this.subsectionForm.reset();
+    this.sheetUnsavedSource?.commit();
+    this.sectionUnsavedSource?.commit();
+    this.subsectionUnsavedSource?.commit();
   }
 
   private loadStructure(): void {
@@ -290,7 +340,15 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
       this.selectedSheetId.set(null);
       this.selectedSectionId.set(null);
       this.missingPreferredSheetKey.set(sheetKey);
-      this.sheetForm.reset({ key: sheetKey, nameRu: '', nameEn: '' });
+      const currentDraft = this.sheetForm.getRawValue();
+      if (
+        currentDraft.key.trim() === '' &&
+        currentDraft.nameRu.trim() === '' &&
+        currentDraft.nameEn.trim() === ''
+      ) {
+        this.sheetForm.reset({ key: sheetKey, nameRu: '', nameEn: '' });
+        this.sheetUnsavedSource?.commit();
+      }
       return;
     }
     this.selectedSheetId.set(sheet.id);

@@ -8,9 +8,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -25,6 +25,10 @@ import {
   AdminMatrixStructureSheet,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -71,6 +75,7 @@ export class MatrixStructurePageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(this.destroyRef);
 
   readonly structure = signal<AdminMatrixStructure>({ sheets: [] });
   readonly selectedSheetId = signal<string | null>(null);
@@ -106,8 +111,36 @@ export class MatrixStructurePageComponent implements OnInit {
     nameRu: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     nameEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
   });
+  private readonly sheetCreateFormValue = toSignal(
+    this.sheetCreateForm.valueChanges.pipe(map(() => this.sheetCreateForm.getRawValue())),
+    { initialValue: this.sheetCreateForm.getRawValue() },
+  );
+  private readonly nameCreateFormValue = toSignal(
+    this.nameCreateForm.valueChanges.pipe(map(() => this.nameCreateForm.getRawValue())),
+    { initialValue: this.nameCreateForm.getRawValue() },
+  );
+  private readonly sheetCreateActive = computed(() => this.createDialog()?.kind === 'sheet');
+  private readonly nameCreateActive = computed(() => {
+    const kind = this.createDialog()?.kind;
+    return kind === 'section' || kind === 'subsection';
+  });
+  private structureUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private sheetCreateUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private nameCreateUnsavedSource: AdminUnsavedChangesSource | null = null;
 
   ngOnInit(): void {
+    this.structureUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.structure,
+      this.saving,
+    );
+    this.sheetCreateUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.sheetCreateFormValue,
+      this.sheetCreateActive,
+    );
+    this.nameCreateUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.nameCreateFormValue,
+      this.nameCreateActive,
+    );
     this.loadStructure();
   }
 
@@ -121,6 +154,7 @@ export class MatrixStructurePageComponent implements OnInit {
         next: (structure) => {
           this.structure.set(structure);
           this.selectedSheetId.set(this.nextSelectedSheetId(structure));
+          this.structureUnsavedSource?.commit();
           this.loading.set(false);
         },
         error: (err: ApiError) => {
@@ -158,6 +192,8 @@ export class MatrixStructurePageComponent implements OnInit {
 
   closeCreateDialog(): void {
     if (this.createSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
+    this.discardCreateDialogDraft();
     this.createDialog.set(null);
     this.createError.set(null);
     this.createFormSubmitted.set(false);
@@ -280,6 +316,7 @@ export class MatrixStructurePageComponent implements OnInit {
     this.saving.set(true);
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
+        this.structureUnsavedSource?.commit();
         this.saving.set(false);
         this.notifications.success(this.i18n.translate('adminMatrixStructure.saved'));
       },
@@ -326,6 +363,7 @@ export class MatrixStructurePageComponent implements OnInit {
           this.createDialog.set(null);
           this.createFormSubmitted.set(false);
           this.sheetCreateForm.reset({ key: '', nameRu: '', nameEn: '' });
+          this.sheetCreateUnsavedSource?.commit();
           this.notifications.success(this.i18n.translate('adminMatrixStructure.sheetCreated'));
           this.refreshStructureAfterCreate(sheet.id);
         },
@@ -357,6 +395,7 @@ export class MatrixStructurePageComponent implements OnInit {
           this.createDialog.set(null);
           this.createFormSubmitted.set(false);
           this.nameCreateForm.reset({ nameRu: '', nameEn: '' });
+          this.nameCreateUnsavedSource?.commit();
           this.notifications.success(this.i18n.translate('adminMatrixStructure.sectionCreated'));
           this.refreshStructureAfterCreate(sheetId);
         },
@@ -389,6 +428,7 @@ export class MatrixStructurePageComponent implements OnInit {
           this.createDialog.set(null);
           this.createFormSubmitted.set(false);
           this.nameCreateForm.reset({ nameRu: '', nameEn: '' });
+          this.nameCreateUnsavedSource?.commit();
           this.notifications.success(this.i18n.translate('adminMatrixStructure.subsectionCreated'));
           this.refreshStructureAfterCreate(preferredSheetId);
         },
@@ -414,6 +454,19 @@ export class MatrixStructurePageComponent implements OnInit {
           this.notifications.error(this.i18n.translate('adminMatrixStructure.loadError'));
         },
       });
+  }
+
+  private discardCreateDialogDraft(): void {
+    const kind = this.createDialog()?.kind;
+    if (kind === 'sheet') {
+      this.sheetCreateForm.reset({ key: '', nameRu: '', nameEn: '' });
+      this.sheetCreateUnsavedSource?.commit();
+      return;
+    }
+    if (kind === 'section' || kind === 'subsection') {
+      this.nameCreateForm.reset({ nameRu: '', nameEn: '' });
+      this.nameCreateUnsavedSource?.commit();
+    }
   }
 
   private selectedSheetIdAfterRefresh(

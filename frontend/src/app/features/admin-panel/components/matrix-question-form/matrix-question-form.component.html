@@ -60,6 +60,7 @@
     </div>
     <div class="col-12">
       <app-matrix-structure-picker
+        [unsavedChangesScope]="unsavedChangesScope"
         [language]="currentLanguage()"
         [selectedSubsectionId]="questionForm.controls.subsectionId.value"
         [preferredSheetKey]="preferredSheetKey"

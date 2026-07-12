@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
@@ -8,6 +8,7 @@ import { I18nLanguage, LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ThemeName, ThemeService } from '../../../../core/layout/theme.service';
 import { AdminPanelHeaderComponent } from './admin-panel-header.component';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 
 describe('AdminPanelHeaderComponent', () => {
   let fixture: ComponentFixture<AdminPanelHeaderComponent>;
@@ -30,6 +31,7 @@ describe('AdminPanelHeaderComponent', () => {
     switchLanguage: jest.Mock;
     translate: jest.Mock;
   };
+  let mockUnsavedChanges: { confirmDiscard: jest.Mock; discardChanges: jest.Mock };
 
   beforeEach(async () => {
     themeSignal = signal<ThemeName>('light');
@@ -46,11 +48,15 @@ describe('AdminPanelHeaderComponent', () => {
     mockAuthService = {
       currentUser: currentUserSignal,
       isLoggedIn: () => currentUserSignal() !== null,
-      logout: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
+      logout: jest.fn().mockReturnValue(of(void 0)),
       clearLocalSession: jest.fn(),
     };
     mockAuthModalService = {
       openLogin: jest.fn(),
+    };
+    mockUnsavedChanges = {
+      confirmDiscard: jest.fn().mockReturnValue(true),
+      discardChanges: jest.fn(),
     };
     mockI18nService = {
       language: languageSignal,
@@ -85,6 +91,7 @@ describe('AdminPanelHeaderComponent', () => {
         { provide: AuthService, useValue: mockAuthService },
         { provide: AuthModalService, useValue: mockAuthModalService },
         { provide: I18nService, useValue: mockI18nService },
+        { provide: AdminUnsavedChangesService, useValue: mockUnsavedChanges },
       ],
     }).compileComponents();
 
@@ -128,6 +135,8 @@ describe('AdminPanelHeaderComponent', () => {
   });
 
   it('toggles theme, switches language, and logs out from admin header controls', () => {
+    const router = TestBed.inject(Router);
+    const navigateByUrl = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     (el.querySelector('button[aria-label="Переключить тему"]') as HTMLButtonElement).click();
 
     const englishButton = Array.from(el.querySelectorAll('button')).find(
@@ -140,6 +149,8 @@ describe('AdminPanelHeaderComponent', () => {
     expect(mockThemeService.toggleTheme).toHaveBeenCalled();
     expect(mockI18nService.switchLanguage).toHaveBeenCalledWith('en');
     expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(mockUnsavedChanges.discardChanges).toHaveBeenCalled();
+    expect(navigateByUrl).toHaveBeenCalledWith('/ru/how-this-site-is-built');
   });
 
   it('shows the login action when there is no current user', () => {
@@ -151,5 +162,15 @@ describe('AdminPanelHeaderComponent', () => {
 
     expect(loginButton.textContent?.trim()).toBe('Войти');
     expect(mockAuthModalService.openLogin).toHaveBeenCalled();
+  });
+
+  it('does not request logout when discarding unsaved changes is cancelled', () => {
+    mockUnsavedChanges.confirmDiscard.mockReturnValue(false);
+
+    fixture.componentInstance.logout();
+
+    expect(mockUnsavedChanges.confirmDiscard).toHaveBeenCalledTimes(1);
+    expect(mockUnsavedChanges.discardChanges).not.toHaveBeenCalled();
+    expect(mockAuthService.logout).not.toHaveBeenCalled();
   });
 });

@@ -146,6 +146,20 @@ describe('ArticleFoldersPageComponent', () => {
     expect(notifications.error).toHaveBeenCalledWith('Не удалось создать папку.');
   });
 
+  it('keeps a changed create modal open when discarding is rejected', () => {
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    click('[data-testid="article-folders-open-create"]');
+    setInput('[data-testid="article-folders-create-key"]', 'architecture');
+
+    fixture.componentInstance.closeCreateDialog();
+    fixture.detectChanges();
+
+    expect(confirm).toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-folders-create-dialog"]'),
+    ).not.toBeNull();
+  });
+
   function click(selector: string): void {
     const element = fixture.nativeElement.querySelector(selector) as HTMLButtonElement | null;
     expect(element).not.toBeNull();

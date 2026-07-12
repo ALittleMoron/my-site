@@ -418,6 +418,7 @@
             <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
           }
           <app-admin-matrix-question-form
+            [unsavedChangesScope]="unsavedChangesScope"
             mode="create"
             [question]="null"
             [createInitialValue]="null"

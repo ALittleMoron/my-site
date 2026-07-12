@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -12,6 +12,7 @@ import {
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
+import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
 import { MatrixQuestionDetailPageComponent } from './matrix-question-detail-page.component';
 
 const INCOMPLETE_QUESTION_ID = '00000000000000000000000000000007';
@@ -94,6 +95,24 @@ describe('MatrixQuestionDetailPageComponent', () => {
     expect(notifications.error.mock.calls[0][0]).toContain('Нельзя опубликовать вопрос');
   });
 
+  it('does not publish when discarding an edited draft is cancelled', () => {
+    service.getQuestion.mockReturnValue(of(readyQuestion('Draft')));
+    routeParams.next(convertToParamMap({ id: READY_QUESTION_ID }));
+    fixture.detectChanges();
+    const draft = signal('baseline');
+    fixture.componentInstance.unsavedChangesScope.registerSource(draft, signal(true));
+    draft.set('changed');
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+    openDetailActions();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-detail-actions-publish"]')
+      ?.click();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(service.publishQuestion).not.toHaveBeenCalled();
+  });
+
   it('publishes, unpublishes, and deletes complete questions from the detail dropdown', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     service.getQuestion.mockReturnValue(of(readyQuestion('Draft')));
@@ -138,6 +157,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
   template: '',
 })
 class MatrixQuestionFormStubComponent {
+  @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
   @Input({ required: true }) mode!: 'create' | 'edit';
   @Input({ required: true }) question!: AdminMatrixQuestionDetailDto | null;
   @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;

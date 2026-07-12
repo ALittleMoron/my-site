@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -7,6 +7,7 @@ import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { localizedPublicHomePath } from '../../../../core/routing/public-home';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 
 interface LanguageOption {
   code: LanguageCode;
@@ -28,6 +29,8 @@ export class AdminPanelHeaderComponent {
   private readonly authService = inject(AuthService);
   private readonly i18n = inject(I18nService);
   private readonly themeService = inject(ThemeService);
+  private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+  private readonly router = inject(Router);
 
   readonly homeLink = computed(() => localizedPublicHomePath(this.currentLanguage()));
   readonly toggleLabel = computed(() =>
@@ -60,9 +63,13 @@ export class AdminPanelHeaderComponent {
   }
 
   logout(): void {
+    if (!this.unsavedChanges.confirmDiscard()) return;
+    this.unsavedChanges.discardChanges();
     this.authService.logout().subscribe({
+      next: () => void this.router.navigateByUrl(this.homeLink()),
       error: () => {
         this.authService.clearLocalSession();
+        void this.router.navigateByUrl(this.homeLink());
       },
     });
   }

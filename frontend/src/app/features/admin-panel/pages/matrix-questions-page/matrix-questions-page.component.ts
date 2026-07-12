@@ -40,6 +40,7 @@ import {
   AdminReadonlyMatrixSheet,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 const SORTS: readonly AdminMatrixWorkspaceSort[] = [
@@ -83,6 +84,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
+  readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(this.destroyRef);
 
   readonly grades = GRADES;
   readonly sorts = SORTS;
@@ -318,6 +320,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
 
   closeForm(): void {
     if (this.formSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.formMode.set(null);
     this.formError.set(null);
   }
@@ -331,6 +334,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.formSubmitting.set(false);
+          this.unsavedChangesScope.commit();
           this.closeForm();
           this.notifications.success(this.i18n.translate('adminMatrixWorkspace.saved'));
           this.loadFilterOptions();

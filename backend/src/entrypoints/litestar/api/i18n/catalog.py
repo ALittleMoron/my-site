@@ -107,6 +107,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.section.workspace": "Рабочая область",
         "adminPanel.section.team": "Команда",
         "adminPanel.section.resumes": "Резюме",
+        "adminUnsavedChanges.confirmDiscard": (
+            "Есть несохранённые изменения. Если продолжить, они будут потеряны. Продолжить?"
+        ),
         "adminArticlesWorkspace.loadError": "Не удалось загрузить статьи.",
         "adminArticlesWorkspace.confirmDelete": "Удалить статью?",
         "adminTeamWorkspace.title": "Команда",
@@ -937,6 +940,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.section.workspace": "Workspace",
         "adminPanel.section.team": "Team",
         "adminPanel.section.resumes": "Resumes",
+        "adminUnsavedChanges.confirmDiscard": (
+            "You have unsaved changes. If you continue, they will be lost. Continue?"
+        ),
         "adminArticlesWorkspace.loadError": "Failed to load articles.",
         "adminArticlesWorkspace.confirmDelete": "Delete article?",
         "adminTeamWorkspace.title": "Team",

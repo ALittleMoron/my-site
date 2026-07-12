@@ -94,6 +94,32 @@ describe('MatrixStructurePageComponent', () => {
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(['SQL', 'Питон']);
   });
 
+  it('keeps optimistic reorder dirty only while its save request is pending', () => {
+    const request = new Subject<void>();
+    service.updateSheetPriorities.mockReturnValue(request.asObservable());
+    createComponent();
+
+    fixture.componentInstance.dropSheets(dropEvent(0, 1));
+
+    expect(fixture.componentInstance.unsavedChangesScope.hasChanges()).toBe(true);
+    request.next();
+    request.complete();
+    expect(fixture.componentInstance.unsavedChangesScope.hasChanges()).toBe(false);
+  });
+
+  it('keeps a changed create dialog open when discarding is cancelled', () => {
+    createComponent();
+    fixture.componentInstance.openSheetCreateDialog();
+    fixture.componentInstance.sheetCreateForm.controls.nameRu.setValue('Черновик');
+    const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+    fixture.componentInstance.closeCreateDialog();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.createDialog()?.kind).toBe('sheet');
+    expect(fixture.componentInstance.sheetCreateForm.controls.nameRu.value).toBe('Черновик');
+  });
+
   it('does not autosave same-position drops', () => {
     createComponent();
 

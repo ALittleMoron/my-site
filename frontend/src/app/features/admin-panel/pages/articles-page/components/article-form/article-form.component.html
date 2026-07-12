@@ -23,6 +23,7 @@
     </div>
     <div class="col-12">
       <app-article-folder-picker
+        [unsavedChangesScope]="unsavedChangesScope()"
         [language]="activeLanguageTab()"
         [selectedFolderId]="form.controls.folderId.value"
         [invalid]="articleFieldInvalid('folderId')"

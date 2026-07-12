@@ -339,6 +339,48 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.querySelector('#matrix-queue-manual-question')).toBeTruthy();
   });
 
+  it('keeps a changed manual draft when closing is cancelled', () => {
+    openAddModal();
+    component.setManualAddQuestion('Unsaved question');
+    fixture.detectChanges();
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    component.closeManualAdd();
+    fixture.detectChanges();
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Есть несохранённые изменения. Если продолжить, они будут потеряны. Продолжить?',
+    );
+    expect(component.manualAddVisible()).toBe(true);
+    expect(component.manualAddQuestion()).toBe('Unsaved question');
+  });
+
+  it('closes a clean manual form without confirmation', () => {
+    openAddModal();
+    jest.mocked(window.confirm).mockClear();
+
+    component.closeManualAdd();
+
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(component.manualAddVisible()).toBe(false);
+  });
+
+  it('protects a manual draft while import mode is visible', () => {
+    openAddModal();
+    component.setManualAddQuestion('Unsaved manual question');
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-import-mode"]')!
+      .click();
+    fixture.detectChanges();
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    component.closeManualAdd();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(component.manualAddVisible()).toBe(true);
+    expect(component.manualAddQuestion()).toBe('Unsaved manual question');
+  });
+
   it('keeps import submit available and shows feedback until a file is selected', () => {
     openImportMode();
 
@@ -516,6 +558,33 @@ describe('MatrixQuestionQueuePageComponent', () => {
     ).toBeTruthy();
   });
 
+  it('preserves an import draft when replacing its file is cancelled', () => {
+    const originalFile = openImportPreview();
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    chooseImportFile(new File(['another'], 'another.txt', { type: 'text/plain' }));
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(component.selectedImportFile()).toBe(originalFile);
+    expect(component.importPreview()).toEqual(importPreview);
+    expect(component.selectedImportRowNumbers()).toEqual(new Set([1]));
+  });
+
+  it('preserves an import draft when switching to manual mode is cancelled', () => {
+    const file = openImportPreview();
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-manual-mode"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(component.addMode()).toBe('import');
+    expect(component.selectedImportFile()).toBe(file);
+    expect(component.importPreview()).toEqual(importPreview);
+  });
+
   it('keeps import modal open and renders backend nested errors when import fails', () => {
     const error: ApiError = {
       code: 'bad_request',
@@ -684,6 +753,49 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
     expect(inputValue('#matrix-form-question-ru')).toBe('What is SQL?');
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
+  });
+
+  it('keeps the selected question and its draft when skip is cancelled', () => {
+    openCreateModalFromQueue();
+    setInputValue('#matrix-form-question-ru', 'Unsaved matrix question');
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(inputValue('#matrix-form-question-ru')).toBe('Unsaved matrix question');
+  });
+
+  it('discards unfinished nested drafts before advancing to the next question', () => {
+    openCreateModalFromQueue();
+    setInputValue('[data-testid="matrix-resource-new-name-ru"]', 'Черновик ресурса');
+    jest.mocked(window.confirm).mockReturnValue(true);
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+    expect(inputValue('[data-testid="matrix-resource-new-name-ru"]')).toBe('');
+    expect(component.unsavedChangesScope.hasChanges()).toBe(false);
+  });
+
+  it('keeps a changed create form open when closing is cancelled', () => {
+    openCreateModalFromQueue();
+    setInputValue('#matrix-form-question-ru', 'Unsaved matrix question');
+    jest.mocked(window.confirm).mockReturnValue(false);
+
+    component.closeCreateModal();
+    fixture.detectChanges();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(inputValue('#matrix-form-question-ru')).toBe('Unsaved matrix question');
   });
 
   it('closes the modal when the last visible queue entry is skipped', () => {
@@ -875,6 +987,16 @@ describe('MatrixQuestionQueuePageComponent', () => {
       throw new Error(`Missing queue form input: ${selector}`);
     }
     return input.value;
+  }
+
+  function setInputValue(selector: string, value: string): void {
+    const input = fixture.nativeElement.querySelector(selector) as HTMLInputElement | null;
+    if (input === null) {
+      throw new Error(`Missing queue form input: ${selector}`);
+    }
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
   }
 
   function buttonText(selector: string): string | undefined {

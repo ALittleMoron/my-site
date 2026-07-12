@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { AdminMatrixStructure } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
+import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
 import { MatrixStructurePickerComponent } from './matrix-structure-picker.component';
 
 const SHEET_ID = '00000000000000000000000000000001';
@@ -53,6 +54,7 @@ interface MatrixStructureValidationCase {
 describe('MatrixStructurePickerComponent', () => {
   let fixture: ComponentFixture<MatrixStructurePickerComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
+  let unsavedChangesScope: AdminUnsavedChangesScope;
 
   beforeEach(async () => {
     service = {
@@ -61,6 +63,10 @@ describe('MatrixStructurePickerComponent', () => {
       createSection: jest.fn(),
       createSubsection: jest.fn(),
     } as unknown as jest.Mocked<MatrixQuestionWorkspaceService>;
+    unsavedChangesScope = new AdminUnsavedChangesScope(
+      () => false,
+      () => undefined,
+    );
 
     await TestBed.configureTestingModule({
       imports: [MatrixStructurePickerComponent],
@@ -74,6 +80,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.componentRef.setInput('preferredSheetKey', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.detectChanges();
   });
 
@@ -98,6 +105,24 @@ describe('MatrixStructurePickerComponent', () => {
 
     expect(subsection.disabled).toBe(false);
     expect(subsection.textContent).toContain('Стиль');
+  });
+
+  it('keeps unfinished inline-create drafts across a language reload', () => {
+    fixture.componentInstance.sheetForm.setValue({
+      key: 'draft-sheet',
+      nameRu: 'Черновик',
+      nameEn: 'Draft',
+    });
+
+    fixture.componentRef.setInput('language', 'en');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sheetForm.getRawValue()).toEqual({
+      key: 'draft-sheet',
+      nameRu: 'Черновик',
+      nameEn: 'Draft',
+    });
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
   });
 
   it('emits selected subsection id', () => {
@@ -166,6 +191,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.componentRef.setInput('preferredSheetKey', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.detectChanges();
 
     setInput('[data-testid="matrix-structure-sheet-key"]', 'sql');
@@ -221,6 +247,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.componentRef.setInput('preferredSheetKey', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.detectChanges();
     choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
     fixture.detectChanges();
@@ -396,6 +423,7 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('selectedSubsectionId', null);
     fixture.componentRef.setInput('preferredSheetKey', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.detectChanges();
     const emit = jest.spyOn(fixture.componentInstance.selectedSubsectionIdChange, 'emit');
     choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);

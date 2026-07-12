@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -21,6 +22,7 @@ import {
 } from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
 import { AdminArticleDetail, AdminArticlePayload } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import { ArticleFormComponent } from '../articles-page/components/article-form/article-form.component';
 
 @Component({
@@ -44,6 +46,11 @@ export class AdminArticleDetailPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+
+  @ViewChild('articleForm') private articleForm: ArticleFormComponent | undefined;
+
+  readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
 
   readonly article = signal<AdminArticleDetail | null>(null);
   readonly loading = signal(false);
@@ -76,12 +83,6 @@ export class AdminArticleDetailPageComponent implements OnInit {
       });
   }
 
-  reloadCurrentArticle(): void {
-    const article = this.article();
-    if (article === null) return;
-    this.loadArticle(article.slug);
-  }
-
   retryLoadArticle(): void {
     this.loadArticle(articleSlugFromParams(this.route.snapshot.paramMap));
   }
@@ -99,6 +100,7 @@ export class AdminArticleDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (article) => {
+          this.articleForm?.acceptSavedArticle(article);
           this.article.set(article);
           this.notifications.success(this.i18n.translate('articles.notify.saved'));
           if (article.slug !== current.slug) {
@@ -155,11 +157,13 @@ export class AdminArticleDetailPageComponent implements OnInit {
   }
 
   publishArticle(article: AdminArticleDetail): void {
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.articleWorkspace
       .publishArticle(article.slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.articleForm?.discardAuxiliaryDrafts();
           this.notifications.success(this.i18n.translate('articles.notify.published'));
           this.loadArticle(article.slug);
         },
@@ -168,11 +172,13 @@ export class AdminArticleDetailPageComponent implements OnInit {
   }
 
   unpublishArticle(article: AdminArticleDetail): void {
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.articleWorkspace
       .unpublishArticle(article.slug)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.articleForm?.discardAuxiliaryDrafts();
           this.notifications.success(this.i18n.translate('articles.notify.unpublished'));
           this.loadArticle(article.slug);
         },
@@ -194,6 +200,7 @@ export class AdminArticleDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.unsavedChangesScope.commit();
           this.notifications.success(this.i18n.translate('articles.notify.deleted'));
           void this.router.navigateByUrl('/admin-panel/articles');
         },

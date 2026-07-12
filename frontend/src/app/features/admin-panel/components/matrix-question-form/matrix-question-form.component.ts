@@ -5,11 +5,13 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnInit,
   Output,
   SimpleChanges,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import {
   FormControl,
@@ -39,6 +41,10 @@ import {
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
+import {
+  AdminUnsavedChangesScope,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
 import {
   MatrixQuestionPreviewResource,
   MatrixQuestionPublicPreviewComponent,
@@ -129,7 +135,7 @@ interface AdminMatrixResourceDraft {
     `,
   ],
 })
-export class MatrixQuestionFormComponent implements OnChanges {
+export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   private readonly workspaceService = inject(MatrixQuestionWorkspaceService);
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
@@ -140,6 +146,7 @@ export class MatrixQuestionFormComponent implements OnChanges {
   @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
   @Input({ required: true }) submitLabelKey!: string;
+  @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
 
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();
   @Output() readonly formCancel = new EventEmitter<void>();
@@ -166,6 +173,9 @@ export class MatrixQuestionFormComponent implements OnChanges {
   readonly showEnLocalizedFields = computed(() => this.localizedDisplayMode() !== 'ru');
 
   private nextNewResourceId = -1;
+  private questionUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private newResourceUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private readonly structurePicker = viewChild(MatrixStructurePickerComponent);
 
   readonly questionForm = this.formBuilder.group({
     slug: [
@@ -189,6 +199,16 @@ export class MatrixQuestionFormComponent implements OnChanges {
     this.questionForm.valueChanges.pipe(map(() => this.questionForm.getRawValue())),
     { initialValue: this.questionForm.getRawValue() },
   );
+  private readonly questionUnsavedSnapshot = computed(() => ({
+    question: this.questionFormValue(),
+    resources: this.resourceDrafts(),
+  }));
+  private readonly newResourceUnsavedSnapshot = computed(() => ({
+    nameRu: this.newResourceNameRu(),
+    nameEn: this.newResourceNameEn(),
+    url: this.newResourceUrl(),
+  }));
+  private readonly unsavedTrackingActive = signal(true);
   readonly previewContent = computed(() => {
     const value = this.questionFormValue();
     const language = this.previewLanguage();
@@ -219,7 +239,43 @@ export class MatrixQuestionFormComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['question'] || changes['mode'] || changes['createInitialValue']) {
       this.resetFromQuestion();
+      this.questionUnsavedSource?.commit();
     }
+  }
+
+  ngOnInit(): void {
+    this.questionUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.questionUnsavedSnapshot,
+      this.unsavedTrackingActive,
+    );
+    this.newResourceUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.newResourceUnsavedSnapshot,
+      this.unsavedTrackingActive,
+    );
+    this.destroyRef.onDestroy(() => {
+      this.questionUnsavedSource?.unregister();
+      this.newResourceUnsavedSource?.unregister();
+    });
+  }
+
+  acceptSavedQuestion(question: AdminMatrixQuestionDetailDto): void {
+    this.question = question;
+    this.resetFromQuestion();
+    this.questionUnsavedSource?.commit();
+  }
+
+  discardDraftsAndAcceptQuestion(question: AdminMatrixQuestionDetailDto): void {
+    this.discardAuxiliaryDrafts();
+    this.acceptSavedQuestion(question);
+  }
+
+  discardAuxiliaryDrafts(): void {
+    this.structurePicker()?.discardDrafts();
+    this.newResourceNameRu.set('');
+    this.newResourceNameEn.set('');
+    this.newResourceUrl.set('');
+    this.newResourceSubmitted.set(false);
+    this.newResourceUnsavedSource?.commit();
   }
 
   submit(): void {
@@ -236,6 +292,13 @@ export class MatrixQuestionFormComponent implements OnChanges {
           max: String(ADMIN_VALIDATION_LIMITS.matrixLongText),
         }),
       );
+      return;
+    }
+    if (
+      this.mode === 'create' &&
+      this.questionUnsavedSource !== null &&
+      !this.unsavedChangesScope.confirmDiscardExcept([this.questionUnsavedSource])
+    ) {
       return;
     }
     const payload = this.buildQuestionPayload();

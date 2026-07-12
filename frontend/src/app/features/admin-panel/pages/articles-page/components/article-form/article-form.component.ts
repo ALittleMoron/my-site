@@ -9,6 +9,8 @@ import {
   input,
   output,
   signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -35,6 +37,10 @@ import {
   ArticleTag,
 } from '../../../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
+import {
+  AdminUnsavedChangesScope,
+  AdminUnsavedChangesSource,
+} from '../../../../services/admin-unsaved-changes.service';
 import { slugify } from '../../../../../../shared/utils/slugify';
 import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/article-authoring-preview.component';
 import { ArticleFolderPickerComponent } from '../article-folder-picker/article-folder-picker.component';
@@ -130,6 +136,7 @@ export class ArticleFormComponent implements OnInit {
   private newTagSlugEdited = false;
 
   readonly article = input<ArticleDetail | null>(null);
+  readonly unsavedChangesScope = input.required<AdminUnsavedChangesScope>();
   readonly articleSave = output<ArticlePayload>();
   readonly formCancel = output<void>();
   readonly tagsChanged = output<void>();
@@ -225,6 +232,27 @@ export class ArticleFormComponent implements OnInit {
     }),
   });
   readonly formSnapshot = signal(this.form.getRawValue());
+  readonly newTagFormSnapshot = signal(this.newTagForm.getRawValue());
+  private mainUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private tagUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private readonly unsavedSourceActive = signal(true);
+  private readonly folderPicker = viewChild(ArticleFolderPickerComponent);
+
+  private readonly authoringState = computed(() => ({
+    form: this.formSnapshot(),
+    selectedTagIds: this.selectedTagIds(),
+  }));
+  private readonly tagAuthoringState = computed(() => ({
+    drafts: this.tags()
+      .filter(tagHasDraftChanges)
+      .map((tag) => ({
+        id: tag.id,
+        nameRu: tag.draftNameRu,
+        nameEn: tag.draftNameEn,
+        slug: tag.draftSlug,
+      })),
+    newTag: this.newTagFormSnapshot(),
+  }));
 
   readonly seoAnalysis = computed(() => {
     const value = this.formSnapshot();
@@ -279,8 +307,23 @@ export class ArticleFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.mainUnsavedSource = this.unsavedChangesScope().registerSource(
+      this.authoringState,
+      this.unsavedSourceActive,
+    );
+    this.tagUnsavedSource = this.unsavedChangesScope().registerSource(
+      this.tagAuthoringState,
+      this.unsavedSourceActive,
+    );
+    this.destroyRef.onDestroy(() => {
+      this.mainUnsavedSource?.unregister();
+      this.tagUnsavedSource?.unregister();
+    });
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.formSnapshot.set(this.form.getRawValue());
+    });
+    this.newTagForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.newTagFormSnapshot.set(this.newTagForm.getRawValue());
     });
     this.loadTags();
     this.loadWikiLinkTargets();
@@ -508,6 +551,13 @@ export class ArticleFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    if (
+      this.article() === null &&
+      this.mainUnsavedSource !== null &&
+      !this.unsavedChangesScope().confirmDiscardExcept([this.mainUnsavedSource])
+    ) {
+      return;
+    }
     const value = this.form.getRawValue();
     const activeTagIds = this.tags()
       .filter((tag) => !this.isTagDeleted(tag) && this.selectedTagIds().has(tag.id))
@@ -529,6 +579,20 @@ export class ArticleFormComponent implements OnInit {
         },
       },
     });
+  }
+
+  acceptSavedArticle(article: ArticleDetail): void {
+    this.applyArticle(article);
+    this.mainUnsavedSource?.commit();
+  }
+
+  discardAuxiliaryDrafts(): void {
+    this.tags.update((tags) => tags.map(toDraft).sort(compareTags));
+    this.newTagForm.reset({ nameRu: '', nameEn: '', slug: '' });
+    this.newTagSlugEdited = false;
+    this.newTagFormSubmitted.set(false);
+    this.folderPicker()?.discardDraft();
+    this.tagUnsavedSource?.commit();
   }
 
   articleFieldInvalid(field: ArticleField): boolean {
@@ -598,7 +662,7 @@ export class ArticleFormComponent implements OnInit {
       .getTags(true, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (tags) => this.tags.set(tags.map(toDraft).sort(compareTags)),
+        next: (tags) => this.tags.set(mergeTagDrafts(tags, this.tags())),
         error: () => this.tagError.set(this.i18n.translate('articles.tags.loadError')),
       });
   }
@@ -636,6 +700,7 @@ export class ArticleFormComponent implements OnInit {
       this.formSnapshot.set(this.form.getRawValue());
       this.selectedFolder.set(null);
       this.selectedTagIds.set(new Set<string>());
+      untracked(() => this.mainUnsavedSource?.commit());
       return;
     }
     this.slugEdited = true;
@@ -673,6 +738,7 @@ export class ArticleFormComponent implements OnInit {
     this.formSnapshot.set(this.form.getRawValue());
     this.selectedFolder.set(null);
     this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
+    untracked(() => this.mainUnsavedSource?.commit());
   }
 
   private activeTags(): ArticleTag[] {
@@ -755,4 +821,28 @@ function missingWikiLinkTargets(params: {
 
 function compareTags(a: ArticleTag, b: ArticleTag): number {
   return a.name.localeCompare(b.name, 'ru');
+}
+
+function tagHasDraftChanges(tag: TagDraft): boolean {
+  return (
+    tag.draftNameRu !== tag.translations.ru.name ||
+    tag.draftNameEn !== tag.translations.en.name ||
+    tag.draftSlug !== tag.slug
+  );
+}
+
+function mergeTagDrafts(tags: ArticleTag[], currentDrafts: TagDraft[]): TagDraft[] {
+  const currentById = new Map(currentDrafts.map((tag) => [tag.id, tag]));
+  return tags
+    .map((tag) => {
+      const current = currentById.get(tag.id);
+      if (current === undefined) return toDraft(tag);
+      return {
+        ...tag,
+        draftNameRu: current.draftNameRu,
+        draftNameEn: current.draftNameEn,
+        draftSlug: current.draftSlug,
+      };
+    })
+    .sort(compareTags);
 }

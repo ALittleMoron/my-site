@@ -106,6 +106,7 @@
             [createInitialValue]="selectedQuestionInitialValue()"
             [submitting]="selectedQuestionProcessing()"
             submitLabelKey="adminMatrixQueue.createAndNext"
+            [unsavedChangesScope]="unsavedChangesScope"
             (questionSave)="createQuestion($event)"
             (formCancel)="closeCreateModal()"
           >

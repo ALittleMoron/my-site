@@ -11,6 +11,7 @@ import {
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { ArticleDetail } from '../../../../models/article-workspace.model';
+import { AdminUnsavedChangesScope } from '../../../../services/admin-unsaved-changes.service';
 import { ArticleFormComponent } from './article-form.component';
 
 const INVALID_SHORT_TEXT = 'x'.repeat(256);
@@ -42,6 +43,8 @@ describe('ArticleFormComponent', () => {
   };
   let mediaUpload: { uploadMediaFile: jest.Mock; getMediaFile: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
+  let unsavedChangesScope: AdminUnsavedChangesScope;
+  let confirmDiscard: jest.Mock<boolean, []>;
 
   beforeEach(async () => {
     mediaUpload = {
@@ -155,8 +158,39 @@ describe('ArticleFormComponent', () => {
       .compileComponents();
 
     fixture = TestBed.createComponent(ArticleFormComponent);
+    confirmDiscard = jest.fn(() => false);
+    unsavedChangesScope = new AdminUnsavedChangesScope(confirmDiscard, () => undefined);
     fixture.componentRef.setInput('article', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.detectChanges();
+  });
+
+  it('tracks authoring values against the loaded baseline and becomes clean after a full revert', () => {
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+
+    setInput('#articleTitleRu', 'Черновик');
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+
+    setInput('#articleTitleRu', '');
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+  });
+
+  it('keeps unrelated tag drafts when a server refresh follows deleting another tag', () => {
+    setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`, 'Черновой Python');
+    articlesService.getTags.mockReturnValue(
+      of([
+        tag({ id: PYTHON_TAG_ID, name: 'Python', slug: 'python', deletedAt: null }),
+        tag({ id: OLD_TAG_ID, name: 'Old', slug: 'old', deletedAt: '2026-01-04T03:04:05+00:00' }),
+      ]),
+    );
+
+    fixture.componentInstance.restoreTag(OLD_TAG_ID);
+    fixture.detectChanges();
+
+    expect(elementValue(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`)).toBe(
+      'Черновой Python',
+    );
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
   });
 
   it('suggests slug from title until slug is edited manually', () => {
@@ -262,6 +296,18 @@ describe('ArticleFormComponent', () => {
         en: { title: 'Typed article', content: 'Content' },
       },
     });
+  });
+
+  it('does not create an article when discarding an unfinished nested draft is rejected', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    fillValidArticleMinimum();
+    setInput('#newTagNameRu', 'Незавершённый тег');
+
+    fixture.componentInstance.submit();
+
+    expect(confirmDiscard).toHaveBeenCalled();
+    expect(saveSpy).not.toHaveBeenCalled();
   });
 
   it('marks required article fields and blocks empty submit', () => {

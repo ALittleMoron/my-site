@@ -95,6 +95,11 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Admin forms with `formControlName` fields must apply the shared validation-state mechanism
   (`AdminControlValidationStateDirective` or the feature's equivalent) so every invalid touched
   `input`, `textarea`, and `select` receives visible invalid styling without one-off template gaps.
+- Admin create/edit forms must register every unsaved authoring source with the shared admin
+  unsaved-changes mechanism, including nested inline drafts and non-form state. Compare the current
+  value with the last loaded or successfully saved baseline so a full manual revert is clean, guard
+  modal close and route/browser exit paths, and exclude filters, search, sorting, preview controls,
+  and export options that do not represent authored data.
 
 ## Comments
 

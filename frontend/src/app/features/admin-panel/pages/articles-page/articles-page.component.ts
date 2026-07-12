@@ -23,6 +23,7 @@ import {
   AdminArticleTree,
 } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
+import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
 import {
   AdminAction,
   AdminActionsDropdownComponent,
@@ -53,6 +54,9 @@ export class AdminArticlesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
+  private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+
+  readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
 
   readonly page = signal(1);
   readonly searchQuery = signal('');
@@ -135,6 +139,7 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   closeForm(): void {
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.formVisible.set(false);
     this.formError.set(null);
   }
@@ -145,6 +150,7 @@ export class AdminArticlesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.unsavedChangesScope.commit();
           this.notifications.success(this.i18n.translate('articles.notify.saved'));
           this.closeForm();
           this.loadWorkspace();

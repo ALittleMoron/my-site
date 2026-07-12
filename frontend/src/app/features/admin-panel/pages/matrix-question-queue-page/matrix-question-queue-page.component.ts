@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -31,6 +32,10 @@ import {
   AdminMatrixQuestionPayload,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionQueueService } from '../../services/matrix-question-queue.service';
+import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
 import { ADMIN_VALIDATION_LIMITS } from '../../utils/admin-validation';
 
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
@@ -70,6 +75,10 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+
+  readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
+  private readonly questionForm = viewChild(MatrixQuestionFormComponent);
 
   readonly questions = signal<QueuedMatrixQuestion[]>([]);
   readonly loading = signal(false);
@@ -161,6 +170,29 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       };
     },
   );
+  private readonly manualAddDraft = computed(() => this.manualAddQuestion());
+  private readonly manualAddDraftActive = computed(() => this.manualAddVisible());
+  private readonly importDraft = computed(() => ({
+    file: this.selectedImportFile(),
+    preview: this.importPreview(),
+    selectedRowNumbers: this.selectedImportRowNumbers(),
+  }));
+  private readonly importDraftActive = computed(
+    () => this.manualAddVisible() && this.addMode() === 'import',
+  );
+  private readonly manualAddUnsavedSource: AdminUnsavedChangesSource;
+  private readonly importUnsavedSource: AdminUnsavedChangesSource;
+
+  constructor() {
+    this.manualAddUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.manualAddDraft,
+      this.manualAddDraftActive,
+    );
+    this.importUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.importDraft,
+      this.importDraftActive,
+    );
+  }
 
   ngOnInit(): void {
     this.loadQueue();
@@ -193,33 +225,50 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   closeCreateModal(): void {
     if (this.selectedQuestionProcessing()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.selectedQuestion.set(null);
     this.formError.set(null);
   }
 
   openManualAdd(): void {
-    this.manualAddVisible.set(true);
     this.addMode.set('manual');
     this.manualAddQuestion.set('');
     this.manualAddSubmitted.set(false);
     this.manualAddSubmitting.set(false);
     this.resetImportState();
+    this.manualAddUnsavedSource.commit();
+    this.importUnsavedSource.commit();
+    this.manualAddVisible.set(true);
   }
 
   closeManualAdd(): void {
     if (this.manualAddSubmitting() || this.importBusy()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.manualAddVisible.set(false);
     this.manualAddQuestion.set('');
     this.manualAddSubmitted.set(false);
     this.addMode.set('manual');
     this.resetImportState();
+    this.manualAddUnsavedSource.commit();
+    this.importUnsavedSource.commit();
   }
 
   setAddMode(mode: QueueAddMode): void {
+    if (mode === this.addMode()) return;
+    if (
+      mode === 'manual' &&
+      this.importUnsavedSource.hasChanges() &&
+      !this.unsavedChangesScope.confirmDiscard()
+    ) {
+      return;
+    }
     this.addMode.set(mode);
     this.importError.set(null);
     this.importFileSelectionErrorKey.set(null);
-    if (mode === 'manual') this.resetImportState();
+    if (mode === 'manual') {
+      this.resetImportState();
+      this.importUnsavedSource.commit();
+    }
   }
 
   setManualAddQuestion(value: string): void {
@@ -268,6 +317,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.manualAddVisible.set(false);
           this.manualAddQuestion.set('');
           this.manualAddSubmitted.set(false);
+          this.manualAddUnsavedSource.commit();
           this.notifications.success(this.i18n.translate('adminMatrixQueue.addManualAdded'));
           this.loadQueue();
         },
@@ -280,7 +330,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
   onImportFileInputChange(event: Event): void {
     const target = event.target as HTMLInputElement | null;
-    this.selectImportFiles(target?.files ?? null);
+    if (!this.selectImportFiles(target?.files ?? null) && target !== null) target.value = '';
   }
 
   onImportDragOver(event: DragEvent): void {
@@ -326,6 +376,9 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     const file = this.selectedImportFile();
     const preview = this.importPreview();
     if (file === null || preview === null || this.importSelectedCount() === 0) return;
+    if (this.manualAddUnsavedSource.hasChanges() && !this.unsavedChangesScope.confirmDiscard()) {
+      return;
+    }
     const selectedRows = preview.rows
       .filter((row) => this.selectedImportRowNumbers().has(row.rowNumber))
       .map((row) => row.rowNumber);
@@ -342,6 +395,8 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.manualAddSubmitted.set(false);
           this.addMode.set('manual');
           this.resetImportState();
+          this.manualAddUnsavedSource.commit();
+          this.importUnsavedSource.commit();
           this.notifications.success(
             this.i18n.translate('adminMatrixQueue.importAdded', { count: questions.length }),
           );
@@ -390,6 +445,8 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     if (this.selectedQuestionProcessing()) return;
     const question = this.selectedQuestion();
     if (question === null) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
+    this.questionForm()?.discardAuxiliaryDrafts();
     this.selectedQuestion.set(this.nextQuestionAfter(question.id));
     this.formError.set(null);
   }
@@ -411,6 +468,9 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.questions.update((questions) =>
             questions.filter((queuedQuestion) => queuedQuestion.id !== question.id),
           );
+          if (this.selectedQuestion()?.id === question.id) {
+            this.questionForm()?.discardAuxiliaryDrafts();
+          }
           if (advance) {
             this.selectedQuestion.set(nextQuestion);
             this.formError.set(null);
@@ -445,6 +505,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           this.questions.update((questions) =>
             questions.filter((queuedQuestion) => queuedQuestion.id !== question.id),
           );
+          this.questionForm()?.discardAuxiliaryDrafts();
           this.selectedQuestion.set(nextQuestion);
           this.formError.set(null);
           this.notifications.success(this.i18n.translate('adminMatrixQueue.created'));
@@ -497,17 +558,27 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     return questions[questionIndex + 1] ?? null;
   }
 
-  private selectImportFiles(files: FileList | File[] | null): void {
+  private selectImportFiles(files: FileList | File[] | null): boolean {
     const selectedFiles = files === null ? [] : Array.from(files);
+    const nextFile = selectedFiles.length === 1 ? selectedFiles[0] : null;
+    const currentFile = this.selectedImportFile();
+    if (currentFile !== null && nextFile !== null && filesEqual(currentFile, nextFile)) {
+      this.importFileSelectionErrorKey.set(null);
+      return true;
+    }
+    if (this.importUnsavedSource.hasChanges() && !this.unsavedChangesScope.confirmDiscard()) {
+      return false;
+    }
     this.importError.set(null);
     this.clearImportPreview();
     if (selectedFiles.length !== 1) {
       this.selectedImportFile.set(null);
       this.importFileSelectionErrorKey.set('adminMatrixQueue.importOneFileOnly');
-      return;
+      return true;
     }
     this.selectedImportFile.set(selectedFiles[0]);
     this.importFileSelectionErrorKey.set(null);
+    return true;
   }
 
   private resetImportState(): void {
@@ -527,4 +598,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
 function normalizeManualQuestion(value: string): string {
   return value.replace(LINE_BREAKS_PATTERN, ' ');
+}
+
+function filesEqual(first: File, second: File): boolean {
+  return (
+    first.name === second.name &&
+    first.size === second.size &&
+    first.type === second.type &&
+    first.lastModified === second.lastModified
+  );
 }

@@ -32,6 +32,10 @@ import {
 } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
 import {
+  AdminUnsavedChangesService,
+  AdminUnsavedChangesSource,
+} from '../../services/admin-unsaved-changes.service';
+import {
   ADMIN_ACCOUNT_USERNAME_PATTERN_ATTRIBUTE,
   ADMIN_VALIDATION_LIMITS,
   accountUsernameValidator,
@@ -80,6 +84,12 @@ export class TeamPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly auth = inject(AuthService);
+  private readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(
+    this.destroyRef,
+  );
+  private readonly createFormUnsavedSource: AdminUnsavedChangesSource;
+  private readonly roleFormUnsavedSource: AdminUnsavedChangesSource;
+  private readonly passwordFormUnsavedSource: AdminUnsavedChangesSource;
 
   readonly page = signal(1);
   readonly accounts = signal<ManagedAccounts | null>(null);
@@ -98,6 +108,9 @@ export class TeamPageComponent implements OnInit {
   readonly passwordFormSubmitted = signal(false);
   readonly passwordError = signal<ApiError | null>(null);
   readonly selectedAccount = signal<ManagedAccount | null>(null);
+  readonly createFormSnapshot = signal({ username: '', role: '', password: '' });
+  readonly roleFormSnapshot = signal({ role: '' });
+  readonly passwordFormSnapshot = signal({ password: '' });
   readonly roleOptions = computed<readonly ManagedAccountRoleOption[]>(() =>
     this.currentUserRole() === 'owner'
       ? MANAGED_ACCOUNT_ROLE_OPTIONS
@@ -144,6 +157,33 @@ export class TeamPageComponent implements OnInit {
     ],
   });
 
+  constructor() {
+    this.createFormSnapshot.set(this.createForm.getRawValue());
+    this.roleFormSnapshot.set(this.roleForm.getRawValue());
+    this.passwordFormSnapshot.set(this.passwordForm.getRawValue());
+    this.createFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.createFormSnapshot,
+      this.createDialogOpen,
+    );
+    this.roleFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.roleFormSnapshot,
+      this.roleDialogOpen,
+    );
+    this.passwordFormUnsavedSource = this.unsavedChangesScope.registerSource(
+      this.passwordFormSnapshot,
+      this.passwordDialogOpen,
+    );
+    this.createForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.createFormSnapshot.set(this.createForm.getRawValue());
+    });
+    this.roleForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.roleFormSnapshot.set(this.roleForm.getRawValue());
+    });
+    this.passwordForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.passwordFormSnapshot.set(this.passwordForm.getRawValue());
+    });
+  }
+
   ngOnInit(): void {
     this.loadAccounts();
   }
@@ -188,11 +228,13 @@ export class TeamPageComponent implements OnInit {
     this.createError.set(null);
     this.createSubmitting.set(false);
     this.createFormSubmitted.set(false);
+    this.createFormUnsavedSource.commit();
     this.createDialogOpen.set(true);
   }
 
   closeCreateDialog(): void {
     if (this.createSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.createDialogOpen.set(false);
     this.createError.set(null);
     this.createFormSubmitted.set(false);
@@ -219,6 +261,7 @@ export class TeamPageComponent implements OnInit {
       .subscribe({
         next: (account) => {
           this.createSubmitting.set(false);
+          this.createFormUnsavedSource.commit();
           this.createDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.created'));
           this.router.navigateByUrl(`/admin-panel/workspace/team/${account.username}`);
@@ -306,11 +349,13 @@ export class TeamPageComponent implements OnInit {
     this.roleError.set(null);
     this.roleSubmitting.set(false);
     this.roleFormSubmitted.set(false);
+    this.roleFormUnsavedSource.commit();
     this.roleDialogOpen.set(true);
   }
 
   closeRoleDialog(): void {
     if (this.roleSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.roleDialogOpen.set(false);
     this.roleError.set(null);
     this.roleFormSubmitted.set(false);
@@ -334,6 +379,8 @@ export class TeamPageComponent implements OnInit {
       .subscribe({
         next: (updatedAccount) => {
           this.roleSubmitting.set(false);
+          this.roleForm.reset({ role: updatedAccount.role });
+          this.roleFormUnsavedSource.commit();
           this.roleDialogOpen.set(false);
           this.replaceAccount(updatedAccount);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.roleUpdated'));
@@ -353,11 +400,13 @@ export class TeamPageComponent implements OnInit {
     this.passwordError.set(null);
     this.passwordSubmitting.set(false);
     this.passwordFormSubmitted.set(false);
+    this.passwordFormUnsavedSource.commit();
     this.passwordDialogOpen.set(true);
   }
 
   closePasswordDialog(): void {
     if (this.passwordSubmitting()) return;
+    if (!this.unsavedChangesScope.confirmDiscard()) return;
     this.passwordDialogOpen.set(false);
     this.passwordError.set(null);
     this.passwordFormSubmitted.set(false);
@@ -381,6 +430,8 @@ export class TeamPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.passwordSubmitting.set(false);
+          this.passwordForm.reset({ password: '' });
+          this.passwordFormUnsavedSource.commit();
           this.passwordDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.passwordUpdated'));
         },
