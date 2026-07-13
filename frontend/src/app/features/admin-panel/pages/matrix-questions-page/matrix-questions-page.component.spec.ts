@@ -234,16 +234,14 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('answerEn');
   });
 
-  it('links only ready published questions to the public question page', () => {
+  it('links every question text to its admin edit page', () => {
     const links = Array.from(fixture.nativeElement.querySelectorAll('a')).map(
       (link) => (link as HTMLAnchorElement).getAttribute('href') ?? '',
     );
 
-    expect(links).toContain('/ru/competency-matrix/questions/ready-question');
-    expect(links).not.toContain('/ru/competency-matrix/questions/typing');
-    expect(
-      fixture.nativeElement.querySelector('[title*="Публичная страница"]')?.textContent,
-    ).toContain('What is typing?');
+    expect(links).toContain(`/admin-panel/matrix-questions/${QUESTION_ID}`);
+    expect(links).toContain(`/admin-panel/matrix-questions/${READY_QUESTION_ID}`);
+    expect(links).not.toContain('/ru/competency-matrix/questions/ready-question');
   });
 
   it('applies and resets filters', () => {

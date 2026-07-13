@@ -276,18 +276,12 @@
           @for (item of workspace()!.items; track item.id) {
             <tr>
               <td>
-                @if (isPublicReady(item)) {
-                  <a class="d-block fw-semibold" [routerLink]="publicQuestionLink(item)">
-                    {{ item.question }}
-                  </a>
-                } @else {
-                  <span
-                    class="d-block fw-semibold text-body"
-                    [attr.title]="'adminMatrixWorkspace.publicLinkUnavailable' | t"
-                  >
-                    {{ item.question }}
-                  </span>
-                }
+                <a
+                  class="d-block fw-semibold"
+                  [routerLink]="['/admin-panel/matrix-questions', item.id]"
+                >
+                  {{ item.question }}
+                </a>
                 <span class="d-block small text-body-secondary">
                   {{ item.section }} / {{ item.subsection }} / {{ item.slug }}
                 </span>

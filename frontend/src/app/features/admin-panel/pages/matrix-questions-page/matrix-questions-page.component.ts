@@ -481,14 +481,6 @@ export class MatrixQuestionsPageComponent implements OnInit {
     return fields.map((field) => this.missingFieldLabel(field)).join(', ');
   }
 
-  isPublicReady(item: AdminMatrixWorkspaceItem): boolean {
-    return item.publishStatus === 'Published' && item.missingFields.length === 0;
-  }
-
-  publicQuestionLink(item: AdminMatrixWorkspaceItem): string {
-    return `/${this.currentLanguage()}/competency-matrix/questions/${item.slug}`;
-  }
-
   private buildWorkspaceFilters(): AdminMatrixQuestionWorkspaceFilters {
     const raw = this.filtersForm.getRawValue();
     return {
