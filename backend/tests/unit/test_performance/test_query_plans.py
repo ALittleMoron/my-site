@@ -221,11 +221,11 @@ class TestQueryCapture:
             (method.storage_class, method.method_name) for method in coverage.covered_methods
         }
 
-    def test_update_article_scenario_avoids_seeded_target_tag_collision(self) -> None:
+    def test_update_article_scenario_reuses_seeded_article_tags(self) -> None:
         article = write_article_for_existing_article()
 
         assert article.id == article_id(99)
-        assert {tag.id for tag in article.tags} == {hex_id(1), hex_id(2)}
+        assert {tag.id for tag in article.tags} == {hex_id(91), hex_id(97), hex_id(103)}
 
     async def test_resume_list_scenario_passes_explicit_search_query(
         self,

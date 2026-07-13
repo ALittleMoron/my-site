@@ -878,7 +878,7 @@ def write_article_for_existing_article() -> Article:
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
         content_file_ids=frozenset(),
-        tags=Tags(values=[seed_tag(1), seed_tag(2)]),
+        tags=Tags(values=[seed_tag(103), seed_tag(97), seed_tag(91)]),
     )
 
 
@@ -922,7 +922,12 @@ def seed_tag(tag_index: int) -> Tag:
         2: ("PostgreSQL", "PostgreSQL", "postgresql"),
         3: ("Pydantic", "Pydantic", "pydantic"),
     }
-    name_ru, name_en, slug = names[tag_index]
+    if tag_index in names:
+        name_ru, name_en, slug = names[tag_index]
+    else:
+        name_ru = f"Тег {tag_index}"
+        name_en = f"Tag {tag_index}"
+        slug = f"tag-{tag_index}"
     return Tag(id=hex_id(tag_index), name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
 
 

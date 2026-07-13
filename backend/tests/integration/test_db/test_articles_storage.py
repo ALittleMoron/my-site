@@ -179,6 +179,21 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert updated.content_file_ids == frozenset({second_content.id})
         assert list(usage_file_ids) == [second_content.id]
 
+    async def test_update_article_with_unchanged_tags_is_idempotent(self) -> None:
+        python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
+        postgres = self.factory.core.tag(tag_id=self.factory.core.hex_id(2), slug="postgres")
+        await self.storage_helper.create_tags(tags=[python, postgres])
+        article = self.factory.core.article(
+            slug="unchanged-tags",
+            tags=[python, postgres],
+        )
+        await self.storage_helper.ensure_article_folder(folder=article.folder)
+        created = await self.storage.create_article(article=article)
+
+        updated = await self.storage.update_article(article=created)
+
+        assert self.collections.slugs(updated.tags) == ["python", "postgres"]
+
     async def test_get_article_by_slug_not_found(self) -> None:
         with pytest.raises(ArticleNotFoundError):
             await self.storage.get_article_by_slug(

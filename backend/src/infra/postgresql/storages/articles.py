@@ -287,7 +287,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
 
     async def create_article(self, *, article: Article) -> Article:
         model = ArticleModel.from_domain_schema(article=article)
-        model.tag_links = self._build_tag_links(article=article)
+        model.tag_links = self._build_tag_links(article=article, existing_tag_links=[])
         self.session.add(model)
         await self.session.flush()
         return await self.get_article_by_slug(
@@ -311,15 +311,29 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         model.update_from_domain_schema(article=article)
         if previous_cover_image_file_id != article.metadata.cover_image_file_id:
             self.session.expire(model, ["cover_image_file"])
-        model.tag_links = self._build_tag_links(article=article)
+        model.tag_links = self._build_tag_links(
+            article=article,
+            existing_tag_links=model.tag_links,
+        )
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
             include_deleted_tags=True,
         )
 
-    def _build_tag_links(self, *, article: Article) -> list[ArticleToTagSecondaryModel]:
-        return [ArticleToTagSecondaryModel.from_domain_schema(tag=tag) for tag in article.tags]
+    def _build_tag_links(
+        self,
+        *,
+        article: Article,
+        existing_tag_links: list[ArticleToTagSecondaryModel],
+    ) -> list[ArticleToTagSecondaryModel]:
+        existing_tag_links_by_tag_id = {link.tag_id: link for link in existing_tag_links}
+        return [
+            existing_tag_links_by_tag_id[tag.id]
+            if tag.id in existing_tag_links_by_tag_id
+            else ArticleToTagSecondaryModel.from_domain_schema(tag=tag)
+            for tag in article.tags
+        ]
 
     async def _get_article_model(self, *, slug: str, load_tag_links: bool) -> ArticleModel:
         query = select(ArticleModel).where(ArticleModel.slug == slug)
