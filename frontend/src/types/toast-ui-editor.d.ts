@@ -1,6 +1,7 @@
 declare module '@toast-ui/editor' {
   export interface ToastUiEditorOptions {
     el: HTMLElement;
+    autofocus?: boolean;
     height?: string;
     initialEditType?: 'markdown' | 'wysiwyg';
     hideModeSwitch?: boolean;

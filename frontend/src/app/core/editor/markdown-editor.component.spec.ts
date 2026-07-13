@@ -7,6 +7,7 @@ import { EditorImageUploadService } from './editor-image-upload.service';
 import { MarkdownEditorComponent } from './markdown-editor.component';
 
 interface MockEditorOptions {
+  autofocus?: boolean;
   initialValue?: string;
   theme?: string;
   events?: {
@@ -90,6 +91,13 @@ describe('MarkdownEditorComponent', () => {
 
     expect(MockEditor.setLanguage).toHaveBeenCalledWith('ru-RU', { Markdown: 'Markdown' });
     expect(MockEditor.instances[0].options.initialValue).toBe('Initial **markdown**');
+  });
+
+  it('does not take focus when the editor is initialized', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    expect(MockEditor.instances[0].options.autofocus).toBe(false);
   });
 
   it('loads Toast UI stylesheets before creating the editor', async () => {

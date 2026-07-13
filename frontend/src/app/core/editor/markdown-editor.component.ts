@@ -62,6 +62,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     const language = await this.resolveEditorLanguage(Editor);
     this.editor = new Editor({
       el: this.editorHost.nativeElement,
+      autofocus: false,
       height: '360px',
       initialEditType: 'markdown',
       hideModeSwitch: true,
