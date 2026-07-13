@@ -11,6 +11,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Observable, map, of, switchMap } from 'rxjs';
+import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -56,6 +58,13 @@ const SORTS: readonly AdminMatrixWorkspaceSort[] = [
 const PAGE_SIZES: readonly number[] = [20, 50, 100];
 
 type WorkspaceTab = 'list' | 'preview';
+
+interface PreviewSnapshot {
+  language: LanguageCode;
+  sheets: AdminReadonlyMatrixSheet[];
+  selectedSheetKey: string | null;
+  questions: AdminReadonlyMatrixQuestionList | null;
+}
 
 @Component({
   selector: 'app-matrix-questions-page',
@@ -112,6 +121,9 @@ export class MatrixQuestionsPageComponent implements OnInit {
   readonly previewLoading = signal(false);
   readonly previewError = signal<ApiError | null>(null);
   readonly previewLoaded = signal(false);
+  readonly previewLanguage = signal<LanguageCode>(this.currentLanguage());
+  readonly previewLanguageLoading = signal(false);
+  readonly previewLanguageError = signal<string | null>(null);
 
   readonly formMode = signal<'create' | null>(null);
   readonly formSubmitting = signal(false);
@@ -148,14 +160,17 @@ export class MatrixQuestionsPageComponent implements OnInit {
     return this.sectionOptions().find((option) => option.label === section)?.subsections ?? [];
   });
   readonly readonlyMatrixLabels = computed(() => {
-    this.i18n.language();
+    const language = this.previewLanguage();
     return {
-      sheetTabsAria: this.i18n.translate('matrix.grid.sheetsAria'),
-      section: this.i18n.translate('matrix.grid.section'),
-      subsection: this.i18n.translate('matrix.grid.subsection'),
-      notSet: this.i18n.translate('shared.notSet'),
+      sheetTabsAria: this.i18n.translateForLanguage(language, 'matrix.grid.sheetsAria'),
+      section: this.i18n.translateForLanguage(language, 'matrix.grid.section'),
+      subsection: this.i18n.translateForLanguage(language, 'matrix.grid.subsection'),
+      notSet: this.i18n.translateForLanguage(language, 'shared.notSet'),
       grades: Object.fromEntries(
-        GRADES.map((grade) => [grade, this.i18n.translate(this.i18n.enumGradeKey(grade))]),
+        GRADES.map((grade) => [
+          grade,
+          this.i18n.translateForLanguage(language, this.i18n.enumGradeKey(grade)),
+        ]),
       ),
     };
   });
@@ -266,21 +281,14 @@ export class MatrixQuestionsPageComponent implements OnInit {
   loadPreviewSheets(): void {
     this.previewLoading.set(true);
     this.previewError.set(null);
-    this.workspaceService
-      .listPublicPreviewSheets(this.currentLanguage())
+    this.previewLanguageError.set(null);
+    this.loadPreviewSnapshot(this.previewLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (sheets) => {
-          this.previewSheets.set(sheets);
+        next: (snapshot) => {
+          this.applyPreviewSnapshot(snapshot);
           this.previewLoaded.set(true);
-          const firstSheet = sheets[0] ?? null;
-          this.selectedPreviewSheetKey.set(firstSheet?.key ?? null);
-          if (firstSheet) {
-            this.loadPreviewQuestions(firstSheet.key);
-          } else {
-            this.previewQuestions.set(null);
-            this.previewLoading.set(false);
-          }
+          this.previewLoading.set(false);
         },
         error: (err: ApiError) => {
           this.previewError.set(err);
@@ -298,7 +306,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
     this.previewLoading.set(true);
     this.previewError.set(null);
     this.workspaceService
-      .listPublicPreviewQuestions(sheetKey, this.currentLanguage())
+      .listPreviewQuestions(sheetKey, this.previewLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (questions) => {
@@ -310,6 +318,51 @@ export class MatrixQuestionsPageComponent implements OnInit {
           this.previewLoading.set(false);
         },
       });
+  }
+
+  setPreviewLanguage(language: LanguageCode): void {
+    if (
+      this.previewLanguage() === language ||
+      this.previewLanguageLoading() ||
+      this.previewLoading()
+    ) {
+      return;
+    }
+    this.previewLanguageLoading.set(true);
+    this.previewLoading.set(true);
+    this.previewError.set(null);
+    this.previewLanguageError.set(null);
+    this.i18n
+      .ensureLanguageBundle(language)
+      .pipe(
+        switchMap(() => this.loadPreviewSnapshot(language)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (snapshot) => {
+          this.applyPreviewSnapshot(snapshot);
+          this.previewLanguageLoading.set(false);
+          this.previewLoading.set(false);
+        },
+        error: () => {
+          this.previewLanguageLoading.set(false);
+          this.previewLoading.set(false);
+          this.previewLanguageError.set(this.i18n.translate('matrix.form.previewLanguageError'));
+        },
+      });
+  }
+
+  previewLanguageSelected(language: LanguageCode): boolean {
+    return this.previewLanguage() === language;
+  }
+
+  openPreviewQuestion(slug: string): void {
+    const questionId = this.previewQuestions()?.questionIdsBySlug[slug];
+    if (questionId === undefined) {
+      this.notifications.error(this.i18n.translate('adminMatrixWorkspace.loadError'));
+      return;
+    }
+    void this.router.navigate(['/admin-panel/matrix-questions', questionId]);
   }
 
   openCreate(): void {
@@ -516,7 +569,32 @@ export class MatrixQuestionsPageComponent implements OnInit {
     }
   }
 
-  currentLanguage(): 'ru' | 'en' {
+  private loadPreviewSnapshot(language: LanguageCode): Observable<PreviewSnapshot> {
+    return this.workspaceService.listPreviewSheets(language).pipe(
+      switchMap((sheets) => {
+        const currentSheetKey = this.selectedPreviewSheetKey();
+        const selectedSheetKey =
+          currentSheetKey !== null && sheets.some((sheet) => sheet.key === currentSheetKey)
+            ? currentSheetKey
+            : (sheets[0]?.key ?? null);
+        if (selectedSheetKey === null) {
+          return of({ language, sheets, selectedSheetKey, questions: null });
+        }
+        return this.workspaceService
+          .listPreviewQuestions(selectedSheetKey, language)
+          .pipe(map((questions) => ({ language, sheets, selectedSheetKey, questions })));
+      }),
+    );
+  }
+
+  private applyPreviewSnapshot(snapshot: PreviewSnapshot): void {
+    this.previewLanguage.set(snapshot.language);
+    this.previewSheets.set(snapshot.sheets);
+    this.selectedPreviewSheetKey.set(snapshot.selectedSheetKey);
+    this.previewQuestions.set(snapshot.questions);
+  }
+
+  currentLanguage(): LanguageCode {
     const language = this.i18n.language();
     if (language === null) {
       throw new Error('I18n language is not initialized');

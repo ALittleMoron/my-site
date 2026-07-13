@@ -649,12 +649,16 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
 };
 
 const I18N_TEST_MESSAGES_EN: Record<string, string> = {
+  'matrix.grid.sheetsAria': 'Competency matrix sheets',
+  'matrix.grid.section': 'Section',
+  'matrix.grid.subsection': 'Subsection',
   'matrix.detail.question': 'Question:',
   'matrix.detail.answer': 'Answer:',
   'matrix.detail.expectedAnswer': 'Expected interview answer:',
   'matrix.detail.interviewFrequency': 'How often asked:',
   'matrix.detail.resources': 'External resources:',
   'enum.interviewFrequency.often': 'Often',
+  'shared.notSet': 'Not set',
   'shared.datePicker.placeholder': 'mm/dd/yyyy',
   'shared.datePicker.open': 'Open calendar',
   'shared.datePicker.previousMonth': 'Previous month',

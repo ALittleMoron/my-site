@@ -21,8 +21,8 @@ import {
   AdminMatrixWorkspaceFilterOptionsDto,
   MatrixItemsListDto,
   MatrixSheetsDto,
-  mapPublicQuestionsDto,
-  mapPublicSheetsDto,
+  mapPreviewQuestionsDto,
+  mapPreviewSheetsDto,
   AdminReadonlyMatrixQuestionList,
   AdminReadonlyMatrixSheet,
 } from '../models/matrix-question-workspace.model';
@@ -112,19 +112,23 @@ export class MatrixQuestionWorkspaceService {
     );
   }
 
-  listPublicPreviewSheets(language: LanguageCode): Observable<AdminReadonlyMatrixSheet[]> {
+  listPreviewSheets(language: LanguageCode): Observable<AdminReadonlyMatrixSheet[]> {
     return this.api
-      .get<MatrixSheetsDto>('/api/competency-matrix/sheets', { language })
-      .pipe(map(mapPublicSheetsDto));
+      .get<MatrixSheetsDto>('/api/admin/competency-matrix/sheets', { language })
+      .pipe(map(mapPreviewSheetsDto));
   }
 
-  listPublicPreviewQuestions(
+  listPreviewQuestions(
     sheetKey: string,
     language: LanguageCode,
   ): Observable<AdminReadonlyMatrixQuestionList> {
     return this.api
-      .get<MatrixItemsListDto>('/api/competency-matrix/items', { sheetKey, language })
-      .pipe(map(mapPublicQuestionsDto));
+      .get<MatrixItemsListDto>('/api/admin/competency-matrix/items', {
+        sheetKey,
+        onlyPublished: 'true',
+        language,
+      })
+      .pipe(map(mapPreviewQuestionsDto));
   }
 
   getQuestion(id: string, language: LanguageCode): Observable<AdminMatrixQuestionDetailDto> {

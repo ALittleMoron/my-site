@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
@@ -127,7 +128,16 @@ const resource: AdminMatrixResource = {
   },
 };
 
-const previewSheets: AdminReadonlyMatrixSheet[] = [{ key: 'python', name: 'Python' }];
+const previewSheetsByLanguage: Record<'ru' | 'en', AdminReadonlyMatrixSheet[]> = {
+  ru: [
+    { key: 'python', name: 'Питон' },
+    { key: 'sql', name: 'SQL' },
+  ],
+  en: [
+    { key: 'python', name: 'Python' },
+    { key: 'sql', name: 'SQL' },
+  ],
+};
 const matrixStructure: AdminMatrixStructure = {
   sheets: [
     {
@@ -155,33 +165,6 @@ const matrixStructure: AdminMatrixStructure = {
     },
   ],
 };
-const previewQuestions: AdminReadonlyMatrixQuestionList = {
-  sheetKey: 'python',
-  sheet: 'Python',
-  sections: [
-    {
-      section: 'Core',
-      subsections: [
-        {
-          subsection: 'Syntax',
-          grades: [
-            {
-              grade: 'Junior',
-              questions: [
-                {
-                  slug: 'typing',
-                  question: 'What is typing?',
-                  interviewFrequency: 'often',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-
 describe('MatrixQuestionsPageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionsPageComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
@@ -192,8 +175,14 @@ describe('MatrixQuestionsPageComponent', () => {
     service = {
       listWorkspaceItems: jest.fn().mockReturnValue(of(workspace)),
       getFilterOptions: jest.fn().mockReturnValue(of(options)),
-      listPublicPreviewSheets: jest.fn().mockReturnValue(of(previewSheets)),
-      listPublicPreviewQuestions: jest.fn().mockReturnValue(of(previewQuestions)),
+      listPreviewSheets: jest
+        .fn()
+        .mockImplementation((language: 'ru' | 'en') => of(previewSheetsByLanguage[language])),
+      listPreviewQuestions: jest
+        .fn()
+        .mockImplementation((sheetKey: string, language: 'ru' | 'en') =>
+          of(previewQuestionList(sheetKey, language)),
+        ),
       deleteQuestion: jest.fn().mockReturnValue(of(void 0)),
       publishQuestion: jest.fn().mockReturnValue(of(void 0)),
       unpublishQuestion: jest.fn().mockReturnValue(of(void 0)),
@@ -271,19 +260,102 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(lastWorkspaceFilters().page).toBe(1);
   });
 
-  it('loads public preview only after opening the preview tab', () => {
-    expect(service.listPublicPreviewSheets).not.toHaveBeenCalled();
+  it('loads protected preview only after opening the preview tab and shows its language', () => {
+    expect(service.listPreviewSheets).not.toHaveBeenCalled();
 
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-preview-tab"]')
-      ?.click();
-    fixture.detectChanges();
+    openPreview();
 
-    expect(service.listPublicPreviewSheets).toHaveBeenCalledWith('ru');
-    expect(service.listPublicPreviewQuestions).toHaveBeenCalledWith('python', 'ru');
-    expect(fixture.nativeElement.textContent).toContain('What is typing?');
+    expect(service.listPreviewSheets).toHaveBeenCalledWith('ru');
+    expect(service.listPreviewQuestions).toHaveBeenCalledWith('python', 'ru');
+    expect(fixture.nativeElement.textContent).toContain('Язык предпросмотра');
+    expect(fixture.nativeElement.textContent).toContain('Что такое typing?');
+    expect(previewLanguageButton('ru').classList).toContain('active');
+    expect(previewLanguageButton('ru').getAttribute('aria-pressed')).toBe('true');
     expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-grid')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-matrix-readonly-grouped-list')).toBeNull();
+  });
+
+  it('reloads all preview data and labels in the selected preview language', () => {
+    const i18n = TestBed.inject(I18nService);
+    const ensureLanguageBundle = jest.spyOn(i18n, 'ensureLanguageBundle');
+    openPreview();
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(ensureLanguageBundle).toHaveBeenCalledWith('en');
+    expect(service.listPreviewSheets).toHaveBeenLastCalledWith('en');
+    expect(service.listPreviewQuestions).toHaveBeenLastCalledWith('python', 'en');
+    expect(previewLanguageButton('en').classList).toContain('active');
+    expect(fixture.nativeElement.textContent).toContain('Python');
+    expect(fixture.nativeElement.textContent).toContain('Core');
+    expect(fixture.nativeElement.textContent).toContain('Syntax');
+    expect(fixture.nativeElement.textContent).toContain('What is typing?');
+    expect(fixture.nativeElement.textContent).toContain('Section');
+    expect(fixture.nativeElement.textContent).toContain('Subsection');
+    expect(fixture.nativeElement.textContent).not.toContain('Что такое typing?');
+  });
+
+  it('preserves the selected sheet key while changing the preview language', () => {
+    openPreview();
+    previewSheetButton('SQL').click();
+    fixture.detectChanges();
+
+    expect(service.listPreviewQuestions).toHaveBeenLastCalledWith('sql', 'ru');
+    expect(fixture.nativeElement.textContent).toContain('Что такое JOIN?');
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(service.listPreviewQuestions).toHaveBeenLastCalledWith('sql', 'en');
+    expect(fixture.componentInstance.selectedPreviewSheetKey()).toBe('sql');
+    expect(fixture.nativeElement.textContent).toContain('What is JOIN?');
+  });
+
+  it('keeps the previous preview language and content when bundle loading fails', () => {
+    const i18n = TestBed.inject(I18nService);
+    jest
+      .spyOn(i18n, 'ensureLanguageBundle')
+      .mockReturnValue(throwError(() => new Error('bundle unavailable')));
+    openPreview();
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(previewLanguageButton('ru').classList).toContain('active');
+    expect(fixture.nativeElement.textContent).toContain('Что такое typing?');
+    expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить язык предпросмотра.');
+    expect(service.listPreviewSheets).not.toHaveBeenCalledWith('en');
+  });
+
+  it('keeps the previous preview language and content when localized data loading fails', () => {
+    service.listPreviewQuestions.mockImplementation((sheetKey: string, language: 'ru' | 'en') =>
+      language === 'en'
+        ? throwError(() => new Error('preview unavailable'))
+        : of(previewQuestionList(sheetKey, language)),
+    );
+    openPreview();
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(service.listPreviewSheets).toHaveBeenLastCalledWith('en');
+    expect(service.listPreviewQuestions).toHaveBeenLastCalledWith('python', 'en');
+    expect(previewLanguageButton('ru').classList).toContain('active');
+    expect(fixture.nativeElement.textContent).toContain('Питон');
+    expect(fixture.nativeElement.textContent).toContain('Что такое typing?');
+    expect(fixture.nativeElement.textContent).not.toContain('What is typing?');
+    expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить язык предпросмотра.');
+  });
+
+  it('opens the selected preview question in the admin editor', () => {
+    openPreview();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-desktop-table"] button')
+      ?.click();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID]);
   });
 
   it('disables and resets dependent section filters from selected sheet and section', () => {
@@ -524,6 +596,35 @@ describe('MatrixQuestionsPageComponent', () => {
     fixture.detectChanges();
   }
 
+  function openPreview(): void {
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-preview-tab"]')
+      ?.click();
+    fixture.detectChanges();
+  }
+
+  function previewLanguageButton(language: 'ru' | 'en'): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      `[data-testid="matrix-workspace-preview-language-${language}"]`,
+    );
+    if (button === null) {
+      throw new Error(`No ${language} preview language button`);
+    }
+    return button;
+  }
+
+  function previewSheetButton(label: string): HTMLButtonElement {
+    const button = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>(
+        'app-matrix-readonly-sheet-tabs button',
+      ),
+    ).find((candidate) => candidate.textContent?.trim() === label);
+    if (button === undefined) {
+      throw new Error(`No ${label} preview sheet button`);
+    }
+    return button;
+  }
+
   function selectQuestionSubsection(subsectionId: string): void {
     const form = fixture.debugElement.query(By.directive(MatrixQuestionFormComponent))
       .componentInstance as MatrixQuestionFormComponent;
@@ -553,3 +654,58 @@ describe('MatrixQuestionsPageComponent', () => {
     return button;
   }
 });
+
+function previewQuestionList(
+  sheetKey: string,
+  language: 'ru' | 'en',
+): AdminReadonlyMatrixQuestionList {
+  const python = sheetKey === 'python';
+  const slug = python ? 'typing' : 'sql-join';
+  return {
+    sheetKey,
+    sheet: python ? (language === 'ru' ? 'Питон' : 'Python') : 'SQL',
+    sections: [
+      {
+        section: python
+          ? language === 'ru'
+            ? 'Основы'
+            : 'Core'
+          : language === 'ru'
+            ? 'Запросы'
+            : 'Queries',
+        subsections: [
+          {
+            subsection: python
+              ? language === 'ru'
+                ? 'Синтаксис'
+                : 'Syntax'
+              : language === 'ru'
+                ? 'Соединения'
+                : 'Joins',
+            grades: [
+              {
+                grade: 'Junior',
+                questions: [
+                  {
+                    slug,
+                    question: python
+                      ? language === 'ru'
+                        ? 'Что такое typing?'
+                        : 'What is typing?'
+                      : language === 'ru'
+                        ? 'Что такое JOIN?'
+                        : 'What is JOIN?',
+                    interviewFrequency: 'often',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    questionIdsBySlug: {
+      [slug]: python ? QUESTION_ID : READY_QUESTION_ID,
+    },
+  };
+}

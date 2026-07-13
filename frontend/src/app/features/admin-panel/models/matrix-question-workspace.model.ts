@@ -38,7 +38,10 @@ export const ADMIN_MATRIX_PUBLICATION_FIELDS: readonly AdminMatrixMissingField[]
 ];
 
 export type AdminReadonlyMatrixSheet = ReadonlyMatrixSheet;
-export type AdminReadonlyMatrixQuestionList = ReadonlyMatrixQuestionList;
+
+export interface AdminReadonlyMatrixQuestionList extends ReadonlyMatrixQuestionList {
+  questionIdsBySlug: Readonly<Record<string, string>>;
+}
 
 export interface AdminMatrixQuestionWorkspaceFilters {
   page: number;
@@ -275,6 +278,7 @@ export interface MatrixSheetsDto {
 }
 
 export interface MatrixItemDto {
+  id: string;
   slug: string;
   question: string;
   interviewFrequency: AdminMatrixInterviewFrequency | null;
@@ -305,11 +309,12 @@ export type AdminMatrixWorkspaceDto = AdminMatrixQuestionWorkspace;
 
 export type AdminMatrixWorkspaceFilterOptionsDto = AdminMatrixWorkspaceFilterOptions;
 
-export function mapPublicSheetsDto(dto: MatrixSheetsDto): AdminReadonlyMatrixSheet[] {
+export function mapPreviewSheetsDto(dto: MatrixSheetsDto): AdminReadonlyMatrixSheet[] {
   return dto.sheets.map((sheet) => ({ key: sheet.key, name: sheet.name }));
 }
 
-export function mapPublicQuestionsDto(dto: MatrixItemsListDto): AdminReadonlyMatrixQuestionList {
+export function mapPreviewQuestionsDto(dto: MatrixItemsListDto): AdminReadonlyMatrixQuestionList {
+  const questionIdsBySlug: Record<string, string> = {};
   return {
     sheetKey: dto.sheetKey,
     sheet: dto.sheet,
@@ -319,14 +324,18 @@ export function mapPublicQuestionsDto(dto: MatrixItemsListDto): AdminReadonlyMat
         subsection: subsection.subsection,
         grades: subsection.grades.map((grade) => ({
           grade: grade.grade,
-          questions: grade.items.map((item) => ({
-            slug: item.slug,
-            question: item.question,
-            interviewFrequency: item.interviewFrequency,
-          })),
+          questions: grade.items.map((item) => {
+            questionIdsBySlug[item.slug] = item.id;
+            return {
+              slug: item.slug,
+              question: item.question,
+              interviewFrequency: item.interviewFrequency,
+            };
+          }),
         })),
       })),
     })),
+    questionIdsBySlug,
   };
 }
 

@@ -326,23 +326,30 @@ describe('MatrixQuestionWorkspaceService', () => {
     expect(resourceName).toBe('Python docs');
   });
 
-  it('loads public preview data through public matrix endpoints', () => {
+  it('loads published preview data through protected matrix endpoints with edit identifiers', () => {
     let sheetCount = 0;
     let questionCount = 0;
+    let questionId = '';
 
-    service.listPublicPreviewSheets('en').subscribe((sheets) => {
+    service.listPreviewSheets('en').subscribe((sheets) => {
       sheetCount = sheets.length;
     });
-    service.listPublicPreviewQuestions('python', 'en').subscribe((questions) => {
+    service.listPreviewQuestions('python', 'en').subscribe((questions) => {
       questionCount = questions.sections[0].subsections[0].grades[0].questions.length;
+      questionId = questions.questionIdsBySlug['typing'];
     });
 
-    const sheetsReq = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/sheets'));
+    const sheetsReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/sheets'),
+    );
     expect(sheetsReq.request.params.get('language')).toBe('en');
     sheetsReq.flush({ sheets: [{ key: 'python', name: 'Python' }] });
 
-    const questionsReq = httpMock.expectOne((r) => r.url.endsWith('/api/competency-matrix/items'));
+    const questionsReq = httpMock.expectOne((r) =>
+      r.url.endsWith('/api/admin/competency-matrix/items'),
+    );
     expect(questionsReq.request.params.get('sheetKey')).toBe('python');
+    expect(questionsReq.request.params.get('onlyPublished')).toBe('true');
     expect(questionsReq.request.params.get('language')).toBe('en');
     questionsReq.flush({
       sheetKey: 'python',
@@ -358,6 +365,7 @@ describe('MatrixQuestionWorkspaceService', () => {
                   grade: 'Junior',
                   items: [
                     {
+                      id: '00000000000000000000000000000007',
                       slug: 'typing',
                       question: 'What is typing?',
                       interviewFrequency: 'often',
@@ -373,5 +381,6 @@ describe('MatrixQuestionWorkspaceService', () => {
 
     expect(sheetCount).toBe(1);
     expect(questionCount).toBe(1);
+    expect(questionId).toBe('00000000000000000000000000000007');
   });
 });
