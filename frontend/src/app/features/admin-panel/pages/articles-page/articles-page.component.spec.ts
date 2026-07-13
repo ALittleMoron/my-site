@@ -120,6 +120,18 @@ describe('AdminArticlesPageComponent', () => {
     expect(service.getArticle).not.toHaveBeenCalled();
   });
 
+  it('links published and draft article titles to their admin edit pages', () => {
+    fixture.detectChanges();
+
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLAnchorElement>('tbody td:first-child a'),
+    ).map((link) => link.getAttribute('href') ?? '');
+
+    expect(links).toContain('/admin-panel/articles/typed-articles');
+    expect(links).toContain('/admin-panel/articles/draft-article');
+    expect(links).not.toContain('/ru/articles/typed-articles');
+  });
+
   it('unpublishes and deletes articles from the admin workspace', () => {
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     fixture.detectChanges();
@@ -135,7 +147,7 @@ describe('AdminArticlesPageComponent', () => {
 
 function articleList(): AdminArticleList {
   return {
-    totalCount: 1,
+    totalCount: 2,
     totalPages: 1,
     articles: [
       {
@@ -161,6 +173,31 @@ function articleList(): AdminArticleList {
           coverImageAltEn: null,
         },
         viewCount: 7,
+        tags: [],
+      },
+      {
+        id: '00000000000000000000000000000002',
+        title: 'Draft article',
+        slug: 'draft-article',
+        folder: 'Engineering',
+        folderId: 'folder-1',
+        folderKey: 'engineering',
+        authorUsername: 'admin',
+        publishedAt: null,
+        publishStatus: 'Draft',
+        updatedAt: '2026-01-04T03:04:05+00:00',
+        excerpt: 'Draft excerpt',
+        metadata: {
+          seoTitleRu: null,
+          seoTitleEn: null,
+          seoDescriptionRu: null,
+          seoDescriptionEn: null,
+          coverImageFileId: null,
+          coverImageUrl: null,
+          coverImageAltRu: null,
+          coverImageAltEn: null,
+        },
+        viewCount: 0,
         tags: [],
       },
     ],

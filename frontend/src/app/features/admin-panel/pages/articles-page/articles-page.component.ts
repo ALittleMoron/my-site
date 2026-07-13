@@ -285,10 +285,6 @@ export class AdminArticlesPageComponent implements OnInit {
     this.onlyPublished.set(value);
   }
 
-  publicArticleLink(slug: string): string {
-    return `/${this.currentLanguage()}/articles/${slug}`;
-  }
-
   loadTags(): void {
     this.articleWorkspace
       .getTags(false, this.currentLanguage())

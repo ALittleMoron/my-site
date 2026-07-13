@@ -108,13 +108,9 @@
         @for (article of articles()!.articles; track article.slug) {
           <tr>
             <td>
-              @if (article.publishStatus === 'Published') {
-                <a class="fw-semibold" [routerLink]="publicArticleLink(article.slug)">
-                  {{ article.title }}
-                </a>
-              } @else {
-                <span class="fw-semibold">{{ article.title }}</span>
-              }
+              <a class="fw-semibold" [routerLink]="['/admin-panel/articles', article.slug]">
+                {{ article.title }}
+              </a>
               <span class="d-block small text-body-secondary">{{ article.slug }}</span>
             </td>
             <td>{{ article.folder }}</td>
