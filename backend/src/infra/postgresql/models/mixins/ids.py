@@ -13,7 +13,7 @@ def generate_uuid4_hex() -> str:
 @declarative_mixin
 class HexUuidIDMixin(BaseModelMixin):
     @declared_attr
-    def id(cls) -> Mapped[int]:
+    def id(cls) -> Mapped[str]:
         return mapped_column(
             String(length=32),
             primary_key=True,
@@ -23,5 +23,5 @@ class HexUuidIDMixin(BaseModelMixin):
         )
 
     @declared_attr
-    def pk(cls) -> Mapped[int]:
+    def pk(cls) -> Mapped[str]:
         return synonym("id")
