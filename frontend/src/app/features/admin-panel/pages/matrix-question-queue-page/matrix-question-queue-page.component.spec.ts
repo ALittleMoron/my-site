@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ApiError } from '../../../../core/models/api-error.model';
@@ -17,6 +18,7 @@ import { MatrixQuestionQueueService } from '../../services/matrix-question-queue
 import { MatrixQuestionQueuePageComponent } from './matrix-question-queue-page.component';
 
 const QUESTION_ID = '00000000000000000000000000000007';
+const CREATED_QUESTION_ID = '00000000000000000000000000000017';
 const IMPORTED_QUESTION_ID = '00000000000000000000000000000008';
 const MISSING_SHEET_QUESTION_ID = '00000000000000000000000000000009';
 const SHEET_ID = '00000000000000000000000000000001';
@@ -134,6 +136,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   };
   let workspaceService: jest.Mocked<MatrixQuestionWorkspaceService>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
+  let router: Router;
 
   beforeEach(async () => {
     queueService = {
@@ -144,7 +147,9 @@ describe('MatrixQuestionQueuePageComponent', () => {
       previewQueuedQuestions: jest.fn().mockReturnValue(of(importPreview)),
       importQueuedQuestions: jest.fn().mockReturnValue(of([queuedQuestion, importedQuestion])),
       rejectQueuedQuestion: jest.fn().mockReturnValue(of(undefined)),
-      createQuestionFromQueue: jest.fn().mockReturnValue(of({ id: QUESTION_ID, slug: 'pep-8' })),
+      createQuestionFromQueue: jest
+        .fn()
+        .mockReturnValue(of({ id: CREATED_QUESTION_ID, slug: 'pep-8' })),
     };
     workspaceService = {
       getStructure: jest.fn().mockReturnValue(of(matrixStructure)),
@@ -166,11 +171,14 @@ describe('MatrixQuestionQueuePageComponent', () => {
         { provide: MatrixQuestionWorkspaceService, useValue: workspaceService },
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
+        provideRouter([]),
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MatrixQuestionQueuePageComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 
@@ -661,9 +669,24 @@ describe('MatrixQuestionQueuePageComponent', () => {
   it('renders queue-only actions through the shared form footer', () => {
     openCreateModalFromQueue();
 
+    const createAndEdit = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-queue-create-and-edit"]',
+    );
+    const createAndNext = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-form-save"]',
+    );
+    const footerButtonLabels = Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>(
+        '[data-testid="matrix-form-action-footer"] button',
+      ),
+    ).map((button) => button.textContent?.trim());
+
     expect(buttonText('[data-testid="matrix-queue-reject-and-next"]')).toBe('Отклонить и далее');
     expect(buttonText('[data-testid="matrix-queue-skip"]')).toBe('Пропустить');
-    expect(buttonText('[data-testid="matrix-form-save"]')).toBe('Создать и далее');
+    expect(buttonText('[data-testid="matrix-queue-create-and-edit"]')).toBe('Создать и перейти');
+    expect(buttonText('[data-testid="matrix-form-save"]')).toBe('Создать и к следующему');
+    expect(createAndEdit?.parentElement).toBe(createAndNext?.parentElement);
+    expect(footerButtonLabels).not.toContain('Отмена');
   });
 
   it('highlights a missing queued sheet key in the shared create modal', () => {
@@ -733,6 +756,80 @@ describe('MatrixQuestionQueuePageComponent', () => {
       MISSING_SHEET_QUESTION_ID,
     ]);
     expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+  });
+
+  it('creates a queued question and opens its admin editor', () => {
+    openCreateModalFromQueue();
+    fillValidCreateForm();
+    jest.mocked(window.confirm).mockClear();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-create-and-edit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.createQuestionFromQueue).toHaveBeenCalledWith(
+      QUESTION_ID,
+      expect.objectContaining({ subsectionId: SUBSECTION_ID }),
+      'ru',
+    );
+    expect(component.questions().map((question) => question.id)).toEqual([
+      MISSING_SHEET_QUESTION_ID,
+    ]);
+    expect(component.selectedQuestion()).toBeNull();
+    expect(component.unsavedChangesScope.hasChanges()).toBe(false);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(notificationService.success).toHaveBeenCalledWith('Вопрос создан.');
+    expect(router.navigate).toHaveBeenCalledWith([
+      '/admin-panel/matrix-questions',
+      CREATED_QUESTION_ID,
+    ]);
+  });
+
+  it('does not retain create-and-edit intent after invalid submission', () => {
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-create-and-edit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.createQuestionFromQueue).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+
+    fillValidCreateForm();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-form-save"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.createQuestionFromQueue).toHaveBeenCalledTimes(1);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+  });
+
+  it('keeps create modal open and does not navigate when create-and-edit fails', () => {
+    const error: ApiError = {
+      code: 'bad_request',
+      type: 'bad_request',
+      message: 'Failed',
+      status: 400,
+      location: 'body',
+      attr: 'payload.slug',
+    };
+    queueService.createQuestionFromQueue.mockReturnValue(throwError(() => error));
+    openCreateModalFromQueue();
+    fillValidCreateForm();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-create-and-edit"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.selectedQuestion()?.id).toBe(QUESTION_ID);
+    expect(component.questions()).toEqual([queuedQuestion, queuedQuestionWithMissingSheet]);
+    expect(fixture.nativeElement.textContent).toContain('payload / slug: Failed');
   });
 
   it('closes the create modal after creating the last visible queue entry', () => {
@@ -848,6 +945,11 @@ describe('MatrixQuestionQueuePageComponent', () => {
         ?.disabled,
     ).toBe(true);
     expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        '[data-testid="matrix-queue-create-and-edit"]',
+      )?.disabled,
+    ).toBe(true);
+    expect(
       fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-form-save"]')
         ?.disabled,
     ).toBe(true);
@@ -875,6 +977,11 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(
       fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')
         ?.disabled,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        '[data-testid="matrix-queue-create-and-edit"]',
+      )?.disabled,
     ).toBe(true);
 
     component.closeCreateModal();
@@ -999,6 +1106,18 @@ describe('MatrixQuestionQueuePageComponent', () => {
       },
       resources: [],
     };
+  }
+
+  function fillValidCreateForm(): void {
+    const section = select('[data-testid="matrix-structure-section"]');
+    section.value = SECTION_ID;
+    section.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const subsection = select('[data-testid="matrix-structure-subsection"]');
+    subsection.value = SUBSECTION_ID;
+    subsection.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
   }
 
   function inputValue(selector: string): string {

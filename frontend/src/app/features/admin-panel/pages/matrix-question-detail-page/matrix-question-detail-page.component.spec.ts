@@ -163,6 +163,7 @@ class MatrixQuestionFormStubComponent {
   @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
   @Input({ required: true }) submitLabelKey!: string;
+  @Input({ required: true }) showCancelAction!: boolean;
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();
   @Output() readonly formCancel = new EventEmitter<void>();
 }

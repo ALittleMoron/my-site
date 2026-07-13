@@ -109,6 +109,7 @@
             [createInitialValue]="selectedQuestionInitialValue()"
             [submitting]="selectedQuestionProcessing()"
             submitLabelKey="adminMatrixQueue.createAndNext"
+            [showCancelAction]="false"
             [unsavedChangesScope]="unsavedChangesScope"
             (questionSave)="createQuestion($event)"
             (formCancel)="closeCreateModal()"
@@ -133,6 +134,16 @@
                 {{ 'adminMatrixQueue.skip' | t }}
               </button>
             </div>
+            <button
+              matrixQuestionFormSubmitActions
+              type="button"
+              class="btn btn-outline-success"
+              data-testid="matrix-queue-create-and-edit"
+              [disabled]="selectedQuestionProcessing()"
+              (click)="createQuestionAndEdit()"
+            >
+              {{ 'adminMatrixQueue.createAndEdit' | t }}
+            </button>
           </app-admin-matrix-question-form>
         </div>
       </div>

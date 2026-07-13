@@ -10,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -44,6 +45,7 @@ const IMPORT_FILE_ACCEPT =
   '.txt,.csv,.xlsx,.xlsm,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12';
 
 type QueueAddMode = 'manual' | 'import';
+type QueueCreateDestination = 'next' | 'edit';
 
 const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
   questionNotText: 'adminMatrixQueue.importIssue.questionNotText',
@@ -72,6 +74,7 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
 })
 export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly queueService = inject(MatrixQuestionQueueService);
+  private readonly router = inject(Router);
   private readonly notifications = inject(NotificationService);
   readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -183,6 +186,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   );
   private readonly manualAddUnsavedSource: AdminUnsavedChangesSource;
   private readonly importUnsavedSource: AdminUnsavedChangesSource;
+  private createDestination: QueueCreateDestination = 'next';
 
   constructor() {
     this.manualAddUnsavedSource = this.unsavedChangesScope.registerSource(
@@ -456,6 +460,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     this.formError.set(null);
   }
 
+  createQuestionAndEdit(): void {
+    if (this.selectedQuestionProcessing()) return;
+    this.createDestination = 'edit';
+    this.questionForm()?.submit();
+    this.createDestination = 'next';
+  }
+
   private rejectQueuedQuestion(question: QueuedMatrixQuestion, advance: boolean): void {
     if (this.submitting() || this.rejectingQuestionId() !== null) return;
     const confirmed =
@@ -493,6 +504,8 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   createQuestion(payload: AdminMatrixQuestionPayload): void {
+    const destination = this.createDestination;
+    this.createDestination = 'next';
     const question = this.selectedQuestion();
     if (question === null) {
       this.notifications.error(this.i18n.translate('adminMatrixQueue.createError'));
@@ -505,15 +518,21 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .createQuestionFromQueue(question.id, payload, this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (createdQuestion) => {
           this.submitting.set(false);
           this.questions.update((questions) =>
             questions.filter((queuedQuestion) => queuedQuestion.id !== question.id),
           );
           this.questionForm()?.discardAuxiliaryDrafts();
-          this.selectedQuestion.set(nextQuestion);
           this.formError.set(null);
           this.notifications.success(this.i18n.translate('adminMatrixQueue.created'));
+          if (destination === 'edit') {
+            this.selectedQuestion.set(null);
+            this.unsavedChangesScope.commit();
+            void this.router.navigate(['/admin-panel/matrix-questions', createdQuestion.id]);
+            return;
+          }
+          this.selectedQuestion.set(nextQuestion);
         },
         error: (err: ApiError) => {
           this.submitting.set(false);

@@ -497,14 +497,18 @@
   >
     <ng-content select="[matrixQuestionFormActions]" />
     <div class="d-flex flex-wrap justify-content-end gap-2 ms-auto">
-      <button
-        type="button"
-        class="btn btn-outline-secondary"
-        [disabled]="submitting"
-        (click)="formCancel.emit()"
-      >
-        {{ 'shared.cancel' | t }}
-      </button>
+      @if (showCancelAction) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-testid="matrix-form-cancel"
+          [disabled]="submitting"
+          (click)="formCancel.emit()"
+        >
+          {{ 'shared.cancel' | t }}
+        </button>
+      }
+      <ng-content select="[matrixQuestionFormSubmitActions]" />
       <button
         type="submit"
         class="btn btn-success"

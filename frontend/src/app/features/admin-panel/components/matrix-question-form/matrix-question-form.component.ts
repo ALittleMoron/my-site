@@ -146,6 +146,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   @Input({ required: true }) createInitialValue!: AdminMatrixQuestionCreateInitialValue | null;
   @Input({ required: true }) submitting!: boolean;
   @Input({ required: true }) submitLabelKey!: string;
+  @Input({ required: true }) showCancelAction!: boolean;
   @Input({ required: true }) unsavedChangesScope!: AdminUnsavedChangesScope;
 
   @Output() readonly questionSave = new EventEmitter<AdminMatrixQuestionPayload>();

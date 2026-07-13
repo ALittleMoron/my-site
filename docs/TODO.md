@@ -539,7 +539,7 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.
 - [x] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
 - [ ] Add a fullscreen single-question queue processing modal that keeps the shared matrix question form wide and shows queue progress/navigation.
-- [x] Add queue-only "create and next", "reject and next", and "skip" actions around the shared matrix question form.
+- [x] Add queue-only "create and next", "create and edit", "reject and next", and "skip" actions around the shared matrix question form.
 - [ ] Add queue-only keyboard shortcuts for fast queued question processing.
 - [ ] Persist queue-only last-used structure, grade, and interview frequency defaults for faster repeated question creation.
 - [ ] Show duplicate/similar-question hints when processing a queued competency matrix question.

@@ -73,6 +73,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.componentRef.setInput('createInitialValue', null);
     fixture.componentRef.setInput('submitting', false);
     fixture.componentRef.setInput('submitLabelKey', 'adminMatrixQueue.createAndNext');
+    fixture.componentRef.setInput('showCancelAction', true);
     fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
     fixture.componentInstance.questionSave.subscribe((payload) => emittedPayloads.push(payload));
     fixture.detectChanges();
@@ -87,7 +88,20 @@ describe('MatrixQuestionFormComponent', () => {
     );
 
     expect(footer).not.toBeNull();
-    expect(submit?.textContent?.trim()).toBe('Создать и далее');
+    expect(submit?.textContent?.trim()).toBe('Создать и к следующему');
+  });
+
+  it('shows or hides the cancel action explicitly', () => {
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-form-cancel"]'),
+    ).not.toBeNull();
+
+    fixture.componentRef.setInput('showCancelAction', false);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>('[data-testid="matrix-form-cancel"]'),
+    ).toBeNull();
   });
 
   it('tracks form, attached-resource, and unfinished new-resource changes against the baseline', () => {
