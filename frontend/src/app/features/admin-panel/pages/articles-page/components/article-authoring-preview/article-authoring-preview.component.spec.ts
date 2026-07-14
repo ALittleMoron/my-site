@@ -31,6 +31,7 @@ describe('ArticleAuthoringPreviewComponent', () => {
       'SEO description for social cards and search snippets.',
     );
     fixture.componentRef.setInput('language', 'ru');
+    fixture.componentRef.setInput('bundleVersion', 0);
     fixture.detectChanges();
   });
 
@@ -54,5 +55,16 @@ describe('ArticleAuthoringPreviewComponent', () => {
 
     expect(social.textContent).toContain('SEO Typed articles');
     expect(social.textContent).toContain('SEO description for social cards');
+  });
+
+  it('renders preview chrome in the selected content language', () => {
+    fixture.componentRef.setInput('language', 'en');
+    fixture.componentRef.setInput('bundleVersion', 1);
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Article');
+    expect(text).toContain('Social preview');
+    expect(text).not.toContain('Превью для соцсетей');
   });
 });

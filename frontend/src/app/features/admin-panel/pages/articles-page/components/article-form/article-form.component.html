@@ -1,4 +1,38 @@
-<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+<div class="d-flex justify-content-end mb-3">
+  <div class="btn-group btn-group-sm" role="group" [attr.aria-label]="'articles.form.viewMode' | t">
+    <button
+      type="button"
+      class="btn"
+      data-testid="article-form-view-edit"
+      [class.btn-secondary]="viewMode() === 'edit'"
+      [class.btn-outline-secondary]="viewMode() !== 'edit'"
+      [attr.aria-pressed]="viewMode() === 'edit'"
+      (click)="showEdit()"
+    >
+      {{ 'articles.form.editMode' | t }}
+    </button>
+    <button
+      type="button"
+      class="btn"
+      data-testid="article-form-view-preview"
+      [class.btn-secondary]="viewMode() === 'preview'"
+      [class.btn-outline-secondary]="viewMode() !== 'preview'"
+      [attr.aria-pressed]="viewMode() === 'preview'"
+      (click)="showPreview()"
+    >
+      {{ 'articles.form.previewMode' | t }}
+    </button>
+  </div>
+</div>
+
+<form
+  id="article-authoring-edit-form"
+  data-testid="article-form-edit"
+  [formGroup]="form"
+  [hidden]="viewMode() !== 'edit'"
+  (ngSubmit)="submit()"
+  novalidate
+>
   <div class="row g-3">
     <div class="col-12">
       <label class="form-label" for="articleSlug">
@@ -73,6 +107,7 @@
       <button
         type="button"
         class="nav-link"
+        data-testid="article-form-language-ru"
         [class.active]="activeLanguageTab() === 'ru'"
         [class.text-danger]="languageTabInvalid('ru')"
         [attr.aria-invalid]="languageTabInvalid('ru') ? 'true' : null"
@@ -90,6 +125,7 @@
       <button
         type="button"
         class="nav-link"
+        data-testid="article-form-language-en"
         [class.active]="activeLanguageTab() === 'en'"
         [class.text-danger]="languageTabInvalid('en')"
         [attr.aria-invalid]="languageTabInvalid('en') ? 'true' : null"
@@ -317,7 +353,7 @@
   <div class="form-check form-switch my-3">
     <input
       id="articlePublishStatus"
-      class="form-check-input"
+      class="form-check-input article-draft-switch-input"
       type="checkbox"
       [checked]="form.controls.publishStatus.value === 'Draft'"
       (change)="setPublishStatusFromEvent($event)"
@@ -326,17 +362,6 @@
   </div>
 
   <app-admin-article-seo-panel [analysis]="seoAnalysis()" />
-
-  <app-admin-article-authoring-preview
-    [title]="activePreview().title"
-    [content]="activePreview().content"
-    [tags]="activePreview().tags"
-    [coverImageUrl]="activePreview().coverImageUrl"
-    [coverImageAlt]="activePreview().coverImageAlt"
-    [seoTitle]="activePreview().seoTitle"
-    [seoDescription]="activePreview().seoDescription"
-    [language]="activePreview().language"
-  />
 
   <div class="border rounded-3 p-3" data-testid="article-tag-picker">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
@@ -376,7 +401,7 @@
         #tagSearchInput
         id="articleTagSearch"
         type="search"
-        class="form-control"
+        class="form-control article-tag-search-input"
         autocomplete="off"
         data-testid="article-tag-search"
         role="combobox"
@@ -440,13 +465,78 @@
       <div class="small text-danger mt-2" role="alert">{{ tagSearchError() }}</div>
     }
   </div>
-
-  <div class="d-flex justify-content-end gap-2 mt-4">
-    <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
-      {{ 'shared.cancel' | t }}
-    </button>
-    <button type="submit" class="btn btn-primary" [disabled]="coverImageUploading()">
-      {{ 'shared.save' | t }}
-    </button>
-  </div>
 </form>
+
+<section
+  data-testid="article-form-preview"
+  [hidden]="viewMode() !== 'preview'"
+  [attr.aria-label]="'articles.preview.aria' | t"
+>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h3 class="h5 mb-0">{{ 'articles.preview.aria' | t }}</h3>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="small text-body-secondary" id="article-preview-language-label">
+        {{ 'articles.preview.language' | t }}
+      </span>
+      <div
+        class="btn-group btn-group-sm"
+        role="group"
+        aria-labelledby="article-preview-language-label"
+      >
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-testid="article-preview-language-ru"
+          [disabled]="previewLanguageLoading()"
+          [class.active]="previewLanguageSelected('ru')"
+          [attr.aria-pressed]="previewLanguageSelected('ru')"
+          (click)="setPreviewLanguage('ru')"
+        >
+          {{ 'articles.preview.languageRu' | t }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-testid="article-preview-language-en"
+          [disabled]="previewLanguageLoading()"
+          [class.active]="previewLanguageSelected('en')"
+          [attr.aria-pressed]="previewLanguageSelected('en')"
+          (click)="setPreviewLanguage('en')"
+        >
+          {{ 'articles.preview.languageEn' | t }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (previewLanguageError()) {
+    <div class="alert alert-danger" role="alert">{{ previewLanguageError() }}</div>
+  }
+
+  <app-admin-article-authoring-preview
+    [title]="activePreview().title"
+    [content]="activePreview().content"
+    [tags]="activePreview().tags"
+    [coverImageUrl]="activePreview().coverImageUrl"
+    [coverImageAlt]="activePreview().coverImageAlt"
+    [seoTitle]="activePreview().seoTitle"
+    [seoDescription]="activePreview().seoDescription"
+    [language]="activePreview().language"
+    [bundleVersion]="previewBundleVersion()"
+  />
+</section>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+  <button type="button" class="btn btn-outline-secondary" (click)="formCancel.emit()">
+    {{ 'shared.cancel' | t }}
+  </button>
+  <button
+    type="submit"
+    class="btn btn-primary"
+    data-testid="article-form-save"
+    form="article-authoring-edit-form"
+    [disabled]="coverImageUploading()"
+  >
+    {{ 'shared.save' | t }}
+  </button>
+</div>

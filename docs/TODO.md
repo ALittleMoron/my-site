@@ -354,7 +354,7 @@
   - [x] Require an explicit `metadata` request object while allowing individual metadata fields to be `null`
   - [x] Add article form controls for SEO metadata and cover upload through the backend file flow
   - [x] Expand the live admin SEO panel with metadata, cover, alt, and wiki-link checks
-  - [x] Add in-form article/social preview for the active language
+  - [x] Add toggleable article/social preview for the selected language
   - [x] Render typed `[[articles:<slug>]]` / `[[matrix:<slug>]]` links as internal localized links
   - [x] Warn when wiki links point to missing targets available in the admin target registry
 - [ ] Extend managed `FileModel` metadata when the next file workflow needs it:

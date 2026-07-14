@@ -606,6 +606,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'articles.form.slug': 'Slug',
   'articles.form.languageRu': 'Русский',
   'articles.form.languageEn': 'Английский',
+  'articles.form.viewMode': 'Режим формы',
+  'articles.form.editMode': 'Редактирование',
+  'articles.form.previewMode': 'Предпросмотр',
   'articles.form.titleRu': 'Заголовок RU',
   'articles.form.titleEn': 'Заголовок EN',
   'articles.form.seoTitleRu': 'SEO-заголовок RU',
@@ -626,6 +629,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'articles.form.tagNameEnAria': 'Название тега EN',
   'articles.form.tagSlugAria': 'Slug тега',
   'articles.preview.aria': 'Предпросмотр статьи',
+  'articles.preview.language': 'Язык предпросмотра',
+  'articles.preview.languageError': 'Не удалось загрузить язык предпросмотра.',
+  'articles.preview.languageRu': 'RU',
+  'articles.preview.languageEn': 'EN',
   'articles.preview.article': 'Статья',
   'articles.preview.social': 'Превью для соцсетей',
   'articles.tags.createError': 'Не удалось создать тег.',
@@ -674,6 +681,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
 };
 
 const I18N_TEST_MESSAGES_EN: Record<string, string> = {
+  'articles.preview.aria': 'Article preview',
+  'articles.preview.article': 'Article',
+  'articles.preview.social': 'Social preview',
   'matrix.grid.sheetsAria': 'Competency matrix sheets',
   'matrix.grid.section': 'Section',
   'matrix.grid.subsection': 'Subsection',

@@ -16,7 +16,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, finalize, map, of, switchMap, tap, timer } from 'rxjs';
+import { catchError, EMPTY, finalize, map, of, switchMap, tap, timer } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -104,6 +104,7 @@ interface TagSearchResult {
 }
 
 type ArticleField = keyof ArticleFormControls;
+type ArticleFormViewMode = 'edit' | 'preview';
 
 @Component({
   selector: 'app-admin-article-form',
@@ -144,6 +145,11 @@ export class ArticleFormComponent implements OnInit {
   readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
   readonly selectedFolder = signal<ArticleFolder | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
+  readonly viewMode = signal<ArticleFormViewMode>('edit');
+  readonly previewLanguage = signal<LanguageCode>(this.currentLanguage());
+  readonly previewLanguageLoading = signal(false);
+  readonly previewLanguageError = signal<string | null>(null);
+  readonly previewBundleVersion = signal(0);
   readonly formSubmitted = signal(false);
   readonly coverImagePreviewUrl = signal<string | null>(null);
   readonly coverImageUploading = signal(false);
@@ -251,19 +257,19 @@ export class ArticleFormComponent implements OnInit {
               ? folder.translations.ru.name
               : folder.translations.en.name,
         language,
-        tags: this.localizedTags(),
+        tags: this.localizedTags(language),
       },
       rules: ARTICLE_SEO_ANALYSIS_RULES,
     });
   });
   readonly activePreview = computed<ArticlePreviewState>(() => {
     const value = this.formSnapshot();
-    const language = this.activeLanguageTab();
+    const language = this.previewLanguage();
     const metadata = toMetadata(value, this.coverImagePreviewUrl());
     return {
       title: language === 'ru' ? value.titleRu : value.titleEn,
       content: language === 'ru' ? value.contentRu : value.contentEn,
-      tags: this.localizedTags(),
+      tags: this.localizedTags(language),
       coverImageUrl: metadata.coverImageUrl,
       coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
       seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
@@ -302,6 +308,41 @@ export class ArticleFormComponent implements OnInit {
 
   setActiveLanguageTab(language: LanguageCode): void {
     this.activeLanguageTab.set(language);
+  }
+
+  showPreview(): void {
+    this.previewLanguageError.set(null);
+    this.previewBundleVersion.update((version) => version + 1);
+    this.viewMode.set('preview');
+  }
+
+  showEdit(): void {
+    this.viewMode.set('edit');
+  }
+
+  setPreviewLanguage(language: LanguageCode): void {
+    if (this.previewLanguage() === language || this.previewLanguageLoading()) return;
+    this.previewLanguageLoading.set(true);
+    this.previewLanguageError.set(null);
+    this.i18n
+      .ensureLanguageBundle(language)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => {
+          this.previewLanguageLoading.set(false);
+          this.previewLanguageError.set(this.i18n.translate('articles.preview.languageError'));
+          return EMPTY;
+        }),
+      )
+      .subscribe(() => {
+        this.previewLanguage.set(language);
+        this.previewLanguageLoading.set(false);
+        this.previewBundleVersion.update((version) => version + 1);
+      });
+  }
+
+  previewLanguageSelected(language: LanguageCode): boolean {
+    return this.previewLanguage() === language;
   }
 
   setContentRu(value: string): void {
@@ -419,6 +460,7 @@ export class ArticleFormComponent implements OnInit {
     this.formSubmitted.set(true);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.viewMode.set('edit');
       return;
     }
     if (
@@ -561,9 +603,9 @@ export class ArticleFormComponent implements OnInit {
     untracked(() => this.mainUnsavedSource?.commit());
   }
 
-  private localizedTags(): ArticleTag[] {
+  private localizedTags(language: LanguageCode): ArticleTag[] {
     return this.selectedTags()
-      .map((tag) => localizeTag(tag, this.activeLanguageTab()))
+      .map((tag) => localizeTag(tag, language))
       .sort(compareLocalizedTags);
   }
 

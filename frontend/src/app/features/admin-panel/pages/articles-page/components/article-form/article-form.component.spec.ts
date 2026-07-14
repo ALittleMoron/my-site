@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
+import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
 import {
   MediaUploadService,
@@ -151,6 +152,29 @@ describe('ArticleFormComponent', () => {
     expect(unsavedChangesScope.hasChanges()).toBe(true);
 
     setInput('#articleTitleRu', '');
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+  });
+
+  it('starts in edit mode and does not treat view or preview-language changes as authored data', () => {
+    expect(viewModeButton('edit').getAttribute('aria-pressed')).toBe('true');
+    expect(viewModeButton('preview').getAttribute('aria-pressed')).toBe('false');
+    expect(editForm().hidden).toBe(false);
+    expect(previewSection().hidden).toBe(true);
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+
+    clickViewMode('preview');
+
+    expect(viewModeButton('edit').getAttribute('aria-pressed')).toBe('false');
+    expect(viewModeButton('preview').getAttribute('aria-pressed')).toBe('true');
+    expect(editForm().hidden).toBe(true);
+    expect(previewSection().hidden).toBe(false);
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+    clickViewMode('edit');
+
+    expect(previewLanguageButton('en').textContent?.trim()).toBe('EN');
+    expect(editLanguageButton('ru').classList).toContain('active');
     expect(unsavedChangesScope.hasChanges()).toBe(false);
   });
 
@@ -378,11 +402,13 @@ describe('ArticleFormComponent', () => {
     ).toBeNull();
   });
 
-  it('localizes selected tag chips and preview to the active article language', () => {
+  it('localizes selected tag chips and preview with their independent language controls', () => {
     fixture.componentInstance.selectTag(
       tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' }),
     );
     fixture.detectChanges();
+
+    clickViewMode('preview');
 
     const picker = fixture.nativeElement.querySelector(
       '[data-testid="article-tag-picker"]',
@@ -393,13 +419,138 @@ describe('ArticleFormComponent', () => {
     expect(preview.textContent).toContain('Питон');
     expect(preview.textContent).not.toContain('Python');
 
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(picker.textContent).toContain('Питон');
+    expect(picker.textContent).not.toContain('Python');
+    expect(preview.textContent).toContain('Python');
+    expect(preview.textContent).not.toContain('Питон');
+  });
+
+  it('switches preview language and preserves unsaved editor values when returning to edit mode', () => {
+    setInput('#articleTitleRu', 'Русский предпросмотр');
+    setInput('#articleTitleEn', 'English preview');
+    setArticleContent('ru', 'Читайте [[articles:typed-article|русскую статью]].');
+    setArticleContent('en', 'Read the [[articles:typed-article|English article]].');
+    fixture.componentInstance.selectTag(
+      tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' }),
+    );
     fixture.componentInstance.setActiveLanguageTab('en');
     fixture.detectChanges();
 
-    expect(picker.textContent).toContain('Python');
-    expect(picker.textContent).not.toContain('Питон');
-    expect(preview.textContent).toContain('Python');
-    expect(preview.textContent).not.toContain('Питон');
+    clickViewMode('preview');
+
+    expect(previewSection().textContent).toContain('Русский предпросмотр');
+    expect(previewSection().textContent).toContain('Питон');
+    expect(previewSection().querySelector('a')?.getAttribute('href')).toBe(
+      '/ru/articles/typed-article',
+    );
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(previewSection().textContent).toContain('English preview');
+    expect(previewSection().textContent).toContain('Python');
+    expect(previewSection().querySelector('a')?.getAttribute('href')).toBe(
+      '/en/articles/typed-article',
+    );
+
+    clickViewMode('edit');
+
+    expect(elementValue('#articleTitleRu')).toBe('Русский предпросмотр');
+    expect(elementValue('#articleTitleEn')).toBe('English preview');
+    expect(editLanguageButton('en').classList).toContain('active');
+  });
+
+  it('keeps the current preview language and content when another bundle fails to load', () => {
+    const i18n = TestBed.inject(I18nService);
+    jest
+      .spyOn(i18n, 'ensureLanguageBundle')
+      .mockReturnValue(throwError(() => new Error('bundle unavailable')));
+    setInput('#articleTitleRu', 'Русский предпросмотр');
+    setInput('#articleTitleEn', 'English preview');
+    clickViewMode('preview');
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(previewLanguageButton('ru').getAttribute('aria-pressed')).toBe('true');
+    expect(previewLanguageButton('en').getAttribute('aria-pressed')).toBe('false');
+    expect(previewSection().textContent).toContain('Русский предпросмотр');
+    expect(previewSection().textContent).toContain('Не удалось загрузить язык предпросмотра.');
+  });
+
+  it('disables preview language controls while the selected bundle is loading', () => {
+    const i18n = TestBed.inject(I18nService);
+    const bundle$ = new Subject<void>();
+    jest.spyOn(i18n, 'ensureLanguageBundle').mockReturnValue(bundle$);
+    clickViewMode('preview');
+
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    expect(previewLanguageButton('ru').disabled).toBe(true);
+    expect(previewLanguageButton('en').disabled).toBe(true);
+
+    bundle$.next();
+    bundle$.complete();
+    fixture.detectChanges();
+
+    expect(previewLanguageButton('en').disabled).toBe(false);
+    expect(previewLanguageButton('en').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('submits valid unsaved article data from preview mode', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    fillValidArticleMinimum();
+
+    clickViewMode('preview');
+    articleSaveButton().click();
+    fixture.detectChanges();
+
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: 'typed-article',
+        translations: {
+          ru: { title: 'Типизированная статья', content: 'Содержимое' },
+          en: { title: 'Typed article', content: 'Content' },
+        },
+      }),
+    );
+    expect(previewSection().hidden).toBe(false);
+  });
+
+  it('keeps preview mode and language after an existing article is accepted as saved', () => {
+    fixture.componentRef.setInput('article', articleDetail('typed-article', 'Typed article'));
+    fixture.detectChanges();
+    clickViewMode('preview');
+    previewLanguageButton('en').click();
+    fixture.detectChanges();
+
+    fixture.componentInstance.acceptSavedArticle(
+      articleDetail('renamed-article', 'Renamed article'),
+    );
+    fixture.detectChanges();
+
+    expect(previewSection().hidden).toBe(false);
+    expect(previewLanguageButton('en').getAttribute('aria-pressed')).toBe('true');
+    expect(previewSection().textContent).toContain('Renamed article');
+  });
+
+  it('returns to visible edit validation when invalid preview data is saved', () => {
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+
+    clickViewMode('preview');
+    articleSaveButton().click();
+    fixture.detectChanges();
+
+    expect(saveSpy).not.toHaveBeenCalled();
+    expect(editForm().hidden).toBe(false);
+    expect(previewSection().hidden).toBe(true);
+    expect(fixture.nativeElement.querySelector('#articleSlug').classList).toContain('is-invalid');
   });
 
   it('marks required article fields and blocks empty submit', () => {
@@ -731,6 +882,8 @@ describe('ArticleFormComponent', () => {
     );
     fixture.detectChanges();
 
+    clickViewMode('preview');
+
     const preview = fixture.debugElement.query(By.css('.articles-preview-article'))
       .nativeElement as HTMLElement;
     const link = fixture.debugElement.query(By.css('.articles-preview-article a'))
@@ -828,6 +981,71 @@ describe('ArticleFormComponent', () => {
     ).find((candidate) => candidate.textContent?.includes(text));
     if (button === undefined) {
       throw new Error(`Button not found: ${text}`);
+    }
+    return button;
+  }
+
+  function viewModeButton(mode: 'edit' | 'preview'): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector(
+      `[data-testid="article-form-view-${mode}"]`,
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error(`Article form view mode button not found: ${mode}`);
+    }
+    return button;
+  }
+
+  function clickViewMode(mode: 'edit' | 'preview'): void {
+    viewModeButton(mode).click();
+    fixture.detectChanges();
+  }
+
+  function editForm(): HTMLFormElement {
+    const form = fixture.nativeElement.querySelector(
+      '[data-testid="article-form-edit"]',
+    ) as HTMLFormElement | null;
+    if (form === null) {
+      throw new Error('Article edit form not found');
+    }
+    return form;
+  }
+
+  function previewSection(): HTMLElement {
+    const section = fixture.nativeElement.querySelector(
+      '[data-testid="article-form-preview"]',
+    ) as HTMLElement | null;
+    if (section === null) {
+      throw new Error('Article preview section not found');
+    }
+    return section;
+  }
+
+  function previewLanguageButton(language: 'ru' | 'en'): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector(
+      `[data-testid="article-preview-language-${language}"]`,
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error(`Article preview language button not found: ${language}`);
+    }
+    return button;
+  }
+
+  function editLanguageButton(language: 'ru' | 'en'): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector(
+      `[data-testid="article-form-language-${language}"]`,
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error(`Article edit language button not found: ${language}`);
+    }
+    return button;
+  }
+
+  function articleSaveButton(): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="article-form-save"]',
+    ) as HTMLButtonElement | null;
+    if (button === null) {
+      throw new Error('Article save button not found');
     }
     return button;
   }

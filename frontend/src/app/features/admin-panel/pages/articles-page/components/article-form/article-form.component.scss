@@ -27,6 +27,17 @@
   background-color: var(--bs-tertiary-bg);
 }
 
+.article-draft-switch-input:checked {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+.article-draft-switch-input:focus,
+.article-tag-search-input:focus {
+  border-color: var(--bs-success);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-success-rgb), 0.25);
+}
+
 .article-tag-chip {
   padding: 0.25rem 0.35rem 0.25rem 0.75rem;
   background: var(--bs-tertiary-bg);
@@ -58,4 +69,10 @@
   z-index: 1040;
   max-height: 18rem;
   overflow-y: auto;
+}
+
+.article-tag-suggestions .list-group-item.active {
+  color: var(--bs-white);
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
 }
