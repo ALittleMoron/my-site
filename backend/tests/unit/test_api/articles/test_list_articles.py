@@ -143,7 +143,6 @@ class TestListArticlesAPI(ApiTestCase):
                             "id": self.factory.core.hex_id(1),
                             "name": "Python",
                             "slug": "python",
-                            "deletedAt": None,
                             "translations": {
                                 "ru": {"name": "Python"},
                                 "en": {"name": "Python"},

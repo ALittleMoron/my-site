@@ -34,7 +34,6 @@ export interface ArticleTagDto {
   id: string;
   name: string;
   slug: string;
-  deletedAt: string | null;
   translations: ArticleTagTranslationsDto;
 }
 
@@ -114,7 +113,6 @@ export interface ArticleTag {
   id: string;
   name: string;
   slug: string;
-  deletedAt: string | null;
   translations: ArticleTagTranslations;
 }
 
@@ -255,7 +253,6 @@ export function mapTagDto(dto: ArticleTagDto): ArticleTag {
     id: dto.id,
     name: dto.name,
     slug: dto.slug,
-    deletedAt: dto.deletedAt,
     translations: dto.translations,
   };
 }

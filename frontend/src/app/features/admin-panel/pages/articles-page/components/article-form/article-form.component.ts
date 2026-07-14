@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   effect,
@@ -14,7 +15,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { catchError, finalize, map, of, switchMap, tap, timer } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -49,12 +51,14 @@ import { AdminControlValidationStateDirective } from '../../../../directives/adm
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
-  isRequiredShortText,
-  isSlug,
   slugValidator,
   trimRequired,
   validationMessage,
 } from '../../../../utils/admin-validation';
+
+const TAG_SEARCH_MIN_LENGTH = 2;
+const TAG_SEARCH_DEBOUNCE_MS = 200;
+const TAG_SEARCH_LIMIT = 10;
 
 interface ArticleFormControls {
   titleRu: FormControl<string>;
@@ -94,27 +98,19 @@ interface ArticlePreviewState {
   language: LanguageCode;
 }
 
-interface TagFormControls {
-  nameRu: FormControl<string>;
-  nameEn: FormControl<string>;
-  slug: FormControl<string>;
-}
-
-interface TagDraft extends ArticleTag {
-  draftNameRu: string;
-  draftNameEn: string;
-  draftSlug: string;
+interface TagSearchResult {
+  tags: ArticleTag[];
+  failed: boolean;
 }
 
 type ArticleField = keyof ArticleFormControls;
-type RequiredTagField = 'nameRu' | 'nameEn' | 'slug';
-type TagDraftField = 'nameRu' | 'nameEn' | 'slug';
 
 @Component({
   selector: 'app-admin-article-form',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MarkdownEditorComponent,
     TranslatePipe,
     ArticleAuthoringPreviewComponent,
@@ -133,22 +129,22 @@ export class ArticleFormComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private slugEdited = false;
-  private newTagSlugEdited = false;
 
   readonly article = input<ArticleDetail | null>(null);
   readonly unsavedChangesScope = input.required<AdminUnsavedChangesScope>();
   readonly articleSave = output<ArticlePayload>();
   readonly formCancel = output<void>();
-  readonly tagsChanged = output<void>();
 
-  readonly tags = signal<TagDraft[]>([]);
-  readonly selectedTagIds = signal<ReadonlySet<string>>(new Set<string>());
+  readonly selectedTags = signal<readonly ArticleTag[]>([]);
+  readonly tagSuggestions = signal<readonly ArticleTag[]>([]);
+  readonly tagSearchLoading = signal(false);
+  readonly tagSearchError = signal<string | null>(null);
+  readonly tagSuggestionsOpen = signal(false);
+  readonly activeTagSuggestionIndex = signal(-1);
   readonly availableWikiLinkTargets = signal<WikiLinkTargetLookup | null>(null);
   readonly selectedFolder = signal<ArticleFolder | null>(null);
-  readonly tagError = signal<string | null>(null);
   readonly activeLanguageTab = signal<LanguageCode>('ru');
   readonly formSubmitted = signal(false);
-  readonly newTagFormSubmitted = signal(false);
   readonly coverImagePreviewUrl = signal<string | null>(null);
   readonly coverImageUploading = signal(false);
   readonly coverImageUploadError = signal<string | null>(null);
@@ -213,45 +209,21 @@ export class ArticleFormComponent implements OnInit {
     publishStatus: new FormControl<'Draft' | 'Published'>('Draft', { nonNullable: true }),
   });
 
-  readonly newTagForm = new FormGroup<TagFormControls>({
-    nameRu: new FormControl('', {
-      nonNullable: true,
-      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
-    }),
-    nameEn: new FormControl('', {
-      nonNullable: true,
-      validators: [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)],
-    }),
-    slug: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        trimRequired,
-        Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText),
-        slugValidator,
-      ],
-    }),
-  });
+  readonly tagSearchControl = new FormControl('', { nonNullable: true });
   readonly formSnapshot = signal(this.form.getRawValue());
-  readonly newTagFormSnapshot = signal(this.newTagForm.getRawValue());
+  readonly displayedSelectedTags = computed(() =>
+    this.selectedTags()
+      .map((tag) => localizeTag(tag, this.activeLanguageTab()))
+      .sort(compareLocalizedTags),
+  );
   private mainUnsavedSource: AdminUnsavedChangesSource | null = null;
-  private tagUnsavedSource: AdminUnsavedChangesSource | null = null;
   private readonly unsavedSourceActive = signal(true);
   private readonly folderPicker = viewChild(ArticleFolderPickerComponent);
+  private readonly tagSearchInput = viewChild<ElementRef<HTMLInputElement>>('tagSearchInput');
 
   private readonly authoringState = computed(() => ({
     form: this.formSnapshot(),
-    selectedTagIds: this.selectedTagIds(),
-  }));
-  private readonly tagAuthoringState = computed(() => ({
-    drafts: this.tags()
-      .filter(tagHasDraftChanges)
-      .map((tag) => ({
-        id: tag.id,
-        nameRu: tag.draftNameRu,
-        nameEn: tag.draftNameEn,
-        slug: tag.draftSlug,
-      })),
-    newTag: this.newTagFormSnapshot(),
+    selectedTagIds: new Set(this.selectedTags().map((tag) => tag.id)),
   }));
 
   readonly seoAnalysis = computed(() => {
@@ -279,7 +251,7 @@ export class ArticleFormComponent implements OnInit {
               ? folder.translations.ru.name
               : folder.translations.en.name,
         language,
-        tags: this.activeTags(),
+        tags: this.localizedTags(),
       },
       rules: ARTICLE_SEO_ANALYSIS_RULES,
     });
@@ -291,7 +263,7 @@ export class ArticleFormComponent implements OnInit {
     return {
       title: language === 'ru' ? value.titleRu : value.titleEn,
       content: language === 'ru' ? value.contentRu : value.contentEn,
-      tags: this.activeTags(),
+      tags: this.localizedTags(),
       coverImageUrl: metadata.coverImageUrl,
       coverImageAlt: language === 'ru' ? metadata.coverImageAltRu : metadata.coverImageAltEn,
       seoTitle: language === 'ru' ? metadata.seoTitleRu : metadata.seoTitleEn,
@@ -311,21 +283,11 @@ export class ArticleFormComponent implements OnInit {
       this.authoringState,
       this.unsavedSourceActive,
     );
-    this.tagUnsavedSource = this.unsavedChangesScope().registerSource(
-      this.tagAuthoringState,
-      this.unsavedSourceActive,
-    );
-    this.destroyRef.onDestroy(() => {
-      this.mainUnsavedSource?.unregister();
-      this.tagUnsavedSource?.unregister();
-    });
+    this.destroyRef.onDestroy(() => this.mainUnsavedSource?.unregister());
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.formSnapshot.set(this.form.getRawValue());
     });
-    this.newTagForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.newTagFormSnapshot.set(this.newTagForm.getRawValue());
-    });
-    this.loadTags();
+    this.initializeTagSearch();
     this.loadWikiLinkTargets();
   }
 
@@ -400,149 +362,57 @@ export class ArticleFormComponent implements OnInit {
       });
   }
 
-  toggleTag(tagId: string, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.selectedTagIds.update((current) => {
-      const next = new Set(current);
-      if (checked) {
-        next.add(tagId);
-      } else {
-        next.delete(tagId);
-      }
-      return next;
-    });
+  selectTag(tag: ArticleTag): void {
+    if (this.selectedTags().some((selectedTag) => selectedTag.id === tag.id)) return;
+    this.selectedTags.update((tags) => [...tags, tag]);
+    this.clearTagSearch();
+    this.tagSearchInput()?.nativeElement.focus();
   }
 
-  isTagSelected(tagId: string): boolean {
-    return this.selectedTagIds().has(tagId);
+  removeTag(tagId: string): void {
+    this.selectedTags.update((tags) => tags.filter((tag) => tag.id !== tagId));
   }
 
-  isTagDeleted(tag: ArticleTag): boolean {
-    return tag.deletedAt !== null;
+  tagName(tag: ArticleTag): string {
+    return tag.translations[this.activeLanguageTab()].name;
   }
 
-  updateTagDraftNameRu(tagId: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.tags.update((tags) =>
-      tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameRu: value } : tag)),
-    );
+  secondaryTagName(tag: ArticleTag): string {
+    const secondaryLanguage = this.activeLanguageTab() === 'ru' ? 'en' : 'ru';
+    return tag.translations[secondaryLanguage].name;
   }
 
-  updateTagDraftNameEn(tagId: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.tags.update((tags) =>
-      tags.map((tag) => (tag.id === tagId ? { ...tag, draftNameEn: value } : tag)),
-    );
-  }
-
-  updateTagDraftSlug(tagId: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.tags.update((tags) =>
-      tags.map((tag) => (tag.id === tagId ? { ...tag, draftSlug: value } : tag)),
-    );
-  }
-
-  onNewTagNameEnInput(): void {
-    if (this.newTagSlugEdited) return;
-    this.newTagForm.controls.slug.setValue(slugify(this.newTagForm.controls.nameEn.value));
-  }
-
-  onNewTagSlugInput(): void {
-    this.newTagSlugEdited = true;
-  }
-
-  createTag(): void {
-    this.newTagFormSubmitted.set(true);
-    if (this.newTagForm.invalid) {
-      this.newTagForm.markAllAsTouched();
+  onTagSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.tagSuggestionsOpen.set(false);
+      this.activeTagSuggestionIndex.set(-1);
       return;
     }
-    this.tagError.set(null);
-    const value = this.newTagForm.getRawValue();
-    this.articlesService
-      .createTag(
-        {
-          slug: value.slug,
-          translations: {
-            ru: { name: value.nameRu },
-            en: { name: value.nameEn },
-          },
-        },
-        this.currentLanguage(),
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (tag) => {
-          this.tags.update((tags) => [...tags, toDraft(tag)].sort(compareTags));
-          this.newTagForm.reset({ nameRu: '', nameEn: '', slug: '' });
-          this.newTagSlugEdited = false;
-          this.newTagFormSubmitted.set(false);
-          this.tagsChanged.emit();
-        },
-        error: () => this.tagError.set(this.i18n.translate('articles.tags.createError')),
-      });
+    const suggestions = this.tagSuggestions();
+    if (!this.tagSuggestionsOpen() || suggestions.length === 0) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeTagSuggestionIndex.update((index) => (index + 1) % suggestions.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeTagSuggestionIndex.update((index) =>
+        index <= 0 ? suggestions.length - 1 : index - 1,
+      );
+      return;
+    }
+    if (event.key === 'Enter') {
+      const tag = suggestions[this.activeTagSuggestionIndex()];
+      if (tag === undefined) return;
+      event.preventDefault();
+      this.selectTag(tag);
+    }
   }
 
-  updateTag(tag: TagDraft): void {
-    if (this.tagDraftInvalid(tag)) return;
-    this.tagError.set(null);
-    this.articlesService
-      .updateTag(
-        tag.id,
-        {
-          slug: tag.draftSlug,
-          translations: {
-            ru: { name: tag.draftNameRu },
-            en: { name: tag.draftNameEn },
-          },
-        },
-        this.currentLanguage(),
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (updated) => {
-          this.tags.update((tags) =>
-            tags
-              .map((item) => (item.id === updated.id ? toDraft(updated) : item))
-              .sort(compareTags),
-          );
-          this.tagsChanged.emit();
-        },
-        error: () => this.tagError.set(this.i18n.translate('articles.tags.saveError')),
-      });
-  }
-
-  deleteTag(tagId: string): void {
-    this.tagError.set(null);
-    this.articlesService
-      .deleteTag(tagId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.loadTags();
-          this.selectedTagIds.update((current) => {
-            const next = new Set(current);
-            next.delete(tagId);
-            return next;
-          });
-          this.tagsChanged.emit();
-        },
-        error: () => this.tagError.set(this.i18n.translate('articles.tags.deleteError')),
-      });
-  }
-
-  restoreTag(tagId: string): void {
-    this.tagError.set(null);
-    this.articlesService
-      .restoreTag(tagId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.loadTags();
-          this.tagsChanged.emit();
-        },
-        error: () => this.tagError.set(this.i18n.translate('articles.tags.restoreError')),
-      });
+  activeTagSuggestionId(): string | null {
+    const tag = this.tagSuggestions()[this.activeTagSuggestionIndex()];
+    return tag === undefined ? null : `article-tag-suggestion-${tag.id}`;
   }
 
   submit(): void {
@@ -559,14 +429,11 @@ export class ArticleFormComponent implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
-    const activeTagIds = this.tags()
-      .filter((tag) => !this.isTagDeleted(tag) && this.selectedTagIds().has(tag.id))
-      .map((tag) => tag.id);
     this.articleSave.emit({
       slug: value.slug,
       folderId: value.folderId,
       publishStatus: value.publishStatus,
-      tagIds: activeTagIds,
+      tagIds: this.selectedTags().map((tag) => tag.id),
       metadata: toPayloadMetadata(value),
       translations: {
         ru: {
@@ -587,12 +454,7 @@ export class ArticleFormComponent implements OnInit {
   }
 
   discardAuxiliaryDrafts(): void {
-    this.tags.update((tags) => tags.map(toDraft).sort(compareTags));
-    this.newTagForm.reset({ nameRu: '', nameEn: '', slug: '' });
-    this.newTagSlugEdited = false;
-    this.newTagFormSubmitted.set(false);
     this.folderPicker()?.discardDraft();
-    this.tagUnsavedSource?.commit();
   }
 
   articleFieldInvalid(field: ArticleField): boolean {
@@ -601,40 +463,6 @@ export class ArticleFormComponent implements OnInit {
 
   articleFieldMessage(field: ArticleField): string | null {
     return validationMessage(this.form.controls[field], this.i18n);
-  }
-
-  newTagFieldInvalid(field: RequiredTagField): boolean {
-    return controlInvalid(this.newTagForm.controls[field], this.newTagFormSubmitted());
-  }
-
-  newTagFieldMessage(field: RequiredTagField): string | null {
-    return validationMessage(this.newTagForm.controls[field], this.i18n);
-  }
-
-  tagDraftFieldInvalid(tag: TagDraft, field: TagDraftField): boolean {
-    if (this.isTagDeleted(tag)) return false;
-    return this.tagDraftFieldMessage(tag, field) !== null;
-  }
-
-  tagDraftFieldMessage(tag: TagDraft, field: TagDraftField): string | null {
-    const value = this.tagDraftFieldValue(tag, field);
-    if (field === 'slug') {
-      return isSlug(value) ? null : this.i18n.translate('validation.slug');
-    }
-    if (value.trim() === '') return this.i18n.translate('validation.required');
-    return isRequiredShortText(value)
-      ? null
-      : this.i18n.translate('validation.maxLength', {
-          max: String(ADMIN_VALIDATION_LIMITS.shortText),
-        });
-  }
-
-  tagDraftInvalid(tag: TagDraft): boolean {
-    return (
-      this.tagDraftFieldInvalid(tag, 'nameRu') ||
-      this.tagDraftFieldInvalid(tag, 'nameEn') ||
-      this.tagDraftFieldInvalid(tag, 'slug')
-    );
   }
 
   languageTabInvalid(language: LanguageCode): boolean {
@@ -655,16 +483,6 @@ export class ArticleFormComponent implements OnInit {
             'contentEn',
           ] satisfies ArticleField[]);
     return fields.some((field) => this.articleFieldInvalid(field));
-  }
-
-  private loadTags(): void {
-    this.articlesService
-      .getTags(true, this.currentLanguage())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (tags) => this.tags.set(mergeTagDrafts(tags, this.tags())),
-        error: () => this.tagError.set(this.i18n.translate('articles.tags.loadError')),
-      });
   }
 
   private loadWikiLinkTargets(): void {
@@ -699,7 +517,8 @@ export class ArticleFormComponent implements OnInit {
       this.coverImagePreviewUrl.set(null);
       this.formSnapshot.set(this.form.getRawValue());
       this.selectedFolder.set(null);
-      this.selectedTagIds.set(new Set<string>());
+      this.selectedTags.set([]);
+      this.clearTagSearch();
       untracked(() => this.mainUnsavedSource?.commit());
       return;
     }
@@ -737,12 +556,15 @@ export class ArticleFormComponent implements OnInit {
     }
     this.formSnapshot.set(this.form.getRawValue());
     this.selectedFolder.set(null);
-    this.selectedTagIds.set(new Set(article.tags.map((tag) => tag.id)));
+    this.selectedTags.set(article.tags);
+    this.clearTagSearch();
     untracked(() => this.mainUnsavedSource?.commit());
   }
 
-  private activeTags(): ArticleTag[] {
-    return this.tags().filter((tag) => tag.deletedAt === null && this.selectedTagIds().has(tag.id));
+  private localizedTags(): ArticleTag[] {
+    return this.selectedTags()
+      .map((tag) => localizeTag(tag, this.activeLanguageTab()))
+      .sort(compareLocalizedTags);
   }
 
   private currentLanguage(): LanguageCode {
@@ -759,10 +581,51 @@ export class ArticleFormComponent implements OnInit {
     control.markAsTouched();
   }
 
-  private tagDraftFieldValue(tag: TagDraft, field: TagDraftField): string {
-    if (field === 'nameRu') return tag.draftNameRu;
-    if (field === 'nameEn') return tag.draftNameEn;
-    return tag.draftSlug;
+  private initializeTagSearch(): void {
+    this.tagSearchControl.valueChanges
+      .pipe(
+        map((query) => query.trim()),
+        tap(() => this.resetTagSearchResults()),
+        switchMap((query) => {
+          if (query.length < TAG_SEARCH_MIN_LENGTH) return of<TagSearchResult | null>(null);
+          return timer(TAG_SEARCH_DEBOUNCE_MS).pipe(
+            tap(() => this.tagSearchLoading.set(true)),
+            switchMap(() =>
+              this.articlesService.searchTags(query, TAG_SEARCH_LIMIT, this.currentLanguage()).pipe(
+                map((tags): TagSearchResult => ({ tags, failed: false })),
+                catchError(() => of<TagSearchResult>({ tags: [], failed: true })),
+              ),
+            ),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((result) => {
+        if (result === null) return;
+        this.tagSearchLoading.set(false);
+        if (result.failed) {
+          this.tagSearchError.set(this.i18n.translate('articles.tags.searchError'));
+          return;
+        }
+        const selectedTagIds = new Set(this.selectedTags().map((tag) => tag.id));
+        const suggestions = result.tags.filter((tag) => !selectedTagIds.has(tag.id));
+        this.tagSuggestions.set(suggestions);
+        this.tagSuggestionsOpen.set(true);
+        this.activeTagSuggestionIndex.set(suggestions.length > 0 ? 0 : -1);
+      });
+  }
+
+  private clearTagSearch(): void {
+    this.tagSearchControl.setValue('');
+    this.resetTagSearchResults();
+  }
+
+  private resetTagSearchResults(): void {
+    this.tagSearchLoading.set(false);
+    this.tagSearchError.set(null);
+    this.tagSuggestions.set([]);
+    this.tagSuggestionsOpen.set(false);
+    this.activeTagSuggestionIndex.set(-1);
   }
 }
 
@@ -799,12 +662,10 @@ function optionalText(value: string): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function toDraft(tag: ArticleTag): TagDraft {
+function localizeTag(tag: ArticleTag, language: LanguageCode): ArticleTag {
   return {
     ...tag,
-    draftNameRu: tag.translations.ru.name,
-    draftNameEn: tag.translations.en.name,
-    draftSlug: tag.slug,
+    name: tag.translations[language].name,
   };
 }
 
@@ -819,30 +680,6 @@ function missingWikiLinkTargets(params: {
   });
 }
 
-function compareTags(a: ArticleTag, b: ArticleTag): number {
+function compareLocalizedTags(a: ArticleTag, b: ArticleTag): number {
   return a.name.localeCompare(b.name, 'ru');
-}
-
-function tagHasDraftChanges(tag: TagDraft): boolean {
-  return (
-    tag.draftNameRu !== tag.translations.ru.name ||
-    tag.draftNameEn !== tag.translations.en.name ||
-    tag.draftSlug !== tag.slug
-  );
-}
-
-function mergeTagDrafts(tags: ArticleTag[], currentDrafts: TagDraft[]): TagDraft[] {
-  const currentById = new Map(currentDrafts.map((tag) => [tag.id, tag]));
-  return tags
-    .map((tag) => {
-      const current = currentById.get(tag.id);
-      if (current === undefined) return toDraft(tag);
-      return {
-        ...tag,
-        draftNameRu: current.draftNameRu,
-        draftNameEn: current.draftNameEn,
-        draftSlug: current.draftSlug,
-      };
-    })
-    .sort(compareTags);
 }

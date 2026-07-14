@@ -13,7 +13,7 @@ from core.articles.schemas import ArticleFilters
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
-from infra.postgresql.models import ArticleFileUsageModel
+from infra.postgresql.models import ArticleFileUsageModel, ArticleToTagSecondaryModel
 from infra.postgresql.storages.articles import ArticlesDatabaseStorage
 from tests.test_cases import StorageTestCase
 
@@ -25,20 +25,19 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
     async def test_get_article_by_slug_success(self) -> None:
         tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
-        deleted_tag = self.factory.core.tag(
+        django_tag = self.factory.core.tag(
             tag_id=self.factory.core.hex_id(2),
-            name="Deleted",
-            slug="deleted",
-            deleted_at="2024-01-01T00:00:00",
+            name="Django",
+            slug="django",
         )
-        await self.storage_helper.create_tags(tags=[tag, deleted_tag])
+        await self.storage_helper.create_tags(tags=[tag, django_tag])
         await self.storage_helper.create_article(
             article=self.factory.core.article(
                 title="Test Article",
                 content="Test content",
                 slug="test-article",
                 folder="Python",
-                tags=[tag, deleted_tag],
+                tags=[tag, django_tag],
                 publish_status=PublishStatusEnum.PUBLISHED,
                 published_at="2024-01-01T00:00:00",
                 created_at="2024-01-01T00:00:00",
@@ -46,18 +45,10 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             ),
         )
 
-        public_result = await self.storage.get_article_by_slug(
-            slug="test-article",
-            include_deleted_tags=False,
-        )
-        admin_result = await self.storage.get_article_by_slug(
-            slug="test-article",
-            include_deleted_tags=True,
-        )
+        result = await self.storage.get_article_by_slug(slug="test-article")
 
-        assert public_result.localized_title(language=LanguageEnum.RU) == "Test Article"
-        assert self.collections.slugs(public_result.tags) == ["python"]
-        assert self.collections.slugs(admin_result.tags) == ["python", "deleted"]
+        assert result.localized_title(language=LanguageEnum.RU) == "Test Article"
+        assert self.collections.slugs(result.tags) == ["python", "django"]
 
     async def test_get_article_by_slug_returns_canonical_translations(self) -> None:
         cover = self.factory.core.stored_file(
@@ -89,7 +80,6 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         result = await self.storage.get_article_by_slug(
             slug="localized-article",
-            include_deleted_tags=False,
         )
 
         assert not hasattr(result, "title")
@@ -198,10 +188,9 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         with pytest.raises(ArticleNotFoundError):
             await self.storage.get_article_by_slug(
                 slug="non-existent",
-                include_deleted_tags=False,
             )
 
-    async def test_list_articles_filters_by_active_tag_and_published_status(self) -> None:
+    async def test_list_articles_filters_by_tag_and_published_status(self) -> None:
         python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         draft_tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(2), slug="draft")
         await self.storage_helper.create_tags(tags=[python, draft_tag])
@@ -734,7 +723,6 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         )
         first = await self.storage.get_article_by_slug(
             slug="draft",
-            include_deleted_tags=False,
         )
         await self.storage.update_article_publish_status(
             slug="draft",
@@ -746,34 +734,31 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         )
         second = await self.storage.get_article_by_slug(
             slug="draft",
-            include_deleted_tags=False,
         )
 
         assert first.published_at is not None
         assert second.published_at == first.published_at
 
-    async def test_tag_soft_delete_and_restore(self) -> None:
+    async def test_delete_tag_physically_removes_tag_and_article_association(self) -> None:
         tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         await self.storage.create_tag(tag=tag)
-
-        await self.storage.soft_delete_tag(tag_id=self.factory.core.hex_id(1))
-        active_tags = await self.storage.list_tags(
-            include_deleted=False,
-            language=LanguageEnum.RU,
-        )
-        deleted_tags = await self.storage.list_tags(
-            include_deleted=True,
-            language=LanguageEnum.RU,
-        )
-        await self.storage.restore_tag(tag_id=self.factory.core.hex_id(1))
-        restored_tags = await self.storage.list_tags(
-            include_deleted=False,
-            language=LanguageEnum.RU,
+        await self.storage_helper.create_article(
+            article=self.factory.core.article(slug="tagged-article", tags=[tag]),
         )
 
-        assert active_tags.values == []
-        assert deleted_tags.values[0].deleted_at is not None
-        assert self.collections.slugs(restored_tags) == ["python"]
+        await self.storage.delete_tag(tag_id=self.factory.core.hex_id(1))
+
+        tags = await self.storage.list_tags(language=LanguageEnum.RU)
+        article_tag_link = await self.db_session.scalar(
+            select(ArticleToTagSecondaryModel).where(
+                ArticleToTagSecondaryModel.tag_id == self.factory.core.hex_id(1),
+            ),
+        )
+
+        assert tags.values == []
+        assert article_tag_link is None
+        with pytest.raises(TagNotFoundError):
+            await self.storage.update_tag(tag=tag)
 
     async def test_search_tags_matches_typo(self) -> None:
         await self.storage_helper.create_tags(
@@ -789,7 +774,6 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         tags = await self.storage.search_tags(
             search_name="pythno",
-            include_deleted=False,
             limit=10,
             language=LanguageEnum.EN,
         )
@@ -810,7 +794,6 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         tags = await self.storage.search_tags(
             search_name="базы",
-            include_deleted=False,
             limit=10,
             language=LanguageEnum.EN,
         )
@@ -840,7 +823,6 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         tags = await self.storage.search_tags(
             search_name="python",
-            include_deleted=False,
             limit=10,
             language=LanguageEnum.EN,
         )
@@ -864,36 +846,11 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         tags = await self.storage.search_tags(
             search_name="limit",
-            include_deleted=False,
             limit=2,
             language=LanguageEnum.EN,
         )
 
         assert len(tags) == 2
-
-    async def test_search_tags_excludes_deleted_tags(self) -> None:
-        await self.storage_helper.create_tags(
-            tags=[
-                self.factory.core.tag(
-                    tag_id=self.factory.core.hex_id(1), name="Python", slug="python"
-                ),
-                self.factory.core.tag(
-                    tag_id=self.factory.core.hex_id(2),
-                    name="Python deleted",
-                    slug="python-deleted",
-                    deleted_at="2026-01-04T03:04:05",
-                ),
-            ],
-        )
-
-        tags = await self.storage.search_tags(
-            search_name="python",
-            include_deleted=False,
-            limit=10,
-            language=LanguageEnum.EN,
-        )
-
-        assert self.collections.slugs(tags) == ["python"]
 
     async def test_update_unknown_tag_raises_not_found(self) -> None:
         with pytest.raises(TagNotFoundError):

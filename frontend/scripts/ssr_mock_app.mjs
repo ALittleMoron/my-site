@@ -35,7 +35,6 @@ export const articleDto = {
       id: 1,
       name: 'Angular',
       slug: 'angular',
-      deletedAt: null,
       translations: {
         ru: { name: 'Angular' },
         en: { name: 'Angular' },

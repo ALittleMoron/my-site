@@ -143,19 +143,6 @@ OnlyPublishedQuery: TypeAlias = Annotated[
         max_items=None,
     ),
 ]
-IncludeDeletedQuery: TypeAlias = Annotated[
-    bool,
-    api_query_parameter(
-        name="includeDeleted",
-        title="Include deleted",
-        description="Whether soft-deleted records should be included.",
-        examples=(False,),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
 SearchNameQuery: TypeAlias = Annotated[
     str,
     api_query_parameter(

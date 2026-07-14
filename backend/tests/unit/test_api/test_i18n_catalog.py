@@ -57,10 +57,12 @@ class TestI18nCatalog:
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
         assert russian_messages["adminPanel.section.articleFolders"] == "Папки"
+        assert russian_messages["adminPanel.section.articleTags"] == "Теги"
         assert russian_messages["adminPanel.section.matrixQuestions"] == "Вопросы"
         assert russian_messages["adminPanel.section.matrixStructure"] == "Структура"
         assert russian_messages["adminPanel.section.matrixQuestionQueue"] == "Очередь вопросов"
         assert english_messages["adminPanel.section.articleFolders"] == "Folders"
+        assert english_messages["adminPanel.section.articleTags"] == "Tags"
         assert english_messages["adminPanel.section.matrixQuestions"] == "Questions"
         assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
         assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"

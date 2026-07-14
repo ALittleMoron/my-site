@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Self
 
 from sqlalchemy import (
@@ -17,7 +17,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
-from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFolder, ArticleMetadata, Tag, Tags
@@ -283,7 +282,6 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
     def to_domain_schema(
         self,
         *,
-        include_deleted_tags: bool,
         include_tags: bool,
         include_files: bool,
     ) -> Article:
@@ -307,11 +305,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             created_at=self.created_at,
             updated_at=self.updated_at,
             tags=Tags(
-                values=[
-                    link.tag.to_domain_schema()
-                    for link in self.tag_links
-                    if include_deleted_tags or link.tag.deleted_at is None
-                ]
+                values=[link.tag.to_domain_schema() for link in self.tag_links]
                 if include_tags
                 else [],
             ),
@@ -353,11 +347,6 @@ class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
         index=True,
         doc="Stable tag slug used in filters",
     )
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        UTCDateTime(timezone=True),
-        doc="Soft deletion timestamp",
-    )
-
     __table_args__ = (
         Index(
             "articles_tag_name_ru_trgm_idx",
@@ -370,34 +359,6 @@ class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
             func.lower(name_en).label("name_en_lower"),
             postgresql_using="gin",
             postgresql_ops={"name_en_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "articles_tag_active_name_ru_id_idx",
-            func.lower(name_ru).label("active_name_ru_lower"),
-            "id",
-            postgresql_include=(
-                "name_ru",
-                "name_en",
-                "slug",
-                "deleted_at",
-                "created_at",
-                "updated_at",
-            ),
-            postgresql_where=deleted_at.is_(None),
-        ),
-        Index(
-            "articles_tag_active_name_en_id_idx",
-            func.lower(name_en).label("active_name_en_lower"),
-            "id",
-            postgresql_include=(
-                "name_ru",
-                "name_en",
-                "slug",
-                "deleted_at",
-                "created_at",
-                "updated_at",
-            ),
-            postgresql_where=deleted_at.is_(None),
         ),
         Index(
             "articles_tag_slug_trgm_idx",
@@ -417,7 +378,6 @@ class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
             name_ru=tag.name_ru,
             name_en=tag.name_en,
             slug=tag.slug,
-            deleted_at=tag.deleted_at,
         )
 
     def update_from_domain_schema(self, tag: Tag) -> None:
@@ -431,7 +391,6 @@ class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
             name_ru=self.name_ru,
             name_en=self.name_en,
             slug=self.slug,
-            deleted_at=self.deleted_at,
         )
 
 

@@ -35,6 +35,15 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'article-tags',
+        title: 'articles.tags.title',
+        canDeactivate: [adminUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./pages/article-tags-page/article-tags-page.component').then(
+            (m) => m.ArticleTagsPageComponent,
+          ),
+      },
+      {
         path: 'article-statistics',
         title: 'articles.stats.button',
         canDeactivate: [adminUnsavedChangesGuard],

@@ -207,7 +207,6 @@ async def insert_seed_tags(*, session: AsyncSession) -> None:
                 "name_ru": name_ru,
                 "name_en": name_en,
                 "slug": f"perf-seed-{slug}",
-                "deleted_at": None,
             }
             for tag_index, (slug, name_ru, name_en) in enumerate(TAG_SPECS, start=1)
         ],

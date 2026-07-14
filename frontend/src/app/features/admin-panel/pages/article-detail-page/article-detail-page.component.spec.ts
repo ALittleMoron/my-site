@@ -134,7 +134,6 @@ class ArticleFormStubComponent {
   readonly unsavedChangesScope = input.required<AdminUnsavedChangesScope>();
   readonly articleSave = output<AdminArticlePayload>();
   readonly formCancel = output<void>();
-  readonly tagsChanged = output<void>();
   readonly acceptedArticle = signal<AdminArticleDetail | null>(null);
   readonly discardAuxiliaryDrafts = jest.fn();
 

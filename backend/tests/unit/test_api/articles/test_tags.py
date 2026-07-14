@@ -2,7 +2,6 @@ import pytest
 import pytest_asyncio
 from httpx import codes
 
-from core.articles.exceptions import TagNotFoundError
 from core.articles.schemas import TagCreateParams, TagUpdateParams
 from core.auth.exceptions import UnauthorizedError
 from core.i18n.enums import LanguageEnum
@@ -26,14 +25,13 @@ class TestTagsAPI(ApiTestCase):
                 ),
                 self.factory.core.tag(
                     tag_id="00000000000040008000000000000102",
-                    name="Old",
-                    slug="old",
-                    deleted_at="2026-01-04T03:04:05",
+                    name="Django",
+                    slug="django",
                 ),
             ],
         )
 
-        response = self.api.get_admin_tags(include_deleted=True)
+        response = self.api.get_admin_tags()
 
         assert response.status_code == codes.OK, response.content
         assert response.json() == {
@@ -42,7 +40,6 @@ class TestTagsAPI(ApiTestCase):
                     "id": "00000000000040008000000000000101",
                     "name": "Python",
                     "slug": "python",
-                    "deletedAt": None,
                     "translations": {
                         "ru": {"name": "Python"},
                         "en": {"name": "Python"},
@@ -50,18 +47,16 @@ class TestTagsAPI(ApiTestCase):
                 },
                 {
                     "id": "00000000000040008000000000000102",
-                    "name": "Old",
-                    "slug": "old",
-                    "deletedAt": "2026-01-04T03:04:05+00:00",
+                    "name": "Django",
+                    "slug": "django",
                     "translations": {
-                        "ru": {"name": "Old"},
-                        "en": {"name": "Old"},
+                        "ru": {"name": "Django"},
+                        "en": {"name": "Django"},
                     },
                 },
             ],
         }
         self.use_case.list_tags.assert_called_once_with(
-            include_deleted=True,
             language=LanguageEnum.RU,
         )
 
@@ -71,37 +66,22 @@ class TestTagsAPI(ApiTestCase):
         assert response.status_code == codes.BAD_REQUEST
         self.use_case.list_tags.assert_not_called()
 
-    def test_public_list_tags_uses_active_tags_only(self) -> None:
+    def test_public_list_tags(self) -> None:
         self.use_case.list_tags.return_value = self.factory.core.tags(values=[])
 
         response = self.no_auth_api.get_tags()
 
         assert response.status_code == codes.OK, response.content
         self.use_case.list_tags.assert_called_once_with(
-            include_deleted=False,
             language=LanguageEnum.RU,
         )
 
     def test_anonymous_cannot_list_admin_tags(self) -> None:
-        response = self.no_auth_api.get_admin_tags(include_deleted=True)
+        response = self.no_auth_api.get_admin_tags()
 
         assert response.status_code == codes.UNAUTHORIZED
         assert response.json()["message"] == UnauthorizedError.message
         self.use_case.list_tags.assert_not_called()
-
-    def test_public_tags_force_active_tags_only(self) -> None:
-        self.use_case.list_tags.return_value = self.factory.core.tags(values=[])
-
-        response = self.no_auth_api.client.get(
-            "/api/articles/tags",
-            params={"includeDeleted": "1", "language": "ru"},
-        )
-
-        assert response.status_code == codes.OK, response.content
-        self.use_case.list_tags.assert_called_once_with(
-            include_deleted=False,
-            language=LanguageEnum.RU,
-        )
 
     def test_search_tags(self) -> None:
         self.use_case.search_tags.return_value = self.factory.core.tags(
@@ -114,12 +94,11 @@ class TestTagsAPI(ApiTestCase):
             ],
         )
 
-        response = self.api.get_search_tags(search_name="py", include_deleted=False, limit=5)
+        response = self.api.get_search_tags(search_name="py", limit=5)
 
         assert response.status_code == codes.OK, response.content
         self.use_case.search_tags.assert_called_once_with(
             search_name="py",
-            include_deleted=False,
             limit=5,
             language=LanguageEnum.RU,
         )
@@ -143,7 +122,6 @@ class TestTagsAPI(ApiTestCase):
             "id": self.tag_id,
             "name": "Бэкенд",
             "slug": "backend",
-            "deletedAt": None,
             "translations": {
                 "ru": {"name": "Бэкенд"},
                 "en": {"name": "Backend"},
@@ -214,25 +192,16 @@ class TestTagsAPI(ApiTestCase):
         response = self.api.delete_tag(tag_id="00000000000040008000000000000003")
 
         assert response.status_code == codes.NO_CONTENT
-        self.use_case.soft_delete_tag.assert_called_once_with(
+        self.use_case.delete_tag.assert_called_once_with(
             tag_id="00000000000040008000000000000003",
         )
 
-    def test_restore_tag_not_found(self) -> None:
-        self.use_case.restore_tag.side_effect = TagNotFoundError()
-
-        response = self.api.post_restore_tag(tag_id="00000000000040008000000000000003")
+    def test_restore_tag_endpoint_does_not_exist(self) -> None:
+        response = self.api.client.post(
+            "/api/admin/articles/tags/00000000000040008000000000000003/restore",
+        )
 
         assert response.status_code == codes.NOT_FOUND
-        assert response.json()["message"] == TagNotFoundError.message
-
-    def test_restore_tag(self) -> None:
-        response = self.api.post_restore_tag(tag_id="00000000000040008000000000000003")
-
-        assert response.status_code == codes.NO_CONTENT
-        self.use_case.restore_tag.assert_called_once_with(
-            tag_id="00000000000040008000000000000003",
-        )
 
     def test_successful_tag_mutations_enqueue_articles_response_cache_warm(
         self,
@@ -265,13 +234,11 @@ class TestTagsAPI(ApiTestCase):
                 data=self.factory.api.tag_request(slug="architecture"),
             ),
             self.api.delete_tag(tag_id="00000000000040008000000000000003"),
-            self.api.post_restore_tag(tag_id="00000000000040008000000000000003"),
         ]
 
         assert [response.status_code for response in responses] == [
             codes.CREATED,
             codes.OK,
             codes.NO_CONTENT,
-            codes.NO_CONTENT,
         ]
-        assert warmed_domains == [ResponseCacheDomain.ARTICLES] * 4
+        assert warmed_domains == [ResponseCacheDomain.ARTICLES] * 3

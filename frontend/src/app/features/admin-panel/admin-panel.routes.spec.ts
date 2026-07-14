@@ -1,4 +1,5 @@
 import { teamGuard } from '../../core/auth/auth.guard';
+import { adminUnsavedChangesGuard } from './guards/admin-unsaved-changes.guard';
 import { adminPanelRoutes } from './admin-panel.routes';
 
 describe('adminPanelRoutes', () => {
@@ -25,5 +26,14 @@ describe('adminPanelRoutes', () => {
     for (const route of [...teamWorkspaceRoutes, ...resumeWorkspaceRoutes]) {
       expect(route.canActivate).toEqual([teamGuard]);
     }
+  });
+
+  it('registers the article tag workspace with unsaved-change protection', () => {
+    const tagRoute = (adminPanelRoutes[0].children ?? []).find(
+      (route) => route.path === 'article-tags',
+    );
+
+    expect(tagRoute).toBeDefined();
+    expect(tagRoute?.canDeactivate).toEqual([adminUnsavedChangesGuard]);
   });
 });

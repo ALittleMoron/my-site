@@ -593,28 +593,22 @@ class APIHelper:
 
     def get_admin_tags(
         self,
-        include_deleted: bool | None = False,
         language: str | None = "ru",
     ) -> Response:
-        params: dict[str, str | bool] = {}
+        params: dict[str, str] = {}
         if language is not None:
             params["language"] = language
-        if include_deleted is not None:
-            params["includeDeleted"] = include_deleted
         return self.client.get("/api/admin/articles/tags", params=params)
 
     def get_search_tags(
         self,
         search_name: str,
-        include_deleted: bool | None = False,
         limit: int | None = 10,
         language: str | None = "ru",
     ) -> Response:
-        params: dict[str, str | int | bool] = {"searchName": search_name}
+        params: dict[str, str | int] = {"searchName": search_name}
         if language is not None:
             params["language"] = language
-        if include_deleted is not None:
-            params["includeDeleted"] = include_deleted
         if limit is not None:
             params["limit"] = limit
         return self.client.get("/api/admin/articles/tags/search", params=params)
@@ -638,9 +632,6 @@ class APIHelper:
 
     def delete_tag(self, tag_id: str) -> Response:
         return self.client.delete(f"/api/admin/articles/tags/{tag_id}")
-
-    def post_restore_tag(self, tag_id: str) -> Response:
-        return self.client.post(f"/api/admin/articles/tags/{tag_id}/restore")
 
     def post_create_contact_me_request(self, data: dict[str, Any]) -> Response:
         return self.client.post("/api/contacts", json=data)

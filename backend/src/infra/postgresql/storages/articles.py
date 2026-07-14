@@ -2,10 +2,22 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any, TypeVar
 
-from sqlalchemy import Select, String, and_, bindparam, case, func, or_, select, true, update
+from sqlalchemy import (
+    Select,
+    String,
+    and_,
+    bindparam,
+    case,
+    delete,
+    func,
+    or_,
+    select,
+    true,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import InstrumentedAttribute, joinedload, selectinload
+from sqlalchemy.orm import InstrumentedAttribute, joinedload, load_only, selectinload
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.exceptions import (
@@ -50,7 +62,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         self,
         *,
         slug: str,
-        include_deleted_tags: bool,
     ) -> Article:
         query = (
             select(ArticleModel)
@@ -66,7 +77,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         if article_model is None:
             raise ArticleNotFoundError
         return article_model.to_domain_schema(
-            include_deleted_tags=include_deleted_tags,
             include_tags=True,
             include_files=True,
         )
@@ -98,7 +108,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         article_models = await self.session.scalars(query)
         articles = [
             article_model.to_domain_schema(
-                include_deleted_tags=filters.only_published is not True,
                 include_tags=filters.include_tags,
                 include_files=filters.include_files,
             )
@@ -119,7 +128,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             query = (
                 query.join(ArticleModel.tag_links)
                 .join(ArticleToTagSecondaryModel.tag)
-                .where(TagModel.slug == filters.tag_slug, TagModel.deleted_at.is_(None))
+                .where(TagModel.slug == filters.tag_slug)
             )
         if filters.published_from is not None:
             query = query.where(
@@ -292,7 +301,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
-            include_deleted_tags=True,
         )
 
     async def update_article(self, *, article: Article) -> Article:
@@ -318,7 +326,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
-            include_deleted_tags=True,
         )
 
     def _build_tag_links(
@@ -424,21 +431,20 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         self,
         *,
         tag_ids: list[str],
-        include_deleted: bool,
     ) -> Tags:
         if not tag_ids:
             return Tags(values=[])
         query = select(TagModel).where(TagModel.id.in_(tag_ids))
-        if not include_deleted:
-            query = query.where(TagModel.deleted_at.is_(None))
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
-    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
+    async def list_tags(self, *, language: LanguageEnum) -> Tags:
         name_column = self._tag_name_column(language=language)
-        query = select(TagModel).order_by(func.lower(name_column), TagModel.id)
-        if not include_deleted:
-            query = query.where(TagModel.deleted_at.is_(None))
+        query = (
+            select(TagModel)
+            .options(load_only(TagModel.id, TagModel.name_ru, TagModel.name_en, TagModel.slug))
+            .order_by(func.lower(name_column), TagModel.id)
+        )
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
@@ -446,7 +452,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         self,
         *,
         search_name: str,
-        include_deleted: bool,
         limit: int,
         language: LanguageEnum,
     ) -> Tags:
@@ -509,8 +514,6 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             )
             .limit(limit)
         )
-        if not include_deleted:
-            query = query.where(TagModel.deleted_at.is_(None))
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
@@ -542,15 +545,12 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             raise TagNotFoundError
         return model
 
-    async def soft_delete_tag(self, *, tag_id: str) -> None:
-        model = await self._get_tag_model(tag_id=tag_id)
-        if model.deleted_at is None:
-            model.deleted_at = datetime.now(tz=UTC)
-        await self.session.flush()
-
-    async def restore_tag(self, *, tag_id: str) -> None:
-        model = await self._get_tag_model(tag_id=tag_id)
-        model.deleted_at = None
+    async def delete_tag(self, *, tag_id: str) -> None:
+        deleted_tag_id = await self.session.scalar(
+            delete(TagModel).where(TagModel.id == tag_id).returning(TagModel.id),
+        )
+        if deleted_tag_id is None:
+            raise TagNotFoundError
         await self.session.flush()
 
 

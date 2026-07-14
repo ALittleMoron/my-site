@@ -152,25 +152,18 @@ export class ArticleWorkspaceService {
     return this.api.post<void>(`/api/admin/articles/detail/${slug}/set-draft`, {});
   }
 
-  getTags(includeDeleted: boolean, language: LanguageCode): Observable<ArticleTag[]> {
+  getTags(language: LanguageCode): Observable<ArticleTag[]> {
     return this.api
       .get<TagsDto>('/api/admin/articles/tags', {
-        includeDeleted: String(includeDeleted),
         language,
       })
       .pipe(map((dto) => dto.tags.map(mapTagDto)));
   }
 
-  searchTags(
-    searchName: string,
-    includeDeleted: boolean,
-    limit: number,
-    language: LanguageCode,
-  ): Observable<ArticleTag[]> {
+  searchTags(searchName: string, limit: number, language: LanguageCode): Observable<ArticleTag[]> {
     return this.api
       .get<TagsDto>('/api/admin/articles/tags/search', {
         searchName,
-        includeDeleted: String(includeDeleted),
         limit: String(limit),
         language,
       })
@@ -191,10 +184,6 @@ export class ArticleWorkspaceService {
 
   deleteTag(tagId: string): Observable<void> {
     return this.api.delete<void>(`/api/admin/articles/tags/${tagId}`);
-  }
-
-  restoreTag(tagId: string): Observable<void> {
-    return this.api.post<void>(`/api/admin/articles/tags/${tagId}/restore`, {});
   }
 
   private mapDetailWithPublicStats(dto: ArticleDetailDto): Observable<ArticleDetail> {

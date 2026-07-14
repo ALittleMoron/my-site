@@ -1,6 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-editor.component';
 import { WikiLinkTargetsService } from '../../../../../../core/wiki-links/wiki-link-targets.service';
@@ -10,7 +11,7 @@ import {
 } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
-import { ArticleDetail } from '../../../../models/article-workspace.model';
+import { ArticleDetail, ArticleTag } from '../../../../models/article-workspace.model';
 import { AdminUnsavedChangesScope } from '../../../../services/admin-unsaved-changes.service';
 import { ArticleFormComponent } from './article-form.component';
 
@@ -18,7 +19,6 @@ const INVALID_SHORT_TEXT = 'x'.repeat(256);
 const INVALID_SEO_DESCRIPTION = 'x'.repeat(321);
 const INVALID_ARTICLE_CONTENT = 'x'.repeat(100_001);
 const PYTHON_TAG_ID = '00000000000000000000000000000001';
-const OLD_TAG_ID = '00000000000000000000000000000002';
 const BACKEND_TAG_ID = '00000000000000000000000000000003';
 
 interface ArticleValidationCase {
@@ -32,14 +32,10 @@ interface ArticleValidationCase {
 describe('ArticleFormComponent', () => {
   let fixture: ComponentFixture<ArticleFormComponent>;
   let articlesService: {
-    getTags: jest.Mock;
     getFolders: jest.Mock;
     createFolder: jest.Mock;
     updateFolderPriorities: jest.Mock;
-    createTag: jest.Mock;
-    updateTag: jest.Mock;
-    deleteTag: jest.Mock;
-    restoreTag: jest.Mock;
+    searchTags: jest.Mock;
   };
   let mediaUpload: { uploadMediaFile: jest.Mock; getMediaFile: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
@@ -119,32 +115,20 @@ describe('ArticleFormComponent', () => {
         }),
       ),
       updateFolderPriorities: jest.fn().mockReturnValue(of(undefined)),
-      getTags: jest.fn().mockReturnValue(
-        of([
-          tag({ id: PYTHON_TAG_ID, name: 'Python', slug: 'python', deletedAt: null }),
-          tag({
-            id: OLD_TAG_ID,
-            name: 'Old',
-            slug: 'old',
-            deletedAt: '2026-01-04T03:04:05+00:00',
-          }),
-        ]),
-      ),
-      createTag: jest
+      searchTags: jest
         .fn()
         .mockReturnValue(
-          of(tag({ id: BACKEND_TAG_ID, name: 'Backend', slug: 'backend', deletedAt: null })),
+          of([
+            tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' }),
+            tag({ id: BACKEND_TAG_ID, nameRu: 'Бэкенд', nameEn: 'Backend', slug: 'backend' }),
+          ]),
         ),
-      updateTag: jest
-        .fn()
-        .mockReturnValue(of(tag({ id: PYTHON_TAG_ID, name: 'Py', slug: 'py', deletedAt: null }))),
-      deleteTag: jest.fn().mockReturnValue(of(undefined)),
-      restoreTag: jest.fn().mockReturnValue(of(undefined)),
     };
 
     await TestBed.configureTestingModule({
       imports: [ArticleFormComponent],
       providers: [
+        provideRouter([]),
         { provide: ArticleWorkspaceService, useValue: articlesService },
         { provide: MediaUploadService, useValue: mediaUpload },
         { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
@@ -157,12 +141,7 @@ describe('ArticleFormComponent', () => {
       })
       .compileComponents();
 
-    fixture = TestBed.createComponent(ArticleFormComponent);
-    confirmDiscard = jest.fn(() => false);
-    unsavedChangesScope = new AdminUnsavedChangesScope(confirmDiscard, () => undefined);
-    fixture.componentRef.setInput('article', null);
-    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
-    fixture.detectChanges();
+    createFixture();
   });
 
   it('tracks authoring values against the loaded baseline and becomes clean after a full revert', () => {
@@ -173,24 +152,6 @@ describe('ArticleFormComponent', () => {
 
     setInput('#articleTitleRu', '');
     expect(unsavedChangesScope.hasChanges()).toBe(false);
-  });
-
-  it('keeps unrelated tag drafts when a server refresh follows deleting another tag', () => {
-    setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`, 'Черновой Python');
-    articlesService.getTags.mockReturnValue(
-      of([
-        tag({ id: PYTHON_TAG_ID, name: 'Python', slug: 'python', deletedAt: null }),
-        tag({ id: OLD_TAG_ID, name: 'Old', slug: 'old', deletedAt: '2026-01-04T03:04:05+00:00' }),
-      ]),
-    );
-
-    fixture.componentInstance.restoreTag(OLD_TAG_ID);
-    fixture.detectChanges();
-
-    expect(elementValue(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`)).toBe(
-      'Черновой Python',
-    );
-    expect(unsavedChangesScope.hasChanges()).toBe(true);
   });
 
   it('suggests slug from title until slug is edited manually', () => {
@@ -228,7 +189,7 @@ describe('ArticleFormComponent', () => {
     expect(elementValue('#articleTitleEn')).toBe('Second article');
   });
 
-  it('emits payload with selected active tags', () => {
+  it('emits payload with selected tags', () => {
     const titleRu = fixture.debugElement.query(By.css('#articleTitleRu'))
       .nativeElement as HTMLInputElement;
     const titleEn = fixture.debugElement.query(By.css('#articleTitleEn'))
@@ -269,9 +230,9 @@ describe('ArticleFormComponent', () => {
       .nativeElement as HTMLInputElement;
     coverImageAltEn.value = 'Cover';
     coverImageAltEn.dispatchEvent(new Event('input'));
-    const tagCheckbox = fixture.debugElement.query(By.css(`#articleTag-${PYTHON_TAG_ID}`))
-      .nativeElement as HTMLInputElement;
-    tagCheckbox.click();
+    fixture.componentInstance.selectTag(
+      tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' }),
+    );
     fixture.detectChanges();
 
     const form = fixture.debugElement.query(By.css('form')).nativeElement as HTMLFormElement;
@@ -298,16 +259,147 @@ describe('ArticleFormComponent', () => {
     });
   });
 
-  it('does not create an article when discarding an unfinished nested draft is rejected', () => {
-    const saveSpy = jest.fn();
-    fixture.componentInstance.articleSave.subscribe(saveSpy);
-    fillValidArticleMinimum();
-    setInput('#newTagNameRu', 'Незавершённый тег');
+  it('searches tags only after two characters and a 200 ms debounce', async () => {
+    setInput('[data-testid="article-tag-search"]', 'p');
+    await waitForTagSearch();
 
-    fixture.componentInstance.submit();
+    expect(articlesService.searchTags).not.toHaveBeenCalled();
 
-    expect(confirmDiscard).toHaveBeenCalled();
-    expect(saveSpy).not.toHaveBeenCalled();
+    setInput('[data-testid="article-tag-search"]', 'py');
+    expect(fixture.componentInstance.tagSearchControl.value).toBe('py');
+    await wait(100);
+    expect(articlesService.searchTags).not.toHaveBeenCalled();
+
+    await wait(120);
+    fixture.detectChanges();
+
+    expect(articlesService.searchTags).toHaveBeenCalledWith('py', 10, 'ru');
+    expect(fixture.nativeElement.textContent).toContain('Питон');
+    expect(fixture.nativeElement.textContent).toContain('Python');
+    expect(fixture.nativeElement.textContent).toContain('python');
+  });
+
+  it('adds one suggested tag, excludes it from later results, and removes it with one button', async () => {
+    const search = fixture.nativeElement.querySelector(
+      '[data-testid="article-tag-search"]',
+    ) as HTMLInputElement;
+    setInput('[data-testid="article-tag-search"]', 'py');
+    await waitForTagSearch();
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-suggestion-${PYTHON_TAG_ID}"]`)
+      ?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Питон');
+    expect(search.value).toBe('');
+    expect(document.activeElement).toBe(search);
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+
+    setInput('[data-testid="article-tag-search"]', 'py');
+    await waitForTagSearch();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(
+        `[data-testid="article-tag-suggestion-${PYTHON_TAG_ID}"]`,
+      ),
+    ).toBeNull();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-remove-${PYTHON_TAG_ID}"]`)
+      ?.click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector(`[data-testid="article-tag-chip-${PYTHON_TAG_ID}"]`),
+    ).toBeNull();
+    expect(unsavedChangesScope.hasChanges()).toBe(false);
+  });
+
+  it('selects suggestions with the keyboard and closes them with Escape', async () => {
+    const search = fixture.nativeElement.querySelector(
+      '[data-testid="article-tag-search"]',
+    ) as HTMLInputElement;
+    setInput('[data-testid="article-tag-search"]', 'tag');
+    await waitForTagSearch();
+    fixture.detectChanges();
+
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector(`[data-testid="article-tag-chip-${BACKEND_TAG_ID}"]`),
+    ).not.toBeNull();
+
+    setInput('[data-testid="article-tag-search"]', 'py');
+    await waitForTagSearch();
+    fixture.detectChanges();
+    const keyupSpy = jest.fn();
+    fixture.nativeElement.addEventListener('keyup', keyupSpy);
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    search.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="listbox"]')).toBeNull();
+    expect(keyupSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows a search error and cancels stale tag searches', async () => {
+    const first = new Subject<ArticleTag[]>();
+    articlesService.searchTags
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(throwError(() => new Error('Nope')));
+
+    setInput('[data-testid="article-tag-search"]', 'py');
+    await waitForTagSearch();
+    setInput('[data-testid="article-tag-search"]', 'back');
+    await waitForTagSearch();
+    fixture.detectChanges();
+
+    first.next([tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' })]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Не удалось найти теги.');
+    expect(fixture.nativeElement.textContent).not.toContain('Питон');
+  });
+
+  it('renders no tag checkboxes or inline tag authoring controls', () => {
+    const picker = fixture.nativeElement.querySelector(
+      '[data-testid="article-tag-picker"]',
+    ) as HTMLElement | null;
+
+    expect(picker).not.toBeNull();
+    expect(picker?.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#newTagNameRu')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid^="article-tag-"][data-testid$="-save"]'),
+    ).toBeNull();
+  });
+
+  it('localizes selected tag chips and preview to the active article language', () => {
+    fixture.componentInstance.selectTag(
+      tag({ id: PYTHON_TAG_ID, nameRu: 'Питон', nameEn: 'Python', slug: 'python' }),
+    );
+    fixture.detectChanges();
+
+    const picker = fixture.nativeElement.querySelector(
+      '[data-testid="article-tag-picker"]',
+    ) as HTMLElement;
+    const preview = fixture.nativeElement.querySelector('.articles-preview-article') as HTMLElement;
+    expect(picker.textContent).toContain('Питон');
+    expect(picker.textContent).not.toContain('Python');
+    expect(preview.textContent).toContain('Питон');
+    expect(preview.textContent).not.toContain('Python');
+
+    fixture.componentInstance.setActiveLanguageTab('en');
+    fixture.detectChanges();
+
+    expect(picker.textContent).toContain('Python');
+    expect(picker.textContent).not.toContain('Питон');
+    expect(preview.textContent).toContain('Python');
+    expect(preview.textContent).not.toContain('Питон');
   });
 
   it('marks required article fields and blocks empty submit', () => {
@@ -480,153 +572,6 @@ describe('ArticleFormComponent', () => {
     submitArticleForm();
 
     expect(saveSpy).not.toHaveBeenCalled();
-  });
-
-  it('marks required new-tag fields and blocks empty tag creation', () => {
-    const nameRu = fixture.debugElement.query(By.css('#newTagNameRu'))
-      .nativeElement as HTMLInputElement;
-    const addButton = fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]'));
-
-    expect(fixture.nativeElement.textContent).toContain('Название RU *');
-    expect(fixture.nativeElement.textContent).toContain('Название EN *');
-    expect(fixture.nativeElement.textContent).toContain('Slug *');
-    expect(addButton).not.toBeNull();
-    if (addButton === null) return;
-
-    (addButton.nativeElement as HTMLButtonElement).click();
-    fixture.detectChanges();
-
-    expect(articlesService.createTag).not.toHaveBeenCalled();
-    expect(nameRu.classList).toContain('is-invalid');
-
-    nameRu.value = 'Backend';
-    nameRu.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-
-    expect(nameRu.classList).not.toContain('is-invalid');
-  });
-
-  it.each<ArticleValidationCase>([
-    {
-      description: 'new tag RU name required text',
-      selector: '#newTagNameRu',
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () => {
-        setInput('#newTagNameEn', 'Backend');
-        setInput('#newTagSlug', 'backend');
-      },
-    },
-    {
-      description: 'new tag EN name max length',
-      selector: '#newTagNameEn',
-      expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () => {
-        setInput('#newTagNameRu', 'Бэкенд');
-        setInput('#newTagNameEn', INVALID_SHORT_TEXT);
-        setInput('#newTagSlug', 'backend');
-      },
-    },
-    {
-      description: 'new tag slug pattern',
-      selector: '#newTagSlug',
-      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
-      setInvalidValue: () => {
-        setInput('#newTagNameRu', 'Бэкенд');
-        setInput('#newTagNameEn', 'Backend');
-        setInput('#newTagSlug', 'Backend Tag');
-      },
-    },
-  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
-    validationCase.setInvalidValue();
-
-    fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]')).nativeElement.click();
-    fixture.detectChanges();
-
-    expect(articlesService.createTag).not.toHaveBeenCalled();
-    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
-  });
-
-  it.each<ArticleValidationCase>([
-    {
-      description: 'inline tag RU name required text',
-      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`,
-      expectedMessage: 'Заполните поле.',
-      setInvalidValue: () =>
-        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-ru"]`, '   '),
-    },
-    {
-      description: 'inline tag EN name max length',
-      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-name-en"]`,
-      expectedMessage: 'Максимум 255 символов.',
-      setInvalidValue: () =>
-        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-name-en"]`, INVALID_SHORT_TEXT),
-    },
-    {
-      description: 'inline tag slug pattern',
-      selector: `[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`,
-      expectedMessage: 'Используйте строчные латинские буквы, цифры и одинарные дефисы.',
-      setInvalidValue: () =>
-        setInput(`[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`, 'Python Tag'),
-    },
-  ])('shows invalid styling and localized feedback for $description', (validationCase) => {
-    validationCase.setInvalidValue();
-
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-${PYTHON_TAG_ID}-save"]`)
-      ?.click();
-    fixture.detectChanges();
-
-    expect(articlesService.updateTag).not.toHaveBeenCalled();
-    expectInvalidControl(validationCase.selector, validationCase.expectedMessage);
-  });
-
-  it('blocks invalid new and inline tag edits', () => {
-    setInput('#newTagNameRu', 'Бэкенд');
-    setInput('#newTagNameEn', 'Backend');
-    setInput('#newTagSlug', 'Backend Tag');
-
-    fixture.debugElement.query(By.css('[data-testid="article-new-tag-add"]')).nativeElement.click();
-    fixture.detectChanges();
-
-    expect(articlesService.createTag).not.toHaveBeenCalled();
-
-    const inlineSlug = fixture.nativeElement.querySelector(
-      `[data-testid="article-tag-${PYTHON_TAG_ID}-slug"]`,
-    ) as HTMLInputElement | null;
-    expect(inlineSlug).not.toBeNull();
-    inlineSlug!.value = 'Python Tag';
-    inlineSlug!.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    fixture.nativeElement
-      .querySelector<HTMLButtonElement>(`[data-testid="article-tag-${PYTHON_TAG_ID}-save"]`)
-      ?.click();
-
-    expect(articlesService.updateTag).not.toHaveBeenCalled();
-  });
-
-  it('edits, deletes, and restores tags with string ids', () => {
-    const draft = fixture.componentInstance.tags().find((tag) => tag.id === PYTHON_TAG_ID);
-    expect(draft).toBeDefined();
-
-    fixture.componentInstance.updateTag({
-      ...draft!,
-      draftNameRu: 'Питон',
-      draftNameEn: 'Python',
-      draftSlug: 'python',
-    });
-    fixture.componentInstance.deleteTag(PYTHON_TAG_ID);
-    fixture.componentInstance.restoreTag(OLD_TAG_ID);
-
-    expect(articlesService.updateTag).toHaveBeenCalledWith(
-      PYTHON_TAG_ID,
-      {
-        slug: 'python',
-        translations: { ru: { name: 'Питон' }, en: { name: 'Python' } },
-      },
-      'ru',
-    );
-    expect(articlesService.deleteTag).toHaveBeenCalledWith(PYTHON_TAG_ID);
-    expect(articlesService.restoreTag).toHaveBeenCalledWith(OLD_TAG_ID);
   });
 
   it('uploads cover image and writes file id into the article metadata payload', () => {
@@ -802,6 +747,24 @@ describe('ArticleFormComponent', () => {
     return (input as HTMLInputElement).value;
   }
 
+  function createFixture(): void {
+    fixture?.destroy();
+    fixture = TestBed.createComponent(ArticleFormComponent);
+    confirmDiscard = jest.fn(() => false);
+    unsavedChangesScope = new AdminUnsavedChangesScope(confirmDiscard, () => undefined);
+    fixture.componentRef.setInput('article', null);
+    fixture.componentRef.setInput('unsavedChangesScope', unsavedChangesScope);
+    fixture.detectChanges();
+  }
+
+  function wait(durationMs: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, durationMs));
+  }
+
+  function waitForTagSearch(): Promise<void> {
+    return wait(220);
+  }
+
   function setInput(selector: string, value: string): void {
     const input = fixture.nativeElement.querySelector(selector) as
       HTMLInputElement | HTMLTextAreaElement;
@@ -885,17 +848,14 @@ class MarkdownEditorStubComponent {
   readonly valueChange = output<string>();
 }
 
-function tag(params: {
-  id: string;
-  name: string;
-  slug: string;
-  deletedAt: string | null;
-}): unknown {
+function tag(params: { id: string; nameRu: string; nameEn: string; slug: string }): ArticleTag {
   return {
-    ...params,
+    id: params.id,
+    name: params.nameRu,
+    slug: params.slug,
     translations: {
-      ru: { name: params.name },
-      en: { name: params.name },
+      ru: { name: params.nameRu },
+      en: { name: params.nameEn },
     },
   };
 }

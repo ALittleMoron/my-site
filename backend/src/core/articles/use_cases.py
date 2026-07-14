@@ -48,15 +48,13 @@ class ArticlesUseCase:
     async def get_article(self, *, slug: str, only_published: bool) -> Article:
         article = await self.storage.get_article_by_slug(
             slug=slug,
-            include_deleted_tags=not only_published,
         )
         if only_published and not article.is_available():
             raise ArticleNotFoundError
-        visible_article = article.public_copy() if only_published else article
-        cover_image_file = visible_article.metadata.cover_image_file
+        cover_image_file = article.metadata.cover_image_file
         if cover_image_file is None:
-            return visible_article.with_cover_image_url(cover_image_url=None)
-        return visible_article.with_cover_image_url(
+            return article.with_cover_image_url(cover_image_url=None)
+        return article.with_cover_image_url(
             cover_image_url=self.file_client.get_access_url(
                 object_name=cover_image_file.relative_path,
                 namespace=cover_image_file.namespace,
@@ -108,7 +106,6 @@ class ArticlesUseCase:
     async def create_article(self, *, params: ArticleCreateParams) -> Article:
         tags = await self.storage.get_tags_by_ids(
             tag_ids=params.tag_ids,
-            include_deleted=False,
         )
         if not tags.all_tags_exist_by_ids(ids=set(params.tag_ids)):
             raise TagNotFoundError
@@ -144,11 +141,9 @@ class ArticlesUseCase:
     ) -> Article:
         existing_article = await self.storage.get_article_by_slug(
             slug=slug,
-            include_deleted_tags=True,
         )
         tags = await self.storage.get_tags_by_ids(
             tag_ids=params.tag_ids,
-            include_deleted=False,
         )
         if not tags.all_tags_exist_by_ids(ids=set(params.tag_ids)):
             raise TagNotFoundError
@@ -192,20 +187,18 @@ class ArticlesUseCase:
     ) -> None:
         await self.storage.update_article_publish_status(slug=slug, publish_status=publish_status)
 
-    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
-        return await self.storage.list_tags(include_deleted=include_deleted, language=language)
+    async def list_tags(self, *, language: LanguageEnum) -> Tags:
+        return await self.storage.list_tags(language=language)
 
     async def search_tags(
         self,
         *,
         search_name: str,
-        include_deleted: bool,
         limit: int,
         language: LanguageEnum,
     ) -> Tags:
         return await self.storage.search_tags(
             search_name=search_name,
-            include_deleted=include_deleted,
             limit=limit,
             language=language,
         )
@@ -221,11 +214,8 @@ class ArticlesUseCase:
     ) -> Tag:
         return await self.storage.update_tag(tag=params.to_tag(tag_id=tag_id))
 
-    async def soft_delete_tag(self, *, tag_id: str) -> None:
-        await self.storage.soft_delete_tag(tag_id=tag_id)
-
-    async def restore_tag(self, *, tag_id: str) -> None:
-        await self.storage.restore_tag(tag_id=tag_id)
+    async def delete_tag(self, *, tag_id: str) -> None:
+        await self.storage.delete_tag(tag_id=tag_id)
 
     async def list_folders(self, *, language: LanguageEnum) -> ArticleFolders:
         return await self.storage.list_folders(language=language)
@@ -337,7 +327,6 @@ class ArticleAnalyticsUseCase:
     async def _get_published_article(self, *, slug: str) -> Article:
         article = await self.articles_storage.get_article_by_slug(
             slug=slug,
-            include_deleted_tags=False,
         )
         if not article.is_available():
             raise ArticleNotFoundError

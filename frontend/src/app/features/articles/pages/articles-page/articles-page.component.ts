@@ -101,12 +101,10 @@ export class ArticlesPageComponent implements OnInit {
   readonly detailLoading = signal(false);
   readonly detailError = signal<ApiError | null>(null);
 
-  readonly activeTags = computed(() =>
-    [...this.tags()].filter((tag) => tag.deletedAt === null).sort(compareTags),
-  );
+  readonly sortedTags = computed(() => [...this.tags()].sort(compareTags));
   readonly activeTag = computed(() => {
     const slug = this.activeTagSlug();
-    return slug ? (this.activeTags().find((tag) => tag.slug === slug) ?? null) : null;
+    return slug ? (this.sortedTags().find((tag) => tag.slug === slug) ?? null) : null;
   });
   readonly isDetailRoute = computed(() => this.currentSlug() !== null);
   readonly isEmpty = computed(

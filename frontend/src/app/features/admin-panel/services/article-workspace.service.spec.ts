@@ -233,20 +233,18 @@ describe('ArticleWorkspaceService', () => {
   });
 
   it('manages tags through admin endpoints', () => {
-    service.getTags(true, 'en').subscribe();
+    service.getTags('en').subscribe();
 
     const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags'));
     expect(listReq.request.method).toBe('GET');
-    expect(listReq.request.params.get('includeDeleted')).toBe('true');
     expect(listReq.request.params.get('language')).toBe('en');
     listReq.flush({ tags: [] });
 
-    service.searchTags('back', true, 5, 'ru').subscribe();
+    service.searchTags('back', 5, 'ru').subscribe();
 
     const searchReq = httpMock.expectOne((r) => r.url.endsWith('/api/admin/articles/tags/search'));
     expect(searchReq.request.method).toBe('GET');
     expect(searchReq.request.params.get('searchName')).toBe('back');
-    expect(searchReq.request.params.get('includeDeleted')).toBe('true');
     expect(searchReq.request.params.get('limit')).toBe('5');
     expect(searchReq.request.params.get('language')).toBe('ru');
     searchReq.flush({ tags: [] });
@@ -276,14 +274,6 @@ describe('ArticleWorkspaceService', () => {
     );
     expect(deleteReq.request.method).toBe('DELETE');
     deleteReq.flush(null);
-
-    service.restoreTag(TAG_ID).subscribe();
-
-    const restoreReq = httpMock.expectOne((r) =>
-      r.url.endsWith(`/api/admin/articles/tags/${TAG_ID}/restore`),
-    );
-    expect(restoreReq.request.method).toBe('POST');
-    restoreReq.flush(null);
   });
 });
 
@@ -384,7 +374,6 @@ function tagDto(): unknown {
     id: TAG_ID,
     name: 'Backend',
     slug: 'backend',
-    deletedAt: null,
     translations: {
       ru: { name: 'Бэкенд' },
       en: { name: 'Backend' },

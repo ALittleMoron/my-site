@@ -26,3 +26,32 @@
   border-radius: var(--bs-border-radius);
   background-color: var(--bs-tertiary-bg);
 }
+
+.article-tag-chip {
+  padding: 0.25rem 0.35rem 0.25rem 0.75rem;
+  background: var(--bs-tertiary-bg);
+}
+
+.article-tag-remove {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.article-tag-remove:hover,
+.article-tag-remove:focus-visible {
+  color: var(--bs-danger-text-emphasis);
+  background: var(--bs-danger-bg-subtle);
+}
+
+.article-tag-suggestions {
+  z-index: 1040;
+  max-height: 18rem;
+  overflow-y: auto;
+}

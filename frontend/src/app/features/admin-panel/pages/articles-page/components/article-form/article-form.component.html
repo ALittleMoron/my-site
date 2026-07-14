@@ -338,192 +338,107 @@
     [language]="activePreview().language"
   />
 
-  <div class="border rounded-3 p-3">
+  <div class="border rounded-3 p-3" data-testid="article-tag-picker">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
       <h3 class="h6 mb-0">{{ 'articles.form.tags' | t }}</h3>
-      @if (tagError()) {
-        <span class="text-danger small">{{ tagError() }}</span>
-      }
+      <a class="small" routerLink="/admin-panel/article-tags">
+        {{ 'articles.tags.manage' | t }}
+      </a>
     </div>
 
-    <div class="row g-2 align-items-end mb-3" [formGroup]="newTagForm">
-      <div class="col-md-3">
-        <label class="form-label small" for="newTagNameRu">
-          {{ 'articles.form.tagNameRu' | t }}
-          <span class="required-marker" aria-hidden="true">*</span>
-        </label>
-        <input
-          id="newTagNameRu"
-          class="form-control form-control-sm"
-          [class.is-invalid]="newTagFieldInvalid('nameRu')"
-          [attr.aria-invalid]="newTagFieldInvalid('nameRu') ? 'true' : null"
-          required
-          aria-required="true"
-          [attr.maxlength]="validationLimits.shortText"
-          formControlName="nameRu"
-        />
-        @if (newTagFieldInvalid('nameRu') && newTagFieldMessage('nameRu'); as message) {
-          <div class="invalid-feedback d-block">{{ message }}</div>
+    @if (displayedSelectedTags().length > 0) {
+      <div class="d-flex flex-wrap gap-2 mb-3" role="list">
+        @for (tag of displayedSelectedTags(); track tag.id) {
+          <span
+            class="article-tag-chip d-inline-flex align-items-center gap-2 rounded-pill border"
+            [attr.data-testid]="'article-tag-chip-' + tag.id"
+            role="listitem"
+          >
+            <span>{{ tag.name }}</span>
+            <button
+              type="button"
+              class="article-tag-remove btn btn-sm rounded-circle"
+              [attr.data-testid]="'article-tag-remove-' + tag.id"
+              [attr.aria-label]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
+              [attr.title]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
+              (click)="removeTag(tag.id)"
+            >
+              <span aria-hidden="true">−</span>
+            </button>
+          </span>
         }
       </div>
-      <div class="col-md-3">
-        <label class="form-label small" for="newTagNameEn">
-          {{ 'articles.form.tagNameEn' | t }}
-          <span class="required-marker" aria-hidden="true">*</span>
-        </label>
-        <input
-          id="newTagNameEn"
-          class="form-control form-control-sm"
-          [class.is-invalid]="newTagFieldInvalid('nameEn')"
-          [attr.aria-invalid]="newTagFieldInvalid('nameEn') ? 'true' : null"
-          required
-          aria-required="true"
-          [attr.maxlength]="validationLimits.shortText"
-          formControlName="nameEn"
-          (input)="onNewTagNameEnInput()"
-        />
-        @if (newTagFieldInvalid('nameEn') && newTagFieldMessage('nameEn'); as message) {
-          <div class="invalid-feedback d-block">{{ message }}</div>
-        }
-      </div>
-      <div class="col-md-4">
-        <label class="form-label small" for="newTagSlug">
-          {{ 'articles.form.slug' | t }}
-          <span class="required-marker" aria-hidden="true">*</span>
-        </label>
-        <input
-          id="newTagSlug"
-          class="form-control form-control-sm"
-          [class.is-invalid]="newTagFieldInvalid('slug')"
-          [attr.aria-invalid]="newTagFieldInvalid('slug') ? 'true' : null"
-          required
-          aria-required="true"
-          [attr.maxlength]="validationLimits.shortText"
-          formControlName="slug"
-          (input)="onNewTagSlugInput()"
-        />
-        @if (newTagFieldInvalid('slug') && newTagFieldMessage('slug'); as message) {
-          <div class="invalid-feedback d-block">{{ message }}</div>
-        }
-      </div>
-      <div class="col-md-2 d-grid">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-primary"
-          data-testid="article-new-tag-add"
-          (click)="createTag()"
+    }
+
+    <label class="form-label" for="articleTagSearch">{{ 'articles.tags.search' | t }}</label>
+    <div class="article-tag-search position-relative">
+      <input
+        #tagSearchInput
+        id="articleTagSearch"
+        type="search"
+        class="form-control"
+        autocomplete="off"
+        data-testid="article-tag-search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="articleTagSuggestions"
+        [attr.aria-expanded]="tagSuggestionsOpen()"
+        [attr.aria-activedescendant]="activeTagSuggestionId()"
+        [formControl]="tagSearchControl"
+        [placeholder]="'articles.tags.searchPlaceholder' | t"
+        (keydown)="onTagSearchKeydown($event)"
+        (keyup.escape)="$event.stopPropagation()"
+      />
+
+      @if (tagSuggestionsOpen()) {
+        <div
+          id="articleTagSuggestions"
+          class="article-tag-suggestions list-group position-absolute start-0 end-0 shadow-sm"
+          role="listbox"
         >
-          {{ 'shared.add' | t }}
-        </button>
-      </div>
-    </div>
-
-    <div class="vstack gap-2">
-      @for (tag of tags(); track tag.id) {
-        <div class="row g-2 align-items-center">
-          <div class="col-auto">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              [id]="'articleTag-' + tag.id"
-              [checked]="isTagSelected(tag.id)"
-              [disabled]="isTagDeleted(tag)"
-              (change)="toggleTag(tag.id, $event)"
-            />
-          </div>
-          <div class="col-md-3">
-            <input
-              class="form-control form-control-sm"
-              [attr.data-testid]="'article-tag-' + tag.id + '-name-ru'"
-              [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameRu')"
-              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'nameRu') ? 'true' : null"
-              [value]="tag.draftNameRu"
-              [disabled]="isTagDeleted(tag)"
-              [attr.maxlength]="validationLimits.shortText"
-              (input)="updateTagDraftNameRu(tag.id, $event)"
-              [attr.aria-label]="'articles.form.tagNameRuAria' | t"
-            />
-            @if (
-              tagDraftFieldInvalid(tag, 'nameRu') && tagDraftFieldMessage(tag, 'nameRu');
-              as message
-            ) {
-              <div class="invalid-feedback d-block">{{ message }}</div>
-            }
-          </div>
-          <div class="col-md-3">
-            <input
-              class="form-control form-control-sm"
-              [attr.data-testid]="'article-tag-' + tag.id + '-name-en'"
-              [class.is-invalid]="tagDraftFieldInvalid(tag, 'nameEn')"
-              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'nameEn') ? 'true' : null"
-              [value]="tag.draftNameEn"
-              [disabled]="isTagDeleted(tag)"
-              [attr.maxlength]="validationLimits.shortText"
-              (input)="updateTagDraftNameEn(tag.id, $event)"
-              [attr.aria-label]="'articles.form.tagNameEnAria' | t"
-            />
-            @if (
-              tagDraftFieldInvalid(tag, 'nameEn') && tagDraftFieldMessage(tag, 'nameEn');
-              as message
-            ) {
-              <div class="invalid-feedback d-block">{{ message }}</div>
-            }
-          </div>
-          <div class="col-md-3">
-            <input
-              class="form-control form-control-sm"
-              [attr.data-testid]="'article-tag-' + tag.id + '-slug'"
-              [class.is-invalid]="tagDraftFieldInvalid(tag, 'slug')"
-              [attr.aria-invalid]="tagDraftFieldInvalid(tag, 'slug') ? 'true' : null"
-              [value]="tag.draftSlug"
-              [disabled]="isTagDeleted(tag)"
-              [attr.maxlength]="validationLimits.shortText"
-              (input)="updateTagDraftSlug(tag.id, $event)"
-              [attr.aria-label]="'articles.form.tagSlugAria' | t"
-            />
-            @if (
-              tagDraftFieldInvalid(tag, 'slug') && tagDraftFieldMessage(tag, 'slug');
-              as message
-            ) {
-              <div class="invalid-feedback d-block">{{ message }}</div>
-            }
-          </div>
-          <div class="col-auto">
-            @if (isTagDeleted(tag)) {
-              <span class="badge text-bg-secondary">{{ 'shared.removed' | t }}</span>
-            }
-          </div>
-          <div class="col d-flex justify-content-end gap-2">
-            @if (isTagDeleted(tag)) {
+          @if (tagSuggestions().length > 0) {
+            @for (tag of tagSuggestions(); track tag.id; let index = $index) {
               <button
+                [id]="'article-tag-suggestion-' + tag.id"
                 type="button"
-                class="btn btn-sm btn-outline-success"
-                (click)="restoreTag(tag.id)"
+                class="list-group-item list-group-item-action"
+                [class.active]="activeTagSuggestionIndex() === index"
+                [attr.aria-selected]="activeTagSuggestionIndex() === index"
+                [attr.data-testid]="'article-tag-suggestion-' + tag.id"
+                role="option"
+                (click)="selectTag(tag)"
               >
-                {{ 'shared.restore' | t }}
-              </button>
-            } @else {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-primary"
-                [attr.data-testid]="'article-tag-' + tag.id + '-save'"
-                [disabled]="tagDraftInvalid(tag)"
-                (click)="updateTag(tag)"
-              >
-                {{ 'shared.save' | t }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                (click)="deleteTag(tag.id)"
-              >
-                {{ 'shared.delete' | t }}
+                <span class="d-block fw-semibold">{{ tagName(tag) }}</span>
+                <span
+                  class="d-block small"
+                  [class.text-body-secondary]="activeTagSuggestionIndex() !== index"
+                >
+                  {{ secondaryTagName(tag) }} · {{ tag.slug }}
+                </span>
               </button>
             }
-          </div>
+          } @else {
+            <div
+              class="list-group-item text-body-secondary"
+              role="option"
+              aria-disabled="true"
+              aria-selected="false"
+            >
+              {{ 'articles.tags.searchEmpty' | t }}
+            </div>
+          }
         </div>
       }
     </div>
+    <div class="form-text">{{ 'articles.tags.searchHint' | t }}</div>
+    @if (tagSearchLoading()) {
+      <div class="small text-body-secondary mt-2" role="status">
+        {{ 'articles.tags.searching' | t }}
+      </div>
+    }
+    @if (tagSearchError()) {
+      <div class="small text-danger mt-2" role="alert">{{ tagSearchError() }}</div>
+    }
   </div>
 
   <div class="d-flex justify-content-end gap-2 mt-4">

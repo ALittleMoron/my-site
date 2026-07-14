@@ -287,7 +287,7 @@ export class AdminArticlesPageComponent implements OnInit {
 
   loadTags(): void {
     this.articleWorkspace
-      .getTags(false, this.currentLanguage())
+      .getTags(this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (tags) => this.tags.set(tags),

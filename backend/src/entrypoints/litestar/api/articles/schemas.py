@@ -46,7 +46,6 @@ class TagResponseSchema(CamelCaseSchema):
     id: Annotated[str, Field(title="Identifier")]
     name: Annotated[str, Field(title="Name")]
     slug: Annotated[str, Field(title="Slug")]
-    deleted_at: Annotated[str | None, Field(title="Deletion date")]
     translations: Annotated[TagTranslationsResponseSchema, Field(title="Translations")]
 
     @classmethod
@@ -55,7 +54,6 @@ class TagResponseSchema(CamelCaseSchema):
             id=schema.id,
             name=schema.localized_name(language=language),
             slug=schema.slug,
-            deleted_at=schema.deleted_at.isoformat() if schema.deleted_at is not None else None,
             translations=TagTranslationsResponseSchema.from_domain_schema(schema=schema),
         )
 

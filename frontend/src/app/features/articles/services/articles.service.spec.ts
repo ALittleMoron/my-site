@@ -75,7 +75,6 @@ describe('ArticlesService', () => {
               id: TAG_ID,
               name: 'Python',
               slug: 'python',
-              deletedAt: null,
               translations: { ru: { name: 'Python' }, en: { name: 'Python' } },
             },
           ],
@@ -210,7 +209,6 @@ describe('ArticlesService', () => {
     service.getPublicTags('en').subscribe();
 
     const listReq = httpMock.expectOne((r) => r.url.endsWith('/api/articles/tags'));
-    expect(listReq.request.params.has('includeDeleted')).toBe(false);
     expect(listReq.request.params.get('language')).toBe('en');
     listReq.flush({ tags: [] });
   });

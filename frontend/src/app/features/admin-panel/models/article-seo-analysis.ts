@@ -17,7 +17,7 @@ export type ArticleSeoCheckId =
   | 'slug-format'
   | 'single-h1'
   | 'content-length'
-  | 'active-tags'
+  | 'tags'
   | 'wiki-links';
 
 export interface ArticleSeoRules {
@@ -201,8 +201,8 @@ export function analyzeArticleSeo(params: {
       },
     }),
     buildCheck({
-      id: 'active-tags',
-      status: params.input.tags.some((tag) => tag.deletedAt === null) ? 'good' : 'warning',
+      id: 'tags',
+      status: params.input.tags.length > 0 ? 'good' : 'warning',
       messageParams: {},
     }),
     buildCheck({

@@ -234,7 +234,7 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(TagModel.__table__).from_select(
-            ["id", "name_ru", "name_en", "slug", "deleted_at"],
+            ["id", "name_ru", "name_en", "slug"],
             select(
                 hex_id_expr(value=value),
                 case(
@@ -255,7 +255,6 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
                     (value == PYDANTIC_ID, literal("pydantic")),
                     else_=func.concat(literal("tag-"), value),
                 ),
-                case((value == GENERAL_TAG_START_ID, literal(SEED_NOW)), else_=literal(None)),
             ).select_from(series),
         ),
     )

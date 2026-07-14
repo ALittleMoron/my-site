@@ -20,7 +20,6 @@ describe('ArticleAuthoringPreviewComponent', () => {
         id: '00000000000000000000000000000001',
         name: 'Angular',
         slug: 'angular',
-        deletedAt: null,
         translations: { ru: { name: 'Angular' }, en: { name: 'Angular' } },
       },
     ]);

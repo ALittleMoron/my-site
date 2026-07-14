@@ -19,10 +19,6 @@ class Tag:
     name_ru: str
     name_en: str
     slug: str
-    deleted_at: datetime | None
-
-    def is_deleted(self) -> bool:
-        return self.deleted_at is not None
 
     def localized_name(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
@@ -122,9 +118,6 @@ class Article:
 
     def localized_folder(self, *, language: LanguageEnum) -> str:
         return self.folder.localized_name(language=language)
-
-    def public_copy(self) -> Article:
-        return replace(self, tags=Tags(values=[tag for tag in self.tags if not tag.is_deleted()]))
 
     def with_cover_image_url(self, *, cover_image_url: str | None) -> Article:
         return replace(
@@ -536,7 +529,6 @@ class TagCreateParams:
             name_ru=self.name_ru,
             name_en=self.name_en,
             slug=self.slug,
-            deleted_at=None,
         )
 
 
@@ -552,5 +544,4 @@ class TagUpdateParams:
             name_ru=self.name_ru,
             name_en=self.name_en,
             slug=self.slug,
-            deleted_at=None,
         )

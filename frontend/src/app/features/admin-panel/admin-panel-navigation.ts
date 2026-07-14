@@ -40,6 +40,13 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         adminOnly: false,
       },
       {
+        key: 'article-tags',
+        labelKey: 'adminPanel.section.articleTags',
+        route: '/admin-panel/article-tags',
+        badgeTextKey: null,
+        adminOnly: false,
+      },
+      {
         key: 'article-statistics',
         labelKey: 'articles.stats.button',
         route: '/admin-panel/article-statistics',

@@ -334,7 +334,9 @@
   - [x] Read article list, detail, tree, tag list, and tag search results in the selected content language
   - [x] Search by `search_vector_ru` or `search_vector_en` depending on requested language
   - [x] Keep `tagSlug` as one language-neutral English filter
-  - [x] Add admin-panel content authoring UI controls for editing RU and EN article and tag fields in one form
+  - [x] Add admin-panel content authoring UI controls for editing RU and EN article fields
+  - [x] Manage RU/EN article tags on a dedicated admin page and attach existing tags through the article picker
+  - [x] Delete article tags permanently with their article associations; do not expose soft deletion or restoration
   - [x] Update the init Alembic migration during pre-deployment development
   - [x] Generate one follow-up autogen migration to verify SQLAlchemy models and migrations are consistent
   - [x] Cover backend and frontend behaviour with focused tests
@@ -379,7 +381,7 @@
   - [x] Add separate public matrix question pages
   - [x] Preserve modal interaction from the matrix overview
   - [x] Emit FAQPage structured data after public question pages exist
-- [x] Add owner/admin/moderator content workspace for articles with admin filters, create modal, edit detail route, tag management, and publish/delete dropdown actions.
+- [x] Add owner/admin/moderator content workspace for articles with admin filters, create modal, edit detail route, a dedicated tag-management page, and publish/delete dropdown actions.
 - [ ] Add article editorial queues and richer workspace views.
 - [ ] Add content health checks for articles: SEO metadata, cover alt text, stale translations, wiki-link issues, and broken external links.
 - [ ] Add article revision history with diff and restore.

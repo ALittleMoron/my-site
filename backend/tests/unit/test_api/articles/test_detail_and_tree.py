@@ -29,11 +29,10 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
         )
 
     def test_get_article(self) -> None:
-        deleted_tag = self.factory.core.tag(
+        tag = self.factory.core.tag(
             tag_id=2,
             name="Old",
             slug="old",
-            deleted_at="2026-01-04T03:04:05",
         )
         article = self.factory.core.article(
             article_id=self.factory.core.hex_id(1),
@@ -46,7 +45,7 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
             published_at="2026-01-02T03:04:05",
             created_at="2026-01-01T03:04:05",
             updated_at="2026-01-03T03:04:05",
-            tags=[deleted_tag],
+            tags=[tag],
         )
         self.use_case.get_article.return_value = article
 
@@ -80,7 +79,6 @@ class TestArticleDetailAndTreeAPI(ApiTestCase):
                     "id": self.factory.core.hex_id(2),
                     "name": "Old",
                     "slug": "old",
-                    "deletedAt": "2026-01-04T03:04:05+00:00",
                     "translations": {
                         "ru": {"name": "Old"},
                         "en": {"name": "Old"},

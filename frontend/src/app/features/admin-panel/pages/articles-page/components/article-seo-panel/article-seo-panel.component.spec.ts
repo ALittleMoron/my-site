@@ -51,10 +51,10 @@ function analysis(): ArticleSeoAnalysis {
         messageKey: 'articles.seoAnalysis.message.titleLength.warning',
       },
       {
-        id: 'active-tags',
+        id: 'tags',
         status: 'warning',
-        titleKey: 'articles.seoAnalysis.check.activeTags',
-        messageKey: 'articles.seoAnalysis.message.activeTags.warning',
+        titleKey: 'articles.seoAnalysis.check.tags',
+        messageKey: 'articles.seoAnalysis.message.tags.warning',
       },
     ],
   };

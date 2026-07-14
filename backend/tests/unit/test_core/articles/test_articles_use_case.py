@@ -177,7 +177,6 @@ class TestArticlesUseCase(TestCase):
         assert result == expected
         self.storage.get_article_by_slug.assert_called_once_with(
             slug="draft-article",
-            include_deleted_tags=True,
         )
 
     async def test_get_article_hydrates_cover_image_url_from_file_client(self) -> None:
@@ -308,7 +307,7 @@ class TestArticlesUseCase(TestCase):
         with pytest.raises(TagNotFoundError):
             await self.use_case.create_article(params=params)
 
-    async def test_create_article_persists_article_with_active_tags(self) -> None:
+    async def test_create_article_persists_article_with_tags(self) -> None:
         tag_ids = [self.factory.core.hex_id(1)]
         article_id = self.factory.core.hex_id(10)
         params = ArticleCreateParams(

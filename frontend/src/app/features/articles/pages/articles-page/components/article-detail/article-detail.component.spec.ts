@@ -45,7 +45,6 @@ describe('ArticleDetailComponent', () => {
           id: '00000000000000000000000000000002',
           name: 'Python',
           slug: 'python',
-          deletedAt: null,
           translations: { ru: { name: 'Python' }, en: { name: 'Python' } },
         },
       ],

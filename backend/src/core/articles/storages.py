@@ -24,7 +24,6 @@ class ArticlesStorage(ABC):
         self,
         *,
         slug: str,
-        include_deleted_tags: bool,
     ) -> Article:
         raise NotImplementedError
 
@@ -91,12 +90,11 @@ class ArticlesStorage(ABC):
         self,
         *,
         tag_ids: list[str],
-        include_deleted: bool,
     ) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum) -> Tags:
+    async def list_tags(self, *, language: LanguageEnum) -> Tags:
         raise NotImplementedError
 
     @abstractmethod
@@ -104,7 +102,6 @@ class ArticlesStorage(ABC):
         self,
         *,
         search_name: str,
-        include_deleted: bool,
         limit: int,
         language: LanguageEnum,
     ) -> Tags:
@@ -119,11 +116,7 @@ class ArticlesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def soft_delete_tag(self, *, tag_id: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def restore_tag(self, *, tag_id: str) -> None:
+    async def delete_tag(self, *, tag_id: str) -> None:
         raise NotImplementedError
 
 

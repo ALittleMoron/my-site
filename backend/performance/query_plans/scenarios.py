@@ -90,7 +90,7 @@ DELETABLE_RESUME_ID = hex_id(101)
 PYTHON_TAG_ID = hex_id(1)
 POSTGRESQL_TAG_ID = hex_id(2)
 PYDANTIC_TAG_ID = hex_id(3)
-DELETED_TAG_ID = hex_id(4)
+DELETABLE_TAG_ID = hex_id(4)
 PYTHON_RESOURCE_ID = hex_id(1)
 POSTGRESQL_RESOURCE_ID = hex_id(2)
 PYDANTIC_RESOURCE_ID = hex_id(3)
@@ -392,7 +392,6 @@ async def run_delete_resume(session: AsyncSession) -> None:
 async def run_get_article_by_slug(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).get_article_by_slug(
         slug="article-100",
-        include_deleted_tags=False,
     )
 
 
@@ -498,13 +497,11 @@ async def run_update_article_folder_priorities(session: AsyncSession) -> None:
 async def run_get_tags_by_ids(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).get_tags_by_ids(
         tag_ids=[PYTHON_TAG_ID, POSTGRESQL_TAG_ID, PYDANTIC_TAG_ID],
-        include_deleted=False,
     )
 
 
 async def run_list_tags(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).list_tags(
-        include_deleted=False,
         language=LanguageEnum.EN,
     )
 
@@ -528,7 +525,6 @@ async def run_search_tags_short(session: AsyncSession) -> None:
 async def run_search_tags(*, session: AsyncSession, search_name: str) -> None:
     await ArticlesDatabaseStorage(session=session).search_tags(
         search_name=search_name,
-        include_deleted=False,
         limit=10,
         language=LanguageEnum.EN,
     )
@@ -541,7 +537,6 @@ async def run_create_tag(session: AsyncSession) -> None:
             name_ru="Новый performance тег",
             name_en="New performance tag",
             slug="query-plan-new-tag",
-            deleted_at=None,
         ),
     )
 
@@ -553,17 +548,12 @@ async def run_update_tag(session: AsyncSession) -> None:
             name_ru="Питон обновленный",
             name_en="Python updated",
             slug="python",
-            deleted_at=None,
         ),
     )
 
 
-async def run_soft_delete_tag(session: AsyncSession) -> None:
-    await ArticlesDatabaseStorage(session=session).soft_delete_tag(tag_id=PYTHON_TAG_ID)
-
-
-async def run_restore_tag(session: AsyncSession) -> None:
-    await ArticlesDatabaseStorage(session=session).restore_tag(tag_id=DELETED_TAG_ID)
+async def run_delete_tag(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).delete_tag(tag_id=DELETABLE_TAG_ID)
 
 
 async def run_increment_view(session: AsyncSession) -> None:
@@ -928,7 +918,7 @@ def seed_tag(tag_index: int) -> Tag:
         name_ru = f"Тег {tag_index}"
         name_en = f"Tag {tag_index}"
         slug = f"tag-{tag_index}"
-    return Tag(id=hex_id(tag_index), name_ru=name_ru, name_en=name_en, slug=slug, deleted_at=None)
+    return Tag(id=hex_id(tag_index), name_ru=name_ru, name_en=name_en, slug=slug)
 
 
 def write_resume_content(*, summary: str) -> ResumeContent:
@@ -1450,7 +1440,7 @@ STORAGE_SCENARIOS = (
         storage_class="ArticlesDatabaseStorage",
         method_name="list_tags",
         group=QueryThresholdGroup.LIST_READ,
-        expected_index_names=("articles_tag_active_name_en_id_idx",),
+        expected_index_names=(),
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason="full tag listing is intentionally sorted for authoring UI",
         run=run_list_tags,
@@ -1530,24 +1520,14 @@ STORAGE_SCENARIOS = (
         run=run_update_tag,
     ),
     scenario(
-        name="tags_soft_delete",
+        name="tags_delete",
         storage_class="ArticlesDatabaseStorage",
-        method_name="soft_delete_tag",
+        method_name="delete_tag",
         group=QueryThresholdGroup.SMALL_WRITE,
         expected_index_names=("articles__tag_model_pkey",),
         forbidden_seq_scan_relations=("articles__tag_model",),
         allow_seq_scan_reason=None,
-        run=run_soft_delete_tag,
-    ),
-    scenario(
-        name="tags_restore",
-        storage_class="ArticlesDatabaseStorage",
-        method_name="restore_tag",
-        group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("articles__tag_model_pkey",),
-        forbidden_seq_scan_relations=("articles__tag_model",),
-        allow_seq_scan_reason=None,
-        run=run_restore_tag,
+        run=run_delete_tag,
     ),
     scenario(
         name="article_analytics_increment_view",

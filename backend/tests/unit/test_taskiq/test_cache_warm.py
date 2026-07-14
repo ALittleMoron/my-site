@@ -83,8 +83,7 @@ class FakeArticlesUseCase:
         self.list_tree_languages.append(language)
         return ArticleTree(folders=[])
 
-    async def list_tags(self, *, include_deleted: bool, language: LanguageEnum):
-        assert include_deleted is False
+    async def list_tags(self, *, language: LanguageEnum):
         self.list_tags_languages.append(language)
         return self.factory.core.tags(values=[self.factory.core.tag(tag_id=1)])
 

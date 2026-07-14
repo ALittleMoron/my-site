@@ -37,7 +37,6 @@ from entrypoints.litestar.api.parameters import (
     ArticleSlugPath,
     DateFromQuery,
     DateToQuery,
-    IncludeDeletedQuery,
     LanguageQuery,
     OnlyPublishedQuery,
     SearchLimitQuery,
@@ -209,7 +208,7 @@ class PublicArticlesApiController(Controller):
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
-        tags = await use_case.list_tags(include_deleted=False, language=language)
+        tags = await use_case.list_tags(language=language)
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
 
 
@@ -554,11 +553,10 @@ class AdminArticlesApiController(Controller):
     )
     async def list_tags(
         self,
-        include_deleted: IncludeDeletedQuery,
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
-        tags = await use_case.list_tags(include_deleted=include_deleted, language=language)
+        tags = await use_case.list_tags(language=language)
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
 
     @get(
@@ -570,14 +568,12 @@ class AdminArticlesApiController(Controller):
     async def search_tags(
         self,
         search_name: SearchNameQuery,
-        include_deleted: IncludeDeletedQuery,
         limit: SearchLimitQuery,
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
         tags = await use_case.search_tags(
             search_name=search_name,
-            include_deleted=include_deleted,
             limit=limit,
             language=language,
         )
@@ -672,25 +668,7 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
     ) -> None:
-        await use_case.soft_delete_tag(tag_id=tag_id)
-        await invalidate_and_enqueue_response_cache_warm_domain(
-            request=request,
-            domain=ResponseCacheDomain.ARTICLES,
-        )
-
-    @post(
-        "/tags/{tag_id:str}/restore",
-        description="Restore a tag.",
-        name="admin-articles-tags-restore-api-handler",
-        status_code=status_codes.HTTP_204_NO_CONTENT,
-    )
-    async def restore_tag(
-        self,
-        tag_id: TagIdPath,
-        request: Request[JwtUser, Token | None, State],
-        use_case: FromDishka[ArticlesUseCase],
-    ) -> None:
-        await use_case.restore_tag(tag_id=tag_id)
+        await use_case.delete_tag(tag_id=tag_id)
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,

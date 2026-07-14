@@ -51,6 +51,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
     expect(fixture.nativeElement.textContent).toContain('Папки');
+    expect(fixture.nativeElement.textContent).toContain('Теги');
     expect(fixture.nativeElement.textContent).toContain('Статистика');
     expect(fixture.nativeElement.textContent).toContain('Вопросы');
     expect(fixture.nativeElement.textContent).toContain('Структура');
@@ -68,7 +69,7 @@ describe('AdminPanelPageComponent', () => {
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
       'Рабочая область2',
-      'Статьи3',
+      'Статьи4',
       'Матрица3',
     ]);
   });

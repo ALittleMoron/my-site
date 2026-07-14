@@ -650,18 +650,12 @@ class CoreFactoryHelper:
         name_ru: str | None = None,
         name_en: str | None = None,
         slug: str = "python",
-        deleted_at: str | None = None,
     ) -> Tag:
         return Tag(
             id=cls.hex_id(tag_id),
             name_ru=name_ru or name,
             name_en=name_en or name,
             slug=slug,
-            deleted_at=(
-                datetime.fromisoformat(deleted_at).replace(tzinfo=UTC)
-                if deleted_at is not None
-                else None
-            ),
         )
 
     @classmethod
