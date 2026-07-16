@@ -12,7 +12,8 @@ from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
-from core.auth.use_cases import AuthUseCase
+from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
+from core.cache_tools.use_cases import CacheToolsUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.contacts.use_cases import ContactsUseCase
@@ -87,6 +88,14 @@ class IocContainerHelper:
 
     async def get_auth_use_case(self) -> Mock:
         use_case = await self.container.get(AuthUseCase)
+        return cast("Mock", use_case)
+
+    async def get_auth_session_cleanup_use_case(self) -> Mock:
+        use_case = await self.container.get(AuthSessionCleanupUseCase)
+        return cast("Mock", use_case)
+
+    async def get_cache_tools_use_case(self) -> Mock:
+        use_case = await self.container.get(CacheToolsUseCase)
         return cast("Mock", use_case)
 
     # USER

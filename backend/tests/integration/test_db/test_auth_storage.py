@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.auth.exceptions import AuthSessionNotFoundError, UserNotFoundError
-from core.auth.schemas import AuthSession, AuthSessionClientMetadata, AuthSessionCreate
+from core.auth.schemas import (
+    AuthSession,
+    AuthSessionCleanupCounts,
+    AuthSessionClientMetadata,
+    AuthSessionCreate,
+)
 from core.auth.types import SessionSecretHash
 from infra.postgresql.storages.auth import AuthDatabaseStorage, AuthSessionDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
@@ -299,6 +304,61 @@ class TestAuthSessionStorage(StorageTestCase):
             )
         assert await self.storage.get_session_by_id(session_id=created_active_session.id)
         assert await self.storage.get_session_by_id(session_id=created_revoked_active_session.id)
+
+    async def test_count_cleanup_sessions_uses_effective_expiry_and_excludes_revoked_soon(
+        self,
+    ) -> None:
+        sessions = [
+            auth_session_create(
+                username="admin",
+                secret_hash="a" * 64,
+                expires_at=self.now,
+            ),
+            replace(
+                auth_session_create(
+                    username="moderator",
+                    secret_hash="b" * 64,
+                    expires_at=self.now + timedelta(days=1),
+                    absolute_expires_at=self.now,
+                ),
+                is_revoked=True,
+            ),
+            auth_session_create(
+                username="admin",
+                secret_hash="c" * 64,
+                expires_at=self.now + timedelta(days=7),
+                absolute_expires_at=self.now + timedelta(days=30),
+            ),
+            auth_session_create(
+                username="moderator",
+                secret_hash="d" * 64,
+                expires_at=self.now + timedelta(days=30),
+                absolute_expires_at=self.now + timedelta(days=7),
+            ),
+            auth_session_create(
+                username="admin",
+                secret_hash="e" * 64,
+                expires_at=self.now + timedelta(days=7, seconds=1),
+                absolute_expires_at=self.now + timedelta(days=30),
+            ),
+            replace(
+                auth_session_create(
+                    username="moderator",
+                    secret_hash="f" * 64,
+                    expires_at=self.now + timedelta(days=1),
+                ),
+                is_revoked=True,
+            ),
+        ]
+        for session in sessions:
+            await self.storage.create_session(session=session)
+
+        counts = await self.storage.count_cleanup_sessions(
+            expired_at=self.now,
+            expiring_soon_at=self.now + timedelta(days=7),
+        )
+
+        assert counts == AuthSessionCleanupCounts(expired_count=2, expiring_soon_count=2)
 
     async def test_revoke_user_sessions_case_insensitively(self) -> None:
         admin_session = auth_session_create(

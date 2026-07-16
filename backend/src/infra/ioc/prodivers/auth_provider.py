@@ -10,7 +10,11 @@ from ua_parser import parse
 from core.account.storages import UserAccountStorage
 from core.auth.generators import AuthSessionSecretGenerator
 from core.auth.password_hashers import PasswordHasher
-from core.auth.schemas import AuthSessionClientMetadata, AuthUseCaseConfig
+from core.auth.schemas import (
+    AuthSessionCleanupPolicy,
+    AuthSessionClientMetadata,
+    AuthUseCaseConfig,
+)
 from core.auth.storages import AuthSessionStorage, AuthStorage, TokenRevocationStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, Token
@@ -126,4 +130,12 @@ class AuthProvider(Provider):
         self,
         auth_session_storage: AuthSessionStorage,
     ) -> AuthSessionCleanupUseCase:
-        return AuthSessionCleanupUseCase(auth_session_storage=auth_session_storage)
+        return AuthSessionCleanupUseCase(
+            auth_session_storage=auth_session_storage,
+            policy=AuthSessionCleanupPolicy(
+                expiring_soon_days=constants.auth.session_expiring_soon_days,
+                scheduled_prune_interval_seconds=(
+                    settings.taskiq.auth_session_prune_interval_seconds
+                ),
+            ),
+        )

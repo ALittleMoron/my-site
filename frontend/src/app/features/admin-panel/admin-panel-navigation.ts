@@ -22,6 +22,14 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         ownerOnly: false,
       },
       {
+        key: 'tools',
+        labelKey: 'adminPanel.section.tools',
+        route: '/admin-panel/workspace/tools',
+        badgeTextKey: null,
+        adminOnly: true,
+        ownerOnly: false,
+      },
+      {
         key: 'agent-clients',
         labelKey: 'adminPanel.section.agentClients',
         route: '/admin-panel/workspace/agent-clients',

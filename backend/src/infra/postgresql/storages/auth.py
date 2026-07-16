@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import cast
 
-from sqlalchemy import delete, func, insert, or_, select, update
+from sqlalchemy import and_, delete, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.exceptions import AuthSessionNotFoundError, UserNotFoundError
-from core.auth.schemas import AuthSession, AuthSessionCreate
+from core.auth.schemas import AuthSession, AuthSessionCleanupCounts, AuthSessionCreate
 from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.types import SessionSecretHash
 from infra.postgresql.models import AuthSessionModel, UserModel
@@ -121,6 +121,37 @@ class AuthSessionDatabaseStorage(AuthSessionStorage):
         if rowcount is None:
             return 0
         return rowcount
+
+    async def count_cleanup_sessions(
+        self,
+        *,
+        expired_at: datetime,
+        expiring_soon_at: datetime,
+    ) -> AuthSessionCleanupCounts:
+        expired_condition = or_(
+            AuthSessionModel.expires_at <= expired_at,
+            AuthSessionModel.absolute_expires_at <= expired_at,
+        )
+        expiring_soon_condition = and_(
+            AuthSessionModel.is_revoked.is_(False),
+            AuthSessionModel.expires_at > expired_at,
+            AuthSessionModel.absolute_expires_at > expired_at,
+            or_(
+                AuthSessionModel.expires_at <= expiring_soon_at,
+                AuthSessionModel.absolute_expires_at <= expiring_soon_at,
+            ),
+        )
+        statement = select(
+            func.count(AuthSessionModel.id).filter(expired_condition).label("expired_count"),
+            func.count(AuthSessionModel.id)
+            .filter(expiring_soon_condition)
+            .label("expiring_soon_count"),
+        )
+        row = (await self.session.execute(statement)).one()
+        return AuthSessionCleanupCounts(
+            expired_count=row.expired_count,
+            expiring_soon_count=row.expiring_soon_count,
+        )
 
     async def revoke_session_by_secret_hash(self, *, secret_hash: SessionSecretHash) -> None:
         statement = (

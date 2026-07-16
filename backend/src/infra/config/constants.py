@@ -29,6 +29,7 @@ class ValkeyDatabaseConstants:
 
 
 class ValkeyNamespaceConstants:
+    admin_cache_warm_operations: str = "ADMIN_CACHE_WARM_OPERATIONS"
     auth_revocations: str = "AUTH_REVOCATIONS"
     framework: str = "LITESTAR"
     matrix_question_suggestions: str = "MATRIX_QUESTION_SUGGESTIONS"
@@ -37,12 +38,15 @@ class ValkeyNamespaceConstants:
 class ValkeyConstants:
     databases: ValkeyDatabaseConstants = ValkeyDatabaseConstants()
     namespaces: ValkeyNamespaceConstants = ValkeyNamespaceConstants()
+    missing_ttl_seconds: int = -2
+    non_expiring_ttl_seconds: int = -1
 
 
 class ResponseCacheConstants:
     store_name: Literal["litestar_cache"] = "litestar_cache"
     domain_key_separator: Literal[":"] = ":"
     default_ttl_seconds: int = 86_400
+    status_scan_batch_size: int = 200
     json_content_type_header_name: bytes = b"content-type"
     json_content_type_header_value: bytes = b"application/json"
 
@@ -53,6 +57,9 @@ class TaskiqConstants:
     result_prefix: Literal["my_site_taskiq_results"] = "my_site_taskiq_results"
     cache_warm_all_task_name: Literal["cache_warm_all"] = "cache_warm_all"
     cache_warm_domain_task_name: Literal["cache_warm_domain"] = "cache_warm_domain"
+    manual_cache_warm_task_name: Literal["manual_cache_warm"] = "manual_cache_warm"
+    cache_warm_operation_key_prefix: Literal["operation"] = "operation"
+    cache_warm_latest_operation_key: Literal["latest"] = "latest"
     auth_session_prune_task_name: Literal["auth_session_prune"] = "auth_session_prune"
     agent_audit_prune_task_name: Literal["agent_audit_prune"] = "agent_audit_prune"
 
@@ -181,6 +188,7 @@ class AuthConstants:
     fetch_metadata_cross_site_value: Literal["cross-site"] = "cross-site"
     no_store_header_value: Literal["no-store"] = "no-store"
     session_secret_byte_count: int = 32
+    session_expiring_soon_days: int = 7
 
 
 class AgentAccessConstants:

@@ -17,7 +17,7 @@ from core.auth.schemas import (
 from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, SessionSecret, Token
-from core.auth.use_cases import AuthUseCase
+from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
 from infra.config.settings import Settings
 
 test_public_key_pem = """\
@@ -115,3 +115,7 @@ class MockAuthProvider(Provider):
         )
         mock.authenticate.return_value = self.user
         return mock
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_session_cleanup_use_case(self) -> AuthSessionCleanupUseCase:
+        return Mock(spec=AuthSessionCleanupUseCase)

@@ -145,7 +145,8 @@ Important boundaries:
   labels derived from the request user agent. They do not store raw IP addresses, raw user-agent
   strings, or fingerprinting fields.
 - Idle-expired and absolute-lifetime-expired server-side auth sessions are physically pruned by a
-  scheduled TaskIQ cleanup task.
+  scheduled TaskIQ cleanup task. Owners and administrators may invoke the same bounded cleanup from
+  `/api/admin/tools/*`; the backend guard, rather than frontend visibility, enforces access.
 - Runtime secrets are mounted as Compose secret files instead of service environment values where
   the application stack needs secrets.
 - Deploy requires the manual GitHub production workflow and the protected `production` environment.
@@ -166,26 +167,31 @@ Important boundaries:
 4. Auth session cleanup: the TaskIQ scheduler enqueues the internal cleanup task, which deletes
    sessions whose effective `expires_at` or original `absolute_expires_at` is at or before the
    scheduler-provided current time.
-5. Admin session management: authenticated team managers use `/api/admin/accounts/*/sessions`
+5. Admin operational tools: an authenticated owner or administrator can inspect only the defined
+   response-cache namespaces, synchronously clear those domains, enqueue the shared full-warm
+   service through a manual lifecycle wrapper, poll its bounded-TTL operation record, or invoke the
+   same expired-session cleanup as the scheduler. Frontend confirmations reduce mistakes but are
+   not an authorization control.
+6. Admin session management: authenticated team managers use `/api/admin/accounts/*/sessions`
    endpoints to list active sessions for accounts they may manage, revoke one session, revoke all
    sessions, or revoke only their own other sessions; responses expose current-session markers and
    coarse device labels, not raw request metadata.
-6. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
+7. Admin content write: authenticated admin-panel browser sends a PASETO bearer token, backend
    middleware authenticates the access token and active session, route guards enforce content/team
    permissions, and use cases update PostgreSQL or file storage.
-7. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
+8. Markdown rendering: authorized content users save authored Markdown, the frontend renders it only
    through the centralized sanitized renderer before binding HTML.
-8. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
+9. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
    adapter; published Markdown can reference computed public object URLs from MinIO.
-9. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
+10. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
    aggregate counts and article-scoped derived reaction identifiers without raw IPs, raw user agents,
    raw referrers, analytics cookies, or third-party analytics IDs.
-10. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
+11. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
    listeners; backups must remain encrypted and non-public.
-11. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
+12. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
    the host materializes Compose secret files, builds locally tagged images, runs initialization, and
    switches the healthy blue/green slot.
-12. Agent draft authoring: a separately certified client connects over WireGuard and mTLS, claims a
+13. Agent draft authoring: a separately certified client connects over WireGuard and mTLS, claims a
    queue item for at most two hours, treats queue/web text as untrusted data, reads matrix context,
    references an existing resource ID or a new HTTPS URL without server-side fetching, and
    atomically creates a server-forced draft. Each action receives a privacy-safe audit record.
@@ -241,6 +247,7 @@ Important boundaries:
 | --- | --- | --- |
 | Bots overload login, auth refresh, contact, suggestion, article list, admin search, or generic API routes. | nginx edge rate limits cover login, auth refresh, contact, matrix suggestions, public article list, admin search endpoints, and generic API traffic. Heavy read paths have narrower limits. | IP-based limits are coarse and may be bypassed by distributed traffic. Future identity-aware quotas would need an explicit design. |
 | A valid agent exhausts claims or shared backend capacity. | Per-certificate nginx limits, a two-hour lease, one active claim per queue item and client, bounded resource count, and explicit release limit impact. | A compromised client can still delay work until claims expire or consume capacity shared with public/admin traffic; revoke it and release affected claims from the human admin flow. |
+| A compromised owner or administrator repeatedly clears or warms the cache. | Backend team-management guards protect every operation; clear is restricted to response-cache domains; warm reuses the bounded TaskIQ path; destructive UI actions require confirmation. | Confirmation is only a UX guard, and there is no per-operator business quota. Repeated authorized operations can still increase backend and Valkey load; revoke the session and investigate operator activity. |
 | Backend, frontend SSR, DB, Valkey, or MinIO becomes unavailable. | Docker health checks, restart policies, blue/green backend/frontend slots, nginx health endpoint, and separate readiness checks reduce single-deploy downtime. | Full production observability and alerts are future work; outages may not be detected quickly without external monitoring. |
 | Expensive queries or content growth degrade performance. | Existing performance smoke, query-plan harness, Lighthouse checks, and cache-warming support cover major regressions. | Query-count/N+1 detection, dashboards, and slow-query production thresholds are still tracked as future monitoring work. |
 
@@ -270,6 +277,10 @@ Important boundaries:
 - Admin session management stays under `/api/admin/*` and is guarded by backend team-management
   authorization. Current-session detection comes from the authenticated bearer token's session id,
   while last-used timestamps are updated only on login and successful refresh.
+- Admin operational controls stay under `/api/admin/tools/*`, use the backend team-management guard,
+  and may touch only the declared response-cache domains or the shared expired-session cleanup use
+  case. Cache metrics are non-transactional snapshots and must not be presented as a freshness or
+  completeness guarantee.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.

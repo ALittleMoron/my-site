@@ -1,27 +1,17 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from core.cache_tools.clients import CacheWarmExecutor
+from core.cache_tools.schemas import CacheWarmSummary
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from entrypoints.taskiq.cache_warm.targets import ResponseCacheWarmTargetCollector
 from entrypoints.taskiq.cache_warm.writer import ResponseCacheWarmWriter
 
-
-@dataclass(frozen=True, slots=True)
-class CacheWarmSummary:
-    attempted: int
-    written: int
-    skipped: int
-
-    def as_dict(self) -> dict[str, int]:
-        return {
-            "attempted": self.attempted,
-            "written": self.written,
-            "skipped": self.skipped,
-        }
+__all__ = ("CacheWarmSummary", "ResponseCacheWarmService")
 
 
 @dataclass(frozen=True, slots=True)
-class ResponseCacheWarmService:
+class ResponseCacheWarmService(CacheWarmExecutor):
     target_collector: ResponseCacheWarmTargetCollector
     writer: ResponseCacheWarmWriter
     use_cache: bool

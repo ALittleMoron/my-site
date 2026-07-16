@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from core.auth.schemas import AuthSession, AuthSessionCreate
+from core.auth.schemas import AuthSession, AuthSessionCleanupCounts, AuthSessionCreate
 from core.auth.types import SessionSecretHash, Token
 
 
@@ -59,6 +59,15 @@ class AuthSessionStorage(ABC):
         *,
         expires_at: datetime,
     ) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_cleanup_sessions(
+        self,
+        *,
+        expired_at: datetime,
+        expiring_soon_at: datetime,
+    ) -> AuthSessionCleanupCounts:
         raise NotImplementedError
 
     @abstractmethod

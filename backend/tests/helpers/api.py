@@ -43,6 +43,24 @@ class APIHelper:
     def get_admin_agent_clients(self) -> Response:
         return self.client.get("/api/admin/agent-clients")
 
+    def get_admin_tools_auth_sessions(self) -> Response:
+        return self.client.get("/api/admin/tools/auth-sessions")
+
+    def post_admin_tools_auth_sessions_prune(self) -> Response:
+        return self.client.post("/api/admin/tools/auth-sessions/prune")
+
+    def get_admin_tools_cache(self) -> Response:
+        return self.client.get("/api/admin/tools/cache")
+
+    def post_admin_tools_cache_clear(self) -> Response:
+        return self.client.post("/api/admin/tools/cache/clear")
+
+    def post_admin_tools_cache_warm(self) -> Response:
+        return self.client.post("/api/admin/tools/cache/warm")
+
+    def get_admin_tools_cache_warm_operation(self, *, operation_id: str) -> Response:
+        return self.client.get(f"/api/admin/tools/cache/warm/{operation_id}")
+
     def post_admin_agent_client(self, *, data: dict[str, Any]) -> Response:
         return self.client.post("/api/admin/agent-clients", json=data)
 

@@ -407,6 +407,9 @@
 
 Workspace is protected owner/admin utilities that live only in the admin panel.
 
+- [x] Operational tools
+  - [x] Inspect, clear, and asynchronously warm response-cache domains with observable status.
+  - [x] Inspect expired and soon-expiring auth sessions and manually prune expired sessions.
 - [x] Resume
   - [x] Store private structured ATS-oriented resume documents outside the knowledge database.
   - [x] Store each resume as a single-language document with required saved RU/EN language.

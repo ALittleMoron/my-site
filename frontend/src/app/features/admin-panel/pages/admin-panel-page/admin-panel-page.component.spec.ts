@@ -53,6 +53,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
+    expect(fixture.nativeElement.textContent).toContain('Инструменты');
     expect(fixture.nativeElement.textContent).not.toContain('AI-агенты');
     expect(fixture.nativeElement.textContent).toContain('Папки');
     expect(fixture.nativeElement.textContent).toContain('Теги');
@@ -72,7 +73,7 @@ describe('AdminPanelPageComponent', () => {
     ) as HTMLButtonElement[];
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
-      'Рабочая область2',
+      'Рабочая область3',
       'Статьи4',
       'Матрица3',
     ]);
@@ -86,6 +87,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).not.toContain('Команда');
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
+    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('Вопросы');
     expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
   });
@@ -100,6 +102,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
+    expect(fixture.nativeElement.textContent).toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('AI-агенты');
   });
 

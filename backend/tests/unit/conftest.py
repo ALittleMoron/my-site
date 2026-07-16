@@ -17,6 +17,7 @@ from tests.unit.mocks.providers.account import MockUserAccountProvider
 from tests.unit.mocks.providers.agent_access import MockAgentAccessProvider
 from tests.unit.mocks.providers.articles import MockArticlesProvider
 from tests.unit.mocks.providers.auth import MockAuthProvider
+from tests.unit.mocks.providers.cache_tools import MockCacheToolsProvider
 from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
@@ -66,6 +67,7 @@ async def container(  # noqa: PLR0913
         MockUserAccountProvider(),
         MockAgentAccessProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),
+        MockCacheToolsProvider(),
         MockWikiLinksProvider(),
         MockHealthcheckProvider(),
     )

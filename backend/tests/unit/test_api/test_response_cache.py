@@ -8,6 +8,7 @@ import pytest
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 
+from core.cache_tools.enums import CacheDomainEnum
 from entrypoints.litestar import response_cache as response_cache_module
 from entrypoints.litestar.api.articles.endpoints import (
     AdminArticlesApiController,
@@ -133,6 +134,23 @@ class TestResponseCacheDomainStore:
         assert articles_store.values == {}
         assert matrix_store.delete_all_count == 0
         assert matrix_store.values == {"GET/api/competency-matrix/sheets": b"matrix"}
+
+    async def test_clear_domains_delegates_to_existing_domain_stores(self) -> None:
+        i18n_store = FakeStore(values={"GET/api/i18n/languages": b"i18n"})
+        articles_store = FakeStore(values={"GET/api/articles": b"articles"})
+        store = ResponseCacheDomainStore(
+            stores={
+                ResponseCacheDomain.I18N: cast("Store", i18n_store),
+                ResponseCacheDomain.ARTICLES: cast("Store", articles_store),
+            },
+        )
+
+        await store.clear_domains(
+            domains=(CacheDomainEnum.I18N, CacheDomainEnum.ARTICLES),
+        )
+
+        assert i18n_store.values == {}
+        assert articles_store.values == {}
 
 
 class TestInvalidateAllResponseCacheDomains:

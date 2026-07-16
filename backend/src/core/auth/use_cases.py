@@ -23,7 +23,9 @@ from core.auth.schemas import (
     AuthRefreshAccessTokenParams,
     AuthRefreshAccessTokenResult,
     AuthSessionCleanupParams,
+    AuthSessionCleanupPolicy,
     AuthSessionCleanupResult,
+    AuthSessionCleanupStatus,
     AuthSessionCreate,
     AuthSessionCredentials,
     AuthUseCaseConfig,
@@ -225,6 +227,24 @@ class AuthUseCase:
 @dataclass(kw_only=True, slots=True, frozen=True)
 class AuthSessionCleanupUseCase:
     auth_session_storage: AuthSessionStorage
+    policy: AuthSessionCleanupPolicy
+
+    async def get_cleanup_status(
+        self,
+        *,
+        params: AuthSessionCleanupParams,
+    ) -> AuthSessionCleanupStatus:
+        counts = await self.auth_session_storage.count_cleanup_sessions(
+            expired_at=params.current_datetime,
+            expiring_soon_at=params.current_datetime
+            + timedelta(days=self.policy.expiring_soon_days),
+        )
+        return AuthSessionCleanupStatus(
+            expired_count=counts.expired_count,
+            expiring_soon_count=counts.expiring_soon_count,
+            expiring_soon_days=self.policy.expiring_soon_days,
+            scheduled_prune_interval_seconds=self.policy.scheduled_prune_interval_seconds,
+        )
 
     async def prune_expired_sessions(
         self,
@@ -234,4 +254,15 @@ class AuthSessionCleanupUseCase:
         deleted_count = await self.auth_session_storage.delete_expired_sessions(
             expires_at=params.current_datetime,
         )
-        return AuthSessionCleanupResult(deleted_count=deleted_count)
+        counts = await self.auth_session_storage.count_cleanup_sessions(
+            expired_at=params.current_datetime,
+            expiring_soon_at=params.current_datetime
+            + timedelta(days=self.policy.expiring_soon_days),
+        )
+        return AuthSessionCleanupResult(
+            deleted_count=deleted_count,
+            expired_count=counts.expired_count,
+            expiring_soon_count=counts.expiring_soon_count,
+            expiring_soon_days=self.policy.expiring_soon_days,
+            scheduled_prune_interval_seconds=self.policy.scheduled_prune_interval_seconds,
+        )

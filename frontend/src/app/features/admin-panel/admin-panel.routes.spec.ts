@@ -46,4 +46,13 @@ describe('adminPanelRoutes', () => {
     expect(route?.canActivate).toEqual([ownerGuard]);
     expect(route?.canDeactivate).toEqual([adminUnsavedChangesGuard]);
   });
+
+  it('keeps operational tools behind the owner and admin team guard', () => {
+    const route = (adminPanelRoutes[0].children ?? []).find(
+      (child) => child.path === 'workspace/tools',
+    );
+
+    expect(route).toBeDefined();
+    expect(route?.canActivate).toEqual([teamGuard]);
+  });
 });

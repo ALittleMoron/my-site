@@ -1,5 +1,6 @@
 from dishka.integrations.taskiq import FromDishka, inject
 
+from core.cache_tools.use_cases import ManualCacheWarmUseCase
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from entrypoints.taskiq.broker import broker
 from entrypoints.taskiq.cache_warm.service import ResponseCacheWarmService
@@ -28,3 +29,16 @@ async def cache_warm_domain(
     service: FromDishka[ResponseCacheWarmService],
 ) -> dict[str, int]:
     return (await service.warm_domain(domain=ResponseCacheDomain(domain_value))).as_dict()
+
+
+@broker.task(constants.taskiq.manual_cache_warm_task_name)
+@inject(patch_module=True)
+async def manual_cache_warm(
+    operation_id: str,
+    use_case: FromDishka[ManualCacheWarmUseCase],
+) -> dict[str, str]:
+    operation = await use_case.run(operation_id=operation_id)
+    return {
+        "operationId": operation.operation_id,
+        "status": operation.status.value,
+    }

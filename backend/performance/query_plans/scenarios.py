@@ -327,6 +327,13 @@ async def run_delete_expired_auth_sessions(session: AsyncSession) -> None:
     )
 
 
+async def run_count_cleanup_auth_sessions(session: AsyncSession) -> None:
+    await AuthSessionDatabaseStorage(session=session).count_cleanup_sessions(
+        expired_at=SEED_NOW,
+        expiring_soon_at=SEED_NOW + timedelta(days=7),
+    )
+
+
 async def run_revoke_auth_session_by_secret_hash(session: AsyncSession) -> None:
     await AuthSessionDatabaseStorage(session=session).revoke_session_by_secret_hash(
         secret_hash=seeded_auth_session_hash(2),
@@ -1576,6 +1583,16 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_delete_expired_auth_sessions,
+    ),
+    scenario(
+        name="auth_session_count_cleanup",
+        storage_class="AuthSessionDatabaseStorage",
+        method_name="count_cleanup_sessions",
+        group=QueryThresholdGroup.AGGREGATE,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=None,
+        run=run_count_cleanup_auth_sessions,
     ),
     scenario(
         name="auth_session_revoke_by_secret_hash",

@@ -98,6 +98,15 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'workspace/tools',
+        title: 'adminTools.title',
+        canActivate: [teamGuard],
+        loadComponent: () =>
+          import('./pages/admin-tools-page/admin-tools-page.component').then(
+            (m) => m.AdminToolsPageComponent,
+          ),
+      },
+      {
         path: 'workspace/agent-clients',
         title: 'adminAgentClients.title',
         canActivate: [ownerGuard],

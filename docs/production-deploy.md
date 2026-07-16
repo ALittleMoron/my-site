@@ -157,6 +157,28 @@ region string. The Compose MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` f
 `APP_URL_SCHEMA` and `APP_DOMAIN` because the bundled MinIO release does not accept bucket-level
 CORS setup through `PutBucketCors`.
 
+## Admin Operational Tools
+
+Owners and administrators can use `/admin-panel/workspace/tools`; the backing handlers stay under
+`/api/admin/tools/*` and enforce the same team-management authorization in the backend. The page
+reports response-cache configuration and per-domain key/TTL metrics for `i18n`, `articles`, and
+`competency_matrix`, plus expired and soon-expiring auth-session counts. Cache inspection uses
+namespace-scoped Valkey scans, so it does not enumerate TaskIQ, auth, or other application keys.
+
+Cache clear is synchronous, is limited to the three response-cache domains, and deliberately does
+not enqueue a warm. Manual warm is asynchronous: the API creates a bounded-TTL operation record in
+the TaskIQ results Valkey database, enqueues a manual wrapper around the shared full-warm service,
+and the page polls the operation through `queued`, `running`, `succeeded`, or `failed`. Operation
+records use
+`TASKIQ_RESULT_EXPIRE_SECONDS`; if a worker stops after accepting a task, a `queued` record can
+remain until that TTL. Cache key/TTL metrics are an operational snapshot rather than a transactional
+freshness guarantee.
+
+Expired-session pruning uses the same use case as the scheduled TaskIQ cleanup. “Expiring soon” is
+the server-owned seven-day window and counts only non-revoked sessions whose effective idle or
+absolute expiration falls within it. Keep the TaskIQ worker and scheduler healthy even when manual
+controls are available: the page is an operator tool, not a replacement for scheduled maintenance.
+
 ## Private Agent API
 
 Production exposes `https://agent.<APP_DOMAIN>:18083/internal/agent/v1` only on

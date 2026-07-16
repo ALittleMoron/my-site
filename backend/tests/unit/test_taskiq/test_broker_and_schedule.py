@@ -98,6 +98,10 @@ class TestTaskiqScheduleConfiguration:
             is cache_warm_tasks_module.cache_warm_domain
         )
         assert (
+            taskiq_worker_module.broker.find_task(constants.taskiq.manual_cache_warm_task_name)
+            is cache_warm_tasks_module.manual_cache_warm
+        )
+        assert (
             taskiq_worker_module.broker.find_task(constants.taskiq.auth_session_prune_task_name)
             is auth_tasks_module.prune_expired_auth_sessions
         )

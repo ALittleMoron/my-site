@@ -134,11 +134,37 @@ class AuthSessionCleanupParams:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class AuthSessionCleanupResult:
+class AuthSessionCleanupPolicy:
+    expiring_soon_days: int
+    scheduled_prune_interval_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCleanupCounts:
+    expired_count: int
+    expiring_soon_count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCleanupStatus:
+    expired_count: int
+    expiring_soon_count: int
+    expiring_soon_days: int
+    scheduled_prune_interval_seconds: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuthSessionCleanupResult(AuthSessionCleanupStatus):
     deleted_count: int
 
     def as_dict(self) -> dict[str, int]:
-        return {"deletedCount": self.deleted_count}
+        return {
+            "deletedCount": self.deleted_count,
+            "expiredCount": self.expired_count,
+            "expiringSoonCount": self.expiring_soon_count,
+            "expiringSoonDays": self.expiring_soon_days,
+            "scheduledPruneIntervalSeconds": self.scheduled_prune_interval_seconds,
+        }
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -178,6 +178,25 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['delivery', 'quality', 'admin', 'infra', 'frontend', 'localization'],
   },
   {
+    id: 'admin-operational-tools',
+    month: '2026-07',
+    order: 12,
+    title: {
+      ru: 'В workspace появились служебные инструменты',
+      en: 'Workspace gained operational tools',
+    },
+    summary: {
+      ru:
+        'Владельцы и администраторы теперь видят состояние кэша по доменам, могут ' +
+        'отдельно очистить его или запустить наблюдаемый прогрев, а также проверить ' +
+        'и удалить протухшие сессии.',
+      en:
+        'Owners and administrators can now inspect cache domains, clear them or start ' +
+        'an observable warm independently, and inspect and prune expired sessions.',
+    },
+    tagIds: ['admin', 'backend', 'frontend', 'infra', 'auth'],
+  },
+  {
     id: 'public-seo-layer',
     month: '2026-06',
     order: 10,

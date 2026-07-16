@@ -10,6 +10,8 @@ from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 from litestar.types.callable_types import CacheKeyBuilder
 
+from core.cache_tools.enums import CacheDomainEnum
+from core.cache_tools.storages import ResponseCacheInvalidationStorage
 from infra.config.constants import constants
 from infra.config.settings import settings
 
@@ -30,7 +32,7 @@ class ResponseCacheDomain(StrEnum):
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
-class ResponseCacheDomainStore(Store):
+class ResponseCacheDomainStore(Store, ResponseCacheInvalidationStorage):
     stores: Mapping[ResponseCacheDomain, Store]
 
     async def set(
@@ -56,6 +58,10 @@ class ResponseCacheDomainStore(Store):
 
     async def delete_domain(self, domain: ResponseCacheDomain) -> None:
         await self.stores[domain].delete_all()
+
+    async def clear_domains(self, *, domains: tuple[CacheDomainEnum, ...]) -> None:
+        for domain in domains:
+            await self.delete_domain(domain=ResponseCacheDomain(domain.value))
 
     async def exists(self, key: str) -> bool:
         store, store_key = self._get_domain_store(key=key)
