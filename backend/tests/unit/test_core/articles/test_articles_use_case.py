@@ -73,6 +73,25 @@ class TestArticlesUseCase(TestCase):
 
         self.storage.list_articles.assert_not_called()
 
+    @pytest.mark.parametrize("only_with_published_articles", [False, True])
+    async def test_list_tags_forwards_published_article_filter(
+        self,
+        only_with_published_articles: bool,
+    ) -> None:
+        tags = self.factory.core.tags(values=[self.factory.core.tag(tag_id=1)])
+        self.storage.list_tags.return_value = tags
+
+        result = await self.use_case.list_tags(
+            language=LanguageEnum.EN,
+            only_with_published_articles=only_with_published_articles,
+        )
+
+        assert result == tags
+        self.storage.list_tags.assert_called_once_with(
+            language=LanguageEnum.EN,
+            only_with_published_articles=only_with_published_articles,
+        )
+
     async def test_list_published_articles_for_seo_uses_shared_storage_list_and_available_articles(
         self,
     ) -> None:

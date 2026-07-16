@@ -94,7 +94,12 @@ class ArticlesStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_tags(self, *, language: LanguageEnum) -> Tags:
+    async def list_tags(
+        self,
+        *,
+        language: LanguageEnum,
+        only_with_published_articles: bool,
+    ) -> Tags:
         raise NotImplementedError
 
     @abstractmethod

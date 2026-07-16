@@ -438,13 +438,30 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 
-    async def list_tags(self, *, language: LanguageEnum) -> Tags:
+    async def list_tags(
+        self,
+        *,
+        language: LanguageEnum,
+        only_with_published_articles: bool,
+    ) -> Tags:
         name_column = self._tag_name_column(language=language)
-        query = (
-            select(TagModel)
-            .options(load_only(TagModel.id, TagModel.name_ru, TagModel.name_en, TagModel.slug))
-            .order_by(func.lower(name_column), TagModel.id)
+        query = select(TagModel).options(
+            load_only(TagModel.id, TagModel.name_ru, TagModel.name_en, TagModel.slug),
         )
+        if only_with_published_articles:
+            query = query.where(
+                select(ArticleToTagSecondaryModel.id)
+                .join(
+                    ArticleModel,
+                    ArticleModel.id == ArticleToTagSecondaryModel.article_id,
+                )
+                .where(
+                    ArticleToTagSecondaryModel.tag_id == TagModel.id,
+                    ArticleModel.publish_status == PublishStatusEnum.PUBLISHED,
+                )
+                .exists(),
+            )
+        query = query.order_by(func.lower(name_column), TagModel.id)
         models = await self.session.scalars(query)
         return Tags(values=[model.to_domain_schema() for model in models])
 

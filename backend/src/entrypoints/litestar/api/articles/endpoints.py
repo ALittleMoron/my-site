@@ -208,7 +208,10 @@ class PublicArticlesApiController(Controller):
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
-        tags = await use_case.list_tags(language=language)
+        tags = await use_case.list_tags(
+            language=language,
+            only_with_published_articles=True,
+        )
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
 
 
@@ -556,7 +559,10 @@ class AdminArticlesApiController(Controller):
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
     ) -> TagsResponseSchema:
-        tags = await use_case.list_tags(language=language)
+        tags = await use_case.list_tags(
+            language=language,
+            only_with_published_articles=False,
+        )
         return TagsResponseSchema.from_domain_schema(schema=tags, language=language)
 
     @get(

@@ -534,6 +534,14 @@ async def run_get_tags_by_ids(session: AsyncSession) -> None:
 async def run_list_tags(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).list_tags(
         language=LanguageEnum.EN,
+        only_with_published_articles=False,
+    )
+
+
+async def run_list_public_tags(session: AsyncSession) -> None:
+    await ArticlesDatabaseStorage(session=session).list_tags(
+        language=LanguageEnum.EN,
+        only_with_published_articles=True,
     )
 
 
@@ -1866,6 +1874,18 @@ STORAGE_SCENARIOS = (
         forbidden_seq_scan_relations=(),
         allow_seq_scan_reason="full tag listing is intentionally sorted for authoring UI",
         run=run_list_tags,
+    ),
+    scenario(
+        name="tags_list_public",
+        storage_class="ArticlesDatabaseStorage",
+        method_name="list_tags",
+        group=QueryThresholdGroup.LIST_READ,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=(
+            "public tag listing scans the tag dictionary and checks published associations"
+        ),
+        run=run_list_public_tags,
     ),
     *(
         scenario(

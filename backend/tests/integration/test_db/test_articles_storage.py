@@ -739,6 +739,55 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert first.published_at is not None
         assert second.published_at == first.published_at
 
+    async def test_list_tags_can_require_a_published_article(self) -> None:
+        published_tag = self.factory.core.tag(
+            tag_id=self.factory.core.hex_id(1),
+            name="Published",
+            slug="published",
+        )
+        draft_tag = self.factory.core.tag(
+            tag_id=self.factory.core.hex_id(2),
+            name="Draft",
+            slug="draft",
+        )
+        unused_tag = self.factory.core.tag(
+            tag_id=self.factory.core.hex_id(3),
+            name="Unused",
+            slug="unused",
+        )
+        await self.storage_helper.create_tags(tags=[published_tag, draft_tag, unused_tag])
+        await self.storage_helper.create_articles(
+            articles=[
+                self.factory.core.article(
+                    slug="first-published",
+                    tags=[published_tag],
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+                self.factory.core.article(
+                    slug="second-published",
+                    tags=[published_tag],
+                    publish_status=PublishStatusEnum.PUBLISHED,
+                ),
+                self.factory.core.article(
+                    slug="draft",
+                    tags=[draft_tag],
+                    publish_status=PublishStatusEnum.DRAFT,
+                ),
+            ],
+        )
+
+        public_tags = await self.storage.list_tags(
+            language=LanguageEnum.EN,
+            only_with_published_articles=True,
+        )
+        all_tags = await self.storage.list_tags(
+            language=LanguageEnum.EN,
+            only_with_published_articles=False,
+        )
+
+        assert self.collections.slugs(public_tags) == ["published"]
+        assert self.collections.slugs(all_tags) == ["draft", "published", "unused"]
+
     async def test_delete_tag_physically_removes_tag_and_article_association(self) -> None:
         tag = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         await self.storage.create_tag(tag=tag)
@@ -748,7 +797,10 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         await self.storage.delete_tag(tag_id=self.factory.core.hex_id(1))
 
-        tags = await self.storage.list_tags(language=LanguageEnum.RU)
+        tags = await self.storage.list_tags(
+            language=LanguageEnum.RU,
+            only_with_published_articles=False,
+        )
         article_tag_link = await self.db_session.scalar(
             select(ArticleToTagSecondaryModel).where(
                 ArticleToTagSecondaryModel.tag_id == self.factory.core.hex_id(1),

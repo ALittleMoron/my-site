@@ -110,7 +110,10 @@ class ArticlesCacheWarmTargetCollector:
         return targets
 
     async def _collect_language_targets(self, *, language: LanguageEnum) -> list[CacheWarmTarget]:
-        tags = await self.articles_use_case.list_tags(language=language)
+        tags = await self.articles_use_case.list_tags(
+            language=language,
+            only_with_published_articles=True,
+        )
         tree = await self.articles_use_case.list_tree(only_published=True, language=language)
         articles = await self.articles_use_case.list_articles(
             filters=self._build_list_filters(language=language),

@@ -58,6 +58,7 @@ class TestTagsAPI(ApiTestCase):
         }
         self.use_case.list_tags.assert_called_once_with(
             language=LanguageEnum.RU,
+            only_with_published_articles=False,
         )
 
     def test_list_tags_requires_explicit_language(self) -> None:
@@ -74,6 +75,7 @@ class TestTagsAPI(ApiTestCase):
         assert response.status_code == codes.OK, response.content
         self.use_case.list_tags.assert_called_once_with(
             language=LanguageEnum.RU,
+            only_with_published_articles=True,
         )
 
     def test_anonymous_cannot_list_admin_tags(self) -> None:

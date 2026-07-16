@@ -67,7 +67,7 @@ class FakeArticlesUseCase:
         self.factory = factory
         self.list_articles_filters: list[ArticleFilters] = []
         self.list_tree_languages: list[LanguageEnum] = []
-        self.list_tags_languages: list[LanguageEnum] = []
+        self.list_tags_calls: list[tuple[LanguageEnum, bool]] = []
         self.detail_slugs: list[str] = []
         self.articles = [
             factory.core.article(slug="first-article"),
@@ -83,8 +83,13 @@ class FakeArticlesUseCase:
         self.list_tree_languages.append(language)
         return ArticleTree(folders=[])
 
-    async def list_tags(self, *, language: LanguageEnum):
-        self.list_tags_languages.append(language)
+    async def list_tags(
+        self,
+        *,
+        language: LanguageEnum,
+        only_with_published_articles: bool,
+    ):
+        self.list_tags_calls.append((language, only_with_published_articles))
         return self.factory.core.tags(values=[self.factory.core.tag(tag_id=1)])
 
     async def get_article(self, *, slug: str, only_published: bool):
@@ -221,6 +226,10 @@ class TestCacheWarmTargetGeneration(TestCase):
                 only_published=True,
                 include_tags=True,
             ),
+        ]
+        assert articles_use_case.list_tags_calls == [
+            (LanguageEnum.RU, True),
+            (LanguageEnum.EN, True),
         ]
         assert matrix_use_case.public_detail_slugs == [
             "first-question",

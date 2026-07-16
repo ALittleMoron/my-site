@@ -187,8 +187,16 @@ class ArticlesUseCase:
     ) -> None:
         await self.storage.update_article_publish_status(slug=slug, publish_status=publish_status)
 
-    async def list_tags(self, *, language: LanguageEnum) -> Tags:
-        return await self.storage.list_tags(language=language)
+    async def list_tags(
+        self,
+        *,
+        language: LanguageEnum,
+        only_with_published_articles: bool,
+    ) -> Tags:
+        return await self.storage.list_tags(
+            language=language,
+            only_with_published_articles=only_with_published_articles,
+        )
 
     async def search_tags(
         self,
