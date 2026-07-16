@@ -21,7 +21,9 @@ Production deploy is a manual server-build deploy:
    **Review deployments** / **Approve and deploy** action before running deploy steps.
 12. The deploy job renders a runtime `.env` from `infra/deploy/runtime-env.manifest.json`.
 13. GitHub Actions syncs source/config to the server.
-14. The server runs `make run`, which builds images locally and switches the healthy blue/green
+14. When the `issue_certificates` input is selected, the server runs `make certbot-issue` before
+    deployment startup.
+15. The server runs `make run`, which builds images locally and switches the healthy blue/green
     slot.
 
 The post-smoke container security jobs use the same Make targets in CI and locally:
@@ -41,11 +43,12 @@ environment entry. `docker-compose.yml` intentionally has no `latest` fallback f
 frontend, nginx, or MinIO wrapper images, so a production start fails early if the deploy renderer
 does not provide the tag.
 
-Start deploy from **Actions** -> **Deploy to production** -> **Run workflow** on `main`. The
-repository environment must restrict production deployments to `main` and require reviewer
-approval. Without those GitHub Environment protection rules, the workflow remains manual, but
-production deploys would no longer have the environment approval and branch protections described
-here.
+Start deploy from **Actions** -> **Deploy to production** -> **Run workflow** on `main`. Select
+`issue_certificates` when the certificate must be issued again, including after adding a hostname
+to the certificate SAN list. The repository environment must restrict production deployments to
+`main` and require reviewer approval. Without those GitHub Environment protection rules, the
+workflow remains manual, but production deploys would no longer have the environment approval and
+branch protections described here.
 
 ## GitHub Environment
 
@@ -249,10 +252,13 @@ client configuration, emergency response, and the full acceptance checklist.
 
 ## TLS
 
-Certificate issuance is no longer part of the GitHub Actions deploy path. The deployed host already
-owns its certificate lifecycle, while the deploy startup script still syncs certbot-owned
-certificates into `infra/nginx/certs/` for the unprivileged nginx container.
-In production, keep renewal host-owned too: a systemd timer or equivalent scheduler should run
+The manual deploy workflow exposes the `issue_certificates` boolean input. When selected, the
+reusable deploy job runs `make certbot-issue` after syncing the new Compose/TLS configuration and
+before `make run`, so a newly added hostname can be included before nginx starts with that
+configuration. Leave the input disabled for ordinary deploys. The deploy startup script still syncs
+certbot-owned certificates into `infra/nginx/certs/` for the unprivileged nginx container.
+
+In production, keep routine renewal host-owned: a systemd timer or equivalent scheduler should run
 `make certbot-renew` from the deployed project directory and let the target resync certificates and
 reload nginx.
 

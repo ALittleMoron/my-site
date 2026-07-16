@@ -83,6 +83,22 @@ require_file_not_contains() {
     fi
 }
 
+require_file_pattern_before() {
+    local file_path="$1"
+    local first_pattern="$2"
+    local second_pattern="$3"
+    local description="$4"
+    local first_line
+    local second_line
+
+    first_line="$(grep -n -F -m 1 -- "$first_pattern" "$file_path" | cut -d: -f1 || true)"
+    second_line="$(grep -n -F -m 1 -- "$second_pattern" "$file_path" | cut -d: -f1 || true)"
+    if [ -z "$first_line" ] || [ -z "$second_line" ] || [ "$first_line" -ge "$second_line" ]; then
+        echo "Invalid ${description} in ${file_path}: ${first_pattern} must precede ${second_pattern}" >&2
+        exit 1
+    fi
+}
+
 require_compose_service_contains() {
     local compose_file="$1"
     local service_name="$2"
@@ -396,15 +412,11 @@ run_deploy_env_configuration_check() {
     require_file_not_contains "$manual_deploy_workflow" "SSH_PRIVATE_KEY=" "SSH private key runtime env entry"
     require_file_not_contains "$manual_deploy_workflow" "DOCKER_PASSWORD=" "Docker password runtime env entry"
     require_file_not_contains "$manual_deploy_workflow" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm env name"
-    require_file_not_contains "$manual_deploy_workflow" "issue_certificates" "deploy-time certificate issue input"
-    require_file_not_contains "$manual_deploy_workflow" "make certbot-issue" "deploy-time certificate issue step"
     require_file_not_contains "$deploy_workflow" "Create .env file from secrets" "manual secret echo env generation"
     require_file_not_contains "$deploy_workflow" "REMOTE_HOST=\${{ secrets.REMOTE_HOST }}" "remote host runtime env entry"
     require_file_not_contains "$deploy_workflow" "SSH_PRIVATE_KEY=" "SSH private key runtime env entry"
     require_file_not_contains "$deploy_workflow" "DOCKER_PASSWORD=" "Docker password runtime env entry"
     require_file_not_contains "$deploy_workflow" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm env name"
-    require_file_not_contains "$deploy_workflow" "issue_certificates" "deploy-time certificate issue input"
-    require_file_not_contains "$deploy_workflow" "make certbot-issue" "deploy-time certificate issue step"
 
     require_file_contains "$manifest_file" '"CACHE_WARM_ARTICLES_PAGE_SIZE"' "cache warm articles page size manifest entry"
     require_file_contains "$manifest_file" '"TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS"' "auth session prune interval manifest entry"
@@ -703,6 +715,7 @@ run_certbot_configuration_check() {
     local compose_file="${repo_dir}/docker-compose.yml"
     local ci_workflow="${repo_dir}/.github/workflows/ci.yaml"
     local deploy_workflow="${repo_dir}/.github/workflows/_deploy.yaml"
+    local manual_deploy_workflow="${repo_dir}/.github/workflows/deploy.yaml"
     local makefile="${repo_dir}/Makefile"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
     local run_script="${repo_dir}/infra/scripts/run.sh"
@@ -724,8 +737,22 @@ run_certbot_configuration_check() {
     require_file_not_contains "$compose_file" "-d mcp.\${APP_DOMAIN}" "legacy MCP hostname certificate SAN"
     require_file_not_contains "$ci_workflow" "issue_certificates" "deploy-time certificate issue input"
     require_file_not_contains "$ci_workflow" "make certbot-issue" "deploy-time certificate issue step"
-    require_file_not_contains "$deploy_workflow" "issue_certificates" "deploy-time certificate issue input"
-    require_file_not_contains "$deploy_workflow" "make certbot-issue" "deploy-time certificate issue step"
+    require_file_contains "$manual_deploy_workflow" "issue_certificates:" "manual deploy certificate issue input"
+    require_file_contains \
+        "$manual_deploy_workflow" \
+        'issue_certificates: ${{ inputs.issue_certificates }}' \
+        "manual deploy certificate issue input forwarding"
+    require_file_contains "$deploy_workflow" "issue_certificates:" "reusable deploy certificate issue input"
+    require_file_contains \
+        "$deploy_workflow" \
+        'if: ${{ inputs.issue_certificates }}' \
+        "conditional deploy certificate issue step"
+    require_file_contains "$deploy_workflow" "make certbot-issue" "deploy-time certificate issue command"
+    require_file_pattern_before \
+        "$deploy_workflow" \
+        "make certbot-issue" \
+        "make run" \
+        "certificate issue and stack restart order"
 }
 
 run_agent_ca_helper_check() {

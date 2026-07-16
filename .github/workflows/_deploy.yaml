@@ -2,6 +2,10 @@ name: Reusable deploy to production
 
 on:
   workflow_call:
+    inputs:
+      issue_certificates:
+        required: true
+        type: boolean
 
 jobs:
   deploy:
@@ -48,6 +52,17 @@ jobs:
           remote_host: ${{ vars.REMOTE_HOST }}
           remote_user: ${{ vars.REMOTE_USER }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Issue certificates
+        if: ${{ inputs.issue_certificates }}
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ vars.REMOTE_HOST }}
+          username: ${{ vars.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ vars.REMOTE_PATH }}
+            make certbot-issue
 
       - name: Restart stack
         uses: appleboy/ssh-action@v1.2.5
