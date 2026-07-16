@@ -1,11 +1,12 @@
 import json
+from unittest.mock import patch
 
 import ecs_logging
 import structlog
 
+from infra.config import loggers
 from infra.config.loggers import (
     build_project_logging_config,
-    configure_project_logging,
     log_sanitized_exception,
 )
 
@@ -24,21 +25,23 @@ def test_project_logging_config_selects_ecs_renderer() -> None:
 
 def test_sanitized_exception_log_excludes_exception_message() -> None:
     secret_marker = "AUTHORED_SECRET_MARKER_7d523e"  # noqa: S105
-    configure_project_logging(debug=False)
+    capturing_logger = structlog.testing.CapturingLogger()
 
-    with structlog.testing.capture_logs() as logs:
+    with patch.object(loggers, "logger", capturing_logger):
         log_sanitized_exception(
             event="agent_request_failed",
             error=RuntimeError(secret_marker),
             request_id="request-id",
         )
 
-    assert secret_marker not in json.dumps(logs)
-    assert logs == [
-        {
-            "event": "agent_request_failed",
-            "exception_type": "RuntimeError",
-            "log_level": "error",
-            "request_id": "request-id",
-        },
+    assert secret_marker not in json.dumps(capturing_logger.calls)
+    assert capturing_logger.calls == [
+        structlog.testing.CapturedCall(
+            method_name="error",
+            args=("agent_request_failed",),
+            kwargs={
+                "exception_type": "RuntimeError",
+                "request_id": "request-id",
+            },
+        ),
     ]
