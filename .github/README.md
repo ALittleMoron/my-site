@@ -109,7 +109,9 @@ make run
 Valkey, MinIO, Databasus, backend with the constrained Agent route contour, frontend, and nginx up
 through Docker health checks, runs one-shot backend initialization, and switches public traffic
 between blue/green backend/frontend slots with a forced nginx recreation so Compose-level port,
-secret, user, and image changes take effect.
+secret, user, and image changes take effect. It also verifies the effective runtime restart
+policies; nginx returns after Docker/VPS restarts and terminates itself after sustained local
+liveness failures so Docker can recover the edge without a socket-mounted watchdog.
 
 ## Local MCP bridge
 

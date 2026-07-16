@@ -110,7 +110,9 @@ make run
 Databasus, backend с ограниченным Agent route-контуром, frontend и nginx через Docker health checks,
 выполняет одноразовую backend-инициализацию и переключает публичный трафик между blue/green
 backend/frontend слотами с принудительным recreation nginx, чтобы применить Compose-изменения
-порта, secrets, пользователя и image.
+порта, secrets, пользователя и image. Скрипт также проверяет фактические runtime restart policies:
+nginx возвращается после перезапуска Docker/VPS и завершает себя после устойчивого отказа локальной
+liveness-проверки, чтобы Docker восстановил edge без watchdog с Docker socket.
 
 ## Локальный MCP bridge
 

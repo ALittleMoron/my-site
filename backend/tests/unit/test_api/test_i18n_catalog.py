@@ -83,6 +83,8 @@ class TestI18nCatalog:
         assert "personal" not in english_messages["siteBuild.seo.description"].lower()
         assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
+        assert "самовосстанавливается" in russian_messages["siteBuild.architecture.infraBody"]
+        assert "self-recovers" in english_messages["siteBuild.architecture.infraBody"]
         for expected, text in (
             ("SSR", russian_quality_body),
             ("SSR", english_quality_body),

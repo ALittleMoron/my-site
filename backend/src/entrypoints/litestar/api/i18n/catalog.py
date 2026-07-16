@@ -619,7 +619,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "siteBuild.architecture.infraBody": (
             "nginx, Docker, MinIO с S3-compatible media storage, Valkey и TaskIQ разделяют "
             "edge routing, файлы, кэш, фоновые задачи и runtime frontend/backend контейнеров, "
-            "а публичный трафик переключается между blue/green слотами после health checks."
+            "а публичный трафик переключается между blue/green слотами после health checks. "
+            "Edge nginx самовосстанавливается после устойчивого отказа локального liveness "
+            "endpoint и использует restart policy для перезапуска Docker или VPS."
         ),
         "siteBuild.architecture.agentTitle": "Безопасный AI-доступ",
         "siteBuild.architecture.agentBody": (
@@ -1644,7 +1646,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "nginx, Docker, MinIO with S3-compatible media storage, Valkey, and TaskIQ "
             "separate edge routing, files, cache, background jobs, and frontend/backend "
             "container runtimes, while public traffic switches between blue/green slots only "
-            "after health checks pass."
+            "after health checks pass. The edge nginx self-recovers after a sustained local "
+            "liveness failure and uses a restart policy for Docker daemon or VPS restarts."
         ),
         "siteBuild.architecture.agentTitle": "Safe AI access",
         "siteBuild.architecture.agentBody": (

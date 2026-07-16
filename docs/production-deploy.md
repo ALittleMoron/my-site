@@ -286,3 +286,38 @@ make certbot-sync
 The remote host needs Docker with the Compose plugin, `make`, `curl`, and SSH access for the
 configured deploy user. The manual deploy job syncs `Makefile`, `docker-compose.yml`, `backend/`,
 `frontend/`, `infra/`, and generated `.env`.
+
+On a systemd-based VPS, Docker itself must be enabled at boot or no container restart policy can
+run after a host reboot:
+
+```bash
+sudo systemctl enable docker.service
+sudo systemctl is-enabled docker.service
+```
+
+## Restart and Edge Recovery
+
+Long-running services use Docker restart policies so containers that were running before a Docker
+daemon or VPS restart return when the enabled daemon starts again. Inactive blue/green backend and
+frontend slots intentionally remain on `unless-stopped`, so a slot stopped by the deploy drain step
+does not return unexpectedly. The public nginx edge uses `always`; `make run` force-recreates it and
+verifies the effective restart policies of every active runtime container through `docker inspect`
+before the edge smoke check.
+
+Docker does not restart a container merely because its health status changes to `unhealthy`.
+The nginx healthcheck therefore records consecutive failures of its loopback
+`/nginx-healthz` endpoint in the existing `/tmp` tmpfs. After 12 failures, it sends `TERM` to nginx
+PID 1; the `always` policy then starts the container again. A successful probe clears the failure
+counter. The recurring probe deliberately checks local liveness only: nginx configuration validity
+is checked during image/deploy validation and at process startup, avoiding a restart loop that
+could replace a still-serving loaded configuration with an invalid on-disk configuration. This
+recovery path needs neither a Docker socket mount nor a privileged watchdog container.
+
+After deployment, verify the applied state with:
+
+```bash
+docker inspect my_site_nginx \
+  --format 'restart={{.HostConfig.RestartPolicy.Name}} status={{.State.Status}} health={{.State.Health.Status}} restarts={{.RestartCount}}'
+docker inspect my_site_nginx \
+  --format '{{range .State.Health.Log}}{{println .End "exit=" .ExitCode .Output}}{{end}}'
+```

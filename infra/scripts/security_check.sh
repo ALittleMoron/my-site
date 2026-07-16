@@ -8,6 +8,7 @@ minio_check_temp_dir=""
 nginx_check_temp_dir=""
 nginx_check_image_tag=""
 nginx_check_container_name=""
+nginx_recovery_container_name=""
 nginx_check_network_name=""
 agent_api_probe_container_name=""
 agent_api_check_image_tag=""
@@ -31,6 +32,9 @@ cleanup_security_check_images() {
     fi
     if [ -n "$nginx_check_container_name" ]; then
         docker rm -f "$nginx_check_container_name" >/dev/null 2>&1 || true
+    fi
+    if [ -n "$nginx_recovery_container_name" ]; then
+        docker rm -f "$nginx_recovery_container_name" >/dev/null 2>&1 || true
     fi
     if [ -n "$agent_api_probe_container_name" ]; then
         docker rm -f "$agent_api_probe_container_name" >/dev/null 2>&1 || true
@@ -538,6 +542,7 @@ run_healthcheck_configuration_check() {
     local deploy_workflow="${repo_dir}/.github/workflows/_deploy.yaml"
     local nginx_template="${repo_dir}/infra/nginx/templates/site.conf.template"
     local nginx_entrypoint="${repo_dir}/infra/nginx/entrypoint.sh"
+    local nginx_healthcheck="${repo_dir}/infra/nginx/healthcheck.sh"
     local run_script="${repo_dir}/infra/scripts/run.sh"
     local backend_start_script="${repo_dir}/backend/start_application.sh"
     local frontend_server="${repo_dir}/frontend/src/server-app.ts"
@@ -594,7 +599,7 @@ run_healthcheck_configuration_check() {
     require_file_contains "$compose_file" "backend-init:" "one-shot backend init service"
     require_file_contains "$compose_file" "/api/healthcheck/ready" "backend readiness healthcheck"
     require_file_contains "$compose_file" "/healthz" "frontend healthcheck"
-    require_file_contains "$compose_file" "/nginx-healthz" "nginx healthcheck"
+    require_file_contains "$nginx_healthcheck" "/nginx-healthz" "nginx healthcheck endpoint"
     require_file_contains "$compose_file" "MINIO_API_CORS_ALLOW_ORIGIN: \${APP_URL_SCHEMA}://\${APP_DOMAIN}" "MinIO public file CORS origin"
     require_file_contains "$compose_file" 'user: "10001:10001"' "backend explicit non-root UID/GID"
     require_file_contains "$compose_file" 'user: "1000:1000"' "frontend explicit non-root UID/GID"
@@ -609,7 +614,7 @@ run_healthcheck_configuration_check() {
     require_compose_service_contains "$compose_file" "valkey" "restart: unless-stopped" "Valkey restart policy"
     require_compose_service_contains "$compose_file" "postgres" "restart: unless-stopped" "PostgreSQL restart policy"
     require_compose_service_contains "$compose_file" "minio" "restart: unless-stopped" "MinIO restart policy"
-    require_compose_service_contains "$compose_file" "nginx" "restart: unless-stopped" "nginx restart policy"
+    require_compose_service_contains "$compose_file" "nginx" "restart: always" "nginx restart policy"
     require_compose_service_contains "$compose_file" "databasus" "restart: unless-stopped" "Databasus restart policy"
     require_file_contains "$compose_file" "dockerfile: infra/minio/Dockerfile" "MinIO non-root wrapper Dockerfile"
     require_file_contains "$compose_file" 'command: ["server", "/data", "--console-address", ":9001"]' "MinIO exec-form command"
@@ -1071,6 +1076,7 @@ run_nginx_syntax_check() {
         -e ACTIVE_BACKEND_SLOT=backend-blue \
         -e ACTIVE_FRONTEND_SLOT=frontend-blue \
         -e MINIO_PUBLIC_URL=https://s3.example.test \
+        -e NGINX_LIVENESS_FAILURE_LIMIT=12 \
         -p "127.0.0.1::18083" \
         -p "127.0.0.1::8443" \
         -v "${COMPOSE_AGENT_CERTIFICATE_CHAIN_FILE}:/run/secrets/agent_client_ca_certificate:ro" \
@@ -1079,6 +1085,19 @@ run_nginx_syntax_check() {
         sh -ec 'mkdir -p /tmp/nginx-conf.d && envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /etc/nginx/runtime-templates/site.conf.template > /tmp/nginx-conf.d/site.conf && exec nginx -g "daemon off;"' >/dev/null
     private_port="$(docker port "$nginx_check_container_name" 18083/tcp | awk -F: 'NR == 1 {print $NF}')"
     public_port="$(docker port "$nginx_check_container_name" 8443/tcp | awk -F: 'NR == 1 {print $NF}')"
+
+    for attempt in 1 2 3 4 5; do
+        if docker exec "$nginx_check_container_name" \
+            /usr/local/bin/my-site-nginx-healthcheck >/dev/null 2>&1; then
+            break
+        fi
+        if [ "$attempt" -eq 5 ]; then
+            echo "Nginx local liveness probe did not become healthy." >&2
+            docker logs "$nginx_check_container_name" >&2
+            exit 1
+        fi
+        sleep 1
+    done
 
     no_certificate_status="$(curl \
         --connect-timeout 3 \
@@ -1285,6 +1304,52 @@ EOF
     fi
 }
 
+run_nginx_recovery_check() {
+    local attempt
+    local restart_count
+
+    nginx_recovery_container_name="my-site-nginx-recovery-check-$(date +%s)-$$"
+    docker run -d \
+        --name "$nginx_recovery_container_name" \
+        --restart always \
+        --read-only \
+        --cap-drop ALL \
+        --security-opt no-new-privileges \
+        --tmpfs /tmp:mode=1777,uid=101,gid=101 \
+        --user 101:101 \
+        -e NGINX_LIVENESS_FAILURE_LIMIT=2 \
+        --entrypoint sh \
+        "$nginx_check_image_tag" \
+        -c 'trap "exit 0" TERM; while :; do sleep 1; done' >/dev/null
+
+    sleep 11
+    if docker exec "$nginx_recovery_container_name" \
+        /usr/local/bin/my-site-nginx-healthcheck >/dev/null 2>&1; then
+        echo "Nginx recovery probe unexpectedly succeeded without a local nginx listener." >&2
+        exit 1
+    fi
+    if [ "$(docker inspect -f '{{.State.Running}}' "$nginx_recovery_container_name")" != "true" ]; then
+        echo "Nginx recovery probe terminated the container before reaching its failure limit." >&2
+        exit 1
+    fi
+
+    docker exec "$nginx_recovery_container_name" \
+        /usr/local/bin/my-site-nginx-healthcheck >/dev/null 2>&1 || true
+    for attempt in 1 2 3 4 5; do
+        restart_count="$(docker inspect -f '{{.RestartCount}}' "$nginx_recovery_container_name")"
+        if [ "$restart_count" -ge 1 ] \
+            && [ "$(docker inspect -f '{{.State.Running}}' "$nginx_recovery_container_name")" = "true" ]; then
+            docker rm -f "$nginx_recovery_container_name" >/dev/null
+            nginx_recovery_container_name=""
+            return
+        fi
+        sleep 1
+    done
+
+    echo "Nginx did not restart after the configured liveness failure limit." >&2
+    exit 1
+}
+
 echo "Checking deployment environment and secret rendering."
 run_deploy_env_configuration_check
 echo "Checking private listener configuration."
@@ -1301,5 +1366,7 @@ echo "Checking MinIO image runtime."
 run_minio_image_check
 echo "Checking dynamic Agent API edge."
 run_nginx_syntax_check
+echo "Checking nginx liveness recovery."
+run_nginx_recovery_check
 echo "Checking nginx static-config recreation."
 run_nginx_recreate_upgrade_check

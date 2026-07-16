@@ -174,6 +174,44 @@ switch_nginx() {
     compose_up_wait --force-recreate nginx
 }
 
+verify_restart_policy() {
+    local service_name="$1"
+    local expected_policy="$2"
+    local container_id
+    local actual_policy
+
+    container_id="$(docker compose ps -q "$service_name")"
+    if [ -z "$container_id" ]; then
+        echo "Running container for ${service_name} could not be found." >&2
+        exit 1
+    fi
+
+    actual_policy="$(docker inspect --format '{{.HostConfig.RestartPolicy.Name}}' "$container_id")"
+    if [ "$actual_policy" != "$expected_policy" ]; then
+        echo "Unexpected restart policy for ${service_name}: expected ${expected_policy}, got ${actual_policy}." >&2
+        exit 1
+    fi
+}
+
+verify_runtime_restart_policies() {
+    local service_name
+    local unless_stopped_services=(
+        "$ACTIVE_BACKEND_SLOT"
+        "$ACTIVE_FRONTEND_SLOT"
+        "taskiq-worker"
+        "taskiq-scheduler"
+        "postgres"
+        "valkey"
+        "minio"
+        "databasus"
+    )
+
+    for service_name in "${unless_stopped_services[@]}"; do
+        verify_restart_policy "$service_name" "unless-stopped"
+    done
+    verify_restart_policy "nginx" "always"
+}
+
 smoke_edge() {
     local edge_health_urls=(
         "https://${APP_DOMAIN}/api/healthcheck"
@@ -252,6 +290,7 @@ run_backend_init
 compose_up_wait "$ACTIVE_BACKEND_SLOT" "$ACTIVE_FRONTEND_SLOT" taskiq-worker taskiq-scheduler
 sync_certificates
 switch_nginx
+verify_runtime_restart_policies
 smoke_edge
 save_active_slot "$target_slot"
 stop_previous_slot "$previous_slot"
