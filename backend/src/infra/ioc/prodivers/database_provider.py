@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from infra.post_commit_actions import PostCommitActions
 from infra.postgresql import meta
 from infra.postgresql.transactions import DatabaseTransactionState
 
@@ -13,9 +14,14 @@ class DatabaseProvider(Provider):
         return DatabaseTransactionState(rollback_required=False)
 
     @provide(scope=Scope.REQUEST)
+    def provide_post_commit_actions(self) -> PostCommitActions:
+        return PostCommitActions(actions=[])
+
+    @provide(scope=Scope.REQUEST)
     async def provide_async_session(
         self,
         transaction_state: DatabaseTransactionState,
+        post_commit_actions: PostCommitActions,
     ) -> AsyncGenerator[AsyncSession, BaseException | None]:
         async with meta.sessionmaker() as session:
             request_exception = yield session
@@ -23,3 +29,4 @@ class DatabaseProvider(Provider):
                 await session.rollback()
             else:
                 await session.commit()
+                await post_commit_actions.run()

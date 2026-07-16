@@ -47,10 +47,11 @@ from entrypoints.litestar.api.parameters import (
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
-    invalidate_and_enqueue_response_cache_warm_domain,
+    invalidate_response_cache_domain_for_mutation,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.post_commit_actions import PostCommitActions
 
 
 class PublicArticlesApiController(Controller):
@@ -244,7 +245,7 @@ class AdminArticlesApiController(Controller):
         name="admin-articles-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_article(
+    async def create_article(  # noqa: PLR0913
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
@@ -280,6 +281,7 @@ class AdminArticlesApiController(Controller):
             ),
         ],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.create_article(
             params=data.to_create_schema(
@@ -287,9 +289,10 @@ class AdminArticlesApiController(Controller):
                 author_username=request.user.username,
             ),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
         return ArticleDetailResponseSchema.from_domain_schema(
             schema=article,
@@ -333,7 +336,7 @@ class AdminArticlesApiController(Controller):
         name="admin-articles-folders-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_folder(
+    async def create_folder(  # noqa: PLR0913
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
@@ -355,13 +358,15 @@ class AdminArticlesApiController(Controller):
             ),
         ],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> ArticleFolderResponseSchema:
         folder = await use_case.create_folder(
             params=data.to_create_schema(folder_id=id_generator.get_next()),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
         return ArticleFolderResponseSchema.from_domain_schema(
             schema=folder,
@@ -386,11 +391,13 @@ class AdminArticlesApiController(Controller):
             ),
         ],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.update_folder_priorities(params=data.to_schema())
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
     @get(
@@ -438,7 +445,7 @@ class AdminArticlesApiController(Controller):
         name="admin-articles-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
-    async def update_article(
+    async def update_article(  # noqa: PLR0913
         self,
         slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
@@ -474,14 +481,16 @@ class AdminArticlesApiController(Controller):
         ],
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.update_article(
             slug=slug,
             params=data.to_update_schema(),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
         return ArticleDetailResponseSchema.from_domain_schema(
             schema=article,
@@ -499,11 +508,13 @@ class AdminArticlesApiController(Controller):
         slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.delete_article(slug=slug)
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
     @post(
@@ -517,14 +528,16 @@ class AdminArticlesApiController(Controller):
         slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.switch_article_publish_status(
             slug=slug,
             publish_status=PublishStatusEnum.DRAFT,
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
     @post(
@@ -538,14 +551,16 @@ class AdminArticlesApiController(Controller):
         slug: ArticleSlugPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.switch_article_publish_status(
             slug=slug,
             publish_status=PublishStatusEnum.PUBLISHED,
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
     @get(
@@ -591,7 +606,7 @@ class AdminArticlesApiController(Controller):
         name="admin-articles-tags-create-api-handler",
         status_code=status_codes.HTTP_201_CREATED,
     )
-    async def create_tag(
+    async def create_tag(  # noqa: PLR0913
         self,
         id_generator: FromDishka[HexUuidIdGenerator],
         request: Request[JwtUser, Token | None, State],
@@ -613,13 +628,15 @@ class AdminArticlesApiController(Controller):
             ),
         ],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> TagResponseSchema:
         tag = await use_case.create_tag(
             params=data.to_create_schema(tag_id=id_generator.get_next()),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
@@ -629,7 +646,7 @@ class AdminArticlesApiController(Controller):
         name="admin-articles-tags-update-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
-    async def update_tag(
+    async def update_tag(  # noqa: PLR0913
         self,
         tag_id: TagIdPath,
         request: Request[JwtUser, Token | None, State],
@@ -651,14 +668,16 @@ class AdminArticlesApiController(Controller):
             ),
         ],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> TagResponseSchema:
         tag = await use_case.update_tag(
             tag_id=tag_id,
             params=data.to_update_schema(),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
         return TagResponseSchema.from_domain_schema(schema=tag, language=language)
 
@@ -673,11 +692,13 @@ class AdminArticlesApiController(Controller):
         tag_id: TagIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.delete_tag(tag_id=tag_id)
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
 

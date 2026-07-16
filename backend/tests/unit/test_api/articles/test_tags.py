@@ -205,23 +205,24 @@ class TestTagsAPI(ApiTestCase):
 
         assert response.status_code == codes.NOT_FOUND
 
-    def test_successful_tag_mutations_enqueue_articles_response_cache_warm(
+    def test_successful_tag_mutations_schedule_articles_cache_invalidation(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        warmed_domains: list[ResponseCacheDomain] = []
+        invalidated_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
+        async def fake_invalidate_response_cache_domain_for_mutation(
             *,
             request: object,
             domain: ResponseCacheDomain,
+            post_commit_actions: object,
         ) -> None:
-            _ = request
-            warmed_domains.append(domain)
+            _ = request, post_commit_actions
+            invalidated_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.articles.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
-            fake_invalidate_and_enqueue_response_cache_warm_domain,
+            "entrypoints.litestar.api.articles.endpoints.invalidate_response_cache_domain_for_mutation",
+            fake_invalidate_response_cache_domain_for_mutation,
             raising=False,
         )
         self.use_case.create_tag.return_value = self.factory.core.tag(tag_id=self.tag_id)
@@ -243,4 +244,4 @@ class TestTagsAPI(ApiTestCase):
             codes.OK,
             codes.NO_CONTENT,
         ]
-        assert warmed_domains == [ResponseCacheDomain.ARTICLES] * 3
+        assert invalidated_domains == [ResponseCacheDomain.ARTICLES] * 3

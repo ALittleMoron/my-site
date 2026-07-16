@@ -114,9 +114,9 @@ class TestAdminArticlesAPI(ApiTestCase):
                     "seoTitleEn": "SEO updated article",
                     "seoDescriptionRu": "Обновлённое описание",
                     "seoDescriptionEn": "Updated description",
-                    "coverImageFileId": None,
-                    "coverImageAltRu": None,
-                    "coverImageAltEn": None,
+                    "coverImageFileId": "0000000000000000000000000000001e",
+                    "coverImageAltRu": "Обложка обновлённой статьи",
+                    "coverImageAltEn": "Updated article cover",
                 },
                 tag_ids=["00000000000040008000000000000031"],
             ),
@@ -139,11 +139,11 @@ class TestAdminArticlesAPI(ApiTestCase):
                     seo_title_en="SEO updated article",
                     seo_description_ru="Обновлённое описание",
                     seo_description_en="Updated description",
-                    cover_image_file_id=None,
+                    cover_image_file_id="0000000000000000000000000000001e",
                     cover_image_file=None,
                     cover_image_url=None,
-                    cover_image_alt_ru=None,
-                    cover_image_alt_en=None,
+                    cover_image_alt_ru="Обложка обновлённой статьи",
+                    cover_image_alt_en="Updated article cover",
                 ),
                 tag_ids=["00000000000040008000000000000031"],
             ),
@@ -334,23 +334,24 @@ class TestAdminArticlesAPI(ApiTestCase):
             ),
         )
 
-    def test_create_article_validation_error_does_not_enqueue_response_cache_warm(
+    def test_create_article_validation_error_does_not_schedule_cache_invalidation(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        warmed_domains: list[ResponseCacheDomain] = []
+        invalidated_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
+        async def fake_invalidate_response_cache_domain_for_mutation(
             *,
             request: object,
             domain: ResponseCacheDomain,
+            post_commit_actions: object,
         ) -> None:
-            _ = request
-            warmed_domains.append(domain)
+            _ = request, post_commit_actions
+            invalidated_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.articles.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
-            fake_invalidate_and_enqueue_response_cache_warm_domain,
+            "entrypoints.litestar.api.articles.endpoints.invalidate_response_cache_domain_for_mutation",
+            fake_invalidate_response_cache_domain_for_mutation,
             raising=False,
         )
         data = self.factory.api.article_request()
@@ -359,7 +360,7 @@ class TestAdminArticlesAPI(ApiTestCase):
         response = self.api.post_create_article(data=data)
 
         assert response.status_code == codes.BAD_REQUEST
-        assert warmed_domains == []
+        assert invalidated_domains == []
 
     def test_delete_article_not_found(self) -> None:
         self.use_case.delete_article.side_effect = ArticleNotFoundError()
@@ -393,23 +394,24 @@ class TestAdminArticlesAPI(ApiTestCase):
             publish_status=PublishStatusEnum.DRAFT,
         )
 
-    def test_successful_article_mutations_enqueue_articles_response_cache_warm(
+    def test_successful_article_mutations_schedule_articles_cache_invalidation(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        warmed_domains: list[ResponseCacheDomain] = []
+        invalidated_domains: list[ResponseCacheDomain] = []
 
-        async def fake_invalidate_and_enqueue_response_cache_warm_domain(
+        async def fake_invalidate_response_cache_domain_for_mutation(
             *,
             request: object,
             domain: ResponseCacheDomain,
+            post_commit_actions: object,
         ) -> None:
-            _ = request
-            warmed_domains.append(domain)
+            _ = request, post_commit_actions
+            invalidated_domains.append(domain)
 
         monkeypatch.setattr(
-            "entrypoints.litestar.api.articles.endpoints.invalidate_and_enqueue_response_cache_warm_domain",
-            fake_invalidate_and_enqueue_response_cache_warm_domain,
+            "entrypoints.litestar.api.articles.endpoints.invalidate_response_cache_domain_for_mutation",
+            fake_invalidate_response_cache_domain_for_mutation,
             raising=False,
         )
         created_article = self.factory.core.article(
@@ -429,7 +431,18 @@ class TestAdminArticlesAPI(ApiTestCase):
             self.api.post_create_article(data=self.factory.api.article_request(slug="new-article")),
             self.api.put_update_article(
                 slug="old-article",
-                data=self.factory.api.article_request(slug="updated-article"),
+                data=self.factory.api.article_request(
+                    slug="updated-article",
+                    metadata={
+                        "seoTitleRu": "SEO обновлённая статья",
+                        "seoTitleEn": "SEO updated article",
+                        "seoDescriptionRu": "Обновлённое описание",
+                        "seoDescriptionEn": "Updated description",
+                        "coverImageFileId": "0000000000000000000000000000001e",
+                        "coverImageAltRu": "Обложка обновлённой статьи",
+                        "coverImageAltEn": "Updated article cover",
+                    },
+                ),
             ),
             self.api.delete_article(slug="updated-article"),
             self.api.post_set_published_status_to_article(slug="draft-article"),
@@ -443,4 +456,4 @@ class TestAdminArticlesAPI(ApiTestCase):
             codes.NO_CONTENT,
             codes.NO_CONTENT,
         ]
-        assert warmed_domains == [ResponseCacheDomain.ARTICLES] * 5
+        assert invalidated_domains == [ResponseCacheDomain.ARTICLES] * 5

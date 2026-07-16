@@ -71,10 +71,11 @@ from entrypoints.litestar.api.parameters import (
 from entrypoints.litestar.guards import content_manager_guard
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
-    invalidate_and_enqueue_response_cache_warm_domain,
+    invalidate_response_cache_domain_for_mutation,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.post_commit_actions import PostCommitActions
 
 
 class PublicCompetencyMatrixApiController(Controller):
@@ -350,11 +351,13 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.update_sheet_priorities(params=data.to_sheet_schema())
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
     @put(
@@ -376,13 +379,15 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.update_section_priorities(
             params=data.to_section_schema(sheet_id=sheet_id),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
     @put(
@@ -404,13 +409,15 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.update_subsection_priorities(
             params=data.to_subsection_schema(section_id=section_id),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
     @get(
@@ -629,6 +636,7 @@ class AdminCompetencyMatrixApiController(Controller):
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: LanguageQuery,
         current_datetime: FromDishka[datetime],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item_from_queue(
             params=data.to_create_from_queue_schema(
@@ -638,9 +646,10 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
             current_datetime=current_datetime,
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
@@ -755,6 +764,7 @@ class AdminCompetencyMatrixApiController(Controller):
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: LanguageQuery,
         suggested_by_username: NamedDependency[str],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item(
             params=data.to_create_schema(
@@ -763,9 +773,10 @@ class AdminCompetencyMatrixApiController(Controller):
             ),
             suggested_by_username=suggested_by_username,
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
@@ -840,6 +851,7 @@ class AdminCompetencyMatrixApiController(Controller):
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: LanguageQuery,
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.update_item(
             params=data.to_update_schema(
@@ -847,9 +859,10 @@ class AdminCompetencyMatrixApiController(Controller):
                 resource_id_generator=id_generator,
             ),
         )
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
         return CompetencyMatrixItemDetailResponseSchema.from_domain_schema(
             schema=item,
@@ -867,11 +880,13 @@ class AdminCompetencyMatrixApiController(Controller):
         pk: EntityPkPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.delete_item(item_id=pk)
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
     @post(
@@ -891,11 +906,13 @@ class AdminCompetencyMatrixApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
         params: NamedDependency[CompetencyMatrixItemPublishStatusSwitchParams],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
     @post(
@@ -915,11 +932,13 @@ class AdminCompetencyMatrixApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[CompetencyMatrixUseCase],
         params: NamedDependency[CompetencyMatrixItemPublishStatusSwitchParams],
+        post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         await use_case.switch_item_publish_status(params=params)
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.COMPETENCY_MATRIX,
+            post_commit_actions=post_commit_actions,
         )
 
 

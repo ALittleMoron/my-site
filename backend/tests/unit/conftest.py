@@ -13,6 +13,7 @@ from core.auth.schemas import JwtUser
 from core.auth.types import RawToken
 from entrypoints.litestar.initializers.main import create_litestar_app
 from infra.config.settings import Settings
+from infra.ioc.prodivers.database_provider import DatabaseProvider
 from tests.unit.mocks.providers.account import MockUserAccountProvider
 from tests.unit.mocks.providers.agent_access import MockAgentAccessProvider
 from tests.unit.mocks.providers.articles import MockArticlesProvider
@@ -58,6 +59,7 @@ async def container(  # noqa: PLR0913
 ) -> AsyncGenerator[AsyncContainer]:
     container = make_async_container(
         LitestarProvider(),
+        DatabaseProvider(),
         MockGeneralProvider(uuid_=global_random_uuid, hex_uuid=global_random_hex_uuid),
         MockFilesProvider(random_suffix=random_suffix),
         MockCompetencyMatrixProvider(),

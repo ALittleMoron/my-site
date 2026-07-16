@@ -55,6 +55,7 @@ class TestDatabaseProviderTransactions:
         transaction_state = DatabaseTransactionState(rollback_required=False)
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
+            post_commit_actions=provider.provide_post_commit_actions(),
         )
 
         assert await anext(generator) is session
@@ -79,6 +80,7 @@ class TestDatabaseProviderTransactions:
         error_message = "request failed"
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
+            post_commit_actions=provider.provide_post_commit_actions(),
         )
 
         assert await anext(generator) is session
@@ -102,6 +104,7 @@ class TestDatabaseProviderTransactions:
         transaction_state = DatabaseTransactionState(rollback_required=False)
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
+            post_commit_actions=provider.provide_post_commit_actions(),
         )
 
         assert await anext(generator) is session
@@ -126,6 +129,7 @@ class TestDatabaseProviderTransactions:
         transaction_state = provider.provide_transaction_state()
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
+            post_commit_actions=provider.provide_post_commit_actions(),
         )
 
         assert await anext(generator) is session

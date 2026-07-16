@@ -110,12 +110,12 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   Litestar guard or another pre-cache boundary check. Do not rely only on controller body checks
   because Litestar can return a cached response before executing the handler body.
 - Mutating handlers that change cached domain content must call
-  `invalidate_and_enqueue_response_cache_warm_domain(...)` only after the use case succeeds when
-  the caller wants to enqueue a background warm task; use `invalidate_response_cache_domain(...)`
-  for invalidation-only domains. The enqueue helper must not duplicate warmable-domain filtering;
-  the TaskIQ task/service owns unsupported-domain handling. Do not invalidate or enqueue on
-  validation/auth failures, and do not invalidate content caches for analytics-only changes when
-  analytics are served from separate uncached endpoints.
+  `invalidate_response_cache_domain_for_mutation(...)` only after the use case succeeds. The helper
+  must not invalidate before commit; it registers one post-commit action that first invalidates the
+  domain and then enqueues its TaskIQ warm. The action must run only after a successful database
+  commit, never after rollback or a failed commit. Do not invalidate or enqueue on
+  validation/auth/use-case failures, and do not invalidate content caches for analytics-only
+  changes when analytics are served from separate uncached endpoints.
 - Response-cache warmers live under `backend/src/entrypoints/taskiq/cache_warm/` and must write
   Litestar-compatible msgpack-encoded ASGI response messages through `ResponseCacheDomainStore`.
   Do not write raw JSON response-cache payloads.

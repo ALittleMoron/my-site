@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import StrEnum
+from functools import partial
 from typing import Any
 
 from litestar import Request
@@ -14,6 +15,7 @@ from core.cache_tools.enums import CacheDomainEnum
 from core.cache_tools.storages import ResponseCacheInvalidationStorage
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.post_commit_actions import PostCommitActions
 
 
 class ResponseCacheDomain(StrEnum):
@@ -111,3 +113,20 @@ async def invalidate_and_enqueue_response_cache_warm_domain(
     from entrypoints.taskiq.cache_warm.tasks import cache_warm_domain  # noqa: PLC0415
 
     await cache_warm_domain.kiq(domain.value)  # type: ignore[call-overload]
+
+
+async def invalidate_response_cache_domain_for_mutation(
+    *,
+    request: Request[Any, Any, Any],
+    domain: ResponseCacheDomain,
+    post_commit_actions: PostCommitActions,
+) -> None:
+    if not settings.app.use_cache:
+        return
+    post_commit_actions.add(
+        action=partial(
+            invalidate_and_enqueue_response_cache_warm_domain,
+            request=request,
+            domain=domain,
+        ),
+    )

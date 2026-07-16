@@ -27,10 +27,11 @@ from entrypoints.litestar.initializers import main as litestar_initializers
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,
-    invalidate_and_enqueue_response_cache_warm_domain,
+    invalidate_response_cache_domain_for_mutation,
 )
 from infra.config.constants import constants
 from infra.config.settings import settings
+from infra.post_commit_actions import PostCommitActions
 
 
 @dataclass
@@ -204,12 +205,13 @@ class TestResponseCacheModuleBoundaries:
         assert callable(invalidate_cache_command)
 
 
-class TestInvalidateAndEnqueueResponseCacheWarmDomain:
-    async def test_invalidates_before_enqueueing_cache_warm(
+class TestInvalidateResponseCacheDomainForMutation:
+    async def test_invalidates_and_enqueues_warm_only_after_commit_action_runs(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         events: list[str] = []
+        cached_values = {"detail": b"old article"}
         monkeypatch.setattr(settings.app, "use_cache", True)
 
         async def fake_invalidate_response_cache_domain(
@@ -219,6 +221,7 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
         ) -> None:
             _ = request
             events.append(f"invalidate:{domain.value}")
+            cached_values.clear()
 
         async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
             events.append(f"enqueue:{domain_value}")
@@ -232,54 +235,43 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
             fake_cache_warm_domain_kiq,
             raising=False,
         )
+        post_commit_actions = PostCommitActions(actions=[])
 
-        await invalidate_and_enqueue_response_cache_warm_domain(
+        await invalidate_response_cache_domain_for_mutation(
             request=cast("Any", object()),
             domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
         )
 
-        assert events == ["invalidate:articles", "enqueue:articles"]
+        assert events == []
+        assert cached_values == {"detail": b"old article"}
 
-    async def test_enqueue_does_not_filter_domains_after_invalidation(
+        await post_commit_actions.run()
+
+        assert events == ["invalidate:articles", "enqueue:articles"]
+        assert cached_values == {}
+
+    async def test_does_not_schedule_post_commit_action_when_cache_is_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(settings.app, "use_cache", False)
+        post_commit_actions = PostCommitActions(actions=[])
+
+        await invalidate_response_cache_domain_for_mutation(
+            request=cast("Any", object()),
+            domain=ResponseCacheDomain.HEALTHCHECK,
+            post_commit_actions=post_commit_actions,
+        )
+
+        assert post_commit_actions.actions == []
+
+    async def test_post_commit_action_does_not_enqueue_when_invalidation_fails(
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         events: list[str] = []
         monkeypatch.setattr(settings.app, "use_cache", True)
-
-        async def fake_invalidate_response_cache_domain(
-            *,
-            request: object,
-            domain: ResponseCacheDomain,
-        ) -> None:
-            _ = request
-            events.append(f"invalidate:{domain.value}")
-
-        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
-            events.append(f"enqueue:{domain_value}")
-
-        monkeypatch.setattr(
-            "entrypoints.litestar.response_cache.invalidate_response_cache_domain",
-            fake_invalidate_response_cache_domain,
-        )
-        monkeypatch.setattr(
-            "entrypoints.taskiq.cache_warm.tasks.cache_warm_domain.kiq",
-            fake_cache_warm_domain_kiq,
-            raising=False,
-        )
-
-        await invalidate_and_enqueue_response_cache_warm_domain(
-            request=cast("Any", object()),
-            domain=ResponseCacheDomain.HEALTHCHECK,
-        )
-
-        assert events == ["invalidate:healthcheck", "enqueue:healthcheck"]
-
-    async def test_does_not_enqueue_when_invalidation_fails(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        events: list[str] = []
 
         async def fake_invalidate_response_cache_domain(
             *,
@@ -291,24 +283,31 @@ class TestInvalidateAndEnqueueResponseCacheWarmDomain:
             msg = "broken cache"
             raise ImproperlyConfiguredException(msg)
 
-        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
-            events.append(f"enqueue:{domain_value}")
-
         monkeypatch.setattr(
             "entrypoints.litestar.response_cache.invalidate_response_cache_domain",
             fake_invalidate_response_cache_domain,
         )
+
+        async def fake_cache_warm_domain_kiq(domain_value: str) -> None:
+            events.append(f"enqueue:{domain_value}")
+
         monkeypatch.setattr(
             "entrypoints.taskiq.cache_warm.tasks.cache_warm_domain.kiq",
             fake_cache_warm_domain_kiq,
             raising=False,
         )
+        post_commit_actions = PostCommitActions(actions=[])
+
+        await invalidate_response_cache_domain_for_mutation(
+            request=cast("Any", object()),
+            domain=ResponseCacheDomain.ARTICLES,
+            post_commit_actions=post_commit_actions,
+        )
+
+        assert events == []
 
         with pytest.raises(ImproperlyConfiguredException):
-            await invalidate_and_enqueue_response_cache_warm_domain(
-                request=cast("Any", object()),
-                domain=ResponseCacheDomain.ARTICLES,
-            )
+            await post_commit_actions.run()
 
         assert events == ["invalidate"]
 
