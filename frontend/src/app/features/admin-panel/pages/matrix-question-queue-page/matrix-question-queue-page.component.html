@@ -19,71 +19,197 @@
   <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
 } @else if (error()) {
   <app-error-message [error]="error()!" [retryLabel]="'shared.retry' | t" (retry)="loadQueue()" />
-} @else if (!hasQuestions()) {
-  <app-empty-state [message]="'adminMatrixQueue.empty' | t" />
 } @else {
-  <div class="list-group">
-    @for (question of questions(); track question.id) {
-      <div class="list-group-item p-0 mb-3">
+  <div class="row g-2 mb-3" role="status" aria-live="polite">
+    <div class="col-6 col-xl-3">
+      <div class="border rounded p-2 h-100">
+        <span class="d-block small text-body-secondary">
+          {{ 'adminMatrixQueue.stats.total' | t }}
+        </span>
+        <strong data-testid="matrix-queue-stat-total">{{ totalQuestionCount() }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="border rounded p-2 h-100">
+        <span class="d-block small text-body-secondary">
+          {{ 'adminMatrixQueue.stats.shown' | t }}
+        </span>
+        <strong data-testid="matrix-queue-stat-shown">{{ shownQuestionCount() }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="border rounded p-2 h-100">
+        <span class="d-block small text-body-secondary">
+          {{ 'adminMatrixQueue.stats.available' | t }}
+        </span>
+        <strong data-testid="matrix-queue-stat-available">{{ availableQuestionCount() }}</strong>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="border rounded p-2 h-100">
+        <span class="d-block small text-body-secondary">
+          {{ 'adminMatrixQueue.stats.claimed' | t }}
+        </span>
+        <strong data-testid="matrix-queue-stat-claimed">{{ claimedQuestionCount() }}</strong>
+      </div>
+    </div>
+  </div>
+
+  @if (hasQuestions()) {
+    <form class="row g-2 align-items-end mb-3" [formGroup]="filtersForm">
+      <div class="col-12 col-md-6 col-xl-4">
+        <label class="form-label" for="matrix-queue-filter-search">
+          {{ 'adminMatrixQueue.filters.search' | t }}
+        </label>
+        <input
+          id="matrix-queue-filter-search"
+          type="search"
+          class="form-control form-control-sm"
+          data-testid="matrix-queue-filter-search"
+          formControlName="searchQuery"
+          [placeholder]="'adminMatrixQueue.filters.searchPlaceholder' | t"
+        />
+      </div>
+      <div class="col-6 col-md-3 col-xl-2">
+        <label class="form-label" for="matrix-queue-filter-sheet">
+          {{ 'adminMatrixQueue.filters.sheet' | t }}
+        </label>
+        <select
+          id="matrix-queue-filter-sheet"
+          class="form-select form-select-sm"
+          data-testid="matrix-queue-filter-sheet"
+          formControlName="sheet"
+        >
+          <option value="">{{ 'adminMatrixQueue.filters.all' | t }}</option>
+          <option value="notSet">{{ 'shared.notSet' | t }}</option>
+          @for (sheet of sheetOptions(); track sheet) {
+            <option [value]="sheet">{{ sheet }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-6 col-md-3 col-xl-2">
+        <label class="form-label" for="matrix-queue-filter-grade">
+          {{ 'adminMatrixQueue.filters.grade' | t }}
+        </label>
+        <select
+          id="matrix-queue-filter-grade"
+          class="form-select form-select-sm"
+          data-testid="matrix-queue-filter-grade"
+          formControlName="grade"
+        >
+          <option value="">{{ 'adminMatrixQueue.filters.all' | t }}</option>
+          <option value="notSet">{{ 'shared.notSet' | t }}</option>
+          @for (grade of grades; track grade) {
+            <option [value]="grade">{{ gradeLabel(grade) }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-6 col-md-4 col-xl-2">
+        <label class="form-label" for="matrix-queue-filter-availability">
+          {{ 'adminMatrixQueue.filters.availability' | t }}
+        </label>
+        <select
+          id="matrix-queue-filter-availability"
+          class="form-select form-select-sm"
+          data-testid="matrix-queue-filter-availability"
+          formControlName="availability"
+        >
+          <option value="">{{ 'adminMatrixQueue.filters.all' | t }}</option>
+          <option value="available">{{ 'adminMatrixQueue.filters.available' | t }}</option>
+          <option value="claimed">{{ 'adminMatrixQueue.filters.claimed' | t }}</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-auto">
         <button
           type="button"
-          class="list-group-item list-group-item-action border-0 rounded-0 w-100 text-start"
-          [class.list-group-item-success]="selectedQuestion()?.id === question.id"
-          [attr.aria-current]="selectedQuestion()?.id === question.id ? 'true' : null"
-          [attr.data-testid]="'matrix-queue-question-' + question.id"
-          [disabled]="question.claim !== null"
-          (click)="selectQuestion(question)"
+          class="btn btn-outline-secondary btn-sm"
+          data-testid="matrix-queue-filter-reset"
+          (click)="resetFilters()"
         >
-          <span class="d-block fw-semibold">{{ question.question }}</span>
-          <span class="d-block small">
-            {{ 'adminMatrixQueue.createdAt' | t }}:
-            <time [attr.datetime]="question.createdAt" data-testid="matrix-queue-created-at">{{
-              formatCreatedAt(question.createdAt)
-            }}</time>
-          </span>
-          <span class="d-block small">
-            {{ 'adminMatrixQueue.suggestedBy' | t }}:
-            {{ suggestedByLabel(question) }}
-          </span>
-          @if (questionStructure(question)) {
-            <span class="d-block small">
-              {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
-            </span>
-          }
-          @if (question.claim; as claim) {
-            <span class="d-block small text-warning-emphasis mt-2" role="status">
-              {{ 'adminMatrixQueue.claimedBy' | t: { agent: claim.agentClientName } }}
-              <time [attr.datetime]="claim.expiresAt">{{
-                formatClaimExpiresAt(claim.expiresAt)
-              }}</time>
-            </span>
-          }
+          {{ 'adminMatrixQueue.filters.reset' | t }}
         </button>
-        <div class="d-flex justify-content-end gap-2 px-3 pb-3">
-          @if (question.claim !== null) {
-            <button
-              type="button"
-              class="btn btn-outline-warning btn-sm"
-              [attr.data-testid]="'matrix-queue-release-' + question.id"
-              [disabled]="releasingClaimQuestionId() !== null"
-              (click)="releaseAgentClaim(question)"
-            >
-              {{ 'adminMatrixQueue.releaseClaim' | t }}
-            </button>
-          }
+      </div>
+    </form>
+  }
+
+  @if (!hasQuestions()) {
+    <app-empty-state [message]="'adminMatrixQueue.empty' | t" />
+  } @else if (!hasFilteredQuestions()) {
+    <app-empty-state [message]="'adminMatrixQueue.filteredEmpty' | t" />
+    <div class="text-center mb-4">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        data-testid="matrix-queue-filter-reset-empty"
+        (click)="resetFilters()"
+      >
+        {{ 'adminMatrixQueue.filters.reset' | t }}
+      </button>
+    </div>
+  } @else {
+    <div class="list-group">
+      @for (question of filteredQuestions(); track question.id) {
+        <div class="list-group-item p-0 mb-3">
           <button
             type="button"
-            class="btn btn-outline-danger btn-sm"
-            [attr.data-testid]="'matrix-queue-reject-' + question.id"
-            [disabled]="question.claim !== null || rejectingQuestionId() !== null"
-            (click)="rejectQuestion(question)"
+            class="list-group-item list-group-item-action border-0 rounded-0 w-100 text-start"
+            [class.list-group-item-success]="selectedQuestion()?.id === question.id"
+            [attr.aria-current]="selectedQuestion()?.id === question.id ? 'true' : null"
+            [attr.data-testid]="'matrix-queue-question-' + question.id"
+            [disabled]="question.claim !== null"
+            (click)="selectQuestion(question)"
           >
-            {{ 'adminMatrixQueue.reject' | t }}
+            <span class="d-block fw-semibold">{{ question.question }}</span>
+            <span class="d-block small">
+              {{ 'adminMatrixQueue.createdAt' | t }}:
+              <time [attr.datetime]="question.createdAt" data-testid="matrix-queue-created-at">{{
+                formatCreatedAt(question.createdAt)
+              }}</time>
+            </span>
+            <span class="d-block small">
+              {{ 'adminMatrixQueue.suggestedBy' | t }}:
+              {{ suggestedByLabel(question) }}
+            </span>
+            @if (questionStructure(question)) {
+              <span class="d-block small">
+                {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
+              </span>
+            }
+            @if (question.claim; as claim) {
+              <span class="d-block small text-warning-emphasis mt-2" role="status">
+                {{ 'adminMatrixQueue.claimedBy' | t: { agent: claim.agentClientName } }}
+                <time [attr.datetime]="claim.expiresAt">{{
+                  formatClaimExpiresAt(claim.expiresAt)
+                }}</time>
+              </span>
+            }
           </button>
+          <div class="d-flex justify-content-end gap-2 px-3 pb-3">
+            @if (question.claim !== null) {
+              <button
+                type="button"
+                class="btn btn-outline-warning btn-sm"
+                [attr.data-testid]="'matrix-queue-release-' + question.id"
+                [disabled]="releasingClaimQuestionId() !== null"
+                (click)="releaseAgentClaim(question)"
+              >
+                {{ 'adminMatrixQueue.releaseClaim' | t }}
+              </button>
+            }
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              [attr.data-testid]="'matrix-queue-reject-' + question.id"
+              [disabled]="question.claim !== null || rejectingQuestionId() !== null"
+              (click)="rejectQuestion(question)"
+            >
+              {{ 'adminMatrixQueue.reject' | t }}
+            </button>
+          </div>
         </div>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 }
 
 @if (selectedQuestion()) {

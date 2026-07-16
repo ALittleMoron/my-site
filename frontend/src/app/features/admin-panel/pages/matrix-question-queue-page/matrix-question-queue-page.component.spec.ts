@@ -1,6 +1,12 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { Subject, of, throwError } from 'rxjs';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ActivatedRoute,
+  Router,
+  convertToParamMap,
+  provideRouter,
+  type ParamMap,
+} from '@angular/router';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
@@ -21,6 +27,8 @@ const QUESTION_ID = '00000000000000000000000000000007';
 const CREATED_QUESTION_ID = '00000000000000000000000000000017';
 const IMPORTED_QUESTION_ID = '00000000000000000000000000000008';
 const MISSING_SHEET_QUESTION_ID = '00000000000000000000000000000009';
+const UNASSIGNED_QUESTION_ID = '00000000000000000000000000000010';
+const PYTHON_MIDDLE_QUESTION_ID = '00000000000000000000000000000011';
 const SHEET_ID = '00000000000000000000000000000001';
 const SECTION_ID = '00000000000000000000000000000002';
 const SUBSECTION_ID = '00000000000000000000000000000003';
@@ -65,6 +73,27 @@ const queuedQuestionWithMissingSheet: QueuedMatrixQuestion = {
   id: MISSING_SHEET_QUESTION_ID,
   question: 'What is SQL?',
   sheet: 'sql',
+};
+
+const unassignedQuestion: QueuedMatrixQuestion = {
+  ...queuedQuestion,
+  id: UNASSIGNED_QUESTION_ID,
+  question: 'What is an index?',
+  grade: null,
+  sheet: null,
+  section: null,
+  subsection: null,
+  suggestedByUsername: 'alice',
+};
+
+const pythonMiddleQuestion: QueuedMatrixQuestion = {
+  ...queuedQuestion,
+  id: PYTHON_MIDDLE_QUESTION_ID,
+  question: 'What is Black?',
+  grade: 'Middle',
+  section: 'Tooling',
+  subsection: 'Formatters',
+  suggestedByUsername: 'alice',
 };
 
 const importPreview: QueuedMatrixImportPreview = {
@@ -156,6 +185,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   let workspaceService: jest.Mocked<MatrixQuestionWorkspaceService>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
   let router: Router;
+  let routeQueryParamMap: BehaviorSubject<ParamMap>;
 
   beforeEach(async () => {
     queueService = {
@@ -182,6 +212,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       success: jest.fn(),
       error: jest.fn(),
     };
+    routeQueryParamMap = new BehaviorSubject(convertToParamMap({}));
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 
     await TestBed.configureTestingModule({
@@ -192,6 +223,10 @@ describe('MatrixQuestionQueuePageComponent', () => {
         { provide: NotificationService, useValue: notificationService },
         provideI18nTesting(),
         provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParamMap.asObservable() },
+        },
       ],
     }).compileComponents();
 
@@ -236,6 +271,120 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Кто предложил: alice');
+  });
+
+  it('filters the queue with AND semantics without reloading or changing FIFO order', () => {
+    loadQueueWithQuestions([
+      queuedQuestion,
+      claimedMiddleQuestion,
+      queuedQuestionWithMissingSheet,
+      unassignedQuestion,
+      pythonMiddleQuestion,
+    ]);
+    const loadCalls = queueService.listQueuedQuestions.mock.calls.length;
+
+    expectStatistic('matrix-queue-stat-total', '5');
+    expectStatistic('matrix-queue-stat-shown', '5');
+    expectStatistic('matrix-queue-stat-available', '4');
+    expectStatistic('matrix-queue-stat-claimed', '1');
+
+    setSelectValue('[data-testid="matrix-queue-filter-sheet"]', 'python');
+    expect(visibleQuestionIds()).toEqual([
+      QUESTION_ID,
+      IMPORTED_QUESTION_ID,
+      PYTHON_MIDDLE_QUESTION_ID,
+    ]);
+    expectStatistic('matrix-queue-stat-shown', '3');
+    expectStatistic('matrix-queue-stat-available', '2');
+    expectStatistic('matrix-queue-stat-claimed', '1');
+
+    setSelectValue('[data-testid="matrix-queue-filter-availability"]', 'available');
+    setSelectValue('[data-testid="matrix-queue-filter-grade"]', 'Middle');
+    setInputValue('[data-testid="matrix-queue-filter-search"]', 'BLACK');
+
+    expect(visibleQuestionIds()).toEqual([PYTHON_MIDDLE_QUESTION_ID]);
+    expectStatistic('matrix-queue-stat-total', '5');
+    expectStatistic('matrix-queue-stat-shown', '1');
+    expectStatistic('matrix-queue-stat-available', '1');
+    expectStatistic('matrix-queue-stat-claimed', '0');
+    expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(loadCalls);
+  });
+
+  it('searches visible metadata case-insensitively and filters unset facets', () => {
+    loadQueueWithQuestions([queuedQuestion, unassignedQuestion]);
+
+    setInputValue('[data-testid="matrix-queue-filter-search"]', 'ALICE');
+    expect(visibleQuestionIds()).toEqual([UNASSIGNED_QUESTION_ID]);
+
+    setInputValue('[data-testid="matrix-queue-filter-search"]', '');
+    setSelectValue('[data-testid="matrix-queue-filter-sheet"]', 'notSet');
+    setSelectValue('[data-testid="matrix-queue-filter-grade"]', 'notSet');
+
+    expect(visibleQuestionIds()).toEqual([UNASSIGNED_QUESTION_ID]);
+  });
+
+  it('shows a filtered empty state and resets all filters', () => {
+    setInputValue('[data-testid="matrix-queue-filter-search"]', 'no matching question');
+
+    expect(visibleQuestionIds()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('По выбранным фильтрам вопросов нет.');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-filter-reset-empty"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(visibleQuestionIds()).toEqual([QUESTION_ID, MISSING_SHEET_QUESTION_ID]);
+  });
+
+  it('restores filters from URL and writes normalized changes back', fakeAsync(() => {
+    loadQueueWithQuestions([queuedQuestion, queuedQuestionWithMissingSheet, unassignedQuestion]);
+
+    routeQueryParamMap.next(
+      convertToParamMap({ sheet: 'sql', availability: 'available', q: 'what' }),
+    );
+    fixture.detectChanges();
+
+    expect(inputValue('[data-testid="matrix-queue-filter-search"]')).toBe('what');
+    expect(select('[data-testid="matrix-queue-filter-sheet"]').value).toBe('sql');
+    expect(select('[data-testid="matrix-queue-filter-availability"]').value).toBe('available');
+    expect(visibleQuestionIds()).toEqual([MISSING_SHEET_QUESTION_ID]);
+
+    jest.mocked(router.navigate).mockClear();
+    setSelectValue('[data-testid="matrix-queue-filter-grade"]', 'Junior');
+    tick(200);
+
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: {
+          q: 'what',
+          sheet: 'sql',
+          grade: 'Junior',
+          availability: 'available',
+        },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
+  }));
+
+  it('ignores and removes invalid finite URL filters', () => {
+    jest.mocked(router.navigate).mockClear();
+
+    routeQueryParamMap.next(convertToParamMap({ grade: 'Lead', availability: 'busy' }));
+    fixture.detectChanges();
+
+    expect(select('[data-testid="matrix-queue-filter-grade"]').value).toBe('');
+    expect(select('[data-testid="matrix-queue-filter-availability"]').value).toBe('');
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { grade: null, availability: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
   });
 
   it('shows an active agent claim and blocks create and reject actions', () => {
@@ -949,6 +1098,36 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
   });
 
+  it('advances only to the next available question matching the active filters', () => {
+    loadQueueWithQuestions([queuedQuestion, queuedQuestionWithMissingSheet, pythonMiddleQuestion]);
+    setSelectValue('[data-testid="matrix-queue-filter-sheet"]', 'python');
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()?.id).toBe(PYTHON_MIDDLE_QUESTION_ID);
+    expect(inputValue('#matrix-form-question-ru')).toBe('What is Black?');
+  });
+
+  it('keeps nonmatching questions hidden after creating the last filtered question', () => {
+    loadQueueWithQuestions([queuedQuestion, queuedQuestionWithMissingSheet]);
+    setSelectValue('[data-testid="matrix-queue-filter-sheet"]', 'python');
+    openCreateModalFromQueue();
+
+    component.createQuestion(minimumQuestionPayload());
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()).toBeNull();
+    expect(component.questions().map((question) => question.id)).toEqual([
+      MISSING_SHEET_QUESTION_ID,
+    ]);
+    expect(visibleQuestionIds()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('По выбранным фильтрам вопросов нет.');
+  });
+
   it('skips over claimed rows when advancing without changing the queue', () => {
     loadQueueWithClaimedMiddle();
     openCreateModalFromQueue();
@@ -1218,11 +1397,33 @@ describe('MatrixQuestionQueuePageComponent', () => {
   }
 
   function loadQueueWithClaimedMiddle(): void {
-    queueService.listQueuedQuestions.mockReturnValue(
-      of([queuedQuestion, claimedMiddleQuestion, queuedQuestionWithMissingSheet]),
-    );
+    loadQueueWithQuestions([queuedQuestion, claimedMiddleQuestion, queuedQuestionWithMissingSheet]);
+  }
+
+  function loadQueueWithQuestions(questions: QueuedMatrixQuestion[]): void {
+    queueService.listQueuedQuestions.mockReturnValue(of(questions));
     component.loadQueue();
     fixture.detectChanges();
+  }
+
+  function visibleQuestionIds(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLButtonElement>(
+        '[data-testid^="matrix-queue-question-"]',
+      ),
+    ).map((button) => button.dataset['testid']!.replace('matrix-queue-question-', ''));
+  }
+
+  function setSelectValue(selector: string, value: string): void {
+    const element = select(selector);
+    element.value = value;
+    element.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function expectStatistic(testId: string, expectedValue: string): void {
+    const element = fixture.nativeElement.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+    expect(element?.textContent).toContain(expectedValue);
   }
 
   function minimumQuestionPayload(): AdminMatrixQuestionPayload {

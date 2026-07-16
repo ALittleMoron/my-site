@@ -10,7 +10,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, type ParamMap } from '@angular/router';
+import { debounceTime, merge } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -28,6 +30,7 @@ import {
   QueuedMatrixImportIssueCode,
   QueuedMatrixImportPreview,
   QueuedMatrixQuestion,
+  type AdminMatrixGrade,
 } from '../../models/matrix-question-queue.model';
 import {
   AdminMatrixQuestionCreateInitialValue,
@@ -43,9 +46,25 @@ import { ADMIN_VALIDATION_LIMITS } from '../../utils/admin-validation';
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 const IMPORT_FILE_ACCEPT =
   '.txt,.csv,.xlsx,.xlsm,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12';
+const FILTER_URL_SYNC_DEBOUNCE_MS = 150;
+const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 
 type QueueAddMode = 'manual' | 'import';
 type QueueCreateDestination = 'next' | 'edit';
+type QueueGradeFilter = '' | 'notSet' | AdminMatrixGrade;
+type QueueAvailabilityFilter = '' | 'available' | 'claimed';
+
+interface QueueFilters {
+  searchQuery: string;
+  sheet: string;
+  grade: QueueGradeFilter;
+  availability: QueueAvailabilityFilter;
+}
+
+interface QueueFiltersFromQueryParams {
+  filters: QueueFilters;
+  invalidQueryParams: { grade?: null; availability?: null };
+}
 
 const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
   questionNotText: 'adminMatrixQueue.importIssue.questionNotText',
@@ -62,6 +81,7 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
   selector: 'app-matrix-question-queue-page',
   standalone: true,
   imports: [
+    ReactiveFormsModule,
     TranslatePipe,
     LoadingSpinnerComponent,
     ErrorMessageComponent,
@@ -75,6 +95,8 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
 export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly queueService = inject(MatrixQuestionQueueService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly notifications = inject(NotificationService);
   readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
@@ -85,6 +107,19 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private readonly questionForm = viewChild(MatrixQuestionFormComponent);
 
   readonly questions = signal<QueuedMatrixQuestion[]>([]);
+  readonly grades = GRADES;
+  readonly filtersForm = this.formBuilder.group({
+    searchQuery: [''],
+    sheet: [''],
+    grade: this.formBuilder.control<QueueGradeFilter>(''),
+    availability: this.formBuilder.control<QueueAvailabilityFilter>(''),
+  });
+  private readonly filters = signal<QueueFilters>({
+    searchQuery: '',
+    sheet: '',
+    grade: '',
+    availability: '',
+  });
   readonly loading = signal(false);
   readonly error = signal<ApiError | null>(null);
   readonly selectedQuestion = signal<QueuedMatrixQuestion | null>(null);
@@ -122,6 +157,52 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       ).length ?? 0,
   );
   readonly hasQuestions = computed(() => this.questions().length > 0);
+  readonly sheetOptions = computed(() => {
+    const options = new Set(
+      this.questions()
+        .map((question) => question.sheet?.trim() ?? '')
+        .filter((sheet) => sheet !== '' && sheet !== 'notSet'),
+    );
+    const activeSheet = this.filters().sheet;
+    if (activeSheet !== '' && activeSheet !== 'notSet') options.add(activeSheet);
+    return Array.from(options);
+  });
+  readonly filteredQuestions = computed(() => {
+    const filters = this.filters();
+    const searchQuery = normalizeSearch(filters.searchQuery);
+    return this.questions().filter((question) => {
+      const matchesSearch =
+        searchQuery === '' ||
+        [
+          question.question,
+          question.sheet,
+          question.section,
+          question.subsection,
+          question.suggestedByUsername,
+        ].some((value) => normalizeSearch(value ?? '').includes(searchQuery));
+      const matchesSheet =
+        filters.sheet === '' ||
+        (filters.sheet === 'notSet'
+          ? question.sheet === null || question.sheet.trim() === ''
+          : question.sheet === filters.sheet);
+      const matchesGrade =
+        filters.grade === '' ||
+        (filters.grade === 'notSet' ? question.grade === null : question.grade === filters.grade);
+      const matchesAvailability =
+        filters.availability === '' ||
+        (filters.availability === 'available' ? question.claim === null : question.claim !== null);
+      return matchesSearch && matchesSheet && matchesGrade && matchesAvailability;
+    });
+  });
+  readonly hasFilteredQuestions = computed(() => this.filteredQuestions().length > 0);
+  readonly totalQuestionCount = computed(() => this.questions().length);
+  readonly shownQuestionCount = computed(() => this.filteredQuestions().length);
+  readonly availableQuestionCount = computed(
+    () => this.filteredQuestions().filter((question) => question.claim === null).length,
+  );
+  readonly claimedQuestionCount = computed(
+    () => this.filteredQuestions().filter((question) => question.claim !== null).length,
+  );
   readonly manualAddQuestionError = computed(() => {
     const question = this.manualAddQuestion().trim();
     if (question.length === 0) return 'validation.required';
@@ -201,7 +282,24 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupFilters();
     this.loadQueue();
+  }
+
+  resetFilters(): void {
+    const filters: QueueFilters = {
+      searchQuery: '',
+      sheet: '',
+      grade: '',
+      availability: '',
+    };
+    this.filtersForm.reset(filters, { emitEvent: false });
+    this.filters.set(filters);
+    this.syncFiltersToUrl(filters);
+  }
+
+  gradeLabel(grade: AdminMatrixGrade): string {
+    return this.i18n.translate(this.i18n.enumGradeKey(grade));
   }
 
   loadQueue(): void {
@@ -626,7 +724,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   private nextQuestionAfter(questionId: string): QueuedMatrixQuestion | null {
-    const questions = this.questions();
+    const questions = this.filteredQuestions();
     const questionIndex = questions.findIndex((question) => question.id === questionId);
     if (questionIndex < 0) return null;
     return questions.slice(questionIndex + 1).find((question) => question.claim === null) ?? null;
@@ -635,6 +733,70 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private handleClaimConflict(): void {
     this.notifications.error(this.i18n.translate('adminMatrixQueue.claimConflict'));
     this.loadQueue();
+  }
+
+  private setupFilters(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const result = this.filtersFromQueryParams(params);
+      this.filtersForm.setValue(result.filters, { emitEvent: false });
+      this.filters.set(result.filters);
+      if (Object.keys(result.invalidQueryParams).length > 0) {
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: result.invalidQueryParams,
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }
+    });
+    this.filtersForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.filters.set(this.filtersForm.getRawValue());
+    });
+    this.filtersForm.controls.searchQuery.valueChanges
+      .pipe(debounceTime(FILTER_URL_SYNC_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncFiltersToUrl(this.filtersForm.getRawValue()));
+    merge(
+      this.filtersForm.controls.sheet.valueChanges,
+      this.filtersForm.controls.grade.valueChanges,
+      this.filtersForm.controls.availability.valueChanges,
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncFiltersToUrl(this.filtersForm.getRawValue()));
+  }
+
+  private filtersFromQueryParams(params: ParamMap): QueueFiltersFromQueryParams {
+    const gradeParam = params.get('grade');
+    const availabilityParam = params.get('availability');
+    const grade = isQueueGradeFilter(gradeParam) ? gradeParam : '';
+    const availability = isQueueAvailabilityFilter(availabilityParam) ? availabilityParam : '';
+    const invalidQueryParams: QueueFiltersFromQueryParams['invalidQueryParams'] = {};
+    if (gradeParam !== null && gradeParam !== grade) invalidQueryParams.grade = null;
+    if (availabilityParam !== null && availabilityParam !== availability) {
+      invalidQueryParams.availability = null;
+    }
+    return {
+      filters: {
+        searchQuery: params.get('q') ?? '',
+        sheet: params.get('sheet') ?? '',
+        grade,
+        availability,
+      },
+      invalidQueryParams,
+    };
+  }
+
+  private syncFiltersToUrl(filters: QueueFilters): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: filters.searchQuery.trim() || null,
+        sheet: filters.sheet || null,
+        grade: filters.grade || null,
+        availability: filters.availability || null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private selectImportFiles(files: FileList | File[] | null): boolean {
@@ -677,6 +839,18 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
 
 function normalizeManualQuestion(value: string): string {
   return value.replace(LINE_BREAKS_PATTERN, ' ');
+}
+
+function normalizeSearch(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+function isQueueGradeFilter(value: string | null): value is QueueGradeFilter {
+  return value === '' || value === 'notSet' || GRADES.some((grade) => grade === value);
+}
+
+function isQueueAvailabilityFilter(value: string | null): value is QueueAvailabilityFilter {
+  return value === '' || value === 'available' || value === 'claimed';
 }
 
 function filesEqual(first: File, second: File): boolean {
