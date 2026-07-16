@@ -86,6 +86,10 @@ taskiq-worker:
 taskiq-scheduler:
 	$(MAKE) -C backend taskiq-scheduler
 
+.PHONY: agent-bridge
+agent-bridge:
+	bash infra/scripts/agent_bridge.sh
+
 .PHONY: tests-coverage
 tests-coverage:
 	$(MAKE) -C backend tests-coverage

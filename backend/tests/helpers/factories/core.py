@@ -29,6 +29,7 @@ from core.competency_matrix.schemas import (
     ExistingExternalResourceAttachment,
     ExternalResource,
     ExternalResources,
+    MatrixQuestionClaimSummary,
     NewExternalResourceAttachment,
     QueuedCompetencyMatrixQuestion,
     QueuedCompetencyMatrixQuestionCreateParams,
@@ -444,6 +445,7 @@ class CoreFactoryHelper:
         subsection: str | None = None,
         suggested_by_username: str = "anon",
         created_at: datetime | None = None,
+        claim: MatrixQuestionClaimSummary | None = None,
     ) -> QueuedCompetencyMatrixQuestion:
         return QueuedCompetencyMatrixQuestion(
             id=cls.hex_id(question_id),
@@ -454,6 +456,7 @@ class CoreFactoryHelper:
             subsection=subsection,
             suggested_by_username=suggested_by_username,
             created_at=created_at or datetime.now(tz=UTC),
+            claim=claim,
         )
 
     @classmethod

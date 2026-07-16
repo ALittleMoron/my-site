@@ -6,7 +6,7 @@ from core.files.enums import FilePurpose
 from core.files.schemas import FileRule, FileRules
 
 
-class _PathConstants:
+class PathConstants:
     src_dir: Path = Path(__file__).resolve().parent.parent.parent
     root_dir: Path = src_dir.parent
     backend_env_file: Path = root_dir / ".env"
@@ -16,11 +16,11 @@ class _PathConstants:
     alembic_dir: Path = infra_dir / "postgresql" / "alembic"
 
 
-class _MinioBucketNamesConstants:
+class MinioBucketNamesConstants:
     media: Literal["media"] = "media"
 
 
-class _ValkeyDatabaseConstants:
+class ValkeyDatabaseConstants:
     response_cache: int = 0
     auth_revocations: int = 1
     question_suggestion_quota: int = 2
@@ -28,18 +28,18 @@ class _ValkeyDatabaseConstants:
     taskiq_results: int = 4
 
 
-class _ValkeyNamespaceConstants:
+class ValkeyNamespaceConstants:
     auth_revocations: str = "AUTH_REVOCATIONS"
     framework: str = "LITESTAR"
     matrix_question_suggestions: str = "MATRIX_QUESTION_SUGGESTIONS"
 
 
-class _ValkeyConstants:
-    databases: _ValkeyDatabaseConstants = _ValkeyDatabaseConstants()
-    namespaces: _ValkeyNamespaceConstants = _ValkeyNamespaceConstants()
+class ValkeyConstants:
+    databases: ValkeyDatabaseConstants = ValkeyDatabaseConstants()
+    namespaces: ValkeyNamespaceConstants = ValkeyNamespaceConstants()
 
 
-class _ResponseCacheConstants:
+class ResponseCacheConstants:
     store_name: Literal["litestar_cache"] = "litestar_cache"
     domain_key_separator: Literal[":"] = ":"
     default_ttl_seconds: int = 86_400
@@ -47,16 +47,17 @@ class _ResponseCacheConstants:
     json_content_type_header_value: bytes = b"application/json"
 
 
-class _TaskiqConstants:
+class TaskiqConstants:
     queue_name: Literal["my_site_background"] = "my_site_background"
     consumer_group_name: Literal["my_site_background"] = "my_site_background"
     result_prefix: Literal["my_site_taskiq_results"] = "my_site_taskiq_results"
     cache_warm_all_task_name: Literal["cache_warm_all"] = "cache_warm_all"
     cache_warm_domain_task_name: Literal["cache_warm_domain"] = "cache_warm_domain"
     auth_session_prune_task_name: Literal["auth_session_prune"] = "auth_session_prune"
+    agent_audit_prune_task_name: Literal["agent_audit_prune"] = "agent_audit_prune"
 
 
-class _FilesConstants:
+class FilesConstants:
     article_image_mime_types: frozenset[str] = frozenset(
         {"image/png", "image/jpeg", "image/webp", "image/gif"},
     )
@@ -95,8 +96,8 @@ class _FilesConstants:
     )
 
 
-class _ResumeExportConstants:
-    fonts_dir: Path = _PathConstants.infra_dir / "resume_export" / "fonts"
+class ResumeExportConstants:
+    fonts_dir: Path = PathConstants.infra_dir / "resume_export" / "fonts"
     font_regular_path: Path = fonts_dir / "NotoSans-Regular.ttf"
     font_bold_path: Path = fonts_dir / "NotoSans-Bold.ttf"
     font_license_path: Path = fonts_dir / "OFL.txt"
@@ -138,11 +139,11 @@ class _ResumeExportConstants:
     word_body_style_id: Literal["ResumeBody"] = "ResumeBody"
 
 
-class _SearchConstants:
+class SearchConstants:
     min_trigram_fuzzy_query_length: int = 6
 
 
-class _QuestionQueueImportConstants:
+class QuestionQueueImportConstants:
     rules: QuestionQueueImportRules = QuestionQueueImportRules(
         supported_text_extensions=frozenset({".txt", ".csv"}),
         supported_excel_extensions=frozenset({".xlsx", ".xlsm"}),
@@ -157,7 +158,7 @@ class _QuestionQueueImportConstants:
     )
 
 
-class _AdminValidationConstants:
+class AdminValidationConstants:
     slug_pattern: str = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
     account_username_pattern: str = r"^[A-Za-z0-9._]+$"
     account_username_min_length: int = 3
@@ -171,7 +172,7 @@ class _AdminValidationConstants:
     resume_long_text_max_length: int = 10_000
 
 
-class _AuthConstants:
+class AuthConstants:
     session_cookie_name: Literal["__Secure-msid"] = "__Secure-msid"
     session_cookie_path: Literal["/api/auth"] = "/api/auth"
     csrf_guard_header_name: Literal["X-CSRF-Guard"] = "X-CSRF-Guard"
@@ -182,18 +183,39 @@ class _AuthConstants:
     session_secret_byte_count: int = 32
 
 
+class AgentAccessConstants:
+    api_path_prefix: str = "/internal/agent/v1"
+    claim_ttl_seconds: int = 7_200
+    minimum_resource_count: int = 1
+    maximum_resource_count: int = 3
+    certificate_lifetime_seconds: int = 90 * 24 * 60 * 60
+    certificate_rotation_window_seconds: int = 14 * 24 * 60 * 60
+    certificate_rotation_normal_access_overlap_seconds: int = 15 * 60
+    csr_pem_max_length: int = 16_384
+    request_body_max_size_bytes: int = 262_144
+    audit_page_max_size: int = 100
+    audit_retention_seconds: int = 365 * 24 * 60 * 60
+    trusted_client_certificate_header: str = "X-Agent-Client-Certificate"
+    request_id_header: str = "X-Request-ID"
+    access_classification: Literal["future internal"] = "future internal"
+    desktop_directory_mode: int = 0o700
+    desktop_private_key_mode: int = 0o600
+    desktop_pending_file_mode: int = 0o600
+
+
 class Constants:
-    path: _PathConstants = _PathConstants()
-    minio_buckets: _MinioBucketNamesConstants = _MinioBucketNamesConstants()
-    valkey: _ValkeyConstants = _ValkeyConstants()
-    response_cache: _ResponseCacheConstants = _ResponseCacheConstants()
-    taskiq: _TaskiqConstants = _TaskiqConstants()
-    files: _FilesConstants = _FilesConstants()
-    resume_export: _ResumeExportConstants = _ResumeExportConstants()
-    search: _SearchConstants = _SearchConstants()
-    question_queue_import: _QuestionQueueImportConstants = _QuestionQueueImportConstants()
-    admin_validation: _AdminValidationConstants = _AdminValidationConstants()
-    auth: _AuthConstants = _AuthConstants()
+    path: PathConstants = PathConstants()
+    minio_buckets: MinioBucketNamesConstants = MinioBucketNamesConstants()
+    valkey: ValkeyConstants = ValkeyConstants()
+    response_cache: ResponseCacheConstants = ResponseCacheConstants()
+    taskiq: TaskiqConstants = TaskiqConstants()
+    files: FilesConstants = FilesConstants()
+    resume_export: ResumeExportConstants = ResumeExportConstants()
+    search: SearchConstants = SearchConstants()
+    question_queue_import: QuestionQueueImportConstants = QuestionQueueImportConstants()
+    admin_validation: AdminValidationConstants = AdminValidationConstants()
+    auth: AuthConstants = AuthConstants()
+    agent_access: AgentAccessConstants = AgentAccessConstants()
 
 
 constants = Constants()

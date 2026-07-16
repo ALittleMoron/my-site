@@ -24,6 +24,15 @@ from core.account.exceptions import (
     ManagedAccountActionForbiddenError,
     SelfAccountActionForbiddenError,
 )
+from core.agent_access.exceptions import (
+    AgentAuditPaginationError,
+    AgentAuthenticationError,
+    AgentCertificateRequestError,
+    AgentClientNameConflictError,
+    AgentClientValidationError,
+    AgentScopeDeniedError,
+    MatrixQuestionDraftValidationError,
+)
 from core.articles.exceptions import (
     ArticleFolderAlreadyExistsError,
     ArticleFolderPriorityInvalidError,
@@ -33,6 +42,7 @@ from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotPublicReadyError,
     CompetencyMatrixStructureAlreadyExistsError,
     CompetencyMatrixStructurePriorityInvalidError,
+    MatrixQuestionClaimConflictError,
     QuestionQueueImportInvalidError,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
@@ -46,6 +56,14 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     EntryNotFoundError: NotFoundHTTPException,
     UnauthorizedError: UnauthorizedHTTPException,
     ForbiddenError: ForbiddenHTTPException,
+    AgentAuthenticationError: UnauthorizedHTTPException,
+    AgentScopeDeniedError: ForbiddenHTTPException,
+    AgentCertificateRequestError: BadRequestHTTPException,
+    AgentClientNameConflictError: ConflictHTTPException,
+    AgentClientValidationError: BadRequestHTTPException,
+    AgentAuditPaginationError: BadRequestHTTPException,
+    MatrixQuestionDraftValidationError: BadRequestHTTPException,
+    MatrixQuestionClaimConflictError: ConflictHTTPException,
     InvalidFileDataError: BadRequestHTTPException,
     FileInUseError: BadRequestHTTPException,
     FileClientInternalError: InternalServerErrorHTTPException,

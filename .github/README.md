@@ -5,7 +5,7 @@
 | Category | Technologies |
 |----------|--------------|
 | Coverage | ![coverage-backend](./badges/coverage-backend.svg) ![coverage-frontend](./badges/coverage-frontend.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![taskiq](./badges/taskiq.svg) ![paseto](./badges/paseto.svg) ![argon2](./badges/argon2.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![taskiq](./badges/taskiq.svg) ![paseto](./badges/paseto.svg) ![argon2](./badges/argon2.svg) ![mcp](./badges/mcp.svg) |
 | Database | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Cache | ![valkey](./badges/valkey.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
@@ -27,6 +27,7 @@ localized articles, and protected owner/admin/moderator workspaces.
 
 - [Project idea](../docs/idea.md)  
 - [Project TODOs](../docs/TODO.md)
+- [Secure agent access](../docs/agent-access.md)
 
 ## 📂 Project Structure
 
@@ -53,7 +54,14 @@ my-site/
 - Public "how this site is built" case-study page covering architecture, quality, and operations
 - Public updates page for milestone-level site changes
 - Russian/English UI and content localization driven by the backend
-- Short-lived PASETO owner/admin/moderator access tokens with sliding/pruned, admin-manageable server-side sessions and inactive-account enforcement
+- Short-lived PASETO owner/admin/moderator access tokens with sliding/pruned, admin-manageable
+  server-side sessions and inactive-account enforcement
+- Private WireGuard + nginx mTLS Agent contour mounted in the main Litestar application, with a
+  local five-tool stdio MCP bridge. The public listener hides the internal route and strips forged
+  certificate headers; the mTLS listener forwards only seven exact REST operations. Distinct
+  certificates, scopes, closed routes, and core Draft enforcement exclude publishing, generic
+  CRUD, arbitrary fetch, shell, SQL, and Docker operations. The simpler composition intentionally
+  shares the backend process, database role, secrets, and availability boundary.
 
 ## 🚀 Quick Start
 
@@ -74,15 +82,17 @@ cp .env.example .env
 mkcert -install
 mkcert \
   <your-domain> \
-  s3.<your-domain>
+  s3.<your-domain> \
+  agent.<your-domain>
 mkdir -p ./infra/nginx/certs
 mv <your-domain>.pem ./infra/nginx/certs/fullchain.pem
 mv <your-domain>-key.pem ./infra/nginx/certs/privkey.pem
 ```
 
-The nginx container runs as UID/GID `101:101`, so mounted certificate and private key files
-must be readable by that user. For local `mkcert` files, `chmod 644 ./infra/nginx/certs/<file>`
-is enough; for production, prefer owner/group permissions that grant read access only to nginx.
+The nginx container runs as UID/GID `101:101`, so mounted certificate and private key files must be
+readable by that user. For local `mkcert` files,
+`chmod 644 ./infra/nginx/certs/<file>` is enough; for production, prefer owner/group permissions
+that grant read access only to nginx.
 Production Let's Encrypt issuance and renewal are handled through the compose-backed
 `make certbot-issue`, `make certbot-renew`, and `make certbot-sync` targets. See
 [Production Deploy](../docs/production-deploy.md).
@@ -96,9 +106,22 @@ make run
 
 `make run` validates the required `.env` values and materializes runtime secrets as local
 `.deploy-state/compose-secrets/` files before Compose starts services. It brings PostgreSQL,
-Valkey, MinIO, Databasus, backend, frontend, and nginx up through Docker health checks, runs
-one-shot backend initialization, and switches public traffic between blue/green backend/frontend
-slots with a graceful nginx reload.
+Valkey, MinIO, Databasus, backend with the constrained Agent route contour, frontend, and nginx up
+through Docker health checks, runs one-shot backend initialization, and switches public traffic
+between blue/green backend/frontend slots with a forced nginx recreation so Compose-level port,
+secret, user, and image changes take effect.
+
+## Local MCP bridge
+
+1. Run the site with `make run` and register a client CSR once in
+   `/admin-panel/workspace/agent-clients`.
+2. Copy `.env.agent-bridge.example` to `.env.agent-bridge` and fill the CA, issued certificate, and
+   private-key absolute paths.
+3. Restart Codex in this repository. Its checked-in config starts the five-tool stdio bridge
+   automatically; no manual exports are required.
+
+For certificate creation, desktop rotation, and the complete security model, see
+[Agent Access](../docs/agent-access.md).
 
 ## ⚙️ Endpoints
 
@@ -116,6 +139,8 @@ ports bound to `VPN_BIND_ADDRESS`:
 
 - MinIO Console: `http://<VPN_BIND_ADDRESS>:18081`
 - Databasus: `http://<VPN_BIND_ADDRESS>:18082`
+- Agent API: `https://agent.<APP_DOMAIN>:18083/internal/agent/v1` (WireGuard plus an active client
+  certificate; the MCP bridge runs locally over stdio)
 
 The production public firewall baseline is `80/tcp`, `443/tcp`, and the chosen
 WireGuard UDP port. See [WireGuard internal access](../docs/wireguard-internal-access.md).

@@ -37,6 +37,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection="Syntax",
                     suggested_by_username="anon",
                     created_at=first_created_at,
+                    claim=None,
                 ),
                 QueuedCompetencyMatrixQuestion(
                     id=self.factory.core.hex_id(1),
@@ -47,6 +48,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection=None,
                     suggested_by_username="alice",
                     created_at=second_created_at,
+                    claim=None,
                 ),
                 QueuedCompetencyMatrixQuestion(
                     id=self.factory.core.hex_id(3),
@@ -57,6 +59,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection=None,
                     suggested_by_username="owner",
                     created_at=third_created_at,
+                    claim=None,
                 ),
             ],
         )
@@ -221,6 +224,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection=None,
                     suggested_by_username="anon",
                     created_at=created_at,
+                    claim=None,
                 ),
                 QueuedCompetencyMatrixQuestion(
                     id=self.factory.core.hex_id(1),
@@ -231,6 +235,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection=None,
                     suggested_by_username="anon",
                     created_at=created_at,
+                    claim=None,
                 ),
             ],
         )
@@ -258,6 +263,7 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
                     subsection=None,
                     suggested_by_username="anon",
                     created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+                    claim=None,
                 ),
             ],
         )

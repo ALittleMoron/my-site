@@ -10,6 +10,7 @@ from core.auth.exceptions import UnauthorizedError
 from core.auth.schemas import JwtUser
 from entrypoints.litestar.guards import (
     content_manager_guard,
+    owner_guard,
     team_manager_guard,
 )
 
@@ -28,6 +29,21 @@ def make_route_handler() -> BaseRouteHandler:
 
 
 class TestGuards:
+    def test_owner_guard_allows_owner(self) -> None:
+        connection = make_connection(JwtUser(username="owner", role=RoleEnum.OWNER))
+
+        owner_guard(connection, make_route_handler())
+
+    @pytest.mark.parametrize(
+        "role",
+        [RoleEnum.ANON, RoleEnum.USER, RoleEnum.MODERATOR, RoleEnum.ADMIN],
+    )
+    def test_owner_guard_rejects_every_non_owner_role(self, role: RoleEnum) -> None:
+        connection = make_connection(JwtUser(username=role.value, role=role))
+
+        with pytest.raises(UnauthorizedError):
+            owner_guard(connection, make_route_handler())
+
     @pytest.mark.parametrize("role", [RoleEnum.OWNER, RoleEnum.ADMIN])
     def test_team_manager_guard_allows_team_roles(self, role: RoleEnum) -> None:
         connection = make_connection(JwtUser(username=role.value, role=role))

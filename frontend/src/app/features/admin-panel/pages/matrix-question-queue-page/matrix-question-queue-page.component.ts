@@ -91,6 +91,7 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   readonly submitting = signal(false);
   readonly formError = signal<ApiError | null>(null);
   readonly rejectingQuestionId = signal<string | null>(null);
+  readonly releasingClaimQuestionId = signal<string | null>(null);
   readonly manualAddVisible = signal(false);
   readonly addMode = signal<QueueAddMode>('manual');
   readonly manualAddQuestion = signal('');
@@ -226,7 +227,15 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     return formatLocalizedDate(value, this.i18n.dateLocale(), 'dateTime');
   }
 
+  formatClaimExpiresAt(value: string): string {
+    return formatLocalizedDate(value, this.i18n.dateLocale(), 'dateTime');
+  }
+
   selectQuestion(question: QueuedMatrixQuestion): void {
+    if (question.claim !== null) {
+      this.notifications.error(this.i18n.translate('adminMatrixQueue.claimBlocked'));
+      return;
+    }
     this.selectedQuestion.set(question);
     this.formError.set(null);
     this.submitting.set(false);
@@ -438,7 +447,40 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   }
 
   rejectQuestion(question: QueuedMatrixQuestion): void {
+    if (question.claim !== null) {
+      this.notifications.error(this.i18n.translate('adminMatrixQueue.claimBlocked'));
+      return;
+    }
     this.rejectQueuedQuestion(question, false);
+  }
+
+  releaseAgentClaim(question: QueuedMatrixQuestion): void {
+    if (question.claim === null || this.releasingClaimQuestionId() !== null) return;
+    const confirmed =
+      this.document.defaultView?.confirm(
+        this.i18n.translate('adminMatrixQueue.confirmReleaseClaim', {
+          agent: question.claim.agentClientName,
+        }),
+      ) ?? false;
+    if (!confirmed) return;
+    this.releasingClaimQuestionId.set(question.id);
+    this.queueService
+      .releaseAgentClaim(question.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.releasingClaimQuestionId.set(null);
+          this.questions.update((questions) =>
+            questions.map((item) => (item.id === question.id ? { ...item, claim: null } : item)),
+          );
+          this.notifications.success(this.i18n.translate('adminMatrixQueue.claimReleased'));
+        },
+        error: () => {
+          this.releasingClaimQuestionId.set(null);
+          this.notifications.error(this.i18n.translate('adminMatrixQueue.claimReleaseError'));
+          this.loadQueue();
+        },
+      });
   }
 
   rejectSelectedQuestionAndAdvance(): void {
@@ -496,9 +538,13 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           }
           this.notifications.success(this.i18n.translate('adminMatrixQueue.rejected'));
         },
-        error: () => {
+        error: (error: ApiError) => {
           this.rejectingQuestionId.set(null);
-          this.notifications.error(this.i18n.translate('adminMatrixQueue.rejectError'));
+          if (error.status === 409) {
+            this.handleClaimConflict();
+          } else {
+            this.notifications.error(this.i18n.translate('adminMatrixQueue.rejectError'));
+          }
         },
       });
   }
@@ -537,7 +583,11 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
         error: (err: ApiError) => {
           this.submitting.set(false);
           this.formError.set(err);
-          this.notifications.error(this.i18n.translate('adminMatrixQueue.createError'));
+          if (err.status === 409) {
+            this.handleClaimConflict();
+          } else {
+            this.notifications.error(this.i18n.translate('adminMatrixQueue.createError'));
+          }
         },
       });
   }
@@ -579,7 +629,12 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     const questions = this.questions();
     const questionIndex = questions.findIndex((question) => question.id === questionId);
     if (questionIndex < 0) return null;
-    return questions[questionIndex + 1] ?? null;
+    return questions.slice(questionIndex + 1).find((question) => question.claim === null) ?? null;
+  }
+
+  private handleClaimConflict(): void {
+    this.notifications.error(this.i18n.translate('adminMatrixQueue.claimConflict'));
+    this.loadQueue();
   }
 
   private selectImportFiles(files: FileList | File[] | null): boolean {

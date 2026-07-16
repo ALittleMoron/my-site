@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
@@ -179,7 +180,22 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def list_queued_questions_with_active_claims(
+        self,
+        *,
+        active_at: datetime,
+    ) -> QueuedCompetencyMatrixQuestions:
+        raise NotImplementedError
+
+    @abstractmethod
     async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_queued_question_for_update(
+        self,
+        question_id: str,
+    ) -> QueuedCompetencyMatrixQuestion:
         raise NotImplementedError
 
     @abstractmethod
@@ -211,6 +227,10 @@ class CompetencyMatrixStorage(ABC):
 
     @abstractmethod
     async def delete_queued_question(self, question_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_question_claim(self, claim_id: str) -> None:
         raise NotImplementedError
 
 

@@ -9,6 +9,7 @@ describe('AdminPanelPageComponent', () => {
   let fixture: ComponentFixture<AdminPanelPageComponent>;
   let currentUser: WritableSignal<AccountInfo | null>;
   let isAdmin: WritableSignal<boolean>;
+  let isOwner: WritableSignal<boolean>;
   let canManageContent: WritableSignal<boolean>;
   let canManageTeam: WritableSignal<boolean>;
   let isLoggedIn: WritableSignal<boolean>;
@@ -16,6 +17,7 @@ describe('AdminPanelPageComponent', () => {
   beforeEach(async () => {
     currentUser = signal({ username: 'admin', role: 'admin' });
     isAdmin = signal(true);
+    isOwner = signal(false);
     canManageContent = signal(true);
     canManageTeam = signal(true);
     isLoggedIn = signal(true);
@@ -29,6 +31,7 @@ describe('AdminPanelPageComponent', () => {
           useValue: {
             currentUser,
             isAdmin,
+            isOwner,
             canManageContent,
             canManageTeam,
             isLoggedIn,
@@ -50,6 +53,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
+    expect(fixture.nativeElement.textContent).not.toContain('AI-агенты');
     expect(fixture.nativeElement.textContent).toContain('Папки');
     expect(fixture.nativeElement.textContent).toContain('Теги');
     expect(fixture.nativeElement.textContent).toContain('Статистика');
@@ -89,12 +93,14 @@ describe('AdminPanelPageComponent', () => {
   it('shows workspace navigation for owners without exact admin access', () => {
     currentUser.set({ username: 'owner', role: 'owner' });
     isAdmin.set(false);
+    isOwner.set(true);
     canManageTeam.set(true);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
+    expect(fixture.nativeElement.textContent).toContain('AI-агенты');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

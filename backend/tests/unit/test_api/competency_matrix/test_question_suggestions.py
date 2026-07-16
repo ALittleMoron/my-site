@@ -18,12 +18,14 @@ from core.competency_matrix.enums import (
     QuestionQueueImportIssueSeverityEnum,
 )
 from core.competency_matrix.exceptions import (
+    MatrixQuestionClaimConflictError,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionQuotaExceededError,
     QuestionSuggestionSheetUnavailableError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
+    MatrixQuestionClaimSummary,
     QuestionQueueImportPreview,
     QuestionQueueImportPreviewIssue,
     QuestionQueueImportPreviewRow,
@@ -42,6 +44,7 @@ from entrypoints.litestar.api.competency_matrix.schemas import (
 )
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 from tests.test_cases import ApiTestCase
+from tests.unit.mocks.providers.auth import test_current_datetime
 
 
 class TestQuestionSuggestionsApi(ApiTestCase):
@@ -221,6 +224,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                         "subsection": None,
                         "suggestedByUsername": "anon",
                         "createdAt": "2026-06-07T12:00:00+00:00",
+                        "claim": None,
                     },
                     {
                         "id": self.factory.core.hex_id(2),
@@ -231,11 +235,14 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                         "subsection": "Syntax",
                         "suggestedByUsername": "alice",
                         "createdAt": "2026-06-07T12:01:00+00:00",
+                        "claim": None,
                     },
                 ],
             },
         )
-        self.use_case.list_queued_questions.assert_called_once_with()
+        self.use_case.list_queued_questions.assert_called_once_with(
+            current_datetime=test_current_datetime
+        )
 
     def test_regular_user_cannot_list_queue(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
@@ -247,6 +254,38 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.UNAUTHORIZED)
         self.use_case.list_queued_questions.assert_not_called()
+
+    def test_queue_list_exposes_active_agent_claim(self) -> None:
+        self.use_case.list_queued_questions.return_value = QueuedCompetencyMatrixQuestions(
+            values=[
+                self.factory.core.queued_competency_matrix_question(
+                    question_id=1,
+                    created_at=datetime(2026, 7, 14, 10, 0, tzinfo=UTC),
+                    claim=MatrixQuestionClaimSummary(
+                        id=self.factory.core.hex_id(2),
+                        agent_client_id=self.factory.core.hex_id(3),
+                        agent_client_name="codex-desktop",
+                        claimed_at=datetime(2026, 7, 14, 11, 0, tzinfo=UTC),
+                        expires_at=datetime(2026, 7, 14, 13, 0, tzinfo=UTC),
+                    ),
+                )
+            ]
+        )
+
+        response = self.api.get_queued_matrix_questions()
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        claim = response.json()["questions"][0]["claim"]
+        assert claim == {
+            "id": self.factory.core.hex_id(2),
+            "agentClientId": self.factory.core.hex_id(3),
+            "agentClientName": "codex-desktop",
+            "claimedAt": "2026-07-14T11:00:00+00:00",
+            "expiresAt": "2026-07-14T13:00:00+00:00",
+        }
+        self.use_case.list_queued_questions.assert_called_once_with(
+            current_datetime=test_current_datetime
+        )
 
     def test_content_manager_can_create_queued_question(self) -> None:
         self.use_case.suggest_question.return_value = (
@@ -272,6 +311,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "subsection": None,
                 "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
+                "claim": None,
             },
         )
         self.use_case.suggest_question.assert_called_once_with(params=ANY)
@@ -325,6 +365,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "subsection": None,
                 "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
+                "claim": None,
             },
             {
                 "id": self.factory.core.hex_id(4),
@@ -335,6 +376,7 @@ class TestQuestionSuggestionsApi(ApiTestCase):
                 "subsection": None,
                 "suggestedByUsername": "test",
                 "createdAt": "2026-06-07T12:03:00+00:00",
+                "claim": None,
             },
         ]
         self.use_case.import_queued_questions.assert_called_once_with(
@@ -673,6 +715,26 @@ class TestQuestionSuggestionsApi(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
         self.use_case.delete_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7),
+            current_datetime=test_current_datetime,
+        )
+
+    def test_reject_queue_entry_returns_conflict_for_active_agent_claim(self) -> None:
+        self.use_case.delete_queued_question.side_effect = MatrixQuestionClaimConflictError
+
+        response = self.api.delete_queued_matrix_question(question_id=7)
+
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.CONFLICT,
+            expected_message="Queued competency matrix question is claimed by an agent",
+        )
+
+    def test_content_manager_can_release_agent_claim(self) -> None:
+        response = self.api.post_release_queued_matrix_question_claim(question_id=7)
+
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
+        self.use_case.release_queued_question_agent_claim.assert_called_once_with(
             question_id=self.factory.core.hex_id(7)
         )
 
@@ -739,10 +801,28 @@ class TestQuestionSuggestionsApi(ApiTestCase):
         assert body["question"] == "What is PEP 8?"
         self.use_case.create_item_from_queue.assert_called_once_with(
             params=ANY,
+            current_datetime=test_current_datetime,
         )
         call_params = self.use_case.create_item_from_queue.call_args.kwargs["params"]
         assert isinstance(call_params, QueuedCompetencyMatrixQuestionCreateItemParams)
         assert call_params.queued_question_id == self.factory.core.hex_id(7)
+
+    def test_create_from_queue_returns_conflict_for_active_agent_claim(self) -> None:
+        self.use_case.create_item_from_queue.side_effect = MatrixQuestionClaimConflictError
+
+        response = self.api.post_create_item_from_queue(
+            question_id=7,
+            data=self.factory.api.competency_matrix_item_request(
+                resources=[],
+            ),
+            language="en",
+        )
+
+        self.asserts.error_message(
+            response=response,
+            expected_status=codes.CONFLICT,
+            expected_message="Queued competency matrix question is claimed by an agent",
+        )
 
 
 def xlsx_bytes(rows: list[list[object]]) -> bytes:

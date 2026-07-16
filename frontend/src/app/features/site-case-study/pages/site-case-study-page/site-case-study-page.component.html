@@ -42,7 +42,7 @@
     <h2 class="h3 fw-semibold">{{ 'siteBuild.architecture.title' | t }}</h2>
     <div class="row g-3 mt-1">
       @for (block of architectureBlocks; track block.titleKey) {
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-3">
           <article class="site-case-study__card h-100">
             <h3 class="h5 fw-semibold">{{ block.titleKey | t }}</h3>
             <p class="text-body-secondary">{{ block.bodyKey | t }}</p>

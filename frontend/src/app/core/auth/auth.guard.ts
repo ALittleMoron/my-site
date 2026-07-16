@@ -31,4 +31,17 @@ export const teamGuard: CanActivateFn = () => {
   );
 };
 
+export const ownerGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const i18n = inject(I18nService);
+  return auth.ensureCurrentUserLoaded().pipe(
+    map(() => auth.isOwner() || router.createUrlTree(['/admin-panel/articles'])),
+    catchError(() => {
+      auth.clearLocalSession();
+      return of(currentPublicHomeUrlTree(router, i18n));
+    }),
+  );
+};
+
 export const adminGuard = teamGuard;

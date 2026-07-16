@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import pytest
+from pydantic import ValidationError
 
 from core.i18n.enums import LanguageEnum
 from infra.config.settings import Settings
@@ -77,3 +78,17 @@ class TestSettings:
     def test_owner_init_credentials_use_owner_environment(self) -> None:
         assert self.settings.owner.init_login == "owner"
         assert self.settings.owner.init_password.get_secret_value() == "owner"
+
+    def test_taskiq_agent_audit_prune_interval_is_required(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS")
+
+        with pytest.raises(ValidationError, match="agent_audit_prune_interval_seconds"):
+            type(self.settings.taskiq)(
+                _env_file=None,
+                auth_session_prune_interval_seconds=86_400,
+                cache_warm_interval_seconds=3_600,
+                result_expire_seconds=3_600,
+            )

@@ -1,15 +1,15 @@
-class _HttpConstants:
+class HttpConstants:
     ok: int = 200
     no_content: int = 204
     too_many_requests: int = 429
 
 
-class _WaitTimeConstants:
+class WaitTimeConstants:
     min_seconds: float = 0.2
     max_seconds: float = 1.0
 
 
-class _TaskWeightConstants:
+class TaskWeightConstants:
     healthcheck: int = 2
     i18n_languages: int = 2
     i18n_bundle: int = 2
@@ -23,30 +23,30 @@ class _TaskWeightConstants:
     spa_root: int = 1
 
 
-class _ArticlesConstants:
+class ArticlesConstants:
     discovery_page_size: int = 100
     list_page_size: int = 10
 
 
-class _SeedConstants:
+class SeedConstants:
     entity_prefix: str = "perf-seed-"
 
 
-class _MatrixQuestionSuggestionConstants:
+class MatrixQuestionSuggestionConstants:
     prefix: str = "Locust matrix suggestion"
     success_statuses: frozenset[int] = frozenset(
-        {_HttpConstants.no_content, _HttpConstants.too_many_requests},
+        {HttpConstants.no_content, HttpConstants.too_many_requests},
     )
 
 
 class Constants:
-    http: _HttpConstants = _HttpConstants()
-    wait_time: _WaitTimeConstants = _WaitTimeConstants()
-    task_weights: _TaskWeightConstants = _TaskWeightConstants()
-    articles: _ArticlesConstants = _ArticlesConstants()
-    seed: _SeedConstants = _SeedConstants()
-    matrix_question_suggestion: _MatrixQuestionSuggestionConstants = (
-        _MatrixQuestionSuggestionConstants()
+    http: HttpConstants = HttpConstants()
+    wait_time: WaitTimeConstants = WaitTimeConstants()
+    task_weights: TaskWeightConstants = TaskWeightConstants()
+    articles: ArticlesConstants = ArticlesConstants()
+    seed: SeedConstants = SeedConstants()
+    matrix_question_suggestion: MatrixQuestionSuggestionConstants = (
+        MatrixQuestionSuggestionConstants()
     )
 
 

@@ -7,6 +7,7 @@ from dishka import AsyncContainer
 
 from core.account.storages import UserAccountStorage
 from core.account.use_cases import AccountsUseCase
+from core.agent_access.use_cases import AgentAdminUseCase
 from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthSessionStorage, AuthStorage
@@ -95,6 +96,10 @@ class IocContainerHelper:
 
     async def get_accounts_use_case(self) -> Mock:
         use_case = await self.container.get(AccountsUseCase)
+        return cast("Mock", use_case)
+
+    async def get_agent_admin_use_case(self) -> Mock:
+        use_case = await self.container.get(AgentAdminUseCase)
         return cast("Mock", use_case)
 
     # FILES

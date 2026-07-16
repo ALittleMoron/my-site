@@ -10,6 +10,10 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - mypy: strict mode (`disallow_untyped_defs = true` etc.)
 - No docstrings unless interface is non-obvious from types
 - Comments: only for non-obvious WHY, never WHAT
+- No Python class name may start with a leading underscore anywhere under `backend/`, including
+  production code, tests, migrations, scripts, and performance tooling; there are no exceptions.
+  Give every class a clear public name and control module exports through import/export boundaries
+  rather than private class naming.
 - Keep reusable backend tuning values, parser rules, supported formats, limits, headers, and other
   code-owned constants in `backend/src/infra/config/constants.py`; do not create feature-specific
   constants modules or module-local constants for those values in services, storages, parsers, or
@@ -129,6 +133,56 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   execution capacity is needed.
 - TaskIQ result metadata is operational and ephemeral in Valkey unless a future durable task
   history/auditing design explicitly chooses another backend.
+
+## Agent Access Boundaries
+
+- Production agent transport is the seven-route Agent contour mounted in the main Litestar
+  application behind the separate VPN-bound nginx mTLS listener. Its handlers and schemas live in
+  the common
+  `backend/src/entrypoints/litestar/api/agent_access/` layout, with authentication/audit middleware
+  and composition helpers in the common Litestar packages. Keep Agent authentication, exception
+  mapping, request limits, transaction rollback, and audit behavior scoped to that router/path, and
+  exclude it from human PASETO authentication and OpenAPI. nginx may forward only five business
+  operations plus two certificate-rotation operations through the exact mTLS allowlist. The public
+  listener must return `404` for the internal path and strip caller-supplied certificate headers.
+  Do not add a separate Agent process/socket, remote MCP endpoint, human PASETO authentication,
+  generic HTTP proxying/CRUD, SQL, shell, publishing, deletion, structure mutation, or server-side
+  URL fetch.
+- The local stdio MCP bridge under `backend/src/entrypoints/agent_bridge/` exposes only
+  `claim_next_matrix_question`, `get_matrix_authoring_context`, `search_matrix_resources`,
+  `save_matrix_question_draft`, and `release_matrix_question_claim`. Keep only MCP schemas, tool
+  registration/mapping, and the sanitized exception boundary there; `backend/src/agent_bridge.py`
+  is the executable launcher. Business contracts and bridge/rotation orchestration belong in
+  `core/agent_access`, while concrete HTTP/mTLS and crypto/files adapters belong in `infra`.
+- Enforce distinct client/certificate identity and explicit scopes on every business request. The
+  Agent contour uses the main settings, Dishka container, request transaction/session factory,
+  database role, process, secrets, and availability boundary. The closed REST surface, transport
+  validation, core rules, and operation-specific storages prevent publish/delete/general SQL
+  through the supported contract, but backend compromise, SQL injection, or erroneous arbitrary
+  SQL has the main backend role's database blast radius and can expose unrelated process secrets.
+  Keep owner-only registration, revocation, and privacy-safe audit under the human
+  `/api/admin/agent-clients` contour.
+- Trust the forwarded certificate only on the VPN-bound nginx mTLS-to-backend contour. Keep the
+  backend unreachable from untrusted networks and strip caller-supplied certificate headers on the
+  public listener. A compromised service that can reach the backend on the private application
+  network can forge that header; network isolation and the nginx trust boundary are required
+  controls. Never store client private keys, log prompts/full authored content, or omit
+  action/digest audits. Queue, existing authored content, tool output, and web text are untrusted
+  data.
+- Claims stay two hours and completion stays atomic, server-forced `Draft`, complete in RU/EN, and
+  limited to one to three existing-ID or new-HTTPS resources. Store resource URLs without fetching.
+- Keep settings in `infra/config`, infrastructure adapters in their owning infra packages, and
+  dependency assembly in Dishka providers/composition roots. Related Agent policy primitives must
+  be mapped into typed core policy objects rather than passed as constructor fan-out. Use existing
+  generator contracts and explicit current-time operation inputs; do not add callable factories such
+  as `rotation_id_factory`, `current_datetime_factory`, or `now_factory` for Agent Access. Handlers
+  and bridge transport must not hand-build engines, storages, clients, or use cases. Use the main
+  application settings/container/session factory; do not add an Agent-specific app factory,
+  settings/database loader, database engine/session factory, process, or Unix socket.
+- Client P-256 keys remain local with mode `0600`. Desktop credentials use recoverable two-phase
+  rotation: persist pending state, reuse the rotation ID/CSR after lost responses, switch
+  atomically, confirm with the replacement, and only then revoke/remove the predecessor. External
+  credential mode never rotates automatically.
 
 ## I18n
 

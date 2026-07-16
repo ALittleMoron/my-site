@@ -31,6 +31,7 @@
           [class.list-group-item-success]="selectedQuestion()?.id === question.id"
           [attr.aria-current]="selectedQuestion()?.id === question.id ? 'true' : null"
           [attr.data-testid]="'matrix-queue-question-' + question.id"
+          [disabled]="question.claim !== null"
           (click)="selectQuestion(question)"
         >
           <span class="d-block fw-semibold">{{ question.question }}</span>
@@ -49,12 +50,32 @@
               {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
             </span>
           }
+          @if (question.claim; as claim) {
+            <span class="d-block small text-warning-emphasis mt-2" role="status">
+              {{ 'adminMatrixQueue.claimedBy' | t: { agent: claim.agentClientName } }}
+              <time [attr.datetime]="claim.expiresAt">{{
+                formatClaimExpiresAt(claim.expiresAt)
+              }}</time>
+            </span>
+          }
         </button>
-        <div class="d-flex justify-content-end px-3 pb-3">
+        <div class="d-flex justify-content-end gap-2 px-3 pb-3">
+          @if (question.claim !== null) {
+            <button
+              type="button"
+              class="btn btn-outline-warning btn-sm"
+              [attr.data-testid]="'matrix-queue-release-' + question.id"
+              [disabled]="releasingClaimQuestionId() !== null"
+              (click)="releaseAgentClaim(question)"
+            >
+              {{ 'adminMatrixQueue.releaseClaim' | t }}
+            </button>
+          }
           <button
             type="button"
             class="btn btn-outline-danger btn-sm"
-            [disabled]="rejectingQuestionId() !== null"
+            [attr.data-testid]="'matrix-queue-reject-' + question.id"
+            [disabled]="question.claim !== null || rejectingQuestionId() !== null"
             (click)="rejectQuestion(question)"
           >
             {{ 'adminMatrixQueue.reject' | t }}

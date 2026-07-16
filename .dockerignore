@@ -3,6 +3,7 @@ pre-commit-config.yaml
 .git
 .gitignore
 .env
+.env.agent-bridge
 .env.test
 .env.example
 .deploy-state

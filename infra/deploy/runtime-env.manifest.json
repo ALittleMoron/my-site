@@ -44,6 +44,7 @@
     { "name": "SSL_CERT", "allowEmpty": false },
     { "name": "SSL_KEY", "allowEmpty": false },
     { "name": "TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS", "allowEmpty": false },
+    { "name": "TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS", "allowEmpty": false },
     { "name": "TASKIQ_CACHE_WARM_INTERVAL_SECONDS", "allowEmpty": false },
     { "name": "TASKIQ_RESULT_EXPIRE_SECONDS", "allowEmpty": false },
     { "name": "VALKEY_HOST", "allowEmpty": false },
@@ -57,6 +58,9 @@
     { "name": "DB_PASSWORD", "allowEmpty": false },
     { "name": "MINIO_ACCESS_KEY", "allowEmpty": false },
     { "name": "MINIO_SECRET_KEY", "allowEmpty": false },
-    { "name": "SENTRY_DSN", "allowEmpty": true }
+    { "name": "SENTRY_DSN", "allowEmpty": true },
+    { "name": "AGENT_ACCESS_ISSUING_CERTIFICATE", "allowEmpty": false },
+    { "name": "AGENT_ACCESS_ISSUING_PRIVATE_KEY", "allowEmpty": false },
+    { "name": "AGENT_ACCESS_CERTIFICATE_CHAIN", "allowEmpty": false }
   ]
 }

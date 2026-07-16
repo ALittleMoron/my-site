@@ -65,6 +65,7 @@ frontend/performance/reports/lighthouse/
 *.swo
 .DS_Store
 .env
+.env.agent-bridge
 .env.local
 .env.development.local
 .env.test.local

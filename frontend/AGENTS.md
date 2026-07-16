@@ -71,6 +71,12 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
   a repository ignore pattern.
 - Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so public SSR detail pages can render without browser APIs.
 
+- Agent client registration, certificate metadata, revocation, scopes, and audit UI is owner-only.
+  The browser may submit a locally generated CSR and display the returned certificate once, but it
+  must never generate, receive, persist, or display a client private key. It must not offer direct
+  private Agent API/MCP execution, publication, generic CRUD, structure mutation, URL fetching,
+  shell, or other generic-agent-access controls.
+
 ## SSR and Browser APIs
 
 - Treat SSR as a pure render path. Browser-only capabilities such as storage, crypto, DOM mutation,

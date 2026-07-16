@@ -1,6 +1,6 @@
 # ruff: noqa: UP040
 # Litestar 2.23 does not unwrap PEP 695 aliases in handler signatures.
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, TypeAlias
 
 from litestar.enums import RequestEncodingType
@@ -241,6 +241,55 @@ DateToQuery: TypeAlias = Annotated[
         title="Date to",
         description="Inclusive end date for the requested reporting period.",
         examples=("2026-01-31",),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+
+AgentClientIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="client_id",
+        title="Agent client ID",
+        description="Agent client identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+AgentAuditPageSizeQuery: TypeAlias = Annotated[
+    int,
+    api_query_parameter(
+        name="pageSize",
+        title="Audit page size",
+        description="Number of newest audit events to return.",
+        examples=(50,),
+        ge=1,
+        le=100,
+        min_items=None,
+        max_items=None,
+    ),
+]
+AgentAuditCursorCreatedAtQuery: TypeAlias = Annotated[
+    datetime | None,
+    api_query_parameter(
+        name="cursorCreatedAt",
+        title="Audit cursor timestamp",
+        description="Timestamp of the last event returned by the previous page.",
+        examples=("2026-07-14T12:00:00+00:00",),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+AgentAuditCursorEventIdQuery: TypeAlias = Annotated[
+    str | None,
+    api_query_parameter(
+        name="cursorEventId",
+        title="Audit cursor event ID",
+        description="Identifier of the last event returned by the previous page.",
+        examples=("00000000000000000000000000000001",),
         ge=None,
         le=None,
         min_items=None,

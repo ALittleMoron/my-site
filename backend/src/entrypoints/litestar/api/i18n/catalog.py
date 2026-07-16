@@ -106,6 +106,71 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.section.workspace": "Рабочая область",
         "adminPanel.section.team": "Команда",
         "adminPanel.section.resumes": "Резюме",
+        "adminPanel.section.agentClients": "AI-агенты",
+        "adminAgentClients.title": "Доступ AI-агентов",
+        "adminAgentClients.description": (
+            "Регистрация mTLS-клиентов, их полномочия, сертификаты и журнал действий."
+        ),
+        "adminAgentClients.register": "Зарегистрировать агента",
+        "adminAgentClients.registerTitle": "Регистрация AI-агента",
+        "adminAgentClients.registerSubmit": "Выпустить сертификат",
+        "adminAgentClients.name": "Имя агента",
+        "adminAgentClients.scopes": "Полномочия",
+        "adminAgentClients.scope.queueClaim": "Работа с очередью вопросов",
+        "adminAgentClients.scope.contextRead": "Чтение контекста матрицы",
+        "adminAgentClients.scope.resourcesRead": "Поиск ресурсов матрицы",
+        "adminAgentClients.scope.draftCreate": "Создание черновиков",
+        "adminAgentClients.scopeRequired": "Выберите хотя бы одно полномочие.",
+        "adminAgentClients.csrPem": "CSR в формате PEM",
+        "adminAgentClients.csrHelp": (
+            "CSR и приватный ключ создаются на устройстве агента. "
+            "Приватный ключ сюда не передаётся."
+        ),
+        "adminAgentClients.issuedTitle": "Сертификат выпущен",
+        "adminAgentClients.issuedWarning": "Сохраните сертификат и цепочку сейчас.",
+        "adminAgentClients.certificatePem": "Клиентский сертификат",
+        "adminAgentClients.certificateChainPem": "Цепочка сертификатов",
+        "adminAgentClients.empty": "AI-агенты ещё не зарегистрированы.",
+        "adminAgentClients.status.active": "Активен",
+        "adminAgentClients.status.revoked": "Отозван",
+        "adminAgentClients.certificates": "Сертификаты",
+        "adminAgentClients.fingerprint": "SHA-256 fingerprint",
+        "adminAgentClients.serialNumber": "Серийный номер",
+        "adminAgentClients.validFrom": "Действует с",
+        "adminAgentClients.expiresAt": "Истекает",
+        "adminAgentClients.audit": "Журнал",
+        "adminAgentClients.auditTitle": "Журнал действий агента",
+        "adminAgentClients.auditFor": "Журнал: {name}",
+        "adminAgentClients.auditPrivacy": (
+            "Журнал содержит идентификаторы и digest входа, но не prompts и не созданный текст."
+        ),
+        "adminAgentClients.auditEmpty": "Действий пока нет.",
+        "adminAgentClients.auditCreatedAt": "Время",
+        "adminAgentClients.auditAction": "Действие",
+        "adminAgentClients.auditResult": "Результат",
+        "adminAgentClients.auditTargets": "Объект",
+        "adminAgentClients.auditRequestId": "Request ID",
+        "adminAgentClients.auditDigest": "Digest входа",
+        "adminAgentClients.auditResult.success": "Успех",
+        "adminAgentClients.auditResult.rejected": "Отклонено",
+        "adminAgentClients.auditResult.failed": "Ошибка",
+        "adminAgentClients.revoke": "Отозвать навсегда",
+        "adminAgentClients.confirmRevoke": (
+            "Навсегда отозвать доступ агента {name}? Повторная активация невозможна."
+        ),
+        "adminAgentClients.loadError": "Не удалось загрузить AI-агентов.",
+        "adminAgentClients.validationError": "Проверьте имя, полномочия и CSR.",
+        "adminAgentClients.registered": "AI-агент зарегистрирован.",
+        "adminAgentClients.registerError": "Не удалось зарегистрировать AI-агента.",
+        "adminAgentClients.duplicateName": "AI-агент с таким именем уже зарегистрирован.",
+        "adminAgentClients.revoked": "Доступ агента отозван навсегда.",
+        "adminAgentClients.revokeError": "Не удалось отозвать доступ агента.",
+        "adminAgentClients.auditLoadError": "Не удалось загрузить журнал агента.",
+        "adminAgentClients.auditLoading": "Загрузка журнала…",
+        "adminAgentClients.auditLoadMore": "Загрузить ещё",
+        "adminAgentClients.auditLoadMoreLoading": "Загрузка следующих событий…",
+        "adminAgentClients.auditLoadMoreError": "Не удалось загрузить следующие события.",
+        "adminAgentClients.auditEnd": "Больше событий нет.",
         "adminUnsavedChanges.confirmDiscard": (
             "Есть несохранённые изменения. Если продолжить, они будут потеряны. Продолжить?"
         ),
@@ -436,6 +501,13 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.createError": "Не удалось создать вопрос из очереди.",
         "adminMatrixQueue.rejected": "Вопрос отклонён.",
         "adminMatrixQueue.rejectError": "Не удалось отклонить вопрос.",
+        "adminMatrixQueue.claimedBy": "Вопрос занят AI-агентом {agent} до",
+        "adminMatrixQueue.claimBlocked": "Вопрос занят AI-агентом.",
+        "adminMatrixQueue.releaseClaim": "Освободить",
+        "adminMatrixQueue.confirmReleaseClaim": "Освободить вопрос, занятый агентом {agent}?",
+        "adminMatrixQueue.claimReleased": "Блокировка агента снята.",
+        "adminMatrixQueue.claimReleaseError": "Не удалось снять блокировку агента.",
+        "adminMatrixQueue.claimConflict": "Вопрос уже занят AI-агентом. Очередь обновлена.",
         "siteBuild.seo.title": "Как устроен сайт",
         "siteBuild.seo.description": "Инженерный разбор устройства этой базы знаний.",
         "siteBuild.hero.kicker": "Инженерный разбор",
@@ -471,6 +543,17 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "nginx, Docker, MinIO с S3-compatible media storage, Valkey и TaskIQ разделяют "
             "edge routing, файлы, кэш, фоновые задачи и runtime frontend/backend контейнеров, "
             "а публичный трафик переключается между blue/green слотами после health checks."
+        ),
+        "siteBuild.architecture.agentTitle": "Безопасный AI-доступ",
+        "siteBuild.architecture.agentBody": (
+            "Семь Agent REST-операций смонтированы в основном Litestar-приложении без отдельного "
+            "процесса и Unix-сокета. Приватную границу сохраняет отдельный WireGuard-bound nginx "
+            "mTLS-listener с точным allowlist; публичный listener возвращает 404 для внутреннего "
+            "пути и удаляет поддельный certificate header. Локальный stdio MCP-мост открывает "
+            "ровно пять Draft-only операций без publish, generic CRUD, SQL, shell или URL fetch. "
+            "Упрощение осознанно оставляет общими с backend процесс, роль БД, секреты и "
+            "доступность: "
+            "изоляция private application network и доверие к nginx остаются частью boundary."
         ),
         "siteBuild.decisions.title": "Инженерные решения",
         "siteBuild.decision.cleanArchitecture": (
@@ -969,6 +1052,70 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminPanel.section.workspace": "Workspace",
         "adminPanel.section.team": "Team",
         "adminPanel.section.resumes": "Resumes",
+        "adminPanel.section.agentClients": "AI agents",
+        "adminAgentClients.title": "AI agent access",
+        "adminAgentClients.description": (
+            "Manage mTLS clients, their permissions, certificates, and audit events."
+        ),
+        "adminAgentClients.register": "Register agent",
+        "adminAgentClients.registerTitle": "Register AI agent",
+        "adminAgentClients.registerSubmit": "Issue certificate",
+        "adminAgentClients.name": "Agent name",
+        "adminAgentClients.scopes": "Permissions",
+        "adminAgentClients.scope.queueClaim": "Work with the question queue",
+        "adminAgentClients.scope.contextRead": "Read matrix authoring context",
+        "adminAgentClients.scope.resourcesRead": "Search matrix resources",
+        "adminAgentClients.scope.draftCreate": "Create drafts",
+        "adminAgentClients.scopeRequired": "Select at least one permission.",
+        "adminAgentClients.csrPem": "PEM CSR",
+        "adminAgentClients.csrHelp": (
+            "Generate the CSR and private key on the agent device. Never submit the private key."
+        ),
+        "adminAgentClients.issuedTitle": "Certificate issued",
+        "adminAgentClients.issuedWarning": "Save the certificate and chain now.",
+        "adminAgentClients.certificatePem": "Client certificate",
+        "adminAgentClients.certificateChainPem": "Certificate chain",
+        "adminAgentClients.empty": "No AI agents have been registered yet.",
+        "adminAgentClients.status.active": "Active",
+        "adminAgentClients.status.revoked": "Revoked",
+        "adminAgentClients.certificates": "Certificates",
+        "adminAgentClients.fingerprint": "SHA-256 fingerprint",
+        "adminAgentClients.serialNumber": "Serial number",
+        "adminAgentClients.validFrom": "Valid from",
+        "adminAgentClients.expiresAt": "Expires",
+        "adminAgentClients.audit": "Audit",
+        "adminAgentClients.auditTitle": "Agent audit log",
+        "adminAgentClients.auditFor": "Audit: {name}",
+        "adminAgentClients.auditPrivacy": (
+            "The log contains IDs and input digests, but no prompts or generated text."
+        ),
+        "adminAgentClients.auditEmpty": "No actions yet.",
+        "adminAgentClients.auditCreatedAt": "Time",
+        "adminAgentClients.auditAction": "Action",
+        "adminAgentClients.auditResult": "Result",
+        "adminAgentClients.auditTargets": "Target",
+        "adminAgentClients.auditRequestId": "Request ID",
+        "adminAgentClients.auditDigest": "Input digest",
+        "adminAgentClients.auditResult.success": "Success",
+        "adminAgentClients.auditResult.rejected": "Rejected",
+        "adminAgentClients.auditResult.failed": "Failed",
+        "adminAgentClients.revoke": "Revoke permanently",
+        "adminAgentClients.confirmRevoke": (
+            "Permanently revoke access for {name}? The client cannot be reactivated."
+        ),
+        "adminAgentClients.loadError": "Failed to load AI agents.",
+        "adminAgentClients.validationError": "Check the name, permissions, and CSR.",
+        "adminAgentClients.registered": "AI agent registered.",
+        "adminAgentClients.registerError": "Failed to register the AI agent.",
+        "adminAgentClients.duplicateName": "An AI agent with this name is already registered.",
+        "adminAgentClients.revoked": "Agent access was permanently revoked.",
+        "adminAgentClients.revokeError": "Failed to revoke agent access.",
+        "adminAgentClients.auditLoadError": "Failed to load the agent audit log.",
+        "adminAgentClients.auditLoading": "Loading the audit log…",
+        "adminAgentClients.auditLoadMore": "Load more",
+        "adminAgentClients.auditLoadMoreLoading": "Loading more events…",
+        "adminAgentClients.auditLoadMoreError": "Failed to load more events.",
+        "adminAgentClients.auditEnd": "There are no more events.",
         "adminUnsavedChanges.confirmDiscard": (
             "You have unsaved changes. If you continue, they will be lost. Continue?"
         ),
@@ -1300,6 +1447,15 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.createError": "Failed to create a question from the queue.",
         "adminMatrixQueue.rejected": "Question rejected.",
         "adminMatrixQueue.rejectError": "Failed to reject the question.",
+        "adminMatrixQueue.claimedBy": "Question claimed by AI agent {agent} until",
+        "adminMatrixQueue.claimBlocked": "This question is claimed by an AI agent.",
+        "adminMatrixQueue.releaseClaim": "Release",
+        "adminMatrixQueue.confirmReleaseClaim": "Release the question claimed by {agent}?",
+        "adminMatrixQueue.claimReleased": "Agent claim released.",
+        "adminMatrixQueue.claimReleaseError": "Failed to release the agent claim.",
+        "adminMatrixQueue.claimConflict": (
+            "An AI agent has already claimed this question. The queue was refreshed."
+        ),
         "siteBuild.seo.title": "How this site is built",
         "siteBuild.seo.description": "An engineering case study about this knowledge base.",
         "siteBuild.hero.kicker": "Engineering case study",
@@ -1335,6 +1491,17 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "separate edge routing, files, cache, background jobs, and frontend/backend "
             "container runtimes, while public traffic switches between blue/green slots only "
             "after health checks pass."
+        ),
+        "siteBuild.architecture.agentTitle": "Safe AI access",
+        "siteBuild.architecture.agentBody": (
+            "Seven Agent REST operations are mounted in the main Litestar application without a "
+            "separate process or Unix socket. A dedicated WireGuard-bound nginx mTLS listener "
+            "preserves the private boundary with an exact allowlist; the public listener returns "
+            "404 for the internal path and strips forged certificate headers. A local stdio MCP "
+            "bridge exposes exactly five Draft-only operations with no publish, generic CRUD, "
+            "SQL, shell, or URL fetch. The simplification intentionally shares the backend "
+            "process, DB role, secrets, and availability: private application-network isolation "
+            "and trust in nginx remain part of the boundary."
         ),
         "siteBuild.decisions.title": "Engineering decisions",
         "siteBuild.decision.cleanArchitecture": (

@@ -28,9 +28,12 @@ export class AdminPanelPageComponent {
   readonly selectedPageKey = signal<string | null>(null);
   readonly visibleNavigationSections = computed<readonly AdminPanelNavigationSection[]>(() => {
     const canManageTeam = this.auth.canManageTeam();
+    const isOwner = this.auth.isOwner();
     return ADMIN_PANEL_NAVIGATION_SECTIONS.map((section) => ({
       ...section,
-      pages: section.pages.filter((page) => canManageTeam || !page.adminOnly),
+      pages: section.pages.filter(
+        (page) => (canManageTeam || !page.adminOnly) && (isOwner || !page.ownerOnly),
+      ),
     })).filter((section) => section.pages.length > 0);
   });
   readonly defaultExpandedSectionKeys = computed<readonly string[]>(() =>

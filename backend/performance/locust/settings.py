@@ -7,11 +7,11 @@ from core.i18n.enums import LanguageEnum
 from infra.config.constants import constants
 
 
-class _LocustBaseSettings(BaseSettings):
+class LocustBaseSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=constants.path.env_file, extra="ignore")
 
 
-class LocustScenarioSettings(_LocustBaseSettings):
+class LocustScenarioSettings(LocustBaseSettings):
     model_config = SettingsConfigDict(env_prefix="PERFORMANCE_")
 
     language: LanguageEnum
@@ -21,7 +21,7 @@ class LocustScenarioSettings(_LocustBaseSettings):
     seed_data: bool
 
 
-class LocustThresholdSettings(_LocustBaseSettings):
+class LocustThresholdSettings(LocustBaseSettings):
     model_config = SettingsConfigDict(env_prefix="LOCUST_")
 
     max_failure_ratio: float
@@ -29,14 +29,14 @@ class LocustThresholdSettings(_LocustBaseSettings):
     max_p95_response_ms: float
 
 
-class LocustSeedSettings(_LocustBaseSettings):
+class LocustSeedSettings(LocustBaseSettings):
     model_config = SettingsConfigDict(env_prefix="PERFORMANCE_")
 
     seed_data: bool
     host: str
 
 
-class LocustSeedDatabaseSettings(_LocustBaseSettings):
+class LocustSeedDatabaseSettings(LocustBaseSettings):
     model_config = SettingsConfigDict(env_prefix="DB_")
 
     host: str

@@ -39,6 +39,11 @@ export class SiteCaseStudyPageComponent implements OnInit {
       bodyKey: 'siteBuild.architecture.infraBody',
       technologies: ['nginx', 'Docker', 'MinIO', 'Valkey', 'GitHub Actions'],
     },
+    {
+      titleKey: 'siteBuild.architecture.agentTitle',
+      bodyKey: 'siteBuild.architecture.agentBody',
+      technologies: ['Litestar REST', 'local stdio MCP', 'WireGuard', 'mTLS', 'Draft-only'],
+    },
   ];
 
   readonly decisionKeys: readonly string[] = [

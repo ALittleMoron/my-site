@@ -106,6 +106,7 @@ Runtime variables:
 - `SSL_CERT`
 - `SSL_KEY`
 - `TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS`
+- `TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS`
 - `TASKIQ_CACHE_WARM_INTERVAL_SECONDS`
 - `TASKIQ_RESULT_EXPIRE_SECONDS`
 - `VALKEY_HOST`
@@ -121,6 +122,9 @@ Runtime secrets:
 - `MINIO_ACCESS_KEY`
 - `MINIO_SECRET_KEY`
 - `SENTRY_DSN`
+- `AGENT_ACCESS_ISSUING_CERTIFICATE`
+- `AGENT_ACCESS_ISSUING_PRIVATE_KEY`
+- `AGENT_ACCESS_CERTIFICATE_CHAIN`
 
 The deploy renderer still writes these values into the host-side runtime `.env`, but
 the Compose helper materializes them as read-only files under `.deploy-state/compose-secrets/`
@@ -152,6 +156,74 @@ computed public file URLs. `MINIO_REGION` must be explicit for SigV4 S3 client o
 region string. The Compose MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` from
 `APP_URL_SCHEMA` and `APP_DOMAIN` because the bundled MinIO release does not accept bucket-level
 CORS setup through `PutBucketCors`.
+
+## Private Agent API
+
+Production exposes `https://agent.<APP_DOMAIN>:18083/internal/agent/v1` only on
+`VPN_BIND_ADDRESS`. nginx requires a trusted client certificate, rate-limits by certificate
+fingerprint, and proxies only the seven fixed REST operations to the normal backend upstream on the
+private Compose network. Those routes are mounted in the main Litestar application but keep their
+own machine authentication, scopes, exception mapping, request limit, transaction rollback, and
+privacy-safe audit behavior. They are excluded from human PASETO authentication and OpenAPI. The
+public `agent.<APP_DOMAIN>` host returns `404` outside the HTTP ACME challenge path; the normal
+public listener also returns `404` for `/internal/agent/v1` and strips caller-supplied
+`X-Agent-Client-Certificate` headers before proxying other backend routes.
+
+Create a P-256 root CA offline and keep its private key off the production host. Use the root to
+create a P-256 issuing CA, then provide the issuing certificate, issuing private key, and complete
+chain through the three dedicated production secrets above. The deployment materializes them as
+Compose secret files; do not move the issuing key into normal environment entries or an image.
+The fail-closed helper accepts only absolute output directories outside the repository:
+
+```bash
+infra/scripts/agent_ca.sh init <offline-root-directory> <production-issuing-directory>
+```
+
+Each client generates its own P-256 private key and CSR locally. The owner registers the CSR and
+least-privilege scopes in the owner-only admin workspace; the server never receives the client key.
+Client keys must remain mode `0600`. Certificates last 90 days and the local stdio bridge starts a
+recoverable two-phase rotation when 14 days or less remain. It persists the pending key and rotation
+ID before the request, switches credentials atomically, and confirms with the replacement
+certificate; only confirmation revokes the predecessor. Lost responses are retried with the same
+rotation ID and key rather than weakening authentication.
+
+Public DNS must contain `agent.<APP_DOMAIN>` for ACME, and the certificate request includes that SAN.
+Trusted clients use split DNS or `/etc/hosts` to resolve the hostname to `VPN_BIND_ADDRESS`; they
+must still validate the Let's Encrypt server certificate by hostname. The agent CA authenticates
+clients and is not the server TLS trust bundle.
+
+`make run` migrates the application database before starting the normal backend. The Agent contour
+reuses the main settings, Dishka container, request session factory, `DB_*` identity, process,
+secrets, and availability boundary; the backend receives the three issuing-CA secrets. The
+supported contract is constrained by mTLS identity, scopes, exact REST routes, transport/core
+validation, and operation-specific storages; it has only five business and two rotation operations,
+with no publish, delete-item, generic CRUD, arbitrary fetch, shell, or SQL operation.
+
+There is deliberately no separate Agent process or database role. Backend compromise, SQL
+injection, or erroneous arbitrary SQL therefore has the main backend role's database blast radius,
+can expose unrelated backend secrets, and can affect public/admin availability. A compromised
+service that can reach the backend on the private application network can also forge the forwarded
+certificate header. Treat the private network and nginx-to-backend hop as a trusted contour, and do
+not describe shared composition as a security control. Deployment force-recreates nginx after the
+new slot is healthy so changes to its port, secret, listener configuration, or image cannot be
+missed by a config reload.
+
+Before enabling agent work:
+
+- Verify `18083/tcp` is bound only to the WireGuard address and cannot be reached on the public IP.
+- Verify public `https://agent.<APP_DOMAIN>/internal/agent/v1/matrix/authoring-context` returns
+  `404`, and verify a caller-supplied `X-Agent-Client-Certificate` is stripped on ordinary public
+  backend requests.
+- Verify an absent, expired, revoked, or wrong-scope certificate fails closed.
+- Verify only the seven documented REST operations reach the Agent API; the local bridge still
+  exposes only the five business tools documented in [Agent access](agent-access.md).
+- Verify unsupported publish, delete, generic CRUD, and SQL routes do not exist and never proxy.
+- Exercise client rotation before the first production certificate enters its rotation window.
+
+If rollout or recovery fails, disable the private listener. Do not fall back to public
+`443`, plaintext HTTP, shared certificates, bearer-only auth, a trusted client-certificate header
+from direct callers, or generic admin/API access. See [Agent access](agent-access.md) for
+client configuration, emergency response, and the full acceptance checklist.
 
 ## TLS
 

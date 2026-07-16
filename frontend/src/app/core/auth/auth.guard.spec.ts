@@ -11,7 +11,7 @@ import {
 } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom, isObservable, of, throwError } from 'rxjs';
-import { authGuard, teamGuard } from './auth.guard';
+import { authGuard, ownerGuard, teamGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
 import { ApiClient } from '../http/api-client.service';
@@ -206,5 +206,41 @@ describe('teamGuard', () => {
     expect(clearLocalSession).toHaveBeenCalledTimes(1);
     expect(result instanceof UrlTree).toBe(true);
     expect((result as UrlTree).toString()).toBe('/ru/how-this-site-is-built');
+  });
+});
+
+describe('ownerGuard', () => {
+  function runGuard(isOwner: boolean): MaybeAsync<GuardResult> {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: {
+            isOwner: () => isOwner,
+            ensureCurrentUserLoaded: () => of(void 0),
+            clearLocalSession: jest.fn(),
+          },
+        },
+        { provide: I18nService, useValue: { language: signal('ru') } },
+      ],
+    });
+    return TestBed.runInInjectionContext(() =>
+      ownerGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
+    );
+  }
+
+  async function resolveGuardResult(result: MaybeAsync<GuardResult>): Promise<GuardResult> {
+    if (isObservable(result)) return firstValueFrom(result);
+    return Promise.resolve(result);
+  }
+
+  it('allows only the owner into agent access management', async () => {
+    await expect(resolveGuardResult(runGuard(true))).resolves.toBe(true);
+
+    const denied = await resolveGuardResult(runGuard(false));
+    expect(denied instanceof UrlTree).toBe(true);
+    expect((denied as UrlTree).toString()).toBe('/admin-panel/articles');
   });
 });

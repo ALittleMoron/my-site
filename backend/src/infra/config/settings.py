@@ -1,8 +1,9 @@
 from ipaddress import IPv4Address
+from pathlib import Path
 from typing import Literal
 
 from litestar.config.response_cache import CACHE_FOREVER
-from pydantic import PositiveInt, SecretStr
+from pydantic import PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from core.files.types import Namespace
@@ -13,16 +14,40 @@ from infra.config.constants import constants
 _LOCAL_ALL_INTERFACES_HOST = IPv4Address(0).compressed
 
 
+class ProjectBaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=constants.path.env_file, extra="ignore")
+
+
 class SecretStrExtended(SecretStr):
     def to_domain_secret(self) -> Secret[str]:
         return Secret(self.get_secret_value())
 
 
-class _ProjectBaseSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=constants.path.env_file, extra="ignore")
+class DatabaseSettings(ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DB_")
+
+    user: str
+    password: SecretStrExtended
+    driver: str
+    host: str
+    port: str
+    name: str
+    pool_pre_ping: bool
+    pool_size: int
+    max_overflow: int
+    expire_on_commit: bool
+    log_query_metrics: bool
+    slow_query_log_threshold_ms: int
+    slow_query_log_statement_max_length: int
+
+    @property
+    def url(self) -> SecretStrExtended:
+        return SecretStrExtended(
+            f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
+        )
 
 
-class _AppSettings(_ProjectBaseSettings):
+class AppSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     url_schema: Literal["http", "https"]
@@ -57,38 +82,14 @@ class _AppSettings(_ProjectBaseSettings):
         return 0
 
 
-class _OwnerSettings(_ProjectBaseSettings):
+class OwnerSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="OWNER_")
 
     init_login: str
     init_password: SecretStrExtended
 
 
-class _DatabaseSettings(_ProjectBaseSettings):
-    model_config = SettingsConfigDict(env_prefix="DB_")
-
-    user: str
-    password: SecretStrExtended
-    driver: str
-    host: str
-    port: str
-    name: str
-    pool_pre_ping: bool
-    pool_size: int
-    max_overflow: int
-    expire_on_commit: bool
-    log_query_metrics: bool
-    slow_query_log_threshold_ms: int
-    slow_query_log_statement_max_length: int
-
-    @property
-    def url(self) -> SecretStrExtended:
-        return SecretStrExtended(
-            f"{self.driver}://{self.user}:{self.password.get_secret_value()}@{self.host}:{self.port}/{self.name}",
-        )
-
-
-class _AuthSettings(_ProjectBaseSettings):
+class AuthSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="AUTH_")
 
     public_key: SecretStrExtended
@@ -100,7 +101,7 @@ class _AuthSettings(_ProjectBaseSettings):
     token_prefix: str
 
 
-class _MinioSettings(_ProjectBaseSettings):
+class MinioSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="MINIO_")
 
     host: str
@@ -129,14 +130,14 @@ class _MinioSettings(_ProjectBaseSettings):
         return f"{self.public_endpoint_url}/{bucket}/{object_path.removeprefix('/')}"
 
 
-class _SentrySettings(_ProjectBaseSettings):
+class SentrySettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="SENTRY_")
 
     use: bool
     dsn: str
 
 
-class _ValkeySettings(_ProjectBaseSettings):
+class ValkeySettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="VALKEY_")
 
     host: str
@@ -150,57 +151,80 @@ class _ValkeySettings(_ProjectBaseSettings):
         return self.get_url(db=constants.valkey.databases.response_cache)
 
 
-class _I18nSettings(_ProjectBaseSettings):
+class I18nSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="I18N_")
 
     default_language: LanguageEnum
 
 
-class _CompetencyMatrixSettings(_ProjectBaseSettings):
+class CompetencyMatrixSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="COMPETENCY_MATRIX_")
 
     question_suggestion_anonymous_daily_limit: PositiveInt
 
 
-class _TaskiqSettings(_ProjectBaseSettings):
+class AgentAccessSettings(ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="AGENT_ACCESS_")
+
+    issuing_certificate_file: Path
+    issuing_private_key_file: Path
+    certificate_chain_file: Path
+
+    @field_validator(
+        "issuing_certificate_file",
+        "issuing_private_key_file",
+        "certificate_chain_file",
+    )
+    @classmethod
+    def validate_absolute_file_path(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            msg = "agent access secret file paths must be absolute"
+            raise ValueError(msg)
+        return value
+
+
+class TaskiqSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="TASKIQ_")
 
     auth_session_prune_interval_seconds: PositiveInt
+    agent_audit_prune_interval_seconds: PositiveInt
     cache_warm_interval_seconds: PositiveInt
     result_expire_seconds: PositiveInt
 
 
-class _CacheWarmSettings(_ProjectBaseSettings):
+class CacheWarmSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="CACHE_WARM_")
 
     articles_page_size: PositiveInt
 
 
 class Settings:
-    app: _AppSettings
-    auth: _AuthSettings
-    cache_warm: _CacheWarmSettings
-    competency_matrix: _CompetencyMatrixSettings
-    database: _DatabaseSettings
-    i18n: _I18nSettings
-    minio: _MinioSettings
-    owner: _OwnerSettings
-    sentry: _SentrySettings
-    taskiq: _TaskiqSettings
-    valkey: _ValkeySettings
+    agent_access: AgentAccessSettings
+    app: AppSettings
+    auth: AuthSettings
+    cache_warm: CacheWarmSettings
+    competency_matrix: CompetencyMatrixSettings
+    database: DatabaseSettings
+    i18n: I18nSettings
+    minio: MinioSettings
+    owner: OwnerSettings
+    sentry: SentrySettings
+    taskiq: TaskiqSettings
+    valkey: ValkeySettings
 
     def __init__(self) -> None:
-        self.app = _AppSettings()
-        self.auth = _AuthSettings()
-        self.cache_warm = _CacheWarmSettings()
-        self.competency_matrix = _CompetencyMatrixSettings()
-        self.database = _DatabaseSettings()
-        self.i18n = _I18nSettings()
-        self.minio = _MinioSettings()
-        self.owner = _OwnerSettings()
-        self.sentry = _SentrySettings()
-        self.taskiq = _TaskiqSettings()
-        self.valkey = _ValkeySettings()
+        self.agent_access = AgentAccessSettings()
+        self.app = AppSettings()
+        self.auth = AuthSettings()
+        self.cache_warm = CacheWarmSettings()
+        self.competency_matrix = CompetencyMatrixSettings()
+        self.database = DatabaseSettings()
+        self.i18n = I18nSettings()
+        self.minio = MinioSettings()
+        self.owner = OwnerSettings()
+        self.sentry = SentrySettings()
+        self.taskiq = TaskiqSettings()
+        self.valkey = ValkeySettings()
 
 
 settings = Settings()

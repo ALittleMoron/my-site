@@ -1,8 +1,10 @@
 from dishka.integrations import taskiq as dishka_taskiq
+from dishka.integrations.base import is_dishka_injected
 from taskiq_redis import RedisAsyncResultBackend
 
 from entrypoints.taskiq import broker as taskiq_broker_module
 from entrypoints.taskiq import worker as taskiq_worker_module
+from entrypoints.taskiq.agent_access import tasks as agent_access_tasks_module
 from entrypoints.taskiq.auth import tasks as auth_tasks_module
 from entrypoints.taskiq.cache_warm import tasks as cache_warm_tasks_module
 from infra.config.constants import constants
@@ -64,10 +66,24 @@ class TestTaskiqScheduleConfiguration:
         ]
         assert "cron" not in schedule[0]
 
+    def test_agent_audit_prune_has_exactly_one_interval_schedule(self) -> None:
+        schedule = agent_access_tasks_module.prune_expired_agent_audits.labels["schedule"]
+
+        assert schedule == [
+            {
+                "schedule_id": "agent_audit_prune",
+                "interval": settings.taskiq.agent_audit_prune_interval_seconds,
+            },
+        ]
+        assert "cron" not in schedule[0]
+
     def test_tasks_use_dishka_taskiq_middleware(self) -> None:
         assert any(
             isinstance(middleware, dishka_taskiq.ContainerMiddleware)
             for middleware in taskiq_broker_module.broker.middlewares
+        )
+        assert is_dishka_injected(
+            agent_access_tasks_module.prune_expired_agent_audits.original_func,
         )
 
     def test_worker_module_is_the_taskiq_registry_entrypoint(self) -> None:
@@ -84,4 +100,8 @@ class TestTaskiqScheduleConfiguration:
         assert (
             taskiq_worker_module.broker.find_task(constants.taskiq.auth_session_prune_task_name)
             is auth_tasks_module.prune_expired_auth_sessions
+        )
+        assert (
+            taskiq_worker_module.broker.find_task(constants.taskiq.agent_audit_prune_task_name)
+            is agent_access_tasks_module.prune_expired_agent_audits
         )

@@ -61,6 +61,13 @@ export class MatrixQuestionQueueService {
     return this.api.delete<void>(`/api/admin/competency-matrix/queued-questions/${questionId}`);
   }
 
+  releaseAgentClaim(questionId: string): Observable<void> {
+    return this.api.post<void>(
+      `/api/admin/competency-matrix/queued-questions/${questionId}/release-agent-claim`,
+      {},
+    );
+  }
+
   createQuestionFromQueue(
     questionId: string,
     payload: AdminMatrixQuestionPayload,

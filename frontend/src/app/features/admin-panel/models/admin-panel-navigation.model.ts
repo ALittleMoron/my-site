@@ -4,6 +4,7 @@ export interface AdminPanelNavigationPage {
   route: string;
   badgeTextKey: string | null;
   adminOnly: boolean;
+  ownerOnly: boolean;
 }
 
 export interface AdminPanelNavigationSection {

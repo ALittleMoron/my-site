@@ -11,9 +11,10 @@ from litestar.testing import TestClient
 from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.auth.types import RawToken
-from entrypoints.litestar.initializers import create_litestar_app
+from entrypoints.litestar.initializers.main import create_litestar_app
 from infra.config.settings import Settings
 from tests.unit.mocks.providers.account import MockUserAccountProvider
+from tests.unit.mocks.providers.agent_access import MockAgentAccessProvider
 from tests.unit.mocks.providers.articles import MockArticlesProvider
 from tests.unit.mocks.providers.auth import MockAuthProvider
 from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
@@ -63,6 +64,7 @@ async def container(  # noqa: PLR0913
         MockContactsProvider(),
         MockResumesProvider(),
         MockUserAccountProvider(),
+        MockAgentAccessProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),
         MockWikiLinksProvider(),
         MockHealthcheckProvider(),

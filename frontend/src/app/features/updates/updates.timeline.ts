@@ -133,13 +133,27 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
       ru:
         'Очередь получила общий RU/EN Markdown-form со sticky actions, сценарии ' +
         '«создать/отклонить и далее» и «пропустить», а импорт из txt/csv/xlsx теперь ' +
-        'показывает предпросмотр, ошибки валидации и точные дубли до подтверждения.',
+        'показывает предпросмотр, ошибки валидации и точные дубли до подтверждения. ' +
+        'Для AI-агентов отдельная machine-граница теперь остаётся на edge: семь REST operations ' +
+        'смонтированы в основном Litestar app и используют общие settings, DI и DB session вместо ' +
+        'отдельного процесса и UDS. WireGuard-bound nginx mTLS-listener пропускает только точный ' +
+        'allowlist, а public listener возвращает 404 для внутреннего пути и удаляет поддельный ' +
+        'certificate header. MCP остался локальным stdio-мостом к пяти Draft-only операциям. ' +
+        'Раздельные сертификаты, scopes и privacy-safe аудит сохраняются; упрощение осознанно ' +
+        'оставляет общими с backend процесс, роль БД, секреты и контур доступности.',
       en:
         'The queue gained a shared RU/EN Markdown form with sticky actions, create/reject-and-next ' +
         'and skip flows, while txt/csv/xlsx imports now show a preview, validation errors, and ' +
-        'exact duplicates before confirmation.',
+        'exact duplicates before confirmation. The separate machine boundary for AI agents now ' +
+        'stays at the edge: seven REST operations are mounted in the main Litestar app and reuse ' +
+        'its settings, DI, and DB session instead of a separate process and UDS. The dedicated ' +
+        'WireGuard-bound nginx mTLS listener forwards only an exact allowlist, while the public ' +
+        'listener returns 404 for the internal path and strips forged certificate headers. MCP ' +
+        'remains a local stdio bridge to five Draft-only operations. Distinct certificates, ' +
+        'scopes, and privacy-safe audit remain; the simplification intentionally shares the ' +
+        'backend process, DB role, secrets, and availability.',
     },
-    tagIds: ['admin', 'frontend', 'backend', 'matrix', 'content', 'localization'],
+    tagIds: ['admin', 'frontend', 'backend', 'matrix', 'content', 'localization', 'security'],
   },
   {
     id: 'release-workflow',

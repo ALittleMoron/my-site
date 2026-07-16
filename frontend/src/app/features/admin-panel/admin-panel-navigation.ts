@@ -11,6 +11,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/workspace/team',
         badgeTextKey: null,
         adminOnly: true,
+        ownerOnly: false,
       },
       {
         key: 'resumes',
@@ -18,6 +19,15 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/workspace/resumes',
         badgeTextKey: null,
         adminOnly: true,
+        ownerOnly: false,
+      },
+      {
+        key: 'agent-clients',
+        labelKey: 'adminPanel.section.agentClients',
+        route: '/admin-panel/workspace/agent-clients',
+        badgeTextKey: null,
+        adminOnly: false,
+        ownerOnly: true,
       },
     ],
   },
@@ -31,6 +41,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/articles',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
       {
         key: 'article-folders',
@@ -38,6 +49,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/article-folders',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
       {
         key: 'article-tags',
@@ -45,6 +57,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/article-tags',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
       {
         key: 'article-statistics',
@@ -52,6 +65,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/article-statistics',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
     ],
   },
@@ -65,6 +79,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/matrix-questions',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
       {
         key: 'matrix-structure',
@@ -72,6 +87,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/matrix-structure',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
       {
         key: 'matrix-question-queue',
@@ -79,6 +95,7 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/matrix-question-queue',
         badgeTextKey: null,
         adminOnly: false,
+        ownerOnly: false,
       },
     ],
   },

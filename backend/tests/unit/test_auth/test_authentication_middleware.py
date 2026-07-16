@@ -7,7 +7,7 @@ from litestar.middleware import AuthenticationResult
 from core.auth.enums import RoleEnum
 from core.auth.schemas import AuthAuthenticateParams, JwtUser
 from core.auth.types import Token
-from entrypoints.litestar.auth import AuthenticationMiddleware
+from entrypoints.litestar.middlewares.auth import AuthenticationMiddleware
 from tests.test_cases import ContainerTestCase
 from tests.unit.mocks.providers.auth import test_current_datetime
 

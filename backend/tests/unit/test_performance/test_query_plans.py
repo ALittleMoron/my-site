@@ -1,7 +1,7 @@
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import Any, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy.dialects import postgresql
@@ -14,6 +14,7 @@ from performance.query_plans import (
     compile_captured_query,
     generate_series_subquery,
 )
+from performance.query_plans import runner as query_plan_runner
 from performance.query_plans import scenarios as query_plan_scenarios
 from performance.query_plans import seed as query_plan_seed
 from performance.query_plans.discovery import discover_storage_methods
@@ -189,6 +190,23 @@ class TestQueryCapture:
         assert "folder_id" in compiled
         assert "folder_ru" not in compiled
         assert "folder_en" not in compiled
+
+    async def test_query_plan_profile_cleanup_removes_seeded_dataset(self) -> None:
+        engine = MagicMock()
+        connection = AsyncMock()
+        engine.begin.return_value.__aenter__.return_value = connection
+
+        await query_plan_runner.cleanup_seeded_profile(engine=engine)
+
+        statement = connection.execute.await_args.args[0]
+        sql = " ".join(statement.text.split())
+        assert sql.startswith("TRUNCATE TABLE ")
+        assert "articles__article_model" in sql
+        assert "competency_matrix__competency_matrix_item_model" in sql
+        assert "competency_matrix__external_resource_model" in sql
+        assert "resumes__resume_model" in sql
+        assert "auth__user_model" in sql
+        assert sql.endswith(" RESTART IDENTITY CASCADE")
 
     def test_discover_storage_methods_finds_public_async_methods_only(self) -> None:
         methods = discover_storage_methods()

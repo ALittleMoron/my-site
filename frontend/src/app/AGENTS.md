@@ -141,6 +141,17 @@ features/<name>/
 | `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                   |
 | `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                          |
 
+## Agent Client Administration
+
+- Keep lifecycle and audit views in the owner-only admin contour backed by the owner-guarded
+  `/api/admin/agent-clients` API. Do not broaden them to admin/moderator roles or public routes.
+- Registration accepts only a client-generated CSR, name, and explicit least-privilege scopes.
+  Never request, upload, cache, or render a client private key. Make the one-time certificate return
+  clear and require explicit confirmation for permanent client revocation.
+- Present agent-created matrix items as drafts requiring human review. Do not add direct private
+  Agent API/MCP execution, publishing, generic CRUD, structure changes, URL fetching, shell/HTTP
+  controls, or imply a claim grants broader authority.
+
 ## Routing
 
 - `app.routes.ts` — top-level only. Lazy-loads feature routes via `loadChildren`.

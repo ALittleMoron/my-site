@@ -5,7 +5,7 @@
 | Категория | Технологии |
 |----------|------------|
 | Покрытие | ![coverage-backend](./badges/coverage-backend.svg) ![coverage-frontend](./badges/coverage-frontend.svg) |
-| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![taskiq](./badges/taskiq.svg) ![paseto](./badges/paseto.svg) ![argon2](./badges/argon2.svg) |
+| Backend | ![python](./badges/python.svg) ![litestar](./badges/litestar.svg) ![async](./badges/async.svg) ![pydantic](./badges/pydantic.svg) ![dishka](./badges/dishka.svg) ![taskiq](./badges/taskiq.svg) ![paseto](./badges/paseto.svg) ![argon2](./badges/argon2.svg) ![mcp](./badges/mcp.svg) |
 | База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Кэш | ![valkey](./badges/valkey.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
@@ -27,6 +27,7 @@
 
 - [Идея проекта](../docs/idea.md)  
 - [Что нужно сделать](../docs/TODO.md)
+- [Безопасный доступ агентов](../docs/agent-access.md)
 
 ## 📂 Структура проекта
 
@@ -53,7 +54,15 @@ my-site/
 - Публичная case-study страница «как устроен сайт» про архитектуру, качество и эксплуатацию
 - Публичная страница обновлений с milestone-изменениями сайта
 - Локализация интерфейса и контента на русском и английском языках
-- PASETO-аутентификация для защищённого режима владельца/администратора/модератора со скользящими, очищаемыми и управляемыми в админке серверными сессиями и блокировкой неактивных аккаунтов
+- PASETO-аутентификация для защищённого режима владельца/администратора/модератора
+  со скользящими, очищаемыми и управляемыми в админке серверными сесиями и
+  блокировкой неактивных аккаунтов
+- Приватный Agent-контур через WireGuard и nginx mTLS, смонтированный в основном Litestar
+  приложении, и локальный stdio MCP bridge с пятью tools. Публичный listener скрывает внутренний
+  route и удаляет поддельный certificate header, а mTLS-listener пропускает только семь точных REST
+  операций. Раздельные сертификаты, scopes, закрытые routes и серверный Draft-контроль исключают
+  публикацию, generic CRUD, произвольный fetch, shell, SQL и Docker-операции. Упрощённая композиция
+  осознанно оставляет общими с backend процесс, роль БД, секреты и контур доступности.
 
 ## 🚀 Запуск
 
@@ -74,14 +83,15 @@ cp .env.example .env
 mkcert -install
 mkcert \
   <your-domain> \
-  s3.<your-domain>
+  s3.<your-domain> \
+  agent.<your-domain>
 mkdir -p ./infra/nginx/certs
 mv <your-domain>.pem ./infra/nginx/certs/fullchain.pem
 mv <your-domain>-key.pem ./infra/nginx/certs/privkey.pem
 ```
 
-Контейнер nginx запускается с UID/GID `101:101`, поэтому смонтированные сертификат и
-приватный ключ должны быть читаемы этим пользователем. Для локальных файлов `mkcert`
+Контейнер nginx запускается с UID/GID `101:101`, поэтому смонтированные сертификат и приватный ключ
+должны быть читаемы этим пользователем. Для локальных файлов `mkcert`
 достаточно `chmod 644 ./infra/nginx/certs/<file>`; для production лучше настроить
 owner/group-права так, чтобы доступ на чтение был только у nginx.
 Production выпуск и renewal Let's Encrypt сертификатов идут через compose-backed
@@ -97,9 +107,22 @@ make run
 
 `make run` заранее проверяет обязательные значения `.env` и материализует runtime secrets как
 локальные файлы `.deploy-state/compose-secrets/`. Затем он поднимает PostgreSQL, Valkey, MinIO,
-Databasus, backend, frontend и nginx через Docker health checks, выполняет одноразовую
-backend-инициализацию и переключает публичный трафик между blue/green backend/frontend слотами
-через graceful nginx reload.
+Databasus, backend с ограниченным Agent route-контуром, frontend и nginx через Docker health checks,
+выполняет одноразовую backend-инициализацию и переключает публичный трафик между blue/green
+backend/frontend слотами с принудительным recreation nginx, чтобы применить Compose-изменения
+порта, secrets, пользователя и image.
+
+## Локальный MCP bridge
+
+1. Запустить сайт через `make run` и один раз зарегистрировать клиентский CSR в
+   `/admin-panel/workspace/agent-clients`.
+2. Скопировать `.env.agent-bridge.example` в `.env.agent-bridge` и указать абсолютные пути к CA,
+   выданному сертификату и приватному ключу.
+3. Перезапустить Codex в этом репозитории. Checked-in конфигурация автоматически запустит stdio
+   bridge с пятью tools; вручную экспортировать переменные не нужно.
+
+Генерация сертификатов, desktop rotation и полная модель безопасности описаны в
+[Agent Access](../docs/agent-access.md).
 
 ## ⚙️ Важные ссылки
 
@@ -117,6 +140,8 @@ backend-инициализацию и переключает публичный 
 
 - MinIO Console: `http://<VPN_BIND_ADDRESS>:18081`
 - Databasus: `http://<VPN_BIND_ADDRESS>:18082`
+- Agent API: `https://agent.<APP_DOMAIN>:18083/internal/agent/v1` (WireGuard и активный клиентский
+  сертификат; MCP bridge запускается локально через stdio)
 
 Production firewall baseline: `80/tcp`, `443/tcp` и выбранный WireGuard UDP
 port. Подробнее: [WireGuard internal access](../docs/wireguard-internal-access.md).

@@ -8,7 +8,6 @@ import pytest
 from litestar.exceptions import ImproperlyConfiguredException
 from litestar.stores.base import Store
 
-from entrypoints.litestar import initializers as litestar_initializers
 from entrypoints.litestar import response_cache as response_cache_module
 from entrypoints.litestar.api.articles.endpoints import (
     AdminArticlesApiController,
@@ -23,6 +22,7 @@ from entrypoints.litestar.api.i18n.endpoints import I18nApiController
 from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
 from entrypoints.litestar.cli.commands.cache import invalidate_cache_command
 from entrypoints.litestar.cli.plugins import CLIPlugin
+from entrypoints.litestar.initializers import main as litestar_initializers
 from entrypoints.litestar.response_cache import (
     ResponseCacheDomain,
     ResponseCacheDomainStore,

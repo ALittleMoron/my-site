@@ -10,6 +10,7 @@ from core.competency_matrix.enums import (
     InterviewFrequencyEnum,
 )
 from core.competency_matrix.exceptions import (
+    CompetencyMatrixItemConflictError,
     CompetencyMatrixItemNotFoundError,
     CompetencyMatrixStructureAlreadyExistsError,
     CompetencyMatrixStructureNotFoundError,
@@ -825,6 +826,16 @@ class TestCompetencyMatrixStorage(StorageTestCase):
                 ),
             ],
         )
+
+    async def test_create_competency_matrix_item_maps_duplicate_slug_to_conflict(self) -> None:
+        with pytest.raises(CompetencyMatrixItemConflictError):
+            await self.storage.create_competency_matrix_item(
+                item=self.factory.core.competency_matrix_item(
+                    item_id=99,
+                    slug="1",
+                    question="Duplicate slug",
+                ),
+            )
 
     async def test_update_competency_matrix_item(self) -> None:
         await self.storage_helper.create_competency_matrix_items(

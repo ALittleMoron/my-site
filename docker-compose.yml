@@ -29,6 +29,9 @@ x-backend-build: &backend-build
     AUTH_TOKEN_PREFIX: ${AUTH_TOKEN_PREFIX}
     CACHE_WARM_ARTICLES_PAGE_SIZE: ${CACHE_WARM_ARTICLES_PAGE_SIZE}
     COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT: ${COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT}
+    AGENT_ACCESS_ISSUING_CERTIFICATE_FILE: /run/secrets/agent_issuing_certificate
+    AGENT_ACCESS_ISSUING_PRIVATE_KEY_FILE: /run/secrets/agent_issuing_private_key
+    AGENT_ACCESS_CERTIFICATE_CHAIN_FILE: /run/secrets/agent_certificate_chain
     DB_DRIVER: ${DB_DRIVER}
     DB_EXPIRE_ON_COMMIT: ${DB_EXPIRE_ON_COMMIT}
     DB_HOST: ${DB_HOST}
@@ -56,6 +59,7 @@ x-backend-build: &backend-build
     SENTRY_DSN_FILE: /run/secrets/sentry_dsn
     SENTRY_USE: ${SENTRY_USE}
     TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS: ${TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS}
+    TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS: ${TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS}
     TASKIQ_CACHE_WARM_INTERVAL_SECONDS: ${TASKIQ_CACHE_WARM_INTERVAL_SECONDS}
     TASKIQ_RESULT_EXPIRE_SECONDS: ${TASKIQ_RESULT_EXPIRE_SECONDS}
     VALKEY_HOST: ${VALKEY_HOST}
@@ -75,6 +79,28 @@ x-backend-build: &backend-build
       target: owner_init_password
     - source: sentry_dsn
       target: sentry_dsn
+
+x-agent-access-backend-secrets: &agent-access-backend-secrets
+  - source: app_secret_key
+    target: app_secret_key
+  - source: auth_private_key
+    target: auth_private_key
+  - source: db_password
+    target: db_password
+  - source: minio_access_key
+    target: minio_access_key
+  - source: minio_secret_key
+    target: minio_secret_key
+  - source: owner_init_password
+    target: owner_init_password
+  - source: sentry_dsn
+    target: sentry_dsn
+  - source: agent_issuing_certificate
+    target: agent_issuing_certificate
+  - source: agent_issuing_private_key
+    target: agent_issuing_private_key
+  - source: agent_certificate_chain
+    target: agent_certificate_chain
 
 x-backend-healthcheck: &backend-healthcheck
   test:
@@ -130,6 +156,7 @@ services:
     <<: *backend-build
     container_name: my_site_backend_blue
     command: bash start_application.sh run
+    secrets: *agent-access-backend-secrets
     depends_on:
       postgres:
         condition: service_healthy
@@ -144,6 +171,7 @@ services:
     <<: *backend-build
     container_name: my_site_backend_green
     command: bash start_application.sh run
+    secrets: *agent-access-backend-secrets
     depends_on:
       postgres:
         condition: service_healthy
@@ -293,6 +321,9 @@ services:
     volumes:
       - ./infra/nginx/certs:/certs:ro
       - certbot-www:/var/www/certbot:ro
+    secrets:
+      - source: agent_certificate_chain
+        target: agent_client_ca_certificate
     environment:
       - APP_DOMAIN=${APP_DOMAIN}
       - SSL_CERT=${SSL_CERT}
@@ -300,18 +331,13 @@ services:
       - ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT:-backend-blue}
       - ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT:-frontend-blue}
       - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}
-    command: >
-      sh -ec '
-        mkdir -p /tmp/nginx-conf.d;
-        envsubst "\$$APP_DOMAIN \$$SSL_CERT \$$SSL_KEY \$$ACTIVE_BACKEND_SLOT \$$ACTIVE_FRONTEND_SLOT \$$MINIO_PUBLIC_URL"
-          < /etc/nginx/runtime-templates/site.conf.template > /tmp/nginx-conf.d/site.conf;
-        exec nginx -g "daemon off;";
-      '
+    command: ["/usr/local/bin/my-site-nginx-entrypoint"]
     ports:
       - "80:8080"
       - "443:8443"
       - "${VPN_BIND_ADDRESS}:18081:18081"
       - "${VPN_BIND_ADDRESS}:18082:18082"
+      - "${VPN_BIND_ADDRESS}:18083:18083"
     depends_on:
       minio:
         condition: service_healthy
@@ -349,6 +375,7 @@ services:
       --keep-until-expiring
       -d ${APP_DOMAIN}
       -d s3.${APP_DOMAIN}
+      -d agent.${APP_DOMAIN}
     networks:
       - app-network
 
@@ -414,3 +441,9 @@ secrets:
     file: ${COMPOSE_OWNER_INIT_PASSWORD_FILE:?COMPOSE_OWNER_INIT_PASSWORD_FILE must be set by infra/scripts/compose_secrets.sh}
   sentry_dsn:
     file: ${COMPOSE_SENTRY_DSN_FILE:?COMPOSE_SENTRY_DSN_FILE must be set by infra/scripts/compose_secrets.sh}
+  agent_issuing_certificate:
+    file: ${COMPOSE_AGENT_ISSUING_CERTIFICATE_FILE:?COMPOSE_AGENT_ISSUING_CERTIFICATE_FILE must be set by infra/scripts/compose_secrets.sh}
+  agent_issuing_private_key:
+    file: ${COMPOSE_AGENT_ISSUING_PRIVATE_KEY_FILE:?COMPOSE_AGENT_ISSUING_PRIVATE_KEY_FILE must be set by infra/scripts/compose_secrets.sh}
+  agent_certificate_chain:
+    file: ${COMPOSE_AGENT_CERTIFICATE_CHAIN_FILE:?COMPOSE_AGENT_CERTIFICATE_CHAIN_FILE must be set by infra/scripts/compose_secrets.sh}

@@ -7,5 +7,6 @@ RUN apk add --no-cache --upgrade c-ares=1.34.8-r0 \
 
 COPY --chown=nginx:nginx infra/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx infra/nginx/templates/ /etc/nginx/runtime-templates/
+COPY --chown=nginx:nginx --chmod=755 infra/nginx/entrypoint.sh /usr/local/bin/my-site-nginx-entrypoint
 
 USER nginx

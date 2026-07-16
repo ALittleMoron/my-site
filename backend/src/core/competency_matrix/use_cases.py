@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
+    MatrixQuestionClaimConflictError,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionSheetUnavailableError,
 )
@@ -207,10 +209,15 @@ class CompetencyMatrixUseCase:
         self,
         *,
         params: QueuedCompetencyMatrixQuestionCreateItemParams,
+        current_datetime: datetime,
     ) -> CompetencyMatrixItem:
-        queued_question = await self.storage.get_queued_question(
+        queued_question = await self.storage.get_queued_question_for_update(
             question_id=params.queued_question_id,
         )
+        if queued_question.claim is not None and queued_question.claim.is_active(
+            current_datetime=current_datetime,
+        ):
+            raise MatrixQuestionClaimConflictError
         resource_ids_to_assign = params.item.get_resource_ids_to_assign()
         resources = (
             await self.storage.get_resources_by_ids(resource_ids=resource_ids_to_assign)
@@ -305,8 +312,14 @@ class CompetencyMatrixUseCase:
             suggested_by_username=params.suggested_by_username,
         )
 
-    async def list_queued_questions(self) -> QueuedCompetencyMatrixQuestions:
-        return await self.storage.list_queued_questions()
+    async def list_queued_questions(
+        self,
+        *,
+        current_datetime: datetime,
+    ) -> QueuedCompetencyMatrixQuestions:
+        return await self.storage.list_queued_questions_with_active_claims(
+            active_at=current_datetime,
+        )
 
     async def preview_queued_questions_import(
         self,
@@ -327,5 +340,24 @@ class CompetencyMatrixUseCase:
             suggested_by_username=suggested_by_username,
         )
 
-    async def delete_queued_question(self, *, question_id: str) -> None:
+    async def delete_queued_question(
+        self,
+        *,
+        question_id: str,
+        current_datetime: datetime,
+    ) -> None:
+        queued_question = await self.storage.get_queued_question_for_update(
+            question_id=question_id,
+        )
+        if queued_question.claim is not None and queued_question.claim.is_active(
+            current_datetime=current_datetime,
+        ):
+            raise MatrixQuestionClaimConflictError
         await self.storage.delete_queued_question(question_id=question_id)
+
+    async def release_queued_question_agent_claim(self, *, question_id: str) -> None:
+        queued_question = await self.storage.get_queued_question_for_update(
+            question_id=question_id,
+        )
+        if queued_question.claim is not None:
+            await self.storage.delete_question_claim(claim_id=queued_question.claim.id)

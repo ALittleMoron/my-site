@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, date, datetime, timedelta
 from urllib.parse import urlparse
 
-from sqlalchemy import delete, insert, or_, select
+from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
@@ -14,6 +14,7 @@ from infra.config.loggers import logger
 from infra.postgresql.meta import sessionmaker
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
@@ -116,74 +117,24 @@ async def seed_performance_data(*, session: AsyncSession) -> None:
 
 
 async def clear_seeded_data(*, session: AsyncSession) -> None:
-    seeded_article_filter = or_(
-        ArticleModel.slug.like("perf-seed-article-%"),
-        ArticleModel.folder_id == SEED_ARTICLE_FOLDER_ID,
-    )
-    seeded_article_ids = select(ArticleModel.id).where(seeded_article_filter)
-    await session.execute(
-        delete(ArticleReactionModel).where(
-            ArticleReactionModel.article_id.in_(seeded_article_ids),
-        ),
-    )
-    await session.execute(
-        delete(ArticleDailyAnalyticsModel).where(
-            ArticleDailyAnalyticsModel.article_id.in_(seeded_article_ids),
-        ),
-    )
-    await session.execute(
-        delete(ArticleToTagSecondaryModel).where(
-            ArticleToTagSecondaryModel.article_id.in_(seeded_article_ids),
-        ),
-    )
-    await session.execute(delete(ArticleModel).where(seeded_article_filter))
-    await session.execute(
-        delete(ArticleFolderModel).where(
-            or_(
-                ArticleFolderModel.id == SEED_ARTICLE_FOLDER_ID,
-                ArticleFolderModel.key == "performance",
-            ),
-        ),
-    )
-    await session.execute(delete(TagModel).where(TagModel.slug.like("perf-seed-%")))
-    await session.execute(
-        delete(ResourceToItemSecondaryModel).where(
-            ResourceToItemSecondaryModel.item_id.in_(
-                [matrix_item_id(item_index) for item_index in matrix_item_range()],
-            ),
-        ),
-    )
-    await session.execute(
-        delete(CompetencyMatrixItemModel).where(
-            CompetencyMatrixItemModel.slug.like("perf-seed-matrix-%"),
-        ),
-    )
-    await session.execute(
-        delete(CompetencyMatrixSubsectionModel).where(
-            CompetencyMatrixSubsectionModel.id.in_(
-                [matrix_subsection_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
-            ),
-        ),
-    )
-    await session.execute(
-        delete(CompetencyMatrixSectionModel).where(
-            CompetencyMatrixSectionModel.id.in_(
-                [matrix_section_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
-            ),
-        ),
-    )
-    await session.execute(
-        delete(CompetencyMatrixSheetModel).where(
-            CompetencyMatrixSheetModel.id.in_(
-                [matrix_sheet_id(sheet_index) for sheet_index in matrix_sheet_indexes()],
-            ),
-        ),
-    )
-    await session.execute(
-        delete(ExternalResourceModel).where(
-            ExternalResourceModel.url.like("https://performance.example.test/%"),
-        ),
-    )
+    # The seed is allowed only for a local test database. Reset every table read by
+    # this workload so a previous query-plan benchmark cannot skew smoke results.
+    for model in (
+        ArticleReactionModel,
+        ArticleDailyAnalyticsModel,
+        ArticleFileUsageModel,
+        ArticleToTagSecondaryModel,
+        ArticleModel,
+        ArticleFolderModel,
+        TagModel,
+        ResourceToItemSecondaryModel,
+        CompetencyMatrixItemModel,
+        CompetencyMatrixSubsectionModel,
+        CompetencyMatrixSectionModel,
+        CompetencyMatrixSheetModel,
+        ExternalResourceModel,
+    ):
+        await session.execute(delete(model))
     await session.execute(delete(UserModel).where(UserModel.username == SEED_AUTHOR_USERNAME))
 
 

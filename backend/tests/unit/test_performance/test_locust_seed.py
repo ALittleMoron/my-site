@@ -6,7 +6,6 @@ from sqlalchemy.dialects import postgresql
 
 from core.auth.enums import RoleEnum
 from performance.locust.seed import (
-    SEED_ARTICLE_FOLDER_ID,
     article_folder_row,
     article_range,
     article_tag_indexes,
@@ -180,6 +179,29 @@ class TestLocustPerformanceSeed:
             for statement in statements
             if statement.table.name == "articles__article_folder_model"
         )
-        compiled = folder_delete.compile(dialect=postgresql.dialect())
+        assert folder_delete.whereclause is None
 
-        assert SEED_ARTICLE_FOLDER_ID in compiled.params.values()
+    async def test_clear_seeded_data_resets_public_workload_tables(self) -> None:
+        session = AsyncMock()
+
+        await clear_seeded_data(session=session)
+
+        statements = [call.args[0] for call in session.execute.await_args_list]
+        unfiltered_delete_tables = {
+            statement.table.name for statement in statements if statement.whereclause is None
+        }
+
+        assert {
+            "articles__article_daily_analytics_model",
+            "articles__article_reaction_model",
+            "articles__article_to_tag_secondary_model",
+            "articles__article_model",
+            "articles__article_folder_model",
+            "articles__tag_model",
+            "competency_matrix__resource_to_item_secondary_model",
+            "competency_matrix__competency_matrix_item_model",
+            "competency_matrix__competency_matrix_subsection_model",
+            "competency_matrix__competency_matrix_section_model",
+            "competency_matrix__competency_matrix_sheet_model",
+            "competency_matrix__external_resource_model",
+        } <= unfiltered_delete_tables

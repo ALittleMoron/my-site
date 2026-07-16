@@ -5,12 +5,14 @@ import pytest
 
 from core.competency_matrix.enums import GradeEnum, QuestionQueueImportIssueCodeEnum
 from core.competency_matrix.exceptions import (
+    MatrixQuestionClaimConflictError,
     QuestionSuggestionAlreadyExistsError,
     QuestionSuggestionSheetUnavailableError,
     QueuedCompetencyMatrixQuestionNotFoundError,
 )
 from core.competency_matrix.schemas import (
     CompetencyMatrixQuestionFingerprint,
+    MatrixQuestionClaimSummary,
     QuestionQueueImportPreview,
     QuestionQueueImportPreviewRow,
     QuestionSuggestionCreateParams,
@@ -61,6 +63,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             subsection=None,
             suggested_by_username="anon",
             created_at=now,
+            claim=None,
         )
 
         params = QuestionSuggestionCreateParams(
@@ -175,6 +178,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             subsection=None,
             suggested_by_username="alice",
             created_at=now,
+            claim=None,
         )
         params = QuestionSuggestionCreateParams(
             question=QueuedCompetencyMatrixQuestionCreateParams(
@@ -297,6 +301,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
         assert result.rows[1].selected_by_default is False
 
     async def test_create_item_from_queue_creates_item_then_removes_queue_entry(self) -> None:
+        current_datetime = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
         queued_question = QueuedCompetencyMatrixQuestion(
             id=self.factory.core.hex_id(7),
             question="What is PEP 8?",
@@ -306,6 +311,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             subsection="Style",
             suggested_by_username="alice",
             created_at=datetime(2026, 6, 7, 12, 0, tzinfo=UTC),
+            claim=None,
         )
         params = self.factory.core.competency_matrix_item_create_params(
             item_id=10,
@@ -320,7 +326,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             item_id=10,
             question_en="What is PEP 8?",
         )
-        self.storage.get_queued_question.return_value = queued_question
+        self.storage.get_queued_question_for_update.return_value = queued_question
         self.storage.create_competency_matrix_item.return_value = created_item
 
         item = await self.use_case.create_item_from_queue(
@@ -328,10 +334,11 @@ class TestQuestionSuggestionsUseCase(TestCase):
                 queued_question_id=self.factory.core.hex_id(7),
                 item=params,
             ),
+            current_datetime=current_datetime,
         )
 
         assert item == created_item
-        self.storage.get_queued_question.assert_called_once_with(
+        self.storage.get_queued_question_for_update.assert_called_once_with(
             question_id=self.factory.core.hex_id(7)
         )
         self.storage.create_competency_matrix_item.assert_called_once()
@@ -351,7 +358,9 @@ class TestQuestionSuggestionsUseCase(TestCase):
         assert create_item_call_index < delete_queue_call_index
 
     async def test_create_item_from_queue_does_not_delete_missing_queue_entry(self) -> None:
-        self.storage.get_queued_question.side_effect = QueuedCompetencyMatrixQuestionNotFoundError
+        self.storage.get_queued_question_for_update.side_effect = (
+            QueuedCompetencyMatrixQuestionNotFoundError
+        )
 
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
             await self.use_case.create_item_from_queue(
@@ -359,7 +368,76 @@ class TestQuestionSuggestionsUseCase(TestCase):
                     queued_question_id=self.factory.core.hex_id(404),
                     item=self.factory.core.competency_matrix_item_create_params(item_id=1),
                 ),
+                current_datetime=datetime(2026, 7, 14, 12, 0, tzinfo=UTC),
             )
 
         self.storage.create_competency_matrix_item.assert_not_called()
         self.storage.delete_queued_question.assert_not_called()
+
+    async def test_create_item_from_queue_rejects_active_agent_claim(self) -> None:
+        current_datetime = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
+        self.storage.get_queued_question_for_update.return_value = (
+            self.factory.core.queued_competency_matrix_question(
+                question_id=7,
+                claim=MatrixQuestionClaimSummary(
+                    id=self.factory.core.hex_id(8),
+                    agent_client_id=self.factory.core.hex_id(9),
+                    agent_client_name="codex-desktop",
+                    claimed_at=datetime(2026, 7, 14, 11, 0, tzinfo=UTC),
+                    expires_at=datetime(2026, 7, 14, 13, 0, tzinfo=UTC),
+                ),
+            )
+        )
+
+        with pytest.raises(MatrixQuestionClaimConflictError):
+            await self.use_case.create_item_from_queue(
+                params=QueuedCompetencyMatrixQuestionCreateItemParams(
+                    queued_question_id=self.factory.core.hex_id(7),
+                    item=self.factory.core.competency_matrix_item_create_params(item_id=1),
+                ),
+                current_datetime=current_datetime,
+            )
+
+        self.storage.create_competency_matrix_item.assert_not_called()
+        self.storage.delete_queued_question.assert_not_called()
+
+    async def test_delete_queued_question_rejects_active_agent_claim(self) -> None:
+        current_datetime = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
+        self.storage.get_queued_question_for_update.return_value = (
+            self.factory.core.queued_competency_matrix_question(
+                question_id=7,
+                claim=MatrixQuestionClaimSummary(
+                    id=self.factory.core.hex_id(8),
+                    agent_client_id=self.factory.core.hex_id(9),
+                    agent_client_name="codex-desktop",
+                    claimed_at=datetime(2026, 7, 14, 11, 0, tzinfo=UTC),
+                    expires_at=datetime(2026, 7, 14, 13, 0, tzinfo=UTC),
+                ),
+            )
+        )
+
+        with pytest.raises(MatrixQuestionClaimConflictError):
+            await self.use_case.delete_queued_question(
+                question_id=self.factory.core.hex_id(7),
+                current_datetime=current_datetime,
+            )
+
+        self.storage.delete_queued_question.assert_not_called()
+
+    async def test_release_agent_claim_deletes_locked_claim(self) -> None:
+        claim = MatrixQuestionClaimSummary(
+            id=self.factory.core.hex_id(8),
+            agent_client_id=self.factory.core.hex_id(9),
+            agent_client_name="codex-desktop",
+            claimed_at=datetime(2026, 7, 14, 11, 0, tzinfo=UTC),
+            expires_at=datetime(2026, 7, 14, 13, 0, tzinfo=UTC),
+        )
+        self.storage.get_queued_question_for_update.return_value = (
+            self.factory.core.queued_competency_matrix_question(question_id=7, claim=claim)
+        )
+
+        await self.use_case.release_queued_question_agent_claim(
+            question_id=self.factory.core.hex_id(7)
+        )
+
+        self.storage.delete_question_claim.assert_called_once_with(claim_id=claim.id)

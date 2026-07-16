@@ -34,6 +34,24 @@ const queuedQuestion: QueuedMatrixQuestion = {
   subsection: 'Style',
   suggestedByUsername: 'anon',
   createdAt: '2026-06-07T12:00:00+00:00',
+  claim: null,
+};
+
+const claimedQuestion: QueuedMatrixQuestion = {
+  ...queuedQuestion,
+  claim: {
+    id: 'claim-1',
+    agentClientId: 'agent-1',
+    agentClientName: 'desktop-codex',
+    claimedAt: '2026-07-14T12:00:00+00:00',
+    expiresAt: '2026-07-14T14:00:00+00:00',
+  },
+};
+
+const claimedMiddleQuestion: QueuedMatrixQuestion = {
+  ...claimedQuestion,
+  id: IMPORTED_QUESTION_ID,
+  question: 'Claimed middle question',
 };
 
 const importedQuestion: QueuedMatrixQuestion = {
@@ -133,6 +151,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
     importQueuedQuestions: jest.Mock;
     rejectQueuedQuestion: jest.Mock;
     createQuestionFromQueue: jest.Mock;
+    releaseAgentClaim: jest.Mock;
   };
   let workspaceService: jest.Mocked<MatrixQuestionWorkspaceService>;
   let notificationService: { success: jest.Mock; error: jest.Mock };
@@ -150,6 +169,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
       createQuestionFromQueue: jest
         .fn()
         .mockReturnValue(of({ id: CREATED_QUESTION_ID, slug: 'pep-8' })),
+      releaseAgentClaim: jest.fn().mockReturnValue(of(undefined)),
     };
     workspaceService = {
       getStructure: jest.fn().mockReturnValue(of(matrixStructure)),
@@ -216,6 +236,63 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Кто предложил: alice');
+  });
+
+  it('shows an active agent claim and blocks create and reject actions', () => {
+    queueService.listQueuedQuestions.mockReturnValue(of([claimedQuestion]));
+    component.loadQueue();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('desktop-codex');
+    expect(fixture.nativeElement.textContent).toContain('Вопрос занят AI-агентом');
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        `[data-testid="matrix-queue-question-${QUESTION_ID}"]`,
+      )?.disabled,
+    ).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector<HTMLButtonElement>(
+        `[data-testid="matrix-queue-reject-${QUESTION_ID}"]`,
+      )?.disabled,
+    ).toBe(true);
+  });
+
+  it('lets a content manager explicitly release an agent claim', () => {
+    queueService.listQueuedQuestions.mockReturnValue(of([claimedQuestion]));
+    component.loadQueue();
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>(`[data-testid="matrix-queue-release-${QUESTION_ID}"]`)!
+      .click();
+    fixture.detectChanges();
+
+    expect(queueService.releaseAgentClaim).toHaveBeenCalledWith(QUESTION_ID);
+    expect(component.questions()[0].claim).toBeNull();
+    expect(notificationService.success).toHaveBeenCalledWith('Блокировка агента снята.');
+  });
+
+  it('reloads the queue and explains a claim race returned as 409', () => {
+    queueService.rejectQueuedQuestion.mockReturnValueOnce(
+      throwError(
+        () =>
+          ({
+            code: 'conflict',
+            type: 'ConflictHTTPException',
+            message: 'claimed',
+            status: 409,
+            location: null,
+            attr: null,
+          }) satisfies ApiError,
+      ),
+    );
+
+    component.rejectQuestion(queuedQuestion);
+
+    expect(queueService.listQueuedQuestions).toHaveBeenCalledTimes(2);
+    expect(notificationService.error).toHaveBeenCalledWith(
+      'Вопрос уже занят AI-агентом. Очередь обновлена.',
+    );
   });
 
   it('renders manual add button next to refresh button', () => {
@@ -872,6 +949,61 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe('');
   });
 
+  it('skips over claimed rows when advancing without changing the queue', () => {
+    loadQueueWithClaimedMiddle();
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.questions()).toEqual([
+      queuedQuestion,
+      claimedMiddleQuestion,
+      queuedQuestionWithMissingSheet,
+    ]);
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+  });
+
+  it('skips over claimed rows after creating a question', () => {
+    loadQueueWithClaimedMiddle();
+    openCreateModalFromQueue();
+
+    component.createQuestion(minimumQuestionPayload());
+
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+    expect(component.questions()).toEqual([claimedMiddleQuestion, queuedQuestionWithMissingSheet]);
+  });
+
+  it('skips over claimed rows after rejecting a question', () => {
+    loadQueueWithClaimedMiddle();
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-reject-and-next"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()?.id).toBe(MISSING_SHEET_QUESTION_ID);
+    expect(component.questions()).toEqual([claimedMiddleQuestion, queuedQuestionWithMissingSheet]);
+  });
+
+  it('closes the modal when only claimed rows remain after the current question', () => {
+    queueService.listQueuedQuestions.mockReturnValue(of([queuedQuestion, claimedMiddleQuestion]));
+    component.loadQueue();
+    fixture.detectChanges();
+    openCreateModalFromQueue();
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-queue-skip"]')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.selectedQuestion()).toBeNull();
+    expect(component.questions()).toEqual([queuedQuestion, claimedMiddleQuestion]);
+  });
+
   it('keeps the selected question and its draft when skip is cancelled', () => {
     openCreateModalFromQueue();
     setInputValue('#matrix-form-question-ru', 'Unsaved matrix question');
@@ -1082,6 +1214,14 @@ describe('MatrixQuestionQueuePageComponent', () => {
     fixture.nativeElement
       .querySelector<HTMLButtonElement>(`[data-testid="matrix-queue-question-${questionId}"]`)!
       .click();
+    fixture.detectChanges();
+  }
+
+  function loadQueueWithClaimedMiddle(): void {
+    queueService.listQueuedQuestions.mockReturnValue(
+      of([queuedQuestion, claimedMiddleQuestion, queuedQuestionWithMissingSheet]),
+    );
+    component.loadQueue();
     fixture.detectChanges();
   }
 

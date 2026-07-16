@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -444,8 +445,9 @@ class AdminCompetencyMatrixApiController(Controller):
     async def list_queued_competency_matrix_questions(
         self,
         use_case: FromDishka[CompetencyMatrixUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> QueuedQuestionsResponseSchema:
-        questions = await use_case.list_queued_questions()
+        questions = await use_case.list_queued_questions(current_datetime=current_datetime)
         return QueuedQuestionsResponseSchema.from_domain_schema(schema=questions)
 
     @post(
@@ -562,8 +564,25 @@ class AdminCompetencyMatrixApiController(Controller):
         self,
         pk: EntityPkPath,
         use_case: FromDishka[CompetencyMatrixUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> None:
-        await use_case.delete_queued_question(question_id=pk)
+        await use_case.delete_queued_question(
+            question_id=pk,
+            current_datetime=current_datetime,
+        )
+
+    @post(
+        "/queued-questions/{pk:str}/release-agent-claim",
+        description="Explicitly release an agent claim on a queued matrix question.",
+        name="admin-competency-matrix-queued-question-release-agent-claim-api-handler",
+        status_code=status_codes.HTTP_204_NO_CONTENT,
+    )
+    async def release_queued_competency_matrix_question_agent_claim(
+        self,
+        pk: EntityPkPath,
+        use_case: FromDishka[CompetencyMatrixUseCase],
+    ) -> None:
+        await use_case.release_queued_question_agent_claim(question_id=pk)
 
     @post(
         "/queued-questions/{pk:str}/create-item",
@@ -609,6 +628,7 @@ class AdminCompetencyMatrixApiController(Controller):
         ],
         use_case: FromDishka[CompetencyMatrixUseCase],
         language: LanguageQuery,
+        current_datetime: FromDishka[datetime],
     ) -> CompetencyMatrixItemDetailResponseSchema:
         item = await use_case.create_item_from_queue(
             params=data.to_create_from_queue_schema(
@@ -616,6 +636,7 @@ class AdminCompetencyMatrixApiController(Controller):
                 item_id_generator=id_generator,
                 resource_id_generator=id_generator,
             ),
+            current_datetime=current_datetime,
         )
         await invalidate_and_enqueue_response_cache_warm_domain(
             request=request,

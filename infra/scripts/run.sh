@@ -87,7 +87,11 @@ require_environment() {
         "VALKEY_PORT"
         "I18N_DEFAULT_LANGUAGE"
         "COMPETENCY_MATRIX_QUESTION_SUGGESTION_ANONYMOUS_DAILY_LIMIT"
+        "AGENT_ACCESS_ISSUING_CERTIFICATE"
+        "AGENT_ACCESS_ISSUING_PRIVATE_KEY"
+        "AGENT_ACCESS_CERTIFICATE_CHAIN"
         "TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS"
+        "TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS"
         "TASKIQ_CACHE_WARM_INTERVAL_SECONDS"
         "TASKIQ_RESULT_EXPIRE_SECONDS"
         "CACHE_WARM_ARTICLES_PAGE_SIZE"
@@ -136,14 +140,14 @@ read_active_slot() {
     printf '%s\n' "${ACTIVE_DEPLOY_SLOT:-}"
 }
 
-service_is_running() {
-    local service_name="$1"
-
-    docker compose ps --services --status running | grep -Fxq "$service_name"
-}
-
 compose_up_wait() {
-    docker compose up --wait --build -d --wait-timeout "$COMPOSE_WAIT_TIMEOUT_SECONDS" "$@"
+    docker compose up \
+        --wait \
+        --build \
+        --detach \
+        --remove-orphans \
+        --wait-timeout "$COMPOSE_WAIT_TIMEOUT_SECONDS" \
+        "$@"
 }
 
 prepare_minio_volume_permissions() {
@@ -166,25 +170,8 @@ sync_certificates() {
     docker compose run --rm cert-sync
 }
 
-render_and_reload_nginx() {
-    docker compose exec \
-        -T \
-        -e "ACTIVE_BACKEND_SLOT=${ACTIVE_BACKEND_SLOT}" \
-        -e "ACTIVE_FRONTEND_SLOT=${ACTIVE_FRONTEND_SLOT}" \
-        -e "MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}" \
-        nginx \
-        sh -c 'mkdir -p /tmp/nginx-conf.d && cat > /tmp/site.conf.template && envsubst "\$APP_DOMAIN \$SSL_CERT \$SSL_KEY \$ACTIVE_BACKEND_SLOT \$ACTIVE_FRONTEND_SLOT \$MINIO_PUBLIC_URL" < /tmp/site.conf.template > /tmp/nginx-conf.d/site.conf && nginx -s reload' \
-        <infra/nginx/templates/site.conf.template
-}
-
 switch_nginx() {
-    if service_is_running nginx \
-        && docker compose exec -T nginx sh -c "grep -q ACTIVE_BACKEND_SLOT /etc/nginx/runtime-templates/site.conf.template"; then
-        render_and_reload_nginx
-        return
-    fi
-
-    compose_up_wait nginx
+    compose_up_wait --force-recreate nginx
 }
 
 smoke_edge() {

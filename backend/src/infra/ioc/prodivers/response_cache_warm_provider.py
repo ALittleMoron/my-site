@@ -30,7 +30,7 @@ class ResponseCacheWarmProvider(Provider):
 
     @provide
     async def provide_response_cache_domain_store(self) -> ResponseCacheDomainStore:
-        from entrypoints.litestar.initializers import (  # noqa: PLC0415
+        from entrypoints.litestar.initializers.main import (  # noqa: PLC0415
             create_response_cache_domain_store,
         )
 

@@ -2,6 +2,7 @@ from collections.abc import Callable, Sequence
 from contextlib import AbstractAsyncContextManager
 
 from dishka import AsyncContainer
+from dishka.integrations.litestar import setup_dishka
 from litestar import Litestar, Router
 from litestar.config.response_cache import ResponseCacheConfig
 from litestar.logging import StructLoggingConfig
@@ -16,10 +17,12 @@ from litestar.stores.base import Store
 from litestar.stores.valkey import ValkeyStore
 from litestar.types import Middleware
 
+from entrypoints.litestar.api.agent_access.endpoints import agent_api_router
 from entrypoints.litestar.api.routers import api_router
-from entrypoints.litestar.auth import AuthenticationMiddleware
 from entrypoints.litestar.cli.plugins import CLIPlugin
 from entrypoints.litestar.exception_handlers import get_litestar_exception_handlers
+from entrypoints.litestar.middlewares.agent_audit import AgentOutcomeAuditMiddleware
+from entrypoints.litestar.middlewares.auth import AuthenticationMiddleware
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
     RequestIdLoggingMiddleware,
@@ -78,12 +81,13 @@ def create_openapi_config() -> OpenAPIConfig:
 
 
 def create_plugins() -> list[PluginProtocol]:
+    project_logging_config = loggers.build_project_logging_config(debug=settings.app.debug)
     logging_config = StructLoggingConfig(
         log_exceptions="always",
-        processors=loggers.processors,
-        wrapper_class=loggers.wrapper_class,
-        logger_factory=loggers.logger_factory,
-        cache_logger_on_first_use=loggers.cache_logger_on_first_use,
+        processors=project_logging_config.processors,
+        wrapper_class=project_logging_config.wrapper_class,
+        logger_factory=project_logging_config.logger_factory,
+        cache_logger_on_first_use=project_logging_config.cache_logger_on_first_use,
     )
     return [
         StructlogPlugin(
@@ -117,13 +121,15 @@ def create_middlewares(container: AsyncContainer) -> list[Middleware]:
 
 
 def create_routers() -> list[Router]:
-    return [api_router, public_router]
+    return [api_router, public_router, agent_api_router]
 
 
 def create_cli_app(
     lifespan: Lifespan,
+    container: AsyncContainer,
 ) -> Litestar:
-    return Litestar(
+    loggers.configure_project_logging(debug=settings.app.debug)
+    app = Litestar(
         lifespan=lifespan,
         debug=settings.app.debug,
         exception_handlers=get_litestar_exception_handlers(),
@@ -131,6 +137,8 @@ def create_cli_app(
         plugins=[CLIPlugin()],
         openapi_config=create_openapi_config(),
     )
+    setup_dishka(container=container, app=app)
+    return app
 
 
 def create_litestar_app(
@@ -139,6 +147,7 @@ def create_litestar_app(
     extra_plugins: Sequence[PluginProtocol],
     extra_middlewares: Sequence[Middleware],
 ) -> Litestar:
+    loggers.configure_project_logging(debug=settings.app.debug)
     app = Litestar(
         route_handlers=create_routers(),
         lifespan=lifespan,
@@ -153,6 +162,11 @@ def create_litestar_app(
         middleware=[*create_middlewares(container), *extra_middlewares],
         plugins=[*create_plugins(), *extra_plugins],
         openapi_config=create_openapi_config(),
+    )
+    setup_dishka(container=container, app=app)
+    app.asgi_handler = AgentOutcomeAuditMiddleware(
+        app=app.asgi_handler,
+        container=container,
     )
     install_openapi_request_body_metadata()
     return app

@@ -61,7 +61,8 @@ issue_certificates() {
         --no-eff-email \
         --keep-until-expiring \
         -d "$APP_DOMAIN" \
-        -d "s3.${APP_DOMAIN}"
+        -d "s3.${APP_DOMAIN}" \
+        -d "agent.${APP_DOMAIN}"
     sync_certificates
 }
 

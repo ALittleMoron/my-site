@@ -13,6 +13,10 @@ class CompetencyMatrixItemNotFoundError(EntryNotFoundError):
     message = "Competency matrix item not found"
 
 
+class CompetencyMatrixItemConflictError(DomainError):
+    message = "Competency matrix item already exists"
+
+
 class CompetencyMatrixStructureNotFoundError(EntryNotFoundError):
     message = "Competency matrix structure entry not found"
 
@@ -39,6 +43,10 @@ class CompetencyMatrixItemNotPublicReadyError(DomainError):
 
 class QueuedCompetencyMatrixQuestionNotFoundError(EntryNotFoundError):
     message = "Queued competency matrix question not found"
+
+
+class MatrixQuestionClaimConflictError(DomainError):
+    message = "Queued competency matrix question is claimed by an agent"
 
 
 class QuestionSuggestionQuotaExceededError(DomainError):

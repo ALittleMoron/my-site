@@ -34,7 +34,11 @@ from performance.query_plans.scenarios import (
     coverage_findings,
     evaluate_storage_method_coverage,
 )
-from performance.query_plans.seed import seed_profile, vacuum_analyze_seeded_tables
+from performance.query_plans.seed import (
+    clear_seeded_tables,
+    seed_profile,
+    vacuum_analyze_seeded_tables,
+)
 from performance.query_plans.sql import (
     compile_captured_query,
     group_queries_by_scenario,
@@ -77,7 +81,10 @@ async def run_query_plan_profile(args: CliArgs) -> int:
             results=results,
         )
     finally:
-        await engine.dispose()
+        try:
+            await cleanup_seeded_profile(engine=engine)
+        finally:
+            await engine.dispose()
 
     findings = (
         *coverage_findings(coverage=coverage),
@@ -90,6 +97,11 @@ async def run_query_plan_profile(args: CliArgs) -> int:
         stderr.write("\n")
         return 1 if args.fail_on_finding else 0
     return 0
+
+
+async def cleanup_seeded_profile(*, engine: AsyncEngine) -> None:
+    async with engine.begin() as connection:
+        await clear_seeded_tables(connection=connection)
 
 
 async def capture_storage_queries(

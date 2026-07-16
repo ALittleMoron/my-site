@@ -49,7 +49,7 @@ class ImageProcessor(Protocol):
     def encode_lossless_webp(self, *, image: Image.Image, method: int) -> bytes: ...
 
 
-class _ArticleImageProcessingSupport:
+class ArticleImageProcessingSupport:
     @staticmethod
     def must_preserve_original(*, loaded: LoadedImage) -> bool:
         return loaded.mime_type == "image/gif" or (
@@ -97,7 +97,7 @@ class ArticleCoverImageContentProcessor(FileContentProcessor):
 
     def process(self, *, params: FileUploadParams) -> FileUploadParams:
         loaded = self.image_processor.load(params=params)
-        if _ArticleImageProcessingSupport.must_preserve_original(loaded=loaded):
+        if ArticleImageProcessingSupport.must_preserve_original(loaded=loaded):
             return params
 
         image = self.image_processor.resize_for_bounds(
@@ -110,7 +110,7 @@ class ArticleCoverImageContentProcessor(FileContentProcessor):
             quality=self.webp_quality,
             method=self.webp_method,
         )
-        return _ArticleImageProcessingSupport.replace_if_worthwhile(
+        return ArticleImageProcessingSupport.replace_if_worthwhile(
             params=params,
             optimized_content=optimized_content,
             min_savings_ratio=self.min_savings_ratio,
@@ -128,7 +128,7 @@ class ArticleContentImageContentProcessor(FileContentProcessor):
 
     def process(self, *, params: FileUploadParams) -> FileUploadParams:
         loaded = self.image_processor.load(params=params)
-        if _ArticleImageProcessingSupport.must_preserve_original(loaded=loaded):
+        if ArticleImageProcessingSupport.must_preserve_original(loaded=loaded):
             return params
         if loaded.mime_type == "image/webp" and not self.image_processor.is_oversized(
             image=loaded.image,
@@ -153,7 +153,7 @@ class ArticleContentImageContentProcessor(FileContentProcessor):
                 quality=self.jpeg_webp_quality,
                 method=self.webp_method,
             )
-        return _ArticleImageProcessingSupport.replace_if_worthwhile(
+        return ArticleImageProcessingSupport.replace_if_worthwhile(
             params=params,
             optimized_content=optimized_content,
             min_savings_ratio=self.min_savings_ratio,
