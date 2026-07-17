@@ -68,7 +68,7 @@
 - [x] Add public "how this site is built" engineering case-study page.
 - [x] Add privacy-safe article analytics (public views, engaged views, anonymous reactions).
 - [x] Move tests to backend and create a src subfolder for backend
-- [ ] Deploy to a remote server
+- [x] Deploy to a remote server
   - [x] Choose hosting
   - [x] Wire up missing secrets and vars
   - [x] Run deployment strictly from the GitHub workflow
@@ -77,7 +77,7 @@
     - [x] MinIO Console via `http://<VPN_BIND_ADDRESS>:18081`
     - [x] Databasus via `http://<VPN_BIND_ADDRESS>:18082`
   - [x] Load the real competency matrix content from the current Google Docs source into the database before first deployment.
-  - [ ] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
+  - [x] Closed beta test with real users (friends, colleagues). Collect feedback and fix critical bugs.
 
 ### Security and Infrastructure
 
