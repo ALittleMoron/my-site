@@ -13,6 +13,7 @@ from sqlalchemy import (
     func,
     or_,
     select,
+    union,
     update,
 )
 from sqlalchemy.exc import IntegrityError
@@ -1021,7 +1022,7 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
         secondary_name = func.lower(secondary_name_column)
         url = func.lower(ExternalResourceModel.url)
         fuzzy_search_allowed = (
-            func.length(search_query) >= constants.search.min_trigram_fuzzy_query_length
+            len(lowered_search_name) >= constants.search.min_trigram_fuzzy_query_length
         )
         similarity_score = func.greatest(
             func.similarity(active_name, search_query),
@@ -1031,41 +1032,47 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             func.word_similarity(search_query, secondary_name),
             func.word_similarity(search_query, url),
         )
-        stmt = (
-            select(ExternalResourceModel)
-            .where(
-                or_(
-                    active_name.ilike(search_pattern),
-                    secondary_name.ilike(search_pattern),
-                    url.ilike(search_pattern),
-                    and_(
-                        fuzzy_search_allowed,
-                        or_(
-                            active_name.op("%")(search_query),
-                            secondary_name.op("%")(search_query),
-                            url.op("%")(search_query),
-                            active_name.op("%>")(search_query),
-                            secondary_name.op("%>")(search_query),
-                            url.op("%>")(search_query),
-                        ),
-                    ),
-                ),
-            )
-            .order_by(
-                case(
-                    (active_name == lowered_search_name, 0),
-                    (active_name.like(prefix_pattern), 1),
-                    (secondary_name == lowered_search_name, 2),
-                    (secondary_name.like(prefix_pattern), 3),
-                    (url.like(search_pattern), 4),
-                    else_=5,
-                ),
-                similarity_score.desc(),
-                active_name,
-                ExternalResourceModel.id,
-            )
-            .limit(limit)
+        substring_filters = (
+            active_name.like(search_pattern),
+            secondary_name.like(search_pattern),
+            url.like(search_pattern),
         )
+        if fuzzy_search_allowed:
+            resource_id = ExternalResourceModel.id.label("resource_id")
+            candidate_filters = (
+                *substring_filters,
+                active_name.op("%")(search_query),
+                secondary_name.op("%")(search_query),
+                url.op("%")(search_query),
+                active_name.op("%>")(search_query),
+                secondary_name.op("%>")(search_query),
+                url.op("%>")(search_query),
+            )
+            candidates = union(
+                *(
+                    select(resource_id).where(candidate_filter)
+                    for candidate_filter in candidate_filters
+                ),
+            ).cte("resource_search_candidates")
+            stmt = select(ExternalResourceModel).join(
+                candidates,
+                candidates.c.resource_id == ExternalResourceModel.id,
+            )
+        else:
+            stmt = select(ExternalResourceModel).where(or_(*substring_filters))
+        stmt = stmt.order_by(
+            case(
+                (active_name == lowered_search_name, 0),
+                (active_name.like(prefix_pattern), 1),
+                (secondary_name == lowered_search_name, 2),
+                (secondary_name.like(prefix_pattern), 3),
+                (url.like(search_pattern), 4),
+                else_=5,
+            ),
+            similarity_score.desc(),
+            active_name,
+            ExternalResourceModel.id,
+        ).limit(limit)
         resources = await self.session.scalars(stmt)
         return ExternalResources(values=[resource.to_domain_schema() for resource in resources])
 

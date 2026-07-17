@@ -236,21 +236,7 @@ REALISTIC_PROFILE = QueryPlanProfile(
     timing_mode=TimingMode.ENFORCE,
     explain_runs=3,
     explain_work_mem_mb=16,
-    scenario_plan_shape_overrides={
-        scenario_name: ScenarioPlanShapeOverride(
-            expected_indexes=(),
-            forbidden_seq_scan_relations=(),
-            allow_seq_scan_reason=(
-                "the optimizer-preferred sequential scan is intentional for the realistic "
-                "5k-resource multi-column trigram search"
-            ),
-        )
-        for scenario_name in (
-            "resources_exact_en",
-            "resources_url_en",
-            "resources_fuzzy_en",
-        )
-    },
+    scenario_plan_shape_overrides={},
 )
 
 STRESS_PROFILE = QueryPlanProfile(

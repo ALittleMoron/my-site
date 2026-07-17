@@ -103,7 +103,9 @@ class TestQueryPlanProfiles:
         with pytest.raises(ValueError, match="Unknown query plan profile: balanced"):
             get_profile(name="balanced")
 
-    def test_resource_search_plan_shape_is_profile_specific(self) -> None:
+    def test_resource_search_plan_shape_requires_trigram_indexes_for_scaled_profiles(
+        self,
+    ) -> None:
         scenario = next(
             scenario for scenario in STORAGE_SCENARIOS if scenario.name == "resources_exact_en"
         )
@@ -119,17 +121,17 @@ class TestQueryPlanProfiles:
             profile=query_plan_models.STRESS_PROFILE,
         )
 
-        assert realistic_expectation.expected_indexes == ()
-        assert realistic_expectation.forbidden_seq_scan_relations == ()
-        assert realistic_expectation.allow_seq_scan_reason is not None
-        assert {index.name for index in stress_expectation.expected_indexes} == {
+        expected_indexes = {
             "cm_external_resource_name_en_trgm_idx",
             "cm_external_resource_name_ru_trgm_idx",
             "cm_external_resource_url_trgm_idx",
         }
-        assert stress_expectation.forbidden_seq_scan_relations == (
-            "competency_matrix__external_resource_model",
-        )
+        for expectation in (realistic_expectation, stress_expectation):
+            assert {index.name for index in expectation.expected_indexes} == expected_indexes
+            assert expectation.forbidden_seq_scan_relations == (
+                "competency_matrix__external_resource_model",
+            )
+            assert expectation.allow_seq_scan_reason is None
 
     @pytest.mark.parametrize(
         "scenario_name",

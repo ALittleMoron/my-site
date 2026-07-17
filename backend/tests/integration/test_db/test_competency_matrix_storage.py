@@ -1169,6 +1169,28 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         )
         assert self.collections.names_en(resources) == ["Pydantic"]
 
+    async def test_search_competency_matrix_resources_matches_url(self) -> None:
+        await self.storage_helper.create_external_resources(
+            resources=[
+                self.factory.core.external_resource(
+                    resource_id=115,
+                    name="Validation documentation",
+                    url="https://docs.pydantic.dev/latest/",
+                ),
+                self.factory.core.external_resource(
+                    resource_id=116,
+                    name="Web framework documentation",
+                    url="https://docs.djangoproject.com",
+                ),
+            ],
+        )
+        resources = await self.storage.search_competency_matrix_resources(
+            search_name="pydantic.dev",
+            limit=10,
+            language=LanguageEnum.EN,
+        )
+        assert self.collections.names_en(resources) == ["Validation documentation"]
+
     async def test_search_competency_matrix_resources_matches_secondary_language_name(
         self,
     ) -> None:
