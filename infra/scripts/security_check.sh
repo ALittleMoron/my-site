@@ -870,7 +870,7 @@ generate_agent_test_certificate() {
     local output_dir="$4"
 
     docker run --rm \
-        --user 0:0 \
+        --user "$(id -u):$(id -g)" \
         --entrypoint python \
         -v "${material_dir}:/material:ro" \
         -v "${output_dir}:/output" \
