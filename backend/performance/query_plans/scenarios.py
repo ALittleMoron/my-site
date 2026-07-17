@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable, Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from hashlib import md5
 
@@ -70,13 +70,15 @@ from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
 from infra.postgresql.storages.resumes import ResumesDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from performance.query_plans.expectations import (
-    BALANCED_THRESHOLD_POLICY,
     QueryThresholdPolicy,
+    expected_indexes_from_names,
     scenario_plan_expectation,
 )
 from performance.query_plans.models import (
     CoverageReport,
+    ExpectedIndex,
     PlanExpectation,
+    QueryPlanProfile,
     QueryThresholdGroup,
     StorageMethod,
 )
@@ -144,7 +146,7 @@ class StorageScenario:
     storage_class: str
     method_name: str
     group: QueryThresholdGroup
-    expected_index_names: tuple[str, ...]
+    expected_indexes: tuple[ExpectedIndex, ...]
     forbidden_seq_scan_relations: tuple[str, ...]
     allow_seq_scan_reason: str | None
     run: ScenarioRunner
@@ -154,15 +156,25 @@ class StorageScenario:
         *,
         policy: QueryThresholdPolicy,
         query_name: str | None,
+        profile: QueryPlanProfile,
     ) -> PlanExpectation:
-        return scenario_plan_expectation(
+        expectation = scenario_plan_expectation(
             scenario_name=self.name,
             group=self.group,
             policy=policy,
             query_name=query_name,
-            expected_index_names=self.expected_index_names,
+            expected_indexes=self.expected_indexes,
             forbidden_seq_scan_relations=self.forbidden_seq_scan_relations,
             allow_seq_scan_reason=self.allow_seq_scan_reason,
+        )
+        override = profile.scenario_plan_shape_overrides.get(self.name)
+        if override is None:
+            return expectation
+        return replace(
+            expectation,
+            expected_indexes=override.expected_indexes,
+            forbidden_seq_scan_relations=override.forbidden_seq_scan_relations,
+            allow_seq_scan_reason=override.allow_seq_scan_reason,
         )
 
 
@@ -1272,7 +1284,7 @@ def scenario(  # noqa: PLR0913
         storage_class=storage_class,
         method_name=method_name,
         group=group,
-        expected_index_names=tuple(expected_index_names),
+        expected_indexes=expected_indexes_from_names(names=expected_index_names),
         forbidden_seq_scan_relations=tuple(forbidden_seq_scan_relations),
         allow_seq_scan_reason=allow_seq_scan_reason,
         run=run,
@@ -1567,7 +1579,7 @@ STORAGE_SCENARIOS = (
         storage_class="AuthSessionDatabaseStorage",
         method_name="list_user_sessions",
         group=QueryThresholdGroup.LIST_READ,
-        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_list_user_auth_sessions,
@@ -1617,7 +1629,7 @@ STORAGE_SCENARIOS = (
         storage_class="AuthSessionDatabaseStorage",
         method_name="revoke_user_session",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
+        expected_index_names=("auth__auth_session_model_pkey",),
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_revoke_user_auth_session,
@@ -1627,7 +1639,7 @@ STORAGE_SCENARIOS = (
         storage_class="AuthSessionDatabaseStorage",
         method_name="revoke_user_sessions",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_revoke_user_auth_sessions,
@@ -1637,7 +1649,7 @@ STORAGE_SCENARIOS = (
         storage_class="AuthSessionDatabaseStorage",
         method_name="revoke_user_sessions_except",
         group=QueryThresholdGroup.SMALL_WRITE,
-        expected_index_names=("auth_sessions_username_lower_active_last_used_idx",),
+        expected_index_names=("auth_sessions_username_lower_active_expiry_idx",),
         forbidden_seq_scan_relations=("auth__auth_session_model",),
         allow_seq_scan_reason=None,
         run=run_revoke_other_user_auth_sessions,
@@ -2236,9 +2248,12 @@ STORAGE_SCENARIOS = (
         storage_class="CompetencyMatrixDatabaseStorage",
         method_name="list_queued_questions_with_active_claims",
         group=QueryThresholdGroup.LIST_READ,
-        expected_index_names=("cm_queued_question_fifo_idx",),
-        forbidden_seq_scan_relations=("competency_matrix__queued_question_model",),
-        allow_seq_scan_reason=None,
+        expected_index_names=(),
+        forbidden_seq_scan_relations=(),
+        allow_seq_scan_reason=(
+            "joining the complete queue to the intentionally tiny active-claim set makes a "
+            "sequential scan and in-memory sort optimal"
+        ),
         run=run_list_queued_questions_with_active_claims,
     ),
     scenario(
@@ -2377,21 +2392,4 @@ STORAGE_SCENARIOS = (
             ),
         )
     ),
-)
-
-
-def scenario_expectation_map(
-    *,
-    scenarios: Sequence[StorageScenario],
-    policy: QueryThresholdPolicy,
-) -> dict[str, PlanExpectation]:
-    return {
-        scenario.name: scenario.plan_expectation(policy=policy, query_name=None)
-        for scenario in scenarios
-    }
-
-
-BALANCED_SCENARIO_EXPECTATIONS = scenario_expectation_map(
-    scenarios=STORAGE_SCENARIOS,
-    policy=BALANCED_THRESHOLD_POLICY,
 )

@@ -1,5 +1,4 @@
-from datetime import UTC, date, datetime, timedelta
-from hashlib import md5
+from datetime import UTC, datetime, timedelta
 from sys import stdout
 
 from sqlalchemy import (
@@ -54,7 +53,7 @@ from infra.postgresql.models import (
     UserModel,
 )
 from infra.postgresql.models.competency_matrix import ResourceToItemSecondaryModel
-from performance.query_plans.models import DatasetProfile
+from performance.query_plans.models import QueryPlanProfile
 
 SEED_NOW = datetime(2026, 1, 15, 12, 0, tzinfo=UTC)
 SEED_USERNAME = "benchmark"
@@ -63,20 +62,19 @@ POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
 GENERAL_TAG_START_ID = 4
 ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
-TARGET_ARTICLE_DIVISOR = 100
 MATRIX_GRADE_BUCKET_MIDDLE = 2
 MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 MATRIX_FREQUENCY_BUCKET_RARELY = 2
 MATRIX_FREQUENCY_BUCKET_NEVER_SEEN = 3
-USER_SEED_COUNT = 10_000
-AUTH_SESSION_SEED_COUNT = 1_000
 INACTIVE_MODERATOR_SEED_INDEX = 2
 OWNER_SEED_INDEX = 3
 MANAGED_ACCOUNT_ROLE_BUCKET_DIVISOR = 100
 MANAGED_ACCOUNT_MODERATOR_BUCKET_REMAINDER = 50
-ARTICLE_REACTION_SEED_COUNT = 50_000
-QUEUED_QUESTION_SEED_COUNT = 50_000
-RESUME_SEED_COUNT = 50_000
+PERCENTAGE_BASE = 100
+TARGET_RESOURCE_LINK_COUNT = 4
+EXISTING_MATRIX_ITEM_SEED_INDEX = 100
+ANALYTICS_DAY_BUCKET_COUNT = 1_095
+ANALYTICS_SOURCE_DAY_OFFSET = 61
 QUERY_PLAN_SEEDED_MODELS = (
     AgentAuditEventModel,
     MatrixQuestionDraftCompletionModel,
@@ -131,38 +129,44 @@ RESUME_SEED_CONTENT: dict[str, object] = {
 }
 
 
-async def seed_profile(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
+async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    cardinalities = profile.cardinalities
     stdout.write(
-        "Seeding query-plan dataset: "
-        f"{profile.article_count} articles, {profile.tag_count} tags, "
-        f"{profile.article_tag_link_count} article-tag links, {profile.resource_count} resources, "
-        f"{RESUME_SEED_COUNT} resumes\n",
+        f"Seeding query-plan profile {profile.name}: "
+        f"{cardinalities.articles.articles} articles, "
+        f"{cardinalities.articles.tags} tags, "
+        f"{cardinalities.articles.article_tag_links} article-tag links, "
+        f"{cardinalities.matrix.items} matrix items, "
+        f"{cardinalities.matrix.resources} resources\n",
     )
     await connection.execute(text("SET LOCAL synchronous_commit = off"))
     await clear_seeded_tables(connection=connection)
-    await insert_users(connection=connection)
-    await insert_auth_sessions(connection=connection)
+    await insert_users(connection=connection, profile=profile)
+    await insert_auth_sessions(connection=connection, profile=profile)
     await insert_tags(connection=connection, profile=profile)
-    await insert_article_folders(connection=connection)
+    await insert_article_folders(connection=connection, profile=profile)
     await insert_articles(connection=connection, profile=profile)
     await insert_article_tag_links(connection=connection, profile=profile)
-    await insert_article_analytics(connection=connection)
+    await insert_article_analytics(connection=connection, profile=profile)
     await insert_article_reactions(connection=connection, profile=profile)
-    await insert_resumes(connection=connection)
+    await insert_resumes(connection=connection, profile=profile)
     await insert_resources(connection=connection, profile=profile)
-    await insert_competency_matrix_structure(connection=connection)
+    await insert_competency_matrix_structure(connection=connection, profile=profile)
     await insert_competency_matrix_items(connection=connection, profile=profile)
-    await insert_competency_matrix_resource_links(connection=connection)
-    await insert_queued_competency_matrix_questions(connection=connection)
-    await insert_agent_access_records(connection=connection)
+    await insert_competency_matrix_resource_links(connection=connection, profile=profile)
+    await insert_queued_competency_matrix_questions(connection=connection, profile=profile)
+    await insert_agent_access_records(connection=connection, profile=profile)
 
 
 async def clear_seeded_tables(*, connection: AsyncConnection) -> None:
     await connection.execute(text(QUERY_PLAN_RESET_SQL))
 
 
-async def insert_users(*, connection: AsyncConnection) -> None:
-    series = generate_series_subquery(end=USER_SEED_COUNT, name="user_series")
+async def insert_users(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.auth.users,
+        name="user_series",
+    )
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(UserModel.__table__).from_select(
@@ -200,9 +204,13 @@ async def insert_users(*, connection: AsyncConnection) -> None:
     )
 
 
-async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
-    series = generate_series_subquery(end=AUTH_SESSION_SEED_COUNT, name="auth_session_series")
+async def insert_auth_sessions(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.auth.sessions,
+        name="auth_session_series",
+    )
     value = sql_cast(series.c.value, Integer)
+    user_number = func.mod(value - 1, profile.cardinalities.auth.users) + 1
     await connection.execute(
         insert(AuthSessionModel.__table__).from_select(
             [
@@ -222,8 +230,8 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
             select(
                 hex_id_expr(value=value),
                 case(
-                    (value == 1, literal(SEED_USERNAME)),
-                    else_=func.concat(literal("benchmark-user-"), value),
+                    (user_number == 1, literal(SEED_USERNAME)),
+                    else_=func.concat(literal("benchmark-user-"), user_number),
                 ),
                 func.concat(
                     deterministic_hex_from_int(value=func.concat(literal("session-a-"), value)),
@@ -252,8 +260,11 @@ async def insert_auth_sessions(*, connection: AsyncConnection) -> None:
     )
 
 
-async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
-    series = generate_series_subquery(end=profile.tag_count, name="tag_series")
+async def insert_tags(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.articles.tags,
+        name="tag_series",
+    )
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(TagModel.__table__).from_select(
@@ -283,23 +294,49 @@ async def insert_tags(*, connection: AsyncConnection, profile: DatasetProfile) -
     )
 
 
-async def insert_article_folders(*, connection: AsyncConnection) -> None:
+async def insert_article_folders(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.articles.folders,
+        name="article_folder_series",
+    )
+    value = sql_cast(series.c.value, Integer)
     await connection.execute(
-        insert(ArticleFolderModel.__table__).values(
-            id=ARTICLE_FOLDER_ID,
-            key="knowledge-base",
-            name_ru="База знаний",
-            name_en="Knowledge base",
-            priority=1,
+        insert(ArticleFolderModel.__table__).from_select(
+            ["id", "key", "name_ru", "name_en", "priority"],
+            select(
+                article_folder_id_expr(value=value),
+                case(
+                    (value == 1, literal("knowledge-base")),
+                    else_=func.concat(literal("folder-"), value),
+                ),
+                case(
+                    (value == 1, literal("База знаний")),
+                    else_=func.concat(literal("Папка "), value),
+                ),
+                case(
+                    (value == 1, literal("Knowledge base")),
+                    else_=func.concat(literal("Folder "), value),
+                ),
+                value,
+            ).select_from(series),
         ),
     )
 
 
-async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
-    series = generate_series_subquery(end=profile.article_count, name="article_series")
+async def insert_articles(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    article_cardinalities = profile.cardinalities.articles
+    series = generate_series_subquery(end=article_cardinalities.articles, name="article_series")
     value = sql_cast(series.c.value, Integer)
-    target_article = func.mod(value, TARGET_ARTICLE_DIVISOR) == 0
-    published_article = func.mod(value, 4) == 0
+    target_divisor = PERCENTAGE_BASE // article_cardinalities.fts_match_percentage
+    target_article = func.mod(value, target_divisor) == 0
+    published_article = (
+        func.mod(value, PERCENTAGE_BASE) < article_cardinalities.published_percentage
+    )
+    folder_number = func.mod(value - 1, article_cardinalities.folders) + 1
     await connection.execute(
         insert(ArticleModel.__table__).from_select(
             [
@@ -348,7 +385,7 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
                     else_=func.concat(literal("General backend content "), value),
                 ),
                 func.concat(literal("article-"), value),
-                literal(ARTICLE_FOLDER_ID),
+                article_folder_id_expr(value=folder_number),
                 literal("benchmark"),
                 case((published_article, literal(SEED_NOW)), else_=literal(None)),
                 sql_cast(
@@ -360,28 +397,37 @@ async def insert_articles(*, connection: AsyncConnection, profile: DatasetProfil
     )
 
 
-async def insert_article_tag_links(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
+async def insert_article_tag_links(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    article_cardinalities = profile.cardinalities.articles
+    target_divisor = PERCENTAGE_BASE // article_cardinalities.fts_match_percentage
     target_link_count = min(
-        profile.article_count // TARGET_ARTICLE_DIVISOR,
-        profile.article_tag_link_count // TARGET_ARTICLE_DIVISOR,
+        article_cardinalities.articles // target_divisor,
+        article_cardinalities.article_tag_links // target_divisor,
     )
-    general_link_count = profile.article_tag_link_count - target_link_count
+    general_link_count = article_cardinalities.article_tag_links - target_link_count
 
     target_series = generate_series_subquery(end=target_link_count, name="target_links")
     target_value = sql_cast(target_series.c.value, Integer)
     target_select = select(
-        deterministic_hex_from_int(value=target_value * TARGET_ARTICLE_DIVISOR),
+        deterministic_hex_from_int(value=target_value * target_divisor),
         literal(hex_id(POSTGRESQL_ID)),
     ).select_from(target_series)
 
     general_series = generate_series_subquery(end=general_link_count, name="general_links")
     general_value = sql_cast(general_series.c.value, Integer)
-    article_number = func.mod(general_value - 1, profile.article_count) + 1
-    link_round = sql_cast((general_value - 1) / profile.article_count, Integer)
+    article_number = func.mod(general_value - 1, article_cardinalities.articles) + 1
+    link_round = sql_cast(
+        func.floor((general_value - 1) / article_cardinalities.articles),
+        Integer,
+    )
     tag_number = (
         func.mod(
             general_value + link_round * 9973,
-            profile.tag_count - PYDANTIC_ID,
+            article_cardinalities.tags - PYDANTIC_ID,
         )
         + GENERAL_TAG_START_ID
     )
@@ -399,32 +445,84 @@ async def insert_article_tag_links(*, connection: AsyncConnection, profile: Data
     )
 
 
-async def insert_article_analytics(*, connection: AsyncConnection) -> None:
+async def insert_article_analytics(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    article_cardinalities = profile.cardinalities.articles
+    source_categories = (
+        ArticleViewSourceCategory.DIRECT,
+        ArticleViewSourceCategory.INTERNAL,
+        ArticleViewSourceCategory.SEARCH,
+        ArticleViewSourceCategory.SOCIAL,
+        ArticleViewSourceCategory.EXTERNAL,
+        ArticleViewSourceCategory.UNKNOWN,
+    )
+    source_count = len(source_categories)
+    series = generate_series_subquery(
+        end=article_cardinalities.daily_analytics,
+        name="article_analytics_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    source_bucket = func.mod(value - 1, source_count)
+    article_number = (
+        func.mod(
+            sql_cast(func.floor((value - 1) / source_count), Integer),
+            article_cardinalities.articles,
+        )
+        + 1
+    )
+    analytics_cycle = sql_cast(
+        func.floor((value - 1) / (source_count * article_cardinalities.articles)),
+        Integer,
+    )
+    recorded_day = func.mod(
+        article_number - 1 + source_bucket * ANALYTICS_SOURCE_DAY_OFFSET + analytics_cycle,
+        ANALYTICS_DAY_BUCKET_COUNT,
+    )
     await connection.execute(
-        insert(ArticleDailyAnalyticsModel),
-        [
-            {
-                "article_id": deterministic_python_hex_from_int(value=article_number),
-                "date": recorded_on,
-                "source_category": source_category,
-                "view_count": 100 + article_number,
-                "engaged_view_count": 10 + article_number,
-            }
-            for article_number in (100, 200)
-            for recorded_on in (date(2026, 1, 14), date(2026, 1, 15))
-            for source_category in (
-                ArticleViewSourceCategory.DIRECT,
-                ArticleViewSourceCategory.SEARCH,
-            )
-        ],
+        insert(ArticleDailyAnalyticsModel.__table__).from_select(
+            [
+                "article_id",
+                "date",
+                "source_category",
+                "view_count",
+                "engaged_view_count",
+            ],
+            select(
+                deterministic_hex_from_int(value=article_number),
+                literal(SEED_NOW.date()) - recorded_day,
+                sql_cast(
+                    case(
+                        *(
+                            (source_bucket == index, literal(category.name))
+                            for index, category in enumerate(source_categories[:-1])
+                        ),
+                        else_=literal(source_categories[-1].name),
+                    ),
+                    ArticleDailyAnalyticsModel.__table__.c.source_category.type,
+                ),
+                100 + func.mod(value, 500),
+                10 + func.mod(value, 50),
+            ).select_from(series),
+            include_defaults=False,
+        ),
     )
 
 
-async def insert_article_reactions(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
-    reaction_count = min(profile.article_count, ARTICLE_REACTION_SEED_COUNT)
-    series = generate_series_subquery(end=reaction_count, name="article_reaction_series")
+async def insert_article_reactions(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    article_cardinalities = profile.cardinalities.articles
+    series = generate_series_subquery(
+        end=article_cardinalities.reactions,
+        name="article_reaction_series",
+    )
     value = sql_cast(series.c.value, Integer)
-    article_number = func.mod(value - 1, profile.article_count) + 1
+    article_number = func.mod(value - 1, article_cardinalities.articles) + 1
     await connection.execute(
         insert(ArticleReactionModel.__table__).from_select(
             [
@@ -456,8 +554,11 @@ async def insert_article_reactions(*, connection: AsyncConnection, profile: Data
     )
 
 
-async def insert_resumes(*, connection: AsyncConnection) -> None:
-    series = generate_series_subquery(end=RESUME_SEED_COUNT, name="resume_series")
+async def insert_resumes(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.resumes.resumes,
+        name="resume_series",
+    )
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(ResumeModel.__table__).from_select(
@@ -475,8 +576,11 @@ async def insert_resumes(*, connection: AsyncConnection) -> None:
     )
 
 
-async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfile) -> None:
-    series = generate_series_subquery(end=profile.resource_count, name="resource_series")
+async def insert_resources(*, connection: AsyncConnection, profile: QueryPlanProfile) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.matrix.resources,
+        name="resource_series",
+    )
     value = sql_cast(series.c.value, Integer)
     await connection.execute(
         insert(ExternalResourceModel.__table__).from_select(
@@ -486,25 +590,47 @@ async def insert_resources(*, connection: AsyncConnection, profile: DatasetProfi
                 case(
                     (value == PYTHON_ID, literal("Документация Pydantic")),
                     (value == POSTGRESQL_ID, literal("Документация Python")),
-                    else_=func.concat(literal("Ресурс "), value),
+                    else_=func.concat(
+                        literal(
+                            "Технический справочный материал по архитектуре, базам данных, "
+                            "тестированию и эксплуатации ",
+                        ),
+                        value,
+                    ),
                 ),
                 case(
                     (value == PYTHON_ID, literal("Pydantic validation guide")),
                     (value == POSTGRESQL_ID, literal("Python documentation")),
-                    else_=func.concat(literal("Resource "), value),
+                    else_=func.concat(
+                        literal(
+                            "Technical reference material for architecture, databases, "
+                            "testing, and operations ",
+                        ),
+                        value,
+                    ),
                 ),
                 case(
                     (value == PYTHON_ID, literal("https://docs.pydantic.dev/latest/")),
                     (value == POSTGRESQL_ID, literal("https://docs.python.org/3/")),
-                    else_=func.concat(literal("https://example.com/resources/"), value),
+                    else_=func.concat(
+                        literal(
+                            "https://example.com/engineering/reference-materials/documentation/",
+                        ),
+                        value,
+                    ),
                 ),
             ).select_from(series),
         ),
     )
 
 
-async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> None:
-    sheet_series = generate_series_subquery(end=20, name="matrix_sheet_series")
+async def insert_competency_matrix_structure(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    matrix = profile.cardinalities.matrix
+    sheet_series = generate_series_subquery(end=matrix.sheets, name="matrix_sheet_series")
     sheet_value = sql_cast(sheet_series.c.value, Integer)
     await connection.execute(
         insert(CompetencyMatrixSheetModel.__table__).from_select(
@@ -528,10 +654,15 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
         ),
     )
 
-    section_series = generate_series_subquery(end=20 * 8, name="matrix_section_series")
+    section_series = generate_series_subquery(
+        end=matrix.sheets * matrix.sections_per_sheet,
+        name="matrix_section_series",
+    )
     section_value = sql_cast(section_series.c.value, Integer)
-    section_bucket = func.mod(section_value - 1, 8)
-    section_sheet_number = sql_cast(func.floor((section_value - 1) / 8), Integer) + 1
+    section_bucket = func.mod(section_value - 1, matrix.sections_per_sheet)
+    section_sheet_number = (
+        sql_cast(func.floor((section_value - 1) / matrix.sections_per_sheet), Integer) + 1
+    )
     await connection.execute(
         insert(CompetencyMatrixSectionModel.__table__).from_select(
             ["id", "sheet_id", "name_ru", "name_en", "priority"],
@@ -557,12 +688,30 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
         ),
     )
 
-    subsection_series = generate_series_subquery(end=20 * 8 * 12, name="matrix_subsection_series")
+    subsection_series = generate_series_subquery(
+        end=matrix.sheets * matrix.sections_per_sheet * matrix.subsections_per_section,
+        name="matrix_subsection_series",
+    )
     subsection_value = sql_cast(subsection_series.c.value, Integer)
-    subsection_bucket = func.mod(subsection_value - 1, 12)
-    subsection_section_number = sql_cast(func.floor((subsection_value - 1) / 12), Integer) + 1
-    subsection_sheet_number = sql_cast(func.floor((subsection_section_number - 1) / 8), Integer) + 1
-    subsection_section_bucket = func.mod(subsection_section_number - 1, 8)
+    subsection_bucket = func.mod(subsection_value - 1, matrix.subsections_per_section)
+    subsection_section_number = (
+        sql_cast(
+            func.floor((subsection_value - 1) / matrix.subsections_per_section),
+            Integer,
+        )
+        + 1
+    )
+    subsection_sheet_number = (
+        sql_cast(
+            func.floor((subsection_section_number - 1) / matrix.sections_per_sheet),
+            Integer,
+        )
+        + 1
+    )
+    subsection_section_bucket = func.mod(
+        subsection_section_number - 1,
+        matrix.sections_per_sheet,
+    )
     python_basics = sa_and(
         subsection_sheet_number == PYTHON_ID,
         subsection_section_bucket == 0,
@@ -591,16 +740,21 @@ async def insert_competency_matrix_structure(*, connection: AsyncConnection) -> 
 async def insert_competency_matrix_items(
     *,
     connection: AsyncConnection,
-    profile: DatasetProfile,
+    profile: QueryPlanProfile,
 ) -> None:
-    series = generate_series_subquery(end=profile.resource_count, name="matrix_item_series")
+    matrix = profile.cardinalities.matrix
+    series = generate_series_subquery(end=matrix.items, name="matrix_item_series")
     value = sql_cast(series.c.value, Integer)
-    sheet_bucket = func.mod(value, 20)
+    sheet_bucket = func.mod(value, matrix.sheets)
     draft_item = func.mod(value, 11) == 0
     missing_answer_en = func.mod(value, 13) == 0
-    section_bucket = func.mod(value, 8)
-    subsection_bucket = func.mod(value, 12)
-    subsection_number = (sheet_bucket * 8 + section_bucket) * 12 + subsection_bucket + 1
+    section_bucket = func.mod(value, matrix.sections_per_sheet)
+    subsection_bucket = func.mod(value, matrix.subsections_per_section)
+    subsection_number = (
+        (sheet_bucket * matrix.sections_per_sheet + section_bucket) * matrix.subsections_per_section
+        + subsection_bucket
+        + 1
+    )
     grade_bucket = func.mod(value, 5)
     frequency_bucket = func.mod(value, 5)
     await connection.execute(
@@ -682,7 +836,12 @@ async def insert_competency_matrix_items(
     )
 
 
-async def insert_competency_matrix_resource_links(*, connection: AsyncConnection) -> None:
+async def insert_competency_matrix_resource_links(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    matrix = profile.cardinalities.matrix
     await connection.execute(
         insert(ResourceToItemSecondaryModel),
         [
@@ -696,9 +855,39 @@ async def insert_competency_matrix_resource_links(*, connection: AsyncConnection
             for resource_id in (hex_id(PYTHON_ID), hex_id(POSTGRESQL_ID))
         ],
     )
+    general_link_count = matrix.resource_links - TARGET_RESOURCE_LINK_COUNT
+    general_item_count = matrix.items - 2
+    series = generate_series_subquery(
+        end=general_link_count,
+        name="matrix_resource_link_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    item_position = func.mod(value - 1, general_item_count) + 1
+    item_number = case(
+        (item_position < EXISTING_MATRIX_ITEM_SEED_INDEX, item_position),
+        else_=item_position + 2,
+    )
+    link_round = sql_cast(func.floor((value - 1) / general_item_count), Integer)
+    resource_number = func.mod(item_position - 1 + link_round, matrix.resources) + 1
+    await connection.execute(
+        insert(ResourceToItemSecondaryModel.__table__).from_select(
+            ["item_id", "resource_id", "context_ru", "context_en"],
+            select(
+                hex_id_expr(value=item_number),
+                hex_id_expr(value=resource_number),
+                func.concat(literal("Контекст query-plan ресурса "), value),
+                func.concat(literal("Query-plan resource context "), value),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
 
 
-async def insert_queued_competency_matrix_questions(*, connection: AsyncConnection) -> None:
+async def insert_queued_competency_matrix_questions(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
     await connection.execute(
         insert(QueuedQuestionModel.__table__),
         [
@@ -715,12 +904,16 @@ async def insert_queued_competency_matrix_questions(*, connection: AsyncConnecti
                 "suggested_by_username": SEED_USERNAME if value % 10 == 0 else "anon",
                 "created_at": SEED_NOW + timedelta(seconds=value),
             }
-            for value in range(1, QUEUED_QUESTION_SEED_COUNT + 1)
+            for value in range(1, profile.cardinalities.matrix.queued_questions + 1)
         ],
     )
 
 
-async def insert_agent_access_records(*, connection: AsyncConnection) -> None:
+async def insert_agent_access_records(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
     await connection.execute(
         insert(AgentClientModel.__table__),
         [
@@ -806,23 +999,45 @@ async def insert_agent_access_records(*, connection: AsyncConnection) -> None:
             },
         ],
     )
+    audit_series = generate_series_subquery(
+        end=profile.cardinalities.agent_access.audit_events,
+        name="agent_audit_series",
+    )
+    audit_value = sql_cast(audit_series.c.value, Integer)
     await connection.execute(
-        insert(AgentAuditEventModel.__table__),
-        [
-            {
-                "id": hex_id(64_001 + value),
-                "agent_client_id": hex_id(60_001),
-                "certificate_id": hex_id(62_001),
-                "action": AgentActionEnum.GET_MATRIX_AUTHORING_CONTEXT,
-                "queue_item_id": None,
-                "matrix_item_id": None,
-                "request_id": f"query-plan-audit-{value}",
-                "result": AgentAuditResultEnum.SUCCESS,
-                "input_digest": f"{value:064x}",
-                "created_at": SEED_NOW - timedelta(days=value),
-            }
-            for value in range(365)
-        ],
+        insert(AgentAuditEventModel.__table__).from_select(
+            [
+                "id",
+                "agent_client_id",
+                "certificate_id",
+                "action",
+                "queue_item_id",
+                "matrix_item_id",
+                "request_id",
+                "result",
+                "input_digest",
+                "created_at",
+            ],
+            select(
+                hex_id_expr(value=64_000 + audit_value),
+                literal(hex_id(60_001)),
+                literal(hex_id(62_001)),
+                sql_cast(
+                    literal(AgentActionEnum.GET_MATRIX_AUTHORING_CONTEXT.name),
+                    AgentAuditEventModel.__table__.c.action.type,
+                ),
+                literal(None),
+                literal(None),
+                func.concat(literal("query-plan-audit-"), audit_value),
+                sql_cast(
+                    literal(AgentAuditResultEnum.SUCCESS.name),
+                    AgentAuditEventModel.__table__.c.result.type,
+                ),
+                func.lpad(func.to_hex(audit_value), 64, literal("0")),
+                literal(SEED_NOW) - audit_value * literal(timedelta(minutes=1)),
+            ).select_from(audit_series),
+            include_defaults=False,
+        ),
     )
 
 
@@ -834,8 +1049,11 @@ def deterministic_hex_from_int(*, value: object) -> object:
     return func.md5(sql_cast(value, String))
 
 
-def deterministic_python_hex_from_int(*, value: int) -> str:
-    return md5(str(value).encode(), usedforsecurity=False).hexdigest()
+def article_folder_id_expr(*, value: object) -> object:
+    return case(
+        (value == 1, literal(ARTICLE_FOLDER_ID)),
+        else_=hex_id_expr(value=3_000_000 + value),
+    )
 
 
 def hex_id_expr(*, value: object) -> object:

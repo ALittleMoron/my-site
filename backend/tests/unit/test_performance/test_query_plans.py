@@ -14,6 +14,7 @@ from performance.query_plans import (
     compile_captured_query,
     generate_series_subquery,
 )
+from performance.query_plans import models as query_plan_models
 from performance.query_plans import runner as query_plan_runner
 from performance.query_plans import scenarios as query_plan_scenarios
 from performance.query_plans import seed as query_plan_seed
@@ -23,17 +24,18 @@ from performance.query_plans.expectations import (
     scenario_plan_expectation,
 )
 from performance.query_plans.models import (
-    BALANCED_PROFILE,
     BenchmarkResult,
     CapturedQuery,
     CoverageReport,
-    DatasetProfile,
     PlanAnalysis,
     QueryThresholdGroup,
     StorageMethod,
 )
 from performance.query_plans.reports import serialize_summary
-from performance.query_plans.runner import apply_query_threshold_overrides
+from performance.query_plans.runner import (
+    apply_query_threshold_overrides,
+    configure_explain_session,
+)
 from performance.query_plans.runtime_capture import RuntimeQueryCapture
 from performance.query_plans.scenarios import (
     STORAGE_SCENARIOS,
@@ -76,15 +78,25 @@ class TestQueryPlanAnalysis:
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                expected_indexes=(
+                    query_plan_models.ExpectedIndex(
+                        name="articles_article_search_vector_en_gin_idx",
+                        relation_name="articles__article_model",
+                    ),
+                ),
                 forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
+            relation_cardinalities={"articles__article_model": 5_000},
+            minimum_blocking_cardinality=1_000,
+            timing_mode=query_plan_models.TimingMode.ENFORCE,
+            effective_execution_threshold_ms=150.0,
         )
 
         assert analysis.execution_time_ms == 42.0
         assert analysis.index_names == ("articles_article_search_vector_en_gin_idx",)
-        assert analysis.findings == ()
+        assert analysis.blocking_findings == ()
+        assert analysis.observations == ()
 
     def test_analyze_explain_result_flags_missing_index_and_large_seq_scan(self) -> None:
         analysis = analyze_explain_result(
@@ -103,15 +115,28 @@ class TestQueryPlanAnalysis:
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                expected_indexes=(
+                    query_plan_models.ExpectedIndex(
+                        name="articles_article_search_vector_en_gin_idx",
+                        relation_name="articles__article_model",
+                    ),
+                ),
                 forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
+            relation_cardinalities={"articles__article_model": 200_000},
+            minimum_blocking_cardinality=1_000,
+            timing_mode=query_plan_models.TimingMode.ENFORCE,
+            effective_execution_threshold_ms=150.0,
         )
 
-        assert "articles_article_search_vector_en_gin_idx" in analysis.findings[0]
-        assert "Seq Scan on articles__article_model" in analysis.findings[1]
-        assert "312.00 ms exceeded 150.00 ms" in analysis.findings[2]
+        assert "articles_article_search_vector_en_gin_idx" in analysis.blocking_findings[0]
+        assert (
+            "Seq Scan on 200000-row relation articles__article_model"
+            in analysis.blocking_findings[1]
+        )
+        assert "312.00 ms exceeded 150.00 ms" in analysis.blocking_findings[2]
+        assert analysis.observations == ()
 
 
 class TestQueryCapture:
@@ -129,32 +154,25 @@ class TestQueryCapture:
         assert "sample_series.value" in compiled
 
     async def test_seed_bulk_selects_cast_native_enum_values(self) -> None:
-        profile = DatasetProfile(
-            name="unit",
-            article_count=10,
-            tag_count=10,
-            article_tag_link_count=10,
-            resource_count=10,
-            explain_runs=1,
-        )
+        profile = make_query_plan_profile()
         expectations: tuple[
             tuple[Callable[..., Awaitable[None]], Mapping[str, object], tuple[str, ...]],
             ...,
         ] = (
-            (query_plan_seed.insert_users, {}, ("role_enum",)),
+            (query_plan_seed.insert_users, {"profile": profile}, ("role_enum",)),
             (
                 query_plan_seed.insert_auth_sessions,
-                {},
+                {"profile": profile},
                 ("auth_session_auth_method_enum", "auth_session_device_type_enum"),
             ),
-            (query_plan_seed.insert_article_folders, {}, ()),
+            (query_plan_seed.insert_article_folders, {"profile": profile}, ()),
             (query_plan_seed.insert_articles, {"profile": profile}, ("publish_status_enum",)),
             (
                 query_plan_seed.insert_article_reactions,
                 {"profile": profile},
                 ("article_reaction_kind_enum",),
             ),
-            (query_plan_seed.insert_resumes, {}, ("language_enum",)),
+            (query_plan_seed.insert_resumes, {"profile": profile}, ("language_enum",)),
             (
                 query_plan_seed.insert_competency_matrix_items,
                 {"profile": profile},
@@ -173,14 +191,7 @@ class TestQueryCapture:
                 assert f"AS {enum_type_name}" in compiled
 
     async def test_article_seed_uses_normalized_folder_id(self) -> None:
-        profile = DatasetProfile(
-            name="unit",
-            article_count=10,
-            tag_count=10,
-            article_tag_link_count=10,
-            resource_count=10,
-            explain_runs=1,
-        )
+        profile = make_query_plan_profile()
         connection = AsyncMock()
 
         await query_plan_seed.insert_articles(connection=connection, profile=profile)
@@ -207,6 +218,20 @@ class TestQueryCapture:
         assert "resumes__resume_model" in sql
         assert "auth__user_model" in sql
         assert sql.endswith(" RESTART IDENTITY CASCADE")
+
+    async def test_explain_session_uses_profile_work_mem_budget(self) -> None:
+        connection = AsyncMock()
+
+        await configure_explain_session(
+            connection=connection,
+            profile=query_plan_models.STRESS_PROFILE,
+        )
+
+        statement = connection.execute.await_args.args[0]
+        parameters = connection.execute.await_args.args[1]
+        assert "set_config('work_mem'" in statement.text
+        assert parameters == {"work_mem": "64MB"}
+        connection.commit.assert_awaited_once_with()
 
     def test_discover_storage_methods_finds_public_async_methods_only(self) -> None:
         methods = discover_storage_methods()
@@ -285,7 +310,12 @@ class TestQueryCapture:
             expectation=PlanExpectation(
                 max_execution_ms=150.0,
                 threshold_source="group:search",
-                expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                expected_indexes=(
+                    query_plan_models.ExpectedIndex(
+                        name="articles_article_search_vector_en_gin_idx",
+                        relation_name="articles__article_model",
+                    ),
+                ),
                 forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
@@ -325,7 +355,12 @@ class TestQueryCapture:
                 expectation=PlanExpectation(
                     max_execution_ms=150.0,
                     threshold_source="group:search",
-                    expected_index_names=("articles_article_search_vector_en_gin_idx",),
+                    expected_indexes=(
+                        query_plan_models.ExpectedIndex(
+                            name="articles_article_search_vector_en_gin_idx",
+                            relation_name="articles__article_model",
+                        ),
+                    ),
                     forbidden_seq_scan_relations=("articles__article_model",),
                     allow_seq_scan_reason=None,
                 ),
@@ -349,7 +384,12 @@ class TestQueryCapture:
             expectation=PlanExpectation(
                 max_execution_ms=100.0,
                 threshold_source="override:tags_fuzzy_en",
-                expected_index_names=("articles_tag_name_en_trgm_idx",),
+                expected_indexes=(
+                    query_plan_models.ExpectedIndex(
+                        name="articles_tag_name_en_trgm_idx",
+                        relation_name="articles__tag_model",
+                    ),
+                ),
                 forbidden_seq_scan_relations=("articles__tag_model",),
                 allow_seq_scan_reason=None,
             ),
@@ -385,7 +425,7 @@ class TestQueryCapture:
             expectation=PlanExpectation(
                 max_execution_ms=100.0,
                 threshold_source="group:small_write",
-                expected_index_names=(),
+                expected_indexes=(),
                 forbidden_seq_scan_relations=(),
                 allow_seq_scan_reason=None,
             ),
@@ -425,8 +465,13 @@ class TestQueryCapture:
             },
             scenario_max_execution_ms={"tags_short_en": 250.0},
             query_max_execution_ms={"tags_short_en__001": 300.0},
-            query_expected_index_names={
-                "tags_short_en__001": ("articles_tag_slug_trgm_idx",),
+            query_expected_indexes={
+                "tags_short_en__001": (
+                    query_plan_models.ExpectedIndex(
+                        name="articles_tag_slug_trgm_idx",
+                        relation_name="articles__tag_model",
+                    ),
+                ),
             },
         )
 
@@ -435,7 +480,12 @@ class TestQueryCapture:
             group=QueryThresholdGroup.SEARCH,
             policy=policy,
             query_name=None,
-            expected_index_names=("articles_tag_name_en_trgm_idx",),
+            expected_indexes=(
+                query_plan_models.ExpectedIndex(
+                    name="articles_tag_name_en_trgm_idx",
+                    relation_name="articles__tag_model",
+                ),
+            ),
             forbidden_seq_scan_relations=("articles__tag_model",),
             allow_seq_scan_reason=None,
         )
@@ -444,7 +494,7 @@ class TestQueryCapture:
             group=QueryThresholdGroup.SEARCH,
             policy=policy,
             query_name=None,
-            expected_index_names=(),
+            expected_indexes=(),
             forbidden_seq_scan_relations=(),
             allow_seq_scan_reason="short search string is intentionally non-selective",
         )
@@ -453,7 +503,7 @@ class TestQueryCapture:
             group=QueryThresholdGroup.SEARCH,
             policy=policy,
             query_name="tags_short_en__001",
-            expected_index_names=(),
+            expected_indexes=(),
             forbidden_seq_scan_relations=(),
             allow_seq_scan_reason="short search string is intentionally non-selective",
         )
@@ -464,8 +514,11 @@ class TestQueryCapture:
         assert override_expectation.threshold_source == "override:tags_short_en"
         assert statement_override_expectation.max_execution_ms == 300.0
         assert statement_override_expectation.threshold_source == "override:tags_short_en__001"
-        assert statement_override_expectation.expected_index_names == (
-            "articles_tag_slug_trgm_idx",
+        assert statement_override_expectation.expected_indexes == (
+            query_plan_models.ExpectedIndex(
+                name="articles_tag_slug_trgm_idx",
+                relation_name="articles__tag_model",
+            ),
         )
 
     def test_runner_applies_statement_threshold_overrides_to_captured_queries(self) -> None:
@@ -478,6 +531,7 @@ class TestQueryCapture:
         captured_queries = apply_query_threshold_overrides(
             queries=(query,),
             scenarios=STORAGE_SCENARIOS,
+            profile=query_plan_models.REALISTIC_PROFILE,
         )
 
         assert captured_queries[0].expectation.max_execution_ms == 250.0
@@ -539,7 +593,12 @@ class TestQueryCapture:
             expectation=PlanExpectation(
                 max_execution_ms=25.0,
                 threshold_source="group:point_read",
-                expected_index_names=("ix_articles__article_model_slug",),
+                expected_indexes=(
+                    query_plan_models.ExpectedIndex(
+                        name="ix_articles__article_model_slug",
+                        relation_name="articles__article_model",
+                    ),
+                ),
                 forbidden_seq_scan_relations=("articles__article_model",),
                 allow_seq_scan_reason=None,
             ),
@@ -557,15 +616,26 @@ class TestQueryCapture:
                     index_names=("ix_articles__article_model_slug",),
                     seq_scan_relations=(),
                     temp_blocks=0,
-                    findings=(),
+                    blocking_findings=(),
+                    observations=(),
                 ),
             ),
             warm_execution_ms=2.0,
-            findings=(),
+            baseline_execution_ms=1.0,
+            effective_execution_threshold_ms=21.0,
+            execution_time_exceeded=False,
+            blocking_findings=(),
+            observations=("planner chose an alternative equivalent index",),
         )
 
         summary = serialize_summary(
-            profile=BALANCED_PROFILE,
+            profile=query_plan_models.REALISTIC_PROFILE,
+            baseline=query_plan_models.QueryPlanBaseline(
+                profile_name="realistic",
+                source_sha="abc123",
+                sample_count=5,
+                query_warm_execution_ms={"articles_by_slug__001": 1.0},
+            ),
             coverage=CoverageReport(
                 discovered_methods=(
                     StorageMethod(
@@ -593,6 +663,43 @@ class TestQueryCapture:
             "missingMethods": [],
             "unexpectedMethods": [],
         }
+        assert summary["profile"] == {
+            "name": "realistic",
+            "timingMode": "enforce",
+            "explainRuns": 3,
+            "explainWorkMemMb": 16,
+            "cardinalities": {
+                "auth": {"users": 100, "sessions": 500},
+                "articles": {
+                    "folders": 20,
+                    "articles": 5_000,
+                    "publishedPercentage": 80,
+                    "ftsMatchPercentage": 1,
+                    "tags": 500,
+                    "articleTagLinks": 20_000,
+                    "dailyAnalytics": 100_000,
+                    "reactions": 10_000,
+                },
+                "resumes": {"resumes": 250},
+                "matrix": {
+                    "sheets": 20,
+                    "sectionsPerSheet": 8,
+                    "subsectionsPerSection": 12,
+                    "items": 10_000,
+                    "resources": 5_000,
+                    "resourceLinks": 25_000,
+                    "queuedQuestions": 5_000,
+                },
+                "agentAccess": {"auditEvents": 10_000},
+            },
+            "relationCardinalities": query_plan_models.REALISTIC_PROFILE.relation_cardinalities,
+        }
+        assert summary["baseline"] == {
+            "profile": "realistic",
+            "sourceSha": "abc123",
+            "sampleCount": 5,
+            "queries": {"articles_by_slug__001": 1.0},
+        }
         summary_results = cast("Sequence[Mapping[str, object]]", summary["results"])
         assert summary_results[0] == {
             "name": "articles_by_slug__001",
@@ -604,11 +711,16 @@ class TestQueryCapture:
             "runtimeElapsedMs": 2.5,
             "warmExecutionMs": 2.0,
             "thresholdSource": "group:point_read",
-            "maxExecutionMs": 25.0,
+            "timingMode": "enforce",
+            "slaExecutionMs": 25.0,
+            "baselineExecutionMs": 1.0,
+            "effectiveExecutionThresholdMs": 21.0,
+            "executionTimeExceeded": False,
             "indexes": ("ix_articles__article_model_slug",),
             "seqScans": (),
             "nodeTypes": ("Index Scan",),
-            "findings": (),
+            "blockingFindings": (),
+            "observations": ("planner chose an alternative equivalent index",),
         }
 
 
@@ -646,8 +758,42 @@ def make_captured_query(*, name: str, scenario_name: str, ordinal: int) -> Captu
         expectation=PlanExpectation(
             max_execution_ms=25.0,
             threshold_source="group:point_read",
-            expected_index_names=(),
+            expected_indexes=(),
             forbidden_seq_scan_relations=(),
             allow_seq_scan_reason=None,
         ),
+    )
+
+
+def make_query_plan_profile() -> query_plan_models.QueryPlanProfile:
+    return query_plan_models.QueryPlanProfile(
+        name="unit",
+        cardinalities=query_plan_models.ProfileCardinalities(
+            auth=query_plan_models.AuthCardinalities(users=10, sessions=10),
+            articles=query_plan_models.ArticleCardinalities(
+                folders=1,
+                articles=10,
+                published_percentage=80,
+                fts_match_percentage=1,
+                tags=10,
+                article_tag_links=10,
+                daily_analytics=10,
+                reactions=10,
+            ),
+            resumes=query_plan_models.ResumeCardinalities(resumes=10),
+            matrix=query_plan_models.MatrixCardinalities(
+                sheets=1,
+                sections_per_sheet=1,
+                subsections_per_section=1,
+                items=101,
+                resources=101,
+                resource_links=10,
+                queued_questions=101,
+            ),
+            agent_access=query_plan_models.AgentAccessCardinalities(audit_events=10),
+        ),
+        timing_mode=query_plan_models.TimingMode.ENFORCE,
+        explain_runs=1,
+        explain_work_mem_mb=16,
+        scenario_plan_shape_overrides={},
     )

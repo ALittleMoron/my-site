@@ -167,8 +167,13 @@ make test-frontend              # только frontend (jest)
 make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, обновлений, case-study и вопроса матрицы
 make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
-make query-plans-balanced       # test DB, storage-wide SQL capture и EXPLAIN ANALYZE gate
+make query-plans-realistic      # обязательный main gate: реалистичные данные, планы + latency
+make query-plans-stress         # ручной большой профиль: строгие планы, latency как observation
 ```
+
+Основной CI вызывает reusable query-plan workflow с профилем `realistic` и timeout 20 минут.
+Отдельный ручной workflow **Query-plan profiles** принимает calibration-прогон `realistic` или
+`stress`, использует timeout 45 минут и публикует артефакты `query-plan-reports-<profile>`.
 
 Backend pytest targets запускаются с явным числом pytest-xdist воркеров по физическим CPU-ядрам,
 без `-n auto`. Для serial-режима задайте `BACKEND_PYTEST_WORKERS=0` или `1`; любое значение больше

@@ -16,21 +16,113 @@ class QueryThresholdGroup(StrEnum):
     HEAVY = "heavy"
 
 
+class TimingMode(StrEnum):
+    ENFORCE = "enforce"
+    OBSERVE = "observe"
+
+
 @dataclass(frozen=True, slots=True)
-class DatasetProfile:
+class AuthCardinalities:
+    users: int
+    sessions: int
+
+
+@dataclass(frozen=True, slots=True)
+class ArticleCardinalities:
+    folders: int
+    articles: int
+    published_percentage: int
+    fts_match_percentage: int
+    tags: int
+    article_tag_links: int
+    daily_analytics: int
+    reactions: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResumeCardinalities:
+    resumes: int
+
+
+@dataclass(frozen=True, slots=True)
+class MatrixCardinalities:
+    sheets: int
+    sections_per_sheet: int
+    subsections_per_section: int
+    items: int
+    resources: int
+    resource_links: int
+    queued_questions: int
+
+
+@dataclass(frozen=True, slots=True)
+class AgentAccessCardinalities:
+    audit_events: int
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileCardinalities:
+    auth: AuthCardinalities
+    articles: ArticleCardinalities
+    resumes: ResumeCardinalities
+    matrix: MatrixCardinalities
+    agent_access: AgentAccessCardinalities
+
+
+@dataclass(frozen=True, slots=True)
+class ExpectedIndex:
     name: str
-    article_count: int
-    tag_count: int
-    article_tag_link_count: int
-    resource_count: int
+    relation_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioPlanShapeOverride:
+    expected_indexes: tuple[ExpectedIndex, ...]
+    forbidden_seq_scan_relations: tuple[str, ...]
+    allow_seq_scan_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class QueryPlanProfile:
+    name: str
+    cardinalities: ProfileCardinalities
+    timing_mode: TimingMode
     explain_runs: int
+    explain_work_mem_mb: int
+    scenario_plan_shape_overrides: Mapping[str, ScenarioPlanShapeOverride]
+
+    @property
+    def relation_cardinalities(self) -> Mapping[str, int]:
+        cardinalities = self.cardinalities
+        matrix = cardinalities.matrix
+        section_count = matrix.sheets * matrix.sections_per_sheet
+        subsection_count = section_count * matrix.subsections_per_section
+        return {
+            "auth__user_model": cardinalities.auth.users,
+            "auth__auth_session_model": cardinalities.auth.sessions,
+            "articles__article_folder_model": cardinalities.articles.folders,
+            "articles__article_model": cardinalities.articles.articles,
+            "articles__tag_model": cardinalities.articles.tags,
+            "articles__article_to_tag_secondary_model": (cardinalities.articles.article_tag_links),
+            "articles__article_daily_analytics_model": cardinalities.articles.daily_analytics,
+            "articles__article_reaction_model": cardinalities.articles.reactions,
+            "resumes__resume_model": cardinalities.resumes.resumes,
+            "competency_matrix__competency_matrix_sheet_model": matrix.sheets,
+            "competency_matrix__competency_matrix_section_model": section_count,
+            "competency_matrix__competency_matrix_subsection_model": subsection_count,
+            "competency_matrix__competency_matrix_item_model": matrix.items,
+            "competency_matrix__external_resource_model": matrix.resources,
+            "competency_matrix__resource_to_item_secondary_model": matrix.resource_links,
+            "competency_matrix__queued_question_model": matrix.queued_questions,
+            "agent_access__agent_audit_event_model": cardinalities.agent_access.audit_events,
+        }
 
 
 @dataclass(frozen=True, slots=True)
 class PlanExpectation:
     max_execution_ms: float
     threshold_source: str
-    expected_index_names: tuple[str, ...]
+    expected_indexes: tuple[ExpectedIndex, ...]
     forbidden_seq_scan_relations: tuple[str, ...]
     allow_seq_scan_reason: str | None
 
@@ -66,7 +158,8 @@ class PlanAnalysis:
     index_names: tuple[str, ...]
     seq_scan_relations: tuple[str, ...]
     temp_blocks: int
-    findings: tuple[str, ...]
+    blocking_findings: tuple[str, ...]
+    observations: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +169,19 @@ class BenchmarkResult:
     explain_json_runs: tuple[object, ...]
     analyses: tuple[PlanAnalysis, ...]
     warm_execution_ms: float
-    findings: tuple[str, ...]
+    baseline_execution_ms: float | None
+    effective_execution_threshold_ms: float
+    execution_time_exceeded: bool
+    blocking_findings: tuple[str, ...]
+    observations: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class QueryPlanBaseline:
+    profile_name: str
+    source_sha: str
+    sample_count: int
+    query_warm_execution_ms: Mapping[str, float]
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,11 +207,80 @@ class CliArgs:
     allow_non_test_db: bool
 
 
-BALANCED_PROFILE = DatasetProfile(
-    name="balanced",
-    article_count=200_000,
-    tag_count=30_000,
-    article_tag_link_count=500_000,
-    resource_count=200_000,
+REALISTIC_PROFILE = QueryPlanProfile(
+    name="realistic",
+    cardinalities=ProfileCardinalities(
+        auth=AuthCardinalities(users=100, sessions=500),
+        articles=ArticleCardinalities(
+            folders=20,
+            articles=5_000,
+            published_percentage=80,
+            fts_match_percentage=1,
+            tags=500,
+            article_tag_links=20_000,
+            daily_analytics=100_000,
+            reactions=10_000,
+        ),
+        resumes=ResumeCardinalities(resumes=250),
+        matrix=MatrixCardinalities(
+            sheets=20,
+            sections_per_sheet=8,
+            subsections_per_section=12,
+            items=10_000,
+            resources=5_000,
+            resource_links=25_000,
+            queued_questions=5_000,
+        ),
+        agent_access=AgentAccessCardinalities(audit_events=10_000),
+    ),
+    timing_mode=TimingMode.ENFORCE,
     explain_runs=3,
+    explain_work_mem_mb=16,
+    scenario_plan_shape_overrides={
+        scenario_name: ScenarioPlanShapeOverride(
+            expected_indexes=(),
+            forbidden_seq_scan_relations=(),
+            allow_seq_scan_reason=(
+                "the optimizer-preferred sequential scan is intentional for the realistic "
+                "5k-resource multi-column trigram search"
+            ),
+        )
+        for scenario_name in (
+            "resources_exact_en",
+            "resources_url_en",
+            "resources_fuzzy_en",
+        )
+    },
+)
+
+STRESS_PROFILE = QueryPlanProfile(
+    name="stress",
+    cardinalities=ProfileCardinalities(
+        auth=AuthCardinalities(users=10_000, sessions=50_000),
+        articles=ArticleCardinalities(
+            folders=200,
+            articles=200_000,
+            published_percentage=80,
+            fts_match_percentage=1,
+            tags=30_000,
+            article_tag_links=500_000,
+            daily_analytics=2_000_000,
+            reactions=500_000,
+        ),
+        resumes=ResumeCardinalities(resumes=50_000),
+        matrix=MatrixCardinalities(
+            sheets=20,
+            sections_per_sheet=8,
+            subsections_per_section=12,
+            items=200_000,
+            resources=200_000,
+            resource_links=500_000,
+            queued_questions=50_000,
+        ),
+        agent_access=AgentAccessCardinalities(audit_events=250_000),
+    ),
+    timing_mode=TimingMode.OBSERVE,
+    explain_runs=3,
+    explain_work_mem_mb=64,
+    scenario_plan_shape_overrides={},
 )

@@ -52,7 +52,7 @@ then writes HTML/JSON reports to `frontend/performance/reports/lighthouse/`.
 
 Use the query-plan harness when changing PostgreSQL storages, query shapes, seed-sensitive indexes,
 or performance thresholds. It starts or reuses the test database, migrates it, clears the
-benchmarked tables, seeds a deterministic balanced dataset, discovers every public async
+benchmarked tables, seeds a deterministic selected-profile dataset, discovers every public async
 `*DatabaseStorage` method under PostgreSQL storages, runs registered deterministic scenarios for
 those methods, captures the SQL actually emitted through SQLAlchemy engine events, then runs:
 
@@ -61,19 +61,62 @@ EXPLAIN (ANALYZE, BUFFERS, VERBOSE, FORMAT JSON)
 ```
 
 ```bash
-make query-plans-balanced
+make query-plans-realistic
+make query-plans-stress
 ```
 
-The balanced profile seeds 200k articles, 30k tags, 500k article-tag links, 200k competency resources,
-representative users, article analytics, reactions, and matrix sheets. Targeted full-text terms are
-present in 1% of articles so the measured searches are selective while still running against large
-tables. The harness runs `VACUUM ANALYZE` after seeding and before measuring plans.
+`realistic` is the required regression gate on `main`; `stress` is a manual capacity diagnostic.
+Both use three EXPLAIN runs, keep about 80% of articles published, and place deterministic full-text
+matches in 1% of articles. Every matching article is published. The harness runs `VACUUM ANALYZE`
+after seeding and before measuring plans.
+
+The EXPLAIN session uses an explicit `work_mem` budget (`16MB` for `realistic`, `64MB` for
+`stress`) so temp-block findings are reproducible instead of depending on the PostgreSQL host
+default. Any temp read or write block remains blocking after that profile budget is applied.
+
+Local `stress` runs start an isolated disk-backed PostgreSQL container on port `55433` by default
+and remove it on exit; this avoids the intentionally RAM-backed general test database running out
+of space. Override that port with `QUERY_PLANS_STRESS_DB_PORT`. GitHub Actions reuses its dedicated
+job service instead. `realistic` continues to start or reuse the normal test database.
+
+| Domain volumes | `realistic` | `stress` |
+|---|---:|---:|
+| Users / auth sessions | 100 / 500 | 10k / 50k |
+| Article folders / articles | 20 / 5k | 200 / 200k |
+| Tags / article-tag links | 500 / 20k | 30k / 500k |
+| Daily analytics / reactions | 100k / 10k | 2m / 500k |
+| Resumes | 250 | 50k |
+| Matrix items / resources / links | 10k / 5k / 25k | 200k / 200k / 500k |
+| Queued questions / Agent audit events | 5k / 10k | 50k / 250k |
+| Matrix sheets × sections × subsections | 20 × 8 × 12 | 20 × 8 × 12 |
 
 The gate fails when a discovered public storage method has no scenario, a scenario captures no SQL,
-an explained statement exceeds its group or scenario threshold, a configured index is missing, a
-forbidden large sequential scan appears, or the plan uses temp blocks. Mutating statements are
-explained in rollback-only transactions, and statements from the same storage scenario are replayed
-as a group so dependent ORM flush/selectinload/merge SQL remains explainable.
+or the plan uses temp blocks. Missing configured indexes and forbidden sequential scans block at
+relation cardinalities of 1,000 rows or more and are observations below that boundary. `realistic`
+also blocks on its absolute latency SLA; `stress` reports SLA overruns as observations while keeping
+plan-shape and temp-block checks strict. Mutating statements are explained in rollback-only
+transactions, and statements from the same storage scenario are replayed as a group so dependent
+ORM flush/selectinload/merge SQL remains explainable.
+
+The absolute query-group ceilings remain 25/250/150/250/100/300 ms. Until a calibrated baseline is
+committed, `realistic` uses those ceilings directly. To prepare the relative gate, download exactly
+five `realistic` `summary.json` artifacts produced from the same GitHub SHA, then run:
+
+```bash
+make query-plans-baseline-candidate \
+  QUERY_PLAN_BASELINE_SOURCE_SHA=<sha> \
+  QUERY_PLAN_BASELINE_OUTPUT=performance/query_plans/realistic-baseline.json \
+  QUERY_PLAN_BASELINE_SUMMARY_1=/tmp/run-1/summary.json \
+  QUERY_PLAN_BASELINE_SUMMARY_2=/tmp/run-2/summary.json \
+  QUERY_PLAN_BASELINE_SUMMARY_3=/tmp/run-3/summary.json \
+  QUERY_PLAN_BASELINE_SUMMARY_4=/tmp/run-4/summary.json \
+  QUERY_PLAN_BASELINE_SUMMARY_5=/tmp/run-5/summary.json
+```
+
+The candidate generator rejects non-`realistic` samples, any sample count other than five, and
+different query sets. It stores profile, source SHA, sample count, and the median of the five warm
+medians for each query. Once committed, the effective `realistic` threshold becomes
+`min(SLA, max(2 × baseline, baseline + 20 ms))`; missing or stale query names then fail the run.
 
 Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 
@@ -81,8 +124,9 @@ Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 - `summary.json`
 - one directory per query with `compiled.sql`, `params.json`, and `explain-run-*.json`
 
-`summary.md` and `summary.json` include storage coverage, scenario-to-method metadata, captured SQL
-counts, runtime capture timings, warm median EXPLAIN timings, plan findings, and threshold sources.
+`summary.md` and `summary.json` include the full relation-cardinality map, timing mode, storage
+coverage, scenario-to-method metadata, captured SQL counts, warm median EXPLAIN timings, SLA,
+baseline, effective threshold, overrun flag, and separate blocking findings and observations.
 
 ## Profiles
 

@@ -83,6 +83,9 @@ jobs:
     needs:
       - backend-tests
     uses: ./.github/workflows/_backend_query_plans.yaml
+    with:
+      profile: realistic
+      timeout_minutes: 20
 
   frontend-ssr-smoke:
     name: "Frontend SSR smoke"

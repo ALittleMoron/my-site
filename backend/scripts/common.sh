@@ -67,7 +67,10 @@ run_with_test_env() {
 }
 
 ensure_backend_test_db() {
-    ensure_test_db "$TEST_ENV_FILE"
+    local compose_file="${1:-docker-compose.test.yml}"
+    local forced_port="${2:-}"
+
+    ensure_test_db "$TEST_ENV_FILE" "$compose_file" "$forced_port"
 }
 
 is_local_performance_host() {

@@ -8,7 +8,9 @@ Production deploy is a manual server-build deploy:
    and/or `.github/README_RU.md` are ignored by the root CI workflow.
 3. GitHub Actions runs backend and frontend quality gates in parallel.
 4. Backend tests wait only for backend gates, while frontend tests wait only for frontend gates.
-5. Backend performance smoke and query-plan smoke run after backend tests.
+5. Backend performance smoke and the blocking `realistic` query-plan regression gate run after
+   backend tests. The larger `stress` query-plan profile is available only from the dedicated
+   manual workflow and reports latency as an observation while keeping plan-shape checks strict.
 6. Frontend SSR smoke and Lighthouse CI run as separate jobs after frontend tests.
 7. Dockerfile lint, Trivy config scan, per-image Docker build/image scans, and infrastructure
    security checks run in parallel after the smoke gates.

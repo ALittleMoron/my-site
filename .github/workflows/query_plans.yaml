@@ -1,0 +1,20 @@
+name: Query-plan profiles
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Dataset profile to run
+        required: true
+        type: choice
+        options:
+          - realistic
+          - stress
+
+jobs:
+  query-plans:
+    name: "Query-plan ${{ inputs.profile }}"
+    uses: ./.github/workflows/_backend_query_plans.yaml
+    with:
+      profile: ${{ inputs.profile }}
+      timeout_minutes: 45

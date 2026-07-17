@@ -65,11 +65,16 @@ test_db_is_available() {
 ensure_test_db() {
     local env_file="$1"
     local compose_file="${2:-docker-compose.test.yml}"
+    local forced_port="${3:-}"
 
     TEST_DB_ENV_FILE="$(resolve_path_from "$PWD" "$env_file")"
     TEST_DB_COMPOSE_FILE="$(resolve_path_from "$test_services_repo_dir" "$compose_file")"
 
     load_env_file "$TEST_DB_ENV_FILE"
+    if [ -n "$forced_port" ]; then
+        DB_PORT="$forced_port"
+        export DB_PORT
+    fi
 
     if test_db_is_available; then
         TEST_DB_OWNED=0

@@ -195,9 +195,17 @@ performance-baseline:
 performance-report-clean:
 	$(MAKE) -C backend performance-report-clean
 
-.PHONY: query-plans-balanced
-query-plans-balanced:
-	$(MAKE) -C backend query-plans-balanced
+.PHONY: query-plans-realistic
+query-plans-realistic:
+	$(MAKE) -C backend query-plans-realistic
+
+.PHONY: query-plans-stress
+query-plans-stress:
+	$(MAKE) -C backend query-plans-stress
+
+.PHONY: query-plans-baseline-candidate
+query-plans-baseline-candidate:
+	$(MAKE) -C backend query-plans-baseline-candidate
 
 .PHONY: clean
 clean:

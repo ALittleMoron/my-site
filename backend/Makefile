@@ -144,6 +144,21 @@ performance-baseline:
 performance-report-clean:
 	bash scripts/run_locust.sh clean "$(PERFORMANCE_ENV_FILE)"
 
-.PHONY: query-plans-balanced
-query-plans-balanced:
-	bash scripts/run_query_plans.sh balanced "$(QUERY_PLANS_ENV_FILE)"
+.PHONY: query-plans-realistic
+query-plans-realistic:
+	bash scripts/run_query_plans.sh realistic "$(QUERY_PLANS_ENV_FILE)"
+
+.PHONY: query-plans-stress
+query-plans-stress:
+	bash scripts/run_query_plans.sh stress "$(QUERY_PLANS_ENV_FILE)"
+
+.PHONY: query-plans-baseline-candidate
+query-plans-baseline-candidate:
+	bash scripts/build_query_plan_baseline.sh \
+		"$(QUERY_PLAN_BASELINE_SOURCE_SHA)" \
+		"$(QUERY_PLAN_BASELINE_OUTPUT)" \
+		"$(QUERY_PLAN_BASELINE_SUMMARY_1)" \
+		"$(QUERY_PLAN_BASELINE_SUMMARY_2)" \
+		"$(QUERY_PLAN_BASELINE_SUMMARY_3)" \
+		"$(QUERY_PLAN_BASELINE_SUMMARY_4)" \
+		"$(QUERY_PLAN_BASELINE_SUMMARY_5)"

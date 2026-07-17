@@ -5,6 +5,7 @@ from sys import stderr, stdout
 from time import perf_counter_ns
 from typing import cast
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
     AsyncEngine,
@@ -17,14 +18,22 @@ from sqlalchemy.pool import NullPool
 from infra.config.settings import settings
 from infra.postgresql.utils import migrate
 from performance.query_plans.analysis import analyze_explain_result, evaluate_plan_analysis
+from performance.query_plans.baseline import (
+    COMMITTED_REALISTIC_BASELINE_PATH,
+    effective_execution_threshold_ms,
+    load_optional_baseline,
+    validate_baseline_query_coverage,
+)
 from performance.query_plans.discovery import discover_storage_methods
-from performance.query_plans.expectations import BALANCED_THRESHOLD_POLICY
+from performance.query_plans.expectations import ABSOLUTE_SLA_POLICY
 from performance.query_plans.models import (
-    BALANCED_PROFILE,
+    REALISTIC_PROFILE,
+    STRESS_PROFILE,
     BenchmarkResult,
     CapturedQuery,
     CliArgs,
-    DatasetProfile,
+    QueryPlanBaseline,
+    QueryPlanProfile,
 )
 from performance.query_plans.reports import write_reports
 from performance.query_plans.runtime_capture import RuntimeQueryCapture
@@ -48,6 +57,14 @@ from performance.query_plans.sql import (
 
 async def run_query_plan_profile(args: CliArgs) -> int:
     profile = get_profile(name=args.profile)
+    baseline = (
+        load_optional_baseline(
+            path=COMMITTED_REALISTIC_BASELINE_PATH,
+            expected_profile_name=profile.name,
+        )
+        if profile is REALISTIC_PROFILE
+        else None
+    )
     ensure_safe_database_name(allow_non_test_db=args.allow_non_test_db)
     migrate(revision="heads")
     engine = create_async_engine(settings.database.url.get_secret_value(), poolclass=NullPool)
@@ -67,16 +84,20 @@ async def run_query_plan_profile(args: CliArgs) -> int:
         queries, capture_findings = await capture_storage_queries(
             engine=engine,
             scenarios=STORAGE_SCENARIOS,
+            profile=profile,
         )
         async with engine.connect() as connection:
+            await configure_explain_session(connection=connection, profile=profile)
             results = await benchmark_queries(
                 connection=connection,
                 queries=queries,
                 profile=profile,
+                baseline=baseline,
             )
         write_reports(
             report_dir=args.report_dir,
             profile=profile,
+            baseline=baseline,
             coverage=coverage,
             results=results,
         )
@@ -89,7 +110,7 @@ async def run_query_plan_profile(args: CliArgs) -> int:
     findings = (
         *coverage_findings(coverage=coverage),
         *capture_findings,
-        *(finding for result in results for finding in result.findings),
+        *(finding for result in results for finding in result.blocking_findings),
     )
     stdout.write(f"Query plan report written to {args.report_dir}\n")
     if findings:
@@ -104,10 +125,23 @@ async def cleanup_seeded_profile(*, engine: AsyncEngine) -> None:
         await clear_seeded_tables(connection=connection)
 
 
+async def configure_explain_session(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    await connection.execute(
+        text("SELECT set_config('work_mem', :work_mem, false)"),
+        {"work_mem": f"{profile.explain_work_mem_mb}MB"},
+    )
+    await connection.commit()
+
+
 async def capture_storage_queries(
     *,
     engine: AsyncEngine,
     scenarios: Sequence[StorageScenario],
+    profile: QueryPlanProfile,
 ) -> tuple[tuple[CapturedQuery, ...], tuple[str, ...]]:
     capture = RuntimeQueryCapture(clock=perf_counter_ns)
     capture.install(engine=engine)
@@ -123,8 +157,9 @@ async def capture_storage_queries(
                 method_name=scenario.method_name,
                 scenario_name=scenario.name,
                 expectation=scenario.plan_expectation(
-                    policy=BALANCED_THRESHOLD_POLICY,
+                    policy=ABSOLUTE_SLA_POLICY,
                     query_name=None,
+                    profile=profile,
                 ),
             )
             try:
@@ -140,6 +175,7 @@ async def capture_storage_queries(
         apply_query_threshold_overrides(
             queries=capture.captured_queries,
             scenarios=scenarios,
+            profile=profile,
         ),
         tuple(findings),
     )
@@ -149,23 +185,27 @@ def apply_query_threshold_overrides(
     *,
     queries: Sequence[CapturedQuery],
     scenarios: Sequence[StorageScenario],
+    profile: QueryPlanProfile,
 ) -> tuple[CapturedQuery, ...]:
     scenarios_by_name = {scenario.name: scenario for scenario in scenarios}
     return tuple(
         replace(
             query,
             expectation=scenarios_by_name[query.scenario_name].plan_expectation(
-                policy=BALANCED_THRESHOLD_POLICY,
+                policy=ABSOLUTE_SLA_POLICY,
                 query_name=query.name,
+                profile=profile,
             ),
         )
         for query in queries
     )
 
 
-def get_profile(*, name: str) -> DatasetProfile:
-    if name == BALANCED_PROFILE.name:
-        return BALANCED_PROFILE
+def get_profile(*, name: str) -> QueryPlanProfile:
+    if name == REALISTIC_PROFILE.name:
+        return REALISTIC_PROFILE
+    if name == STRESS_PROFILE.name:
+        return STRESS_PROFILE
     msg = f"Unknown query plan profile: {name}"
     raise ValueError(msg)
 
@@ -187,8 +227,20 @@ async def benchmark_queries(
     *,
     connection: AsyncConnection,
     queries: Sequence[CapturedQuery],
-    profile: DatasetProfile,
+    profile: QueryPlanProfile,
+    baseline: QueryPlanBaseline | None,
 ) -> tuple[BenchmarkResult, ...]:
+    if baseline is not None:
+        if baseline.profile_name != profile.name:
+            msg = (
+                f"baseline profile {baseline.profile_name!r} does not match "
+                f"query-plan profile {profile.name!r}"
+            )
+            raise ValueError(msg)
+        validate_baseline_query_coverage(
+            baseline=baseline,
+            query_names=tuple(query.name for query in queries),
+        )
     compiled_queries = {
         query.name: compile_captured_query(query=query, dialect=connection.dialect)
         for query in queries
@@ -215,6 +267,19 @@ async def benchmark_queries(
                             name=query.name,
                             explain_json=cast("Sequence[object]", explain_json),
                             expectation=query.expectation,
+                            relation_cardinalities=profile.relation_cardinalities,
+                            minimum_blocking_cardinality=1_000,
+                            timing_mode=profile.timing_mode,
+                            effective_execution_threshold_ms=(
+                                effective_execution_threshold_ms(
+                                    sla_execution_ms=query.expectation.max_execution_ms,
+                                    baseline_execution_ms=(
+                                        None
+                                        if baseline is None
+                                        else baseline.query_warm_execution_ms[query.name]
+                                    ),
+                                )
+                            ),
                         ),
                     )
             finally:
@@ -224,10 +289,21 @@ async def benchmark_queries(
     for query in queries:
         analyses = analyses_by_query[query.name]
         warm_execution_ms = median(analysis.execution_time_ms for analysis in analyses[1:])
-        shape_findings = evaluate_plan_analysis(
+        baseline_execution_ms = (
+            None if baseline is None else baseline.query_warm_execution_ms[query.name]
+        )
+        effective_threshold_ms = effective_execution_threshold_ms(
+            sla_execution_ms=query.expectation.max_execution_ms,
+            baseline_execution_ms=baseline_execution_ms,
+        )
+        findings = evaluate_plan_analysis(
             analysis=analyses[-1],
             expectation=query.expectation,
             measured_execution_ms=warm_execution_ms,
+            relation_cardinalities=profile.relation_cardinalities,
+            minimum_blocking_cardinality=1_000,
+            timing_mode=profile.timing_mode,
+            effective_execution_threshold_ms=effective_threshold_ms,
         )
         results.append(
             BenchmarkResult(
@@ -236,7 +312,15 @@ async def benchmark_queries(
                 explain_json_runs=tuple(explain_json_runs_by_query[query.name]),
                 analyses=tuple(analyses),
                 warm_execution_ms=warm_execution_ms,
-                findings=tuple(f"{query.name}: {finding}" for finding in shape_findings),
+                baseline_execution_ms=baseline_execution_ms,
+                effective_execution_threshold_ms=effective_threshold_ms,
+                execution_time_exceeded=warm_execution_ms > effective_threshold_ms,
+                blocking_findings=tuple(
+                    f"{query.name}: {finding}" for finding in findings.blocking
+                ),
+                observations=tuple(
+                    f"{query.name}: {observation}" for observation in findings.observations
+                ),
             ),
         )
     return tuple(results)

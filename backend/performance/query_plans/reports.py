@@ -4,13 +4,20 @@ from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
 
-from performance.query_plans.models import BenchmarkResult, CoverageReport, DatasetProfile
+from performance.query_plans.baseline import serialize_baseline
+from performance.query_plans.models import (
+    BenchmarkResult,
+    CoverageReport,
+    QueryPlanBaseline,
+    QueryPlanProfile,
+)
 
 
 def write_reports(
     *,
     report_dir: Path,
-    profile: DatasetProfile,
+    profile: QueryPlanProfile,
+    baseline: QueryPlanBaseline | None,
     coverage: CoverageReport,
     results: Sequence[BenchmarkResult],
 ) -> None:
@@ -34,12 +41,22 @@ def write_reports(
                 encoding="utf-8",
             )
     (report_dir / "summary.md").write_text(
-        render_markdown_summary(profile=profile, coverage=coverage, results=results),
+        render_markdown_summary(
+            profile=profile,
+            baseline=baseline,
+            coverage=coverage,
+            results=results,
+        ),
         encoding="utf-8",
     )
     (report_dir / "summary.json").write_text(
         json.dumps(
-            serialize_summary(profile=profile, coverage=coverage, results=results),
+            serialize_summary(
+                profile=profile,
+                baseline=baseline,
+                coverage=coverage,
+                results=results,
+            ),
             ensure_ascii=False,
             indent=2,
             default=json_default,
@@ -50,7 +67,8 @@ def write_reports(
 
 def render_markdown_summary(
     *,
-    profile: DatasetProfile,
+    profile: QueryPlanProfile,
+    baseline: QueryPlanBaseline | None,
     coverage: CoverageReport,
     results: Sequence[BenchmarkResult],
 ) -> str:
@@ -58,32 +76,51 @@ def render_markdown_summary(
         "# Query Plan Report",
         "",
         f"- Profile: `{profile.name}`",
-        f"- Articles: `{profile.article_count}`",
-        f"- Tags: `{profile.tag_count}`",
-        f"- Article-tag links: `{profile.article_tag_link_count}`",
-        f"- Resources: `{profile.resource_count}`",
+        f"- Timing mode: `{profile.timing_mode.value}`",
         f"- EXPLAIN runs per query: `{profile.explain_runs}`",
+        f"- EXPLAIN work_mem: `{profile.explain_work_mem_mb}MB`",
+        f"- Baseline: `{baseline.source_sha}`" if baseline is not None else "- Baseline: disabled",
         f"- Storage methods discovered: `{len(coverage.discovered_methods)}`",
         f"- Storage methods covered: `{len(coverage.covered_methods)}`",
         f"- Missing storage scenarios: `{len(coverage.missing_methods)}`",
         f"- Unexpected storage scenarios: `{len(coverage.unexpected_methods)}`",
         "",
-        "| Query | Storage method | Runtime ms | Warm median ms | Threshold | Indexes | "
-        "Seq scans | Findings |",
-        "|---|---|---:|---:|---|---|---|---|",
+        "## Relation cardinalities",
+        "",
     ]
+    lines.extend(
+        f"- `{relation_name}`: `{cardinality}`"
+        for relation_name, cardinality in profile.relation_cardinalities.items()
+    )
+    lines.extend(
+        (
+            "",
+            "## Query results",
+            "",
+            "| Query | Storage method | Runtime ms | Warm median ms | SLA ms | Baseline ms | "
+            "Effective ms | Exceeded | Indexes | Seq scans | Blocking findings | Observations |",
+            "|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|",
+        ),
+    )
     for result in results:
         last_analysis = result.analyses[-1]
         indexes = ", ".join(last_analysis.index_names) or "-"
         seq_scans = ", ".join(last_analysis.seq_scan_relations) or "-"
-        findings = "<br>".join(result.findings) or "OK"
+        blocking_findings = "<br>".join(result.blocking_findings) or "OK"
+        observations = "<br>".join(result.observations) or "-"
+        baseline_execution_ms = (
+            f"{result.baseline_execution_ms:.2f}"
+            if result.baseline_execution_ms is not None
+            else "-"
+        )
         lines.append(
             f"| `{result.query.name}` | "
             f"`{result.query.storage_class}.{result.query.method_name}` | "
             f"{result.query.elapsed_ms:.2f} | {result.warm_execution_ms:.2f} | "
-            f"{result.query.expectation.max_execution_ms:.2f} "
-            f"({result.query.expectation.threshold_source}) | "
-            f"{indexes} | {seq_scans} | {findings} |",
+            f"{result.query.expectation.max_execution_ms:.2f} | {baseline_execution_ms} | "
+            f"{result.effective_execution_threshold_ms:.2f} | "
+            f"{'yes' if result.execution_time_exceeded else 'no'} | "
+            f"{indexes} | {seq_scans} | {blocking_findings} | {observations} |",
         )
     lines.append("")
     lines.append(
@@ -96,19 +133,14 @@ def render_markdown_summary(
 
 def serialize_summary(
     *,
-    profile: DatasetProfile,
+    profile: QueryPlanProfile,
+    baseline: QueryPlanBaseline | None,
     coverage: CoverageReport,
     results: Sequence[BenchmarkResult],
 ) -> Mapping[str, object]:
     return {
-        "profile": {
-            "name": profile.name,
-            "articleCount": profile.article_count,
-            "tagCount": profile.tag_count,
-            "articleTagLinkCount": profile.article_tag_link_count,
-            "resourceCount": profile.resource_count,
-            "explainRuns": profile.explain_runs,
-        },
+        "profile": serialize_profile(profile=profile),
+        "baseline": {} if baseline is None else serialize_baseline(baseline=baseline),
         "coverage": {
             "discoveredMethodCount": len(coverage.discovered_methods),
             "coveredMethodCount": len(coverage.covered_methods),
@@ -132,14 +164,57 @@ def serialize_summary(
                 "runtimeElapsedMs": result.query.elapsed_ms,
                 "warmExecutionMs": result.warm_execution_ms,
                 "thresholdSource": result.query.expectation.threshold_source,
-                "maxExecutionMs": result.query.expectation.max_execution_ms,
+                "timingMode": profile.timing_mode.value,
+                "slaExecutionMs": result.query.expectation.max_execution_ms,
+                "baselineExecutionMs": result.baseline_execution_ms,
+                "effectiveExecutionThresholdMs": result.effective_execution_threshold_ms,
+                "executionTimeExceeded": result.execution_time_exceeded,
                 "indexes": result.analyses[-1].index_names,
                 "seqScans": result.analyses[-1].seq_scan_relations,
                 "nodeTypes": result.analyses[-1].node_types,
-                "findings": result.findings,
+                "blockingFindings": result.blocking_findings,
+                "observations": result.observations,
             }
             for result in results
         ],
+    }
+
+
+def serialize_profile(*, profile: QueryPlanProfile) -> Mapping[str, object]:
+    cardinalities = profile.cardinalities
+    return {
+        "name": profile.name,
+        "timingMode": profile.timing_mode.value,
+        "explainRuns": profile.explain_runs,
+        "explainWorkMemMb": profile.explain_work_mem_mb,
+        "cardinalities": {
+            "auth": {
+                "users": cardinalities.auth.users,
+                "sessions": cardinalities.auth.sessions,
+            },
+            "articles": {
+                "folders": cardinalities.articles.folders,
+                "articles": cardinalities.articles.articles,
+                "publishedPercentage": cardinalities.articles.published_percentage,
+                "ftsMatchPercentage": cardinalities.articles.fts_match_percentage,
+                "tags": cardinalities.articles.tags,
+                "articleTagLinks": cardinalities.articles.article_tag_links,
+                "dailyAnalytics": cardinalities.articles.daily_analytics,
+                "reactions": cardinalities.articles.reactions,
+            },
+            "resumes": {"resumes": cardinalities.resumes.resumes},
+            "matrix": {
+                "sheets": cardinalities.matrix.sheets,
+                "sectionsPerSheet": cardinalities.matrix.sections_per_sheet,
+                "subsectionsPerSection": cardinalities.matrix.subsections_per_section,
+                "items": cardinalities.matrix.items,
+                "resources": cardinalities.matrix.resources,
+                "resourceLinks": cardinalities.matrix.resource_links,
+                "queuedQuestions": cardinalities.matrix.queued_questions,
+            },
+            "agentAccess": {"auditEvents": cardinalities.agent_access.audit_events},
+        },
+        "relationCardinalities": profile.relation_cardinalities,
     }
 
 

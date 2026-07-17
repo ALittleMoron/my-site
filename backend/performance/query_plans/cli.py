@@ -5,14 +5,18 @@ from pathlib import Path
 from typing import cast
 
 from performance.query_plans import run_query_plan_profile
-from performance.query_plans.models import BALANCED_PROFILE, CliArgs
+from performance.query_plans.models import REALISTIC_PROFILE, STRESS_PROFILE, CliArgs
 
 
 def parse_args(argv: Sequence[str] | None = None) -> CliArgs:
     parser = argparse.ArgumentParser(
         description="Seed PostgreSQL and EXPLAIN ANALYZE real SQLAlchemy search queries.",
     )
-    parser.add_argument("--profile", choices=(BALANCED_PROFILE.name,), required=True)
+    parser.add_argument(
+        "--profile",
+        choices=(REALISTIC_PROFILE.name, STRESS_PROFILE.name),
+        required=True,
+    )
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--fail-on-finding", action="store_true")
     parser.add_argument("--allow-non-test-db", action="store_true")

@@ -166,8 +166,13 @@ make test-frontend              # frontend only (jest)
 make -C frontend ssr-smoke      # production SSR build + public article, updates, case-study, and matrix question HTML smoke
 make performance-smoke          # auto local backend + seeded short Locust smoke profile
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
-make query-plans-balanced       # auto test DB, storage-wide SQL capture + EXPLAIN ANALYZE gate
+make query-plans-realistic      # required main gate: realistic data, plan shape + latency
+make query-plans-stress         # manual large-data run: strict plans, observed latency
 ```
+
+Main CI calls the reusable query-plan workflow with `realistic` and a 20-minute timeout. The
+dedicated **Query-plan profiles** workflow is manual, accepts `realistic` calibration or `stress`,
+uses a 45-minute timeout, and publishes `query-plan-reports-<profile>` artifacts.
 
 Backend pytest targets run with an explicit pytest-xdist worker count based on physical CPU cores,
 not `-n auto`. Set `BACKEND_PYTEST_WORKERS=0` or `1` for serial execution, or set any value greater
