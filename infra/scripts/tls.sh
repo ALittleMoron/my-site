@@ -73,8 +73,11 @@ issue_certificates() {
         "${challenge_options[@]}" \
         --email "$LE_EMAIL" \
         --agree-tos \
+        --non-interactive \
         --no-eff-email \
         --keep-until-expiring \
+        --expand \
+        --cert-name "$APP_DOMAIN" \
         -d "$APP_DOMAIN" \
         -d "s3.${APP_DOMAIN}" \
         -d "agent.${APP_DOMAIN}"

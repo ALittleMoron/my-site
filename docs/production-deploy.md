@@ -274,7 +274,9 @@ make certbot-issue
 When the Compose nginx service is running, the target uses the shared ACME webroot and leaves nginx
 on host port `80/tcp`. It then syncs the issued certificate and reloads nginx. On first boot, when
 nginx is not running, the target falls back to Certbot's standalone HTTP challenge; in that case,
-host port `80/tcp` must be free.
+host port `80/tcp` must be free. Issuance is non-interactive and targets the `APP_DOMAIN` certificate
+lineage explicitly, expanding it when the configured `s3` or `agent` subject alternative names are
+new.
 
 For certificate renewal on a running stack:
 
