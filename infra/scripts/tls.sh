@@ -45,17 +45,32 @@ sync_certificates() {
     docker compose run --rm cert-sync
 }
 
+nginx_is_running() {
+    docker compose ps --services --status running | grep -Fxq nginx
+}
+
 reload_nginx_if_running() {
-    if docker compose ps --services --status running | grep -Fxq nginx; then
+    if nginx_is_running; then
         docker compose exec -T nginx nginx -s reload
     fi
 }
 
 issue_certificates() {
-    docker compose run --rm --service-ports certbot \
+    local -a compose_options=(run --rm)
+    local -a challenge_options
+
+    if nginx_is_running; then
+        echo "Issuing certificates through the running nginx ACME webroot."
+        challenge_options=(--webroot --webroot-path=/var/www/certbot)
+    else
+        echo "Issuing certificates with the standalone ACME server on port 80."
+        compose_options+=(--service-ports)
+        challenge_options=(--standalone --preferred-challenges http)
+    fi
+
+    docker compose "${compose_options[@]}" certbot \
         certonly \
-        --standalone \
-        --preferred-challenges http \
+        "${challenge_options[@]}" \
         --email "$LE_EMAIL" \
         --agree-tos \
         --no-eff-email \
@@ -64,6 +79,7 @@ issue_certificates() {
         -d "s3.${APP_DOMAIN}" \
         -d "agent.${APP_DOMAIN}"
     sync_certificates
+    reload_nginx_if_running
 }
 
 renew_certificates() {

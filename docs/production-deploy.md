@@ -265,11 +265,16 @@ In production, keep routine renewal host-owned: a systemd timer or equivalent sc
 reload nginx.
 
 If certificates must be issued again on the server, run the maintenance target directly on the
-host while port `80/tcp` is free:
+host:
 
 ```bash
 make certbot-issue
 ```
+
+When the Compose nginx service is running, the target uses the shared ACME webroot and leaves nginx
+on host port `80/tcp`. It then syncs the issued certificate and reloads nginx. On first boot, when
+nginx is not running, the target falls back to Certbot's standalone HTTP challenge; in that case,
+host port `80/tcp` must be free.
 
 For certificate renewal on a running stack:
 
