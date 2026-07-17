@@ -145,6 +145,28 @@ describe('MatrixQuestionFormComponent', () => {
     expect(slug.classList).not.toContain('is-invalid');
   });
 
+  it('describes expected-answer editors as interview answer explanations', () => {
+    const russianLabel = fixture.nativeElement.querySelector(
+      '#matrix-form-expected-ru-label',
+    ) as HTMLElement;
+    const englishLabel = fixture.nativeElement.querySelector(
+      '#matrix-form-expected-en-label',
+    ) as HTMLElement;
+    const russianHint = fixture.nativeElement.querySelector(
+      '#matrix-form-expected-ru-hint',
+    ) as HTMLElement;
+    const russianEditor = fixture.nativeElement.querySelector(
+      '#matrix-form-expected-ru',
+    ) as HTMLElement;
+
+    expect(russianLabel.textContent?.trim()).toBe('Объяснение ответа на собеседовании RU');
+    expect(englishLabel.textContent?.trim()).toBe('Объяснение ответа на собеседовании EN');
+    expect(russianHint.textContent?.trim()).toBe(
+      'Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также какие ошибки часто допускают кандидаты.',
+    );
+    expect(russianEditor.getAttribute('aria-describedby')).toBe('matrix-form-expected-ru-hint');
+  });
+
   it.each<MatrixQuestionControlValidationCase>([
     {
       description: 'slug pattern',

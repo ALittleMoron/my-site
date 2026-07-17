@@ -34,7 +34,7 @@ describe('MatrixQuestionPublicPreviewComponent', () => {
   it('renders the public question content shape from preview inputs', () => {
     expect(element.textContent).toContain('Question:');
     expect(element.textContent).toContain('Answer:');
-    expect(element.textContent).toContain('Expected interview answer:');
+    expect(element.textContent).toContain('Interview answer explanation:');
     expect(element.textContent).toContain('External resources:');
     expect(element.textContent).not.toContain('Вопрос:');
     expect(element.textContent).toContain('What is typing?');

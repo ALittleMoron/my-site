@@ -577,7 +577,7 @@ function buildMessages() {
     'matrix.grid.subsection': 'Subsection',
     'matrix.detail.question': 'Question:',
     'matrix.detail.answer': 'Answer:',
-    'matrix.detail.expectedAnswer': 'Expected interview answer:',
+    'matrix.detail.expectedAnswer': 'Interview answer explanation:',
     'matrix.detail.resources': 'External resources:',
     'matrix.detailAria': 'Matrix question detail',
     'matrix.empty': 'No matrix questions found.',

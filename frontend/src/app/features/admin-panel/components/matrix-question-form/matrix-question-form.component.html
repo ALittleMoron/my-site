@@ -242,11 +242,15 @@
         <div class="form-label" id="matrix-form-expected-ru-label">
           {{ 'matrix.form.expectedAnswerRu' | t }}
         </div>
+        <div class="form-text mb-2" id="matrix-form-expected-ru-hint">
+          {{ 'matrix.form.expectedAnswerHint' | t }}
+        </div>
         <div
           id="matrix-form-expected-ru"
           class="matrix-markdown-editor"
           role="group"
           aria-labelledby="matrix-form-expected-ru-label"
+          aria-describedby="matrix-form-expected-ru-hint"
           [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
           [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerRu')"
           [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
@@ -266,11 +270,15 @@
         <div class="form-label" id="matrix-form-expected-en-label">
           {{ 'matrix.form.expectedAnswerEn' | t }}
         </div>
+        <div class="form-text mb-2" id="matrix-form-expected-en-hint">
+          {{ 'matrix.form.expectedAnswerHint' | t }}
+        </div>
         <div
           id="matrix-form-expected-en"
           class="matrix-markdown-editor"
           role="group"
           aria-labelledby="matrix-form-expected-en-label"
+          aria-describedby="matrix-form-expected-en-hint"
           [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
           [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerEn')"
           [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"

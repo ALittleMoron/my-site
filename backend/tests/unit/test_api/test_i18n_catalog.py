@@ -67,6 +67,51 @@ class TestI18nCatalog:
         assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
         assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"
 
+    def test_matrix_expected_answer_labels_describe_an_explanation(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert (
+            russian_messages["adminMatrixWorkspace.missing.interviewExpectedAnswerRu"]
+            == "Объяснение ответа на собеседовании RU"
+        )
+        assert (
+            russian_messages["adminMatrixWorkspace.missing.interviewExpectedAnswerEn"]
+            == "Объяснение ответа на собеседовании EN"
+        )
+        assert russian_messages["matrix.form.expectedAnswerRu"] == (
+            "Объяснение ответа на собеседовании RU"
+        )
+        assert russian_messages["matrix.form.expectedAnswerEn"] == (
+            "Объяснение ответа на собеседовании EN"
+        )
+        assert russian_messages["matrix.form.expectedAnswerHint"] == (
+            "Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также "
+            "какие ошибки часто допускают кандидаты."
+        )
+        assert russian_messages["matrix.detail.expectedAnswer"] == (
+            "Объяснение ответа на собеседовании:"
+        )
+        assert (
+            english_messages["adminMatrixWorkspace.missing.interviewExpectedAnswerRu"]
+            == "Interview answer explanation RU"
+        )
+        assert (
+            english_messages["adminMatrixWorkspace.missing.interviewExpectedAnswerEn"]
+            == "Interview answer explanation EN"
+        )
+        assert english_messages["matrix.form.expectedAnswerRu"] == (
+            "Interview answer explanation RU"
+        )
+        assert english_messages["matrix.form.expectedAnswerEn"] == (
+            "Interview answer explanation EN"
+        )
+        assert english_messages["matrix.form.expectedAnswerHint"] == (
+            "Explain why the question is asked, what answer is expected and why, and which "
+            "mistakes candidates commonly make."
+        )
+        assert english_messages["matrix.detail.expectedAnswer"] == ("Interview answer explanation:")
+
     def test_site_build_case_study_catalog_describes_public_engineering_page(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

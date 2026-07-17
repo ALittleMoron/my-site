@@ -638,6 +638,9 @@ Flashcards should be implemented strictly after auth implementation for common u
 
 ## Refactoring
 
+- [ ] Rename `interview_expected_answer` / `interviewExpectedAnswer` everywhere to
+  `interview_answer_explanation` / `interviewAnswerExplanation`, including the database,
+  migrations, backend contracts, API schemas, frontend models, tests, and Agent Access.
 - [x] Simplify BootstrapRenderer
 - [x] Add pre-commit hooks (ruff, mypy, pytest)
 - [x] Move CLI to a separate entry point (from main.py)

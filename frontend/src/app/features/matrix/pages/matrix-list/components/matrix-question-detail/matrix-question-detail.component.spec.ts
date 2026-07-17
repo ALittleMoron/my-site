@@ -137,7 +137,7 @@ describe('MatrixQuestionDetailComponent', () => {
     );
     expect(headings).toContain('Вопрос:');
     expect(headings).toContain('Ответ:');
-    expect(headings).toContain('Ответ, который ожидается на собеседовании:');
+    expect(headings).toContain('Объяснение ответа на собеседовании:');
     expect(headings).not.toContain('Как часто спрашивают:');
   });
 

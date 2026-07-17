@@ -472,8 +472,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.questionEn": "Вопрос EN",
         "adminMatrixWorkspace.missing.answerRu": "Ответ RU",
         "adminMatrixWorkspace.missing.answerEn": "Ответ EN",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": "Ожидаемый ответ RU",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Ожидаемый ответ EN",
+        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": (
+            "Объяснение ответа на собеседовании RU"
+        ),
+        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": (
+            "Объяснение ответа на собеседовании EN"
+        ),
         "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
         "adminMatrixStructure.createError": "Не удалось создать элемент структуры матрицы.",
         "adminMatrixStructure.validationError": "Проверьте поля элемента структуры.",
@@ -749,9 +753,13 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.answer": "Ответ",
         "matrix.form.answerRu": "Ответ RU",
         "matrix.form.answerEn": "Ответ EN",
-        "matrix.form.expectedAnswer": "Ожидаемый ответ на собеседовании",
-        "matrix.form.expectedAnswerRu": "Ожидаемый ответ RU",
-        "matrix.form.expectedAnswerEn": "Ожидаемый ответ EN",
+        "matrix.form.expectedAnswer": "Объяснение ответа на собеседовании",
+        "matrix.form.expectedAnswerRu": "Объяснение ответа на собеседовании RU",
+        "matrix.form.expectedAnswerEn": "Объяснение ответа на собеседовании EN",
+        "matrix.form.expectedAnswerHint": (
+            "Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также "
+            "какие ошибки часто допускают кандидаты."
+        ),
         "matrix.form.wikiLinksMissing": "Не найдены wiki-цели: {targets}.",
         "matrix.resources.title": "Внешние ресурсы",
         "matrix.resources.searchPlaceholder": "Найти ресурс",
@@ -769,7 +777,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.detail.interviewFrequency": "Как часто спрашивают:",
         "matrix.detail.suggestedBy": "Кто предложил:",
         "matrix.detail.answer": "Ответ:",
-        "matrix.detail.expectedAnswer": "Ответ, который ожидается на собеседовании:",
+        "matrix.detail.expectedAnswer": "Объяснение ответа на собеседовании:",
         "matrix.detail.resources": "Внешние ресурсы:",
         "matrix.detail.openQuestion": "К вопросу",
         "matrix.filter.searchPlaceholder": "Поиск навыков и вопросов",
@@ -1493,8 +1501,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.questionEn": "Question EN",
         "adminMatrixWorkspace.missing.answerRu": "Answer RU",
         "adminMatrixWorkspace.missing.answerEn": "Answer EN",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": "Expected answer RU",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": "Expected answer EN",
+        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": (
+            "Interview answer explanation RU"
+        ),
+        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": (
+            "Interview answer explanation EN"
+        ),
         "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
         "adminMatrixStructure.createError": "Failed to create the matrix structure item.",
         "adminMatrixStructure.validationError": "Check the structure item fields.",
@@ -1776,9 +1788,13 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.answer": "Answer",
         "matrix.form.answerRu": "Answer RU",
         "matrix.form.answerEn": "Answer EN",
-        "matrix.form.expectedAnswer": "Expected interview answer",
-        "matrix.form.expectedAnswerRu": "Expected answer RU",
-        "matrix.form.expectedAnswerEn": "Expected answer EN",
+        "matrix.form.expectedAnswer": "Interview answer explanation",
+        "matrix.form.expectedAnswerRu": "Interview answer explanation RU",
+        "matrix.form.expectedAnswerEn": "Interview answer explanation EN",
+        "matrix.form.expectedAnswerHint": (
+            "Explain why the question is asked, what answer is expected and why, and which "
+            "mistakes candidates commonly make."
+        ),
         "matrix.form.wikiLinksMissing": "Missing wiki targets: {targets}.",
         "matrix.resources.title": "External resources",
         "matrix.resources.searchPlaceholder": "Find resource",
@@ -1796,7 +1812,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.detail.interviewFrequency": "How often asked:",
         "matrix.detail.suggestedBy": "Suggested by:",
         "matrix.detail.answer": "Answer:",
-        "matrix.detail.expectedAnswer": "Expected interview answer:",
+        "matrix.detail.expectedAnswer": "Interview answer explanation:",
         "matrix.detail.resources": "External resources:",
         "matrix.detail.openQuestion": "To question",
         "matrix.filter.searchPlaceholder": "Search skills and questions",
