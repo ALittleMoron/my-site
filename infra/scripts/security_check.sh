@@ -771,9 +771,9 @@ run_agent_ca_helper_check() {
     bash "$ca_script" init "${ca_temp_dir}/offline" "${ca_temp_dir}/issuing" >/dev/null
     bash "$ca_script" client-csr test-agent "${ca_temp_dir}/client" >/dev/null
 
-    test "$(stat -f '%Lp' "${ca_temp_dir}/offline/agent-root-ca.key.pem" 2>/dev/null || stat -c '%a' "${ca_temp_dir}/offline/agent-root-ca.key.pem")" = "600"
-    test "$(stat -f '%Lp' "${ca_temp_dir}/issuing/agent-issuing-ca.key.pem" 2>/dev/null || stat -c '%a' "${ca_temp_dir}/issuing/agent-issuing-ca.key.pem")" = "600"
-    test "$(stat -f '%Lp' "${ca_temp_dir}/client/test-agent.key.pem" 2>/dev/null || stat -c '%a' "${ca_temp_dir}/client/test-agent.key.pem")" = "600"
+    test "$(stat -c '%a' "${ca_temp_dir}/offline/agent-root-ca.key.pem" 2>/dev/null || stat -f '%Lp' "${ca_temp_dir}/offline/agent-root-ca.key.pem")" = "600"
+    test "$(stat -c '%a' "${ca_temp_dir}/issuing/agent-issuing-ca.key.pem" 2>/dev/null || stat -f '%Lp' "${ca_temp_dir}/issuing/agent-issuing-ca.key.pem")" = "600"
+    test "$(stat -c '%a' "${ca_temp_dir}/client/test-agent.key.pem" 2>/dev/null || stat -f '%Lp' "${ca_temp_dir}/client/test-agent.key.pem")" = "600"
     openssl verify \
         -CAfile "${ca_temp_dir}/offline/agent-root-ca.cert.pem" \
         "${ca_temp_dir}/issuing/agent-issuing-ca.cert.pem" >/dev/null
