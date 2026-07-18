@@ -414,6 +414,20 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(slug.classList).not.toContain('is-invalid');
   });
 
+  it('scrolls the create form when the wheel is used over modal chrome', () => {
+    fixture.componentInstance.openCreate();
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector<HTMLElement>('.modal')!;
+    const modalBody = modal.querySelector<HTMLElement>('.modal-body')!;
+    makeElementScrollable(modalBody, 1200, 400);
+    const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 });
+
+    modal.querySelector<HTMLElement>('.modal-header')!.dispatchEvent(event);
+
+    expect(modalBody.scrollTop).toBe(120);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('keeps a changed create modal open when discarding is cancelled', () => {
     const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
     fixture.componentInstance.openCreate();
@@ -708,4 +722,14 @@ function previewQuestionList(
       [slug]: python ? QUESTION_ID : READY_QUESTION_ID,
     },
   };
+}
+
+function makeElementScrollable(
+  element: HTMLElement,
+  scrollHeight: number,
+  clientHeight: number,
+): void {
+  Object.defineProperty(element, 'scrollHeight', { configurable: true, value: scrollHeight });
+  Object.defineProperty(element, 'clientHeight', { configurable: true, value: clientHeight });
+  element.scrollTop = 0;
 }

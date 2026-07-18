@@ -13,6 +13,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { startWith } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -61,6 +62,7 @@ const AGENT_AUDIT_PAGE_SIZE = 50;
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agent-clients-page.component.html',

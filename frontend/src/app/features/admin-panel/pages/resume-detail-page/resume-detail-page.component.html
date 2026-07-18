@@ -130,15 +130,10 @@
   </div>
 
   @if (exportModalOpen()) {
-    <button
-      type="button"
-      class="resume-export-modal-backdrop"
-      [attr.aria-label]="'shared.close' | t"
-      (click)="closeExportModal()"
-    ></button>
     <div class="resume-export-modal-shell">
       <section
-        class="resume-export-modal"
+        class="resume-export-modal d-flex flex-column overflow-hidden"
+        [appModalScroll]="resumeExportScrollArea"
         role="dialog"
         aria-modal="true"
         aria-labelledby="resume-export-title"
@@ -156,29 +151,35 @@
           ></button>
         </header>
 
-        <div class="mb-3">
-          <label class="form-label" for="resume-export-format">
-            {{ 'adminResumeWorkspace.exportFormat' | t }}
-          </label>
-          <select
-            #exportFormatSelect
-            id="resume-export-format"
-            class="form-select form-select-sm"
-            data-testid="resume-export-format"
-            [value]="selectedExportFormat()"
-            [disabled]="exporting()"
-            (change)="selectExportFormat(exportFormatSelect.value)"
-          >
-            <option value="">{{ 'adminResumeWorkspace.exportFormatPlaceholder' | t }}</option>
-            @for (format of exportFormats; track format.value) {
-              <option [value]="format.value">{{ format.labelKey | t }}</option>
-            }
-          </select>
-        </div>
+        <div
+          #resumeExportScrollArea
+          class="resume-export-modal-body overflow-y-auto"
+          data-testid="resume-export-modal-body"
+        >
+          <div class="mb-3">
+            <label class="form-label" for="resume-export-format">
+              {{ 'adminResumeWorkspace.exportFormat' | t }}
+            </label>
+            <select
+              #exportFormatSelect
+              id="resume-export-format"
+              class="form-select form-select-sm"
+              data-testid="resume-export-format"
+              [value]="selectedExportFormat()"
+              [disabled]="exporting()"
+              (change)="selectExportFormat(exportFormatSelect.value)"
+            >
+              <option value="">{{ 'adminResumeWorkspace.exportFormatPlaceholder' | t }}</option>
+              @for (format of exportFormats; track format.value) {
+                <option [value]="format.value">{{ format.labelKey | t }}</option>
+              }
+            </select>
+          </div>
 
-        @if (exportError()) {
-          <p class="text-danger small mb-3">{{ 'adminResumeWorkspace.exportError' | t }}</p>
-        }
+          @if (exportError()) {
+            <p class="text-danger small mb-3">{{ 'adminResumeWorkspace.exportError' | t }}</p>
+          }
+        </div>
 
         <footer class="d-flex justify-content-end gap-2">
           <button
@@ -205,6 +206,13 @@
         </footer>
       </section>
     </div>
+    <button
+      type="button"
+      class="resume-export-modal-backdrop"
+      [appModalScroll]="resumeExportScrollArea"
+      [attr.aria-label]="'shared.close' | t"
+      (click)="closeExportModal()"
+    ></button>
   }
 
   @if (loading()) {

@@ -1,6 +1,10 @@
-<div id="login-modal" class="modal force-display-block login-modal-backdrop">
+<div
+  id="login-modal"
+  class="modal force-display-block login-modal-backdrop"
+  [appModalScroll]="loginScrollArea"
+>
   <form
-    class="modal-dialog modal-fullscreen-sm-down"
+    class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"
     [formGroup]="form"
     (ngSubmit)="login()"
     novalidate
@@ -16,7 +20,7 @@
         ></button>
       </div>
 
-      <div class="modal-body">
+      <div #loginScrollArea class="modal-body">
         <div class="alert alert-warning" role="alert">
           <strong>{{ 'auth.login.restrictedAccessWarning.title' | t }}</strong>
           <div>{{ 'auth.login.restrictedAccessWarning.message' | t }}</div>

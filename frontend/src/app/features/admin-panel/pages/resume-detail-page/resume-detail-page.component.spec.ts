@@ -453,6 +453,21 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 
+  it('scrolls the export form body when the wheel is used over its header', () => {
+    buttonByLabel('Экспорт').click();
+    fixture.detectChanges();
+    const modalBody = elementByTestId<HTMLElement>('resume-export-modal-body');
+    makeElementScrollable(modalBody, 600, 160);
+    const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 80 });
+
+    fixture.nativeElement
+      .querySelector<HTMLElement>('.resume-export-modal header')!
+      .dispatchEvent(event);
+
+    expect(modalBody.scrollTop).toBe(80);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('exports unsaved form edits in the selected format', () => {
     fixture.componentInstance.setActiveTab('summary');
     fixture.detectChanges();
@@ -1537,4 +1552,14 @@ function apiError(): ApiError {
     location: null,
     attr: null,
   };
+}
+
+function makeElementScrollable(
+  element: HTMLElement,
+  scrollHeight: number,
+  clientHeight: number,
+): void {
+  Object.defineProperty(element, 'scrollHeight', { configurable: true, value: scrollHeight });
+  Object.defineProperty(element, 'clientHeight', { configurable: true, value: clientHeight });
+  element.scrollTop = 0;
 }

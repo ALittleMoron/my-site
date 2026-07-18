@@ -138,6 +138,7 @@
 @if (registrationOpen()) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="registrationScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'adminAgentClients.registerTitle' | t"
@@ -154,7 +155,7 @@
             (click)="closeRegistration()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #registrationScrollArea class="modal-body">
           @if (registrationErrorKey(); as errorKey) {
             <div class="alert alert-danger" role="alert" data-testid="agent-registration-error">
               {{ errorKey | t }}
@@ -234,6 +235,7 @@
 @if (auditClient(); as client) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="auditScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'adminAgentClients.auditTitle' | t"
@@ -251,7 +253,7 @@
             (click)="closeAudit()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #auditScrollArea class="modal-body">
           <p class="text-body-secondary">{{ 'adminAgentClients.auditPrivacy' | t }}</p>
           @if (auditLoading()) {
             <div data-testid="agent-audit-initial-loading">

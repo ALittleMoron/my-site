@@ -145,6 +145,7 @@
 @if (createDialog(); as dialog) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="structureScrollArea"
     role="dialog"
     aria-modal="true"
     data-testid="matrix-structure-create-dialog"
@@ -154,7 +155,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered"
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -176,7 +177,7 @@
             (click)="closeCreateDialog()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #structureScrollArea class="modal-body">
           @if (createError()) {
             <app-error-message
               [error]="createError()!"

@@ -14,6 +14,7 @@ import { Observable, finalize } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -58,6 +59,7 @@ interface ArticleTagFormControls {
     EmptyStateComponent,
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-tags-page.component.html',

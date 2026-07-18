@@ -25,6 +25,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -50,6 +51,7 @@ const LINE_BREAKS_PATTERN = /[\r\n]+/g;
     MatrixQuestionDetailComponent,
     RouterLink,
     TranslatePipe,
+    ModalScrollDirective,
   ],
   templateUrl: './matrix-list.component.html',
   styleUrl: './matrix-list.component.scss',

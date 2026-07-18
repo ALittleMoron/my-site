@@ -14,6 +14,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
@@ -71,6 +72,7 @@ const MANAGED_ACCOUNT_ROLE_OPTIONS: readonly ManagedAccountRoleOption[] = [
     EmptyStateComponent,
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './team-page.component.html',

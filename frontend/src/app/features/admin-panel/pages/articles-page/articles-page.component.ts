@@ -12,6 +12,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
@@ -43,6 +44,7 @@ const PAGE_SIZE = 20;
     EmptyStateComponent,
     AdminActionsDropdownComponent,
     ArticleFormComponent,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './articles-page.component.html',

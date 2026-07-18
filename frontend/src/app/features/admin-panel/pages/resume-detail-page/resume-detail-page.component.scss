@@ -39,10 +39,13 @@
   box-shadow: var(--bs-box-shadow-lg);
   max-height: calc(100vh - 2rem);
   max-width: 22rem;
-  overflow: auto;
   padding: 1rem;
   pointer-events: auto;
   width: 100%;
+}
+
+.resume-export-modal-body {
+  min-height: 0;
 }
 
 @media (width <= 575.98px) {

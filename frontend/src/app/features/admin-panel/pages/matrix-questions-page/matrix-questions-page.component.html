@@ -419,6 +419,7 @@
 @if (formMode()) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="questionScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'matrix.modal.create' | t"
@@ -444,7 +445,7 @@
             (click)="closeForm()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #questionScrollArea class="modal-body">
           @if (formError()) {
             <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
           }

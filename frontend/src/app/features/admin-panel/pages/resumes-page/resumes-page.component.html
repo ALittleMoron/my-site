@@ -96,6 +96,7 @@
   @if (createDialogOpen()) {
     <div
       class="modal d-block bg-dark bg-opacity-50"
+      [appModalScroll]="resumeCreateScrollArea"
       role="dialog"
       aria-modal="true"
       data-testid="resume-create-dialog"
@@ -127,7 +128,7 @@
               (click)="closeCreateDialog()"
             ></button>
           </div>
-          <div class="modal-body">
+          <div #resumeCreateScrollArea class="modal-body">
             @if (createError()) {
               <app-error-message
                 [error]="createError()!"

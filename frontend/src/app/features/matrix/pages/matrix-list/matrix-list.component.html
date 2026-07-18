@@ -42,6 +42,7 @@
 @if (detailVisible()) {
   <div
     class="modal d-block modal-backdrop-overlay"
+    [appModalScroll]="detailScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'matrix.detailAria' | t"
@@ -50,7 +51,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down"
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -70,7 +71,7 @@
             (click)="closeDetail()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #detailScrollArea class="modal-body">
           @if (language()) {
             <app-matrix-question-detail
               [question]="selectedQuestion()"
@@ -88,6 +89,7 @@
 @if (suggestionVisible()) {
   <div
     class="modal d-block modal-backdrop-overlay"
+    [appModalScroll]="suggestionScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'matrix.suggestion.title' | t"
@@ -96,7 +98,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down"
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -113,7 +115,7 @@
             (click)="closeQuestionSuggestion()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #suggestionScrollArea class="modal-body">
           <label class="form-label" for="matrix-question-suggestion-sheet">
             {{ 'matrix.form.sheet' | t }}
           </label>

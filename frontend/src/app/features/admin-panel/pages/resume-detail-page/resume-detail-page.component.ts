@@ -24,6 +24,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, catchError } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
@@ -230,6 +231,7 @@ const RESUME_EXPORT_FORMAT_OPTIONS: readonly ResumeExportFormatOption[] = [
     ErrorMessageComponent,
     LocalizedDatePickerComponent,
     AdminControlValidationStateDirective,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './resume-detail-page.component.html',

@@ -15,6 +15,7 @@ import { AuthModalService } from '../../../../core/auth/auth-modal.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
@@ -69,6 +70,7 @@ const MANAGED_ACCOUNT_ROLE_OPTIONS: readonly ManagedAccountRoleOption[] = [
     ErrorMessageComponent,
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './team-member-detail-page.component.html',

@@ -231,6 +231,7 @@
 
 ### Frontend
 
+- [x] Keep background pages fixed while every modal routes backdrop and chrome scrolling to its content.
 - [x] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
 - [x] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
 - [x] Cookie consent

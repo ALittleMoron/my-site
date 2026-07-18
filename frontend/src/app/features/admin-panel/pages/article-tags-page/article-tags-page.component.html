@@ -81,6 +81,7 @@
 @if (dialogOpen()) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="tagScrollArea"
     role="dialog"
     aria-modal="true"
     data-testid="article-tag-dialog"
@@ -92,7 +93,7 @@
     tabindex="0"
   >
     <div
-      class="modal-dialog modal-dialog-centered"
+      class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
       role="document"
       tabindex="-1"
       (click)="$event.stopPropagation()"
@@ -118,7 +119,7 @@
             (click)="closeDialog()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #tagScrollArea class="modal-body">
           @if (formError()) {
             <app-error-message
               [error]="formError()!"

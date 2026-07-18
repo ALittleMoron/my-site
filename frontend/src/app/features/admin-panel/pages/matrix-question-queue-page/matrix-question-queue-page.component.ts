@@ -16,6 +16,7 @@ import { debounceTime, merge } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.directive';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import {
@@ -87,6 +88,7 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
     ErrorMessageComponent,
     EmptyStateComponent,
     MatrixQuestionFormComponent,
+    ModalScrollDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',

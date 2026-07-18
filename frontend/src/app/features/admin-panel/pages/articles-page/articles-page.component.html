@@ -167,6 +167,7 @@
 @if (formVisible()) {
   <div
     class="modal d-block modal-backdrop-overlay"
+    [appModalScroll]="articleScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'articles.formAria' | t"
@@ -193,7 +194,7 @@
             (click)="closeForm()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #articleScrollArea class="modal-body">
           @if (formError()) {
             <app-error-message [error]="formError()!" [retryLabel]="'shared.retry' | t" />
           }

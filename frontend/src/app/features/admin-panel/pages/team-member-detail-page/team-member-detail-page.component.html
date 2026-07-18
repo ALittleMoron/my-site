@@ -165,6 +165,7 @@
   @if (roleDialogOpen()) {
     <div
       class="modal d-block bg-dark bg-opacity-50"
+      [appModalScroll]="roleScrollArea"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="'adminTeamWorkspace.roleTitle' | t"
@@ -173,7 +174,7 @@
       tabindex="0"
     >
       <div
-        class="modal-dialog modal-dialog-centered"
+        class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
         role="document"
         tabindex="-1"
         (click)="$event.stopPropagation()"
@@ -195,7 +196,7 @@
               (click)="closeRoleDialog()"
             ></button>
           </div>
-          <div class="modal-body">
+          <div #roleScrollArea class="modal-body">
             @if (roleError()) {
               <app-error-message
                 [error]="roleError()!"
@@ -241,6 +242,7 @@
   @if (passwordDialogOpen()) {
     <div
       class="modal d-block bg-dark bg-opacity-50"
+      [appModalScroll]="passwordScrollArea"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="'adminTeamWorkspace.passwordTitle' | t"
@@ -249,7 +251,7 @@
       tabindex="0"
     >
       <div
-        class="modal-dialog modal-dialog-centered"
+        class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
         role="document"
         tabindex="-1"
         (click)="$event.stopPropagation()"
@@ -271,7 +273,7 @@
               (click)="closePasswordDialog()"
             ></button>
           </div>
-          <div class="modal-body">
+          <div #passwordScrollArea class="modal-body">
             @if (passwordError()) {
               <app-error-message
                 [error]="passwordError()!"

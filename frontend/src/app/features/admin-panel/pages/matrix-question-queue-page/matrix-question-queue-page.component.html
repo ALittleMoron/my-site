@@ -215,6 +215,7 @@
 @if (selectedQuestion()) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="queueQuestionScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'matrix.modal.create' | t"
@@ -240,7 +241,7 @@
             (click)="closeCreateModal()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #queueQuestionScrollArea class="modal-body">
           @if (formError()) {
             <div class="alert alert-danger" role="alert">
               <ul class="mb-0 ps-3">
@@ -301,6 +302,7 @@
 @if (manualAddVisible()) {
   <div
     class="modal d-block bg-dark bg-opacity-50"
+    [appModalScroll]="queueAddScrollArea"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="'adminMatrixQueue.addManualTitle' | t"
@@ -327,7 +329,7 @@
             (click)="closeManualAdd()"
           ></button>
         </div>
-        <div class="modal-body">
+        <div #queueAddScrollArea class="modal-body">
           <div
             class="btn-group w-100 mb-3"
             role="group"
