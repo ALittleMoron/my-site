@@ -172,7 +172,7 @@ describe('MatrixQuestionDetailComponent', () => {
     expect(answerDiv?.innerHTML).toContain('<strong>');
   });
 
-  it('should render fenced code blocks with language and highlight classes', () => {
+  it('should render fenced code blocks with real syntax highlighting', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.componentRef.setInput('question', {
       ...mockDetail,
@@ -185,6 +185,8 @@ describe('MatrixQuestionDetailComponent', () => {
     const code = el.querySelector('code.language-ts');
     expect(pre).toBeTruthy();
     expect(code?.textContent).toContain('const answer = 42;');
+    expect(code?.querySelector('.token.keyword')?.textContent).toBe('const');
+    expect(code?.querySelector('.token.number')?.textContent).toBe('42');
   });
 
   it('should render typed wiki links with the active language prefix', () => {

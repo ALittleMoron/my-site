@@ -58,6 +58,10 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "allowedCommonJsDependencies": [
+              "@toast-ui/editor-plugin-code-syntax-highlight",
+              "prismjs"
+            ],
             "security": {
               "allowedHosts": []
             },
@@ -78,6 +82,11 @@
                 "inject": false,
                 "bundleName": "toastui-editor-dark"
               },
+              {
+                "input": "node_modules/@toast-ui/editor-plugin-code-syntax-highlight/dist/toastui-editor-plugin-code-syntax-highlight.css",
+                "inject": false,
+                "bundleName": "toastui-editor-code-syntax-highlight"
+              },
               "src/styles/main.scss"
             ],
             "scripts": []
@@ -93,7 +102,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "700kB",
+                  "maximumWarning": "705kB",
                   "maximumError": "1MB"
                 },
                 {

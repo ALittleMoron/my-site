@@ -1,5 +1,6 @@
-import { marked } from 'marked';
+import { marked, Renderer } from 'marked';
 import { LanguageCode } from '../i18n/i18n.model';
+import { highlightMarkdownCode } from '../markdown/markdown-syntax-highlighter';
 
 export const WIKI_LINK_TARGET_TYPES = ['articles', 'matrix'] as const;
 
@@ -20,6 +21,20 @@ export interface WikiLinkTargetGroup {
 export type WikiLinkTargetLookup = ReadonlyMap<WikiLinkTargetType, ReadonlySet<string>>;
 
 const WIKI_LINK_PATTERN = /\[\[(articles|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\n]+))?\]\]/g;
+const DEFAULT_CODE_RENDERER = new Renderer();
+const MARKDOWN_RENDERER = new Renderer();
+
+MARKDOWN_RENDERER.code = (token): string => {
+  const highlighted = highlightMarkdownCode(token.text, token.lang);
+  if (highlighted === null) {
+    return withMarkdownCodeClass(DEFAULT_CODE_RENDERER.code(token));
+  }
+
+  return (
+    `<pre class="markdown-code"><code class="language-${highlighted.language}">` +
+    `${highlighted.html}\n</code></pre>\n`
+  );
+};
 
 export function parseWikiLinks(markdown: string): WikiLink[] {
   return Array.from(markdown.matchAll(WIKI_LINK_PATTERN), (match) => ({
@@ -55,9 +70,8 @@ export function renderMarkdownWithWikiLinks(
   sanitizeHtml: (html: string) => string,
 ): string {
   const markdownWithLinks = replaceWikiLinks(markdown, language);
-  const html = marked.parse(markdownWithLinks, { async: false });
-  const enhanced = html.replaceAll('<pre><code', '<pre class="markdown-code"><code');
-  return sanitizeHtml(enhanced);
+  const html = marked.parse(markdownWithLinks, { async: false, renderer: MARKDOWN_RENDERER });
+  return sanitizeHtml(html);
 }
 
 export function replaceWikiLinksWithPlainText(markdown: string): string {
@@ -86,4 +100,8 @@ function wikiLinkPath(type: WikiLinkTargetType, slug: string, language: Language
 
 function escapeMarkdownLinkLabel(value: string): string {
   return value.replace(/([\\[\]])/g, '\\$1');
+}
+
+function withMarkdownCodeClass(html: string): string {
+  return html.replace('<pre>', '<pre class="markdown-code">');
 }

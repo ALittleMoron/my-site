@@ -67,4 +67,12 @@ describe('ArticleAuthoringPreviewComponent', () => {
     expect(text).toContain('Social preview');
     expect(text).not.toContain('Превью для соцсетей');
   });
+
+  it('renders highlighted fenced code in the authoring preview', () => {
+    fixture.componentRef.setInput('content', '```ts\nconst answer = 42;\n```');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('code.language-ts')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.token.keyword')?.textContent).toBe('const');
+  });
 });

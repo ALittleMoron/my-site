@@ -9,6 +9,7 @@ import { MarkdownEditorComponent } from './markdown-editor.component';
 interface MockEditorOptions {
   autofocus?: boolean;
   initialValue?: string;
+  plugins?: unknown[];
   theme?: string;
   events?: {
     change?: () => void;
@@ -110,6 +111,14 @@ describe('MarkdownEditorComponent', () => {
 
     expect(styleLinks).toContain('/toastui-editor.css');
     expect(styleLinks).toContain('/toastui-editor-dark.css');
+    expect(styleLinks).toContain('/toastui-editor-code-syntax-highlight.css');
+  });
+
+  it('configures code syntax highlighting for the preview', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    expect(MockEditor.instances[0].options.plugins).toHaveLength(1);
   });
 
   it('uses Toast UI dark theme when the app theme is dark', async () => {
@@ -164,6 +173,8 @@ async function waitForEditor(fixture: ComponentFixture<MarkdownEditorComponent>)
 
 function removeEditorStylesheetLinks(): void {
   document
-    .querySelectorAll('link[href="/toastui-editor.css"], link[href="/toastui-editor-dark.css"]')
+    .querySelectorAll(
+      'link[href="/toastui-editor.css"], link[href="/toastui-editor-dark.css"], link[href="/toastui-editor-code-syntax-highlight.css"]',
+    )
     .forEach((link) => link.remove());
 }

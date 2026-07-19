@@ -10,6 +10,7 @@ declare module '@toast-ui/editor' {
     theme?: string;
     usageStatistics?: boolean;
     initialValue?: string;
+    plugins?: unknown[];
     toolbarItems?: string[][];
     events?: {
       change?: () => void;

@@ -83,6 +83,15 @@
   --danger-color: rgb(220, 53, 69);
   --danger-color-rgb: 220, 53, 69;
 
+  --syntax-comment-color: rgb(100, 116, 139);
+  --syntax-punctuation-color: rgb(71, 85, 105);
+  --syntax-literal-color: rgb(180, 35, 24);
+  --syntax-string-color: rgb(15, 118, 110);
+  --syntax-operator-color: rgb(3, 105, 161);
+  --syntax-keyword-color: rgb(109, 40, 217);
+  --syntax-function-color: rgb(3, 105, 161);
+  --syntax-variable-color: rgb(180, 83, 9);
+
   --link-color: var(--main-link-color);
   --link-color-rgb: var(--main-link-color-rgb);
   --link-hover-color: var(--accent-hover-color);
@@ -253,6 +262,15 @@
 
   --danger-color: rgb(248, 113, 113);
   --danger-color-rgb: 248, 113, 113;
+
+  --syntax-comment-color: rgb(148, 163, 184);
+  --syntax-punctuation-color: rgb(203, 213, 225);
+  --syntax-literal-color: rgb(252, 165, 165);
+  --syntax-string-color: rgb(134, 239, 172);
+  --syntax-operator-color: rgb(125, 211, 252);
+  --syntax-keyword-color: rgb(196, 181, 253);
+  --syntax-function-color: rgb(125, 211, 252);
+  --syntax-variable-color: rgb(253, 224, 71);
 
   --link-color: rgb(34, 197, 94);
   --link-color-rgb: 34, 197, 94;

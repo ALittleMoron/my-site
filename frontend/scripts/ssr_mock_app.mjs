@@ -42,13 +42,13 @@ export const articleDto = {
     },
   ],
   content:
-    '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
+    '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].\n\n```ts\nconst answer = 42;\n```',
   createdAt: '2026-01-01T03:04:05+00:00',
   translations: {
     ru: {
       title: 'Typed articles',
       content:
-        '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].',
+        '## Rendered SSR article body\n\nRead [[matrix:how-to-write-function|matrix question]].\n\n```ts\nconst answer = 42;\n```',
       folder: 'Engineering',
     },
     en: {
@@ -64,7 +64,7 @@ export const matrixQuestionDto = {
   slug: 'how-to-write-function',
   question: 'Как написать функцию?',
   answer:
-    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].',
+    '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].\n\n```python\ndef answer():\n    return 42\n```',
   interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
   sheetKey: 'python',
   sheet: 'Python',
@@ -76,7 +76,7 @@ export const matrixQuestionDto = {
     ru: {
       question: 'Как написать функцию?',
       answer:
-        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].',
+        '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].\n\n```python\ndef answer():\n    return 42\n```',
       interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
       sheet: 'Python',
       section: 'Основы',

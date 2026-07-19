@@ -152,6 +152,8 @@ async function assertPublishedArticleHtml(frontendPort, requests) {
       'wiki link to matrix localized',
       html.includes('href="/ru/competency-matrix/questions/how-to-write-function"'),
     ],
+    ['article code language', html.includes('class="language-ts"')],
+    ['article code syntax token', html.includes('class="token keyword">const</span>')],
     ['no noindex on published article', !html.includes('name="robots" content="noindex')],
     ['no analytics request', pageRequests.every((entry) => !entry.includes('/analytics/'))],
     ['no reaction request', pageRequests.every((entry) => !entry.includes('/reaction'))],
@@ -181,6 +183,8 @@ async function assertPublishedMatrixQuestionHtml(frontendPort, requests) {
     ['json-ld faq', html.includes('"@type":"FAQPage"')],
     ['json-ld question', html.includes('"name":"Как написать функцию?"')],
     ['wiki link to article localized', html.includes('href="/ru/articles/typed-articles"')],
+    ['matrix code language', html.includes('class="language-python"')],
+    ['matrix code syntax token', html.includes('class="token keyword">def</span>')],
     ['no noindex on published matrix question', !html.includes('name="robots" content="noindex')],
     [
       'matrix public detail preflight',

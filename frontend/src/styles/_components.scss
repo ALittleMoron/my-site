@@ -231,6 +231,71 @@
   white-space: pre;
 }
 
+:where(.markdown-code, .toastui-editor-contents, .toastui-editor-ww-container) {
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: var(--syntax-comment-color);
+    font-style: italic;
+  }
+
+  .token.punctuation {
+    color: var(--syntax-punctuation-color);
+  }
+
+  .token.property,
+  .token.tag,
+  .token.boolean,
+  .token.number,
+  .token.constant,
+  .token.symbol,
+  .token.deleted {
+    color: var(--syntax-literal-color);
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: var(--syntax-string-color);
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url {
+    color: var(--syntax-operator-color);
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.keyword {
+    color: var(--syntax-keyword-color);
+  }
+
+  .token.function,
+  .token.class-name {
+    color: var(--syntax-function-color);
+  }
+
+  .token.regex,
+  .token.important,
+  .token.variable {
+    color: var(--syntax-variable-color);
+  }
+
+  .token.important,
+  .token.bold {
+    font-weight: 700;
+  }
+
+  .token.italic {
+    font-style: italic;
+  }
+}
+
 .question-detail,
 .articles-markdown {
   overflow-wrap: anywhere;

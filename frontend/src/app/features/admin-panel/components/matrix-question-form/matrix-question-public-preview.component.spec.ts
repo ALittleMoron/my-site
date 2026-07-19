@@ -64,4 +64,12 @@ describe('MatrixQuestionPublicPreviewComponent', () => {
     expect(answer?.textContent).toContain('unsafe');
     expect(warnSpy).toHaveBeenCalled();
   });
+
+  it('renders highlighted fenced code in the authoring preview', () => {
+    fixture.componentRef.setInput('answer', '```python\ndef answer():\n    return 42\n```');
+    fixture.detectChanges();
+
+    expect(element.querySelector('code.language-python')).toBeTruthy();
+    expect(element.querySelector('.token.keyword')?.textContent).toBe('def');
+  });
 });

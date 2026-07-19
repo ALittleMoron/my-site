@@ -72,4 +72,57 @@ describe('wiki links', () => {
     expect(html).toContain('[[typed-articles]]');
     expect(html).toContain('[[unknown:slug]]');
   });
+
+  it('renders real syntax tokens for multiple supported fenced code blocks', () => {
+    const html = renderMarkdownWithWikiLinks(
+      [
+        '```ts',
+        'const answer: number = 42;',
+        '```',
+        '',
+        '```python',
+        'def answer():',
+        '    return 42',
+        '```',
+      ].join('\n'),
+      'en',
+      sanitizeHtml,
+    );
+
+    expect(html).toContain('<code class="language-ts">');
+    expect(html).toContain('<code class="language-python">');
+    expect(html).toContain('<span class="token keyword">const</span>');
+    expect(html).toContain('<span class="token keyword">def</span>');
+  });
+
+  it.each([
+    { language: 'js', code: 'const value = 1;' },
+    { language: 'sh', code: 'echo "$HOME"' },
+    { language: 'dockerfile', code: 'FROM python:3.14' },
+    { language: 'yml', code: 'enabled: true' },
+  ])('highlights the $language language alias', ({ language, code }) => {
+    const html = renderMarkdownWithWikiLinks(
+      `\`\`\`${language}\n${code}\n\`\`\``,
+      'en',
+      sanitizeHtml,
+    );
+
+    expect(html).toContain(`class="language-${language}"`);
+    expect(html).toContain('class="token ');
+  });
+
+  it.each(['', 'unknown-language'])(
+    'keeps an unsupported "%s" fenced code block as escaped plain code',
+    (language) => {
+      const html = renderMarkdownWithWikiLinks(
+        `\`\`\`${language}\n<script>alert("code")</script>\n\`\`\``,
+        'en',
+        sanitizeHtml,
+      );
+
+      expect(html).toContain('<pre class="markdown-code"><code');
+      expect(html).toContain('&lt;script&gt;alert(&quot;code&quot;)&lt;/script&gt;');
+      expect(html).not.toContain('<span class="token ');
+    },
+  );
 });

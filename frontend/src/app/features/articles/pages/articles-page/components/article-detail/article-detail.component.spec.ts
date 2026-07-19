@@ -121,6 +121,17 @@ describe('ArticleDetailComponent', () => {
     expect(link.textContent).toBe('matrix question');
   });
 
+  it('renders highlighted fenced code on the public article detail', () => {
+    fixture.componentRef.setInput('article', {
+      ...fixture.componentInstance.article()!,
+      content: '```ts\nconst answer = 42;\n```',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('code.language-ts')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.token.keyword')?.textContent).toBe('const');
+  });
+
   it('does not render admin actions or draft badges on public article details', () => {
     fixture.componentRef.setInput('article', {
       ...fixture.componentInstance.article()!,

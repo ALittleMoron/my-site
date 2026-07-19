@@ -17,9 +17,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type Editor from '@toast-ui/editor';
 import { I18nService } from '../i18n/i18n.service';
 import { ThemeService } from '../layout/theme.service';
+import { MARKDOWN_PRISM } from '../markdown/markdown-syntax-highlighter';
 import { EditorImageUploadService } from './editor-image-upload.service';
 
-const EDITOR_STYLESHEET_HREFS = ['/toastui-editor.css', '/toastui-editor-dark.css'] as const;
+const EDITOR_STYLESHEET_HREFS = [
+  '/toastui-editor.css',
+  '/toastui-editor-dark.css',
+  '/toastui-editor-code-syntax-highlight.css',
+] as const;
 
 @Component({
   selector: 'app-markdown-editor',
@@ -58,7 +63,10 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
 
     this.ensureEditorStylesheets();
-    const { default: Editor } = await import('@toast-ui/editor');
+    const [{ default: Editor }, { default: codeSyntaxHighlight }] = await Promise.all([
+      import('@toast-ui/editor'),
+      import('@toast-ui/editor-plugin-code-syntax-highlight'),
+    ]);
     const language = await this.resolveEditorLanguage(Editor);
     this.editor = new Editor({
       el: this.editorHost.nativeElement,
@@ -70,6 +78,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       previewStyle: 'vertical',
       usageStatistics: false,
       initialValue: this.value(),
+      plugins: [[codeSyntaxHighlight, { highlighter: MARKDOWN_PRISM }]],
       ...(this.themeService.theme() === 'dark' ? { theme: 'dark' as const } : {}),
       toolbarItems: [
         ['heading', 'bold', 'italic', 'strike'],
