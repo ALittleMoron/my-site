@@ -1,9 +1,13 @@
 declare module '@toast-ui/editor' {
+  export type EditorType = 'markdown' | 'wysiwyg';
+  export type MarkdownPosition = [number, number];
+  export type SelectionPosition = [MarkdownPosition, MarkdownPosition] | [number, number];
+
   export interface ToastUiEditorOptions {
     el: HTMLElement;
     autofocus?: boolean;
     height?: string;
-    initialEditType?: 'markdown' | 'wysiwyg';
+    initialEditType?: EditorType;
     hideModeSwitch?: boolean;
     language?: string;
     previewStyle?: 'tab' | 'vertical';
@@ -14,6 +18,7 @@ declare module '@toast-ui/editor' {
     toolbarItems?: string[][];
     events?: {
       change?: () => void;
+      keyup?: (editorType: EditorType, event: KeyboardEvent) => void;
     };
     hooks?: {
       addImageBlobHook?: (
@@ -29,6 +34,12 @@ declare module '@toast-ui/editor' {
     constructor(options: ToastUiEditorOptions);
 
     getMarkdown(): string;
+
+    getSelection(): SelectionPosition;
+
+    insertText(text: string): void;
+
+    setSelection(start: MarkdownPosition | number, end?: MarkdownPosition | number): void;
 
     setMarkdown(markdown: string, cursorToEnd?: boolean): void;
 

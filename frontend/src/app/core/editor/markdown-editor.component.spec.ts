@@ -13,6 +13,7 @@ interface MockEditorOptions {
   theme?: string;
   events?: {
     change?: () => void;
+    keyup?: (editorType: 'markdown' | 'wysiwyg', event: KeyboardEvent) => void;
   };
   hooks?: {
     addImageBlobHook?: (blob: Blob, callback: (url: string, altText?: string) => void) => void;
@@ -25,6 +26,10 @@ class MockEditor {
 
   readonly options: MockEditorOptions;
   private markdown: string;
+  private selection: [[number, number], [number, number]] = [
+    [1, 1],
+    [1, 1],
+  ];
 
   constructor(options: MockEditorOptions) {
     this.options = options;
@@ -39,6 +44,16 @@ class MockEditor {
   setMarkdown(markdown: string): void {
     this.markdown = markdown;
   }
+
+  getSelection(): [[number, number], [number, number]] {
+    return this.selection;
+  }
+
+  insertText = jest.fn();
+
+  setSelection = jest.fn((start: [number, number], end: [number, number] = start) => {
+    this.selection = [start, end];
+  });
 
   destroy = jest.fn();
 }
@@ -138,6 +153,75 @@ describe('MarkdownEditorComponent', () => {
     MockEditor.instances[0].options.events?.change?.();
 
     expect(emitted).toEqual(['Updated']);
+  });
+
+  it('inserts a closing code fence after the third backtick and keeps the cursor at the opener', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+    const editor = MockEditor.instances[0];
+    editor.setMarkdown('```');
+    editor.setSelection([1, 4]);
+    editor.setSelection.mockClear();
+
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: '`' }));
+
+    expect(editor.insertText).toHaveBeenCalledWith('\n```');
+    expect(editor.setSelection).toHaveBeenCalledWith([1, 4]);
+  });
+
+  it('does not duplicate an existing closing code fence', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+    const editor = MockEditor.instances[0];
+    editor.setMarkdown('```\n```');
+    editor.setSelection([1, 4]);
+    editor.insertText.mockClear();
+
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: '`' }));
+
+    expect(editor.insertText).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-close a code fence when the third backtick closes an open block', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+    const editor = MockEditor.instances[0];
+    editor.setMarkdown('```ts\nconst answer = 42;\n```');
+    editor.setSelection([3, 4]);
+    editor.insertText.mockClear();
+
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: '`' }));
+
+    expect(editor.insertText).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-close inline backticks or react to other keys', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+    const editor = MockEditor.instances[0];
+    editor.setMarkdown('Text ```');
+    editor.setSelection([1, 9]);
+
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: '`' }));
+    editor.setMarkdown('```');
+    editor.setSelection([1, 4]);
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: 'Enter' }));
+
+    expect(editor.insertText).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-close a code fence for a selection or in WYSIWYG mode', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+    const editor = MockEditor.instances[0];
+    editor.setMarkdown('```');
+    editor.setSelection([1, 1], [1, 4]);
+
+    editor.options.events?.keyup?.('markdown', new KeyboardEvent('keyup', { key: '`' }));
+    editor.setSelection([1, 4]);
+    editor.options.events?.keyup?.('wysiwyg', new KeyboardEvent('keyup', { key: '`' }));
+
+    expect(editor.insertText).not.toHaveBeenCalled();
   });
 
   it('uploads image blobs through EditorImageUploadService', async () => {

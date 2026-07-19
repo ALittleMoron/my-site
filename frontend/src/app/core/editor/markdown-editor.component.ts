@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type Editor from '@toast-ui/editor';
+import type { EditorType, MarkdownPosition, SelectionPosition } from '@toast-ui/editor';
 import { I18nService } from '../i18n/i18n.service';
 import { ThemeService } from '../layout/theme.service';
 import { MARKDOWN_PRISM } from '../markdown/markdown-syntax-highlighter';
@@ -25,6 +26,14 @@ const EDITOR_STYLESHEET_HREFS = [
   '/toastui-editor-dark.css',
   '/toastui-editor-code-syntax-highlight.css',
 ] as const;
+const CODE_FENCE = '```';
+
+type MarkdownSelection = [MarkdownPosition, MarkdownPosition];
+
+interface OpenCodeFence {
+  marker: '`' | '~';
+  length: number;
+}
 
 @Component({
   selector: 'app-markdown-editor',
@@ -91,6 +100,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
             this.valueChange.emit(this.editor?.getMarkdown() ?? '');
           }
         },
+        keyup: (editorType, event) => this.autoCloseCodeFence(editorType, event),
       },
       hooks: {
         addImageBlobHook: (blob, callback) => {
@@ -125,6 +135,41 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     return links.some((link) => link.getAttribute('href') === href);
   }
 
+  private autoCloseCodeFence(editorType: EditorType, event: KeyboardEvent): void {
+    const editor = this.editor;
+    if (!editor || editorType !== 'markdown' || event.key !== '`' || event.isComposing) {
+      return;
+    }
+
+    const selection = editor.getSelection();
+    if (!isMarkdownSelection(selection)) {
+      return;
+    }
+
+    const [start, end] = selection;
+    const [lineNumber, columnNumber] = start;
+    if (
+      lineNumber !== end[0] ||
+      columnNumber !== end[1] ||
+      columnNumber !== CODE_FENCE.length + 1
+    ) {
+      return;
+    }
+
+    const lines = editor.getMarkdown().split(/\r?\n/);
+    const lineIndex = lineNumber - 1;
+    if (
+      lines[lineIndex] !== CODE_FENCE ||
+      lines[lineIndex + 1] === CODE_FENCE ||
+      hasOpenCodeFence(lines, lineIndex)
+    ) {
+      return;
+    }
+
+    editor.insertText(`\n${CODE_FENCE}`);
+    editor.setSelection(start);
+  }
+
   private async resolveEditorLanguage(editorConstructor: typeof Editor): Promise<string> {
     if (this.i18n.language() !== 'ru') {
       return 'en-US';
@@ -133,4 +178,36 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     editorConstructor.setLanguage('ru-RU', ruRu);
     return 'ru-RU';
   }
+}
+
+function isMarkdownSelection(selection: SelectionPosition): selection is MarkdownSelection {
+  return Array.isArray(selection[0]);
+}
+
+function hasOpenCodeFence(lines: string[], endIndex: number): boolean {
+  let openFence: OpenCodeFence | null = null;
+
+  for (let index = 0; index < endIndex; index += 1) {
+    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(lines[index]);
+    if (!match) {
+      continue;
+    }
+
+    const fence = match[1];
+    const marker = fence[0] as OpenCodeFence['marker'];
+    const suffix = match[2];
+    if (!openFence) {
+      if (marker === '`' && suffix.includes('`')) {
+        continue;
+      }
+      openFence = { marker, length: fence.length };
+      continue;
+    }
+
+    if (marker === openFence.marker && fence.length >= openFence.length && suffix.trim() === '') {
+      openFence = null;
+    }
+  }
+
+  return openFence !== null;
 }
