@@ -541,26 +541,104 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Add moderation inbox for suggested matrix questions.
 - [x] Add ToastUI Markdown editing to competency matrix answer and expected-answer fields in the shared matrix question form.
 - [x] Add RU/EN/RU+EN display modes to the shared matrix question form for localized question, answer, and expected-answer fields.
+- [ ] Add a provider-agnostic RU-to-EN translation workspace to the shared matrix question form.
+  - [ ] Add a dedicated translation view with read-only RU source content and editable EN content shown side by side on wide screens and stacked in matching pairs on narrow screens.
+  - [ ] Pair question, answer, interview expected answer, resource name, and resource context fields so the source and translation stay visually connected.
+  - [ ] Add per-field "copy RU source" actions with explicit success, unavailable, and failure feedback.
+  - [ ] Add "copy all RU content for translation" using a structured package that includes stable field and resource identifiers.
+  - [ ] Preserve Markdown, fenced and inline code, URLs, and typed wiki links in translation packages.
+  - [ ] Add structured EN package paste/import with validation and a field-by-field preview before applying changes to the form.
+  - [ ] Show EN translation completeness independently from ordinary non-empty-field validation.
+  - [ ] Warn when normalized RU and EN content is identical, including the queue-created question text that initially populates both languages.
+  - [ ] Allow intentionally language-neutral or identical content to be explicitly reviewed so it does not remain a permanent warning.
+  - [ ] Provide a direct action from translation mode to the EN public preview without changing the current UI language.
 - [x] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.
+  - [ ] Distinguish fields required to save a draft, blockers that prevent publication, and advisory content-health warnings.
+  - [ ] Group live readiness results by structure and metadata, RU content, EN content, and attached resources.
+  - [ ] Show compact per-group and overall progress without hiding the exact missing or suspicious fields.
+  - [ ] Make each readiness item reveal the required RU/EN display mode, scroll to the related control, and move focus to it.
+  - [ ] Keep frontend readiness results aligned with backend publication guards and cover both boundaries with behavioral tests.
+  - [ ] Reuse the same readiness vocabulary in the form, workspace rows, filters, and publication feedback.
 - [x] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
 - [ ] Add a fullscreen single-question queue processing modal that keeps the shared matrix question form wide and shows queue progress/navigation.
+  - [ ] Show the current position and remaining available count within the active filtered queue.
+  - [ ] Add explicit previous and next navigation without mutating skipped queue entries.
+  - [ ] Preserve active queue filters and FIFO context while processing, creating, rejecting, or temporarily leaving for the detail editor.
+  - [ ] Skip claimed questions safely and explain when no further available question matches the active filters.
+  - [ ] Keep the action footer and readiness summary reachable on desktop, narrow screens, and short viewports.
+  - [ ] Move focus into the modal on open, restore it on close, and keep Escape and focus behavior predictable when unsaved changes exist.
 - [x] Add queue-only "create and next", "create and edit", "reject and next", and "skip" actions around the shared matrix question form.
 - [ ] Add queue-only keyboard shortcuts for fast queued question processing.
+  - [ ] Add shortcuts for create and next, create and edit, reject and next, skip, previous, and next.
+  - [ ] Do not trigger queue shortcuts while focus is inside inputs, textareas, selects, Markdown editors, dialogs, or other editable controls.
+  - [ ] Disable shortcuts while requests or confirmation dialogs are pending and prevent duplicate submissions.
+  - [ ] Show a discoverable shortcut reference in the fullscreen processing UI.
 - [ ] Persist queue-only last-used structure, grade, and interview frequency defaults for faster repeated question creation.
+  - [ ] Apply stored defaults only when the queued question does not already provide the corresponding value.
+  - [ ] Scope defaults to the authenticated content manager and keep storage access SSR-safe.
+  - [ ] Ignore or clear stale structure identifiers that no longer exist.
+  - [ ] Let the user reset persisted queue defaults from the processing UI.
 - [ ] Show duplicate/similar-question hints when processing a queued competency matrix question.
+  - [ ] Detect normalized exact matches separately from fuzzy similar-question matches.
+  - [ ] Search across both RU and EN question text and show structure, grade, status, and similarity context.
+  - [ ] Link hints to the existing admin detail page without losing the queued-question draft or queue position.
+  - [ ] Keep hints advisory and allow the manager to continue when the similarity is intentional.
 - [ ] Add search, filters, and sorting to the competency matrix question queue.
+  - [x] Search visible queue question and source metadata case-insensitively.
+  - [x] Filter by sheet, grade, and claim availability with explicit unset choices.
+  - [x] Persist normalized queue filter state in the URL.
+  - [ ] Add sorting while preserving FIFO as the default, including created time, sheet, grade, and claim availability options.
 - [ ] Add the ability to split one queued competency matrix question into multiple queued questions.
 - [x] Add import preview/confirmation for competency matrix question queue imports with duplicate/validation warnings.
 - [ ] Ability to report a typo in the competency matrix
 - [ ] Add moderation inbox for report a typo in the matrix questions.
 - [x] Add owner/admin/moderator content workspace for matrix questions with richer filters, public preview, edit detail route, and dropdown actions.
+- [ ] Add fast matrix question workspace navigation and safe batch actions.
+  - [ ] Add previous and next question navigation on the detail page within the current filtered and sorted workspace selection.
+  - [ ] Preserve the complete workspace query state and return position when navigating through detail pages.
+  - [ ] Make workspace summary cards apply and visibly describe the corresponding draft, missing, dangerous-published, or ready-published filter preset.
+  - [ ] Add multi-row selection that remains understandable across pagination and filter changes.
+  - [ ] Add batch unpublish, grade change, and interview-frequency change actions with confirmation and per-item results.
+  - [ ] Allow batch publication only for ready questions, leave blocked questions unchanged, and report their blockers individually.
+  - [ ] Enforce every batch mutation through the same backend authorization and publication rules as single-item actions.
+- [ ] Add local autosave and draft recovery for competency matrix question authoring.
+  - [ ] Debounce local snapshots of question fields, localized Markdown, structure selection, and attached-resource drafts without saving filter or preview-only UI state.
+  - [ ] Scope snapshots by authenticated account and question ID or queued-question ID so drafts cannot cross users or authoring contexts.
+  - [ ] Show snapshot time and explicit restore or discard actions when a recoverable draft is found.
+  - [ ] Warn when the server version changed after the local snapshot and preview the conflict before restoration.
+  - [ ] Clear recovered data after a successful save or explicit discard and expire abandoned snapshots after a documented retention period.
+  - [ ] Fail safely with visible non-blocking feedback when browser storage is unavailable or full.
+- [ ] Harden existing matrix question management workflows with behavioral regression coverage and manual UX QA.
+  - [ ] Cover workspace filter URL -> detail -> back and previous/next navigation without losing context.
+  - [ ] Cover queue -> draft creation -> RU-to-EN translation -> EN preview -> publication across focused frontend and backend tests.
+  - [ ] Cover unsaved-change, autosave recovery, request failure, retry, and duplicate-submission paths.
+  - [ ] Verify keyboard and focus behavior for create, edit, queue, confirmation, preview, and recovery flows.
+  - [ ] Manually verify the complete management flow through the existing local stack on desktop, narrow mobile, and short viewport layouts.
 - [ ] Add content health checks for matrix questions: stale translations, wiki-link issues, resource issues, and broken external links.
+  - [ ] Detect EN content that became stale after its RU source changed and show which localized fields require review.
+  - [ ] Include identical RU/EN warnings and explicit intentionally-identical review state in health results.
+  - [ ] Detect missing, malformed, or unpublished typed wiki-link targets in both languages.
+  - [ ] Detect missing resource translations, attachment contexts, duplicate URLs, and resources no longer referenced by any question.
+  - [ ] Check external links asynchronously with SSRF-safe URL policy, bounded timeouts, retries, and cached results.
+  - [ ] Add workspace health filters and actionable links that open the affected question and focus the relevant field.
+  - [ ] Keep health analysis advisory for drafts and make any publication-blocking subset explicit and backend-enforced.
 - [ ] Add self-assessment / interview mode with expected-answer reveal.
 - [ ] Track weak matrix topics for later study recommendations.
 - [ ] Add matrix question revision history with diff and restore.
+  - [ ] Record actor, timestamp, operation, publication state, structure, localized content, and attached-resource changes for each saved revision.
+  - [ ] Render field-level and Markdown-aware diffs separately for RU and EN content.
+  - [ ] Show resource attachment, context, metadata, and structure changes alongside text changes.
+  - [ ] Restore a historical version by creating a new auditable revision instead of destructively rewinding history.
+  - [ ] Keep revision reads and restores owner/admin/moderator protected and cover authorization and restore behavior with tests.
 - [ ] Add matrix analytics panel for views, engagement, typo reports, and suggestions.
 - [ ] Add matrix resource library with deduplication, reuse, tagging, and link checks.
+  - [ ] Detect exact and probable duplicate resource URLs before creating a shared resource.
+  - [ ] Search and filter resources by localized name, URL, tag, usage, and link-health state.
+  - [ ] Show every question using a resource and the impact before shared resource metadata is changed.
+  - [ ] Reuse existing localized resource names while keeping per-question RU/EN attachment contexts editable.
+  - [ ] Run link checks asynchronously with SSRF protections and expose last-check time and actionable failure state.
+  - [ ] Support safe merge of duplicate resources while preserving all question attachments and localized contexts.
 
 ### Competency roadmaps
 
