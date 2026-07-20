@@ -142,7 +142,22 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminAgentClients.scope.draftCreate': 'Создание черновиков',
   'adminAgentClients.scopeRequired': 'Выберите хотя бы одно полномочие.',
   'adminAgentClients.csrPem': 'CSR в формате PEM',
-  'adminAgentClients.csrHelp': 'Приватный ключ остаётся на устройстве агента.',
+  'adminAgentClients.csrHelp': 'Вставьте полный PEM-блок CSR.',
+  'adminAgentClients.csrInstructionsTitle': 'Как создать CSR',
+  'adminAgentClients.csrInstructionsBody':
+    'Выполните команду на устройстве агента. Требуется OpenSSL. Она создаст локальный приватный ключ EC P-256 и CSR в формате PEM.',
+  'adminAgentClients.csrPosixTitle': 'Linux/macOS (Bash/Zsh)',
+  'adminAgentClients.csrAdvancedSummary': 'Windows PowerShell и буфер обмена',
+  'adminAgentClients.csrPowerShellTitle': 'Windows PowerShell',
+  'adminAgentClients.csrClipboardHelp':
+    'Команды ниже копируют уже созданный CSR. В Linux/macOS выбирается доступный Wayland, X11 или macOS-инструмент; если его нет, CSR выводится в терминал.',
+  'adminAgentClients.csrPosixClipboardTitle': 'Linux/macOS: скопировать CSR',
+  'adminAgentClients.csrPowerShellClipboardTitle': 'Windows PowerShell: скопировать CSR',
+  'adminAgentClients.csrCopyCommand': 'Копировать команду',
+  'adminAgentClients.csrCommandCopied': 'Команда скопирована.',
+  'adminAgentClients.csrCommandCopyError': 'Не удалось скопировать команду.',
+  'adminAgentClients.csrPrivateKeyWarning':
+    'Сохраните agent.key.pem только на устройстве агента и вставьте только CSR целиком — от BEGIN CERTIFICATE REQUEST до END CERTIFICATE REQUEST.',
   'adminAgentClients.issuedTitle': 'Сертификат выпущен',
   'adminAgentClients.issuedWarning': 'Сохраните сертификат и цепочку сейчас.',
   'adminAgentClients.certificatePem': 'Клиентский сертификат',

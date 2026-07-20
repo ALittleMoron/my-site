@@ -50,6 +50,48 @@ const SCOPE_OPTIONS: readonly ScopeOption[] = [
   { value: 'matrix.draft.create', labelKey: 'adminAgentClients.scope.draftCreate' },
 ];
 
+const POSIX_CSR_COMMAND = [
+  'mkdir agent-credentials',
+  '&& chmod 700 agent-credentials',
+  '&& (cd agent-credentials',
+  '&& umask 077',
+  '&& openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256',
+  '-pkeyopt ec_param_enc:named_curve -out agent.key.pem',
+  "&& openssl req -new -sha256 -key agent.key.pem -subj '/CN=agent' -out agent.csr.pem",
+  '&& cat agent.csr.pem)',
+].join(' ');
+
+const POWERSHELL_CSR_COMMAND = [
+  "$dir='agent-credentials';",
+  'New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null;',
+  '$me=[System.Security.Principal.WindowsIdentity]::GetCurrent().Name;',
+  'icacls $dir /inheritancelevel:r /grant:r "${me}:(OI)(CI)F" | Out-Null;',
+  "if ($LASTEXITCODE -ne 0) { throw 'Failed to protect credential directory' };",
+  'openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256',
+  '-pkeyopt ec_param_enc:named_curve -out "$dir\\agent.key.pem";',
+  "if ($LASTEXITCODE -ne 0) { throw 'OpenSSL key generation failed' };",
+  'openssl req -new -sha256 -key "$dir\\agent.key.pem"',
+  '-subj \'/CN=agent\' -out "$dir\\agent.csr.pem";',
+  "if ($LASTEXITCODE -ne 0) { throw 'OpenSSL CSR generation failed' };",
+  'Get-Content -Raw "$dir\\agent.csr.pem"',
+].join(' ');
+
+const POSIX_CSR_CLIPBOARD_COMMAND = [
+  'if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-copy >/dev/null 2>&1;',
+  'then wl-copy < agent-credentials/agent.csr.pem;',
+  'elif [ -n "${DISPLAY:-}" ] && command -v xclip >/dev/null 2>&1;',
+  'then xclip -selection clipboard < agent-credentials/agent.csr.pem;',
+  'elif [ -n "${DISPLAY:-}" ] && command -v xsel >/dev/null 2>&1;',
+  'then xsel --clipboard --input < agent-credentials/agent.csr.pem;',
+  'elif command -v pbcopy >/dev/null 2>&1;',
+  'then pbcopy < agent-credentials/agent.csr.pem;',
+  'else cat agent-credentials/agent.csr.pem;',
+  'fi',
+].join(' ');
+
+const POWERSHELL_CSR_CLIPBOARD_COMMAND =
+  'Get-Content -Raw .\\agent-credentials\\agent.csr.pem | Set-Clipboard';
+
 const AGENT_AUDIT_PAGE_SIZE = 50;
 
 @Component({
@@ -93,6 +135,10 @@ export class AgentClientsPageComponent implements OnInit {
   readonly auditLoadMoreError = signal(false);
   readonly auditReachedEnd = signal(false);
   readonly scopeOptions = SCOPE_OPTIONS;
+  readonly csrPosixCommand = POSIX_CSR_COMMAND;
+  readonly csrPowerShellCommand = POWERSHELL_CSR_COMMAND;
+  readonly csrPosixClipboardCommand = POSIX_CSR_CLIPBOARD_COMMAND;
+  readonly csrPowerShellClipboardCommand = POWERSHELL_CSR_CLIPBOARD_COMMAND;
   readonly hasClients = computed(() => this.clients().length > 0);
   readonly registrationForm = new FormGroup<AgentRegistrationForm>({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -206,6 +252,26 @@ export class AgentClientsPageComponent implements OnInit {
           this.notifications.error(this.i18n.translate(errorKey));
         },
       });
+  }
+
+  copyCsrCommand(command: string): void {
+    const clipboard = this.document.defaultView?.navigator.clipboard;
+    if (clipboard === undefined) {
+      this.notifications.error(this.i18n.translate('adminAgentClients.csrCommandCopyError'));
+      return;
+    }
+    try {
+      void clipboard.writeText(command).then(
+        () => {
+          this.notifications.success(this.i18n.translate('adminAgentClients.csrCommandCopied'));
+        },
+        () => {
+          this.notifications.error(this.i18n.translate('adminAgentClients.csrCommandCopyError'));
+        },
+      );
+    } catch {
+      this.notifications.error(this.i18n.translate('adminAgentClients.csrCommandCopyError'));
+    }
   }
 
   dismissIssuedCredentials(): void {

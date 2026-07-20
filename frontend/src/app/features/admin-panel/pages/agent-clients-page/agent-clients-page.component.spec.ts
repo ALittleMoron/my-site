@@ -57,6 +57,63 @@ describe('AgentClientsPageComponent', () => {
     ]);
   });
 
+  it('shows local CSR generation guidance with advanced platform options collapsed', () => {
+    fixture.componentInstance.openRegistration();
+    fixture.detectChanges();
+
+    const instructions = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="agent-csr-instructions"]',
+    );
+    const posixCommand = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="agent-csr-posix-command"]',
+    );
+    const advancedOptions = fixture.nativeElement.querySelector<HTMLDetailsElement>(
+      '[data-testid="agent-csr-advanced-options"]',
+    );
+
+    expect(instructions?.textContent).toContain('OpenSSL');
+    expect(instructions?.textContent).toContain('Linux/macOS');
+    expect(instructions?.textContent).toContain('Windows PowerShell');
+    expect(instructions?.textContent).toContain('вставьте только CSR');
+    expect(posixCommand?.textContent).toContain('ec_paramgen_curve:P-256');
+    expect(posixCommand?.textContent).toContain('agent.key.pem');
+    expect(posixCommand?.textContent).toContain('agent.csr.pem');
+    expect(posixCommand?.textContent).not.toContain('\n');
+    expect(advancedOptions?.open).toBe(false);
+    expect(fixture.nativeElement.querySelectorAll('[data-command-copy]')).toHaveLength(4);
+  });
+
+  it('copies the complete command and reports success', async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    setClipboard({ writeText });
+    fixture.componentInstance.openRegistration();
+    fixture.detectChanges();
+    const command = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="agent-csr-posix-command"]',
+    )!.textContent!;
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="agent-csr-copy-posix"]')!
+      .click();
+    await fixture.whenStable();
+
+    expect(writeText).toHaveBeenCalledWith(command);
+    expect(notifications.success).toHaveBeenCalledWith('Команда скопирована.');
+  });
+
+  it('reports when browser clipboard access is unavailable or rejected', async () => {
+    setClipboard(undefined);
+    fixture.componentInstance.copyCsrCommand('command');
+    expect(notifications.error).toHaveBeenCalledWith('Не удалось скопировать команду.');
+
+    notifications.error.mockClear();
+    setClipboard({ writeText: jest.fn().mockRejectedValue(new Error('Denied')) });
+    fixture.componentInstance.copyCsrCommand('command');
+    await fixture.whenStable();
+
+    expect(notifications.error).toHaveBeenCalledWith('Не удалось скопировать команду.');
+  });
+
   it('registers only a CSR and exposes the issued certificate and chain once', () => {
     fixture.componentInstance.openRegistration();
     fixture.componentInstance.registrationForm.controls.name.setValue('runner-codex');
@@ -301,4 +358,11 @@ function client(overrides: Partial<AgentClient> = {}): AgentClient {
     ],
     ...overrides,
   };
+}
+
+function setClipboard(clipboard: Pick<Clipboard, 'writeText'> | undefined): void {
+  Object.defineProperty(window.navigator, 'clipboard', {
+    configurable: true,
+    value: clipboard,
+  });
 }

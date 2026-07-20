@@ -200,6 +200,111 @@
             <label class="form-label" for="agent-client-csr">{{
               'adminAgentClients.csrPem' | t
             }}</label>
+            <section
+              class="border rounded bg-body-tertiary p-3 mb-3"
+              aria-labelledby="agent-csr-instructions-title"
+              data-testid="agent-csr-instructions"
+            >
+              <h4 id="agent-csr-instructions-title" class="h6">
+                {{ 'adminAgentClients.csrInstructionsTitle' | t }}
+              </h4>
+              <p class="small mb-3">{{ 'adminAgentClients.csrInstructionsBody' | t }}</p>
+              <div class="mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <strong id="agent-csr-posix-title" class="small">{{
+                    'adminAgentClients.csrPosixTitle' | t
+                  }}</strong>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    aria-describedby="agent-csr-posix-title"
+                    data-command-copy
+                    data-testid="agent-csr-copy-posix"
+                    (click)="copyCsrCommand(csrPosixCommand)"
+                  >
+                    {{ 'adminAgentClients.csrCopyCommand' | t }}
+                  </button>
+                </div>
+                <pre class="border rounded bg-body-secondary p-2 mb-0 overflow-auto"><code
+                  class="user-select-all"
+                  data-testid="agent-csr-posix-command"
+                >{{ csrPosixCommand }}</code></pre>
+              </div>
+              <details data-testid="agent-csr-advanced-options">
+                <summary class="fw-semibold small">
+                  {{ 'adminAgentClients.csrAdvancedSummary' | t }}
+                </summary>
+                <div class="vstack gap-3 mt-3">
+                  <div>
+                    <div
+                      class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"
+                    >
+                      <strong id="agent-csr-powershell-title" class="small">{{
+                        'adminAgentClients.csrPowerShellTitle' | t
+                      }}</strong>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        aria-describedby="agent-csr-powershell-title"
+                        data-command-copy
+                        (click)="copyCsrCommand(csrPowerShellCommand)"
+                      >
+                        {{ 'adminAgentClients.csrCopyCommand' | t }}
+                      </button>
+                    </div>
+                    <pre class="border rounded bg-body-secondary p-2 mb-0 overflow-auto"><code
+                      class="user-select-all"
+                    >{{ csrPowerShellCommand }}</code></pre>
+                  </div>
+                  <p class="small mb-0">{{ 'adminAgentClients.csrClipboardHelp' | t }}</p>
+                  <div>
+                    <div
+                      class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"
+                    >
+                      <strong id="agent-csr-posix-clipboard-title" class="small">{{
+                        'adminAgentClients.csrPosixClipboardTitle' | t
+                      }}</strong>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        aria-describedby="agent-csr-posix-clipboard-title"
+                        data-command-copy
+                        (click)="copyCsrCommand(csrPosixClipboardCommand)"
+                      >
+                        {{ 'adminAgentClients.csrCopyCommand' | t }}
+                      </button>
+                    </div>
+                    <pre class="border rounded bg-body-secondary p-2 mb-0 overflow-auto"><code
+                      class="user-select-all"
+                    >{{ csrPosixClipboardCommand }}</code></pre>
+                  </div>
+                  <div>
+                    <div
+                      class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2"
+                    >
+                      <strong id="agent-csr-powershell-clipboard-title" class="small">{{
+                        'adminAgentClients.csrPowerShellClipboardTitle' | t
+                      }}</strong>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        aria-describedby="agent-csr-powershell-clipboard-title"
+                        data-command-copy
+                        (click)="copyCsrCommand(csrPowerShellClipboardCommand)"
+                      >
+                        {{ 'adminAgentClients.csrCopyCommand' | t }}
+                      </button>
+                    </div>
+                    <pre class="border rounded bg-body-secondary p-2 mb-0 overflow-auto"><code
+                      class="user-select-all"
+                    >{{ csrPowerShellClipboardCommand }}</code></pre>
+                  </div>
+                </div>
+              </details>
+              <p class="alert alert-warning small py-2 mt-3 mb-0">
+                {{ 'adminAgentClients.csrPrivateKeyWarning' | t }}
+              </p>
+            </section>
             <textarea
               id="agent-client-csr"
               class="form-control font-monospace"
