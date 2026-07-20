@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import {
@@ -30,6 +30,7 @@ describe('AdminArticlesPageComponent', () => {
     deleteArticle: jest.Mock;
   };
   let router: Router;
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     service = {
@@ -46,6 +47,7 @@ describe('AdminArticlesPageComponent', () => {
       unpublishArticle: jest.fn().mockReturnValue(of(undefined)),
       deleteArticle: jest.fn().mockReturnValue(of(undefined)),
     };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [AdminArticlesPageComponent],
@@ -54,6 +56,10 @@ describe('AdminArticlesPageComponent', () => {
         provideI18nTesting(),
         { provide: ArticleWorkspaceService, useValue: service },
         { provide: NotificationService, useValue: { success: jest.fn(), error: jest.fn() } },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
       ],
     }).compileComponents();
 
@@ -80,6 +86,60 @@ describe('AdminArticlesPageComponent', () => {
     expect(
       fixture.nativeElement.querySelector('[data-testid="admin-articles-only-published"]'),
     ).toBeTruthy();
+  });
+
+  it('restores all applied article filters from the URL before the first list request', () => {
+    service.getTags.mockReturnValue(
+      of([
+        {
+          id: 'tag-1',
+          name: 'Angular',
+          slug: 'angular',
+          translations: { ru: { name: 'Angular' }, en: { name: 'Angular' } },
+        } satisfies AdminArticleTag,
+      ]),
+    );
+    service.listArticles.mockReturnValue(of({ ...articleList(), totalPages: 5 }));
+    routeQueryParams.next(
+      convertToParamMap({
+        q: 'router',
+        tag: 'angular',
+        publishedFrom: '2026-01-01',
+        publishedTo: '2026-02-01',
+        onlyPublished: 'true',
+        page: '3',
+      }),
+    );
+
+    fixture.detectChanges();
+
+    expect(service.listArticles).toHaveBeenCalledTimes(1);
+    expect(service.listArticles).toHaveBeenCalledWith({
+      page: 3,
+      pageSize: 20,
+      language: 'ru',
+      onlyPublished: true,
+      tagSlug: 'angular',
+      publishedFrom: '2026-01-01',
+      publishedTo: '2026-02-01',
+      searchQuery: 'router',
+    });
+  });
+
+  it('clamps an out-of-range URL page and reloads the nearest valid page', () => {
+    routeQueryParams.next(convertToParamMap({ page: '9' }));
+
+    fixture.detectChanges();
+
+    expect(service.listArticles.mock.calls.map(([filters]) => filters.page)).toEqual([9, 1]);
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ page: null }),
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
   });
 
   it('publishes an article from the admin workspace', () => {
@@ -116,7 +176,9 @@ describe('AdminArticlesPageComponent', () => {
       .querySelector<HTMLButtonElement>('[data-testid="article-actions-typed-articles-edit"]')
       ?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles', 'typed-articles']);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles', 'typed-articles'], {
+      queryParamsHandling: 'preserve',
+    });
     expect(service.getArticle).not.toHaveBeenCalled();
   });
 

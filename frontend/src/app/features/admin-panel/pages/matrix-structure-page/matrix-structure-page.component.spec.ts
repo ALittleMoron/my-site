@@ -1,6 +1,7 @@
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Subject, of, throwError } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { AdminMatrixStructure } from '../../models/matrix-question-workspace.model';
@@ -21,6 +22,8 @@ describe('MatrixStructurePageComponent', () => {
   let fixture: ComponentFixture<MatrixStructurePageComponent>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
   let notifications: { success: jest.Mock; error: jest.Mock };
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let router: Router;
 
   beforeEach(async () => {
     service = {
@@ -36,15 +39,23 @@ describe('MatrixStructurePageComponent', () => {
       success: jest.fn(),
       error: jest.fn(),
     };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [MatrixStructurePageComponent],
       providers: [
+        provideRouter([]),
         provideI18nTesting(),
         { provide: MatrixQuestionWorkspaceService, useValue: service },
         { provide: NotificationService, useValue: notifications },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
       ],
     }).compileComponents();
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
   it('renders loading and then the loaded structure', () => {
@@ -64,6 +75,25 @@ describe('MatrixStructurePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Питон');
     expect(fixture.nativeElement.textContent).toContain('Основы');
     expect(fixture.nativeElement.textContent).toContain('Стиль');
+  });
+
+  it('restores the selected sheet by stable key and writes sheet changes to the URL', () => {
+    routeQueryParams.next(convertToParamMap({ sheet: 'sql' }));
+    createComponent();
+
+    expect(fixture.componentInstance.selectedSheetId()).toBe(SQL_SHEET_ID);
+    jest.mocked(router.navigate).mockClear();
+
+    fixture.componentInstance.selectSheet(PYTHON_SHEET_ID);
+
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { sheet: 'python' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
   });
 
   it('uses the visible blocks as drag targets without priority action buttons', () => {

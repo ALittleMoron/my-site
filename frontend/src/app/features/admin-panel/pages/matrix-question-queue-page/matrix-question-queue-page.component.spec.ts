@@ -380,7 +380,25 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(
       [],
       expect.objectContaining({
-        queryParams: { grade: null, availability: null },
+        queryParams: { q: null, sheet: null, grade: null, availability: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
+  });
+
+  it('canonicalizes duplicated scalar queue filters', () => {
+    jest.mocked(router.navigate).mockClear();
+
+    routeQueryParamMap.next(convertToParamMap({ q: ['one', 'two'], sheet: ['python', 'sql'] }));
+    fixture.detectChanges();
+
+    expect(inputValue('[data-testid="matrix-queue-filter-search"]')).toBe('');
+    expect(select('[data-testid="matrix-queue-filter-sheet"]').value).toBe('');
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { q: null, sheet: null, grade: null, availability: null },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       }),
@@ -1019,10 +1037,13 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(component.unsavedChangesScope.hasChanges()).toBe(false);
     expect(window.confirm).not.toHaveBeenCalled();
     expect(notificationService.success).toHaveBeenCalledWith('Вопрос создан.');
-    expect(router.navigate).toHaveBeenCalledWith([
-      '/admin-panel/matrix-questions',
-      CREATED_QUESTION_ID,
-    ]);
+    expect(router.navigate).toHaveBeenCalledWith(
+      ['/admin-panel/matrix-questions', CREATED_QUESTION_ID],
+      {
+        queryParams: { returnTo: 'queue' },
+        queryParamsHandling: 'merge',
+      },
+    );
   });
 
   it('does not retain create-and-edit intent after invalid submission', () => {

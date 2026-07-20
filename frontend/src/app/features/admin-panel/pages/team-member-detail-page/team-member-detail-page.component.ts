@@ -205,7 +205,7 @@ export class TeamMemberDetailPageComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigateByUrl('/admin-panel/workspace/team');
+    this.navigateToList();
   }
 
   accountActions(account: ManagedAccount): AdminAction[] {
@@ -423,11 +423,18 @@ export class TeamMemberDetailPageComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.deleted'));
-          this.router.navigateByUrl('/admin-panel/workspace/team');
+          this.navigateToList();
         },
         error: () =>
           this.notifications.error(this.i18n.translate('adminTeamWorkspace.deleteError')),
       });
+  }
+
+  private navigateToList(): void {
+    void this.router.navigate(['/admin-panel/workspace/team'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   }
 
   revokeSession(session: ManagedAccountSession): void {

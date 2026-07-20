@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
-import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
@@ -28,6 +28,7 @@ describe('TeamPageComponent', () => {
     success: jest.Mock;
     error: jest.Mock;
   };
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     service = {
@@ -44,6 +45,7 @@ describe('TeamPageComponent', () => {
       success: jest.fn(),
       error: jest.fn(),
     };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [TeamPageComponent],
@@ -58,11 +60,15 @@ describe('TeamPageComponent', () => {
             currentUser,
           },
         },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
       ],
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(TeamPageComponent);
     fixture.detectChanges();
   });
@@ -73,6 +79,21 @@ describe('TeamPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('AdminUser');
     expect(fixture.nativeElement.textContent).toContain('Администратор');
     expect(fixture.nativeElement.textContent).toContain('Активен');
+  });
+
+  it('restores pagination from the URL before the first request', () => {
+    fixture.destroy();
+    service.listAccounts.mockClear();
+    service.listAccounts.mockReturnValue(
+      of({ ...accountsList([account()]), totalCount: 41, totalPages: 3 }),
+    );
+    routeQueryParams.next(convertToParamMap({ page: '2' }));
+
+    fixture = TestBed.createComponent(TeamPageComponent);
+    fixture.detectChanges();
+
+    expect(service.listAccounts).toHaveBeenCalledTimes(1);
+    expect(service.listAccounts).toHaveBeenCalledWith({ page: 2, pageSize: 20 });
   });
 
   it('renders owner accounts and owner role labels', () => {
@@ -118,7 +139,9 @@ describe('TeamPageComponent', () => {
       isActive: true,
     });
     expect(notifications.success).toHaveBeenCalledWith('Участник создан.');
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/team/NewAdmin');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/workspace/team', 'NewAdmin'], {
+      queryParamsHandling: 'preserve',
+    });
   });
 
   it('guards changed create, role, and password dialogs and accepts exact reverts', () => {

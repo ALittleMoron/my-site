@@ -41,6 +41,8 @@ describe('MatrixQuestionWorkspaceService', () => {
         sheetKeys: ['python', 'sql'],
         grades: ['Junior', 'Senior'],
         interviewFrequencies: ['often', 'rarely'],
+        sectionIds: ['section-1'],
+        subsectionIds: ['subsection-1'],
         sections: ['Core'],
         subsections: ['Syntax'],
         publishStatuses: ['Draft', 'Published'],
@@ -61,6 +63,8 @@ describe('MatrixQuestionWorkspaceService', () => {
     expect(req.request.params.getAll('sheetKeys')).toEqual(['python', 'sql']);
     expect(req.request.params.getAll('grades')).toEqual(['Junior', 'Senior']);
     expect(req.request.params.getAll('interviewFrequencies')).toEqual(['often', 'rarely']);
+    expect(req.request.params.getAll('sectionIds')).toEqual(['section-1']);
+    expect(req.request.params.getAll('subsectionIds')).toEqual(['subsection-1']);
     expect(req.request.params.get('hasMissingFields')).toBe('true');
     req.flush({
       totalCount: 1,
@@ -94,10 +98,10 @@ describe('MatrixQuestionWorkspaceService', () => {
   });
 
   it('loads filter options from the admin endpoint', () => {
-    let firstSubsection = '';
+    let firstSubsectionId = '';
 
     service.getFilterOptions('ru').subscribe((options) => {
-      firstSubsection = options.sheets[0].sections[0].subsections[0];
+      firstSubsectionId = options.sheets[0].sections[0].subsections[0].id;
     });
 
     const req = httpMock.expectOne((r) =>
@@ -110,7 +114,13 @@ describe('MatrixQuestionWorkspaceService', () => {
         {
           key: 'python',
           label: 'Питон',
-          sections: [{ label: 'Основы', subsections: ['Синтаксис'] }],
+          sections: [
+            {
+              id: 'section-1',
+              label: 'Основы',
+              subsections: [{ id: 'subsection-1', label: 'Синтаксис' }],
+            },
+          ],
         },
       ],
       grades: ['Junior'],
@@ -120,7 +130,7 @@ describe('MatrixQuestionWorkspaceService', () => {
       publishStatuses: ['Draft', 'Published'],
     });
 
-    expect(firstSubsection).toBe('Синтаксис');
+    expect(firstSubsectionId).toBe('subsection-1');
   });
 
   it('loads matrix structure from the admin endpoint', () => {

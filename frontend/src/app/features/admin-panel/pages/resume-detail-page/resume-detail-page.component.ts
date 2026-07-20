@@ -422,7 +422,7 @@ export class AdminResumeDetailPageComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigateByUrl('/admin-panel/workspace/resumes');
+    this.navigateToList();
   }
 
   saveResume(): void {
@@ -463,13 +463,20 @@ export class AdminResumeDetailPageComponent implements OnInit {
           this.deleting.set(false);
           this.resumeFormUnsavedSource.commit();
           this.notifications.success(this.i18n.translate('adminResumeWorkspace.deleted'));
-          this.router.navigateByUrl('/admin-panel/workspace/resumes');
+          this.navigateToList();
         },
         error: () => {
           this.deleting.set(false);
           this.notifications.error(this.i18n.translate('adminResumeWorkspace.deleteError'));
         },
       });
+  }
+
+  private navigateToList(): void {
+    void this.router.navigate(['/admin-panel/workspace/resumes'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   }
 
   openExportModal(): void {

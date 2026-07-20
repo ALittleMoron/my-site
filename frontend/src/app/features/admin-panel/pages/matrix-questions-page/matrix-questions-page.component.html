@@ -137,11 +137,11 @@
       <select
         id="matrix-workspace-section"
         class="form-select form-select-sm"
-        formControlName="section"
+        formControlName="sectionId"
       >
         <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (section of sectionOptions(); track section.label) {
-          <option [value]="section.label">{{ section.label }}</option>
+        @for (section of sectionOptions(); track section.id) {
+          <option [value]="section.id">{{ section.label }}</option>
         }
       </select>
     </div>
@@ -152,11 +152,11 @@
       <select
         id="matrix-workspace-subsection"
         class="form-select form-select-sm"
-        formControlName="subsection"
+        formControlName="subsectionId"
       >
         <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (subsection of subsectionOptions(); track subsection) {
-          <option [value]="subsection">{{ subsection }}</option>
+        @for (subsection of subsectionOptions(); track subsection.id) {
+          <option [value]="subsection.id">{{ subsection.label }}</option>
         }
       </select>
     </div>
@@ -279,6 +279,7 @@
                 <a
                   class="d-block fw-semibold"
                   [routerLink]="['/admin-panel/matrix-questions', item.id]"
+                  queryParamsHandling="preserve"
                 >
                   {{ item.question }}
                 </a>

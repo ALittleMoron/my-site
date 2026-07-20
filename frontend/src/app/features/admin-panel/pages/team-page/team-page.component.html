@@ -44,6 +44,7 @@
                 <a
                   class="fw-semibold"
                   [routerLink]="['/admin-panel/workspace/team', account.username]"
+                  queryParamsHandling="preserve"
                 >
                   {{ account.username }}
                 </a>

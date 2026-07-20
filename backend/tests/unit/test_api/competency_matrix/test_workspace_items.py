@@ -14,6 +14,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixFilterSectionOption,
     CompetencyMatrixFilterSheetOption,
+    CompetencyMatrixFilterSubsectionOption,
     CompetencyMatrixMissingFieldEnum,
     CompetencyMatrixWorkspace,
     CompetencyMatrixWorkspaceFilters,
@@ -78,6 +79,8 @@ class TestWorkspaceItemsAPI(ApiTestCase):
             sort="interviewFrequency",
             sheet_keys=["python", "sql"],
             grades=["Junior"],
+            section_ids=[self.factory.core.hex_id(31)],
+            subsection_ids=[self.factory.core.hex_id(41)],
             sections=["Basics"],
             subsections=["Functions"],
             publish_statuses=["Published"],
@@ -125,6 +128,8 @@ class TestWorkspaceItemsAPI(ApiTestCase):
                 search_query="functions",
                 sheet_keys=("python", "sql"),
                 grades=(GradeEnum.JUNIOR,),
+                section_ids=(self.factory.core.hex_id(31),),
+                subsection_ids=(self.factory.core.hex_id(41),),
                 sections=("Basics",),
                 subsections=("Functions",),
                 publish_statuses=(PublishStatusEnum.PUBLISHED,),
@@ -143,8 +148,14 @@ class TestWorkspaceItemsAPI(ApiTestCase):
                     label="Python",
                     sections=[
                         CompetencyMatrixFilterSectionOption(
+                            id=self.factory.core.hex_id(31),
                             label="Basics",
-                            subsections=["Functions"],
+                            subsections=[
+                                CompetencyMatrixFilterSubsectionOption(
+                                    id=self.factory.core.hex_id(41),
+                                    label="Functions",
+                                ),
+                            ],
                         ),
                     ],
                 ),
@@ -164,7 +175,18 @@ class TestWorkspaceItemsAPI(ApiTestCase):
                 {
                     "key": "python",
                     "label": "Python",
-                    "sections": [{"label": "Basics", "subsections": ["Functions"]}],
+                    "sections": [
+                        {
+                            "id": self.factory.core.hex_id(31),
+                            "label": "Basics",
+                            "subsections": [
+                                {
+                                    "id": self.factory.core.hex_id(41),
+                                    "label": "Functions",
+                                },
+                            ],
+                        },
+                    ],
                 },
             ],
             "grades": ["Junior"],

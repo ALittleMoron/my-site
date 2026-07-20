@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { AdminArticleStats } from '../../models/article-workspace.model';
@@ -12,6 +13,7 @@ describe('AdminArticleStatisticsPageComponent', () => {
   let service: {
     getAdminStats: jest.Mock;
   };
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     jest.useFakeTimers();
@@ -19,6 +21,7 @@ describe('AdminArticleStatisticsPageComponent', () => {
     service = {
       getAdminStats: jest.fn().mockReturnValue(of(articleStats())),
     };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
     Object.defineProperty(window.URL, 'createObjectURL', {
       configurable: true,
       value: jest.fn().mockReturnValue('blob:article-statistics'),
@@ -31,10 +34,19 @@ describe('AdminArticleStatisticsPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AdminArticleStatisticsPageComponent],
-      providers: [provideI18nTesting(), { provide: ArticleWorkspaceService, useValue: service }],
+      providers: [
+        provideRouter([]),
+        provideI18nTesting(),
+        { provide: ArticleWorkspaceService, useValue: service },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdminArticleStatisticsPageComponent);
+    jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -54,6 +66,19 @@ describe('AdminArticleStatisticsPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Статистика');
     expect(fixture.nativeElement.textContent).toContain('Typed articles');
     expect(fixture.nativeElement.textContent).toContain('Просмотры: 7');
+  });
+
+  it('restores an explicit statistics range from the URL before loading', () => {
+    routeQueryParams.next(convertToParamMap({ dateFrom: '2026-05-01', dateTo: '2026-05-31' }));
+
+    fixture.detectChanges();
+
+    expect(service.getAdminStats).toHaveBeenCalledTimes(1);
+    expect(service.getAdminStats).toHaveBeenCalledWith({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+      language: 'ru',
+    });
   });
 
   it('updates the date range and refreshes statistics', () => {

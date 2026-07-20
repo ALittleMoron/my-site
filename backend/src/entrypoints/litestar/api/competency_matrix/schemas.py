@@ -17,6 +17,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixFilterSectionOption,
     CompetencyMatrixFilterSheetOption,
+    CompetencyMatrixFilterSubsectionOption,
     CompetencyMatrixItem,
     CompetencyMatrixItemCreateParams,
     CompetencyMatrixItems,
@@ -1187,13 +1188,35 @@ class CompetencyMatrixFilterOptionResponseSchema(CamelCaseSchema):
         return cls(key=schema.key, label=schema.label)
 
 
+class CompetencyMatrixFilterSubsectionOptionResponseSchema(CamelCaseSchema):
+    id: Annotated[str, Field(title="Subsection ID")]
+    label: Annotated[str, Field(title="Subsection")]
+
+    @classmethod
+    def from_domain_schema(cls, *, schema: CompetencyMatrixFilterSubsectionOption) -> Self:
+        return cls(id=schema.id, label=schema.label)
+
+
 class CompetencyMatrixFilterSectionOptionResponseSchema(CamelCaseSchema):
+    id: Annotated[str, Field(title="Section ID")]
     label: Annotated[str, Field(title="Section")]
-    subsections: Annotated[list[str], Field(title="Subsections")]
+    subsections: Annotated[
+        list[CompetencyMatrixFilterSubsectionOptionResponseSchema],
+        Field(title="Subsections"),
+    ]
 
     @classmethod
     def from_domain_schema(cls, *, schema: CompetencyMatrixFilterSectionOption) -> Self:
-        return cls(label=schema.label, subsections=schema.subsections)
+        return cls(
+            id=schema.id,
+            label=schema.label,
+            subsections=[
+                CompetencyMatrixFilterSubsectionOptionResponseSchema.from_domain_schema(
+                    schema=subsection,
+                )
+                for subsection in schema.subsections
+            ],
+        )
 
 
 class CompetencyMatrixFilterSheetOptionResponseSchema(CamelCaseSchema):

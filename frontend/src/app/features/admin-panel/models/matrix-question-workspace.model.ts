@@ -52,6 +52,8 @@ export interface AdminMatrixQuestionWorkspaceFilters {
   sheetKeys?: string[];
   grades?: AdminMatrixGrade[];
   interviewFrequencies?: AdminMatrixInterviewFrequency[];
+  sectionIds?: string[];
+  subsectionIds?: string[];
   sections?: string[];
   subsections?: string[];
   publishStatuses?: AdminMatrixPublishStatus[];
@@ -96,8 +98,14 @@ export interface AdminMatrixFilterOption {
 }
 
 export interface AdminMatrixFilterSectionOption {
+  id: string;
   label: string;
-  subsections: string[];
+  subsections: AdminMatrixFilterSubsectionOption[];
+}
+
+export interface AdminMatrixFilterSubsectionOption {
+  id: string;
+  label: string;
 }
 
 export interface AdminMatrixFilterSheetOption extends AdminMatrixFilterOption {

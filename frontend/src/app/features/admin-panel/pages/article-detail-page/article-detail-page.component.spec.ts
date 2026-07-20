@@ -84,6 +84,7 @@ describe('AdminArticleDetailPageComponent', () => {
       'ru',
     );
     expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles', 'renamed-article'], {
+      queryParamsHandling: 'preserve',
       replaceUrl: true,
     });
     expect(form?.acceptedArticle()?.slug).toBe('renamed-article');
@@ -107,7 +108,10 @@ describe('AdminArticleDetailPageComponent', () => {
     expect(form?.discardAuxiliaryDrafts).toHaveBeenCalled();
     expect(window.confirm).toHaveBeenCalled();
     expect(service.deleteArticle).toHaveBeenCalledWith('typed-articles');
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/articles');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/articles'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   });
 
   it('reloads when the route slug changes without recreating the component', () => {

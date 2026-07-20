@@ -387,6 +387,32 @@ MatrixInterviewFrequenciesQuery: TypeAlias = Annotated[
         max_items=None,
     ),
 ]
+MatrixSectionIdsQuery: TypeAlias = Annotated[
+    list[str] | None,
+    api_query_parameter(
+        name="sectionIds",
+        title="Section IDs",
+        description="Optional stable competency matrix section ID filters.",
+        examples=(["00000000000000000000000000000001"],),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+MatrixSubsectionIdsQuery: TypeAlias = Annotated[
+    list[str] | None,
+    api_query_parameter(
+        name="subsectionIds",
+        title="Subsection IDs",
+        description="Optional stable competency matrix subsection ID filters.",
+        examples=(["00000000000000000000000000000001"],),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
 MatrixSectionsQuery: TypeAlias = Annotated[
     list[str] | None,
     api_query_parameter(

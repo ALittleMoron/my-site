@@ -89,7 +89,7 @@ describe('TeamMemberDetailPageComponent', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(TeamMemberDetailPageComponent);
     fixture.detectChanges();
   });
@@ -243,7 +243,10 @@ describe('TeamMemberDetailPageComponent', () => {
     expect(service.deleteAccount).toHaveBeenCalledWith('AdminUser');
     expect(notifications.success).toHaveBeenCalledWith('Участник деактивирован.');
     expect(notifications.success).toHaveBeenCalledWith('Участник удалён.');
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/team');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/workspace/team'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   });
 
   it('hides unavailable self actions but allows self password updates', () => {

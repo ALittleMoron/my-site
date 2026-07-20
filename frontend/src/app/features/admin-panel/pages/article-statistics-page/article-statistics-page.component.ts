@@ -9,12 +9,20 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { AdminArticleStats } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
 import { AdminArticleStatisticsPanelComponent } from './components/article-statistics-panel/article-statistics-panel.component';
+import {
+  canonicalQueryMatches,
+  readIsoDateQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
+
+const ARTICLE_STATISTICS_QUERY_KEYS = ['dateFrom', 'dateTo'] as const;
 
 @Component({
   selector: 'app-admin-article-statistics-page',
@@ -28,6 +36,12 @@ export class AdminArticleStatisticsPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private currentQueryParams: ParamMap | null = null;
+  private skipNextCanonicalLoad: Record<string, string | null> | null = null;
+  private appliedDateFrom = '';
+  private appliedDateTo = '';
 
   readonly stats = signal<AdminArticleStats | null>(null);
   readonly loading = signal(false);
@@ -73,7 +87,7 @@ export class AdminArticleStatisticsPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadStats();
+    this.setupQueryState();
   }
 
   setDateFrom(value: string): void {
@@ -86,12 +100,53 @@ export class AdminArticleStatisticsPageComponent implements OnInit {
 
   loadStats(): void {
     if (this.dateFrom().trim() === '' || this.dateTo().trim() === '') return;
+    const canonical = { dateFrom: this.dateFrom(), dateTo: this.dateTo() };
+    if (
+      this.currentQueryParams !== null &&
+      canonicalQueryMatches(this.currentQueryParams, ARTICLE_STATISTICS_QUERY_KEYS, canonical)
+    ) {
+      this.loadAppliedStats();
+      return;
+    }
+    this.appliedDateFrom = canonical.dateFrom;
+    this.appliedDateTo = canonical.dateTo;
+    this.replaceQueryAndLoad(canonical);
+  }
+
+  private setupQueryState(): void {
+    const defaultDateFrom = this.dateFrom();
+    const defaultDateTo = this.dateTo();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      const dateFrom = readIsoDateQuery(params, 'dateFrom').value ?? defaultDateFrom;
+      const dateTo = readIsoDateQuery(params, 'dateTo').value ?? defaultDateTo;
+      const canonical = { dateFrom, dateTo };
+      if (
+        this.skipNextCanonicalLoad !== null &&
+        canonicalQueryMatches(params, ARTICLE_STATISTICS_QUERY_KEYS, this.skipNextCanonicalLoad)
+      ) {
+        this.skipNextCanonicalLoad = null;
+        return;
+      }
+      this.dateFrom.set(dateFrom);
+      this.dateTo.set(dateTo);
+      this.appliedDateFrom = dateFrom;
+      this.appliedDateTo = dateTo;
+      if (!canonicalQueryMatches(params, ARTICLE_STATISTICS_QUERY_KEYS, canonical)) {
+        this.replaceQueryAndLoad(canonical);
+        return;
+      }
+      this.loadAppliedStats();
+    });
+  }
+
+  private loadAppliedStats(): void {
     this.loading.set(true);
     this.error.set(null);
     this.articleWorkspace
       .getAdminStats({
-        dateFrom: this.dateFrom(),
-        dateTo: this.dateTo(),
+        dateFrom: this.appliedDateFrom,
+        dateTo: this.appliedDateTo,
         language: this.language(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -105,6 +160,12 @@ export class AdminArticleStatisticsPageComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  private replaceQueryAndLoad(canonical: Record<string, string>): void {
+    this.skipNextCanonicalLoad = canonical;
+    void replaceAdminQueryParams(this.router, this.route, canonical);
+    this.loadAppliedStats();
   }
 
   exportStatsCsv(): void {

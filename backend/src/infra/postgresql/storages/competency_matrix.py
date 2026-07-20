@@ -36,6 +36,7 @@ from core.competency_matrix.schemas import (
     CompetencyMatrixFilterOptions,
     CompetencyMatrixFilterSectionOption,
     CompetencyMatrixFilterSheetOption,
+    CompetencyMatrixFilterSubsectionOption,
     CompetencyMatrixItem,
     CompetencyMatrixItemFilters,
     CompetencyMatrixItemStructure,
@@ -366,19 +367,29 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             )
             if not row.section:
                 continue
-            subsections = sheet["sections"].setdefault(row.section, {})
+            section = sheet["sections"].setdefault(
+                row.section_id,
+                {"label": row.section, "subsections": {}},
+            )
             if row.subsection:
-                subsections.setdefault(row.subsection, None)
+                section["subsections"].setdefault(row.subsection_id, row.subsection)
         return [
             CompetencyMatrixFilterSheetOption(
                 key=sheet_key,
                 label=sheet["label"],
                 sections=[
                     CompetencyMatrixFilterSectionOption(
-                        label=section,
-                        subsections=list(subsections),
+                        id=section_id,
+                        label=section["label"],
+                        subsections=[
+                            CompetencyMatrixFilterSubsectionOption(
+                                id=subsection_id,
+                                label=subsection_label,
+                            )
+                            for subsection_id, subsection_label in section["subsections"].items()
+                        ],
                     )
-                    for section, subsections in sheet["sections"].items()
+                    for section_id, section in sheet["sections"].items()
                 ],
             )
             for sheet_key, sheet in sheets.items()
@@ -718,6 +729,10 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             conditions.append(
                 CompetencyMatrixItemModel.interview_frequency.in_(filters.interview_frequencies),
             )
+        if filters.section_ids:
+            conditions.append(CompetencyMatrixSectionModel.id.in_(filters.section_ids))
+        if filters.subsection_ids:
+            conditions.append(CompetencyMatrixSubsectionModel.id.in_(filters.subsection_ids))
         if filters.sections:
             conditions.append(
                 self._section_column(language=filters.language).in_(filters.sections),

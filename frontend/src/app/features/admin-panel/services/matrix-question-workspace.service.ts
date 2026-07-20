@@ -202,6 +202,8 @@ function workspaceQueryParams(filters: AdminMatrixQuestionWorkspaceFilters): Que
   setOptionalArray(params, 'sheetKeys', filters.sheetKeys);
   setOptionalArray(params, 'grades', filters.grades);
   setOptionalArray(params, 'interviewFrequencies', filters.interviewFrequencies);
+  setOptionalArray(params, 'sectionIds', filters.sectionIds);
+  setOptionalArray(params, 'subsectionIds', filters.subsectionIds);
   setOptionalArray(params, 'sections', filters.sections);
   setOptionalArray(params, 'subsections', filters.subsections);
   setOptionalArray(params, 'publishStatuses', filters.publishStatuses);

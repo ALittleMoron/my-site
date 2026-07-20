@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -37,6 +38,13 @@ import {
   trimRequired,
   validationMessage,
 } from '../../utils/admin-validation';
+import {
+  canonicalQueryMatches,
+  readOptionalStringQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
+
+const MATRIX_STRUCTURE_QUERY_KEYS = ['sheet'] as const;
 
 type MatrixCreateKind = 'sheet' | 'section' | 'subsection';
 type MatrixSheetCreateField = 'key' | 'nameRu' | 'nameEn';
@@ -77,7 +85,11 @@ export class MatrixStructurePageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(this.destroyRef);
+  private currentQueryParams: ParamMap | null = null;
+  private structureLoaded = false;
 
   readonly structure = signal<AdminMatrixStructure>({ sheets: [] });
   readonly selectedSheetId = signal<string | null>(null);
@@ -143,6 +155,7 @@ export class MatrixStructurePageComponent implements OnInit {
       this.nameCreateFormValue,
       this.nameCreateActive,
     );
+    this.setupQueryState();
     this.loadStructure();
   }
 
@@ -155,7 +168,8 @@ export class MatrixStructurePageComponent implements OnInit {
       .subscribe({
         next: (structure) => {
           this.structure.set(structure);
-          this.selectedSheetId.set(this.nextSelectedSheetId(structure));
+          this.structureLoaded = true;
+          this.applyQueryState();
           this.structureUnsavedSource?.commit();
           this.loading.set(false);
         },
@@ -168,7 +182,10 @@ export class MatrixStructurePageComponent implements OnInit {
   }
 
   selectSheet(sheetId: string): void {
-    this.selectedSheetId.set(sheetId);
+    const sheet = this.structure().sheets.find((item) => item.id === sheetId);
+    if (sheet === undefined) return;
+    this.selectedSheetId.set(sheet.id);
+    this.replaceSelectedSheet(sheet.key);
   }
 
   openSheetCreateDialog(): void {
@@ -449,7 +466,10 @@ export class MatrixStructurePageComponent implements OnInit {
       .subscribe({
         next: (structure) => {
           this.structure.set(structure);
-          this.selectedSheetId.set(this.selectedSheetIdAfterRefresh(structure, preferredSheetId));
+          const selectedSheetId = this.selectedSheetIdAfterRefresh(structure, preferredSheetId);
+          this.selectedSheetId.set(selectedSheetId);
+          const selectedSheet = structure.sheets.find((sheet) => sheet.id === selectedSheetId);
+          this.replaceSelectedSheet(selectedSheet?.key ?? null);
         },
         error: (err: ApiError) => {
           this.error.set(err);
@@ -504,6 +524,39 @@ export class MatrixStructurePageComponent implements OnInit {
     const selectedId = this.selectedSheetId();
     const existing = structure.sheets.find((sheet) => sheet.id === selectedId);
     return existing?.id ?? structure.sheets[0]?.id ?? null;
+  }
+
+  private setupQueryState(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      if (this.structureLoaded) this.applyQueryState();
+    });
+  }
+
+  private applyQueryState(): void {
+    const params = this.currentQueryParams;
+    if (params === null) return;
+    const requestedSheetKey = readOptionalStringQuery(params, 'sheet').value;
+    const selectedSheet =
+      this.structure().sheets.find((sheet) => sheet.key === requestedSheetKey) ??
+      this.structure().sheets[0] ??
+      null;
+    this.selectedSheetId.set(selectedSheet?.id ?? null);
+    const canonical = { sheet: selectedSheet?.key ?? null };
+    if (!canonicalQueryMatches(params, MATRIX_STRUCTURE_QUERY_KEYS, canonical)) {
+      void replaceAdminQueryParams(this.router, this.route, canonical);
+    }
+  }
+
+  private replaceSelectedSheet(sheetKey: string | null): void {
+    const canonical = { sheet: sheetKey };
+    if (
+      this.currentQueryParams !== null &&
+      canonicalQueryMatches(this.currentQueryParams, MATRIX_STRUCTURE_QUERY_KEYS, canonical)
+    ) {
+      return;
+    }
+    void replaceAdminQueryParams(this.router, this.route, canonical);
   }
 
   private currentLanguage(): 'ru' | 'en' {

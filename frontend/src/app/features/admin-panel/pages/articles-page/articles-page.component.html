@@ -108,7 +108,11 @@
         @for (article of articles()!.articles; track article.slug) {
           <tr>
             <td>
-              <a class="fw-semibold" [routerLink]="['/admin-panel/articles', article.slug]">
+              <a
+                class="fw-semibold"
+                [routerLink]="['/admin-panel/articles', article.slug]"
+                queryParamsHandling="preserve"
+              >
                 {{ article.title }}
               </a>
               <span class="d-block small text-body-secondary">{{ article.slug }}</span>

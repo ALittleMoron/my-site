@@ -627,8 +627,19 @@ class TestCompetencyMatrixStorage(StorageTestCase):
             attr="label",
         ) == ["Python", "SQL", "Python draft"]
         python_draft = next(sheet for sheet in options.sheets if sheet.key == "python-draft")
-        assert [(section.label, section.subsections) for section in python_draft.sections] == [
-            ("Drafts", ["Queue"]),
+        assert [
+            (
+                section.id,
+                section.label,
+                [(subsection.id, subsection.label) for subsection in section.subsections],
+            )
+            for section in python_draft.sections
+        ] == [
+            (
+                self.factory.core.hex_id(3),
+                "Drafts",
+                [(self.factory.core.hex_id(4), "Queue")],
+            ),
         ]
         assert GradeEnum.JUNIOR in options.grades
         assert InterviewFrequencyEnum.OFTEN in options.interview_frequencies
@@ -636,6 +647,24 @@ class TestCompetencyMatrixStorage(StorageTestCase):
         assert "Queue" in options.subsections
         assert PublishStatusEnum.DRAFT in options.publish_statuses
         assert PublishStatusEnum.PUBLISHED in options.publish_statuses
+
+    async def test_list_workspace_items_filters_by_structure_ids_in_any_language(self) -> None:
+        expected_slugs = ["1"]
+        for language in LanguageEnum:
+            items, total_count, summary = await self.storage.list_competency_matrix_workspace_items(
+                filters=CompetencyMatrixWorkspaceFilters(
+                    page=1,
+                    page_size=20,
+                    language=language,
+                    sort=CompetencyMatrixWorkspaceSortEnum.NEWEST,
+                    section_ids=(self.factory.core.hex_id(1),),
+                    subsection_ids=(self.factory.core.hex_id(1),),
+                ),
+            )
+
+            assert total_count == 1
+            assert summary.total == 1
+            assert self.collections.slugs(items) == expected_slugs
 
     async def test_list_workspace_items_filters_and_sorts_by_interview_frequency(self) -> None:
         await self.storage_helper.create_competency_matrix_items(

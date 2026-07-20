@@ -21,12 +21,14 @@ const READY_QUESTION_ID = '00000000000000000000000000000008';
 describe('MatrixQuestionDetailPageComponent', () => {
   let fixture: ComponentFixture<MatrixQuestionDetailPageComponent>;
   let routeParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let routeQueryParams: ReturnType<typeof convertToParamMap>;
   let service: jest.Mocked<MatrixQuestionWorkspaceService>;
   let router: Router;
   let notifications: { success: jest.Mock; error: jest.Mock };
 
   beforeEach(async () => {
     routeParams = new BehaviorSubject(convertToParamMap({ id: INCOMPLETE_QUESTION_ID }));
+    routeQueryParams = convertToParamMap({});
     service = {
       getQuestion: jest.fn().mockReturnValue(of(incompleteQuestion())),
       updateQuestion: jest.fn().mockReturnValue(of(readyQuestion('Draft'))),
@@ -47,6 +49,14 @@ describe('MatrixQuestionDetailPageComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: routeParams.asObservable(),
+            snapshot: {
+              get paramMap() {
+                return routeParams.value;
+              },
+              get queryParamMap() {
+                return routeQueryParams;
+              },
+            },
           },
         },
       ],
@@ -58,7 +68,7 @@ describe('MatrixQuestionDetailPageComponent', () => {
       .compileComponents();
 
     router = TestBed.inject(Router);
-    jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(MatrixQuestionDetailPageComponent);
     fixture.detectChanges();
   });
@@ -140,7 +150,23 @@ describe('MatrixQuestionDetailPageComponent', () => {
     expect(service.unpublishQuestion).toHaveBeenCalledWith(READY_QUESTION_ID);
     expect(window.confirm).toHaveBeenCalled();
     expect(service.deleteQuestion).toHaveBeenCalledWith(READY_QUESTION_ID);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/matrix-questions');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions'], {
+      queryParams: { returnTo: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  });
+
+  it('returns queue-originated questions to the queue with its query context', () => {
+    routeQueryParams = convertToParamMap({ returnTo: 'queue', q: 'typing', sheet: 'python' });
+
+    fixture.componentInstance.goBack();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-question-queue'], {
+      queryParams: { returnTo: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   });
 
   function openDetailActions(): void {

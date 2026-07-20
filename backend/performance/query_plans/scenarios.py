@@ -738,6 +738,8 @@ async def run_list_competency_matrix_workspace_items(session: AsyncSession) -> N
             sheet_keys=("python",),
             grades=(GradeEnum.JUNIOR,),
             interview_frequencies=(InterviewFrequencyEnum.OFTEN,),
+            section_ids=(PYTHON_SECTION_ID,),
+            subsection_ids=(PYTHON_SUBSECTION_ID,),
             sections=(),
             subsections=(),
             publish_statuses=(PublishStatusEnum.PUBLISHED,),

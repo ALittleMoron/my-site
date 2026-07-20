@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, Subject, throwError } from 'rxjs';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of, Subject, throwError } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { ArticleTag } from '../../models/article-workspace.model';
@@ -18,6 +19,8 @@ describe('ArticleTagsPageComponent', () => {
     deleteTag: jest.Mock;
   };
   let notifications: { success: jest.Mock; error: jest.Mock };
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let router: Router;
 
   beforeEach(async () => {
     articlesService = {
@@ -33,15 +36,23 @@ describe('ArticleTagsPageComponent', () => {
       deleteTag: jest.fn().mockReturnValue(of(undefined)),
     };
     notifications = { success: jest.fn(), error: jest.fn() };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [ArticleTagsPageComponent],
       providers: [
+        provideRouter([]),
         { provide: ArticleWorkspaceService, useValue: articlesService },
         { provide: NotificationService, useValue: notifications },
         provideI18nTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
       ],
     }).compileComponents();
+    router = TestBed.inject(Router);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
   });
 
   it('renders tags without status or deleted-tag controls', () => {
@@ -59,6 +70,29 @@ describe('ArticleTagsPageComponent', () => {
     expect(text()).not.toContain('Активен');
     expect(text()).not.toContain('Удалён');
   });
+
+  it('restores search from the URL and debounces URL updates', fakeAsync(() => {
+    routeQueryParams.next(convertToParamMap({ q: 'django' }));
+    render();
+
+    expect(text()).not.toContain('Питон');
+    expect(text()).toContain('Джанго');
+    jest.mocked(router.navigate).mockClear();
+
+    fixture.componentInstance.setSearchQuery('python');
+    tick(249);
+    expect(router.navigate).not.toHaveBeenCalled();
+    tick(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { q: 'python' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
+    );
+  }));
 
   it('renders loading, error, and empty states', () => {
     const tags$ = new Subject<ArticleTag[]>();

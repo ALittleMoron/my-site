@@ -215,14 +215,27 @@ export class MatrixQuestionDetailPageComponent implements OnInit {
         next: () => {
           this.unsavedChangesScope.commit();
           this.notifications.success(this.i18n.translate('matrix.notify.deleted'));
-          void this.router.navigateByUrl('/admin-panel/matrix-questions');
+          this.navigateToSourceList();
         },
         error: () => this.notifications.error(this.i18n.translate('matrix.notify.deleteError')),
       });
   }
 
   goBack(): void {
-    void this.router.navigateByUrl('/admin-panel/matrix-questions');
+    this.navigateToSourceList();
+  }
+
+  private navigateToSourceList(): void {
+    const returnToValues = this.route.snapshot.queryParamMap.getAll('returnTo');
+    const destination =
+      returnToValues.length === 1 && returnToValues[0] === 'queue'
+        ? ['/admin-panel/matrix-question-queue']
+        : ['/admin-panel/matrix-questions'];
+    void this.router.navigate(destination, {
+      queryParams: { returnTo: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private missingFieldLabel(field: string): string {

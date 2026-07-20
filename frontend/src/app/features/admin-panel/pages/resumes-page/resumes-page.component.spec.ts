@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -23,6 +23,7 @@ describe('AdminResumesPageComponent', () => {
     success: jest.Mock;
     error: jest.Mock;
   };
+  let routeQueryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(async () => {
     service = {
@@ -33,6 +34,7 @@ describe('AdminResumesPageComponent', () => {
       success: jest.fn(),
       error: jest.fn(),
     };
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
       imports: [AdminResumesPageComponent],
@@ -41,11 +43,15 @@ describe('AdminResumesPageComponent', () => {
         provideI18nTesting(),
         { provide: ResumeWorkspaceService, useValue: service },
         { provide: NotificationService, useValue: notifications },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: routeQueryParams.asObservable() },
+        },
       ],
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(AdminResumesPageComponent);
     fixture.detectChanges();
   });
@@ -61,6 +67,21 @@ describe('AdminResumesPageComponent', () => {
       formatExpectedDate(resume().createdAt, 'ru-RU'),
     );
     expect(fixture.nativeElement.textContent).not.toContain(resume().updatedAt);
+  });
+
+  it('restores pagination from the URL before the first request', () => {
+    fixture.destroy();
+    service.listResumes.mockClear();
+    service.listResumes.mockReturnValue(
+      of({ ...resumesList([resume()]), totalCount: 41, totalPages: 3 }),
+    );
+    routeQueryParams.next(convertToParamMap({ page: '2' }));
+
+    fixture = TestBed.createComponent(AdminResumesPageComponent);
+    fixture.detectChanges();
+
+    expect(service.listResumes).toHaveBeenCalledTimes(1);
+    expect(service.listResumes).toHaveBeenCalledWith({ page: 2, pageSize: 20 });
   });
 
   it('renders resume dates in the selected language and preserves ISO values', () => {
@@ -176,9 +197,9 @@ describe('AdminResumesPageComponent', () => {
       }),
     } satisfies ResumePayload);
     expect(notifications.success).toHaveBeenCalledWith('Резюме сохранено.');
-    expect(router.navigateByUrl).toHaveBeenCalledWith(
-      `/admin-panel/workspace/resumes/${RESUME_ID}`,
-    );
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/workspace/resumes', RESUME_ID], {
+      queryParamsHandling: 'preserve',
+    });
   });
 
   it('marks required create fields and clears red border after a required value is entered', () => {

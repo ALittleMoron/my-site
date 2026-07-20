@@ -41,7 +41,11 @@
           @for (resume of resumes()!.resumes; track resume.id) {
             <tr>
               <td>
-                <a class="fw-semibold" [routerLink]="['/admin-panel/workspace/resumes', resume.id]">
+                <a
+                  class="fw-semibold"
+                  [routerLink]="['/admin-panel/workspace/resumes', resume.id]"
+                  queryParamsHandling="preserve"
+                >
                   {{ resume.title }}
                 </a>
                 <span class="badge text-bg-secondary ms-2">

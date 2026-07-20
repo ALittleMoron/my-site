@@ -10,7 +10,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, finalize } from 'rxjs';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { Observable, Subject, debounceTime, finalize } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -39,6 +40,15 @@ import {
   trimRequired,
   validationMessage,
 } from '../../utils/admin-validation';
+import {
+  canonicalQueryMatches,
+  queryString,
+  readOptionalStringQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
+
+const ARTICLE_TAG_QUERY_KEYS = ['q'] as const;
+const SEARCH_QUERY_DEBOUNCE_MS = 250;
 
 type ArticleTagFormField = keyof ArticleTagFormControls;
 
@@ -71,7 +81,11 @@ export class ArticleTagsPageComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+  private readonly searchQueryChanges = new Subject<string>();
+  private currentQueryParams: ParamMap | null = null;
   private slugEdited = false;
 
   readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
@@ -131,6 +145,7 @@ export class ArticleTagsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupQueryState();
     this.loadTags();
   }
 
@@ -155,6 +170,30 @@ export class ArticleTagsPageComponent implements OnInit {
 
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
+    this.searchQueryChanges.next(value);
+  }
+
+  private setupQueryState(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      const searchQuery = readOptionalStringQuery(params, 'q').value ?? '';
+      this.searchQuery.set(searchQuery);
+      const canonical = { q: queryString(searchQuery) };
+      if (!canonicalQueryMatches(params, ARTICLE_TAG_QUERY_KEYS, canonical)) {
+        void replaceAdminQueryParams(this.router, this.route, canonical);
+      }
+    });
+    this.searchQueryChanges
+      .pipe(debounceTime(SEARCH_QUERY_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
+      .subscribe((searchQuery) => {
+        const canonical = { q: queryString(searchQuery) };
+        if (
+          this.currentQueryParams === null ||
+          !canonicalQueryMatches(this.currentQueryParams, ARTICLE_TAG_QUERY_KEYS, canonical)
+        ) {
+          void replaceAdminQueryParams(this.router, this.route, canonical);
+        }
+      });
   }
 
   openCreate(): void {

@@ -632,11 +632,6 @@ Flashcards should be implemented strictly after auth implementation for common u
   - [x] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.
   - [x] Clarify which created external resource context field is Russian and which is English in the competency matrix question form.
 
-## Documentation
-
-- [x] Add parameter details to the API and include examples and other fields.
-- [ ] Add public architecture, quality, and security articles as engineering documentation.
-
 ## Refactoring
 
 - [ ] Rename `interview_expected_answer` / `interviewExpectedAnswer` everywhere to
@@ -655,4 +650,4 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Refactor core exceptions to inherit only from `Exception`/domain exception bases and move
   `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
 - [ ] Remove application-level id generators and rely on database-generated identifiers.
-- [ ] Move functions from endooints (to response classes or to other classes)
+- [ ] Move functions from endpoints (to response classes or to other classes)

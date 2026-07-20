@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -35,8 +35,15 @@ import {
   trimRequired,
   validationMessage,
 } from '../../utils/admin-validation';
+import {
+  canonicalQueryMatches,
+  queryNumber,
+  readPositiveIntegerQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
 
 const PAGE_SIZE = 20;
+const RESUMES_QUERY_KEYS = ['page'] as const;
 type RequiredCreateField = 'title' | 'language' | 'fullName' | 'role' | 'summary';
 
 interface ResumeLanguageOption {
@@ -70,12 +77,15 @@ export class AdminResumesPageComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly unsavedChangesScope = inject(AdminUnsavedChangesService).createScope(
     this.destroyRef,
   );
   private readonly createFormUnsavedSource: AdminUnsavedChangesSource;
+  private currentQueryParams: ParamMap | null = null;
+  private skipNextCanonicalLoad: Record<string, string | null> | null = null;
 
   readonly page = signal(1);
   readonly resumes = signal<Resumes | null>(null);
@@ -115,7 +125,7 @@ export class AdminResumesPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadResumes();
+    this.setupQueryState();
   }
 
   loadResumes(): void {
@@ -126,6 +136,11 @@ export class AdminResumesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resumes) => {
+          const lastPage = Math.max(1, resumes.totalPages);
+          if (this.page() > lastPage) {
+            this.commitPage(lastPage);
+            return;
+          }
           this.resumes.set(resumes);
           this.loading.set(false);
         },
@@ -139,14 +154,12 @@ export class AdminResumesPageComponent implements OnInit {
 
   previousPage(): void {
     if (this.page() <= 1) return;
-    this.page.update((page) => page - 1);
-    this.loadResumes();
+    this.commitPage(this.page() - 1);
   }
 
   nextPage(): void {
     if (this.page() >= (this.resumes()?.totalPages ?? 1)) return;
-    this.page.update((page) => page + 1);
-    this.loadResumes();
+    this.commitPage(this.page() + 1);
   }
 
   openCreateDialog(): void {
@@ -189,7 +202,9 @@ export class AdminResumesPageComponent implements OnInit {
           this.createFormUnsavedSource.commit();
           this.createDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminResumeWorkspace.saved'));
-          this.router.navigateByUrl(`/admin-panel/workspace/resumes/${resume.id}`);
+          void this.router.navigate(['/admin-panel/workspace/resumes', resume.id], {
+            queryParamsHandling: 'preserve',
+          });
         },
         error: (err: ApiError) => {
           this.createError.set(err);
@@ -197,6 +212,46 @@ export class AdminResumesPageComponent implements OnInit {
           this.notifications.error(this.i18n.translate('adminResumeWorkspace.saveError'));
         },
       });
+  }
+
+  private setupQueryState(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      const page = readPositiveIntegerQuery(params, 'page', 1).value;
+      const canonical = { page: queryNumber(page, 1) };
+      if (
+        this.skipNextCanonicalLoad !== null &&
+        canonicalQueryMatches(params, RESUMES_QUERY_KEYS, this.skipNextCanonicalLoad)
+      ) {
+        this.skipNextCanonicalLoad = null;
+        return;
+      }
+      this.page.set(page);
+      if (!canonicalQueryMatches(params, RESUMES_QUERY_KEYS, canonical)) {
+        this.replacePageAndLoad(page, canonical);
+        return;
+      }
+      this.loadResumes();
+    });
+  }
+
+  private commitPage(page: number): void {
+    const canonical = { page: queryNumber(page, 1) };
+    if (
+      this.currentQueryParams !== null &&
+      canonicalQueryMatches(this.currentQueryParams, RESUMES_QUERY_KEYS, canonical)
+    ) {
+      this.loadResumes();
+      return;
+    }
+    this.replacePageAndLoad(page, canonical);
+  }
+
+  private replacePageAndLoad(page: number, canonical: Record<string, string | null>): void {
+    this.page.set(page);
+    this.skipNextCanonicalLoad = canonical;
+    void replaceAdminQueryParams(this.router, this.route, canonical);
+    this.loadResumes();
   }
 
   completedSections(resume: Resume): number {

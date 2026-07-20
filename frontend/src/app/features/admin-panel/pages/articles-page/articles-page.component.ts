@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -30,8 +30,35 @@ import {
   AdminActionsDropdownComponent,
 } from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
 import { ArticleFormComponent } from './components/article-form/article-form.component';
+import {
+  canonicalQueryMatches,
+  queryNumber,
+  queryString,
+  readBooleanQuery,
+  readIsoDateQuery,
+  readOptionalStringQuery,
+  readPositiveIntegerQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
 
 const PAGE_SIZE = 20;
+const ARTICLE_QUERY_KEYS = [
+  'q',
+  'tag',
+  'publishedFrom',
+  'publishedTo',
+  'onlyPublished',
+  'page',
+] as const;
+
+interface ArticleQueryState {
+  searchQuery: string | null;
+  tagSlug: string | null;
+  publishedFrom: string | null;
+  publishedTo: string | null;
+  onlyPublished: boolean;
+  page: number;
+}
 
 @Component({
   selector: 'app-admin-articles-page',
@@ -56,7 +83,11 @@ export class AdminArticlesPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly unsavedChanges = inject(AdminUnsavedChangesService);
+  private appliedState: ArticleQueryState = emptyArticleQueryState();
+  private currentQueryParams: ParamMap | null = null;
+  private skipNextCanonicalLoad: Record<string, string | null> | null = null;
 
   readonly unsavedChangesScope = this.unsavedChanges.createScope(this.destroyRef);
 
@@ -75,9 +106,8 @@ export class AdminArticlesPageComponent implements OnInit {
   readonly formError = signal<ApiError | null>(null);
 
   ngOnInit(): void {
-    this.loadWorkspace();
-    this.loadTags();
     this.loadTree();
+    this.initializeTagsAndQueryState();
   }
 
   loadWorkspace(): void {
@@ -85,18 +115,23 @@ export class AdminArticlesPageComponent implements OnInit {
     this.error.set(null);
     this.articleWorkspace
       .listArticles({
-        page: this.page(),
+        page: this.appliedState.page,
         pageSize: PAGE_SIZE,
         language: this.currentLanguage(),
-        onlyPublished: this.onlyPublished(),
-        tagSlug: this.tagSlug(),
-        publishedFrom: this.publishedFrom() || null,
-        publishedTo: this.publishedTo() || null,
-        searchQuery: this.normalizedSearchQuery(),
+        onlyPublished: this.appliedState.onlyPublished,
+        tagSlug: this.appliedState.tagSlug,
+        publishedFrom: this.appliedState.publishedFrom,
+        publishedTo: this.appliedState.publishedTo,
+        searchQuery: this.appliedState.searchQuery,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (articles) => {
+          const lastPage = Math.max(1, articles.totalPages);
+          if (this.appliedState.page > lastPage) {
+            this.replaceQueryStateAndLoad({ ...this.appliedState, page: lastPage });
+            return;
+          }
           this.articles.set(articles);
           this.loading.set(false);
         },
@@ -109,8 +144,14 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.page.set(1);
-    this.loadWorkspace();
+    this.commitQueryState({
+      searchQuery: this.normalizedSearchQuery(),
+      tagSlug: this.tagSlug(),
+      publishedFrom: queryString(this.publishedFrom()),
+      publishedTo: queryString(this.publishedTo()),
+      onlyPublished: this.onlyPublished(),
+      page: 1,
+    });
   }
 
   resetFilters(): void {
@@ -119,20 +160,17 @@ export class AdminArticlesPageComponent implements OnInit {
     this.publishedFrom.set('');
     this.publishedTo.set('');
     this.onlyPublished.set(false);
-    this.page.set(1);
-    this.loadWorkspace();
+    this.commitQueryState(emptyArticleQueryState());
   }
 
   previousPage(): void {
     if (this.page() <= 1) return;
-    this.page.update((page) => page - 1);
-    this.loadWorkspace();
+    this.commitQueryState({ ...this.appliedState, page: this.page() - 1 });
   }
 
   nextPage(): void {
     if (this.page() >= (this.articles()?.totalPages ?? 1)) return;
-    this.page.update((page) => page + 1);
-    this.loadWorkspace();
+    this.commitQueryState({ ...this.appliedState, page: this.page() + 1 });
   }
 
   openCreate(): void {
@@ -215,7 +253,9 @@ export class AdminArticlesPageComponent implements OnInit {
   handleArticleAction(actionId: string, article: AdminArticleList['articles'][number]): void {
     switch (actionId) {
       case 'edit':
-        void this.router.navigate(['/admin-panel/articles', article.slug]);
+        void this.router.navigate(['/admin-panel/articles', article.slug], {
+          queryParamsHandling: 'preserve',
+        });
         return;
       case 'publish':
         this.publishArticle(article.slug);
@@ -297,6 +337,101 @@ export class AdminArticlesPageComponent implements OnInit {
       });
   }
 
+  private initializeTagsAndQueryState(): void {
+    this.articleWorkspace
+      .getTags(this.currentLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (tags) => {
+          this.tags.set(tags);
+          this.setupQueryState(true);
+        },
+        error: () => {
+          this.tags.set([]);
+          this.setupQueryState(false);
+        },
+      });
+  }
+
+  private setupQueryState(validateTag: boolean): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      const state = this.articleStateFromQuery(params, validateTag);
+      const canonical = this.serializeQueryState(state);
+      if (
+        this.skipNextCanonicalLoad !== null &&
+        canonicalQueryMatches(params, ARTICLE_QUERY_KEYS, this.skipNextCanonicalLoad)
+      ) {
+        this.skipNextCanonicalLoad = null;
+        return;
+      }
+      this.applyQueryState(state);
+      if (!canonicalQueryMatches(params, ARTICLE_QUERY_KEYS, canonical)) {
+        this.replaceQueryStateAndLoad(state);
+        return;
+      }
+      this.loadWorkspace();
+    });
+  }
+
+  private articleStateFromQuery(params: ParamMap, validateTag: boolean): ArticleQueryState {
+    const searchQuery = readOptionalStringQuery(params, 'q').value;
+    const requestedTag = readOptionalStringQuery(params, 'tag').value;
+    const tagSlug =
+      requestedTag !== null && validateTag && !this.tags().some((tag) => tag.slug === requestedTag)
+        ? null
+        : requestedTag;
+    return {
+      searchQuery,
+      tagSlug,
+      publishedFrom: readIsoDateQuery(params, 'publishedFrom').value,
+      publishedTo: readIsoDateQuery(params, 'publishedTo').value,
+      onlyPublished: readBooleanQuery(params, 'onlyPublished', false).value,
+      page: readPositiveIntegerQuery(params, 'page', 1).value,
+    };
+  }
+
+  private applyQueryState(state: ArticleQueryState): void {
+    this.appliedState = state;
+    this.page.set(state.page);
+    this.searchQuery.set(state.searchQuery ?? '');
+    this.tagSlug.set(state.tagSlug);
+    this.publishedFrom.set(state.publishedFrom ?? '');
+    this.publishedTo.set(state.publishedTo ?? '');
+    this.onlyPublished.set(state.onlyPublished);
+  }
+
+  private commitQueryState(state: ArticleQueryState): void {
+    const canonical = this.serializeQueryState(state);
+    if (
+      this.currentQueryParams !== null &&
+      canonicalQueryMatches(this.currentQueryParams, ARTICLE_QUERY_KEYS, canonical)
+    ) {
+      this.loadWorkspace();
+      return;
+    }
+    this.replaceQueryStateAndLoad(state);
+  }
+
+  private replaceQueryStateAndLoad(state: ArticleQueryState): void {
+    const canonical = this.serializeQueryState(state);
+    this.applyQueryState(state);
+    this.skipNextCanonicalLoad = canonical;
+    void replaceAdminQueryParams(this.router, this.route, canonical);
+    this.loadWorkspace();
+  }
+
+  private serializeQueryState(state: ArticleQueryState): Record<string, string | null> {
+    return {
+      q: state.searchQuery,
+      tag: state.tagSlug,
+      publishedFrom: state.publishedFrom,
+      publishedTo: state.publishedTo,
+      onlyPublished: state.onlyPublished ? 'true' : null,
+      page: queryNumber(state.page, 1),
+    };
+  }
+
   private loadTree(): void {
     this.articleWorkspace
       .getTree(this.currentLanguage())
@@ -319,4 +454,15 @@ export class AdminArticlesPageComponent implements OnInit {
     }
     return language;
   }
+}
+
+function emptyArticleQueryState(): ArticleQueryState {
+  return {
+    searchQuery: null,
+    tagSlug: null,
+    publishedFrom: null,
+    publishedTo: null,
+    onlyPublished: false,
+    page: 1,
+  };
 }

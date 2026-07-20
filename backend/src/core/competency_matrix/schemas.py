@@ -765,6 +765,8 @@ class CompetencyMatrixWorkspaceFilters:
     sheet_keys: tuple[str, ...] = ()
     grades: tuple[GradeEnum, ...] = ()
     interview_frequencies: tuple[InterviewFrequencyEnum, ...] = ()
+    section_ids: tuple[str, ...] = ()
+    subsection_ids: tuple[str, ...] = ()
     sections: tuple[str, ...] = ()
     subsections: tuple[str, ...] = ()
     publish_statuses: tuple[PublishStatusEnum, ...] = ()
@@ -836,9 +838,16 @@ class CompetencyMatrixFilterOption:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class CompetencyMatrixFilterSectionOption:
+class CompetencyMatrixFilterSubsectionOption:
+    id: str
     label: str
-    subsections: list[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CompetencyMatrixFilterSectionOption:
+    id: str
+    label: str
+    subsections: list[CompetencyMatrixFilterSubsectionOption]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

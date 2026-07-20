@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -44,8 +44,15 @@ import {
   trimRequired,
   validationMessage,
 } from '../../utils/admin-validation';
+import {
+  canonicalQueryMatches,
+  queryNumber,
+  readPositiveIntegerQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
 
 const PAGE_SIZE = 20;
+const TEAM_QUERY_KEYS = ['page'] as const;
 type TeamCreateField = 'username' | 'role' | 'password';
 type TeamRoleField = 'role';
 type TeamPasswordField = 'password';
@@ -82,6 +89,7 @@ export class TeamPageComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -92,6 +100,8 @@ export class TeamPageComponent implements OnInit {
   private readonly createFormUnsavedSource: AdminUnsavedChangesSource;
   private readonly roleFormUnsavedSource: AdminUnsavedChangesSource;
   private readonly passwordFormUnsavedSource: AdminUnsavedChangesSource;
+  private currentQueryParams: ParamMap | null = null;
+  private skipNextCanonicalLoad: Record<string, string | null> | null = null;
 
   readonly page = signal(1);
   readonly accounts = signal<ManagedAccounts | null>(null);
@@ -187,7 +197,7 @@ export class TeamPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAccounts();
+    this.setupQueryState();
   }
 
   loadAccounts(): void {
@@ -198,6 +208,11 @@ export class TeamPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (accounts) => {
+          const lastPage = Math.max(1, accounts.totalPages);
+          if (this.page() > lastPage) {
+            this.commitPage(lastPage);
+            return;
+          }
           this.accounts.set(accounts);
           this.loading.set(false);
         },
@@ -211,14 +226,12 @@ export class TeamPageComponent implements OnInit {
 
   previousPage(): void {
     if (this.page() <= 1) return;
-    this.page.update((page) => page - 1);
-    this.loadAccounts();
+    this.commitPage(this.page() - 1);
   }
 
   nextPage(): void {
     if (this.page() >= (this.accounts()?.totalPages ?? 1)) return;
-    this.page.update((page) => page + 1);
-    this.loadAccounts();
+    this.commitPage(this.page() + 1);
   }
 
   openCreateDialog(): void {
@@ -266,7 +279,9 @@ export class TeamPageComponent implements OnInit {
           this.createFormUnsavedSource.commit();
           this.createDialogOpen.set(false);
           this.notifications.success(this.i18n.translate('adminTeamWorkspace.created'));
-          this.router.navigateByUrl(`/admin-panel/workspace/team/${account.username}`);
+          void this.router.navigate(['/admin-panel/workspace/team', account.username], {
+            queryParamsHandling: 'preserve',
+          });
         },
         error: (err: ApiError) => {
           this.createError.set(err);
@@ -322,7 +337,9 @@ export class TeamPageComponent implements OnInit {
   handleAccountAction(actionId: string, account: ManagedAccount): void {
     switch (actionId) {
       case 'detail':
-        void this.router.navigateByUrl(`/admin-panel/workspace/team/${account.username}`);
+        void this.router.navigate(['/admin-panel/workspace/team', account.username], {
+          queryParamsHandling: 'preserve',
+        });
         return;
       case 'role':
         this.openRoleDialog(account);
@@ -342,6 +359,46 @@ export class TeamPageComponent implements OnInit {
       default:
         throw new Error(`Unsupported team account action: ${actionId}`);
     }
+  }
+
+  private setupQueryState(): void {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.currentQueryParams = params;
+      const page = readPositiveIntegerQuery(params, 'page', 1).value;
+      const canonical = { page: queryNumber(page, 1) };
+      if (
+        this.skipNextCanonicalLoad !== null &&
+        canonicalQueryMatches(params, TEAM_QUERY_KEYS, this.skipNextCanonicalLoad)
+      ) {
+        this.skipNextCanonicalLoad = null;
+        return;
+      }
+      this.page.set(page);
+      if (!canonicalQueryMatches(params, TEAM_QUERY_KEYS, canonical)) {
+        this.replacePageAndLoad(page, canonical);
+        return;
+      }
+      this.loadAccounts();
+    });
+  }
+
+  private commitPage(page: number): void {
+    const canonical = { page: queryNumber(page, 1) };
+    if (
+      this.currentQueryParams !== null &&
+      canonicalQueryMatches(this.currentQueryParams, TEAM_QUERY_KEYS, canonical)
+    ) {
+      this.loadAccounts();
+      return;
+    }
+    this.replacePageAndLoad(page, canonical);
+  }
+
+  private replacePageAndLoad(page: number, canonical: Record<string, string | null>): void {
+    this.page.set(page);
+    this.skipNextCanonicalLoad = canonical;
+    void replaceAdminQueryParams(this.router, this.route, canonical);
+    this.loadAccounts();
   }
 
   openRoleDialog(account: ManagedAccount): void {

@@ -89,7 +89,7 @@ describe('AdminResumeDetailPageComponent', () => {
 
     router = TestBed.inject(Router);
     i18n = TestBed.inject(I18nService);
-    jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    jest.spyOn(router, 'navigate').mockResolvedValue(true);
     Object.defineProperty(window.URL, 'createObjectURL', {
       configurable: true,
       value: jest.fn().mockReturnValue('blob:resume-export'),
@@ -180,7 +180,10 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.deleteResume();
 
     expect(unsavedChanges.hasChanges()).toBe(false);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/workspace/resumes'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   });
 
   it('renders preview from unsaved form state', () => {
@@ -1149,7 +1152,10 @@ describe('AdminResumeDetailPageComponent', () => {
     fixture.componentInstance.deleteResume();
 
     expect(service.deleteResume).toHaveBeenCalledWith(RESUME_ID);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/admin-panel/workspace/resumes');
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/workspace/resumes'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   });
 
   it('updates payload when skill list inputs are added and removed', () => {

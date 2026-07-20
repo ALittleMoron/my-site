@@ -105,6 +105,7 @@ export class AdminArticleDetailPageComponent implements OnInit {
           this.notifications.success(this.i18n.translate('articles.notify.saved'));
           if (article.slug !== current.slug) {
             void this.router.navigate(['/admin-panel/articles', article.slug], {
+              queryParamsHandling: 'preserve',
               replaceUrl: true,
             });
           }
@@ -202,14 +203,21 @@ export class AdminArticleDetailPageComponent implements OnInit {
         next: () => {
           this.unsavedChangesScope.commit();
           this.notifications.success(this.i18n.translate('articles.notify.deleted'));
-          void this.router.navigateByUrl('/admin-panel/articles');
+          this.navigateToList();
         },
         error: () => this.notifications.error(this.i18n.translate('articles.notify.deleteError')),
       });
   }
 
   goBack(): void {
-    void this.router.navigateByUrl('/admin-panel/articles');
+    this.navigateToList();
+  }
+
+  private navigateToList(): void {
+    void this.router.navigate(['/admin-panel/articles'], {
+      queryParamsHandling: 'preserve',
+      replaceUrl: true,
+    });
   }
 
   private currentLanguage(): 'ru' | 'en' {

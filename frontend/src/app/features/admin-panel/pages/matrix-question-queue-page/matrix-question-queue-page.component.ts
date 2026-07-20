@@ -43,11 +43,18 @@ import {
   AdminUnsavedChangesSource,
 } from '../../services/admin-unsaved-changes.service';
 import { ADMIN_VALIDATION_LIMITS } from '../../utils/admin-validation';
+import {
+  canonicalQueryMatches,
+  queryString,
+  readOptionalStringQuery,
+  replaceAdminQueryParams,
+} from '../../utils/admin-query-state';
 
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 const IMPORT_FILE_ACCEPT =
   '.txt,.csv,.xlsx,.xlsm,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12';
 const FILTER_URL_SYNC_DEBOUNCE_MS = 150;
+const QUEUE_QUERY_KEYS = ['q', 'sheet', 'grade', 'availability'] as const;
 const GRADES: readonly AdminMatrixGrade[] = ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'];
 
 type QueueAddMode = 'manual' | 'import';
@@ -60,11 +67,6 @@ interface QueueFilters {
   sheet: string;
   grade: QueueGradeFilter;
   availability: QueueAvailabilityFilter;
-}
-
-interface QueueFiltersFromQueryParams {
-  filters: QueueFilters;
-  invalidQueryParams: { grade?: null; availability?: null };
 }
 
 const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
@@ -675,7 +677,10 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           if (destination === 'edit') {
             this.selectedQuestion.set(null);
             this.unsavedChangesScope.commit();
-            void this.router.navigate(['/admin-panel/matrix-questions', createdQuestion.id]);
+            void this.router.navigate(['/admin-panel/matrix-questions', createdQuestion.id], {
+              queryParams: { returnTo: 'queue' },
+              queryParamsHandling: 'merge',
+            });
             return;
           }
           this.selectedQuestion.set(nextQuestion);
@@ -740,15 +745,11 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
   private setupFilters(): void {
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const result = this.filtersFromQueryParams(params);
-      this.filtersForm.setValue(result.filters, { emitEvent: false });
-      this.filters.set(result.filters);
-      if (Object.keys(result.invalidQueryParams).length > 0) {
-        void this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: result.invalidQueryParams,
-          queryParamsHandling: 'merge',
-          replaceUrl: true,
-        });
+      this.filtersForm.setValue(result, { emitEvent: false });
+      this.filters.set(result);
+      const canonical = this.serializeFilters(result);
+      if (!canonicalQueryMatches(params, QUEUE_QUERY_KEYS, canonical)) {
+        void replaceAdminQueryParams(this.router, this.route, canonical);
       }
     });
     this.filtersForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -766,39 +767,30 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
       .subscribe(() => this.syncFiltersToUrl(this.filtersForm.getRawValue()));
   }
 
-  private filtersFromQueryParams(params: ParamMap): QueueFiltersFromQueryParams {
-    const gradeParam = params.get('grade');
-    const availabilityParam = params.get('availability');
+  private filtersFromQueryParams(params: ParamMap): QueueFilters {
+    const gradeParam = readOptionalStringQuery(params, 'grade').value;
+    const availabilityParam = readOptionalStringQuery(params, 'availability').value;
     const grade = isQueueGradeFilter(gradeParam) ? gradeParam : '';
     const availability = isQueueAvailabilityFilter(availabilityParam) ? availabilityParam : '';
-    const invalidQueryParams: QueueFiltersFromQueryParams['invalidQueryParams'] = {};
-    if (gradeParam !== null && gradeParam !== grade) invalidQueryParams.grade = null;
-    if (availabilityParam !== null && availabilityParam !== availability) {
-      invalidQueryParams.availability = null;
-    }
     return {
-      filters: {
-        searchQuery: params.get('q') ?? '',
-        sheet: params.get('sheet') ?? '',
-        grade,
-        availability,
-      },
-      invalidQueryParams,
+      searchQuery: readOptionalStringQuery(params, 'q').value ?? '',
+      sheet: readOptionalStringQuery(params, 'sheet').value ?? '',
+      grade,
+      availability,
     };
   }
 
   private syncFiltersToUrl(filters: QueueFilters): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        q: filters.searchQuery.trim() || null,
-        sheet: filters.sheet || null,
-        grade: filters.grade || null,
-        availability: filters.availability || null,
-      },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
+    void replaceAdminQueryParams(this.router, this.route, this.serializeFilters(filters));
+  }
+
+  private serializeFilters(filters: QueueFilters): Record<string, string | null> {
+    return {
+      q: queryString(filters.searchQuery),
+      sheet: queryString(filters.sheet),
+      grade: filters.grade || null,
+      availability: filters.availability || null,
+    };
   }
 
   private selectImportFiles(files: FileList | File[] | null): boolean {

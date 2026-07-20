@@ -73,12 +73,24 @@ const options: AdminMatrixWorkspaceFilterOptions = {
     {
       key: 'python',
       label: 'Python',
-      sections: [{ label: 'Core', subsections: ['Syntax'] }],
+      sections: [
+        {
+          id: SECTION_ID,
+          label: 'Core',
+          subsections: [{ id: SUBSECTION_ID, label: 'Syntax' }],
+        },
+      ],
     },
     {
       key: 'sql',
       label: 'SQL',
-      sections: [{ label: 'Queries', subsections: ['Select'] }],
+      sections: [
+        {
+          id: 'section-sql',
+          label: 'Queries',
+          subsections: [{ id: 'subsection-select', label: 'Select' }],
+        },
+      ],
     },
   ],
   grades: ['Junior', 'Middle'],
@@ -355,7 +367,9 @@ describe('MatrixQuestionsPageComponent', () => {
       .querySelector<HTMLButtonElement>('[data-testid="matrix-desktop-table"] button')
       ?.click();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID]);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID], {
+      queryParamsHandling: 'preserve',
+    });
   });
 
   it('disables and resets dependent section filters from selected sheet and section', () => {
@@ -380,7 +394,7 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(section.textContent).toContain('Core');
     expect(section.textContent).not.toContain('Queries');
 
-    section.value = 'Core';
+    section.value = SECTION_ID;
     section.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     expect(subsection.disabled).toBe(false);
@@ -501,7 +515,9 @@ describe('MatrixQuestionsPageComponent', () => {
       ?.click();
     fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID]);
+    expect(router.navigate).toHaveBeenCalledWith(['/admin-panel/matrix-questions', QUESTION_ID], {
+      queryParamsHandling: 'preserve',
+    });
     expect(service.getQuestion).not.toHaveBeenCalled();
   });
 
