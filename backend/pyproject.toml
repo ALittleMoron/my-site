@@ -16,10 +16,10 @@ dependencies = [
     "sqlalchemy[asyncio,mypy]>=2.0.51",
     "sqlalchemy-dev-utils>=1.4.0",
     "alembic>=1.18.5",
-    "pyseto>=1.9.3",
+    "pyseto>=1.10.0",
     "itsdangerous>=2.2.0",
     "structlog>=26.1.0",
-    "aiobotocore>=3.7.0",
+    "aiobotocore>=3.8.0",
     "litestar[cli,pydantic,valkey]>=2.24.0",
     "ecs-logging>=2.3.0",
     "sentry-sdk[litestar]>=2.64.0",
@@ -33,7 +33,7 @@ dependencies = [
     "defusedxml>=0.7.1",
     "taskiq>=0.12.4",
     "taskiq-redis>=1.2.3",
-    "types-aiobotocore-s3>=3.7.0",
+    "types-aiobotocore-s3>=3.8.0",
     "msgpack>=1.2.1",
     "mcp>=1.28.1,<2",
     "pillow>=12.3.0",
@@ -43,16 +43,16 @@ dependencies = [
 [dependency-groups]
 dev = [
     "bandit>=1.9.4",
-    "coverage>=7.15.1",
+    "coverage>=7.15.2",
     "httpx>=0.28.1",
-    "mypy>=2.2.0",
+    "mypy>=2.3.0",
     "pip-audit>=2.10.1",
     "pypdf>=6.14.2",
     "pytest==9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.15.21",
+    "ruff>=0.15.22",
     "vulture>=2.16",
 ]
 local = [
@@ -60,7 +60,7 @@ local = [
     "pre-commit>=4.6.0",
 ]
 performance = [
-    "locust==2.45.0",
+    "locust==2.46.0",
 ]
 
 [tool.uv]
