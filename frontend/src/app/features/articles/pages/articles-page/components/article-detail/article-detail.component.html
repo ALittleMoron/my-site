@@ -34,6 +34,15 @@
       }
     </div>
 
+    @if (coverImageUrl(); as coverImageUrl) {
+      <img
+        class="d-block img-fluid mb-4"
+        data-testid="article-detail-cover"
+        [src]="coverImageUrl"
+        [alt]="coverImageAlt()"
+      />
+    }
+
     <div class="articles-markdown" [innerHTML]="contentHtml()"></div>
 
     @if (isPublished()) {

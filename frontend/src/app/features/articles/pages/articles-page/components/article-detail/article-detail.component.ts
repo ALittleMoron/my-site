@@ -52,6 +52,16 @@ export class ArticleDetailComponent {
     return this.wikiLinkRenderer.render(article.content, this.language());
   });
 
+  readonly coverImageUrl = computed(() => this.article()?.metadata.coverImageUrl ?? null);
+
+  readonly coverImageAlt = computed(() => {
+    const metadata = this.article()?.metadata;
+    if (!metadata) return '';
+    return this.language() === 'ru'
+      ? (metadata.coverImageAltRu ?? '')
+      : (metadata.coverImageAltEn ?? '');
+  });
+
   readonly isPublished = computed(() => this.article()?.publishStatus === 'Published');
 
   articleDate(): string {

@@ -72,6 +72,50 @@ describe('ArticleDetailComponent', () => {
     expect(text).toContain('5');
   });
 
+  it('renders the public cover image with localized alt text', () => {
+    const coverImage = fixture.nativeElement.querySelector<HTMLImageElement>(
+      '[data-testid="article-detail-cover"]',
+    );
+
+    expect(coverImage?.getAttribute('src')).toBe('https://example.com/cover.jpg');
+    expect(coverImage?.alt).toBe('Cover image EN');
+
+    fixture.componentRef.setInput('language', 'ru');
+    fixture.detectChanges();
+
+    expect(coverImage?.alt).toBe('Cover image RU');
+  });
+
+  it('uses an empty alt when the localized cover alt is absent', () => {
+    fixture.componentRef.setInput('article', {
+      ...fixture.componentInstance.article()!,
+      metadata: {
+        ...fixture.componentInstance.article()!.metadata,
+        coverImageAltEn: null,
+      },
+    });
+    fixture.detectChanges();
+
+    const coverImage = fixture.nativeElement.querySelector<HTMLImageElement>(
+      '[data-testid="article-detail-cover"]',
+    );
+
+    expect(coverImage?.alt).toBe('');
+  });
+
+  it('does not render a cover image when its URL is absent', () => {
+    fixture.componentRef.setInput('article', {
+      ...fixture.componentInstance.article()!,
+      metadata: {
+        ...fixture.componentInstance.article()!.metadata,
+        coverImageUrl: null,
+      },
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="article-detail-cover"]')).toBeNull();
+  });
+
   it('renders a localized article date and preserves the ISO value', () => {
     const timestamp = fixture.nativeElement.querySelector<HTMLTimeElement>(
       '[data-testid="article-detail-date"]',
