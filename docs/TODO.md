@@ -185,6 +185,7 @@
     - [x] Dependency versions pinned, including required local runtime image tags
     - [x] Dependencies updated regularly
     - [x] No pip install from untrusted sources
+    - [ ] Refresh nginx Alpine `curl`/`libcurl` pins when the configured repository drops the pinned revision so `make run` remains reproducible.
 
 ### Tracing and Monitoring
 
@@ -541,17 +542,17 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [x] Add moderation inbox for suggested matrix questions.
 - [x] Add ToastUI Markdown editing to competency matrix answer and expected-answer fields in the shared matrix question form.
 - [x] Add RU/EN/RU+EN display modes to the shared matrix question form for localized question, answer, and expected-answer fields.
-- [ ] Add a provider-agnostic RU-to-EN translation workspace to the shared matrix question form.
-  - [ ] Add a dedicated translation view with read-only RU source content and editable EN content shown side by side on wide screens and stacked in matching pairs on narrow screens.
-  - [ ] Pair question, answer, interview expected answer, resource name, and resource context fields so the source and translation stay visually connected.
-  - [ ] Add per-field "copy RU source" actions with explicit success, unavailable, and failure feedback.
-  - [ ] Add "copy all RU content for translation" using a structured package that includes stable field and resource identifiers.
-  - [ ] Preserve Markdown, fenced and inline code, URLs, and typed wiki links in translation packages.
-  - [ ] Add structured EN package paste/import with validation and a field-by-field preview before applying changes to the form.
-  - [ ] Show EN translation completeness independently from ordinary non-empty-field validation.
-  - [ ] Warn when normalized RU and EN content is identical, including the queue-created question text that initially populates both languages.
-  - [ ] Allow intentionally language-neutral or identical content to be explicitly reviewed so it does not remain a permanent warning.
-  - [ ] Provide a direct action from translation mode to the EN public preview without changing the current UI language.
+- [x] Add a provider-agnostic RU-to-EN translation workspace to the shared matrix question form.
+  - [x] Add a dedicated translation view with read-only RU source content and editable EN content shown side by side on wide screens and stacked in matching pairs on narrow screens.
+  - [x] Pair question, answer, interview expected answer, resource name, and resource context fields so the source and translation stay visually connected.
+  - [x] Add per-field "copy RU source" actions with explicit success, unavailable, and failure feedback.
+  - [x] Add "copy all RU content for translation" using a structured package that includes stable field and resource identifiers.
+  - [x] Preserve Markdown, fenced and inline code, URLs, and typed wiki links in translation packages.
+  - [x] Add structured EN package paste/import with validation and a field-by-field preview before applying changes to the form.
+  - [x] Show EN translation completeness independently from ordinary non-empty-field validation.
+  - [x] Warn when normalized RU and EN content is identical, including the queue-created question text that initially populates both languages.
+  - [x] Allow intentionally language-neutral or identical content to be explicitly reviewed so it does not remain a permanent warning.
+  - [x] Provide a direct action from translation mode to the EN public preview without changing the current UI language.
 - [x] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
 - [ ] Add a compact shared matrix question form readiness panel for required publication fields.
   - [ ] Distinguish fields required to save a draft, blockers that prevent publication, and advisory content-health warnings.

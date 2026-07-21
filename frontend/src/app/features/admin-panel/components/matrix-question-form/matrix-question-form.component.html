@@ -19,6 +19,17 @@
       <button
         type="button"
         class="btn"
+        data-testid="matrix-form-view-translation"
+        [class.btn-secondary]="viewMode() === 'translation'"
+        [class.btn-outline-secondary]="viewMode() !== 'translation'"
+        [attr.aria-pressed]="viewMode() === 'translation'"
+        (click)="showTranslation()"
+      >
+        {{ 'matrix.form.translationMode' | t }}
+      </button>
+      <button
+        type="button"
+        class="btn"
         data-testid="matrix-form-view-preview"
         [class.btn-secondary]="viewMode() === 'preview'"
         [class.btn-outline-secondary]="viewMode() !== 'preview'"
@@ -453,6 +464,18 @@
       }
     </section>
   </div>
+  <section
+    [hidden]="viewMode() !== 'translation'"
+    [attr.aria-label]="'matrix.form.translationMode' | t"
+  >
+    <app-matrix-question-translation-workspace
+      [fields]="translationFields()"
+      [resetKey]="translationResetKey()"
+      [disabled]="submitting || previewLanguageLoading()"
+      (translationChange)="applyTranslationChange($event)"
+      (previewEnglish)="showEnglishPreview()"
+    />
+  </section>
   <section
     [hidden]="viewMode() !== 'preview'"
     [attr.aria-label]="'adminMatrixWorkspace.previewTab' | t"

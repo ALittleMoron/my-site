@@ -134,6 +134,9 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
         'Очередь получила общий RU/EN Markdown-form со sticky actions, сценарии ' +
         '«создать/отклонить и далее» и «пропустить», а импорт из txt/csv/xlsx теперь ' +
         'показывает предпросмотр, ошибки валидации и точные дубли до подтверждения. ' +
+        'Общая форма также получила независимый от провайдера RU→EN workspace: связанные ' +
+        'пары полей, проверку готовности и совпадений, EN-предпросмотр и версионный JSON ' +
+        'для безопасного copy/import с сохранением Markdown, code, URL и typed wiki links. ' +
         'Для AI-агентов отдельная machine-граница теперь остаётся на edge: семь REST operations ' +
         'смонтированы в основном Litestar app и используют общие settings, DI и DB session вместо ' +
         'отдельного процесса и UDS. WireGuard-bound nginx mTLS-listener пропускает только точный ' +
@@ -144,7 +147,11 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
       en:
         'The queue gained a shared RU/EN Markdown form with sticky actions, create/reject-and-next ' +
         'and skip flows, while txt/csv/xlsx imports now show a preview, validation errors, and ' +
-        'exact duplicates before confirmation. The separate machine boundary for AI agents now ' +
+        'exact duplicates before confirmation. ' +
+        'The shared form also gained a provider-agnostic RU→EN workspace with connected field ' +
+        'pairs, completeness and identical-text review, direct EN preview, and versioned JSON ' +
+        'copy/import that preserves Markdown, code, URLs, and typed wiki links. ' +
+        'The separate machine boundary for AI agents now ' +
         'stays at the edge: seven REST operations are mounted in the main Litestar app and reuse ' +
         'its settings, DI, and DB session instead of a separate process and UDS. The dedicated ' +
         'WireGuard-bound nginx mTLS listener forwards only an exact allowlist, while the public ' +

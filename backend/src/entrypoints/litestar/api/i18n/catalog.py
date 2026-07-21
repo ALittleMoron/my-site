@@ -741,6 +741,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.question": "Вопрос",
         "matrix.form.viewMode": "Режим формы",
         "matrix.form.editMode": "Редактирование",
+        "matrix.form.translationMode": "Перевод",
         "matrix.form.previewMode": "Предпросмотр",
         "matrix.form.localizedDisplayMode": "Показывать поля",
         "matrix.form.previewLanguage": "Язык предпросмотра",
@@ -779,6 +780,78 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "какие ошибки часто допускают кандидаты."
         ),
         "matrix.form.wikiLinksMissing": "Не найдены wiki-цели: {targets}.",
+        "matrix.translation.title": "Перевод RU → EN",
+        "matrix.translation.description": (
+            "Сверяйте русский источник с английской версией и переносите переводы "
+            "из любого внешнего сервиса через структурированный JSON-пакет."
+        ),
+        "matrix.translation.copyAll": "Копировать весь RU-пакет",
+        "matrix.translation.previewEn": "Предпросмотр EN",
+        "matrix.translation.completeness": "Готовность EN-перевода",
+        "matrix.translation.sourceRu": "Источник RU",
+        "matrix.translation.targetEn": "Перевод EN",
+        "matrix.translation.copySource": "Копировать RU",
+        "matrix.translation.sharedResourceReadOnly": (
+            "Имя общего ресурса управляется отдельно и здесь доступно только для проверки."
+        ),
+        "matrix.translation.identicalWarning": (
+            "RU и EN совпадают после нормализации. Переведите текст или подтвердите, "
+            "что он намеренно одинаковый."
+        ),
+        "matrix.translation.reviewIdentical": "Подтвердить совпадение",
+        "matrix.translation.reviewed": "Совпадение подтверждено.",
+        "matrix.translation.copyUnavailable": "В этом поле нет RU-текста для копирования.",
+        "matrix.translation.clipboardUnavailable": "Буфер обмена недоступен в этом браузере.",
+        "matrix.translation.copyFailure": "Не удалось скопировать текст.",
+        "matrix.translation.copySuccess": "Текст скопирован.",
+        "matrix.translation.field.question": "Вопрос",
+        "matrix.translation.field.answer": "Ответ",
+        "matrix.translation.field.interviewAnswerExplanation": (
+            "Объяснение ответа на собеседовании"
+        ),
+        "matrix.translation.field.name": "Название ресурса",
+        "matrix.translation.field.context": "Контекст ресурса",
+        "matrix.translation.status.complete": "Переведено",
+        "matrix.translation.status.missingSource": "Нет RU-источника",
+        "matrix.translation.status.missingTranslation": "Нет EN-перевода",
+        "matrix.translation.status.identical": "Совпадает с RU",
+        "matrix.translation.status.reviewed": "Совпадение проверено",
+        "matrix.translation.status.notApplicable": "Не требуется",
+        "matrix.translation.import.title": "Импорт EN-пакета",
+        "matrix.translation.import.help": (
+            "Вставьте JSON v1 или один блок ```json```. Сначала проверьте изменения, "
+            "затем выберите поля для применения."
+        ),
+        "matrix.translation.import.preview": "Проверить пакет",
+        "matrix.translation.import.current": "Текущий EN",
+        "matrix.translation.import.imported": "Импортируемый EN",
+        "matrix.translation.import.selected": "Выбрано: {count}",
+        "matrix.translation.import.apply": "Применить выбранное",
+        "matrix.translation.importInvalid": "Пакет не прошёл проверку.",
+        "matrix.translation.importPreviewReady": "Предпросмотр импорта готов.",
+        "matrix.translation.importNothingSelected": "Выберите хотя бы одно валидное изменение.",
+        "matrix.translation.importApplied": "Применено полей: {count}.",
+        "matrix.translation.import.error.invalidJson": "Не удалось прочитать JSON.",
+        "matrix.translation.import.error.invalidEnvelope": "Структура пакета не поддерживается.",
+        "matrix.translation.import.error.unsupportedVersion": "Версия пакета не поддерживается.",
+        "matrix.translation.import.error.invalidLanguageDirection": (
+            "Пакет должен переводить с RU на EN."
+        ),
+        "matrix.translation.import.error.invalidFields": "Поля пакета имеют неверный формат.",
+        "matrix.translation.import.status.changed": "Изменение",
+        "matrix.translation.import.status.unchanged": "Без изменений",
+        "matrix.translation.import.status.invalid": "Ошибка",
+        "matrix.translation.import.status.stale": "RU-источник изменился",
+        "matrix.translation.import.status.readOnly": "Только чтение",
+        "matrix.translation.import.issue.unknownField": "Поле или ресурс не найден в форме.",
+        "matrix.translation.import.issue.duplicateField": "Поле повторяется в пакете.",
+        "matrix.translation.import.issue.staleSource": "RU-источник не совпадает с текущим.",
+        "matrix.translation.import.issue.emptyTranslation": "EN-перевод пуст.",
+        "matrix.translation.import.issue.translationTooLong": "EN-перевод слишком длинный.",
+        "matrix.translation.import.issue.protectedContentChanged": (
+            "Изменены code, URL или typed wiki targets."
+        ),
+        "matrix.translation.import.issue.readOnlyField": "Это поле нельзя менять в форме вопроса.",
         "matrix.resources.title": "Внешние ресурсы",
         "matrix.resources.searchPlaceholder": "Найти ресурс",
         "matrix.resources.newNamePlaceholder": "Название нового ресурса",
@@ -1795,6 +1868,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.question": "Question",
         "matrix.form.viewMode": "Form mode",
         "matrix.form.editMode": "Editing",
+        "matrix.form.translationMode": "Translation",
         "matrix.form.previewMode": "Preview",
         "matrix.form.localizedDisplayMode": "Show fields",
         "matrix.form.previewLanguage": "Preview language",
@@ -1833,6 +1907,80 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "mistakes candidates commonly make."
         ),
         "matrix.form.wikiLinksMissing": "Missing wiki targets: {targets}.",
+        "matrix.translation.title": "RU → EN translation",
+        "matrix.translation.description": (
+            "Compare the Russian source with the English version and move translations "
+            "through a structured JSON package from any external service."
+        ),
+        "matrix.translation.copyAll": "Copy the full RU package",
+        "matrix.translation.previewEn": "Preview EN",
+        "matrix.translation.completeness": "EN translation completeness",
+        "matrix.translation.sourceRu": "RU source",
+        "matrix.translation.targetEn": "EN translation",
+        "matrix.translation.copySource": "Copy RU",
+        "matrix.translation.sharedResourceReadOnly": (
+            "The shared resource name is managed separately and is read-only here."
+        ),
+        "matrix.translation.identicalWarning": (
+            "RU and EN are identical after normalization. Translate the text or confirm that "
+            "it is intentionally language-neutral."
+        ),
+        "matrix.translation.reviewIdentical": "Confirm identical text",
+        "matrix.translation.reviewed": "Identical text confirmed.",
+        "matrix.translation.copyUnavailable": "This field has no RU source to copy.",
+        "matrix.translation.clipboardUnavailable": "The clipboard is unavailable in this browser.",
+        "matrix.translation.copyFailure": "Failed to copy the text.",
+        "matrix.translation.copySuccess": "Text copied.",
+        "matrix.translation.field.question": "Question",
+        "matrix.translation.field.answer": "Answer",
+        "matrix.translation.field.interviewAnswerExplanation": ("Interview answer explanation"),
+        "matrix.translation.field.name": "Resource name",
+        "matrix.translation.field.context": "Resource context",
+        "matrix.translation.status.complete": "Translated",
+        "matrix.translation.status.missingSource": "Missing RU source",
+        "matrix.translation.status.missingTranslation": "Missing EN translation",
+        "matrix.translation.status.identical": "Identical to RU",
+        "matrix.translation.status.reviewed": "Identical text reviewed",
+        "matrix.translation.status.notApplicable": "Not applicable",
+        "matrix.translation.import.title": "Import EN package",
+        "matrix.translation.import.help": (
+            "Paste JSON v1 or one ```json``` block. Preview the changes first, then select "
+            "which fields to apply."
+        ),
+        "matrix.translation.import.preview": "Validate package",
+        "matrix.translation.import.current": "Current EN",
+        "matrix.translation.import.imported": "Imported EN",
+        "matrix.translation.import.selected": "Selected: {count}",
+        "matrix.translation.import.apply": "Apply selected",
+        "matrix.translation.importInvalid": "The package failed validation.",
+        "matrix.translation.importPreviewReady": "Import preview is ready.",
+        "matrix.translation.importNothingSelected": "Select at least one valid change.",
+        "matrix.translation.importApplied": "Applied fields: {count}.",
+        "matrix.translation.import.error.invalidJson": "The JSON could not be read.",
+        "matrix.translation.import.error.invalidEnvelope": "The package shape is unsupported.",
+        "matrix.translation.import.error.unsupportedVersion": "The package version is unsupported.",
+        "matrix.translation.import.error.invalidLanguageDirection": (
+            "The package must translate from RU to EN."
+        ),
+        "matrix.translation.import.error.invalidFields": (
+            "The package fields have an invalid shape."
+        ),
+        "matrix.translation.import.status.changed": "Changed",
+        "matrix.translation.import.status.unchanged": "Unchanged",
+        "matrix.translation.import.status.invalid": "Invalid",
+        "matrix.translation.import.status.stale": "RU source changed",
+        "matrix.translation.import.status.readOnly": "Read-only",
+        "matrix.translation.import.issue.unknownField": "The field or resource is not in the form.",
+        "matrix.translation.import.issue.duplicateField": "The field is duplicated in the package.",
+        "matrix.translation.import.issue.staleSource": "The RU source does not match the form.",
+        "matrix.translation.import.issue.emptyTranslation": "The EN translation is empty.",
+        "matrix.translation.import.issue.translationTooLong": "The EN translation is too long.",
+        "matrix.translation.import.issue.protectedContentChanged": (
+            "Code, URLs, or typed wiki targets were changed."
+        ),
+        "matrix.translation.import.issue.readOnlyField": (
+            "This field cannot be changed from the question form."
+        ),
         "matrix.resources.title": "External resources",
         "matrix.resources.searchPlaceholder": "Find resource",
         "matrix.resources.newNamePlaceholder": "New resource name",

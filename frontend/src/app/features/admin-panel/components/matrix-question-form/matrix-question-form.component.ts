@@ -50,6 +50,11 @@ import {
   MatrixQuestionPublicPreviewComponent,
 } from './matrix-question-public-preview.component';
 import {
+  MatrixQuestionTranslationChange,
+  MatrixQuestionTranslationField,
+} from './matrix-question-translation.model';
+import { MatrixQuestionTranslationWorkspaceComponent } from './matrix-question-translation-workspace.component';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   isHttpUrl,
@@ -80,7 +85,7 @@ type MatrixQuestionField =
   | 'interviewAnswerExplanationEn';
 type NewResourceField = 'nameRu' | 'nameEn' | 'url';
 type MatrixQuestionDisplayMode = 'ru' | 'en' | 'ruEn';
-type MatrixQuestionViewMode = 'edit' | 'preview';
+type MatrixQuestionViewMode = 'edit' | 'translation' | 'preview';
 
 interface AdminMatrixAttachedResourceTranslations {
   ru: { name: string; context: string };
@@ -105,6 +110,7 @@ interface AdminMatrixResourceDraft {
     TranslatePipe,
     MatrixStructurePickerComponent,
     MatrixQuestionPublicPreviewComponent,
+    MatrixQuestionTranslationWorkspaceComponent,
     AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -170,6 +176,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   readonly previewLanguageLoading = signal(false);
   readonly previewLanguageError = signal<string | null>(null);
   readonly previewBundleVersion = signal(0);
+  readonly translationResetKey = signal('create:blank');
   readonly showRuLocalizedFields = computed(() => this.localizedDisplayMode() !== 'en');
   readonly showEnLocalizedFields = computed(() => this.localizedDisplayMode() !== 'ru');
 
@@ -241,6 +248,67 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
       url: resource.url,
       context: resource.translations[language].context,
     }));
+  });
+  readonly translationFields = computed<MatrixQuestionTranslationField[]>(() => {
+    const value = this.questionFormValue();
+    const questionFields: MatrixQuestionTranslationField[] = [
+      {
+        scope: 'question',
+        fieldId: 'question',
+        source: value.questionRu,
+        translation: value.questionEn,
+        editable: true,
+        required: true,
+        maxLength: ADMIN_VALIDATION_LIMITS.shortText,
+      },
+      {
+        scope: 'question',
+        fieldId: 'answer',
+        source: value.answerRu,
+        translation: value.answerEn,
+        editable: true,
+        required: true,
+        maxLength: ADMIN_VALIDATION_LIMITS.matrixLongText,
+      },
+      {
+        scope: 'question',
+        fieldId: 'interviewAnswerExplanation',
+        source: value.interviewAnswerExplanationRu,
+        translation: value.interviewAnswerExplanationEn,
+        editable: true,
+        required: true,
+        maxLength: ADMIN_VALIDATION_LIMITS.matrixLongText,
+      },
+    ];
+    const resourceFields = this.resourceDrafts().flatMap<MatrixQuestionTranslationField>(
+      (resource) => [
+        {
+          scope: 'resource',
+          resourceId: resource.id,
+          fieldId: 'name',
+          resourceLabel: resource.translations[this.currentLanguage()].name,
+          resourceUrl: resource.url,
+          source: resource.translations.ru.name,
+          translation: resource.translations.en.name,
+          editable: resource.isNew,
+          required: resource.isNew,
+          maxLength: ADMIN_VALIDATION_LIMITS.shortText,
+        },
+        {
+          scope: 'resource',
+          resourceId: resource.id,
+          fieldId: 'context',
+          resourceLabel: resource.translations[this.currentLanguage()].name,
+          resourceUrl: resource.url,
+          source: resource.translations.ru.context,
+          translation: resource.translations.en.context,
+          editable: true,
+          required: false,
+          maxLength: ADMIN_VALIDATION_LIMITS.matrixLongText,
+        },
+      ],
+    );
+    return [...questionFields, ...resourceFields];
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -386,8 +454,66 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     this.viewMode.set('preview');
   }
 
+  showTranslation(): void {
+    this.viewMode.set('translation');
+  }
+
   showEdit(): void {
     this.viewMode.set('edit');
+  }
+
+  showEnglishPreview(): void {
+    this.publishError.set(null);
+    this.previewLanguageError.set(null);
+    if (this.previewLanguage() === 'en') {
+      this.showPreview();
+      return;
+    }
+    if (this.previewLanguageLoading()) return;
+    this.previewLanguageLoading.set(true);
+    this.i18n
+      .ensureLanguageBundle('en')
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        catchError(() => {
+          this.previewLanguageLoading.set(false);
+          this.publishError.set(this.i18n.translate('matrix.form.previewLanguageError'));
+          return EMPTY;
+        }),
+      )
+      .subscribe(() => {
+        this.previewLanguage.set('en');
+        this.previewLanguageLoading.set(false);
+        this.previewBundleVersion.update((version) => version + 1);
+        this.viewMode.set('preview');
+      });
+  }
+
+  applyTranslationChange(change: MatrixQuestionTranslationChange): void {
+    if (change.scope === 'question') {
+      if (change.fieldId === 'question') {
+        this.updateFormControl(this.questionForm.controls.questionEn, change.value);
+      } else if (change.fieldId === 'answer') {
+        this.updateFormControl(this.questionForm.controls.answerEn, change.value);
+      } else if (change.fieldId === 'interviewAnswerExplanation') {
+        this.updateFormControl(
+          this.questionForm.controls.interviewAnswerExplanationEn,
+          change.value,
+        );
+      }
+      return;
+    }
+    const resourceIndex = this.resourceDrafts().findIndex(
+      (resource) => resource.id === change.resourceId,
+    );
+    if (resourceIndex < 0) return;
+    if (change.fieldId === 'name') {
+      this.updateResourceName(resourceIndex, 'en', change.value);
+      return;
+    }
+    if (change.fieldId === 'context') {
+      this.updateResourceContext(resourceIndex, 'en', change.value);
+    }
   }
 
   setAnswerRu(value: string): void {
@@ -489,6 +615,23 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     );
   }
 
+  updateResourceName(index: number, language: 'ru' | 'en', name: string): void {
+    this.resourceDrafts.update((drafts) =>
+      drafts.map((draft, currentIndex) =>
+        currentIndex === index && draft.isNew
+          ? {
+              ...draft,
+              name: language === this.currentLanguage() ? name : draft.name,
+              translations: {
+                ...draft.translations,
+                [language]: { ...draft.translations[language], name },
+              },
+            }
+          : draft,
+      ),
+    );
+  }
+
   detachResource(index: number): void {
     this.resourceDrafts.update((drafts) =>
       drafts.filter((_, currentIndex) => currentIndex !== index),
@@ -572,11 +715,16 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   private resetFromQuestion(): void {
     this.formSubmitted.set(false);
     this.publishError.set(null);
-    this.localizedDisplayMode.set('ruEn');
+    this.localizedDisplayMode.set(this.mode === 'edit' ? 'ru' : 'ruEn');
     this.viewMode.set('edit');
     this.previewLanguage.set(this.currentLanguage());
     this.previewLanguageLoading.set(false);
     this.previewLanguageError.set(null);
+    this.translationResetKey.set(
+      this.question === null
+        ? `create:${this.createInitialValue?.slug ?? 'blank'}`
+        : `question:${this.question.id}`,
+    );
     if (this.question === null) {
       const initialValue = this.createInitialValue;
       this.questionForm.reset({
@@ -652,6 +800,10 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   }
 
   private updateMarkdownContent(control: FormControl<string>, value: string): void {
+    this.updateFormControl(control, value);
+  }
+
+  private updateFormControl(control: FormControl<string>, value: string): void {
     control.setValue(value);
     control.markAsDirty();
     control.markAsTouched();

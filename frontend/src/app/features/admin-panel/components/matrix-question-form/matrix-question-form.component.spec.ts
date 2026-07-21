@@ -14,6 +14,11 @@ import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-w
 import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
 import { MatrixQuestionFormComponent } from './matrix-question-form.component';
+import {
+  MatrixQuestionTranslationChange,
+  MatrixQuestionTranslationField,
+} from './matrix-question-translation.model';
+import { MatrixQuestionTranslationWorkspaceComponent } from './matrix-question-translation-workspace.component';
 
 const RESOURCE_ID = '00000000000000000000000000000003';
 const SUBSECTION_ID = '00000000000000000000000000000013';
@@ -62,8 +67,20 @@ describe('MatrixQuestionFormComponent', () => {
       ],
     })
       .overrideComponent(MatrixQuestionFormComponent, {
-        remove: { imports: [MatrixStructurePickerComponent, MarkdownEditorComponent] },
-        add: { imports: [MatrixStructurePickerStubComponent, MarkdownEditorStubComponent] },
+        remove: {
+          imports: [
+            MatrixStructurePickerComponent,
+            MarkdownEditorComponent,
+            MatrixQuestionTranslationWorkspaceComponent,
+          ],
+        },
+        add: {
+          imports: [
+            MatrixStructurePickerStubComponent,
+            MarkdownEditorStubComponent,
+            MatrixQuestionTranslationWorkspaceStubComponent,
+          ],
+        },
       })
       .compileComponents();
 
@@ -400,6 +417,22 @@ describe('MatrixQuestionFormComponent', () => {
     ).toEqual(['## RU answer', '## EN answer', 'RU explanation', 'EN explanation']);
   });
 
+  it('shows only RU localized fields by default when editing an existing question', () => {
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('question', questionDetail());
+    fixture.detectChanges();
+
+    expect(element('#matrix-form-question-ru')).not.toBeNull();
+    expect(element('#matrix-form-question-en')).toBeNull();
+    expect(element('#matrix-form-answer-ru')).not.toBeNull();
+    expect(element('#matrix-form-answer-en')).toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="matrix-form-display-mode-ru"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
   it('switches between RU and EN localized field sets without losing values', () => {
     fixture.componentRef.setInput('createInitialValue', {
       slug: 'queued-question-0007',
@@ -480,6 +513,133 @@ describe('MatrixQuestionFormComponent', () => {
         ?.getAttribute('aria-pressed'),
     ).toBe('true');
     expectInvalidControl('#matrix-form-question-en', 'Максимум 255 символов.');
+  });
+
+  it('opens the translation workspace and applies question and resource EN changes to the form', () => {
+    fixture.componentRef.setInput('createInitialValue', {
+      slug: 'queued-question-0007',
+      subsectionId: SUBSECTION_ID,
+      preferredSheetKey: 'python',
+      grade: 'Junior',
+      interviewFrequency: null,
+      publishStatus: 'Draft',
+      translations: {
+        ru: {
+          question: 'Что такое PEP 8?',
+          answer: 'RU answer',
+          interviewAnswerExplanation: 'RU explanation',
+        },
+        en: {
+          question: 'Что такое PEP 8?',
+          answer: '',
+          interviewAnswerExplanation: '',
+        },
+      },
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.attachResource(resource);
+    fixture.componentInstance.newResourceNameRu.set('Новый ресурс');
+    fixture.componentInstance.newResourceNameEn.set('New resource');
+    fixture.componentInstance.newResourceUrl.set(VALID_RESOURCE_URL);
+    fixture.componentInstance.addNewResource();
+    fixture.detectChanges();
+
+    clickViewMode('translation');
+    const workspace = translationWorkspace();
+    expect(workspace.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          scope: 'question',
+          fieldId: 'question',
+          source: 'Что такое PEP 8?',
+          translation: 'Что такое PEP 8?',
+        }),
+        expect.objectContaining({
+          scope: 'resource',
+          resourceId: RESOURCE_ID,
+          fieldId: 'name',
+          editable: false,
+        }),
+        expect.objectContaining({
+          scope: 'resource',
+          resourceId: 'new--1',
+          fieldId: 'name',
+          editable: true,
+        }),
+      ]),
+    );
+
+    workspace.translationChange.emit({
+      scope: 'question',
+      fieldId: 'question',
+      value: 'What is PEP 8?',
+    });
+    workspace.translationChange.emit({
+      scope: 'question',
+      fieldId: 'answer',
+      value: 'EN answer',
+    });
+    workspace.translationChange.emit({
+      scope: 'resource',
+      resourceId: 'new--1',
+      fieldId: 'name',
+      value: 'New documentation resource',
+    });
+    workspace.translationChange.emit({
+      scope: 'resource',
+      resourceId: RESOURCE_ID,
+      fieldId: 'context',
+      value: 'Read the docs',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.questionForm.controls.questionEn.value).toBe('What is PEP 8?');
+    expect(fixture.componentInstance.questionForm.controls.answerEn.value).toBe('EN answer');
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+    expect(translationWorkspace().fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          resourceId: 'new--1',
+          fieldId: 'name',
+          translation: 'New documentation resource',
+        }),
+        expect.objectContaining({
+          resourceId: RESOURCE_ID,
+          fieldId: 'context',
+          translation: 'Read the docs',
+        }),
+      ]),
+    );
+  });
+
+  it('opens the existing public preview in EN without changing the UI language', () => {
+    const i18n = TestBed.inject(I18nService);
+    const ensureLanguageBundle = jest
+      .spyOn(i18n, 'ensureLanguageBundle')
+      .mockReturnValue(of(void 0));
+    clickViewMode('translation');
+
+    translationWorkspace().previewEnglish.emit();
+    fixture.detectChanges();
+
+    expect(ensureLanguageBundle).toHaveBeenCalledWith('en');
+    expect(i18n.language()).toBe('ru');
+    expect(fixture.componentInstance.previewLanguage()).toBe('en');
+    expect(previewSection().hidden).toBe(false);
+  });
+
+  it('keeps translation mode visible and reports a failed direct EN preview', () => {
+    const i18n = TestBed.inject(I18nService);
+    jest
+      .spyOn(i18n, 'ensureLanguageBundle')
+      .mockReturnValue(throwError(() => new Error('bundle unavailable')));
+    clickViewMode('translation');
+
+    translationWorkspace().previewEnglish.emit();
+    fixture.detectChanges();
+
+    expect(translationSection().hidden).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить язык предпросмотра.');
   });
 
   it('blocks invalid slug and long answer text before emitting', () => {
@@ -763,7 +923,10 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(inputValue('#matrix-form-slug')).toBe('existing-question');
-    expect(inputValue('#matrix-form-question-en')).toBe('Existing question?');
+    expect(inputValue('#matrix-form-question-ru')).toBe('Существующий вопрос?');
+    expect(fixture.componentInstance.questionForm.controls.questionEn.value).toBe(
+      'Existing question?',
+    );
   });
 
   function submitForm(): void {
@@ -829,7 +992,7 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
   }
 
-  function clickViewMode(mode: 'edit' | 'preview'): void {
+  function clickViewMode(mode: 'edit' | 'translation' | 'preview'): void {
     const button = fixture.nativeElement.querySelector(
       `[data-testid="matrix-form-view-${mode}"]`,
     ) as HTMLButtonElement | null;
@@ -838,6 +1001,21 @@ describe('MatrixQuestionFormComponent', () => {
     }
     button.click();
     fixture.detectChanges();
+  }
+
+  function translationWorkspace(): MatrixQuestionTranslationWorkspaceStubComponent {
+    return fixture.debugElement.query(By.directive(MatrixQuestionTranslationWorkspaceStubComponent))
+      .componentInstance as MatrixQuestionTranslationWorkspaceStubComponent;
+  }
+
+  function translationSection(): HTMLElement {
+    const section = element('[data-testid="matrix-translation-workspace-stub"]')?.closest(
+      'section',
+    );
+    if (!(section instanceof HTMLElement)) {
+      throw new Error('No matrix question translation section found');
+    }
+    return section;
   }
 
   function previewSection(): HTMLElement {
@@ -904,6 +1082,19 @@ class MatrixStructurePickerStubComponent {
 class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
   @Output() readonly valueChange = new EventEmitter<string>();
+}
+
+@Component({
+  selector: 'app-matrix-question-translation-workspace',
+  standalone: true,
+  template: '<div data-testid="matrix-translation-workspace-stub"></div>',
+})
+class MatrixQuestionTranslationWorkspaceStubComponent {
+  @Input({ required: true }) fields!: readonly MatrixQuestionTranslationField[];
+  @Input({ required: true }) resetKey!: string;
+  @Input({ required: true }) disabled!: boolean;
+  @Output() readonly translationChange = new EventEmitter<MatrixQuestionTranslationChange>();
+  @Output() readonly previewEnglish = new EventEmitter<void>();
 }
 
 function questionDetail(): AdminMatrixQuestionDetailDto {
