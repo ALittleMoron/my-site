@@ -145,7 +145,7 @@ function matrixQuestion(overrides: Partial<MatrixQuestionDetail> = {}): MatrixQu
     slug: 'what-is-a-closure',
     question: 'Что такое замыкание?',
     answer: '**Замыкание** хранит внешнюю область видимости.',
-    interviewExpectedAnswer: 'Лексическая область видимости.',
+    interviewAnswerExplanation: 'Лексическая область видимости.',
     sheetKey: 'javascript',
     sheet: 'JavaScript',
     grade: 'Junior',
@@ -158,7 +158,7 @@ function matrixQuestion(overrides: Partial<MatrixQuestionDetail> = {}): MatrixQu
       ru: {
         question: 'Что такое замыкание?',
         answer: '**Замыкание** хранит внешнюю область видимости.',
-        interviewExpectedAnswer: 'Лексическая область видимости.',
+        interviewAnswerExplanation: 'Лексическая область видимости.',
         sheet: 'JavaScript',
         section: 'Core',
         subsection: 'Syntax',
@@ -166,7 +166,7 @@ function matrixQuestion(overrides: Partial<MatrixQuestionDetail> = {}): MatrixQu
       en: {
         question: 'What is a closure?',
         answer: 'A **closure** keeps outer scope.',
-        interviewExpectedAnswer: 'Lexical scope.',
+        interviewAnswerExplanation: 'Lexical scope.',
         sheet: 'JavaScript',
         section: 'Core',
         subsection: 'Syntax',

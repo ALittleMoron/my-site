@@ -139,8 +139,8 @@ Portfolio and articles site with a knowledge database
   explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix
   sheet/section/subsection names live in normalized structure tables, questions store required
   `subsection_id`, and sheets use a stable language-neutral `key`/`sheetKey`; localized sheet names,
-  sections, subsections, questions, answers, expected answers, resource names, and attachment
-  contexts are projections.
+  sections, subsections, questions, answers, interview answer explanations, resource names, and
+  attachment contexts are projections.
   Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
   resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
   whether the authored text actually matches the selected language.

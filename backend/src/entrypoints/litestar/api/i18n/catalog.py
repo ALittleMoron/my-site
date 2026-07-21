@@ -490,10 +490,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.questionEn": "Вопрос EN",
         "adminMatrixWorkspace.missing.answerRu": "Ответ RU",
         "adminMatrixWorkspace.missing.answerEn": "Ответ EN",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": (
+        "adminMatrixWorkspace.missing.interviewAnswerExplanationRu": (
             "Объяснение ответа на собеседовании RU"
         ),
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": (
+        "adminMatrixWorkspace.missing.interviewAnswerExplanationEn": (
             "Объяснение ответа на собеседовании EN"
         ),
         "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
@@ -771,10 +771,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.answer": "Ответ",
         "matrix.form.answerRu": "Ответ RU",
         "matrix.form.answerEn": "Ответ EN",
-        "matrix.form.expectedAnswer": "Объяснение ответа на собеседовании",
-        "matrix.form.expectedAnswerRu": "Объяснение ответа на собеседовании RU",
-        "matrix.form.expectedAnswerEn": "Объяснение ответа на собеседовании EN",
-        "matrix.form.expectedAnswerHint": (
+        "matrix.form.interviewAnswerExplanation": "Объяснение ответа на собеседовании",
+        "matrix.form.interviewAnswerExplanationRu": "Объяснение ответа на собеседовании RU",
+        "matrix.form.interviewAnswerExplanationEn": "Объяснение ответа на собеседовании EN",
+        "matrix.form.interviewAnswerExplanationHint": (
             "Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также "
             "какие ошибки часто допускают кандидаты."
         ),
@@ -795,7 +795,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.detail.interviewFrequency": "Как часто спрашивают:",
         "matrix.detail.suggestedBy": "Кто предложил:",
         "matrix.detail.answer": "Ответ:",
-        "matrix.detail.expectedAnswer": "Объяснение ответа на собеседовании:",
+        "matrix.detail.interviewAnswerExplanation": "Объяснение ответа на собеседовании:",
         "matrix.detail.resources": "Внешние ресурсы:",
         "matrix.detail.openQuestion": "К вопросу",
         "matrix.filter.searchPlaceholder": "Поиск навыков и вопросов",
@@ -1538,10 +1538,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.missing.questionEn": "Question EN",
         "adminMatrixWorkspace.missing.answerRu": "Answer RU",
         "adminMatrixWorkspace.missing.answerEn": "Answer EN",
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerRu": (
+        "adminMatrixWorkspace.missing.interviewAnswerExplanationRu": (
             "Interview answer explanation RU"
         ),
-        "adminMatrixWorkspace.missing.interviewExpectedAnswerEn": (
+        "adminMatrixWorkspace.missing.interviewAnswerExplanationEn": (
             "Interview answer explanation EN"
         ),
         "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
@@ -1825,10 +1825,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.form.answer": "Answer",
         "matrix.form.answerRu": "Answer RU",
         "matrix.form.answerEn": "Answer EN",
-        "matrix.form.expectedAnswer": "Interview answer explanation",
-        "matrix.form.expectedAnswerRu": "Interview answer explanation RU",
-        "matrix.form.expectedAnswerEn": "Interview answer explanation EN",
-        "matrix.form.expectedAnswerHint": (
+        "matrix.form.interviewAnswerExplanation": "Interview answer explanation",
+        "matrix.form.interviewAnswerExplanationRu": "Interview answer explanation RU",
+        "matrix.form.interviewAnswerExplanationEn": "Interview answer explanation EN",
+        "matrix.form.interviewAnswerExplanationHint": (
             "Explain why the question is asked, what answer is expected and why, and which "
             "mistakes candidates commonly make."
         ),
@@ -1849,7 +1849,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "matrix.detail.interviewFrequency": "How often asked:",
         "matrix.detail.suggestedBy": "Suggested by:",
         "matrix.detail.answer": "Answer:",
-        "matrix.detail.expectedAnswer": "Interview answer explanation:",
+        "matrix.detail.interviewAnswerExplanation": "Interview answer explanation:",
         "matrix.detail.resources": "External resources:",
         "matrix.detail.openQuestion": "To question",
         "matrix.filter.searchPlaceholder": "Search skills and questions",

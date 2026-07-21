@@ -890,8 +890,8 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
             question_en="What is PEP 8?",
             answer_ru="Руководство по стилю Python.",
             answer_en="The Python style guide.",
-            interview_expected_answer_ru="Объяснить назначение и основные правила.",
-            interview_expected_answer_en="Explain its purpose and core rules.",
+            interview_answer_explanation_ru="Объяснить назначение и основные правила.",
+            interview_answer_explanation_en="Explain its purpose and core rules.",
             resources=(
                 MatrixQuestionDraftResourceParams(
                     name_ru="PEP 8",

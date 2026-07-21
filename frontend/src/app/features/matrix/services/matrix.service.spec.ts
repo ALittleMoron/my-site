@@ -129,7 +129,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
     slug: 'what-is-pep8',
     question: 'What is PEP8?',
     answer: 'Answer',
-    interviewExpectedAnswer: 'Expected answer',
+    interviewAnswerExplanation: 'Answer explanation',
     sheetKey: 'python',
     sheet: 'Python',
     grade: 'Junior',
@@ -142,7 +142,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
       ru: {
         question: 'Что такое PEP8?',
         answer: 'Ответ',
-        interviewExpectedAnswer: 'Ожидаемый ответ',
+        interviewAnswerExplanation: 'Объяснение ответа',
         sheet: 'Питон',
         section: 'Основы',
         subsection: 'Стиль',
@@ -150,7 +150,7 @@ function matrixDetailDto(overrides: Partial<Record<string, unknown>> = {}) {
       en: {
         question: 'What is PEP8?',
         answer: 'Answer',
-        interviewExpectedAnswer: 'Expected answer',
+        interviewAnswerExplanation: 'Answer explanation',
         sheet: 'Python',
         section: 'Core',
         subsection: 'Style',

@@ -768,8 +768,8 @@ async def insert_competency_matrix_items(
                 "question_en_fingerprint",
                 "answer_ru",
                 "answer_en",
-                "interview_expected_answer_ru",
-                "interview_expected_answer_en",
+                "interview_answer_explanation_ru",
+                "interview_answer_explanation_en",
                 "subsection_id",
                 "grade",
                 "interview_frequency",
@@ -799,8 +799,8 @@ async def insert_competency_matrix_items(
                     (missing_answer_en, literal("")),
                     else_=func.concat(literal("Matrix answer "), value),
                 ),
-                func.concat(literal("Ожидаемый ответ "), value),
-                func.concat(literal("Expected answer "), value),
+                func.concat(literal("Объяснение ответа "), value),
+                func.concat(literal("Answer explanation "), value),
                 hex_id_expr(value=subsection_number),
                 sql_cast(
                     case(

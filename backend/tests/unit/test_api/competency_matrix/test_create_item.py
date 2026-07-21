@@ -22,8 +22,8 @@ class TestCreateItemAPI(ApiTestCase):
             question_en="question 1",
             answer_ru="ответ 1",
             answer_en="answer 1",
-            interview_expected_answer_ru="ожидаемый ответ 1",
-            interview_expected_answer_en="interview expected answer 1",
+            interview_answer_explanation_ru="объяснение ответа 1",
+            interview_answer_explanation_en="interview answer explanation 1",
             sheet_key="python",
             sheet_ru="Питон",
             sheet_en="Python",
@@ -77,8 +77,8 @@ class TestCreateItemAPI(ApiTestCase):
                 question_en="question 1",
                 answer_ru="ответ 1",
                 answer_en="answer 1",
-                interview_expected_answer_ru="ожидаемый ответ 1",
-                interview_expected_answer_en="interview expected answer 1",
+                interview_answer_explanation_ru="объяснение ответа 1",
+                interview_answer_explanation_en="interview answer explanation 1",
                 sheet_key="python",
                 sheet_ru="Питон",
                 sheet_en="Python",
@@ -118,7 +118,7 @@ class TestCreateItemAPI(ApiTestCase):
             "slug": "question-1",
             "question": "question 1",
             "answer": "answer 1",
-            "interviewExpectedAnswer": "interview expected answer 1",
+            "interviewAnswerExplanation": "interview answer explanation 1",
             "subsectionId": self.factory.core.hex_id(1),
             "sheetKey": "python",
             "sheet": "Python",
@@ -132,12 +132,12 @@ class TestCreateItemAPI(ApiTestCase):
                 "ru": {
                     "question": "вопрос 1",
                     "answer": "ответ 1",
-                    "interviewExpectedAnswer": "ожидаемый ответ 1",
+                    "interviewAnswerExplanation": "объяснение ответа 1",
                 },
                 "en": {
                     "question": "question 1",
                     "answer": "answer 1",
-                    "interviewExpectedAnswer": "interview expected answer 1",
+                    "interviewAnswerExplanation": "interview answer explanation 1",
                 },
             },
             "resources": [
@@ -180,12 +180,12 @@ class TestCreateItemAPI(ApiTestCase):
                     "ru": {
                         "question": "вопрос 1",
                         "answer": "ответ 1",
-                        "interviewExpectedAnswer": "ожидаемый ответ 1",
+                        "interviewAnswerExplanation": "объяснение ответа 1",
                     },
                     "en": {
                         "question": "question 1",
                         "answer": "answer 1",
-                        "interviewExpectedAnswer": "interview expected answer 1",
+                        "interviewAnswerExplanation": "interview answer explanation 1",
                     },
                 },
                 "resources": [],
@@ -245,6 +245,22 @@ class TestCreateItemAPI(ApiTestCase):
                 ],
             ),
         )
+        assert response.status_code == codes.BAD_REQUEST, response.json()
+        self.use_case.create_item.assert_not_called()
+
+    def test_create_item_rejects_legacy_interview_answer_field(self) -> None:
+        data = self.factory.api.competency_matrix_item_request()
+        translations = data["translations"]
+        assert isinstance(translations, dict)
+        legacy_parts = ("interview", "expected", "answer")
+        legacy_field = legacy_parts[0] + "".join(part.title() for part in legacy_parts[1:])
+        for language in ("ru", "en"):
+            translation = translations[language]
+            assert isinstance(translation, dict)
+            translation[legacy_field] = translation.pop("interviewAnswerExplanation")
+
+        response = self.api.post_create_item(data=data)
+
         assert response.status_code == codes.BAD_REQUEST, response.json()
         self.use_case.create_item.assert_not_called()
 
@@ -313,8 +329,8 @@ class TestCreateItemAPI(ApiTestCase):
             interview_frequency=None,
             answer_ru="",
             answer_en="",
-            interview_expected_answer_ru="",
-            interview_expected_answer_en="",
+            interview_answer_explanation_ru="",
+            interview_answer_explanation_en="",
             sheet_key="python",
             sheet_ru="",
             sheet_en="",
@@ -332,8 +348,8 @@ class TestCreateItemAPI(ApiTestCase):
                 question_en="partial question",
                 answer_ru="",
                 answer_en="",
-                interview_expected_answer_ru="",
-                interview_expected_answer_en="",
+                interview_answer_explanation_ru="",
+                interview_answer_explanation_en="",
                 sheet_ru="",
                 sheet_en="",
                 grade=None,
@@ -357,8 +373,8 @@ class TestCreateItemAPI(ApiTestCase):
                 question_en="partial question",
                 answer_ru="",
                 answer_en="",
-                interview_expected_answer_ru="",
-                interview_expected_answer_en="",
+                interview_answer_explanation_ru="",
+                interview_answer_explanation_en="",
                 sheet_ru="",
                 sheet_en="",
                 grade=None,

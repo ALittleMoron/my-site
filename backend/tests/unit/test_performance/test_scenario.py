@@ -150,7 +150,7 @@ def matrix_item_detail_payload(*, slug: str) -> dict[str, object]:
         "question": "How do you test this?",
         "interviewFrequency": "often",
         "answer": "Use a realistic seeded scenario.",
-        "interviewExpectedAnswer": "Name the data, threshold, and rollback path.",
+        "interviewAnswerExplanation": "Name the data, threshold, and rollback path.",
         "sheetKey": "python",
         "sheet": "Python",
         "grade": "Junior",
@@ -162,7 +162,7 @@ def matrix_item_detail_payload(*, slug: str) -> dict[str, object]:
             "ru": {
                 "question": "Как проверить это?",
                 "answer": "Через реалистичный seed.",
-                "interviewExpectedAnswer": "Назвать данные, порог и откат.",
+                "interviewAnswerExplanation": "Назвать данные, порог и откат.",
                 "sheet": "Питон",
                 "section": "Основы",
                 "subsection": "Производительность",
@@ -170,7 +170,7 @@ def matrix_item_detail_payload(*, slug: str) -> dict[str, object]:
             "en": {
                 "question": "How do you test this?",
                 "answer": "Use a realistic seeded scenario.",
-                "interviewExpectedAnswer": "Name the data, threshold, and rollback path.",
+                "interviewAnswerExplanation": "Name the data, threshold, and rollback path.",
                 "sheet": "Python",
                 "section": "Basics",
                 "subsection": "Performance",

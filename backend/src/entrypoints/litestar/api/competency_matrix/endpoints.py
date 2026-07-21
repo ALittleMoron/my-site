@@ -620,12 +620,12 @@ class AdminCompetencyMatrixApiController(Controller):
                             "ru": {
                                 "question": "Как asyncio.gather обрабатывает ошибки?",
                                 "answer": "Ответ",
-                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                                "interviewAnswerExplanation": "Объяснение ответа",
                             },
                             "en": {
                                 "question": "How does asyncio.gather handle errors?",
                                 "answer": "Answer",
-                                "interviewExpectedAnswer": "Expected answer",
+                                "interviewAnswerExplanation": "Answer explanation",
                             },
                         },
                         "resources": [],
@@ -748,12 +748,12 @@ class AdminCompetencyMatrixApiController(Controller):
                             "ru": {
                                 "question": "Как asyncio.gather обрабатывает ошибки?",
                                 "answer": "Ответ",
-                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                                "interviewAnswerExplanation": "Объяснение ответа",
                             },
                             "en": {
                                 "question": "How does asyncio.gather handle errors?",
                                 "answer": "Answer",
-                                "interviewExpectedAnswer": "Expected answer",
+                                "interviewAnswerExplanation": "Answer explanation",
                             },
                         },
                         "resources": [],
@@ -836,12 +836,12 @@ class AdminCompetencyMatrixApiController(Controller):
                             "ru": {
                                 "question": "Как asyncio.gather обрабатывает ошибки?",
                                 "answer": "Ответ",
-                                "interviewExpectedAnswer": "Ожидаемый ответ",
+                                "interviewAnswerExplanation": "Объяснение ответа",
                             },
                             "en": {
                                 "question": "How does asyncio.gather handle errors?",
                                 "answer": "Answer",
-                                "interviewExpectedAnswer": "Expected answer",
+                                "interviewAnswerExplanation": "Answer explanation",
                             },
                         },
                         "resources": [],

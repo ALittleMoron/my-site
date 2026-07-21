@@ -23,7 +23,7 @@ export class MatrixQuestionPublicPreviewComponent {
 
   readonly question = input.required<string>();
   readonly answer = input.required<string>();
-  readonly interviewExpectedAnswer = input.required<string>();
+  readonly interviewAnswerExplanation = input.required<string>();
   readonly interviewFrequency = input.required<AdminMatrixInterviewFrequency | null>();
   readonly resources = input.required<readonly MatrixQuestionPreviewResource[]>();
   readonly language = input.required<LanguageCode>();
@@ -33,7 +33,7 @@ export class MatrixQuestionPublicPreviewComponent {
     this.wikiLinkRenderer.render(this.answer(), this.language()),
   );
   readonly interviewAnswerHtml = computed(() =>
-    this.wikiLinkRenderer.render(this.interviewExpectedAnswer(), this.language()),
+    this.wikiLinkRenderer.render(this.interviewAnswerExplanation(), this.language()),
   );
   readonly interviewFrequencyLabel = computed<string | null>(() => {
     this.bundleVersion();

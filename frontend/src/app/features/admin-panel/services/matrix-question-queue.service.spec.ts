@@ -211,12 +211,12 @@ describe('MatrixQuestionQueueService', () => {
             ru: {
               question: 'Что такое PEP 8?',
               answer: 'Ответ',
-              interviewExpectedAnswer: 'Ожидаемый ответ',
+              interviewAnswerExplanation: 'Объяснение ответа',
             },
             en: {
               question: 'What is PEP 8?',
               answer: 'Answer',
-              interviewExpectedAnswer: 'Expected answer',
+              interviewAnswerExplanation: 'Answer explanation',
             },
           },
           resources: [],

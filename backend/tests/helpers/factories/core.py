@@ -186,9 +186,9 @@ class CoreFactoryHelper:
         answer: str = "Answer",
         answer_ru: str | None = None,
         answer_en: str | None = None,
-        interview_expected_answer: str = "Answer",
-        interview_expected_answer_ru: str | None = None,
-        interview_expected_answer_en: str | None = None,
+        interview_answer_explanation: str = "Answer",
+        interview_answer_explanation_ru: str | None = None,
+        interview_answer_explanation_en: str | None = None,
         sheet_key: str | None = None,
         sheet: str = "Sheet",
         sheet_ru: str | None = None,
@@ -218,13 +218,13 @@ class CoreFactoryHelper:
             ),
             answer_ru=cls._fallback(answer_ru, answer),
             answer_en=cls._fallback(answer_en, answer),
-            interview_expected_answer_ru=cls._fallback(
-                interview_expected_answer_ru,
-                interview_expected_answer,
+            interview_answer_explanation_ru=cls._fallback(
+                interview_answer_explanation_ru,
+                interview_answer_explanation,
             ),
-            interview_expected_answer_en=cls._fallback(
-                interview_expected_answer_en,
-                interview_expected_answer,
+            interview_answer_explanation_en=cls._fallback(
+                interview_answer_explanation_en,
+                interview_answer_explanation,
             ),
             structure=cls.competency_matrix_item_structure(
                 sheet_id=sheet_id,
@@ -286,9 +286,9 @@ class CoreFactoryHelper:
         answer: str = "Answer",
         answer_ru: str | None = None,
         answer_en: str | None = None,
-        interview_expected_answer: str = "Answer",
-        interview_expected_answer_ru: str | None = None,
-        interview_expected_answer_en: str | None = None,
+        interview_answer_explanation: str = "Answer",
+        interview_answer_explanation_ru: str | None = None,
+        interview_answer_explanation_en: str | None = None,
         sheet_key: str | None = None,
         sheet: str = "Sheet",
         sheet_ru: str | None = None,
@@ -328,13 +328,13 @@ class CoreFactoryHelper:
             publish_status=publish_status,
             answer_ru=cls._fallback(answer_ru, answer),
             answer_en=cls._fallback(answer_en, answer),
-            interview_expected_answer_ru=cls._fallback(
-                interview_expected_answer_ru,
-                interview_expected_answer,
+            interview_answer_explanation_ru=cls._fallback(
+                interview_answer_explanation_ru,
+                interview_answer_explanation,
             ),
-            interview_expected_answer_en=cls._fallback(
-                interview_expected_answer_en,
-                interview_expected_answer,
+            interview_answer_explanation_en=cls._fallback(
+                interview_answer_explanation_en,
+                interview_answer_explanation,
             ),
             subsection_id=cls.hex_id(subsection_id),
             grade=grade,
@@ -357,9 +357,9 @@ class CoreFactoryHelper:
         answer: str = "Answer",
         answer_ru: str | None = None,
         answer_en: str | None = None,
-        interview_expected_answer: str = "Answer",
-        interview_expected_answer_ru: str | None = None,
-        interview_expected_answer_en: str | None = None,
+        interview_answer_explanation: str = "Answer",
+        interview_answer_explanation_ru: str | None = None,
+        interview_answer_explanation_en: str | None = None,
         sheet_key: str | None = None,
         sheet: str = "Sheet",
         sheet_ru: str | None = None,
@@ -399,13 +399,13 @@ class CoreFactoryHelper:
             publish_status=publish_status,
             answer_ru=cls._fallback(answer_ru, answer),
             answer_en=cls._fallback(answer_en, answer),
-            interview_expected_answer_ru=cls._fallback(
-                interview_expected_answer_ru,
-                interview_expected_answer,
+            interview_answer_explanation_ru=cls._fallback(
+                interview_answer_explanation_ru,
+                interview_answer_explanation,
             ),
-            interview_expected_answer_en=cls._fallback(
-                interview_expected_answer_en,
-                interview_expected_answer,
+            interview_answer_explanation_en=cls._fallback(
+                interview_answer_explanation_en,
+                interview_answer_explanation,
             ),
             subsection_id=cls.hex_id(subsection_id),
             grade=grade,

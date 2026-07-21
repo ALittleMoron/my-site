@@ -251,8 +251,8 @@ def _save_payload(
         "questionEn": f"Question: {authored_marker}",
         "answerRu": f"Ответ: {authored_marker}",
         "answerEn": f"Answer: {authored_marker}",
-        "interviewExpectedAnswerRu": f"Ожидаемый ответ: {authored_marker}",
-        "interviewExpectedAnswerEn": f"Expected answer: {authored_marker}",
+        "interviewAnswerExplanationRu": f"Объяснение ответа: {authored_marker}",
+        "interviewAnswerExplanationEn": f"Answer explanation: {authored_marker}",
         "resources": [
             {
                 "nameRu": "Интеграционный ресурс",

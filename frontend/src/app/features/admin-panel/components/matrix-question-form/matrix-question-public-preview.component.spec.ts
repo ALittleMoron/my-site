@@ -15,7 +15,7 @@ describe('MatrixQuestionPublicPreviewComponent', () => {
     fixture = TestBed.createComponent(MatrixQuestionPublicPreviewComponent);
     fixture.componentRef.setInput('question', 'What is typing?');
     fixture.componentRef.setInput('answer', 'Use **types**.');
-    fixture.componentRef.setInput('interviewExpectedAnswer', 'Explain `Protocol`.');
+    fixture.componentRef.setInput('interviewAnswerExplanation', 'Explain `Protocol`.');
     fixture.componentRef.setInput('interviewFrequency', 'often');
     fixture.componentRef.setInput('resources', [
       {

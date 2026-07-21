@@ -973,15 +973,15 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
                 self._blank_text_condition(CompetencyMatrixItemModel.answer_en),
             ),
             (
-                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_ANSWER_EXPLANATION_RU,
                 self._blank_text_condition(
-                    CompetencyMatrixItemModel.interview_expected_answer_ru,
+                    CompetencyMatrixItemModel.interview_answer_explanation_ru,
                 ),
             ),
             (
-                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_ANSWER_EXPLANATION_EN,
                 self._blank_text_condition(
-                    CompetencyMatrixItemModel.interview_expected_answer_en,
+                    CompetencyMatrixItemModel.interview_answer_explanation_en,
                 ),
             ),
         )

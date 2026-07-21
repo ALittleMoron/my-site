@@ -111,8 +111,8 @@ class MatrixQuestionDraftSaveInput(AgentBridgeSchema):
     question_en: MatrixLongTextInput
     answer_ru: MatrixLongTextInput
     answer_en: MatrixLongTextInput
-    interview_expected_answer_ru: MatrixLongTextInput
-    interview_expected_answer_en: MatrixLongTextInput
+    interview_answer_explanation_ru: MatrixLongTextInput
+    interview_answer_explanation_en: MatrixLongTextInput
     resources: MatrixDraftResourcesInput
 
     def to_domain_schema(self, *, claim_id: str) -> MatrixQuestionDraftSaveParams:
@@ -126,8 +126,8 @@ class MatrixQuestionDraftSaveInput(AgentBridgeSchema):
             question_en=self.question_en,
             answer_ru=self.answer_ru,
             answer_en=self.answer_en,
-            interview_expected_answer_ru=self.interview_expected_answer_ru,
-            interview_expected_answer_en=self.interview_expected_answer_en,
+            interview_answer_explanation_ru=self.interview_answer_explanation_ru,
+            interview_answer_explanation_en=self.interview_answer_explanation_en,
             resources=tuple(resource.to_domain_schema() for resource in self.resources),
         )
 

@@ -98,8 +98,8 @@ async def test_agent_api_client_maps_all_operations_to_fixed_routes_and_camel_ca
         "questionEn": "How do locks work?",
         "answerRu": "Они сериализуют конфликтующий доступ.",
         "answerEn": "They serialize conflicting access.",
-        "interviewExpectedAnswerRu": "Упоминает row locks.",
-        "interviewExpectedAnswerEn": "Mentions row locks.",
+        "interviewAnswerExplanationRu": "Упоминает row locks.",
+        "interviewAnswerExplanationEn": "Mentions row locks.",
         "resources": [
             {
                 "nameRu": "Документация PostgreSQL",
@@ -418,8 +418,8 @@ def _draft_input() -> MatrixQuestionDraftSaveParams:
         question_en="How do locks work?",
         answer_ru="Они сериализуют конфликтующий доступ.",
         answer_en="They serialize conflicting access.",
-        interview_expected_answer_ru="Упоминает row locks.",
-        interview_expected_answer_en="Mentions row locks.",
+        interview_answer_explanation_ru="Упоминает row locks.",
+        interview_answer_explanation_en="Mentions row locks.",
         resources=(
             MatrixQuestionDraftResourceParams(
                 name_ru="Документация PostgreSQL",

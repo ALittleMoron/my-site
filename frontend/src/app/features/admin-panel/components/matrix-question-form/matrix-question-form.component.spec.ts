@@ -145,18 +145,18 @@ describe('MatrixQuestionFormComponent', () => {
     expect(slug.classList).not.toContain('is-invalid');
   });
 
-  it('describes expected-answer editors as interview answer explanations', () => {
+  it('describes interview-answer-explanation editors as interview answer explanations', () => {
     const russianLabel = fixture.nativeElement.querySelector(
-      '#matrix-form-expected-ru-label',
+      '#matrix-form-interview-answer-explanation-ru-label',
     ) as HTMLElement;
     const englishLabel = fixture.nativeElement.querySelector(
-      '#matrix-form-expected-en-label',
+      '#matrix-form-interview-answer-explanation-en-label',
     ) as HTMLElement;
     const russianHint = fixture.nativeElement.querySelector(
-      '#matrix-form-expected-ru-hint',
+      '#matrix-form-interview-answer-explanation-ru-hint',
     ) as HTMLElement;
     const russianEditor = fixture.nativeElement.querySelector(
-      '#matrix-form-expected-ru',
+      '#matrix-form-interview-answer-explanation-ru',
     ) as HTMLElement;
 
     expect(russianLabel.textContent?.trim()).toBe('Объяснение ответа на собеседовании RU');
@@ -164,7 +164,9 @@ describe('MatrixQuestionFormComponent', () => {
     expect(russianHint.textContent?.trim()).toBe(
       'Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также какие ошибки часто допускают кандидаты.',
     );
-    expect(russianEditor.getAttribute('aria-describedby')).toBe('matrix-form-expected-ru-hint');
+    expect(russianEditor.getAttribute('aria-describedby')).toBe(
+      'matrix-form-interview-answer-explanation-ru-hint',
+    );
   });
 
   it.each<MatrixQuestionControlValidationCase>([
@@ -199,16 +201,18 @@ describe('MatrixQuestionFormComponent', () => {
       setInvalidValue: () => setMarkdownEditor('#matrix-form-answer-en', INVALID_MATRIX_TEXT),
     },
     {
-      description: 'expected answer RU max length',
-      selector: '#matrix-form-expected-ru',
+      description: 'answer explanation RU max length',
+      selector: '#matrix-form-interview-answer-explanation-ru',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setMarkdownEditor('#matrix-form-expected-ru', INVALID_MATRIX_TEXT),
+      setInvalidValue: () =>
+        setMarkdownEditor('#matrix-form-interview-answer-explanation-ru', INVALID_MATRIX_TEXT),
     },
     {
-      description: 'expected answer EN max length',
-      selector: '#matrix-form-expected-en',
+      description: 'answer explanation EN max length',
+      selector: '#matrix-form-interview-answer-explanation-en',
       expectedMessage: 'Максимум 20000 символов.',
-      setInvalidValue: () => setMarkdownEditor('#matrix-form-expected-en', INVALID_MATRIX_TEXT),
+      setInvalidValue: () =>
+        setMarkdownEditor('#matrix-form-interview-answer-explanation-en', INVALID_MATRIX_TEXT),
     },
   ])('shows invalid styling and localized feedback for $description', (validationCase) => {
     fillValidQuestionMinimum();
@@ -279,12 +283,12 @@ describe('MatrixQuestionFormComponent', () => {
         ru: {
           question: 'Что такое PEP 8?',
           answer: '',
-          interviewExpectedAnswer: '',
+          interviewAnswerExplanation: '',
         },
         en: {
           question: 'What is PEP 8?',
           answer: '',
-          interviewExpectedAnswer: '',
+          interviewAnswerExplanation: '',
         },
       },
     });
@@ -300,7 +304,7 @@ describe('MatrixQuestionFormComponent', () => {
     ).toBe('python');
   });
 
-  it('edits answer and expected-answer Markdown through shared editors', () => {
+  it('edits answer and interview-answer-explanation Markdown through shared editors', () => {
     fixture.componentRef.setInput('createInitialValue', {
       slug: 'queued-question-0007',
       subsectionId: SUBSECTION_ID,
@@ -312,12 +316,12 @@ describe('MatrixQuestionFormComponent', () => {
         ru: {
           question: 'Что такое PEP 8?',
           answer: '## RU answer',
-          interviewExpectedAnswer: 'RU expected',
+          interviewAnswerExplanation: 'RU explanation',
         },
         en: {
           question: 'What is PEP 8?',
           answer: '## EN answer',
-          interviewExpectedAnswer: 'EN expected',
+          interviewAnswerExplanation: 'EN explanation',
         },
       },
     });
@@ -329,14 +333,14 @@ describe('MatrixQuestionFormComponent', () => {
     expect(editors.map((editor) => editor.componentInstance.value)).toEqual([
       '## RU answer',
       '## EN answer',
-      'RU expected',
-      'EN expected',
+      'RU explanation',
+      'EN explanation',
     ]);
 
     editors[0].componentInstance.valueChange.emit('Updated RU answer');
     editors[1].componentInstance.valueChange.emit('Updated EN answer');
-    editors[2].componentInstance.valueChange.emit('Updated RU expected');
-    editors[3].componentInstance.valueChange.emit('Updated EN expected');
+    editors[2].componentInstance.valueChange.emit('Updated RU explanation');
+    editors[3].componentInstance.valueChange.emit('Updated EN explanation');
     fixture.detectChanges();
 
     submitForm();
@@ -345,12 +349,12 @@ describe('MatrixQuestionFormComponent', () => {
       ru: {
         question: 'Что такое PEP 8?',
         answer: 'Updated RU answer',
-        interviewExpectedAnswer: 'Updated RU expected',
+        interviewAnswerExplanation: 'Updated RU explanation',
       },
       en: {
         question: 'What is PEP 8?',
         answer: 'Updated EN answer',
-        interviewExpectedAnswer: 'Updated EN expected',
+        interviewAnswerExplanation: 'Updated EN explanation',
       },
     });
   });
@@ -367,12 +371,12 @@ describe('MatrixQuestionFormComponent', () => {
         ru: {
           question: 'Что такое PEP 8?',
           answer: '## RU answer',
-          interviewExpectedAnswer: 'RU expected',
+          interviewAnswerExplanation: 'RU explanation',
         },
         en: {
           question: 'What is PEP 8?',
           answer: '## EN answer',
-          interviewExpectedAnswer: 'EN expected',
+          interviewAnswerExplanation: 'EN explanation',
         },
       },
     });
@@ -382,8 +386,8 @@ describe('MatrixQuestionFormComponent', () => {
     expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
     expect(element('#matrix-form-answer-ru')).not.toBeNull();
     expect(element('#matrix-form-answer-en')).not.toBeNull();
-    expect(element('#matrix-form-expected-ru')).not.toBeNull();
-    expect(element('#matrix-form-expected-en')).not.toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-ru')).not.toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-en')).not.toBeNull();
     expect(
       fixture.nativeElement
         .querySelector('[data-testid="matrix-form-display-mode-ru-en"]')
@@ -393,7 +397,7 @@ describe('MatrixQuestionFormComponent', () => {
       fixture.debugElement
         .queryAll(By.directive(MarkdownEditorStubComponent))
         .map((editor) => editor.componentInstance.value),
-    ).toEqual(['## RU answer', '## EN answer', 'RU expected', 'EN expected']);
+    ).toEqual(['## RU answer', '## EN answer', 'RU explanation', 'EN explanation']);
   });
 
   it('switches between RU and EN localized field sets without losing values', () => {
@@ -408,12 +412,12 @@ describe('MatrixQuestionFormComponent', () => {
         ru: {
           question: 'Что такое PEP 8?',
           answer: '## RU answer',
-          interviewExpectedAnswer: 'RU expected',
+          interviewAnswerExplanation: 'RU explanation',
         },
         en: {
           question: 'What is PEP 8?',
           answer: '## EN answer',
-          interviewExpectedAnswer: 'EN expected',
+          interviewAnswerExplanation: 'EN explanation',
         },
       },
     });
@@ -424,22 +428,22 @@ describe('MatrixQuestionFormComponent', () => {
     expect(element('#matrix-form-question-en')).toBeNull();
     expect(element('#matrix-form-answer-ru')).not.toBeNull();
     expect(element('#matrix-form-answer-en')).toBeNull();
-    expect(element('#matrix-form-expected-ru')).not.toBeNull();
-    expect(element('#matrix-form-expected-en')).toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-ru')).not.toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-en')).toBeNull();
     setInput('#matrix-form-question-ru', 'Что такое PEP 8 на практике?');
     setMarkdownEditor('#matrix-form-answer-ru', 'Updated RU answer');
-    setMarkdownEditor('#matrix-form-expected-ru', 'Updated RU expected');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-ru', 'Updated RU explanation');
 
     clickDisplayMode('en');
     expect(element('#matrix-form-question-ru')).toBeNull();
     expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
     expect(element('#matrix-form-answer-ru')).toBeNull();
     expect(element('#matrix-form-answer-en')).not.toBeNull();
-    expect(element('#matrix-form-expected-ru')).toBeNull();
-    expect(element('#matrix-form-expected-en')).not.toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-ru')).toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-en')).not.toBeNull();
     setInput('#matrix-form-question-en', 'What is PEP 8 in practice?');
     setMarkdownEditor('#matrix-form-answer-en', 'Updated EN answer');
-    setMarkdownEditor('#matrix-form-expected-en', 'Updated EN expected');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-en', 'Updated EN explanation');
 
     clickDisplayMode('ru-en');
     expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8 на практике?');
@@ -451,12 +455,12 @@ describe('MatrixQuestionFormComponent', () => {
       ru: {
         question: 'Что такое PEP 8 на практике?',
         answer: 'Updated RU answer',
-        interviewExpectedAnswer: 'Updated RU expected',
+        interviewAnswerExplanation: 'Updated RU explanation',
       },
       en: {
         question: 'What is PEP 8 in practice?',
         answer: 'Updated EN answer',
-        interviewExpectedAnswer: 'Updated EN expected',
+        interviewAnswerExplanation: 'Updated EN explanation',
       },
     });
   });
@@ -541,8 +545,8 @@ describe('MatrixQuestionFormComponent', () => {
     for (const selector of [
       '#matrix-form-answer-ru',
       '#matrix-form-answer-en',
-      '#matrix-form-expected-ru',
-      '#matrix-form-expected-en',
+      '#matrix-form-interview-answer-explanation-ru',
+      '#matrix-form-interview-answer-explanation-en',
       '#matrixResourceContextRu0',
       '#matrixResourceContextEn0',
     ]) {
@@ -683,8 +687,8 @@ describe('MatrixQuestionFormComponent', () => {
       '#matrix-form-answer-en',
       'Learn **types** in the [[articles:python-typing|article]].',
     );
-    setMarkdownEditor('#matrix-form-expected-ru', 'Покажите `Protocol`.');
-    setMarkdownEditor('#matrix-form-expected-en', 'Show `Protocol`.');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-ru', 'Покажите `Protocol`.');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-en', 'Show `Protocol`.');
     setSelect('#matrix-form-interview-frequency', 'often');
     fixture.componentInstance.attachResource(resource);
     fixture.detectChanges();
@@ -908,7 +912,7 @@ function questionDetail(): AdminMatrixQuestionDetailDto {
     slug: 'existing-question',
     question: 'Existing question?',
     answer: '',
-    interviewExpectedAnswer: '',
+    interviewAnswerExplanation: '',
     subsectionId: SUBSECTION_ID,
     sheetKey: 'python',
     sheet: 'Python',
@@ -919,8 +923,8 @@ function questionDetail(): AdminMatrixQuestionDetailDto {
     publishStatus: 'Draft',
     suggestedByUsername: 'owner',
     translations: {
-      ru: { question: 'Существующий вопрос?', answer: '', interviewExpectedAnswer: '' },
-      en: { question: 'Existing question?', answer: '', interviewExpectedAnswer: '' },
+      ru: { question: 'Существующий вопрос?', answer: '', interviewAnswerExplanation: '' },
+      en: { question: 'Existing question?', answer: '', interviewAnswerExplanation: '' },
     },
     resources: [],
   };

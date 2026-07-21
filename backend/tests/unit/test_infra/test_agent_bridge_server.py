@@ -297,7 +297,7 @@ def _draft_arguments() -> dict[str, object]:
         "question_en": "How do locks work?",
         "answer_ru": "Они сериализуют конфликтующий доступ.",
         "answer_en": "They serialize conflicting access.",
-        "interview_expected_answer_ru": "Упоминает row locks.",
-        "interview_expected_answer_en": "Mentions row locks.",
+        "interview_answer_explanation_ru": "Упоминает row locks.",
+        "interview_answer_explanation_en": "Mentions row locks.",
         "resources": [resource.model_dump(mode="json", by_alias=False)],
     }

@@ -202,8 +202,8 @@ function incompleteQuestion(): AdminMatrixQuestionDetailDto {
     question: 'Incomplete question?',
     grade: null,
     translations: {
-      ru: { question: 'Неполный вопрос?', answer: '', interviewExpectedAnswer: '' },
-      en: { question: 'Incomplete question?', answer: '', interviewExpectedAnswer: '' },
+      ru: { question: 'Неполный вопрос?', answer: '', interviewAnswerExplanation: '' },
+      en: { question: 'Incomplete question?', answer: '', interviewAnswerExplanation: '' },
     },
   };
 }
@@ -214,7 +214,7 @@ function readyQuestion(publishStatus: 'Draft' | 'Published'): AdminMatrixQuestio
     slug: 'ready-question',
     question: 'Ready question?',
     answer: 'Answer',
-    interviewExpectedAnswer: 'Expected',
+    interviewAnswerExplanation: 'Explanation',
     subsectionId: '00000000000000000000000000000003',
     sheetKey: 'python',
     sheet: 'Python',
@@ -228,12 +228,12 @@ function readyQuestion(publishStatus: 'Draft' | 'Published'): AdminMatrixQuestio
       ru: {
         question: 'Готовый вопрос?',
         answer: 'Ответ',
-        interviewExpectedAnswer: 'Ожидаемый ответ',
+        interviewAnswerExplanation: 'Объяснение ответа',
       },
       en: {
         question: 'Ready question?',
         answer: 'Answer',
-        interviewExpectedAnswer: 'Expected',
+        interviewAnswerExplanation: 'Explanation',
       },
     },
     resources: [],
@@ -254,12 +254,12 @@ function questionPayload(
       ru: {
         question: 'Готовый вопрос?',
         answer: 'Ответ',
-        interviewExpectedAnswer: 'Ожидаемый ответ',
+        interviewAnswerExplanation: 'Объяснение ответа',
       },
       en: {
         question: 'Ready question?',
         answer: 'Answer',
-        interviewExpectedAnswer: 'Expected',
+        interviewAnswerExplanation: 'Explanation',
       },
     },
     resources: [],

@@ -145,8 +145,8 @@ class AgentBridgeServer:
         question_en: MatrixLongTextInput,
         answer_ru: MatrixLongTextInput,
         answer_en: MatrixLongTextInput,
-        interview_expected_answer_ru: MatrixLongTextInput,
-        interview_expected_answer_en: MatrixLongTextInput,
+        interview_answer_explanation_ru: MatrixLongTextInput,
+        interview_answer_explanation_en: MatrixLongTextInput,
         resources: MatrixDraftResourcesInput,
     ) -> MatrixDraftSaveOutput:
         """Save a complete RU/EN Draft and consume its active claim."""
@@ -159,8 +159,8 @@ class AgentBridgeServer:
             question_en=question_en,
             answer_ru=answer_ru,
             answer_en=answer_en,
-            interview_expected_answer_ru=interview_expected_answer_ru,
-            interview_expected_answer_en=interview_expected_answer_en,
+            interview_answer_explanation_ru=interview_answer_explanation_ru,
+            interview_answer_explanation_en=interview_answer_explanation_en,
             resources=resources,
         )
         result = await self.use_case.save_matrix_question_draft(

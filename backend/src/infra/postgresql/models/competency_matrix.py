@@ -252,13 +252,13 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         String(),
         doc="English answer",
     )
-    interview_expected_answer_ru: Mapped[str] = mapped_column(
+    interview_answer_explanation_ru: Mapped[str] = mapped_column(
         String(),
-        doc="Russian interview expected answer",
+        doc="Russian interview answer explanation",
     )
-    interview_expected_answer_en: Mapped[str] = mapped_column(
+    interview_answer_explanation_en: Mapped[str] = mapped_column(
         String(),
-        doc="English interview expected answer",
+        doc="English interview answer explanation",
     )
     subsection_id: Mapped[str] = mapped_column(
         ForeignKey(CompetencyMatrixSubsectionModel.id, ondelete="RESTRICT"),
@@ -321,8 +321,8 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
                 "length(TRIM(BOTH FROM question_en)) = 0 OR "
                 "length(TRIM(BOTH FROM answer_ru)) = 0 OR "
                 "length(TRIM(BOTH FROM answer_en)) = 0 OR "
-                "length(TRIM(BOTH FROM interview_expected_answer_ru)) = 0 OR "
-                "length(TRIM(BOTH FROM interview_expected_answer_en)) = 0)",
+                "length(TRIM(BOTH FROM interview_answer_explanation_ru)) = 0 OR "
+                "length(TRIM(BOTH FROM interview_answer_explanation_en)) = 0)",
             ),
         ),
         Index(
@@ -378,8 +378,8 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             answer_en=item.answer_en,
             publish_status=item.publish_status,
             published_at=item.published_at,
-            interview_expected_answer_ru=item.interview_expected_answer_ru,
-            interview_expected_answer_en=item.interview_expected_answer_en,
+            interview_answer_explanation_ru=item.interview_answer_explanation_ru,
+            interview_answer_explanation_en=item.interview_answer_explanation_en,
             subsection_id=item.subsection_id,
             grade=item.grade,
             interview_frequency=item.interview_frequency,
@@ -407,8 +407,8 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         self.publish_status = item.publish_status
         if item.published_at is not None:
             self.published_at = item.published_at
-        self.interview_expected_answer_ru = item.interview_expected_answer_ru
-        self.interview_expected_answer_en = item.interview_expected_answer_en
+        self.interview_answer_explanation_ru = item.interview_answer_explanation_ru
+        self.interview_answer_explanation_en = item.interview_answer_explanation_en
         self.subsection_id = item.subsection_id
         self.grade = item.grade
         self.interview_frequency = item.interview_frequency
@@ -423,8 +423,8 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
             answer_en=self.answer_en,
             publish_status=PublishStatusEnum.from_value(self.publish_status),
             published_at=self.published_at,
-            interview_expected_answer_ru=self.interview_expected_answer_ru,
-            interview_expected_answer_en=self.interview_expected_answer_en,
+            interview_answer_explanation_ru=self.interview_answer_explanation_ru,
+            interview_answer_explanation_en=self.interview_answer_explanation_en,
             structure=self.subsection.to_item_structure(),
             grade=self.grade,
             interview_frequency=self.interview_frequency,

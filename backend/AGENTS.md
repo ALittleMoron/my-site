@@ -191,7 +191,7 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Articles, article tags, article folders, and competency matrix content localise with required fixed fields in their
   owning tables: article `title_ru`, `title_en`, `content_ru`, `content_en`; article folder
   `name_ru`, `name_en`; tag `name_ru`, `name_en`; plus competency matrix item `question_*`, `answer_*`,
-  `interview_expected_answer_*`, matrix structure `name_ru`/`name_en` on sheet, section, and
+  `interview_answer_explanation_*`, matrix structure `name_ru`/`name_en` on sheet, section, and
   subsection tables, resource `name_*`, and attachment `context_*` fields.
   Competency matrix sheets must use a stable language-neutral `key`/`sheetKey` identifier, and
   questions must reference the normalized structure through a required `subsection_id`.

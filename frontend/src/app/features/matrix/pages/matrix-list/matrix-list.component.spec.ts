@@ -101,7 +101,7 @@ const mockDetail: MatrixQuestionDetail = {
   slug: 'what-is-a-closure',
   question: 'What is a closure?',
   answer: 'A **closure** is a function.',
-  interviewExpectedAnswer: 'Lexical scoping.',
+  interviewAnswerExplanation: 'Lexical scoping.',
   sheetKey: 'javascript',
   sheet: 'JavaScript',
   grade: 'Junior',
@@ -114,7 +114,7 @@ const mockDetail: MatrixQuestionDetail = {
     ru: {
       question: 'Что такое замыкание?',
       answer: 'Замыкание — это функция.',
-      interviewExpectedAnswer: 'Лексическая область видимости.',
+      interviewAnswerExplanation: 'Лексическая область видимости.',
       sheet: 'JavaScript',
       section: 'Core',
       subsection: 'Syntax',
@@ -122,7 +122,7 @@ const mockDetail: MatrixQuestionDetail = {
     en: {
       question: 'What is a closure?',
       answer: 'A **closure** is a function.',
-      interviewExpectedAnswer: 'Lexical scoping.',
+      interviewAnswerExplanation: 'Lexical scoping.',
       sheet: 'JavaScript',
       section: 'Core',
       subsection: 'Syntax',

@@ -347,8 +347,8 @@ class MatrixQuestionDraftSaveParams:
     question_en: str
     answer_ru: str
     answer_en: str
-    interview_expected_answer_ru: str
-    interview_expected_answer_en: str
+    interview_answer_explanation_ru: str
+    interview_answer_explanation_en: str
     resources: tuple[MatrixQuestionDraftResourceAttachmentParams, ...]
 
     def ensure_valid(self, *, minimum_resource_count: int, maximum_resource_count: int) -> None:
@@ -364,8 +364,8 @@ class MatrixQuestionDraftSaveParams:
                 self.question_en,
                 self.answer_ru,
                 self.answer_en,
-                self.interview_expected_answer_ru,
-                self.interview_expected_answer_en,
+                self.interview_answer_explanation_ru,
+                self.interview_answer_explanation_en,
             )
         ):
             raise MatrixQuestionDraftValidationError
@@ -385,8 +385,8 @@ class MatrixQuestionDraftSaveParams:
             "answer_ru": self.answer_ru,
             "claim_id": self.claim_id,
             "grade": self.grade.value,
-            "interview_expected_answer_en": self.interview_expected_answer_en,
-            "interview_expected_answer_ru": self.interview_expected_answer_ru,
+            "interview_answer_explanation_en": self.interview_answer_explanation_en,
+            "interview_answer_explanation_ru": self.interview_answer_explanation_ru,
             "interview_frequency": self.interview_frequency.value,
             "question_en": self.question_en,
             "question_ru": self.question_ru,

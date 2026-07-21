@@ -430,8 +430,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixWorkspace.missing.questionEn': 'Вопрос EN',
   'adminMatrixWorkspace.missing.answerRu': 'Ответ RU',
   'adminMatrixWorkspace.missing.answerEn': 'answerEn',
-  'adminMatrixWorkspace.missing.interviewExpectedAnswerRu': 'Объяснение ответа на собеседовании RU',
-  'adminMatrixWorkspace.missing.interviewExpectedAnswerEn': 'Объяснение ответа на собеседовании EN',
+  'adminMatrixWorkspace.missing.interviewAnswerExplanationRu':
+    'Объяснение ответа на собеседовании RU',
+  'adminMatrixWorkspace.missing.interviewAnswerExplanationEn':
+    'Объяснение ответа на собеседовании EN',
   'adminMatrixStructure.loadError': 'Не удалось загрузить структуру матрицы.',
   'adminMatrixStructure.createError': 'Не удалось создать элемент структуры матрицы.',
   'adminMatrixStructure.validationError': 'Проверьте поля элемента структуры.',
@@ -584,9 +586,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.form.subsectionRequired': 'Выберите подраздел.',
   'matrix.form.answerRu': 'Ответ RU',
   'matrix.form.answerEn': 'Ответ EN',
-  'matrix.form.expectedAnswerRu': 'Объяснение ответа на собеседовании RU',
-  'matrix.form.expectedAnswerEn': 'Объяснение ответа на собеседовании EN',
-  'matrix.form.expectedAnswerHint':
+  'matrix.form.interviewAnswerExplanationRu': 'Объяснение ответа на собеседовании RU',
+  'matrix.form.interviewAnswerExplanationEn': 'Объяснение ответа на собеседовании EN',
+  'matrix.form.interviewAnswerExplanationHint':
     'Объясните, зачем задают вопрос, какой ответ ожидается и почему, а также какие ошибки часто допускают кандидаты.',
   'matrix.form.wikiLinksMissing': 'Не найдены wiki-цели: {targets}.',
   'matrix.resources.title': 'Внешние ресурсы',
@@ -601,7 +603,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'matrix.resources.detach': 'Открепить',
   'matrix.detail.question': 'Вопрос:',
   'matrix.detail.answer': 'Ответ:',
-  'matrix.detail.expectedAnswer': 'Объяснение ответа на собеседовании:',
+  'matrix.detail.interviewAnswerExplanation': 'Объяснение ответа на собеседовании:',
   'matrix.detail.interviewFrequency': 'Как часто спрашивают:',
   'matrix.detail.suggestedBy': 'Кто предложил:',
   'matrix.detail.resources': 'Внешние ресурсы:',
@@ -839,7 +841,7 @@ const I18N_TEST_MESSAGES_EN: Record<string, string> = {
   'matrix.grid.subsection': 'Subsection',
   'matrix.detail.question': 'Question:',
   'matrix.detail.answer': 'Answer:',
-  'matrix.detail.expectedAnswer': 'Interview answer explanation:',
+  'matrix.detail.interviewAnswerExplanation': 'Interview answer explanation:',
   'matrix.detail.interviewFrequency': 'How often asked:',
   'matrix.detail.resources': 'External resources:',
   'enum.interviewFrequency.often': 'Often',

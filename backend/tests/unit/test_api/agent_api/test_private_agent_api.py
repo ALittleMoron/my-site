@@ -256,6 +256,31 @@ def test_save_schema_rejects_fourth_resource(
     agent_api_provider.matrix_use_case.save_matrix_question_draft.assert_not_awaited()
 
 
+def test_save_schema_rejects_legacy_interview_answer_fields(
+    agent_api_client: TestClient,
+    agent_api_provider: MockAgentApiProvider,
+    agent_identity: AgentIdentity,
+) -> None:
+    agent_api_provider.identity_use_case.authenticate_business_client.return_value = replace(
+        agent_identity,
+        scopes=frozenset({AgentScopeEnum.MATRIX_DRAFT_CREATE}),
+    )
+    payload = _valid_save_payload()
+    legacy_parts = ("interview", "expected", "answer")
+    legacy_field = legacy_parts[0] + "".join(part.title() for part in legacy_parts[1:])
+    for language in ("Ru", "En"):
+        current_field = f"interviewAnswerExplanation{language}"
+        payload[f"{legacy_field}{language}"] = payload.pop(current_field)
+
+    response = agent_api_client.put(
+        f"{PREFIX}/matrix/question-claims/{'c' * 32}/draft",
+        json=payload,
+    )
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    agent_api_provider.matrix_use_case.save_matrix_question_draft.assert_not_awaited()
+
+
 def test_save_maps_path_claim_id_and_never_accepts_publish_state(
     agent_api_client: TestClient,
     agent_api_provider: MockAgentApiProvider,
@@ -523,8 +548,8 @@ def _valid_save_payload() -> dict[str, object]:
         "questionEn": "Question",
         "answerRu": "Ответ",
         "answerEn": "Answer",
-        "interviewExpectedAnswerRu": "Ожидаемый ответ",
-        "interviewExpectedAnswerEn": "Expected answer",
+        "interviewAnswerExplanationRu": "Объяснение ответа",
+        "interviewAnswerExplanationEn": "Answer explanation",
         "resources": [
             {
                 "resourceId": "f" * 32,

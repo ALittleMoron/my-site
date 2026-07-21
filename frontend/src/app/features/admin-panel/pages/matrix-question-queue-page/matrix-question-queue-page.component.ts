@@ -249,12 +249,12 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
           ru: {
             question: question.question,
             answer: '',
-            interviewExpectedAnswer: '',
+            interviewAnswerExplanation: '',
           },
           en: {
             question: question.question,
             answer: '',
-            interviewExpectedAnswer: '',
+            interviewAnswerExplanation: '',
           },
         },
       };

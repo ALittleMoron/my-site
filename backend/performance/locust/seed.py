@@ -385,9 +385,11 @@ def matrix_item_row(*, item_index: int) -> dict[str, object]:
             "Name realistic data, warm/cold cache, p95, average, and rollback criteria. "
             f"Related article: [[articles:{article_slug(article_index=question_number)}]]."
         ),
-        "interview_expected_answer_ru": "Ожидается конкретный план проверки и сравнения baseline.",
-        "interview_expected_answer_en": (
-            "Expected answer gives a concrete baseline comparison plan."
+        "interview_answer_explanation_ru": (
+            "Ожидается конкретный план проверки и сравнения baseline."
+        ),
+        "interview_answer_explanation_en": (
+            "Answer explanation gives a concrete baseline comparison plan."
         ),
         "subsection_id": matrix_subsection_id(sheet_index),
         "suggested_by_username": SEED_AUTHOR_USERNAME,

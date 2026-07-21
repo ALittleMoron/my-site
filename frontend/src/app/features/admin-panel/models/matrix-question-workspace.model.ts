@@ -23,8 +23,8 @@ export type AdminMatrixMissingField =
   | 'questionEn'
   | 'answerRu'
   | 'answerEn'
-  | 'interviewExpectedAnswerRu'
-  | 'interviewExpectedAnswerEn';
+  | 'interviewAnswerExplanationRu'
+  | 'interviewAnswerExplanationEn';
 
 export const ADMIN_MATRIX_PUBLICATION_FIELDS: readonly AdminMatrixMissingField[] = [
   'slug',
@@ -33,8 +33,8 @@ export const ADMIN_MATRIX_PUBLICATION_FIELDS: readonly AdminMatrixMissingField[]
   'questionEn',
   'answerRu',
   'answerEn',
-  'interviewExpectedAnswerRu',
-  'interviewExpectedAnswerEn',
+  'interviewAnswerExplanationRu',
+  'interviewAnswerExplanationEn',
 ];
 
 export type AdminReadonlyMatrixSheet = ReadonlyMatrixSheet;
@@ -124,7 +124,7 @@ export interface AdminMatrixWorkspaceFilterOptions {
 export interface AdminMatrixQuestionTranslation {
   question: string;
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
 }
 
 export interface AdminMatrixQuestionTranslations {
@@ -148,7 +148,7 @@ export interface AdminMatrixQuestionDetailDto {
   slug: string;
   question: string;
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
   subsectionId: string;
   sheetKey: string;
   sheet: string;
@@ -398,9 +398,9 @@ function isMatrixQuestionPayloadFieldMissing(
       return payload.translations.ru.answer.trim() === '';
     case 'answerEn':
       return payload.translations.en.answer.trim() === '';
-    case 'interviewExpectedAnswerRu':
-      return payload.translations.ru.interviewExpectedAnswer.trim() === '';
-    case 'interviewExpectedAnswerEn':
-      return payload.translations.en.interviewExpectedAnswer.trim() === '';
+    case 'interviewAnswerExplanationRu':
+      return payload.translations.ru.interviewAnswerExplanation.trim() === '';
+    case 'interviewAnswerExplanationEn':
+      return payload.translations.en.interviewAnswerExplanation.trim() === '';
   }
 }

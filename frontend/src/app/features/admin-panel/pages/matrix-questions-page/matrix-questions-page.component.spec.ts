@@ -105,7 +105,7 @@ const savedQuestion: AdminMatrixQuestionDetailDto = {
   slug: 'new-question',
   question: 'New question?',
   answer: '',
-  interviewExpectedAnswer: '',
+  interviewAnswerExplanation: '',
   subsectionId: SUBSECTION_ID,
   sheetKey: 'python',
   sheet: '',
@@ -119,12 +119,12 @@ const savedQuestion: AdminMatrixQuestionDetailDto = {
     ru: {
       question: 'Новый вопрос?',
       answer: '',
-      interviewExpectedAnswer: '',
+      interviewAnswerExplanation: '',
     },
     en: {
       question: 'New question?',
       answer: '',
-      interviewExpectedAnswer: '',
+      interviewAnswerExplanation: '',
     },
   },
   resources: [],

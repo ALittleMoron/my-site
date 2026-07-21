@@ -109,11 +109,11 @@ class MatrixQuestionDraftSaveRequestSchema(CamelCaseSchema):
         str,
         Field(min_length=1, max_length=constants.admin_validation.matrix_long_text_max_length),
     ]
-    interview_expected_answer_ru: Annotated[
+    interview_answer_explanation_ru: Annotated[
         str,
         Field(min_length=1, max_length=constants.admin_validation.matrix_long_text_max_length),
     ]
-    interview_expected_answer_en: Annotated[
+    interview_answer_explanation_en: Annotated[
         str,
         Field(min_length=1, max_length=constants.admin_validation.matrix_long_text_max_length),
     ]
@@ -136,8 +136,8 @@ class MatrixQuestionDraftSaveRequestSchema(CamelCaseSchema):
             question_en=self.question_en,
             answer_ru=self.answer_ru,
             answer_en=self.answer_en,
-            interview_expected_answer_ru=self.interview_expected_answer_ru,
-            interview_expected_answer_en=self.interview_expected_answer_en,
+            interview_answer_explanation_ru=self.interview_answer_explanation_ru,
+            interview_answer_explanation_en=self.interview_answer_explanation_en,
             resources=tuple(resource.to_domain_schema() for resource in self.resources),
         )
 

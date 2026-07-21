@@ -1238,8 +1238,8 @@ def write_matrix_item(*, item_id: str, slug: str) -> CompetencyMatrixItem:
         published_at=SEED_NOW,
         answer_ru="Через deterministic storage сценарии.",
         answer_en="Through deterministic storage scenarios.",
-        interview_expected_answer_ru="Назвать listener, EXPLAIN и thresholds.",
-        interview_expected_answer_en="Name listener, EXPLAIN, and thresholds.",
+        interview_answer_explanation_ru="Назвать listener, EXPLAIN и thresholds.",
+        interview_answer_explanation_en="Name listener, EXPLAIN, and thresholds.",
         structure=CompetencyMatrixItemStructure(
             sheet_id=PYTHON_SHEET_ID,
             sheet_key="python",

@@ -92,8 +92,8 @@ class MatrixQuestionDraftSaveRequest(AgentApiWireSchema):
     question_en: str
     answer_ru: str
     answer_en: str
-    interview_expected_answer_ru: str
-    interview_expected_answer_en: str
+    interview_answer_explanation_ru: str
+    interview_answer_explanation_en: str
     resources: list[MatrixDraftResourceRequest]
 
     @classmethod
@@ -119,8 +119,8 @@ class MatrixQuestionDraftSaveRequest(AgentApiWireSchema):
             question_en=schema.question_en,
             answer_ru=schema.answer_ru,
             answer_en=schema.answer_en,
-            interview_expected_answer_ru=schema.interview_expected_answer_ru,
-            interview_expected_answer_en=schema.interview_expected_answer_en,
+            interview_answer_explanation_ru=schema.interview_answer_explanation_ru,
+            interview_answer_explanation_en=schema.interview_answer_explanation_en,
             resources=resources,
         )
 

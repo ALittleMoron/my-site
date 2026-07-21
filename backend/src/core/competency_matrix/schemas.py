@@ -34,8 +34,8 @@ class CompetencyMatrixMissingFieldEnum(StrEnum):
     QUESTION_EN = "questionEn"
     ANSWER_RU = "answerRu"
     ANSWER_EN = "answerEn"
-    INTERVIEW_EXPECTED_ANSWER_RU = "interviewExpectedAnswerRu"
-    INTERVIEW_EXPECTED_ANSWER_EN = "interviewExpectedAnswerEn"
+    INTERVIEW_ANSWER_EXPLANATION_RU = "interviewAnswerExplanationRu"
+    INTERVIEW_ANSWER_EXPLANATION_EN = "interviewAnswerExplanationEn"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -556,8 +556,8 @@ class BaseCompetencyMatrixItem:
     publish_status: PublishStatusEnum
     answer_ru: str
     answer_en: str
-    interview_expected_answer_ru: str
-    interview_expected_answer_en: str
+    interview_answer_explanation_ru: str
+    interview_answer_explanation_en: str
     structure: CompetencyMatrixItemStructure
     grade: GradeEnum | None
     interview_frequency: InterviewFrequencyEnum | None
@@ -581,12 +581,12 @@ class BaseCompetencyMatrixItem:
             (CompetencyMatrixMissingFieldEnum.ANSWER_RU, not self.answer_ru.strip()),
             (CompetencyMatrixMissingFieldEnum.ANSWER_EN, not self.answer_en.strip()),
             (
-                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_RU,
-                not self.interview_expected_answer_ru.strip(),
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_ANSWER_EXPLANATION_RU,
+                not self.interview_answer_explanation_ru.strip(),
             ),
             (
-                CompetencyMatrixMissingFieldEnum.INTERVIEW_EXPECTED_ANSWER_EN,
-                not self.interview_expected_answer_en.strip(),
+                CompetencyMatrixMissingFieldEnum.INTERVIEW_ANSWER_EXPLANATION_EN,
+                not self.interview_answer_explanation_en.strip(),
             ),
         )
         return tuple(field for field, is_missing in checks if is_missing)
@@ -638,10 +638,10 @@ class BaseCompetencyMatrixItem:
             return self.answer_ru
         return self.answer_en
 
-    def localized_interview_expected_answer(self, *, language: LanguageEnum) -> str:
+    def localized_interview_answer_explanation(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
-            return self.interview_expected_answer_ru
-        return self.interview_expected_answer_en
+            return self.interview_answer_explanation_ru
+        return self.interview_answer_explanation_en
 
     def localized_sheet(self, *, language: LanguageEnum) -> str:
         return self.structure.localized_sheet(language=language)
@@ -668,8 +668,8 @@ class CompetencyMatrixItemWriteParams:
     publish_status: PublishStatusEnum
     answer_ru: str
     answer_en: str
-    interview_expected_answer_ru: str
-    interview_expected_answer_en: str
+    interview_answer_explanation_ru: str
+    interview_answer_explanation_en: str
     subsection_id: str
     grade: GradeEnum | None
     interview_frequency: InterviewFrequencyEnum | None
@@ -729,8 +729,8 @@ class CompetencyMatrixItemWriteParams:
             published_at=published_at,
             answer_ru=self.answer_ru,
             answer_en=self.answer_en,
-            interview_expected_answer_ru=self.interview_expected_answer_ru,
-            interview_expected_answer_en=self.interview_expected_answer_en,
+            interview_answer_explanation_ru=self.interview_answer_explanation_ru,
+            interview_answer_explanation_en=self.interview_answer_explanation_en,
             structure=structure,
             grade=self.grade,
             interview_frequency=self.interview_frequency,

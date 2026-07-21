@@ -239,56 +239,64 @@
     }
     @if (showRuLocalizedFields()) {
       <div class="col-12">
-        <div class="form-label" id="matrix-form-expected-ru-label">
-          {{ 'matrix.form.expectedAnswerRu' | t }}
+        <div class="form-label" id="matrix-form-interview-answer-explanation-ru-label">
+          {{ 'matrix.form.interviewAnswerExplanationRu' | t }}
         </div>
-        <div class="form-text mb-2" id="matrix-form-expected-ru-hint">
-          {{ 'matrix.form.expectedAnswerHint' | t }}
+        <div class="form-text mb-2" id="matrix-form-interview-answer-explanation-ru-hint">
+          {{ 'matrix.form.interviewAnswerExplanationHint' | t }}
         </div>
         <div
-          id="matrix-form-expected-ru"
+          id="matrix-form-interview-answer-explanation-ru"
           class="matrix-markdown-editor"
           role="group"
-          aria-labelledby="matrix-form-expected-ru-label"
-          aria-describedby="matrix-form-expected-ru-hint"
-          [class.is-invalid]="fieldInvalid('expectedAnswerRu')"
-          [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerRu')"
-          [attr.aria-invalid]="fieldInvalid('expectedAnswerRu') ? 'true' : null"
+          aria-labelledby="matrix-form-interview-answer-explanation-ru-label"
+          aria-describedby="matrix-form-interview-answer-explanation-ru-hint"
+          [class.is-invalid]="fieldInvalid('interviewAnswerExplanationRu')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('interviewAnswerExplanationRu')"
+          [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationRu') ? 'true' : null"
         >
           <app-markdown-editor
-            [value]="questionForm.controls.expectedAnswerRu.value"
-            (valueChange)="setExpectedAnswerRu($event)"
+            [value]="questionForm.controls.interviewAnswerExplanationRu.value"
+            (valueChange)="setInterviewAnswerExplanationRu($event)"
           />
         </div>
-        @if (fieldInvalid('expectedAnswerRu') && fieldMessage('expectedAnswerRu'); as message) {
+        @if (
+          fieldInvalid('interviewAnswerExplanationRu') &&
+            fieldMessage('interviewAnswerExplanationRu');
+          as message
+        ) {
           <div class="invalid-feedback d-block">{{ message }}</div>
         }
       </div>
     }
     @if (showEnLocalizedFields()) {
       <div class="col-12">
-        <div class="form-label" id="matrix-form-expected-en-label">
-          {{ 'matrix.form.expectedAnswerEn' | t }}
+        <div class="form-label" id="matrix-form-interview-answer-explanation-en-label">
+          {{ 'matrix.form.interviewAnswerExplanationEn' | t }}
         </div>
-        <div class="form-text mb-2" id="matrix-form-expected-en-hint">
-          {{ 'matrix.form.expectedAnswerHint' | t }}
+        <div class="form-text mb-2" id="matrix-form-interview-answer-explanation-en-hint">
+          {{ 'matrix.form.interviewAnswerExplanationHint' | t }}
         </div>
         <div
-          id="matrix-form-expected-en"
+          id="matrix-form-interview-answer-explanation-en"
           class="matrix-markdown-editor"
           role="group"
-          aria-labelledby="matrix-form-expected-en-label"
-          aria-describedby="matrix-form-expected-en-hint"
-          [class.is-invalid]="fieldInvalid('expectedAnswerEn')"
-          [class.matrix-markdown-editor-invalid]="fieldInvalid('expectedAnswerEn')"
-          [attr.aria-invalid]="fieldInvalid('expectedAnswerEn') ? 'true' : null"
+          aria-labelledby="matrix-form-interview-answer-explanation-en-label"
+          aria-describedby="matrix-form-interview-answer-explanation-en-hint"
+          [class.is-invalid]="fieldInvalid('interviewAnswerExplanationEn')"
+          [class.matrix-markdown-editor-invalid]="fieldInvalid('interviewAnswerExplanationEn')"
+          [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationEn') ? 'true' : null"
         >
           <app-markdown-editor
-            [value]="questionForm.controls.expectedAnswerEn.value"
-            (valueChange)="setExpectedAnswerEn($event)"
+            [value]="questionForm.controls.interviewAnswerExplanationEn.value"
+            (valueChange)="setInterviewAnswerExplanationEn($event)"
           />
         </div>
-        @if (fieldInvalid('expectedAnswerEn') && fieldMessage('expectedAnswerEn'); as message) {
+        @if (
+          fieldInvalid('interviewAnswerExplanationEn') &&
+            fieldMessage('interviewAnswerExplanationEn');
+          as message
+        ) {
           <div class="invalid-feedback d-block">{{ message }}</div>
         }
       </div>
@@ -491,7 +499,7 @@
     <app-matrix-question-public-preview
       [question]="previewContent().question"
       [answer]="previewContent().answer"
-      [interviewExpectedAnswer]="previewContent().interviewExpectedAnswer"
+      [interviewAnswerExplanation]="previewContent().interviewAnswerExplanation"
       [interviewFrequency]="previewContent().interviewFrequency"
       [resources]="previewResources()"
       [language]="previewLanguage()"

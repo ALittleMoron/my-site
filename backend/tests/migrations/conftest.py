@@ -77,5 +77,12 @@ def migrated_to_0011() -> Generator[None]:
 
 
 @pytest.fixture
+def migrated_to_0012() -> Generator[None]:
+    migrate(revision="0012")
+    yield
+    downgrade(revision="base")
+
+
+@pytest.fixture
 def migration_asserts() -> AssertsHelper:
     return AssertsHelper()

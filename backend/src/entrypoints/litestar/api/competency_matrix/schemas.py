@@ -576,9 +576,9 @@ class NewResourceAttachmentRequestSchema(CamelCaseSchema):
 class CompetencyMatrixItemTranslationSchema(CamelCaseSchema):
     question: Annotated[RequiredShortText, Field(title="Question")]
     answer: Annotated[MatrixLongText, Field(title="Answer")]
-    interview_expected_answer: Annotated[
+    interview_answer_explanation: Annotated[
         MatrixLongText,
-        Field(title="Expected interview answer"),
+        Field(title="Interview answer explanation"),
     ]
 
 
@@ -592,12 +592,12 @@ class CompetencyMatrixItemTranslationsSchema(CamelCaseSchema):
             ru=CompetencyMatrixItemTranslationSchema(
                 question=schema.question_ru,
                 answer=schema.answer_ru,
-                interview_expected_answer=schema.interview_expected_answer_ru,
+                interview_answer_explanation=schema.interview_answer_explanation_ru,
             ),
             en=CompetencyMatrixItemTranslationSchema(
                 question=schema.question_en,
                 answer=schema.answer_en,
-                interview_expected_answer=schema.interview_expected_answer_en,
+                interview_answer_explanation=schema.interview_answer_explanation_en,
             ),
         )
 
@@ -636,7 +636,7 @@ class CompetencyMatrixItemResponseSchema(PublicCompetencyMatrixItemResponseSchem
 
 class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemResponseSchema):
     answer: Annotated[str, Field(title="Answer")]
-    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    interview_answer_explanation: Annotated[str, Field(title="Interview answer explanation")]
     sheet_key: Annotated[str, Field(title="Sheet key")]
     sheet: Annotated[str, Field(title="Sheet")]
     grade: Annotated[GradeEnum | None, Field(title="Grade")]
@@ -661,7 +661,7 @@ class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemR
         return cls(
             **summary.model_dump(),
             answer=schema.localized_answer(language=language),
-            interview_expected_answer=schema.localized_interview_expected_answer(
+            interview_answer_explanation=schema.localized_interview_answer_explanation(
                 language=language,
             ),
             sheet_key=schema.sheet_key,
@@ -684,7 +684,7 @@ class PublicCompetencyMatrixItemDetailResponseSchema(PublicCompetencyMatrixItemR
 
 class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchema):
     answer: Annotated[str, Field(title="Answer")]
-    interview_expected_answer: Annotated[str, Field(title="Expected interview answer")]
+    interview_answer_explanation: Annotated[str, Field(title="Interview answer explanation")]
     subsection_id: Annotated[str, Field(title="Subsection identifier")]
     sheet_key: Annotated[str, Field(title="Sheet key")]
     sheet: Annotated[str, Field(title="Sheet")]
@@ -710,7 +710,7 @@ class CompetencyMatrixItemDetailResponseSchema(CompetencyMatrixItemResponseSchem
         return cls(
             **summary.model_dump(),
             answer=schema.localized_answer(language=language),
-            interview_expected_answer=schema.localized_interview_expected_answer(
+            interview_answer_explanation=schema.localized_interview_answer_explanation(
                 language=language,
             ),
             subsection_id=schema.subsection_id,
@@ -759,8 +759,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             question_en=self.translations.en.question,
             answer_ru=self.translations.ru.answer,
             answer_en=self.translations.en.answer,
-            interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
-            interview_expected_answer_en=self.translations.en.interview_expected_answer,
+            interview_answer_explanation_ru=self.translations.ru.interview_answer_explanation,
+            interview_answer_explanation_en=self.translations.en.interview_answer_explanation,
             subsection_id=self.subsection_id,
             grade=self.grade,
             interview_frequency=self.interview_frequency,
@@ -794,8 +794,8 @@ class CompetencyMatrixItemRequestSchema(CamelCaseSchema):
             question_en=self.translations.en.question,
             answer_ru=self.translations.ru.answer,
             answer_en=self.translations.en.answer,
-            interview_expected_answer_ru=self.translations.ru.interview_expected_answer,
-            interview_expected_answer_en=self.translations.en.interview_expected_answer,
+            interview_answer_explanation_ru=self.translations.ru.interview_answer_explanation,
+            interview_answer_explanation_en=self.translations.en.interview_answer_explanation,
             subsection_id=self.subsection_id,
             grade=self.grade,
             interview_frequency=self.interview_frequency,

@@ -65,7 +65,7 @@ export const matrixQuestionDto = {
   question: 'Как написать функцию?',
   answer:
     '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].\n\n```python\ndef answer():\n    return 42\n```',
-  interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
+  interviewAnswerExplanation: 'Покажите сигнатуру, ветвление и тест.',
   sheetKey: 'python',
   sheet: 'Python',
   grade: 'Junior',
@@ -77,7 +77,7 @@ export const matrixQuestionDto = {
       question: 'Как написать функцию?',
       answer:
         '## Rendered SSR matrix answer\n\nФункция должна быть маленькой и проверяемой. См. [[articles:typed-articles|typed article]].\n\n```python\ndef answer():\n    return 42\n```',
-      interviewExpectedAnswer: 'Покажите сигнатуру, ветвление и тест.',
+      interviewAnswerExplanation: 'Покажите сигнатуру, ветвление и тест.',
       sheet: 'Python',
       section: 'Основы',
       subsection: 'Функции',
@@ -85,7 +85,7 @@ export const matrixQuestionDto = {
     en: {
       question: 'How to write a function?',
       answer: '## Rendered SSR matrix answer\n\nA function should be small and testable.',
-      interviewExpectedAnswer: 'Show a signature, a branch, and a test.',
+      interviewAnswerExplanation: 'Show a signature, a branch, and a test.',
       sheet: 'Python',
       section: 'Basics',
       subsection: 'Functions',
@@ -577,7 +577,7 @@ function buildMessages() {
     'matrix.grid.subsection': 'Subsection',
     'matrix.detail.question': 'Question:',
     'matrix.detail.answer': 'Answer:',
-    'matrix.detail.expectedAnswer': 'Interview answer explanation:',
+    'matrix.detail.interviewAnswerExplanation': 'Interview answer explanation:',
     'matrix.detail.resources': 'External resources:',
     'matrix.detailAria': 'Matrix question detail',
     'matrix.empty': 'No matrix questions found.',

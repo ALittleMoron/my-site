@@ -1471,12 +1471,12 @@ describe('MatrixQuestionQueuePageComponent', () => {
         ru: {
           question: 'Что такое PEP 8?',
           answer: '',
-          interviewExpectedAnswer: '',
+          interviewAnswerExplanation: '',
         },
         en: {
           question: 'What is PEP 8?',
           answer: '',
-          interviewExpectedAnswer: '',
+          interviewAnswerExplanation: '',
         },
       },
       resources: [],

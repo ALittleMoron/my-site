@@ -32,8 +32,8 @@ export class MatrixQuestionDetailComponent {
 
   readonly interviewAnswerHtml = computed<string>(() => {
     const q = this.question();
-    if (!q?.interviewExpectedAnswer) return '';
-    return this.wikiLinkRenderer.render(q.interviewExpectedAnswer, this.language());
+    if (!q?.interviewAnswerExplanation) return '';
+    return this.wikiLinkRenderer.render(q.interviewAnswerExplanation, this.language());
   });
   readonly interviewFrequencyLabel = computed<string | null>(() => {
     const frequency = this.question()?.interviewFrequency ?? null;

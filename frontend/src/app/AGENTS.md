@@ -88,8 +88,8 @@ Never violate these boundaries:
   structure trees, item lists, item details, resource search, and create/update responses; use stable
   `sheetKey` values for public sheet selection and required `subsectionId` values for question
   create/update persistence.
-- Require all RU/EN competency matrix question, answer, expected-answer, structure inline-create,
-  resource-name, and resource-context fields in frontend forms. Do not reintroduce manual
+- Require all RU/EN competency matrix question, answer, interview answer explanation, structure
+  inline-create, resource-name, and resource-context fields in frontend forms. Do not reintroduce manual
   sheet/section/subsection text fields on question forms; use the admin structure picker.
   Do not add frontend-only language fallbacks for localized content.
 - Resume workspace content is single-language per resume. Forms must send required `language` plus

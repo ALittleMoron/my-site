@@ -94,8 +94,8 @@ filesystem, publish, delete-item, or structure-management operation. New resourc
 credential-free HTTPS URLs; the server stores them but never requests them.
 
 Claims last two hours. A client and a queue item can each have only one active claim. Draft saves
-require complete RU/EN question, answer, and expected-answer text, a valid subsection, grade,
-frequency, slug, and one to three resources. A resource is either an existing resource ID with
+require complete RU/EN question, answer, and interview answer explanation text, a valid subsection,
+grade, frequency, slug, and one to three resources. A resource is either an existing resource ID with
 complete RU/EN contexts or a new HTTPS URL with complete RU/EN names and contexts. Status is always
 constructed as `Draft`; clients cannot submit `publishStatus` or `publishedAt`.
 

@@ -24,7 +24,7 @@ export interface MatrixAttachedResourceTranslationsDto {
 export interface MatrixItemTranslationDto {
   question: string;
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
   sheet: string;
   section: string;
   subsection: string;
@@ -55,7 +55,7 @@ export interface MatrixItemDto {
 
 export interface MatrixItemDetailDto extends MatrixItemDto {
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
   sheetKey: string;
   sheet: string;
   grade: MatrixGrade | null;
@@ -123,7 +123,7 @@ export interface MatrixAttachedResourceTranslations {
 export interface MatrixItemTranslation {
   question: string;
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
   sheet: string;
   section: string;
   subsection: string;
@@ -159,7 +159,7 @@ export interface MatrixQuestion {
 
 export interface MatrixQuestionDetail extends MatrixQuestion {
   answer: string;
-  interviewExpectedAnswer: string;
+  interviewAnswerExplanation: string;
   sheetKey: string;
   sheet: string;
   grade: MatrixGrade | null;
@@ -263,7 +263,7 @@ export function mapMatrixDetailDto(dto: MatrixItemDetailDto): MatrixQuestionDeta
     question: dto.question,
     interviewFrequency: dto.interviewFrequency,
     answer: dto.answer,
-    interviewExpectedAnswer: dto.interviewExpectedAnswer,
+    interviewAnswerExplanation: dto.interviewAnswerExplanation,
     sheetKey: dto.sheetKey,
     sheet: dto.sheet,
     grade: dto.grade,

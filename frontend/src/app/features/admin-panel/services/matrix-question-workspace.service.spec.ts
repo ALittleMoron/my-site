@@ -190,7 +190,7 @@ describe('MatrixQuestionWorkspaceService', () => {
       slug: 'large-id-question',
       question: 'Большой id?',
       answer: '',
-      interviewExpectedAnswer: '',
+      interviewAnswerExplanation: '',
       subsectionId: SUBSECTION_ID,
       sheetKey: 'python',
       sheet: 'Python',
@@ -201,8 +201,8 @@ describe('MatrixQuestionWorkspaceService', () => {
       publishStatus: 'Draft',
       suggestedByUsername: 'owner',
       translations: {
-        ru: { question: 'Большой id?', answer: '', interviewExpectedAnswer: '' },
-        en: { question: 'Large id?', answer: '', interviewExpectedAnswer: '' },
+        ru: { question: 'Большой id?', answer: '', interviewAnswerExplanation: '' },
+        en: { question: 'Large id?', answer: '', interviewAnswerExplanation: '' },
       },
       resources: [],
     });

@@ -76,8 +76,8 @@ type MatrixQuestionField =
   | 'questionEn'
   | 'answerRu'
   | 'answerEn'
-  | 'expectedAnswerRu'
-  | 'expectedAnswerEn';
+  | 'interviewAnswerExplanationRu'
+  | 'interviewAnswerExplanationEn';
 type NewResourceField = 'nameRu' | 'nameEn' | 'url';
 type MatrixQuestionDisplayMode = 'ru' | 'en' | 'ruEn';
 type MatrixQuestionViewMode = 'edit' | 'preview';
@@ -193,8 +193,14 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     questionEn: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
     answerRu: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
     answerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
-    expectedAnswerRu: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
-    expectedAnswerEn: ['', Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText)],
+    interviewAnswerExplanationRu: [
+      '',
+      Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText),
+    ],
+    interviewAnswerExplanationEn: [
+      '',
+      Validators.maxLength(ADMIN_VALIDATION_LIMITS.matrixLongText),
+    ],
   });
   private readonly questionFormValue = toSignal(
     this.questionForm.valueChanges.pipe(map(() => this.questionForm.getRawValue())),
@@ -217,13 +223,13 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
       ? {
           question: value.questionRu,
           answer: value.answerRu,
-          interviewExpectedAnswer: value.expectedAnswerRu,
+          interviewAnswerExplanation: value.interviewAnswerExplanationRu,
           interviewFrequency: value.interviewFrequency || null,
         }
       : {
           question: value.questionEn,
           answer: value.answerEn,
-          interviewExpectedAnswer: value.expectedAnswerEn,
+          interviewAnswerExplanation: value.interviewAnswerExplanationEn,
           interviewFrequency: value.interviewFrequency || null,
         };
   });
@@ -392,12 +398,12 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     this.updateMarkdownContent(this.questionForm.controls.answerEn, value);
   }
 
-  setExpectedAnswerRu(value: string): void {
-    this.updateMarkdownContent(this.questionForm.controls.expectedAnswerRu, value);
+  setInterviewAnswerExplanationRu(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.interviewAnswerExplanationRu, value);
   }
 
-  setExpectedAnswerEn(value: string): void {
-    this.updateMarkdownContent(this.questionForm.controls.expectedAnswerEn, value);
+  setInterviewAnswerExplanationEn(value: string): void {
+    this.updateMarkdownContent(this.questionForm.controls.interviewAnswerExplanationEn, value);
   }
 
   searchResources(value: string): void {
@@ -583,8 +589,10 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
         questionEn: initialValue?.translations.en.question ?? '',
         answerRu: initialValue?.translations.ru.answer ?? '',
         answerEn: initialValue?.translations.en.answer ?? '',
-        expectedAnswerRu: initialValue?.translations.ru.interviewExpectedAnswer ?? '',
-        expectedAnswerEn: initialValue?.translations.en.interviewExpectedAnswer ?? '',
+        interviewAnswerExplanationRu:
+          initialValue?.translations.ru.interviewAnswerExplanation ?? '',
+        interviewAnswerExplanationEn:
+          initialValue?.translations.en.interviewAnswerExplanation ?? '',
       });
       this.resetResourceDrafts();
       return;
@@ -599,8 +607,8 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
       questionEn: this.question.translations.en.question,
       answerRu: this.question.translations.ru.answer,
       answerEn: this.question.translations.en.answer,
-      expectedAnswerRu: this.question.translations.ru.interviewExpectedAnswer,
-      expectedAnswerEn: this.question.translations.en.interviewExpectedAnswer,
+      interviewAnswerExplanationRu: this.question.translations.ru.interviewAnswerExplanation,
+      interviewAnswerExplanationEn: this.question.translations.en.interviewAnswerExplanation,
     });
     this.resourceDrafts.set(this.question.resources.map(toResourceDraft));
     this.resourceSearchResults.set([]);
@@ -621,12 +629,12 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
         ru: {
           question: raw.questionRu.trim(),
           answer: raw.answerRu,
-          interviewExpectedAnswer: raw.expectedAnswerRu,
+          interviewAnswerExplanation: raw.interviewAnswerExplanationRu,
         },
         en: {
           question: raw.questionEn.trim(),
           answer: raw.answerEn,
-          interviewExpectedAnswer: raw.expectedAnswerEn,
+          interviewAnswerExplanation: raw.interviewAnswerExplanationEn,
         },
       },
       resources: this.resourceDrafts().map(toResourceAttachmentPayload),
@@ -682,7 +690,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     return (
       this.questionForm.controls.questionRu.invalid ||
       this.questionForm.controls.answerRu.invalid ||
-      this.questionForm.controls.expectedAnswerRu.invalid
+      this.questionForm.controls.interviewAnswerExplanationRu.invalid
     );
   }
 
@@ -690,7 +698,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     return (
       this.questionForm.controls.questionEn.invalid ||
       this.questionForm.controls.answerEn.invalid ||
-      this.questionForm.controls.expectedAnswerEn.invalid
+      this.questionForm.controls.interviewAnswerExplanationEn.invalid
     );
   }
 }
