@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -16,6 +17,10 @@ import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.direc
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
+import {
+  LocalizedDatePickerComponent,
+  LocalizedDatePickerLabels,
+} from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
   AdminArticleList,
@@ -69,6 +74,7 @@ interface ArticleQueryState {
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    LocalizedDatePickerComponent,
     AdminActionsDropdownComponent,
     ArticleFormComponent,
     ModalScrollDirective,
@@ -104,6 +110,27 @@ export class AdminArticlesPageComponent implements OnInit {
   readonly error = signal<ApiError | null>(null);
   readonly formVisible = signal(false);
   readonly formError = signal<ApiError | null>(null);
+  readonly filterApplyAttempted = signal(false);
+  readonly publishedFromValid = signal(true);
+  readonly publishedToValid = signal(true);
+  readonly dateLocale = computed(() => this.i18n.dateLocale());
+  readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => ({
+    placeholder: this.datePickerTranslation('placeholder'),
+    openCalendar: this.datePickerTranslation('open'),
+    changeCalendar: this.datePickerTranslation('change'),
+    dialog: this.datePickerTranslation('dialog'),
+    previousMonth: this.datePickerTranslation('previousMonth'),
+    nextMonth: this.datePickerTranslation('nextMonth'),
+    openMonthYearPicker: this.datePickerTranslation('openMonthYearPicker'),
+    previousYear: this.datePickerTranslation('previousYear'),
+    nextYear: this.datePickerTranslation('nextYear'),
+    clear: this.datePickerTranslation('clear'),
+    close: this.datePickerTranslation('close'),
+    formatHint: this.datePickerTranslation('formatHint'),
+    invalidDate: this.datePickerTranslation('invalidDate'),
+    requiredDate: this.datePickerTranslation('requiredDate'),
+    keyboardHelp: this.datePickerTranslation('keyboardHelp'),
+  }));
 
   ngOnInit(): void {
     this.loadTree();
@@ -144,6 +171,8 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   applyFilters(): void {
+    this.filterApplyAttempted.set(true);
+    if (!this.publishedFromValid() || !this.publishedToValid()) return;
     this.commitQueryState({
       searchQuery: this.normalizedSearchQuery(),
       tagSlug: this.tagSlug(),
@@ -155,6 +184,9 @@ export class AdminArticlesPageComponent implements OnInit {
   }
 
   resetFilters(): void {
+    this.filterApplyAttempted.set(false);
+    this.publishedFromValid.set(true);
+    this.publishedToValid.set(true);
     this.searchQuery.set('');
     this.tagSlug.set(null);
     this.publishedFrom.set('');
@@ -323,8 +355,21 @@ export class AdminArticlesPageComponent implements OnInit {
     this.publishedTo.set(value);
   }
 
+  setPublishedFromValidity(valid: boolean): void {
+    this.publishedFromValid.set(valid);
+  }
+
+  setPublishedToValidity(valid: boolean): void {
+    this.publishedToValid.set(valid);
+  }
+
   setOnlyPublished(value: boolean): void {
     this.onlyPublished.set(value);
+  }
+
+  private datePickerTranslation(key: string): string {
+    this.i18n.language();
+    return this.i18n.translate(`shared.datePicker.${key}`);
   }
 
   loadTags(): void {

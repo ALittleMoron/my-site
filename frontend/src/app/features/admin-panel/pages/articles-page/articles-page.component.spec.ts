@@ -124,6 +124,59 @@ describe('AdminArticlesPageComponent', () => {
       publishedTo: '2026-02-01',
       searchQuery: 'router',
     });
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#admin-articles-from',
+    ) as HTMLInputElement;
+    const publishedTo = fixture.nativeElement.querySelector(
+      '#admin-articles-to',
+    ) as HTMLInputElement;
+    expect(publishedFrom.type).toBe('text');
+    expect(publishedFrom.classList).toContain('form-control-sm');
+    expect(publishedFrom.value).toBe('01.01.2026');
+    expect(publishedTo.value).toBe('01.02.2026');
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid="date-picker-toggle"]').length,
+    ).toBe(2);
+  });
+
+  it('applies themed date picker values as ISO article filters', () => {
+    fixture.detectChanges();
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#admin-articles-from',
+    ) as HTMLInputElement;
+    const publishedTo = fixture.nativeElement.querySelector(
+      '#admin-articles-to',
+    ) as HTMLInputElement;
+
+    publishedFrom.value = '15/03/2026';
+    publishedFrom.dispatchEvent(new Event('input'));
+    publishedTo.value = '20/03/2026';
+    publishedTo.dispatchEvent(new Event('input'));
+    fixture.nativeElement.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+
+    expect(service.listArticles).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        publishedFrom: '2026-03-15',
+        publishedTo: '2026-03-20',
+      }),
+    );
+  });
+
+  it('does not apply article filters while a date picker contains invalid manual input', () => {
+    fixture.detectChanges();
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#admin-articles-from',
+    ) as HTMLInputElement;
+    publishedFrom.value = '31.02.2026';
+    publishedFrom.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    service.listArticles.mockClear();
+
+    fixture.componentInstance.applyFilters();
+    fixture.detectChanges();
+
+    expect(service.listArticles).not.toHaveBeenCalled();
+    expect(publishedFrom.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('clamps an out-of-range URL page and reloads the nearest valid page', () => {

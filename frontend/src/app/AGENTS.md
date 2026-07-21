@@ -106,6 +106,12 @@ Never violate these boundaries:
   injection or feature/domain state. Keep logic UI-local.
 - Current primitives: `LoadingSpinnerComponent`, `ErrorMessageComponent`, `EmptyStateComponent`,
   `LocalizedDatePickerComponent`.
+- Use `LocalizedDatePickerComponent` for calendar-date fields because native date-picker popovers
+  cannot be themed consistently with the site. Keep values as ISO `YYYY-MM-DD`, pass all labels
+  from backend i18n, and use `controlSize="small"` when the picker sits beside compact inline
+  controls. Preserve its modal dialog/grid semantics, roving focus, keyboard navigation, Angular
+  Forms validation, and stylesheet-owned positioning; do not replace the native dialog top layer
+  with runtime inline positioning that would weaken the strict CSP.
 
 ## Feature Structure
 

@@ -30,16 +30,28 @@ class TestI18nCatalog:
             for source in ArticleViewSourceCategory:
                 assert f"enum.articleViewSource.{source.value}" in messages
 
-    def test_date_picker_catalog_has_month_year_navigation_labels(self) -> None:
+    def test_date_picker_catalog_has_accessible_dialog_labels(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
+        assert russian_messages["shared.datePicker.dialog"] == "Выбор даты"
+        assert russian_messages["shared.datePicker.change"] == "Изменить дату"
         assert russian_messages["shared.datePicker.openMonthYearPicker"] == "Выбрать месяц и год"
         assert russian_messages["shared.datePicker.previousYear"] == "Предыдущий год"
         assert russian_messages["shared.datePicker.nextYear"] == "Следующий год"
+        assert russian_messages["shared.datePicker.clear"] == "Очистить"
+        assert russian_messages["shared.datePicker.close"] == "Закрыть"
+        assert russian_messages["shared.datePicker.formatHint"] == "Формат даты: ДД.ММ.ГГГГ"
+        assert russian_messages["shared.datePicker.requiredDate"] == "Укажите дату."
+        assert english_messages["shared.datePicker.dialog"] == "Choose date"
+        assert english_messages["shared.datePicker.change"] == "Change date"
         assert english_messages["shared.datePicker.openMonthYearPicker"] == "Choose month and year"
         assert english_messages["shared.datePicker.previousYear"] == "Previous year"
         assert english_messages["shared.datePicker.nextYear"] == "Next year"
+        assert english_messages["shared.datePicker.clear"] == "Clear"
+        assert english_messages["shared.datePicker.close"] == "Close"
+        assert english_messages["shared.datePicker.formatHint"] == "Date format: MM/DD/YYYY"
+        assert english_messages["shared.datePicker.requiredDate"] == "Enter a date."
 
     def test_shell_catalog_keeps_footer_contact_without_about_navigation(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)

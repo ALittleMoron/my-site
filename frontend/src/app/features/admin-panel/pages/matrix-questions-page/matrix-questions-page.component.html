@@ -217,20 +217,34 @@
       <label class="form-label" for="matrix-workspace-from">{{
         'articles.filters.from' | t
       }}</label>
-      <input
-        id="matrix-workspace-from"
-        type="date"
-        class="form-control form-control-sm"
-        formControlName="publishedFrom"
+      <app-localized-date-picker
+        inputId="matrix-workspace-from"
+        [value]="filtersForm.controls.publishedFrom.value"
+        controlSize="small"
+        [dateLocale]="dateLocale()"
+        [labels]="datePickerLabels()"
+        [required]="false"
+        [invalid]="!publishedFromValid() && filtersForm.controls.publishedFrom.touched"
+        [controlDisabled]="false"
+        [readonly]="false"
+        (valueChange)="setPublishedFrom($event)"
+        (validityChange)="setPublishedFromValidity($event)"
       />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-to">{{ 'articles.filters.to' | t }}</label>
-      <input
-        id="matrix-workspace-to"
-        type="date"
-        class="form-control form-control-sm"
-        formControlName="publishedTo"
+      <app-localized-date-picker
+        inputId="matrix-workspace-to"
+        [value]="filtersForm.controls.publishedTo.value"
+        controlSize="small"
+        [dateLocale]="dateLocale()"
+        [labels]="datePickerLabels()"
+        [required]="false"
+        [invalid]="!publishedToValid() && filtersForm.controls.publishedTo.touched"
+        [controlDisabled]="false"
+        [readonly]="false"
+        (valueChange)="setPublishedTo($event)"
+        (validityChange)="setPublishedToValidity($event)"
       />
     </div>
     <div class="col-12 col-md-auto d-flex gap-2">

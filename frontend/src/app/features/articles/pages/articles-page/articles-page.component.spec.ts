@@ -359,7 +359,7 @@ describe('ArticlesPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="articles-tag-filters"]')).toBe(null);
   });
 
-  it('renders localized date pickers without visible format hints and keeps ISO query params', () => {
+  it('renders localized date pickers with accessible format guidance and keeps ISO query params', () => {
     paramMap.next(convertToParamMap({}));
     fixture.detectChanges();
 
@@ -368,13 +368,13 @@ describe('ArticlesPageComponent', () => {
 
     expect(from.type).toBe('text');
     expect(to.type).toBe('text');
-    expect(from.placeholder).toBe('дд/мм/гггг');
-    expect(to.placeholder).toBe('дд/мм/гггг');
+    expect(from.placeholder).toBe('дд.мм.гггг');
+    expect(to.placeholder).toBe('дд.мм.гггг');
     expect(fixture.nativeElement.querySelector('[data-testid="date-picker-toggle"]')).toBeTruthy();
-    expect(from.title).toBe('');
-    expect(to.title).toBe('');
-    expect(fixture.nativeElement.querySelector('#articlesPublishedFromHint')).toBe(null);
-    expect(fixture.nativeElement.querySelector('#articlesPublishedToHint')).toBe(null);
+    expect(from.title).toBe('Формат даты: ДД.ММ.ГГГГ');
+    expect(to.title).toBe('Формат даты: ДД.ММ.ГГГГ');
+    expect(document.getElementById(from.getAttribute('aria-describedby')!)).not.toBeNull();
+    expect(document.getElementById(to.getAttribute('aria-describedby')!)).not.toBeNull();
 
     fixture.nativeElement.querySelector('[data-testid="date-picker-toggle"]').click();
     fixture.detectChanges();
@@ -403,6 +403,24 @@ describe('ArticlesPageComponent', () => {
     expect(to.value).toBe('01/31/2026');
     expect(from.placeholder).toBe('mm/dd/yyyy');
     expect(to.placeholder).toBe('mm/dd/yyyy');
+  });
+
+  it('does not apply public article filters while a date picker contains invalid manual input', () => {
+    paramMap.next(convertToParamMap({}));
+    fixture.detectChanges();
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#articlesPublishedFrom',
+    ) as HTMLInputElement;
+    publishedFrom.value = '31.02.2026';
+    publishedFrom.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    router.navigate.mockClear();
+
+    fixture.componentInstance.applyFilters();
+    fixture.detectChanges();
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(publishedFrom.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('keeps article authoring controls out of public article routes for content managers', () => {

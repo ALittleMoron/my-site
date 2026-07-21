@@ -13,6 +13,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { ApiError } from '../../../../core/models/api-error.model';
+import { LocalizedDatePickerLabels } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { AdminArticleStats } from '../../models/article-workspace.model';
 import { ArticleWorkspaceService } from '../../services/article-workspace.service';
 import { AdminArticleStatisticsPanelComponent } from './components/article-statistics-panel/article-statistics-panel.component';
@@ -50,33 +51,25 @@ export class AdminArticleStatisticsPageComponent implements OnInit {
   readonly dateTo = signal(formatDateInput(new Date()));
 
   readonly dateLocale = computed(() => this.i18n.dateLocale());
-  readonly datePlaceholder = computed(() => {
+  readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => {
     this.language();
-    return this.i18n.translate('shared.datePicker.placeholder');
-  });
-  readonly openCalendarLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.open');
-  });
-  readonly previousMonthLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.previousMonth');
-  });
-  readonly nextMonthLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.nextMonth');
-  });
-  readonly openMonthYearPickerLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.openMonthYearPicker');
-  });
-  readonly previousYearLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.previousYear');
-  });
-  readonly nextYearLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.nextYear');
+    return {
+      placeholder: this.i18n.translate('shared.datePicker.placeholder'),
+      openCalendar: this.i18n.translate('shared.datePicker.open'),
+      changeCalendar: this.i18n.translate('shared.datePicker.change'),
+      dialog: this.i18n.translate('shared.datePicker.dialog'),
+      previousMonth: this.i18n.translate('shared.datePicker.previousMonth'),
+      nextMonth: this.i18n.translate('shared.datePicker.nextMonth'),
+      openMonthYearPicker: this.i18n.translate('shared.datePicker.openMonthYearPicker'),
+      previousYear: this.i18n.translate('shared.datePicker.previousYear'),
+      nextYear: this.i18n.translate('shared.datePicker.nextYear'),
+      clear: this.i18n.translate('shared.datePicker.clear'),
+      close: this.i18n.translate('shared.datePicker.close'),
+      formatHint: this.i18n.translate('shared.datePicker.formatHint'),
+      invalidDate: this.i18n.translate('shared.datePicker.invalidDate'),
+      requiredDate: this.i18n.translate('shared.datePicker.requiredDate'),
+      keyboardHelp: this.i18n.translate('shared.datePicker.keyboardHelp'),
+    };
   });
   readonly language = computed(() => {
     const language = this.i18n.language();

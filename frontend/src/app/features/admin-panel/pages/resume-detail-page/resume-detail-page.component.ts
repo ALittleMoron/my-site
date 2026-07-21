@@ -28,7 +28,10 @@ import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.direc
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
-import { LocalizedDatePickerComponent } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
+import {
+  LocalizedDatePickerComponent,
+  LocalizedDatePickerLabels,
+} from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
@@ -264,33 +267,25 @@ export class AdminResumeDetailPageComponent implements OnInit {
     toResumeLanguage(this.resumeForm.controls.language.getRawValue()),
   );
   readonly dateLocale = computed(() => this.i18n.dateLocale());
-  readonly datePlaceholder = computed(() => {
+  readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => {
     this.i18n.language();
-    return this.i18n.translate('shared.datePicker.placeholder');
-  });
-  readonly openCalendarLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.open');
-  });
-  readonly previousMonthLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.previousMonth');
-  });
-  readonly nextMonthLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.nextMonth');
-  });
-  readonly openMonthYearPickerLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.openMonthYearPicker');
-  });
-  readonly previousYearLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.previousYear');
-  });
-  readonly nextYearLabel = computed(() => {
-    this.i18n.language();
-    return this.i18n.translate('shared.datePicker.nextYear');
+    return {
+      placeholder: this.i18n.translate('shared.datePicker.placeholder'),
+      openCalendar: this.i18n.translate('shared.datePicker.open'),
+      changeCalendar: this.i18n.translate('shared.datePicker.change'),
+      dialog: this.i18n.translate('shared.datePicker.dialog'),
+      previousMonth: this.i18n.translate('shared.datePicker.previousMonth'),
+      nextMonth: this.i18n.translate('shared.datePicker.nextMonth'),
+      openMonthYearPicker: this.i18n.translate('shared.datePicker.openMonthYearPicker'),
+      previousYear: this.i18n.translate('shared.datePicker.previousYear'),
+      nextYear: this.i18n.translate('shared.datePicker.nextYear'),
+      clear: this.i18n.translate('shared.datePicker.clear'),
+      close: this.i18n.translate('shared.datePicker.close'),
+      formatHint: this.i18n.translate('shared.datePicker.formatHint'),
+      invalidDate: this.i18n.translate('shared.datePicker.invalidDate'),
+      requiredDate: this.i18n.translate('shared.datePicker.requiredDate'),
+      keyboardHelp: this.i18n.translate('shared.datePicker.keyboardHelp'),
+    };
   });
   readonly loading = signal(false);
   readonly saving = signal(false);

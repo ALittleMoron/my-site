@@ -20,6 +20,10 @@ import { ModalScrollDirective } from '../../../../core/layout/modal-scroll.direc
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
+import {
+  LocalizedDatePickerComponent,
+  LocalizedDatePickerLabels,
+} from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
@@ -136,6 +140,7 @@ interface MatrixWorkspaceQueryState {
     LoadingSpinnerComponent,
     ErrorMessageComponent,
     EmptyStateComponent,
+    LocalizedDatePickerComponent,
     MatrixSheetTabsComponent,
     MatrixGroupedGridComponent,
     AdminActionsDropdownComponent,
@@ -209,6 +214,26 @@ export class MatrixQuestionsPageComponent implements OnInit {
     }),
     pageSize: this.formBuilder.control('20', { validators: Validators.required }),
   });
+  readonly dateLocale = computed(() => this.i18n.dateLocale());
+  readonly publishedFromValid = signal(true);
+  readonly publishedToValid = signal(true);
+  readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => ({
+    placeholder: this.datePickerTranslation('placeholder'),
+    openCalendar: this.datePickerTranslation('open'),
+    changeCalendar: this.datePickerTranslation('change'),
+    dialog: this.datePickerTranslation('dialog'),
+    previousMonth: this.datePickerTranslation('previousMonth'),
+    nextMonth: this.datePickerTranslation('nextMonth'),
+    openMonthYearPicker: this.datePickerTranslation('openMonthYearPicker'),
+    previousYear: this.datePickerTranslation('previousYear'),
+    nextYear: this.datePickerTranslation('nextYear'),
+    clear: this.datePickerTranslation('clear'),
+    close: this.datePickerTranslation('close'),
+    formatHint: this.datePickerTranslation('formatHint'),
+    invalidDate: this.datePickerTranslation('invalidDate'),
+    requiredDate: this.datePickerTranslation('requiredDate'),
+    keyboardHelp: this.datePickerTranslation('keyboardHelp'),
+  }));
 
   readonly isEmpty = computed(() => !this.loading() && (this.workspace()?.items.length ?? 0) === 0);
   readonly canGoBack = computed(() => this.page() > 1);
@@ -339,11 +364,17 @@ export class MatrixQuestionsPageComponent implements OnInit {
   }
 
   applyFilters(): void {
+    if (this.filtersForm.invalid || !this.publishedFromValid() || !this.publishedToValid()) {
+      this.filtersForm.markAllAsTouched();
+      return;
+    }
     const state = this.requireAppliedQueryState();
     this.commitQueryState({ ...this.stateFromForm(state), page: 1 });
   }
 
   resetFilters(): void {
+    this.publishedFromValid.set(true);
+    this.publishedToValid.set(true);
     this.filtersForm.reset({
       searchQuery: '',
       sheetKey: '',
@@ -365,6 +396,22 @@ export class MatrixQuestionsPageComponent implements OnInit {
       previewLanguage: state.previewLanguage,
       previewSheet: state.previewSheet,
     });
+  }
+
+  setPublishedFrom(value: string): void {
+    this.filtersForm.controls.publishedFrom.setValue(value);
+  }
+
+  setPublishedTo(value: string): void {
+    this.filtersForm.controls.publishedTo.setValue(value);
+  }
+
+  setPublishedFromValidity(valid: boolean): void {
+    this.publishedFromValid.set(valid);
+  }
+
+  setPublishedToValidity(valid: boolean): void {
+    this.publishedToValid.set(valid);
   }
 
   previousPage(): void {
@@ -882,6 +929,11 @@ export class MatrixQuestionsPageComponent implements OnInit {
   private loadForQueryState(state: MatrixWorkspaceQueryState): void {
     if (state.tab === 'preview') this.loadPreviewSheets();
     else this.loadWorkspace();
+  }
+
+  private datePickerTranslation(key: string): string {
+    this.i18n.language();
+    return this.i18n.translate(`shared.datePicker.${key}`);
   }
 
   currentLanguage(): LanguageCode {

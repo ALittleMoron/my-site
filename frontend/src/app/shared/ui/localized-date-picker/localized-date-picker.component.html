@@ -1,27 +1,38 @@
 <div class="localized-date-picker">
   <div class="input-group">
     <input
+      #textInput
       [id]="inputId()"
       type="text"
       class="form-control"
+      [class.form-control-sm]="controlSize() === 'small'"
       inputmode="numeric"
       autocomplete="off"
-      [attr.placeholder]="placeholder()"
+      [attr.placeholder]="labels().placeholder"
+      [attr.title]="labels().formatHint"
+      [attr.aria-describedby]="inputDescribedBy()"
+      [attr.aria-errormessage]="effectiveInvalid() ? errorId : null"
       [attr.aria-required]="required() ? 'true' : null"
-      [attr.aria-invalid]="invalid() ? 'true' : null"
+      [attr.aria-invalid]="effectiveInvalid() ? 'true' : null"
       [required]="required()"
-      [class.is-invalid]="invalid()"
+      [readOnly]="readonly()"
+      [disabled]="effectiveDisabled()"
+      [class.is-invalid]="effectiveInvalid()"
       [value]="displayValue()"
       (input)="onTextInput($event)"
       (blur)="onTextBlur()"
     />
     <button
+      #calendarToggle
       type="button"
       class="btn btn-outline-secondary localized-date-picker-toggle"
+      [class.btn-sm]="controlSize() === 'small'"
       data-testid="date-picker-toggle"
-      [attr.aria-label]="openCalendarLabel()"
+      aria-haspopup="dialog"
+      [attr.aria-label]="toggleAriaLabel()"
       [attr.aria-controls]="calendarId"
       [attr.aria-expanded]="calendarOpen()"
+      [disabled]="effectiveDisabled() || readonly()"
       (click)="toggleCalendar()"
     >
       <svg
@@ -44,17 +55,38 @@
     </button>
   </div>
 
-  @if (calendarOpen()) {
+  <div [id]="formatHintId" class="visually-hidden">{{ labels().formatHint }}</div>
+  @if (effectiveInvalid()) {
     <div
-      [id]="calendarId"
-      class="localized-date-picker-calendar border rounded bg-body shadow-sm p-2"
-      data-testid="date-picker-calendar"
+      [id]="errorId"
+      class="invalid-feedback d-block"
+      data-testid="date-picker-validation-message"
+      role="alert"
     >
+      {{ validationMessage() }}
+    </div>
+  }
+
+  <dialog
+    #calendarDialog
+    [id]="calendarId"
+    class="localized-date-picker-calendar bg-body text-body shadow"
+    data-testid="date-picker-calendar"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="labels().dialog"
+    (cancel)="onDialogCancel($event)"
+    (close)="onDialogClosed()"
+    (click)="onDialogClick($event)"
+    (keydown)="onDialogKeydown($event)"
+  >
+    <div class="localized-date-picker-calendar-content">
       <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
-          [attr.aria-label]="previousMonthLabel()"
+          data-testid="date-picker-previous-month"
+          [attr.aria-label]="labels().previousMonth"
           (click)="showPreviousMonth()"
         >
           ‹
@@ -63,17 +95,24 @@
           type="button"
           class="btn btn-sm btn-link localized-date-picker-month-year-toggle text-capitalize"
           data-testid="date-picker-month-year-toggle"
-          [attr.aria-label]="openMonthYearPickerLabel()"
+          [attr.aria-label]="labels().openMonthYearPicker"
           [attr.aria-controls]="monthYearPanelId"
           [attr.aria-expanded]="calendarMode() === 'monthYear'"
           (click)="toggleMonthYearPicker()"
         >
-          {{ monthLabel() }}
+          <span
+            [id]="monthHeadingId"
+            data-testid="date-picker-month-heading"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {{ monthLabel() }}
+          </span>
         </button>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
-          [attr.aria-label]="nextMonthLabel()"
+          [attr.aria-label]="labels().nextMonth"
           (click)="showNextMonth()"
         >
           ›
@@ -81,30 +120,48 @@
       </div>
 
       @if (calendarMode() === 'days') {
-        <div class="localized-date-picker-grid localized-date-picker-weekdays mb-1">
-          @for (weekday of weekdayLabels(); track $index) {
-            <div class="text-body-secondary small text-center">{{ weekday }}</div>
-          }
-        </div>
-        <div class="localized-date-picker-grid">
-          @for (cell of calendarCells(); track $index) {
-            @if (cell) {
-              <button
-                type="button"
-                class="btn btn-sm localized-date-picker-day"
-                [class.btn-success]="cell.selected"
-                [class.btn-outline-secondary]="!cell.selected"
-                [class.localized-date-picker-today]="cell.today"
-                [attr.aria-label]="cell.ariaLabel"
-                [attr.aria-pressed]="cell.selected"
-                [attr.data-date]="cell.iso"
-                (click)="selectDate(cell.iso)"
-              >
-                {{ cell.label }}
-              </button>
-            } @else {
-              <span aria-hidden="true"></span>
+        <div
+          class="localized-date-picker-date-grid"
+          role="grid"
+          [attr.aria-labelledby]="monthHeadingId"
+          [attr.aria-describedby]="keyboardHelpId"
+        >
+          <div class="localized-date-picker-grid-row" role="row">
+            @for (weekday of weekdayLabels(); track weekday.long) {
+              <div class="small text-center text-body-secondary" role="columnheader">
+                <abbr [attr.title]="weekday.long">{{ weekday.short }}</abbr>
+              </div>
             }
+          </div>
+          @for (row of calendarRows(); track $index) {
+            <div class="localized-date-picker-grid-row" role="row">
+              @for (cell of row; track cell?.iso ?? $index) {
+                @if (cell) {
+                  <button
+                    #dayButton
+                    type="button"
+                    role="gridcell"
+                    class="btn btn-sm localized-date-picker-day"
+                    [class.btn-success]="cell.selected"
+                    [class.btn-outline-secondary]="!cell.selected"
+                    [class.localized-date-picker-today]="cell.today"
+                    [attr.aria-label]="cell.ariaLabel"
+                    [attr.aria-selected]="cell.selected ? 'true' : null"
+                    [attr.aria-current]="cell.today ? 'date' : null"
+                    [attr.aria-disabled]="cell.disabled ? 'true' : null"
+                    [attr.data-date]="cell.iso"
+                    [tabindex]="cell.iso === focusedIso() ? 0 : -1"
+                    [disabled]="cell.disabled"
+                    (click)="selectDate(cell.iso)"
+                    (keydown)="onDayKeydown($event, cell.iso)"
+                  >
+                    {{ cell.label }}
+                  </button>
+                } @else {
+                  <span role="gridcell" aria-hidden="true"></span>
+                }
+              }
+            </div>
           }
         </div>
       } @else {
@@ -118,40 +175,80 @@
               type="button"
               class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
               data-testid="date-picker-previous-year"
-              [attr.aria-label]="previousYearLabel()"
+              [attr.aria-label]="labels().previousYear"
               (click)="showPreviousYear()"
             >
               ‹
             </button>
-            <div class="small fw-semibold text-center flex-grow-1">{{ visibleYearLabel() }}</div>
+            <div class="small fw-semibold text-center flex-grow-1" aria-live="polite">
+              {{ visibleYearLabel() }}
+            </div>
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary localized-date-picker-nav"
               data-testid="date-picker-next-year"
-              [attr.aria-label]="nextYearLabel()"
+              [attr.aria-label]="labels().nextYear"
               (click)="showNextYear()"
             >
               ›
             </button>
           </div>
-          <div class="localized-date-picker-month-grid">
-            @for (month of monthOptions(); track month.index) {
-              <button
-                type="button"
-                class="btn btn-sm localized-date-picker-month text-capitalize"
-                [class.btn-success]="month.selected"
-                [class.btn-outline-secondary]="!month.selected"
-                [attr.aria-label]="month.ariaLabel"
-                [attr.aria-pressed]="month.selected"
-                [attr.data-month-index]="month.index"
-                (click)="selectMonth(month.index)"
-              >
-                {{ month.label }}
-              </button>
+          <div
+            class="localized-date-picker-month-grid"
+            role="grid"
+            [attr.aria-label]="labels().openMonthYearPicker"
+          >
+            @for (row of monthRows(); track $index) {
+              <div class="localized-date-picker-month-row" role="row">
+                @for (month of row; track month.index) {
+                  <button
+                    #monthButton
+                    type="button"
+                    role="gridcell"
+                    class="btn btn-sm localized-date-picker-month text-capitalize"
+                    [class.btn-success]="month.selected"
+                    [class.btn-outline-secondary]="!month.selected"
+                    [attr.aria-label]="month.ariaLabel"
+                    [attr.aria-selected]="month.selected ? 'true' : null"
+                    [attr.data-month-index]="month.index"
+                    [tabindex]="month.index === focusedMonthIndex() ? 0 : -1"
+                    (click)="selectMonth(month.index)"
+                    (keydown)="onMonthKeydown($event, month.index)"
+                  >
+                    {{ month.label }}
+                  </button>
+                }
+              </div>
             }
           </div>
         </div>
       }
+
+      <p [id]="keyboardHelpId" class="small text-body-secondary mt-2 mb-2">
+        {{ labels().keyboardHelp }}
+      </p>
+      <div class="d-flex justify-content-end gap-2">
+        @if (!required()) {
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary me-auto"
+            data-testid="date-picker-clear"
+            [disabled]="!canClear()"
+            (click)="clearDate()"
+          >
+            {{ labels().clear }}
+          </button>
+        }
+        <button
+          #closeButton
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          data-testid="date-picker-close"
+          (click)="closeCalendar()"
+        >
+          {{ labels().close }}
+        </button>
+      </div>
     </div>
-  }
+  </dialog>
 </div>

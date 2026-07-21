@@ -696,21 +696,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-experience-' + index + '-start-date'"
-                          [value]="experienceItem.controls.startDate.value ?? ''"
+                          formControlName="startDate"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="true"
                           [invalid]="
                             experienceItem.controls.startDate.invalid &&
                             experienceItem.controls.startDate.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(experienceItem.controls.startDate, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-md-6">
@@ -722,21 +718,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-experience-' + index + '-end-date'"
-                          [value]="experienceItem.controls.endDate.value ?? ''"
+                          formControlName="endDate"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="false"
                           [invalid]="
                             experienceItem.controls.endDate.invalid &&
                             experienceItem.controls.endDate.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(experienceItem.controls.endDate, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-12">
@@ -1356,21 +1348,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-education-' + index + '-start-date'"
-                          [value]="educationItem.controls.startDate.value ?? ''"
+                          formControlName="startDate"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="true"
                           [invalid]="
                             educationItem.controls.startDate.invalid &&
                             educationItem.controls.startDate.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(educationItem.controls.startDate, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-md-6">
@@ -1380,21 +1368,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-education-' + index + '-end-date'"
-                          [value]="educationItem.controls.endDate.value ?? ''"
+                          formControlName="endDate"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="true"
                           [invalid]="
                             educationItem.controls.endDate.invalid &&
                             educationItem.controls.endDate.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(educationItem.controls.endDate, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-12">
@@ -1544,21 +1528,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-certification-' + index + '-issued-on'"
-                          [value]="certification.controls.issuedOn.value ?? ''"
+                          formControlName="issuedOn"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="false"
                           [invalid]="
                             certification.controls.issuedOn.invalid &&
                             certification.controls.issuedOn.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(certification.controls.issuedOn, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-md-6">
@@ -1570,21 +1550,17 @@
                         </label>
                         <app-localized-date-picker
                           [inputId]="'resume-certification-' + index + '-expires-on'"
-                          [value]="certification.controls.expiresOn.value ?? ''"
+                          formControlName="expiresOn"
+                          controlSize="default"
                           [dateLocale]="dateLocale()"
-                          [placeholder]="datePlaceholder()"
+                          [labels]="datePickerLabels()"
                           [required]="false"
                           [invalid]="
                             certification.controls.expiresOn.invalid &&
                             certification.controls.expiresOn.touched
                           "
-                          [openCalendarLabel]="openCalendarLabel()"
-                          [previousMonthLabel]="previousMonthLabel()"
-                          [nextMonthLabel]="nextMonthLabel()"
-                          [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-                          [previousYearLabel]="previousYearLabel()"
-                          [nextYearLabel]="nextYearLabel()"
-                          (valueChange)="updateDate(certification.controls.expiresOn, $event)"
+                          [controlDisabled]="false"
+                          [readonly]="false"
                         />
                       </div>
                       <div class="col-12">

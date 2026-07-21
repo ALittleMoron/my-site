@@ -272,6 +272,47 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(lastWorkspaceFilters().page).toBe(1);
   });
 
+  it('applies compact themed date picker values as ISO matrix filters', () => {
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#matrix-workspace-from',
+    ) as HTMLInputElement;
+    const publishedTo = fixture.nativeElement.querySelector(
+      '#matrix-workspace-to',
+    ) as HTMLInputElement;
+
+    expect(publishedFrom.type).toBe('text');
+    expect(publishedFrom.classList).toContain('form-control-sm');
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid="date-picker-toggle"]').length,
+    ).toBe(2);
+    publishedFrom.value = '15/03/2026';
+    publishedFrom.dispatchEvent(new Event('input'));
+    publishedTo.value = '20/03/2026';
+    publishedTo.dispatchEvent(new Event('input'));
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-apply"]')
+      ?.click();
+
+    expect(lastWorkspaceFilters().publishedFrom).toBe('2026-03-15');
+    expect(lastWorkspaceFilters().publishedTo).toBe('2026-03-20');
+  });
+
+  it('does not apply matrix filters while a date picker contains invalid manual input', () => {
+    const publishedFrom = fixture.nativeElement.querySelector(
+      '#matrix-workspace-from',
+    ) as HTMLInputElement;
+    publishedFrom.value = '31.02.2026';
+    publishedFrom.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    service.listWorkspaceItems.mockClear();
+
+    fixture.componentInstance.applyFilters();
+    fixture.detectChanges();
+
+    expect(service.listWorkspaceItems).not.toHaveBeenCalled();
+    expect(publishedFrom.getAttribute('aria-invalid')).toBe('true');
+  });
+
   it('loads protected preview only after opening the preview tab and shows its language', () => {
     expect(service.listPreviewSheets).not.toHaveBeenCalled();
 

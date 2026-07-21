@@ -39,22 +39,34 @@
   </div>
   <div class="col-6 col-md-4 col-xl-2">
     <label class="form-label" for="admin-articles-from">{{ 'articles.filters.from' | t }}</label>
-    <input
-      id="admin-articles-from"
-      class="form-control form-control-sm"
-      type="date"
+    <app-localized-date-picker
+      inputId="admin-articles-from"
       [value]="publishedFrom()"
-      (input)="setPublishedFrom($any($event.target).value)"
+      controlSize="small"
+      [dateLocale]="dateLocale()"
+      [labels]="datePickerLabels()"
+      [required]="false"
+      [invalid]="filterApplyAttempted() && !publishedFromValid()"
+      [controlDisabled]="false"
+      [readonly]="false"
+      (valueChange)="setPublishedFrom($event)"
+      (validityChange)="setPublishedFromValidity($event)"
     />
   </div>
   <div class="col-6 col-md-4 col-xl-2">
     <label class="form-label" for="admin-articles-to">{{ 'articles.filters.to' | t }}</label>
-    <input
-      id="admin-articles-to"
-      class="form-control form-control-sm"
-      type="date"
+    <app-localized-date-picker
+      inputId="admin-articles-to"
       [value]="publishedTo()"
-      (input)="setPublishedTo($any($event.target).value)"
+      controlSize="small"
+      [dateLocale]="dateLocale()"
+      [labels]="datePickerLabels()"
+      [required]="false"
+      [invalid]="filterApplyAttempted() && !publishedToValid()"
+      [controlDisabled]="false"
+      [readonly]="false"
+      (valueChange)="setPublishedTo($event)"
+      (validityChange)="setPublishedToValidity($event)"
     />
   </div>
   <div class="col-6 col-md-4 col-xl-auto">

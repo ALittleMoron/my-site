@@ -23,7 +23,10 @@ import { AnonymousReactionService } from '../../../../core/privacy/anonymous-rea
 import { SeoAlternate, SeoService } from '../../../../core/seo/seo.service';
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
-import { LocalizedDatePickerComponent } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
+import {
+  LocalizedDatePickerComponent,
+  LocalizedDatePickerLabels,
+} from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
   ArticleDetail,
@@ -87,6 +90,9 @@ export class ArticlesPageComponent implements OnInit {
   readonly searchQuery = signal('');
   readonly publishedFrom = signal('');
   readonly publishedTo = signal('');
+  readonly filterApplyAttempted = signal(false);
+  readonly publishedFromValid = signal(true);
+  readonly publishedToValid = signal(true);
   readonly page = signal(1);
 
   readonly articles = signal<ArticleList | null>(null);
@@ -124,33 +130,25 @@ export class ArticlesPageComponent implements OnInit {
     );
   });
   readonly dateLocale = computed(() => this.i18n.dateLocale());
-  readonly datePlaceholder = computed(() => {
+  readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => {
     this.language();
-    return this.i18n.translate('shared.datePicker.placeholder');
-  });
-  readonly openCalendarLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.open');
-  });
-  readonly previousMonthLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.previousMonth');
-  });
-  readonly nextMonthLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.nextMonth');
-  });
-  readonly openMonthYearPickerLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.openMonthYearPicker');
-  });
-  readonly previousYearLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.previousYear');
-  });
-  readonly nextYearLabel = computed(() => {
-    this.language();
-    return this.i18n.translate('shared.datePicker.nextYear');
+    return {
+      placeholder: this.i18n.translate('shared.datePicker.placeholder'),
+      openCalendar: this.i18n.translate('shared.datePicker.open'),
+      changeCalendar: this.i18n.translate('shared.datePicker.change'),
+      dialog: this.i18n.translate('shared.datePicker.dialog'),
+      previousMonth: this.i18n.translate('shared.datePicker.previousMonth'),
+      nextMonth: this.i18n.translate('shared.datePicker.nextMonth'),
+      openMonthYearPicker: this.i18n.translate('shared.datePicker.openMonthYearPicker'),
+      previousYear: this.i18n.translate('shared.datePicker.previousYear'),
+      nextYear: this.i18n.translate('shared.datePicker.nextYear'),
+      clear: this.i18n.translate('shared.datePicker.clear'),
+      close: this.i18n.translate('shared.datePicker.close'),
+      formatHint: this.i18n.translate('shared.datePicker.formatHint'),
+      invalidDate: this.i18n.translate('shared.datePicker.invalidDate'),
+      requiredDate: this.i18n.translate('shared.datePicker.requiredDate'),
+      keyboardHelp: this.i18n.translate('shared.datePicker.keyboardHelp'),
+    };
   });
   readonly language = computed(() => {
     const language = this.i18n.language();
@@ -252,17 +250,30 @@ export class ArticlesPageComponent implements OnInit {
     this.publishedTo.set(value);
   }
 
+  setPublishedFromValidity(valid: boolean): void {
+    this.publishedFromValid.set(valid);
+  }
+
+  setPublishedToValidity(valid: boolean): void {
+    this.publishedToValid.set(valid);
+  }
+
   onSearchInput(event: Event): void {
     this.setSearchQuery(readInputValue(event));
   }
 
   applyFilters(): void {
+    this.filterApplyAttempted.set(true);
+    if (!this.publishedFromValid() || !this.publishedToValid()) return;
     this.router.navigate(this.localizedListCommands(), {
       queryParams: this.buildListQueryParams({ page: 1 }),
     });
   }
 
   clearListFilters(): void {
+    this.filterApplyAttempted.set(false);
+    this.publishedFromValid.set(true);
+    this.publishedToValid.set(true);
     this.searchQuery.set('');
     this.setPublishedFrom('');
     this.setPublishedTo('');

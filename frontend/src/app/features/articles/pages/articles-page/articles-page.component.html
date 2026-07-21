@@ -122,17 +122,15 @@
             <app-localized-date-picker
               inputId="articlesPublishedFrom"
               [value]="publishedFrom()"
+              controlSize="default"
               [dateLocale]="dateLocale()"
-              [placeholder]="datePlaceholder()"
+              [labels]="datePickerLabels()"
               [required]="false"
-              [invalid]="false"
-              [openCalendarLabel]="openCalendarLabel()"
-              [previousMonthLabel]="previousMonthLabel()"
-              [nextMonthLabel]="nextMonthLabel()"
-              [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-              [previousYearLabel]="previousYearLabel()"
-              [nextYearLabel]="nextYearLabel()"
+              [invalid]="filterApplyAttempted() && !publishedFromValid()"
+              [controlDisabled]="false"
+              [readonly]="false"
               (valueChange)="setPublishedFrom($event)"
+              (validityChange)="setPublishedFromValidity($event)"
             />
           </div>
           <div class="articles-filter-date">
@@ -142,17 +140,15 @@
             <app-localized-date-picker
               inputId="articlesPublishedTo"
               [value]="publishedTo()"
+              controlSize="default"
               [dateLocale]="dateLocale()"
-              [placeholder]="datePlaceholder()"
+              [labels]="datePickerLabels()"
               [required]="false"
-              [invalid]="false"
-              [openCalendarLabel]="openCalendarLabel()"
-              [previousMonthLabel]="previousMonthLabel()"
-              [nextMonthLabel]="nextMonthLabel()"
-              [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-              [previousYearLabel]="previousYearLabel()"
-              [nextYearLabel]="nextYearLabel()"
+              [invalid]="filterApplyAttempted() && !publishedToValid()"
+              [controlDisabled]="false"
+              [readonly]="false"
               (valueChange)="setPublishedTo($event)"
+              (validityChange)="setPublishedToValidity($event)"
             />
           </div>
           <div class="d-flex gap-2">

@@ -11,17 +11,15 @@
       <app-localized-date-picker
         inputId="adminArticleStatsDateFrom"
         [value]="dateFrom()"
+        controlSize="small"
         [dateLocale]="dateLocale()"
-        [placeholder]="datePlaceholder()"
+        [labels]="datePickerLabels()"
         [required]="true"
         [invalid]="dateFromInvalid()"
-        [openCalendarLabel]="openCalendarLabel()"
-        [previousMonthLabel]="previousMonthLabel()"
-        [nextMonthLabel]="nextMonthLabel()"
-        [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-        [previousYearLabel]="previousYearLabel()"
-        [nextYearLabel]="nextYearLabel()"
+        [controlDisabled]="false"
+        [readonly]="false"
         (valueChange)="setDateFrom($event)"
+        (validityChange)="setDateFromValidity($event)"
       />
     </div>
     <div>
@@ -35,17 +33,15 @@
       <app-localized-date-picker
         inputId="adminArticleStatsDateTo"
         [value]="dateTo()"
+        controlSize="small"
         [dateLocale]="dateLocale()"
-        [placeholder]="datePlaceholder()"
+        [labels]="datePickerLabels()"
         [required]="true"
         [invalid]="dateToInvalid()"
-        [openCalendarLabel]="openCalendarLabel()"
-        [previousMonthLabel]="previousMonthLabel()"
-        [nextMonthLabel]="nextMonthLabel()"
-        [openMonthYearPickerLabel]="openMonthYearPickerLabel()"
-        [previousYearLabel]="previousYearLabel()"
-        [nextYearLabel]="nextYearLabel()"
+        [controlDisabled]="false"
+        [readonly]="false"
         (valueChange)="setDateTo($event)"
+        (validityChange)="setDateToValidity($event)"
       />
     </div>
     <button
