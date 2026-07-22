@@ -554,13 +554,13 @@ Flashcards should be implemented strictly after auth implementation for common u
   - [x] Allow intentionally language-neutral or identical content to be explicitly reviewed so it does not remain a permanent warning.
   - [x] Provide a direct action from translation mode to the EN public preview without changing the current UI language.
 - [x] Add a sticky shared matrix question form action footer that supports custom submit labels/actions without queue-specific branching.
-- [ ] Add a compact shared matrix question form readiness panel for required publication fields.
-  - [ ] Distinguish fields required to save a draft, blockers that prevent publication, and advisory content-health warnings.
-  - [ ] Group live readiness results by structure and metadata, RU content, EN content, and attached resources.
-  - [ ] Show compact per-group and overall progress without hiding the exact missing or suspicious fields.
-  - [ ] Make each readiness item reveal the required RU/EN display mode, scroll to the related control, and move focus to it.
-  - [ ] Keep frontend readiness results aligned with backend publication guards and cover both boundaries with behavioral tests.
-  - [ ] Reuse the same readiness vocabulary in the form, workspace rows, filters, and publication feedback.
+- [x] Add a compact shared matrix question form readiness panel for required publication fields.
+  - [x] Distinguish fields required to save a draft, blockers that prevent publication, and advisory content-health warnings.
+  - [x] Group live readiness results by structure and metadata, RU content, EN content, and attached resources.
+  - [x] Show compact per-group and overall progress without hiding the exact missing or suspicious fields.
+  - [x] Make each readiness item reveal the required RU/EN display mode, scroll to the related control, and move focus to it.
+  - [x] Keep frontend readiness results aligned with backend publication guards and cover both boundaries with behavioral tests.
+  - [x] Reuse the same readiness vocabulary in the form, workspace rows, filters, and publication feedback.
 - [x] Add an in-form public preview for competency matrix question Markdown and attached resources before saving/publishing.
 - [ ] Add a fullscreen single-question queue processing modal that keeps the shared matrix question form wide and shows queue progress/navigation.
   - [ ] Show the current position and remaining available count within the active filtered queue.

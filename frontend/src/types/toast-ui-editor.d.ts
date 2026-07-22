@@ -39,6 +39,8 @@ declare module '@toast-ui/editor' {
 
     insertText(text: string): void;
 
+    moveCursorToStart(focus?: boolean): void;
+
     setSelection(start: MarkdownPosition | number, end?: MarkdownPosition | number): void;
 
     setMarkdown(markdown: string, cursorToEnd?: boolean): void;

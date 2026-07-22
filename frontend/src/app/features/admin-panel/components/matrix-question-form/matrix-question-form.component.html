@@ -1,4 +1,9 @@
-<form [formGroup]="questionForm" (ngSubmit)="submit()" novalidate>
+<form
+  [formGroup]="questionForm"
+  [attr.data-focus-render-version]="focusRenderVersion()"
+  (ngSubmit)="submit()"
+  novalidate
+>
   @if (publishError()) {
     <div class="alert alert-danger" role="alert">{{ publishError() }}</div>
   }
@@ -40,6 +45,11 @@
       </button>
     </div>
   </div>
+
+  <app-matrix-question-readiness-panel
+    [analysis]="readiness()"
+    (itemSelected)="selectReadinessItem($event)"
+  />
 
   <div class="row g-3" [hidden]="viewMode() !== 'edit'">
     <div class="col-md-6">
@@ -215,6 +225,7 @@
           [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
         >
           <app-markdown-editor
+            #answerRuEditor
             [value]="questionForm.controls.answerRu.value"
             (valueChange)="setAnswerRu($event)"
           />
@@ -239,6 +250,7 @@
           [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
         >
           <app-markdown-editor
+            #answerEnEditor
             [value]="questionForm.controls.answerEn.value"
             (valueChange)="setAnswerEn($event)"
           />
@@ -267,6 +279,7 @@
           [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationRu') ? 'true' : null"
         >
           <app-markdown-editor
+            #explanationRuEditor
             [value]="questionForm.controls.interviewAnswerExplanationRu.value"
             (valueChange)="setInterviewAnswerExplanationRu($event)"
           />
@@ -299,6 +312,7 @@
           [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationEn') ? 'true' : null"
         >
           <app-markdown-editor
+            #explanationEnEditor
             [value]="questionForm.controls.interviewAnswerExplanationEn.value"
             (valueChange)="setInterviewAnswerExplanationEn($event)"
           />
@@ -472,7 +486,9 @@
       [fields]="translationFields()"
       [resetKey]="translationResetKey()"
       [disabled]="submitting || previewLanguageLoading()"
+      [reviewedTranslationSignatures]="reviewedTranslationSignatures()"
       (translationChange)="applyTranslationChange($event)"
+      (identicalReviewed)="reviewIdenticalTranslation($event)"
       (previewEnglish)="showEnglishPreview()"
     />
   </section>

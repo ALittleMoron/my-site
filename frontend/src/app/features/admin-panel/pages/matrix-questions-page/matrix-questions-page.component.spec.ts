@@ -229,10 +229,10 @@ describe('MatrixQuestionsPageComponent', () => {
     expect(service.getFilterOptions).toHaveBeenCalledWith('ru');
     expect(service.listWorkspaceItems).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Всего');
-    expect(fixture.nativeElement.textContent).toContain('Опасно опубликованы');
+    expect(fixture.nativeElement.textContent).toContain('Опубликованы с блокерами');
     expect(fixture.nativeElement.textContent).toContain('What is typing?');
     expect(fixture.nativeElement.textContent).toContain('Часто');
-    expect(fixture.nativeElement.textContent).toContain('answerEn');
+    expect(fixture.nativeElement.textContent).toContain('Ответ EN');
   });
 
   it('links every question text to its admin edit page', () => {
@@ -544,7 +544,7 @@ describe('MatrixQuestionsPageComponent', () => {
       ?.click();
 
     expect(service.publishQuestion).not.toHaveBeenCalled();
-    expect(notifications.error.mock.calls[0][0]).toContain('answerEn');
+    expect(notifications.error.mock.calls[0][0]).toContain('Ответ EN');
   });
 
   it('routes the row edit action to the matrix question detail page', () => {

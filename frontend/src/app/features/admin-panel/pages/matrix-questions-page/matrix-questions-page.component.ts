@@ -663,7 +663,7 @@ export class MatrixQuestionsPageComponent implements OnInit {
   }
 
   missingFieldLabel(field: string): string {
-    return this.i18n.translate(`adminMatrixWorkspace.missing.${field}`);
+    return this.i18n.translate(`matrix.readiness.field.${field}`);
   }
 
   missingFieldsText(fields: readonly AdminMatrixMissingField[]): string {

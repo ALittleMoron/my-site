@@ -137,6 +137,34 @@ describe('MatrixStructurePickerComponent', () => {
     expect(emit).toHaveBeenLastCalledWith(SUBSECTION_ID);
   });
 
+  it('focuses the first actionable structure prerequisite when subsection is disabled', () => {
+    const sheet = select('[data-testid="matrix-structure-sheet"]');
+    const scrollIntoView = jest.fn();
+    const focus = jest.spyOn(sheet, 'focus');
+    sheet.scrollIntoView = scrollIntoView;
+
+    fixture.componentInstance.focusSubsection();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('focuses the subsection select when its prerequisites are selected', () => {
+    choose(select('[data-testid="matrix-structure-sheet"]'), SHEET_ID);
+    fixture.detectChanges();
+    choose(select('[data-testid="matrix-structure-section"]'), SECTION_ID);
+    fixture.detectChanges();
+    const subsection = select('[data-testid="matrix-structure-subsection"]');
+    const scrollIntoView = jest.fn();
+    const focus = jest.spyOn(subsection, 'focus');
+    subsection.scrollIntoView = scrollIntoView;
+
+    fixture.componentInstance.focusSubsection();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
   it('selects the preferred sheet by key when no subsection is selected', () => {
     fixture.componentRef.setInput('preferredSheetKey', 'PYTHON');
     fixture.detectChanges();

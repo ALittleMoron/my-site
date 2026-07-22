@@ -275,6 +275,109 @@ describe('MatrixQuestionFormComponent', () => {
     );
   });
 
+  it('updates the shared readiness panel live and keeps advisory warnings non-blocking', () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-readiness-panel"]')?.textContent,
+    ).toContain('0 / 9');
+    fillValidQuestionMinimum();
+    setSelect('#matrix-form-grade', 'Middle');
+    setMarkdownEditor('#matrix-form-answer-ru', 'Ответ');
+    setMarkdownEditor('#matrix-form-answer-en', 'Answer');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-ru', 'Объяснение');
+    setMarkdownEditor('#matrix-form-interview-answer-explanation-en', 'Explanation');
+    setSelect('#matrix-form-status', 'Published');
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="matrix-readiness-panel"]')?.textContent,
+    ).toContain('9 / 9');
+    expect(fixture.componentInstance.readiness().warningCount).toBeGreaterThan(0);
+
+    submitForm();
+
+    expect(emittedPayloads[0].publishStatus).toBe('Published');
+  });
+
+  it('opens the exact localized edit field selected from readiness while preview is visible', () => {
+    fillValidQuestionMinimum();
+    clickViewMode('preview');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-readiness-id="publicationBlocker:answerEn"]')
+      ?.click();
+    fixture.detectChanges();
+
+    expect(previewSection().hidden).toBe(true);
+    expect(element('#matrix-form-answer-en')).not.toBeNull();
+    expect(element('#matrix-form-answer-ru')).toBeNull();
+  });
+
+  it('focuses a readiness target when the form is already in edit mode', async () => {
+    const frequency = element('#matrix-form-interview-frequency');
+
+    element('[data-readiness-id="warning:interviewFrequency"]')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(frequency);
+  });
+
+  it('focuses the exact localized resource context selected from readiness', async () => {
+    fixture.componentInstance.attachResource(resource);
+    fixture.componentInstance.setLocalizedDisplayMode('en');
+    fixture.detectChanges();
+
+    element(`[data-readiness-id="warning:resource:${RESOURCE_ID}:context:ru"]`)?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const context = element('#matrixResourceContextRu0');
+    expect(context).not.toBeNull();
+    expect(document.activeElement).toBe(context);
+  });
+
+  it('focuses the shared Markdown editor selected from readiness', async () => {
+    fillValidQuestionMinimum();
+
+    element('[data-readiness-id="publicationBlocker:answerEn"]')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const editor = fixture.debugElement.query(By.css('#matrix-form-answer-en app-markdown-editor'))
+      .componentInstance as MarkdownEditorStubComponent;
+    expect(editor.focus).toHaveBeenCalled();
+  });
+
+  it('shares identical review state with translation mode and resets it after content changes', () => {
+    fillValidQuestionMinimum();
+    setInput('#matrix-form-question-en', 'Вопрос?');
+    const identicalSelector = '[data-readiness-id="identical:question:question"]';
+    expect(element(identicalSelector)).not.toBeNull();
+
+    element(identicalSelector)?.click();
+    fixture.detectChanges();
+    expect(translationSection().hidden).toBe(false);
+
+    const translation = translationWorkspace();
+    translation.identicalReviewed.emit(translation.fields[0]);
+    fixture.detectChanges();
+    expect(element(identicalSelector)).toBeNull();
+
+    translation.translationChange.emit({
+      scope: 'question',
+      fieldId: 'question',
+      value: 'Different question?',
+    });
+    fixture.detectChanges();
+    translation.translationChange.emit({
+      scope: 'question',
+      fieldId: 'question',
+      value: 'Вопрос?',
+    });
+    fixture.detectChanges();
+
+    expect(element(identicalSelector)).not.toBeNull();
+  });
+
   it('does not create a question when discarding an unfinished nested draft is rejected', () => {
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
@@ -498,7 +601,7 @@ describe('MatrixQuestionFormComponent', () => {
     });
   });
 
-  it('returns to RU+EN when hidden localized fields block submission', () => {
+  it('reveals the exact hidden localized field that blocks submission', () => {
     fillValidQuestionMinimum();
     setInput('#matrix-form-question-en', INVALID_SHORT_TEXT);
     clickDisplayMode('ru');
@@ -509,7 +612,7 @@ describe('MatrixQuestionFormComponent', () => {
     expect(element('#matrix-form-question-en')).not.toBeNull();
     expect(
       fixture.nativeElement
-        .querySelector('[data-testid="matrix-form-display-mode-ru-en"]')
+        .querySelector('[data-testid="matrix-form-display-mode-en"]')
         ?.getAttribute('aria-pressed'),
     ).toBe('true');
     expectInvalidControl('#matrix-form-question-en', 'Максимум 255 символов.');
@@ -665,11 +768,13 @@ describe('MatrixQuestionFormComponent', () => {
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
     setInput('#matrix-form-question-en', 'Incomplete question?');
+    fixture.componentInstance.newResourceNameRu.set('Незавершённый ресурс');
     setSelect('#matrix-form-status', 'Published');
 
     submitForm();
 
     expect(emittedPayloads).toEqual([]);
+    expect(confirmDiscard).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Нельзя опубликовать вопрос');
   });
 
@@ -1072,6 +1177,8 @@ class MatrixStructurePickerStubComponent {
   @Input() disabled = false;
   @Input() invalid = false;
   @Output() readonly selectedSubsectionIdChange = new EventEmitter<string | null>();
+
+  readonly focusSubsection = jest.fn();
 }
 
 @Component({
@@ -1082,6 +1189,8 @@ class MatrixStructurePickerStubComponent {
 class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
   @Output() readonly valueChange = new EventEmitter<string>();
+
+  readonly focus = jest.fn();
 }
 
 @Component({
@@ -1093,8 +1202,12 @@ class MatrixQuestionTranslationWorkspaceStubComponent {
   @Input({ required: true }) fields!: readonly MatrixQuestionTranslationField[];
   @Input({ required: true }) resetKey!: string;
   @Input({ required: true }) disabled!: boolean;
+  @Input({ required: true }) reviewedTranslationSignatures!: ReadonlyMap<string, string>;
   @Output() readonly translationChange = new EventEmitter<MatrixQuestionTranslationChange>();
+  @Output() readonly identicalReviewed = new EventEmitter<MatrixQuestionTranslationField>();
   @Output() readonly previewEnglish = new EventEmitter<void>();
+
+  readonly focusTranslationField = jest.fn<void, [string]>();
 }
 
 function questionDetail(): AdminMatrixQuestionDetailDto {

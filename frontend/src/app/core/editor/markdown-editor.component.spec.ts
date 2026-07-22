@@ -51,6 +51,8 @@ class MockEditor {
 
   insertText = jest.fn();
 
+  moveCursorToStart = jest.fn();
+
   setSelection = jest.fn((start: [number, number], end: [number, number] = start) => {
     this.selection = [start, end];
   });
@@ -114,6 +116,23 @@ describe('MarkdownEditorComponent', () => {
     await waitForEditor(fixture);
 
     expect(MockEditor.instances[0].options.autofocus).toBe(false);
+  });
+
+  it('focuses the editor through the public wrapper API', async () => {
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    fixture.componentInstance.focus();
+
+    expect(MockEditor.instances[0].moveCursorToStart).toHaveBeenCalledWith(true);
+  });
+
+  it('honors a focus request made before the lazy editor is ready', async () => {
+    fixture.componentInstance.focus();
+    fixture.detectChanges();
+    await waitForEditor(fixture);
+
+    expect(MockEditor.instances[0].moveCursorToStart).toHaveBeenCalledWith(true);
   });
 
   it('loads Toast UI stylesheets before creating the editor', async () => {

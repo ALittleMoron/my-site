@@ -2,17 +2,24 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
   Input,
+  Injector,
   OnChanges,
   OnInit,
   Output,
+  PLATFORM_ID,
   SimpleChanges,
+  afterNextRender,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   FormControl,
   NonNullableFormBuilder,
@@ -30,13 +37,11 @@ import {
   AdminMatrixGrade,
   AdminMatrixInterviewFrequency,
   AdminMatrixQuestionCreateInitialValue,
-  AdminMatrixMissingField,
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
   AdminMatrixResource,
   AdminMatrixResourceAttachmentPayload,
   AdminMatrixPublishStatus,
-  missingMatrixQuestionPayloadFields,
 } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { MatrixStructurePickerComponent } from '../matrix-structure-picker/matrix-structure-picker.component';
@@ -54,6 +59,15 @@ import {
   MatrixQuestionTranslationField,
 } from './matrix-question-translation.model';
 import { MatrixQuestionTranslationWorkspaceComponent } from './matrix-question-translation-workspace.component';
+import { matrixQuestionTranslationFieldKey } from './matrix-question-translation-package';
+import {
+  MatrixQuestionReadinessFieldId,
+  MatrixQuestionReadinessItem,
+  analyzeMatrixQuestionReadiness,
+  matrixQuestionResourceContextKey,
+  matrixQuestionTranslationFieldSignature,
+} from './matrix-question-readiness.model';
+import { MatrixQuestionReadinessPanelComponent } from './matrix-question-readiness-panel.component';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -73,6 +87,16 @@ const INTERVIEW_FREQUENCIES: readonly AdminMatrixInterviewFrequency[] = [
 ];
 const PUBLISH_STATUSES: readonly AdminMatrixPublishStatus[] = ['Draft', 'Published'];
 const RESOURCE_SEARCH_LIMIT = 10;
+const READINESS_FORM_FIELDS = [
+  'slug',
+  'subsectionId',
+  'questionRu',
+  'questionEn',
+  'answerRu',
+  'answerEn',
+  'interviewAnswerExplanationRu',
+  'interviewAnswerExplanationEn',
+] as const satisfies readonly MatrixQuestionReadinessFieldId[];
 
 type MatrixQuestionField =
   | 'slug'
@@ -111,6 +135,7 @@ interface AdminMatrixResourceDraft {
     MatrixStructurePickerComponent,
     MatrixQuestionPublicPreviewComponent,
     MatrixQuestionTranslationWorkspaceComponent,
+    MatrixQuestionReadinessPanelComponent,
     AdminControlValidationStateDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -146,6 +171,9 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   private readonly i18n = inject(I18nService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   @Input({ required: true }) mode!: 'create' | 'edit';
   @Input({ required: true }) question!: AdminMatrixQuestionDetailDto | null;
@@ -177,6 +205,10 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   readonly previewLanguageError = signal<string | null>(null);
   readonly previewBundleVersion = signal(0);
   readonly translationResetKey = signal('create:blank');
+  readonly focusRenderVersion = signal(0);
+  readonly reviewedTranslationSignatures = signal<ReadonlyMap<string, string>>(
+    new Map<string, string>(),
+  );
   readonly showRuLocalizedFields = computed(() => this.localizedDisplayMode() !== 'en');
   readonly showEnLocalizedFields = computed(() => this.localizedDisplayMode() !== 'ru');
 
@@ -184,6 +216,13 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   private questionUnsavedSource: AdminUnsavedChangesSource | null = null;
   private newResourceUnsavedSource: AdminUnsavedChangesSource | null = null;
   private readonly structurePicker = viewChild(MatrixStructurePickerComponent);
+  private readonly translationWorkspace = viewChild(MatrixQuestionTranslationWorkspaceComponent);
+  private readonly answerRuEditor = viewChild<MarkdownEditorComponent>('answerRuEditor');
+  private readonly answerEnEditor = viewChild<MarkdownEditorComponent>('answerEnEditor');
+  private readonly explanationRuEditor = viewChild<MarkdownEditorComponent>('explanationRuEditor');
+  private readonly explanationEnEditor = viewChild<MarkdownEditorComponent>('explanationEnEditor');
+  private previousTranslationResetKey: string | undefined;
+  private previousTranslationFieldSignatures = new Map<string, string>();
 
   readonly questionForm = this.formBuilder.group({
     slug: [
@@ -310,6 +349,52 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     );
     return [...questionFields, ...resourceFields];
   });
+  readonly readiness = computed(() => {
+    const value = this.questionFormValue();
+    const invalidFields = new Set<MatrixQuestionReadinessFieldId>();
+    for (const field of READINESS_FORM_FIELDS) {
+      if (this.questionForm.controls[field].invalid) invalidFields.add(field);
+    }
+    const invalidResourceContextKeys = new Set<string>();
+    for (const resource of this.resourceDrafts()) {
+      for (const language of ['ru', 'en'] as const) {
+        if (
+          resource.translations[language].context.length > ADMIN_VALIDATION_LIMITS.matrixLongText
+        ) {
+          invalidResourceContextKeys.add(matrixQuestionResourceContextKey(resource.id, language));
+        }
+      }
+    }
+    return analyzeMatrixQuestionReadiness({
+      slug: value.slug,
+      subsectionId: value.subsectionId,
+      grade: value.grade === '' ? null : value.grade,
+      interviewFrequency: value.interviewFrequency === '' ? null : value.interviewFrequency,
+      fields: this.translationFields(),
+      resources: this.resourceDrafts().map((resource) => ({
+        id: resource.id,
+        label: resource.translations[this.currentLanguage()].name,
+        contextRu: resource.translations.ru.context,
+        contextEn: resource.translations.en.context,
+      })),
+      invalidFields,
+      invalidResourceContextKeys,
+      reviewedTranslationSignatures: this.reviewedTranslationSignatures(),
+    });
+  });
+
+  constructor() {
+    effect(() => {
+      const resetKey = this.translationResetKey();
+      const signatures = new Map(
+        this.translationFields().map((field) => [
+          matrixQuestionTranslationFieldKey(field),
+          matrixQuestionTranslationFieldSignature(field),
+        ]),
+      );
+      untracked(() => this.reconcileReviewedTranslations(resetKey, signatures));
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['question'] || changes['mode'] || changes['createInitialValue']) {
@@ -356,17 +441,32 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   submit(): void {
     this.formSubmitted.set(true);
     this.publishError.set(null);
-    if (this.questionForm.invalid) {
+    const readiness = this.readiness();
+    if (!readiness.canSaveDraft) {
       this.questionForm.markAllAsTouched();
-      this.revealHiddenInvalidLocalizedFields();
-      return;
-    }
-    if (this.resourceDraftsInvalid()) {
       this.publishError.set(
-        this.i18n.translate('validation.maxLength', {
-          max: String(ADMIN_VALIDATION_LIMITS.matrixLongText),
+        this.i18n.translate('matrix.readiness.saveBlocked', {
+          count: readiness.draftBlockerCount,
         }),
       );
+      const firstDraftBlocker = readiness.issues.find((issue) => issue.severity === 'draftBlocker');
+      if (firstDraftBlocker !== undefined) this.selectReadinessItem(firstDraftBlocker);
+      return;
+    }
+    if (this.questionForm.controls.publishStatus.value === 'Published' && !readiness.canPublish) {
+      const publicationBlockers = readiness.issues.filter(
+        (issue) => issue.severity === 'publicationBlocker',
+      );
+      this.publishError.set(
+        this.i18n.translate('adminMatrixWorkspace.publishMissingFields', {
+          fields: publicationBlockers
+            .map((issue) => this.i18n.translate(issue.labelKey, issue.labelParams))
+            .join(', '),
+        }),
+      );
+      if (publicationBlockers[0] !== undefined) {
+        this.selectReadinessItem(publicationBlockers[0]);
+      }
       return;
     }
     if (
@@ -377,16 +477,47 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
       return;
     }
     const payload = this.buildQuestionPayload();
-    const missingFields = missingMatrixQuestionPayloadFields(payload);
-    if (payload.publishStatus === 'Published' && missingFields.length > 0) {
-      this.publishError.set(
-        this.i18n.translate('adminMatrixWorkspace.publishMissingFields', {
-          fields: this.missingFieldsText(missingFields),
-        }),
+    this.questionSave.emit(payload);
+  }
+
+  selectReadinessItem(item: MatrixQuestionReadinessItem): void {
+    this.focusRenderVersion.update((version) => version + 1);
+    const target = item.target;
+    if (target.kind === 'translation') {
+      this.viewMode.set('translation');
+      this.afterNextRender(() =>
+        this.translationWorkspace()?.focusTranslationField(target.translationKey),
       );
       return;
     }
-    this.questionSave.emit(payload);
+
+    this.viewMode.set('edit');
+    if (target.kind === 'field') {
+      const displayMode = displayModeForReadinessField(target.fieldId);
+      if (displayMode !== null) this.localizedDisplayMode.set(displayMode);
+      this.afterNextRender(() => this.focusReadinessField(target.fieldId));
+      return;
+    }
+    if (target.kind === 'resourceSearch') {
+      this.afterNextRender(() =>
+        this.scrollAndFocus(
+          this.host.nativeElement.querySelector<HTMLElement>(
+            '[data-testid="matrix-resource-search"]',
+          ),
+        ),
+      );
+      return;
+    }
+    this.afterNextRender(() => this.focusResourceContext(target.resourceId, target.language));
+  }
+
+  reviewIdenticalTranslation(field: MatrixQuestionTranslationField): void {
+    const reviewed = new Map(this.reviewedTranslationSignatures());
+    reviewed.set(
+      matrixQuestionTranslationFieldKey(field),
+      matrixQuestionTranslationFieldSignature(field),
+    );
+    this.reviewedTranslationSignatures.set(reviewed);
   }
 
   fieldInvalid(field: MatrixQuestionField): boolean {
@@ -696,14 +827,6 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     return this.question === null ? (this.createInitialValue?.preferredSheetKey ?? null) : null;
   }
 
-  missingFieldLabel(field: string): string {
-    return this.i18n.translate(`adminMatrixWorkspace.missing.${field}`);
-  }
-
-  missingFieldsText(fields: readonly AdminMatrixMissingField[]): string {
-    return fields.map((field) => this.missingFieldLabel(field)).join(', ');
-  }
-
   currentLanguage(): 'ru' | 'en' {
     const language = this.i18n.language();
     if (language === null) {
@@ -725,6 +848,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
         ? `create:${this.createInitialValue?.slug ?? 'blank'}`
         : `question:${this.question.id}`,
     );
+    this.reviewedTranslationSignatures.set(new Map<string, string>());
     if (this.question === null) {
       const initialValue = this.createInitialValue;
       this.questionForm.reset({
@@ -820,43 +944,114 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
     return url.length <= ADMIN_VALIDATION_LIMITS.url && httpUrlValidatorValue(url);
   }
 
-  private resourceDraftsInvalid(): boolean {
-    return this.resourceDrafts().some(
-      (draft) =>
-        draft.translations.ru.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText ||
-        draft.translations.en.context.length > ADMIN_VALIDATION_LIMITS.matrixLongText,
-    );
-  }
-
-  private revealHiddenInvalidLocalizedFields(): void {
-    const mode = this.localizedDisplayMode();
-    if (
-      (mode === 'ru' && this.enLocalizedFieldsInvalid()) ||
-      (mode === 'en' && this.ruLocalizedFieldsInvalid())
-    ) {
-      this.localizedDisplayMode.set('ruEn');
+  private reconcileReviewedTranslations(
+    resetKey: string,
+    fieldSignatures: ReadonlyMap<string, string>,
+  ): void {
+    if (this.previousTranslationResetKey !== resetKey) {
+      this.reviewedTranslationSignatures.set(new Map<string, string>());
+    } else {
+      const reviewed = new Map(this.reviewedTranslationSignatures());
+      let changed = false;
+      for (const [key, reviewedSignature] of reviewed) {
+        if (
+          fieldSignatures.get(key) !== this.previousTranslationFieldSignatures.get(key) ||
+          fieldSignatures.get(key) !== reviewedSignature
+        ) {
+          reviewed.delete(key);
+          changed = true;
+        }
+      }
+      if (changed) this.reviewedTranslationSignatures.set(reviewed);
     }
+    this.previousTranslationResetKey = resetKey;
+    this.previousTranslationFieldSignatures = new Map(fieldSignatures);
   }
 
-  private ruLocalizedFieldsInvalid(): boolean {
-    return (
-      this.questionForm.controls.questionRu.invalid ||
-      this.questionForm.controls.answerRu.invalid ||
-      this.questionForm.controls.interviewAnswerExplanationRu.invalid
+  private afterNextRender(callback: () => void): void {
+    if (!this.isBrowser) return;
+    afterNextRender({ write: callback }, { injector: this.injector });
+  }
+
+  private focusReadinessField(
+    fieldId: Extract<MatrixQuestionReadinessItem['target'], { kind: 'field' }>['fieldId'],
+  ): void {
+    if (fieldId === 'subsectionId') {
+      this.structurePicker()?.focusSubsection();
+      return;
+    }
+    const markdownEditor = this.markdownEditorForField(fieldId);
+    if (markdownEditor !== null) {
+      this.host.nativeElement
+        .querySelector<HTMLElement>(`#matrix-form-${readinessFieldDomSuffix(fieldId)}`)
+        ?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      markdownEditor.focus();
+      return;
+    }
+    this.scrollAndFocus(
+      this.host.nativeElement.querySelector<HTMLElement>(
+        `#matrix-form-${readinessFieldDomSuffix(fieldId)}`,
+      ),
     );
   }
 
-  private enLocalizedFieldsInvalid(): boolean {
-    return (
-      this.questionForm.controls.questionEn.invalid ||
-      this.questionForm.controls.answerEn.invalid ||
-      this.questionForm.controls.interviewAnswerExplanationEn.invalid
+  private markdownEditorForField(
+    fieldId: Extract<MatrixQuestionReadinessItem['target'], { kind: 'field' }>['fieldId'],
+  ): MarkdownEditorComponent | null {
+    if (fieldId === 'answerRu') return this.answerRuEditor() ?? null;
+    if (fieldId === 'answerEn') return this.answerEnEditor() ?? null;
+    if (fieldId === 'interviewAnswerExplanationRu') return this.explanationRuEditor() ?? null;
+    if (fieldId === 'interviewAnswerExplanationEn') return this.explanationEnEditor() ?? null;
+    return null;
+  }
+
+  private focusResourceContext(resourceId: string, language: 'ru' | 'en'): void {
+    const index = this.resourceDrafts().findIndex((resource) => resource.id === resourceId);
+    if (index < 0) return;
+    const suffix = language === 'ru' ? 'Ru' : 'En';
+    this.scrollAndFocus(
+      this.host.nativeElement.querySelector<HTMLElement>(`#matrixResourceContext${suffix}${index}`),
     );
+  }
+
+  private scrollAndFocus(target: HTMLElement | null): void {
+    if (target === null) return;
+    target.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    target.focus({ preventScroll: true });
   }
 }
 
 function httpUrlValidatorValue(value: string): boolean {
   return value !== '' && isHttpUrl(value);
+}
+
+function displayModeForReadinessField(
+  fieldId: Extract<MatrixQuestionReadinessItem['target'], { kind: 'field' }>['fieldId'],
+): MatrixQuestionDisplayMode | null {
+  if (fieldId.endsWith('Ru')) return 'ru';
+  if (fieldId.endsWith('En')) return 'en';
+  return null;
+}
+
+function readinessFieldDomSuffix(
+  fieldId: Extract<MatrixQuestionReadinessItem['target'], { kind: 'field' }>['fieldId'],
+): string {
+  const suffixByField = {
+    slug: 'slug',
+    subsectionId: 'subsection',
+    grade: 'grade',
+    interviewFrequency: 'interview-frequency',
+    questionRu: 'question-ru',
+    questionEn: 'question-en',
+    answerRu: 'answer-ru',
+    answerEn: 'answer-en',
+    interviewAnswerExplanationRu: 'interview-answer-explanation-ru',
+    interviewAnswerExplanationEn: 'interview-answer-explanation-en',
+  } satisfies Record<
+    Extract<MatrixQuestionReadinessItem['target'], { kind: 'field' }>['fieldId'],
+    string
+  >;
+  return suffixByField[fieldId];
 }
 
 function toResourceDraft(

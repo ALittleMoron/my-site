@@ -100,6 +100,7 @@ describe('MatrixQuestionTranslationWorkspaceComponent', () => {
     fixture.componentRef.setInput('fields', initialFields);
     fixture.componentRef.setInput('resetKey', 'question:1');
     fixture.componentRef.setInput('disabled', false);
+    fixture.componentRef.setInput('reviewedTranslationSignatures', new Map<string, string>());
     fixture.detectChanges();
   });
 
@@ -143,35 +144,52 @@ describe('MatrixQuestionTranslationWorkspaceComponent', () => {
     expect(status('resource:new--1:context')).toBe('notApplicable');
   });
 
-  it('requires explicit review for identical text and resets it after either side changes', () => {
+  it('emits explicit review and renders the parent-controlled reviewed signature', () => {
+    const reviewed: MatrixQuestionTranslationField[] = [];
+    fixture.componentInstance.identicalReviewed.subscribe((field) => reviewed.push(field));
     click('[data-testid="matrix-translation-review-question-question"]');
 
-    expect(status('question:question')).toBe('reviewed');
-    expect(text('[data-testid="matrix-translation-completeness"]')).toContain('3 / 4');
+    expect(reviewed).toEqual([initialFields[0]]);
 
     fixture.componentRef.setInput(
-      'fields',
-      initialFields.map((field) =>
-        field.scope === 'question' && field.fieldId === 'question'
-          ? { ...field, source: 'Что такое PEP 8?', translation: 'Что такое PEP 8?' }
-          : field,
-      ),
+      'reviewedTranslationSignatures',
+      new Map([
+        ['question:question', `${initialFields[0].source}\u0000${initialFields[0].translation}`],
+      ]),
     );
     fixture.detectChanges();
-
-    expect(status('question:question')).toBe('identical');
-    expect(text('[data-testid="matrix-translation-completeness"]')).toContain('2 / 4');
+    expect(status('question:question')).toBe('reviewed');
+    expect(text('[data-testid="matrix-translation-completeness"]')).toContain('3 / 4');
   });
 
-  it('keeps review through view persistence updates and clears it for another question', () => {
-    click('[data-testid="matrix-translation-review-question-question"]');
-    fixture.componentRef.setInput('fields', [...initialFields]);
-    fixture.detectChanges();
-    expect(status('question:question')).toBe('reviewed');
+  it('scrolls to an identical pair and focuses its review action', () => {
+    const card = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-translation-key="question:question"]',
+    );
+    const reviewButton = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-translation-review-question-question"]',
+    );
+    if (card === null || reviewButton === null) throw new Error('No identical translation row');
+    const scrollIntoView = jest.fn();
+    const focus = jest.spyOn(reviewButton, 'focus');
+    card.scrollIntoView = scrollIntoView;
 
+    fixture.componentInstance.focusTranslationField('question:question');
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('resets import state for another question without owning translation review state', () => {
+    setImportValue('translation package');
     fixture.componentRef.setInput('resetKey', 'question:2');
     fixture.detectChanges();
-    expect(status('question:question')).toBe('identical');
+
+    expect(
+      fixture.nativeElement.querySelector<HTMLTextAreaElement>(
+        '[data-testid="matrix-translation-import-input"]',
+      )?.value,
+    ).toBe('');
   });
 
   it('reports clipboard success, unavailable source/API, and rejected writes', async () => {

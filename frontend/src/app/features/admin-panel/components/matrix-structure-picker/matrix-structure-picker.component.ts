@@ -11,6 +11,8 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
+  ElementRef,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -121,6 +123,11 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   private sheetUnsavedSource: AdminUnsavedChangesSource | null = null;
   private sectionUnsavedSource: AdminUnsavedChangesSource | null = null;
   private subsectionUnsavedSource: AdminUnsavedChangesSource | null = null;
+  private readonly sheetSelect = viewChild.required<ElementRef<HTMLSelectElement>>('sheetSelect');
+  private readonly sectionSelect =
+    viewChild.required<ElementRef<HTMLSelectElement>>('sectionSelect');
+  private readonly subsectionSelect =
+    viewChild.required<ElementRef<HTMLSelectElement>>('subsectionSelect');
 
   ngOnInit(): void {
     this.sheetUnsavedSource = this.unsavedChangesScope.registerSource(
@@ -170,6 +177,15 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
 
   onSubsectionChange(value: string): void {
     this.selectedSubsectionIdChange.emit(optionalString(value));
+  }
+
+  focusSubsection(): void {
+    const subsection = this.subsectionSelect().nativeElement;
+    const section = this.sectionSelect().nativeElement;
+    const sheet = this.sheetSelect().nativeElement;
+    const select = !subsection.disabled ? subsection : !section.disabled ? section : sheet;
+    select.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    select.focus({ preventScroll: true });
   }
 
   controlInvalid(control: AbstractControl<unknown>): boolean {

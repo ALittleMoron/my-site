@@ -2,13 +2,14 @@ import { DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   effect,
   inject,
   input,
   output,
-  signal,
   untracked,
+  signal,
 } from '@angular/core';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -27,6 +28,7 @@ import {
   previewMatrixQuestionTranslationPackage,
   serializeMatrixQuestionTranslationPackage,
 } from './matrix-question-translation-package';
+import { matrixQuestionTranslationFieldSignature } from './matrix-question-readiness.model';
 
 type TranslationFieldStatus =
   'complete' | 'missingSource' | 'missingTranslation' | 'identical' | 'reviewed' | 'notApplicable';
@@ -48,23 +50,22 @@ interface TranslationWorkspaceRow {
 })
 export class MatrixQuestionTranslationWorkspaceComponent {
   private readonly document = inject(DOCUMENT);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly i18n = inject(I18nService);
   private readonly notifications = inject(NotificationService);
 
   readonly fields = input.required<readonly MatrixQuestionTranslationField[]>();
   readonly resetKey = input.required<string>();
   readonly disabled = input.required<boolean>();
+  readonly reviewedTranslationSignatures = input.required<ReadonlyMap<string, string>>();
   readonly translationChange = output<MatrixQuestionTranslationChange>();
+  readonly identicalReviewed = output<MatrixQuestionTranslationField>();
   readonly previewEnglish = output<void>();
 
   readonly importInput = signal('');
   private readonly previewInput = signal<string | null>(null);
   private readonly selectedPreviewKeys = signal<ReadonlySet<string>>(new Set<string>());
-  private readonly reviewedFieldSignatures = signal<ReadonlyMap<string, string>>(
-    new Map<string, string>(),
-  );
   private previousResetKey: string | undefined;
-  private previousFieldSignatures = new Map<string, string>();
 
   readonly rows = computed<TranslationWorkspaceRow[]>(() =>
     this.fields().map((field) => {
@@ -107,13 +108,7 @@ export class MatrixQuestionTranslationWorkspaceComponent {
   constructor() {
     effect(() => {
       const resetKey = this.resetKey();
-      const fieldSignatures = new Map(
-        this.fields().map((field) => [
-          matrixQuestionTranslationFieldKey(field),
-          this.fieldSignature(field),
-        ]),
-      );
-      untracked(() => this.reconcileSessionState(resetKey, fieldSignatures));
+      untracked(() => this.reconcileImportState(resetKey));
     });
   }
 
@@ -150,10 +145,21 @@ export class MatrixQuestionTranslationWorkspaceComponent {
 
   reviewIdentical(row: TranslationWorkspaceRow): void {
     if (row.status !== 'identical') return;
-    const reviewed = new Map(this.reviewedFieldSignatures());
-    reviewed.set(row.key, this.fieldSignature(row.field));
-    this.reviewedFieldSignatures.set(reviewed);
+    this.identicalReviewed.emit(row.field);
     this.notifications.success(this.i18n.translate('matrix.translation.reviewed'));
+  }
+
+  focusTranslationField(translationKey: string): void {
+    const card = Array.from(
+      this.host.nativeElement.querySelectorAll<HTMLElement>('[data-translation-key]'),
+    ).find((candidate) => candidate.dataset['translationKey'] === translationKey);
+    if (card === undefined) return;
+    card.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    const reviewButton = card.querySelector<HTMLButtonElement>(
+      '[data-testid^="matrix-translation-review-"]',
+    );
+    const editableTarget = card.querySelector<HTMLElement>('.form-control, button');
+    (reviewButton ?? editableTarget)?.focus({ preventScroll: true });
   }
 
   setImportInput(value: string): void {
@@ -273,7 +279,8 @@ export class MatrixQuestionTranslationWorkspaceComponent {
     if (source === '') return 'missingSource';
     if (translation === '') return 'missingTranslation';
     if (source !== translation) return 'complete';
-    return this.reviewedFieldSignatures().get(key) === this.fieldSignature(field)
+    return this.reviewedTranslationSignatures().get(key) ===
+      matrixQuestionTranslationFieldSignature(field)
       ? 'reviewed'
       : 'identical';
   }
@@ -300,30 +307,11 @@ export class MatrixQuestionTranslationWorkspaceComponent {
     }
   }
 
-  private fieldSignature(field: MatrixQuestionTranslationField): string {
-    return `${field.source}\u0000${field.translation}`;
-  }
-
-  private reconcileSessionState(resetKey: string, fieldSignatures: Map<string, string>): void {
+  private reconcileImportState(resetKey: string): void {
     if (this.previousResetKey !== resetKey) {
-      this.reviewedFieldSignatures.set(new Map<string, string>());
       this.resetImportState();
-    } else {
-      const reviewed = new Map(this.reviewedFieldSignatures());
-      let changed = false;
-      for (const [key, reviewedSignature] of reviewed) {
-        if (
-          fieldSignatures.get(key) !== this.previousFieldSignatures.get(key) ||
-          fieldSignatures.get(key) !== reviewedSignature
-        ) {
-          reviewed.delete(key);
-          changed = true;
-        }
-      }
-      if (changed) this.reviewedFieldSignatures.set(reviewed);
     }
     this.previousResetKey = resetKey;
-    this.previousFieldSignatures = fieldSignatures;
   }
 
   private resetImportState(): void {

@@ -50,6 +50,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private editor: Editor | null = null;
   private syncingInput = false;
+  private focusPending = false;
 
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
 
@@ -113,10 +114,22 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
         },
       },
     });
+    if (this.focusPending) {
+      this.focusPending = false;
+      this.editor.moveCursorToStart(true);
+    }
   }
 
   ngOnDestroy(): void {
     this.editor?.destroy();
+  }
+
+  focus(): void {
+    if (this.editor === null) {
+      this.focusPending = true;
+      return;
+    }
+    this.editor.moveCursorToStart(true);
   }
 
   private ensureEditorStylesheets(): void {

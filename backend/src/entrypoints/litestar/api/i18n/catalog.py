@@ -449,17 +449,17 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.listTab": "Список",
         "adminMatrixWorkspace.previewTab": "Публичный предпросмотр",
         "adminMatrixWorkspace.total": "Всего",
-        "adminMatrixWorkspace.missingDraft": "Черновики с пропусками",
-        "adminMatrixWorkspace.dangerousPublished": "Опасно опубликованы",
-        "adminMatrixWorkspace.readyPublished": "Готовы к публикации",
+        "adminMatrixWorkspace.missingDraft": "Черновики с блокерами публикации",
+        "adminMatrixWorkspace.dangerousPublished": "Опубликованы с блокерами",
+        "adminMatrixWorkspace.readyPublished": "Опубликованы без блокеров",
         "adminMatrixWorkspace.status": "Статус",
-        "adminMatrixWorkspace.missingFields": "Пропуски",
-        "adminMatrixWorkspace.hasMissingFields": "Есть пропуски",
-        "adminMatrixWorkspace.noMissingFields": "Без пропусков",
+        "adminMatrixWorkspace.missingFields": "Готовность к публикации",
+        "adminMatrixWorkspace.hasMissingFields": "Есть блокеры публикации",
+        "adminMatrixWorkspace.noMissingFields": "Нет блокеров публикации",
         "adminMatrixWorkspace.sortLabel": "Сортировка",
         "adminMatrixWorkspace.pageSize": "На странице",
         "adminMatrixWorkspace.actions": "Действия",
-        "adminMatrixWorkspace.ready": "Готово",
+        "adminMatrixWorkspace.ready": "Нет блокеров",
         "adminMatrixWorkspace.page": "Страница",
         "adminMatrixWorkspace.empty": "Вопросы матрицы не найдены.",
         "adminMatrixWorkspace.save": "Сохранить",
@@ -474,7 +474,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "и полностью заполненных вопросов."
         ),
         "adminMatrixWorkspace.publishMissingFields": (
-            "Нельзя опубликовать вопрос: заполните поля {fields}."
+            "Нельзя опубликовать вопрос: устраните блокеры публикации — {fields}."
         ),
         "adminMatrixWorkspace.sort.newest": "Сначала новые",
         "adminMatrixWorkspace.sort.oldest": "Сначала старые",
@@ -482,20 +482,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.interviewFrequency": "Частота на собеседовании",
         "adminMatrixWorkspace.sort.section": "Раздел",
         "adminMatrixWorkspace.sort.subsection": "Подраздел",
-        "adminMatrixWorkspace.sort.missingFields": "Пропуски",
-        "adminMatrixWorkspace.sort.dangerousPublished": "Опасные публикации",
-        "adminMatrixWorkspace.missing.slug": "Slug",
-        "adminMatrixWorkspace.missing.grade": "Грейд",
-        "adminMatrixWorkspace.missing.questionRu": "Вопрос RU",
-        "adminMatrixWorkspace.missing.questionEn": "Вопрос EN",
-        "adminMatrixWorkspace.missing.answerRu": "Ответ RU",
-        "adminMatrixWorkspace.missing.answerEn": "Ответ EN",
-        "adminMatrixWorkspace.missing.interviewAnswerExplanationRu": (
-            "Объяснение ответа на собеседовании RU"
-        ),
-        "adminMatrixWorkspace.missing.interviewAnswerExplanationEn": (
-            "Объяснение ответа на собеседовании EN"
-        ),
+        "adminMatrixWorkspace.sort.missingFields": "Сначала больше блокеров",
+        "adminMatrixWorkspace.sort.dangerousPublished": "Сначала опубликованные с блокерами",
         "adminMatrixStructure.loadError": "Не удалось загрузить структуру матрицы.",
         "adminMatrixStructure.createError": "Не удалось создать элемент структуры матрицы.",
         "adminMatrixStructure.validationError": "Проверьте поля элемента структуры.",
@@ -780,6 +768,51 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "какие ошибки часто допускают кандидаты."
         ),
         "matrix.form.wikiLinksMissing": "Не найдены wiki-цели: {targets}.",
+        "matrix.readiness.aria": "Готовность вопроса матрицы",
+        "matrix.readiness.title": "Готовность",
+        "matrix.readiness.requiredProgress": "Обязательные поля публикации",
+        "matrix.readiness.resourceCount": "Ресурсов: {count}",
+        "matrix.readiness.groupReady": "Проблем нет",
+        "matrix.readiness.group.structure": "Структура и метаданные",
+        "matrix.readiness.group.ru": "Контент RU",
+        "matrix.readiness.group.en": "Контент EN",
+        "matrix.readiness.group.resources": "Ресурсы",
+        "matrix.readiness.severity.draftBlocker": "Черновик",
+        "matrix.readiness.severity.publicationBlocker": "Публикация",
+        "matrix.readiness.severity.warning": "Совет",
+        "matrix.readiness.field.slug": "Slug",
+        "matrix.readiness.field.subsectionId": "Подраздел",
+        "matrix.readiness.field.grade": "Грейд",
+        "matrix.readiness.field.interviewFrequency": "Частота на собеседовании",
+        "matrix.readiness.field.questionRu": "Вопрос RU",
+        "matrix.readiness.field.questionEn": "Вопрос EN",
+        "matrix.readiness.field.answerRu": "Ответ RU",
+        "matrix.readiness.field.answerEn": "Ответ EN",
+        "matrix.readiness.field.interviewAnswerExplanationRu": (
+            "Объяснение ответа на собеседовании RU"
+        ),
+        "matrix.readiness.field.interviewAnswerExplanationEn": (
+            "Объяснение ответа на собеседовании EN"
+        ),
+        "matrix.readiness.field.resources": "Приложенные ресурсы",
+        "matrix.readiness.field.resourceNameTranslation": "Название ресурса {resource}",
+        "matrix.readiness.field.resourceContextRu": "Контекст RU — {resource}",
+        "matrix.readiness.field.resourceContextEn": "Контекст EN — {resource}",
+        "matrix.readiness.field.resourceContextTranslation": "Контексты ресурса {resource}",
+        "matrix.readiness.reason.invalidDraft": "Исправьте поле для сохранения черновика.",
+        "matrix.readiness.reason.requiredForDraft": "Обязательно для сохранения черновика.",
+        "matrix.readiness.reason.requiredForPublication": "Обязательно для публикации.",
+        "matrix.readiness.reason.recommendedMetadata": (
+            "Укажите значение, чтобы читателю был понятен контекст."
+        ),
+        "matrix.readiness.reason.resourceRecommended": ("Добавьте хотя бы один полезный источник."),
+        "matrix.readiness.reason.contextRecommended": "Добавьте контекст использования ресурса.",
+        "matrix.readiness.reason.identical": (
+            "RU и EN совпадают: переведите или подтвердите совпадение."
+        ),
+        "matrix.readiness.saveBlocked": (
+            "Черновик не сохранён: исправьте блокирующие поля ({count})."
+        ),
         "matrix.translation.title": "Перевод RU → EN",
         "matrix.translation.description": (
             "Сверяйте русский источник с английской версией и переносите переводы "
@@ -1581,17 +1614,17 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.listTab": "List",
         "adminMatrixWorkspace.previewTab": "Public preview",
         "adminMatrixWorkspace.total": "Total",
-        "adminMatrixWorkspace.missingDraft": "Missing drafts",
-        "adminMatrixWorkspace.dangerousPublished": "Dangerous published",
-        "adminMatrixWorkspace.readyPublished": "Ready published",
+        "adminMatrixWorkspace.missingDraft": "Drafts with publication blockers",
+        "adminMatrixWorkspace.dangerousPublished": "Published with blockers",
+        "adminMatrixWorkspace.readyPublished": "Published without blockers",
         "adminMatrixWorkspace.status": "Status",
-        "adminMatrixWorkspace.missingFields": "Missing fields",
-        "adminMatrixWorkspace.hasMissingFields": "Has missing fields",
-        "adminMatrixWorkspace.noMissingFields": "No missing fields",
+        "adminMatrixWorkspace.missingFields": "Publication readiness",
+        "adminMatrixWorkspace.hasMissingFields": "Has publication blockers",
+        "adminMatrixWorkspace.noMissingFields": "No publication blockers",
         "adminMatrixWorkspace.sortLabel": "Sort",
         "adminMatrixWorkspace.pageSize": "Page size",
         "adminMatrixWorkspace.actions": "Actions",
-        "adminMatrixWorkspace.ready": "Ready",
+        "adminMatrixWorkspace.ready": "No blockers",
         "adminMatrixWorkspace.page": "Page",
         "adminMatrixWorkspace.empty": "No matrix questions found.",
         "adminMatrixWorkspace.save": "Save",
@@ -1605,7 +1638,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "The public page is available only for published and complete questions."
         ),
         "adminMatrixWorkspace.publishMissingFields": (
-            "Cannot publish the question: fill in {fields}."
+            "Cannot publish the question: resolve publication blockers — {fields}."
         ),
         "adminMatrixWorkspace.sort.newest": "Newest first",
         "adminMatrixWorkspace.sort.oldest": "Oldest first",
@@ -1613,20 +1646,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixWorkspace.sort.interviewFrequency": "Interview frequency",
         "adminMatrixWorkspace.sort.section": "Section",
         "adminMatrixWorkspace.sort.subsection": "Subsection",
-        "adminMatrixWorkspace.sort.missingFields": "Missing fields",
-        "adminMatrixWorkspace.sort.dangerousPublished": "Dangerous published",
-        "adminMatrixWorkspace.missing.slug": "Slug",
-        "adminMatrixWorkspace.missing.grade": "Grade",
-        "adminMatrixWorkspace.missing.questionRu": "Question RU",
-        "adminMatrixWorkspace.missing.questionEn": "Question EN",
-        "adminMatrixWorkspace.missing.answerRu": "Answer RU",
-        "adminMatrixWorkspace.missing.answerEn": "Answer EN",
-        "adminMatrixWorkspace.missing.interviewAnswerExplanationRu": (
-            "Interview answer explanation RU"
-        ),
-        "adminMatrixWorkspace.missing.interviewAnswerExplanationEn": (
-            "Interview answer explanation EN"
-        ),
+        "adminMatrixWorkspace.sort.missingFields": "Most blockers first",
+        "adminMatrixWorkspace.sort.dangerousPublished": "Published with blockers first",
         "adminMatrixStructure.loadError": "Failed to load the matrix structure.",
         "adminMatrixStructure.createError": "Failed to create the matrix structure item.",
         "adminMatrixStructure.validationError": "Check the structure item fields.",
@@ -1917,6 +1938,45 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "mistakes candidates commonly make."
         ),
         "matrix.form.wikiLinksMissing": "Missing wiki targets: {targets}.",
+        "matrix.readiness.aria": "Matrix question readiness",
+        "matrix.readiness.title": "Readiness",
+        "matrix.readiness.requiredProgress": "Required publication fields",
+        "matrix.readiness.resourceCount": "Resources: {count}",
+        "matrix.readiness.groupReady": "No issues",
+        "matrix.readiness.group.structure": "Structure and metadata",
+        "matrix.readiness.group.ru": "RU content",
+        "matrix.readiness.group.en": "EN content",
+        "matrix.readiness.group.resources": "Resources",
+        "matrix.readiness.severity.draftBlocker": "Draft",
+        "matrix.readiness.severity.publicationBlocker": "Publication",
+        "matrix.readiness.severity.warning": "Advice",
+        "matrix.readiness.field.slug": "Slug",
+        "matrix.readiness.field.subsectionId": "Subsection",
+        "matrix.readiness.field.grade": "Grade",
+        "matrix.readiness.field.interviewFrequency": "Interview frequency",
+        "matrix.readiness.field.questionRu": "Question RU",
+        "matrix.readiness.field.questionEn": "Question EN",
+        "matrix.readiness.field.answerRu": "Answer RU",
+        "matrix.readiness.field.answerEn": "Answer EN",
+        "matrix.readiness.field.interviewAnswerExplanationRu": "Interview answer explanation RU",
+        "matrix.readiness.field.interviewAnswerExplanationEn": "Interview answer explanation EN",
+        "matrix.readiness.field.resources": "Attached resources",
+        "matrix.readiness.field.resourceNameTranslation": "Resource name {resource}",
+        "matrix.readiness.field.resourceContextRu": "RU context — {resource}",
+        "matrix.readiness.field.resourceContextEn": "EN context — {resource}",
+        "matrix.readiness.field.resourceContextTranslation": "Resource contexts {resource}",
+        "matrix.readiness.reason.invalidDraft": "Fix the field before saving a draft.",
+        "matrix.readiness.reason.requiredForDraft": "Required to save a draft.",
+        "matrix.readiness.reason.requiredForPublication": "Required for publication.",
+        "matrix.readiness.reason.recommendedMetadata": (
+            "Set a value so readers can understand the context."
+        ),
+        "matrix.readiness.reason.resourceRecommended": "Attach at least one useful source.",
+        "matrix.readiness.reason.contextRecommended": "Add usage context for the resource.",
+        "matrix.readiness.reason.identical": (
+            "RU and EN match: translate the content or confirm the match."
+        ),
+        "matrix.readiness.saveBlocked": ("Draft was not saved: fix the blocking fields ({count})."),
         "matrix.translation.title": "RU → EN translation",
         "matrix.translation.description": (
             "Compare the Russian source with the English version and move translations "

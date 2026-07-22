@@ -84,11 +84,11 @@ class TestI18nCatalog:
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
 
         assert (
-            russian_messages["adminMatrixWorkspace.missing.interviewAnswerExplanationRu"]
+            russian_messages["matrix.readiness.field.interviewAnswerExplanationRu"]
             == "Объяснение ответа на собеседовании RU"
         )
         assert (
-            russian_messages["adminMatrixWorkspace.missing.interviewAnswerExplanationEn"]
+            russian_messages["matrix.readiness.field.interviewAnswerExplanationEn"]
             == "Объяснение ответа на собеседовании EN"
         )
         assert russian_messages["matrix.form.interviewAnswerExplanationRu"] == (
@@ -105,11 +105,11 @@ class TestI18nCatalog:
             "Объяснение ответа на собеседовании:"
         )
         assert (
-            english_messages["adminMatrixWorkspace.missing.interviewAnswerExplanationRu"]
+            english_messages["matrix.readiness.field.interviewAnswerExplanationRu"]
             == "Interview answer explanation RU"
         )
         assert (
-            english_messages["adminMatrixWorkspace.missing.interviewAnswerExplanationEn"]
+            english_messages["matrix.readiness.field.interviewAnswerExplanationEn"]
             == "Interview answer explanation EN"
         )
         assert english_messages["matrix.form.interviewAnswerExplanationRu"] == (
