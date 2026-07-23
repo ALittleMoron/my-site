@@ -73,12 +73,19 @@ describe('ArticleDetailComponent', () => {
   });
 
   it('renders the public cover image with localized alt text', () => {
+    const coverSlot = fixture.nativeElement.querySelector<HTMLElement>(
+      '[data-testid="article-detail-cover-slot"]',
+    );
     const coverImage = fixture.nativeElement.querySelector<HTMLImageElement>(
       '[data-testid="article-detail-cover"]',
     );
 
+    expect(coverSlot?.classList.contains('ratio')).toBe(true);
+    expect(coverSlot?.classList.contains('ratio-16x9')).toBe(true);
     expect(coverImage?.getAttribute('src')).toBe('https://example.com/cover.jpg');
     expect(coverImage?.alt).toBe('Cover image EN');
+    expect(coverImage?.width).toBe(1600);
+    expect(coverImage?.height).toBe(900);
 
     fixture.componentRef.setInput('language', 'ru');
     fixture.detectChanges();

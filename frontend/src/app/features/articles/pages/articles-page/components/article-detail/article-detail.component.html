@@ -35,12 +35,16 @@
     </div>
 
     @if (coverImageUrl(); as coverImageUrl) {
-      <img
-        class="d-block img-fluid mb-4"
-        data-testid="article-detail-cover"
-        [src]="coverImageUrl"
-        [alt]="coverImageAlt()"
-      />
+      <div class="ratio ratio-16x9 mb-4" data-testid="article-detail-cover-slot">
+        <img
+          class="d-block w-100 h-100 object-fit-cover"
+          data-testid="article-detail-cover"
+          [src]="coverImageUrl"
+          [alt]="coverImageAlt()"
+          width="1600"
+          height="900"
+        />
+      </div>
     }
 
     <div class="articles-markdown" [innerHTML]="contentHtml()"></div>

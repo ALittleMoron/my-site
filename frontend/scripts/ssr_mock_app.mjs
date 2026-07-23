@@ -8,6 +8,12 @@ const frontendRoot = resolve(scriptDir, '..');
 const defaultServerEntry = pathToFileURL(
   resolve(frontendRoot, 'dist/my-site-frontend/server/server.mjs'),
 ).href;
+const ARTICLE_COVER_PATH = '/api/fixtures/article-cover.svg';
+const ARTICLE_COVER_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">'
+  + '<rect width="1600" height="900" fill="#198754"/>'
+  + '<path d="M0 720 400 360l320 288 240-216 640 468H0Z" fill="#f8f9fa"/>'
+  + '</svg>';
 
 export const articleDto = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -26,7 +32,7 @@ export const articleDto = {
       'SEO description RU with enough text to be useful for search snippets and social cards.',
     seoDescriptionEn:
       'SEO description EN with enough text to be useful for search snippets and social cards.',
-    coverImageUrl: 'https://example.com/cover.jpg',
+    coverImageUrl: ARTICLE_COVER_PATH,
     coverImageAltRu: 'Typed articles cover RU',
     coverImageAltEn: 'Typed articles cover',
   },
@@ -330,6 +336,18 @@ function createMockBackendHandler(requests) {
   return (req, res) => {
     const url = new URL(req.url ?? '/', 'http://backend.local');
     requests.push(`${req.method ?? 'GET'} ${url.pathname}${url.search}`);
+
+    if (
+      (req.method === 'GET' || req.method === 'HEAD')
+      && url.pathname === ARTICLE_COVER_PATH
+    ) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.end(req.method === 'HEAD' ? undefined : ARTICLE_COVER_SVG);
+      return;
+    }
+
     res.setHeader('Content-Type', 'application/json');
 
     if (url.pathname === '/api/i18n/languages') {
@@ -355,13 +373,13 @@ function createMockBackendHandler(requests) {
       writeJson(res, {
         totalCount: 1,
         totalPages: 1,
-        articles: [articleSummary()],
+        articles: [articleSummary(req)],
       });
       return;
     }
 
     if (url.pathname === '/api/articles/detail/typed-articles') {
-      writeJson(res, articleDto);
+      writeJson(res, articleDtoForRequest(req));
       return;
     }
 
@@ -471,19 +489,30 @@ function createMockBackendHandler(requests) {
   };
 }
 
-function articleSummary() {
+function articleDtoForRequest(req) {
   return {
-    id: articleDto.id,
-    title: articleDto.title,
-    slug: articleDto.slug,
-    folder: articleDto.folder,
-    authorUsername: articleDto.authorUsername,
-    publishedAt: articleDto.publishedAt,
-    publishStatus: articleDto.publishStatus,
-    updatedAt: articleDto.updatedAt,
-    excerpt: articleDto.excerpt,
-    metadata: articleDto.metadata,
-    tags: articleDto.tags,
+    ...articleDto,
+    metadata: {
+      ...articleDto.metadata,
+      coverImageUrl: `${readFixtureOrigin(req)}${ARTICLE_COVER_PATH}`,
+    },
+  };
+}
+
+function articleSummary(req) {
+  const responseArticle = articleDtoForRequest(req);
+  return {
+    id: responseArticle.id,
+    title: responseArticle.title,
+    slug: responseArticle.slug,
+    folder: responseArticle.folder,
+    authorUsername: responseArticle.authorUsername,
+    publishedAt: responseArticle.publishedAt,
+    publishStatus: responseArticle.publishStatus,
+    updatedAt: responseArticle.updatedAt,
+    excerpt: responseArticle.excerpt,
+    metadata: responseArticle.metadata,
+    tags: responseArticle.tags,
   };
 }
 

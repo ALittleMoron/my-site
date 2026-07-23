@@ -7,6 +7,7 @@ const { frontendPort, requests } = fixture;
 try {
   await assertDiscoveryEndpoints(frontendPort);
   await assertBrowserApiProxy(frontendPort);
+  await assertFixtureCover(frontendPort);
   await assertBrowserAnalyticsProxy(frontendPort);
   await assertSiteBuildCaseStudyHtml(frontendPort, requests);
   await assertUpdatesHtml(frontendPort, requests);
@@ -69,6 +70,22 @@ async function assertBrowserApiProxy(frontendPort) {
     ['language payload', body.includes('"defaultLanguage":"ru"')],
   ];
   assertExpected(expected, body, 'browser API proxy');
+}
+
+async function assertFixtureCover(frontendPort) {
+  const response = await fetch(
+    `http://127.0.0.1:${frontendPort}/api/fixtures/article-cover.svg`,
+  );
+  const contentType = response.headers.get('content-type') ?? '';
+  const cacheControl = response.headers.get('cache-control') ?? '';
+  const body = await response.text();
+  const expected = [
+    ['status 200', response.status === 200],
+    ['image content type', contentType.startsWith('image/svg+xml')],
+    ['immutable cache', cacheControl === 'public, max-age=31536000, immutable'],
+    ['16:9 dimensions', body.includes('viewBox="0 0 1600 900"')],
+  ];
+  assertExpected(expected, body, 'fixture article cover');
 }
 
 async function assertBrowserAnalyticsProxy(frontendPort) {
@@ -134,7 +151,8 @@ async function assertUpdatesHtml(frontendPort, requests) {
 
 async function assertPublishedArticleHtml(frontendPort, requests) {
   const requestStart = requests.length;
-  const response = await fetch(`http://127.0.0.1:${frontendPort}/ru/articles/typed-articles`);
+  const origin = `http://127.0.0.1:${frontendPort}`;
+  const response = await fetch(`${origin}/ru/articles/typed-articles`);
   const html = await response.text();
   const pageRequests = requests.slice(requestStart);
   const expected = [
@@ -145,7 +163,12 @@ async function assertPublishedArticleHtml(frontendPort, requests) {
     ['hreflang ru', html.includes('hreflang="ru"')],
     ['hreflang en', html.includes('hreflang="en"')],
     ['og type article', html.includes('property="og:type" content="article"')],
-    ['og image', html.includes('property="og:image" content="https://example.com/cover.jpg"')],
+    [
+      'og image',
+      html.includes(
+        `property="og:image" content="${origin}/api/fixtures/article-cover.svg"`,
+      ),
+    ],
     ['json-ld', html.includes('"@type":"BlogPosting"')],
     ['json-ld headline', html.includes('"headline":"SEO Typed articles RU"')],
     [
