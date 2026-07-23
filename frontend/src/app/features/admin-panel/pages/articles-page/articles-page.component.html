@@ -69,21 +69,21 @@
       (validityChange)="setPublishedToValidity($event)"
     />
   </div>
-  <div class="col-6 col-md-4 col-xl-auto">
-    <div class="form-check form-switch">
-      <input
-        id="admin-articles-only-published"
-        data-testid="admin-articles-only-published"
-        class="form-check-input"
-        type="checkbox"
-        role="switch"
-        [checked]="onlyPublished()"
-        (change)="setOnlyPublished(!onlyPublished())"
-      />
-      <label class="form-check-label" for="admin-articles-only-published">
-        {{ 'articles.filters.onlyPublished' | t }}
-      </label>
-    </div>
+  <div class="col-6 col-md-4 col-xl-2">
+    <label class="form-label" for="admin-articles-publish-status">
+      {{ 'adminMatrixWorkspace.status' | t }}
+    </label>
+    <select
+      id="admin-articles-publish-status"
+      data-testid="admin-articles-publish-status"
+      class="form-select form-select-sm"
+      [value]="publishStatus() ?? ''"
+      (change)="setPublishStatus($any($event.target).value)"
+    >
+      <option value="">{{ 'shared.notSet' | t }}</option>
+      <option value="Draft">{{ 'enum.publishStatus.Draft' | t }}</option>
+      <option value="Published">{{ 'enum.publishStatus.Published' | t }}</option>
+    </select>
   </div>
   <div class="col-12 col-md-auto d-flex gap-2">
     <button type="submit" class="btn btn-secondary btn-sm">

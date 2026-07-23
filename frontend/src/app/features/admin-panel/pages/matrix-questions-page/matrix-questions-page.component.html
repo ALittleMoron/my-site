@@ -78,7 +78,7 @@
   }
 
   <form class="row g-2 align-items-end mb-3" [formGroup]="filtersForm" (ngSubmit)="applyFilters()">
-    <div class="col-12 col-md-4 col-xl-3">
+    <div class="col-12 col-md-4 col-xl-4">
       <label class="form-label" for="matrix-workspace-search">
         {{ 'articles.filters.search' | t }}
       </label>
@@ -175,7 +175,7 @@
         }
       </select>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-3">
       <label class="form-label" for="matrix-workspace-missing">
         {{ 'adminMatrixWorkspace.missingFields' | t }}
       </label>
@@ -189,7 +189,7 @@
         <option value="false">{{ 'adminMatrixWorkspace.noMissingFields' | t }}</option>
       </select>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-3">
       <label class="form-label" for="matrix-workspace-sort">
         {{ 'adminMatrixWorkspace.sortLabel' | t }}
       </label>
@@ -199,7 +199,7 @@
         }
       </select>
     </div>
-    <div class="col-6 col-md-4 col-xl-1">
+    <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-page-size">
         {{ 'adminMatrixWorkspace.pageSize' | t }}
       </label>

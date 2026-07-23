@@ -25,6 +25,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/l
 import {
   AdminArticleList,
   AdminArticlePayload,
+  AdminArticlePublishStatus,
   AdminArticleTag,
   AdminArticleTree,
 } from '../../models/article-workspace.model';
@@ -39,7 +40,6 @@ import {
   canonicalQueryMatches,
   queryNumber,
   queryString,
-  readBooleanQuery,
   readIsoDateQuery,
   readOptionalStringQuery,
   readPositiveIntegerQuery,
@@ -47,12 +47,13 @@ import {
 } from '../../utils/admin-query-state';
 
 const PAGE_SIZE = 20;
+const ARTICLE_PUBLISH_STATUSES = ['Draft', 'Published'] as const;
 const ARTICLE_QUERY_KEYS = [
   'q',
   'tag',
   'publishedFrom',
   'publishedTo',
-  'onlyPublished',
+  'publishStatus',
   'page',
 ] as const;
 
@@ -61,7 +62,7 @@ interface ArticleQueryState {
   tagSlug: string | null;
   publishedFrom: string | null;
   publishedTo: string | null;
-  onlyPublished: boolean;
+  publishStatus: AdminArticlePublishStatus | null;
   page: number;
 }
 
@@ -102,7 +103,7 @@ export class AdminArticlesPageComponent implements OnInit {
   readonly tagSlug = signal<string | null>(null);
   readonly publishedFrom = signal('');
   readonly publishedTo = signal('');
-  readonly onlyPublished = signal(false);
+  readonly publishStatus = signal<AdminArticlePublishStatus | null>(null);
   readonly articles = signal<AdminArticleList | null>(null);
   readonly tags = signal<AdminArticleTag[]>([]);
   readonly tree = signal<AdminArticleTree>({ folders: [] });
@@ -145,7 +146,7 @@ export class AdminArticlesPageComponent implements OnInit {
         page: this.appliedState.page,
         pageSize: PAGE_SIZE,
         language: this.currentLanguage(),
-        onlyPublished: this.appliedState.onlyPublished,
+        publishStatus: this.appliedState.publishStatus,
         tagSlug: this.appliedState.tagSlug,
         publishedFrom: this.appliedState.publishedFrom,
         publishedTo: this.appliedState.publishedTo,
@@ -178,7 +179,7 @@ export class AdminArticlesPageComponent implements OnInit {
       tagSlug: this.tagSlug(),
       publishedFrom: queryString(this.publishedFrom()),
       publishedTo: queryString(this.publishedTo()),
-      onlyPublished: this.onlyPublished(),
+      publishStatus: this.publishStatus(),
       page: 1,
     });
   }
@@ -191,7 +192,7 @@ export class AdminArticlesPageComponent implements OnInit {
     this.tagSlug.set(null);
     this.publishedFrom.set('');
     this.publishedTo.set('');
-    this.onlyPublished.set(false);
+    this.publishStatus.set(null);
     this.commitQueryState(emptyArticleQueryState());
   }
 
@@ -363,8 +364,12 @@ export class AdminArticlesPageComponent implements OnInit {
     this.publishedToValid.set(valid);
   }
 
-  setOnlyPublished(value: boolean): void {
-    this.onlyPublished.set(value);
+  setPublishStatus(value: string): void {
+    this.publishStatus.set(
+      ARTICLE_PUBLISH_STATUSES.includes(value as AdminArticlePublishStatus)
+        ? (value as AdminArticlePublishStatus)
+        : null,
+    );
   }
 
   private datePickerTranslation(key: string): string {
@@ -431,7 +436,7 @@ export class AdminArticlesPageComponent implements OnInit {
       tagSlug,
       publishedFrom: readIsoDateQuery(params, 'publishedFrom').value,
       publishedTo: readIsoDateQuery(params, 'publishedTo').value,
-      onlyPublished: readBooleanQuery(params, 'onlyPublished', false).value,
+      publishStatus: this.readPublishStatus(params),
       page: readPositiveIntegerQuery(params, 'page', 1).value,
     };
   }
@@ -443,7 +448,7 @@ export class AdminArticlesPageComponent implements OnInit {
     this.tagSlug.set(state.tagSlug);
     this.publishedFrom.set(state.publishedFrom ?? '');
     this.publishedTo.set(state.publishedTo ?? '');
-    this.onlyPublished.set(state.onlyPublished);
+    this.publishStatus.set(state.publishStatus);
   }
 
   private commitQueryState(state: ArticleQueryState): void {
@@ -472,7 +477,7 @@ export class AdminArticlesPageComponent implements OnInit {
       tag: state.tagSlug,
       publishedFrom: state.publishedFrom,
       publishedTo: state.publishedTo,
-      onlyPublished: state.onlyPublished ? 'true' : null,
+      publishStatus: state.publishStatus,
       page: queryNumber(state.page, 1),
     };
   }
@@ -492,6 +497,13 @@ export class AdminArticlesPageComponent implements OnInit {
     return value === '' ? null : value;
   }
 
+  private readPublishStatus(params: ParamMap): AdminArticlePublishStatus | null {
+    const value = readOptionalStringQuery(params, 'publishStatus').value;
+    return value !== null && ARTICLE_PUBLISH_STATUSES.includes(value as AdminArticlePublishStatus)
+      ? (value as AdminArticlePublishStatus)
+      : null;
+  }
+
   private currentLanguage(): 'ru' | 'en' {
     const language = this.i18n.language();
     if (language === null) {
@@ -507,7 +519,7 @@ function emptyArticleQueryState(): ArticleQueryState {
     tagSlug: null,
     publishedFrom: null,
     publishedTo: null,
-    onlyPublished: false,
+    publishStatus: null,
     page: 1,
   };
 }

@@ -452,6 +452,19 @@ PublishStatusesQuery: TypeAlias = Annotated[
         max_items=None,
     ),
 ]
+PublishStatusQuery: TypeAlias = Annotated[
+    PublishStatusEnum | None,
+    api_query_parameter(
+        name="publishStatus",
+        title="Publication status",
+        description="Optional exact publication status filter.",
+        examples=(PublishStatusEnum.DRAFT.value,),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
 HasMissingFieldsQuery: TypeAlias = Annotated[
     bool | None,
     api_query_parameter(

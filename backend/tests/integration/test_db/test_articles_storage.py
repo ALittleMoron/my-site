@@ -241,6 +241,23 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert self.collections.slugs(articles) == ["published-python"]
         assert total_count == 1
 
+        draft_articles, draft_total_count = await self.storage.list_articles(
+            filters=ArticleFilters(
+                page=1,
+                page_size=10,
+                language=LanguageEnum.RU,
+                only_published=False,
+                publish_status=PublishStatusEnum.DRAFT,
+                tag_slug="python",
+                published_from=None,
+                published_to=None,
+                search_query=None,
+            ),
+        )
+
+        assert self.collections.slugs(draft_articles) == ["draft-python"]
+        assert draft_total_count == 1
+
     async def test_list_articles_filters_published_without_pagination_or_tags_for_seo(self) -> None:
         await self.storage_helper.create_articles(
             articles=[

@@ -169,6 +169,7 @@ class ArticleFilters:
     page_size: int | None = None
     language: LanguageEnum = LanguageEnum.EN
     only_published: bool | None = None
+    publish_status: PublishStatusEnum | None = None
     tag_slug: str | None = None
     published_from: date | None = None
     published_to: date | None = None

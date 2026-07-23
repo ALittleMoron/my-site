@@ -415,22 +415,22 @@ class APIHelper:
         self,
         page: int | None = 1,
         page_size: int | None = 10,
-        only_published: bool | None = True,
+        publish_status: str | None = None,
         language: str | None = "ru",
         tag_slug: str | None = None,
         published_from: str | None = None,
         published_to: str | None = None,
         search_query: str | None = None,
     ) -> Response:
-        params: dict[str, str | int | bool] = {}
+        params: dict[str, str | int] = {}
         if language is not None:
             params["language"] = language
         if page is not None:
             params["page"] = page
         if page_size is not None:
             params["pageSize"] = page_size
-        if only_published is not None:
-            params["onlyPublished"] = only_published
+        if publish_status is not None:
+            params["publishStatus"] = publish_status
         if tag_slug is not None:
             params["tagSlug"] = tag_slug
         if published_from is not None:

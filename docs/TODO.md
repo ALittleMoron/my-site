@@ -682,6 +682,8 @@ Flashcards should be implemented strictly after auth implementation for common u
 ## Bugs
 
 - [ ] Fix initial bundle big size.
+- [ ] Replace native admin filter selects with accessible custom dropdowns whose open option list
+  follows the site's green active-color theme consistently across operating systems.
 - [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
 - [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
 - [x] Production public UI QA

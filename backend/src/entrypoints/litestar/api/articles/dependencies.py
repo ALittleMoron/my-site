@@ -1,11 +1,11 @@
 from core.articles.schemas import ArticleFilters
 from entrypoints.litestar.api.parameters import (
     LanguageQuery,
-    OnlyPublishedQuery,
     PageQuery,
     PageSizeQuery,
     PublishedFromQuery,
     PublishedToQuery,
+    PublishStatusQuery,
     SearchQueryFilter,
     TagSlugQuery,
 )
@@ -39,8 +39,8 @@ def provide_public_article_filters(  # noqa: PLR0913
 def provide_article_filters(  # noqa: PLR0913
     page: PageQuery,
     page_size: PageSizeQuery,
-    only_published: OnlyPublishedQuery,
     language: LanguageQuery,
+    publish_status: PublishStatusQuery = None,
     tag_slug: TagSlugQuery = None,
     published_from: PublishedFromQuery = None,
     published_to: PublishedToQuery = None,
@@ -53,7 +53,8 @@ def provide_article_filters(  # noqa: PLR0913
         page=page,
         page_size=page_size,
         language=language,
-        only_published=only_published,
+        only_published=False,
+        publish_status=publish_status,
         tag_slug=tag_slug,
         published_from=published_from,
         published_to=published_to,

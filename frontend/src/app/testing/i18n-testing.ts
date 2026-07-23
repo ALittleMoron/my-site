@@ -392,7 +392,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixWorkspace.listTab': 'Список',
   'adminMatrixWorkspace.previewTab': 'Публичный предпросмотр',
   'adminMatrixWorkspace.total': 'Всего',
-  'adminMatrixWorkspace.missingDraft': 'Черновики с блокерами публикации',
+  'adminMatrixWorkspace.missingDraft': 'Черновики с блокерами',
   'adminMatrixWorkspace.dangerousPublished': 'Опубликованы с блокерами',
   'adminMatrixWorkspace.readyPublished': 'Опубликованы без блокеров',
   'adminMatrixWorkspace.status': 'Статус',

@@ -124,6 +124,8 @@ class ArticlesDatabaseStorage(ArticlesStorage):
     ) -> Select[tuple[_SelectT]]:
         if filters.only_published is True:
             query = query.where(ArticleModel.publish_status == PublishStatusEnum.PUBLISHED)
+        if filters.publish_status is not None:
+            query = query.where(ArticleModel.publish_status == filters.publish_status)
         if filters.tag_slug is not None:
             query = (
                 query.join(ArticleModel.tag_links)

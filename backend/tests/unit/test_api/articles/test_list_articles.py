@@ -30,8 +30,8 @@ class TestListArticlesAPI(ApiTestCase):
         filters = provide_article_filters(
             page=2,
             page_size=5,
-            only_published=True,
             language=LanguageEnum.RU,
+            publish_status=PublishStatusEnum.DRAFT,
             tag_slug="python",
             published_from=date(2026, 1, 1),
             published_to=date(2026, 1, 31),
@@ -42,7 +42,8 @@ class TestListArticlesAPI(ApiTestCase):
             page=2,
             page_size=5,
             language=LanguageEnum.RU,
-            only_published=True,
+            only_published=False,
+            publish_status=PublishStatusEnum.DRAFT,
             tag_slug="python",
             published_from=date(2026, 1, 1),
             published_to=date(2026, 1, 31),
@@ -77,8 +78,8 @@ class TestListArticlesAPI(ApiTestCase):
         filters = provide_article_filters(
             page=1,
             page_size=10,
-            only_published=True,
             language=LanguageEnum.RU,
+            publish_status=None,
             tag_slug=None,
             published_from=None,
             published_to=None,
@@ -210,13 +211,13 @@ class TestListArticlesAPI(ApiTestCase):
         self.use_case.list_articles.assert_not_called()
 
     def test_anonymous_cannot_request_admin_articles(self) -> None:
-        response = self.no_auth_api.get_admin_articles(page=1, page_size=10, only_published=False)
+        response = self.no_auth_api.get_admin_articles(page=1, page_size=10)
 
         assert response.status_code == codes.UNAUTHORIZED
         assert response.json()["message"] == UnauthorizedError.message
         self.use_case.list_articles.assert_not_called()
 
-    def test_moderator_can_request_all_articles_from_admin_api(self) -> None:
+    def test_moderator_can_filter_draft_articles_from_admin_api(self) -> None:
         self.authentication_use_case.authenticate.return_value = JwtUser(
             username="moderator",
             role=RoleEnum.MODERATOR,
@@ -227,7 +228,11 @@ class TestListArticlesAPI(ApiTestCase):
             total_pages=0,
         )
 
-        response = self.api.get_admin_articles(page=1, page_size=10, only_published=False)
+        response = self.api.get_admin_articles(
+            page=1,
+            page_size=10,
+            publish_status=PublishStatusEnum.DRAFT.value,
+        )
 
         assert response.status_code == codes.OK, response.content
         self.use_case.list_articles.assert_called_once_with(
@@ -236,6 +241,7 @@ class TestListArticlesAPI(ApiTestCase):
                 page_size=10,
                 language=LanguageEnum.RU,
                 only_published=False,
+                publish_status=PublishStatusEnum.DRAFT,
                 tag_slug=None,
                 published_from=None,
                 published_to=None,

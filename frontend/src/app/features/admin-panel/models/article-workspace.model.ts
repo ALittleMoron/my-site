@@ -359,7 +359,7 @@ export interface ArticleListParams {
   page: number;
   pageSize: number;
   language: LanguageCode;
-  onlyPublished: boolean;
+  publishStatus: ArticlePublishStatus | null;
   tagSlug: string | null;
   publishedFrom: string | null;
   publishedTo: string | null;

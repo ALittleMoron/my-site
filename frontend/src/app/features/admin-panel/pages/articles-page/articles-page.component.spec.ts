@@ -75,7 +75,7 @@ describe('AdminArticlesPageComponent', () => {
       page: 1,
       pageSize: 20,
       language: 'ru',
-      onlyPublished: false,
+      publishStatus: null,
       tagSlug: null,
       publishedFrom: null,
       publishedTo: null,
@@ -84,7 +84,7 @@ describe('AdminArticlesPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Статьи');
     expect(fixture.nativeElement.textContent).toContain('Добавить статью');
     expect(
-      fixture.nativeElement.querySelector('[data-testid="admin-articles-only-published"]'),
+      fixture.nativeElement.querySelector('[data-testid="admin-articles-publish-status"]'),
     ).toBeTruthy();
   });
 
@@ -106,7 +106,7 @@ describe('AdminArticlesPageComponent', () => {
         tag: 'angular',
         publishedFrom: '2026-01-01',
         publishedTo: '2026-02-01',
-        onlyPublished: 'true',
+        publishStatus: 'Published',
         page: '3',
       }),
     );
@@ -118,7 +118,7 @@ describe('AdminArticlesPageComponent', () => {
       page: 3,
       pageSize: 20,
       language: 'ru',
-      onlyPublished: true,
+      publishStatus: 'Published',
       tagSlug: 'angular',
       publishedFrom: '2026-01-01',
       publishedTo: '2026-02-01',
@@ -177,6 +177,29 @@ describe('AdminArticlesPageComponent', () => {
 
     expect(service.listArticles).not.toHaveBeenCalled();
     expect(publishedFrom.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('requests articles with the selected publication status', () => {
+    fixture.detectChanges();
+    service.listArticles.mockClear();
+    const publishStatus = fixture.nativeElement.querySelector(
+      '[data-testid="admin-articles-publish-status"]',
+    );
+
+    expect(publishStatus).toBeInstanceOf(HTMLSelectElement);
+    if (!(publishStatus instanceof HTMLSelectElement)) return;
+    expect(Array.from(publishStatus.options).map((option) => option.value)).toEqual([
+      '',
+      'Draft',
+      'Published',
+    ]);
+    publishStatus.value = 'Draft';
+    publishStatus.dispatchEvent(new Event('change'));
+    fixture.nativeElement.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+
+    expect(service.listArticles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ publishStatus: 'Draft' }),
+    );
   });
 
   it('clamps an out-of-range URL page and reloads the nearest valid page', () => {

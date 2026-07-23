@@ -79,6 +79,13 @@ class TestI18nCatalog:
         assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
         assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"
 
+    def test_matrix_draft_blocker_summary_labels_fit_the_summary_card(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["adminMatrixWorkspace.missingDraft"] == "Черновики с блокерами"
+        assert english_messages["adminMatrixWorkspace.missingDraft"] == "Drafts with blockers"
+
     def test_matrix_interview_answer_explanation_labels_describe_an_explanation(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

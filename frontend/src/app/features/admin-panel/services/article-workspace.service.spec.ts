@@ -27,7 +27,7 @@ describe('ArticleWorkspaceService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('loads admin articles with explicit visibility and public stats', () => {
+  it('loads admin articles with an exact publication status and public stats', () => {
     let firstTitle = '';
 
     service
@@ -35,7 +35,7 @@ describe('ArticleWorkspaceService', () => {
         page: 2,
         pageSize: 20,
         language: 'en',
-        onlyPublished: false,
+        publishStatus: 'Draft',
         tagSlug: 'python',
         publishedFrom: '2026-01-01',
         publishedTo: '2026-01-31',
@@ -50,7 +50,8 @@ describe('ArticleWorkspaceService', () => {
     expect(listReq.request.params.get('page')).toBe('2');
     expect(listReq.request.params.get('pageSize')).toBe('20');
     expect(listReq.request.params.get('language')).toBe('en');
-    expect(listReq.request.params.get('onlyPublished')).toBe('false');
+    expect(listReq.request.params.get('publishStatus')).toBe('Draft');
+    expect(listReq.request.params.has('onlyPublished')).toBe(false);
     expect(listReq.request.params.get('tagSlug')).toBe('python');
     expect(listReq.request.params.get('publishedFrom')).toBe('2026-01-01');
     expect(listReq.request.params.get('publishedTo')).toBe('2026-01-31');

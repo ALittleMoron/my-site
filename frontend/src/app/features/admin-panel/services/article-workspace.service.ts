@@ -42,7 +42,6 @@ export class ArticleWorkspaceService {
       page: String(params.page),
       pageSize: String(params.pageSize),
       language: params.language,
-      onlyPublished: String(params.onlyPublished),
     };
     this.applyOptionalListParams(queryParams, params);
     return this.getArticlesFromPath('/api/admin/articles', queryParams);
@@ -52,6 +51,9 @@ export class ArticleWorkspaceService {
     queryParams: Record<string, string | readonly string[]>,
     params: ArticleListParams,
   ): void {
+    if (params.publishStatus) {
+      queryParams['publishStatus'] = params.publishStatus;
+    }
     if (params.tagSlug) {
       queryParams['tagSlug'] = params.tagSlug;
     }
