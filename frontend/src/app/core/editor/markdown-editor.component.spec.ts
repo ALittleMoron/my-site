@@ -1,10 +1,14 @@
 import { CSP_NONCE, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CompletionContext } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';
 import { of, throwError } from 'rxjs';
 import { provideI18nTesting } from '../../testing/i18n-testing';
+import { WikiLinkTargetsService } from '../wiki-links/wiki-link-targets.service';
+import { createWikiLinkTargetRegistry } from '../wiki-links/wiki-links';
 import { EditorImageUploadService } from './editor-image-upload.service';
 import { MarkdownEditorComponent } from './markdown-editor.component';
+import { wikiLinkCompletionSource } from './markdown-editor.wiki-links';
 
 const EDITOR_MESSAGES = {
   'markdownEditor.mode.aria': 'Режим Markdown-редактора',
@@ -32,15 +36,59 @@ const EDITOR_MESSAGES = {
   'markdownEditor.search.matchCase': 'Учитывать регистр',
   'markdownEditor.search.byWord': 'Слово целиком',
   'markdownEditor.search.close': 'Закрыть',
+  'markdownEditor.completions': 'Варианты',
+  'markdownEditor.wikiLinks.registryUnavailable': 'Не удалось загрузить варианты wiki-ссылок.',
+  'enum.publishStatus.Draft': 'Черновик',
+  'enum.publishStatus.Published': 'Опубликовано',
 };
+
+const RU_WIKI_LINK_REGISTRY = createWikiLinkTargetRegistry([
+  { type: 'articles', items: [] },
+  {
+    type: 'matrix',
+    items: [
+      {
+        slug: 'known-question',
+        title: 'Известный вопрос',
+        publishStatus: 'Draft',
+      },
+    ],
+  },
+]);
+
+const EN_WIKI_LINK_REGISTRY = createWikiLinkTargetRegistry([
+  { type: 'articles', items: [] },
+  {
+    type: 'matrix',
+    items: [
+      {
+        slug: 'known-question',
+        title: 'Known question',
+        publishStatus: 'Draft',
+      },
+    ],
+  },
+]);
 
 describe('MarkdownEditorComponent', () => {
   let fixture: ComponentFixture<MarkdownEditorComponent>;
   let uploadService: { uploadEditorImage: jest.Mock };
+  let wikiLinkTargetsService: { getTargets: jest.Mock };
 
   beforeEach(async () => {
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [],
+    });
     uploadService = {
       uploadEditorImage: jest.fn().mockReturnValue(of('https://cdn.example.com/image.png')),
+    };
+    wikiLinkTargetsService = {
+      getTargets: jest
+        .fn()
+        .mockImplementation((language: string) =>
+          of(language === 'ru' ? RU_WIKI_LINK_REGISTRY : EN_WIKI_LINK_REGISTRY),
+        ),
     };
 
     await TestBed.configureTestingModule({
@@ -48,6 +96,7 @@ describe('MarkdownEditorComponent', () => {
       providers: [
         { provide: CSP_NONCE, useValue: 'markdown-editor-test-nonce' },
         { provide: EditorImageUploadService, useValue: uploadService },
+        { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
         provideI18nTesting(EDITOR_MESSAGES),
       ],
     }).compileComponents();
@@ -172,6 +221,189 @@ describe('MarkdownEditorComponent', () => {
     expect(contentElement().getAttribute('aria-label')).toBe('Article content EN');
   });
 
+  it('supplies the localized wiki-link registry to CodeMirror state', () => {
+    const view = editorView();
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: '[[matrix:' },
+      selection: { anchor: '[[matrix:'.length },
+    });
+
+    const result = wikiLinkCompletionSource(
+      new CompletionContext(view.state, view.state.selection.main.head, false),
+    );
+
+    expect(result?.options).toEqual([
+      expect.objectContaining({
+        label: 'known-question',
+        wikiLinkTitle: 'Известный вопрос',
+        wikiLinkStatus: 'Черновик',
+      }),
+    ]);
+    expect(wikiLinkTargetsService.getTargets).toHaveBeenCalledWith('ru');
+  });
+
+  it('updates localized completion titles on language change without rebuilding the editor', () => {
+    const view = editorView();
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: '[[matrix:' },
+      selection: { anchor: '[[matrix:'.length },
+    });
+
+    fixture.componentRef.setInput('language', 'en');
+    fixture.detectChanges();
+
+    const result = wikiLinkCompletionSource(
+      new CompletionContext(view.state, view.state.selection.main.head, false),
+    );
+    expect(editorView()).toBe(view);
+    expect(result?.options).toEqual([
+      expect.objectContaining({
+        label: 'known-question',
+        wikiLinkTitle: 'Known question',
+        wikiLinkStatus: 'Черновик',
+      }),
+    ]);
+    expect(wikiLinkTargetsService.getTargets).toHaveBeenCalledWith('en');
+  });
+
+  it('keeps manual editing available when the target registry cannot be loaded', () => {
+    wikiLinkTargetsService.getTargets.mockImplementation((language: string) =>
+      language === 'en'
+        ? throwError(() => new Error('registry unavailable'))
+        : of(RU_WIKI_LINK_REGISTRY),
+    );
+    fixture.componentRef.setInput('language', 'en');
+    fixture.detectChanges();
+    const view = editorView();
+
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: '[[matrix:manual-link]]' },
+      selection: { anchor: '[[matrix:manual-link'.length },
+    });
+    fixture.detectChanges();
+
+    expect(view.state.doc.toString()).toBe('[[matrix:manual-link]]');
+    expect(query<HTMLElement>('.markdown-editor-status').textContent).toContain(
+      'Не удалось загрузить варианты wiki-ссылок.',
+    );
+  });
+
+  it('supports strict domain filtering and keyboard-first chained completion', async () => {
+    const view = editorView();
+    replaceEditorDocument(view, '[[m]]', 3);
+
+    await waitForAutocomplete();
+
+    expect(completionLabels()).toEqual(['matrix']);
+    expect(
+      query<HTMLElement>('.cm-tooltip-autocomplete [role="listbox"]').getAttribute('aria-label'),
+    ).toBe('Варианты');
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Enter',
+        key: 'Enter',
+      }),
+    );
+    await waitForAutocomplete();
+
+    expect(view.state.doc.toString()).toBe('[[matrix:]]');
+    expect(completionLabels()).toEqual(['known-question']);
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Enter',
+        key: 'Enter',
+      }),
+    );
+
+    expect(view.state.doc.toString()).toBe('[[matrix:known-question]]');
+    expect(view.state.selection.main.head).toBe(view.state.doc.toString().indexOf(']]'));
+  });
+
+  it('shows the human title and status above the slug without a generic text icon', async () => {
+    replaceEditorDocument(editorView(), '[[matrix:]]', '[[matrix:'.length);
+
+    await waitForAutocomplete();
+
+    const option = query<HTMLElement>('.cm-wiki-link-completion-option');
+    const metadata = query<HTMLElement>(
+      '.cm-wiki-link-completion-option .cm-wiki-link-completion-metadata',
+    );
+    const slug = query<HTMLElement>('.cm-wiki-link-completion-option .cm-completionLabel');
+    expect(option.querySelector('.cm-completionIcon')).toBeNull();
+    expect(metadata.textContent).toContain('Известный вопрос');
+    expect(metadata.textContent).toContain('Черновик');
+    expect(slug.textContent).toBe('known-question');
+    expect(metadata.compareDocumentPosition(slug) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
+  it('uses ArrowDown and Escape without moving or changing the typed fragment', async () => {
+    const view = editorView();
+    replaceEditorDocument(view, '[[]]', 2);
+    await waitForAutocomplete();
+    const cursor = view.state.selection.main.head;
+
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'ArrowDown',
+        key: 'ArrowDown',
+      }),
+    );
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Escape',
+        key: 'Escape',
+      }),
+    );
+
+    expect(view.state.doc.toString()).toBe('[[]]');
+    expect(view.state.selection.main.head).toBe(cursor);
+    expect(fixture.nativeElement.querySelector('.cm-tooltip-autocomplete')).toBeNull();
+  });
+
+  it('applies a mouse-selected target with the same minimal transaction', async () => {
+    const view = editorView();
+    replaceEditorDocument(view, '[[matrix:kn]]', '[[matrix:kn'.length);
+    await waitForAutocomplete();
+    const option = query<HTMLElement>('.cm-tooltip-autocomplete li');
+
+    option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+
+    expect(view.state.doc.toString()).toBe('[[matrix:known-question]]');
+    expect(view.state.selection.main.head).toBe(view.state.doc.toString().indexOf(']]'));
+  });
+
+  it('does not accept a completion during IME composition', async () => {
+    const view = editorView();
+    replaceEditorDocument(view, '[[matrix:kn]]', '[[matrix:kn'.length);
+    await waitForAutocomplete();
+
+    contentElement().dispatchEvent(
+      new CompositionEvent('compositionstart', {
+        bubbles: true,
+        data: 'в',
+      }),
+    );
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Enter',
+        key: 'Enter',
+        isComposing: true,
+      }),
+    );
+
+    expect(view.state.doc.toString()).not.toBe('[[matrix:known-question]]');
+  });
+
   it('switches between accessible source and preview tabs and restores editor focus', () => {
     const previewTab = query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]');
     previewTab.click();
@@ -222,6 +454,35 @@ describe('MarkdownEditorComponent', () => {
     expect(preview.innerHTML).not.toContain('<script');
     expect(preview.innerHTML).not.toContain('onerror');
     warning.mockRestore();
+  });
+
+  it('opens only preview wiki-links in a new tab with opener isolation', () => {
+    const open = jest.spyOn(window, 'open').mockImplementation(() => null);
+    fixture.componentRef.setInput(
+      'value',
+      '[[articles:example|Wiki article]] and [ordinary article](/ru/articles/ordinary)',
+    );
+    fixture.detectChanges();
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+    const links = Array.from(
+      query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').querySelectorAll('a'),
+    );
+    const wikiLink = links.find((link) => link.textContent === 'Wiki article');
+    const ordinaryLink = links.find((link) => link.textContent === 'ordinary article');
+    if (wikiLink === undefined || ordinaryLink === undefined) {
+      throw new Error('Missing preview links');
+    }
+
+    const wikiClick = new MouseEvent('click', { bubbles: true, cancelable: true });
+    wikiLink.dispatchEvent(wikiClick);
+    const ordinaryClick = new MouseEvent('click', { bubbles: true, cancelable: true });
+    ordinaryLink.dispatchEvent(ordinaryClick);
+
+    expect(wikiClick.defaultPrevented).toBe(true);
+    expect(ordinaryClick.defaultPrevented).toBe(false);
+    expect(open).toHaveBeenCalledWith('/ru/articles/example', '_blank', 'noopener,noreferrer');
+    open.mockRestore();
   });
 
   it('emits physical-key formatting commands on a non-English keyboard layout', () => {
@@ -499,6 +760,23 @@ describe('MarkdownEditorComponent', () => {
     return query<HTMLElement>('.cm-content');
   }
 
+  function editorView(): EditorView {
+    const view = EditorView.findFromDOM(contentElement());
+    if (view === null) {
+      throw new Error('Missing EditorView');
+    }
+    return view;
+  }
+
+  function completionLabels(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll<HTMLElement>(
+        '.cm-tooltip-autocomplete .cm-completionLabel',
+      ),
+      (label) => label.textContent ?? '',
+    );
+  }
+
   function query<T extends Element>(selector: string): T {
     const element = fixture.nativeElement.querySelector(selector) as T | null;
     if (element === null) {
@@ -518,6 +796,10 @@ describe('MarkdownEditorComponent on the server', () => {
           provide: EditorImageUploadService,
           useValue: { uploadEditorImage: jest.fn() },
         },
+        {
+          provide: WikiLinkTargetsService,
+          useValue: { getTargets: jest.fn() },
+        },
         provideI18nTesting(EDITOR_MESSAGES),
       ],
     }).compileComponents();
@@ -528,6 +810,7 @@ describe('MarkdownEditorComponent on the server', () => {
 
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(fixture.nativeElement.querySelector('.cm-editor')).toBeNull();
+    expect(TestBed.inject(WikiLinkTargetsService).getTargets).not.toHaveBeenCalled();
     fixture.destroy();
   });
 });
@@ -561,4 +844,16 @@ function keyboardEventWithKeyCode(init: KeyboardEventInit, keyCode: number): Key
   const event = new KeyboardEvent('keydown', init);
   Object.defineProperty(event, 'keyCode', { value: keyCode });
   return event;
+}
+
+function replaceEditorDocument(view: EditorView, document: string, cursor: number): void {
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: document },
+    selection: { anchor: cursor },
+    userEvent: 'input.type',
+  });
+}
+
+async function waitForAutocomplete(): Promise<void> {
+  await new Promise((resolve) => window.setTimeout(resolve, 230));
 }

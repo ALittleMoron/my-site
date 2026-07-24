@@ -40,6 +40,9 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'markdownEditor.upload.failed': 'Не удалось загрузить {fileName}.',
   'markdownEditor.upload.retry': 'Повторить',
   'markdownEditor.upload.dismiss': 'Закрыть',
+  'markdownEditor.completions': 'Варианты автодополнения',
+  'markdownEditor.wikiLinks.registryUnavailable':
+    'Не удалось загрузить варианты wiki-ссылок. Ручной ввод по-прежнему доступен.',
   'markdownEditor.search.find': 'Найти',
   'markdownEditor.search.replace': 'Заменить',
   'markdownEditor.search.next': 'Следующее',
@@ -77,6 +80,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'markdownEditor.command.codeBlock': 'Блок кода',
   'markdownEditor.command.table': 'Таблица',
   'markdownEditor.command.search': 'Поиск и замена',
+  'enum.publishStatus.Draft': 'Черновик',
+  'enum.publishStatus.Published': 'Опубликовано',
   'validation.required': 'Заполните поле.',
   'validation.minLength': 'Минимум {min} символов.',
   'validation.maxLength': 'Максимум {max} символов.',

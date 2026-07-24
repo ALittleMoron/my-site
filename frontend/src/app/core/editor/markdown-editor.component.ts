@@ -37,6 +37,8 @@ import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
 import { TranslatePipe } from '../i18n/translate.pipe';
 import { WikiLinkRendererService } from '../wiki-links/wiki-link-renderer.service';
+import { WikiLinkTargetsService } from '../wiki-links/wiki-link-targets.service';
+import { parseWikiLinks, wikiLinkPath } from '../wiki-links/wiki-links';
 import {
   MARKDOWN_EDITOR_COMMANDS,
   MARKDOWN_EDITOR_SHORTCUT_GROUPS,
@@ -57,6 +59,7 @@ import {
   markdownEditorCspExtension,
   markdownEditorFoundationExtensions,
 } from './markdown-editor.extensions';
+import { WikiLinkCompletionData, setWikiLinkCompletionData } from './markdown-editor.wiki-links';
 
 type EditorMode = 'edit' | 'preview';
 type UploadStatus = 'queued' | 'uploading' | 'error';
@@ -88,6 +91,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly imageUpload = inject(EditorImageUploadService);
   private readonly i18n = inject(I18nService);
   private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
+  private readonly wikiLinkTargets = inject(WikiLinkTargetsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
@@ -103,6 +107,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private restoreEditorFocus = false;
   private savedScrollTop = 0;
   private nextUploadId = 0;
+  private currentWikiLinkCompletionData: WikiLinkCompletionData | null = null;
 
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
   @ViewChild('imageInput', { static: true })
@@ -124,6 +129,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   readonly uploadErrors = computed(() =>
     this.uploads().filter((upload) => upload.status === 'error'),
   );
+  readonly wikiLinkRegistryUnavailable = signal(false);
   readonly previewHtml = computed(() =>
     this.wikiLinkRenderer.render(this.internalValue(), this.language()),
   );
@@ -172,6 +178,35 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
         ],
       });
     });
+    effect((onCleanup) => {
+      const language = this.language();
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+
+      this.wikiLinkRegistryUnavailable.set(false);
+      this.updateWikiLinkCompletionData(null);
+      const subscription = this.wikiLinkTargets.getTargets(language).subscribe({
+        next: (registry) => {
+          if (this.language() !== language) {
+            return;
+          }
+          this.updateWikiLinkCompletionData({
+            registry,
+            publishStatusLabels: {
+              Draft: this.i18n.translate('enum.publishStatus.Draft'),
+              Published: this.i18n.translate('enum.publishStatus.Published'),
+            },
+          });
+        },
+        error: () => {
+          if (this.language() === language) {
+            this.wikiLinkRegistryUnavailable.set(true);
+          }
+        },
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
   }
 
   ngAfterViewInit(): void {
@@ -187,6 +222,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       }),
     });
     this.internalValue.set(this.value());
+    this.editorView.dispatch({
+      effects: setWikiLinkCompletionData.of(this.currentWikiLinkCompletionData),
+    });
     if (this.focusPending) {
       this.focusPending = false;
       this.editorView.focus();
@@ -265,6 +303,33 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
     this.queueImageUploads(Array.from(input.files ?? []), this.currentCursor());
     input.value = '';
+  }
+
+  onPreviewClick(event: MouseEvent): void {
+    const browserWindow = this.document.defaultView;
+    if (
+      !isPlatformBrowser(this.platformId) ||
+      browserWindow === null ||
+      !(event.target instanceof browserWindow.Element)
+    ) {
+      return;
+    }
+    const anchor = event.target.closest('a');
+    const href = anchor?.getAttribute('href');
+    if (href === null || href === undefined) {
+      return;
+    }
+    const wikiLinkPaths = new Set(
+      parseWikiLinks(this.internalValue()).map((link) =>
+        wikiLinkPath(link.type, link.slug, this.language()),
+      ),
+    );
+    if (!wikiLinkPaths.has(href)) {
+      return;
+    }
+
+    event.preventDefault();
+    browserWindow.open(href, '_blank', 'noopener,noreferrer');
   }
 
   retryUpload(id: number): void {
@@ -614,6 +679,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   private searchPhrases(): Record<string, string> {
     return {
+      Completions: this.i18n.translate('markdownEditor.completions'),
       Find: this.i18n.translate('markdownEditor.search.find'),
       Replace: this.i18n.translate('markdownEditor.search.replace'),
       next: this.i18n.translate('markdownEditor.search.next'),
@@ -640,6 +706,11 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       lang: this.language(),
       spellcheck: 'true',
     };
+  }
+
+  private updateWikiLinkCompletionData(data: WikiLinkCompletionData | null): void {
+    this.currentWikiLinkCompletionData = data;
+    this.editorView?.dispatch({ effects: setWikiLinkCompletionData.of(data) });
   }
 }
 

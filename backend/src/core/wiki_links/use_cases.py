@@ -5,7 +5,7 @@ from core.competency_matrix.schemas import CompetencyMatrixItemFilters
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.i18n.enums import LanguageEnum
 from core.wiki_links.enums import WikiLinkTargetTypeEnum
-from core.wiki_links.schemas import WikiLinkTargetGroup, WikiLinkTargets
+from core.wiki_links.schemas import WikiLinkTarget, WikiLinkTargetGroup, WikiLinkTargets
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -25,11 +25,25 @@ class WikiLinksUseCase:
             values=[
                 WikiLinkTargetGroup(
                     type=WikiLinkTargetTypeEnum.ARTICLES,
-                    slugs=[article.slug for article in article_items],
+                    items=[
+                        WikiLinkTarget(
+                            slug=article.slug,
+                            title=article.title,
+                            publish_status=article.publish_status,
+                        )
+                        for article in article_items
+                    ],
                 ),
                 WikiLinkTargetGroup(
                     type=WikiLinkTargetTypeEnum.MATRIX,
-                    slugs=[item.slug for item in matrix_items],
+                    items=[
+                        WikiLinkTarget(
+                            slug=item.slug,
+                            title=item.localized_question(language=language),
+                            publish_status=item.publish_status,
+                        )
+                        for item in matrix_items
+                    ],
                 ),
             ],
         )

@@ -40,8 +40,26 @@ describe('wiki links', () => {
       markdown:
         'Read [[articles:typed-articles]], [[matrix:missing-question]], and [[matrix:missing-question|again]].',
       availableTargets: createWikiLinkTargetLookup([
-        { type: 'articles', slugs: ['typed-articles'] },
-        { type: 'matrix', slugs: ['known-question'] },
+        {
+          type: 'articles',
+          items: [
+            {
+              slug: 'typed-articles',
+              title: 'Typed articles',
+              publishStatus: 'Published',
+            },
+          ],
+        },
+        {
+          type: 'matrix',
+          items: [
+            {
+              slug: 'known-question',
+              title: 'Known question',
+              publishStatus: 'Draft',
+            },
+          ],
+        },
       ]),
     });
 

@@ -91,6 +91,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "markdownEditor.upload.failed": "Не удалось загрузить {fileName}.",
         "markdownEditor.upload.retry": "Повторить",
         "markdownEditor.upload.dismiss": "Закрыть",
+        "markdownEditor.completions": "Варианты автодополнения",
+        "markdownEditor.wikiLinks.registryUnavailable": (
+            "Не удалось загрузить варианты wiki-ссылок. Ручной ввод по-прежнему доступен."
+        ),
         "markdownEditor.search.find": "Найти",
         "markdownEditor.search.replace": "Заменить",
         "markdownEditor.search.next": "Следующее",
@@ -1318,6 +1322,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "markdownEditor.upload.failed": "Could not upload {fileName}.",
         "markdownEditor.upload.retry": "Retry",
         "markdownEditor.upload.dismiss": "Dismiss",
+        "markdownEditor.completions": "Completions",
+        "markdownEditor.wikiLinks.registryUnavailable": (
+            "Wiki-link suggestions could not be loaded. Manual entry is still available."
+        ),
         "markdownEditor.search.find": "Find",
         "markdownEditor.search.replace": "Replace",
         "markdownEditor.search.next": "Next",

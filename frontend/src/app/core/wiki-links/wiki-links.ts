@@ -15,10 +15,21 @@ export interface WikiLink {
 
 export interface WikiLinkTargetGroup {
   type: WikiLinkTargetType;
-  slugs: string[];
+  items: WikiLinkTarget[];
+}
+
+export interface WikiLinkTarget {
+  slug: string;
+  title: string;
+  publishStatus: 'Draft' | 'Published';
 }
 
 export type WikiLinkTargetLookup = ReadonlyMap<WikiLinkTargetType, ReadonlySet<string>>;
+
+export interface WikiLinkTargetRegistry {
+  groups: readonly WikiLinkTargetGroup[];
+  lookup: WikiLinkTargetLookup;
+}
 
 const WIKI_LINK_PATTERN = /\[\[(articles|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\n]+))?\]\]/g;
 const DEFAULT_CODE_RENDERER = new Renderer();
@@ -45,10 +56,26 @@ export function parseWikiLinks(markdown: string): WikiLink[] {
   }));
 }
 
+export function parseWikiLink(markdown: string): WikiLink | null {
+  const links = parseWikiLinks(markdown);
+  return links.length === 1 && links[0].raw === markdown ? links[0] : null;
+}
+
 export function createWikiLinkTargetLookup(
   targets: readonly WikiLinkTargetGroup[],
 ): WikiLinkTargetLookup {
-  return new Map(targets.map((target) => [target.type, new Set(target.slugs)] as const));
+  return new Map(
+    targets.map((target) => [target.type, new Set(target.items.map((item) => item.slug))] as const),
+  );
+}
+
+export function createWikiLinkTargetRegistry(
+  groups: readonly WikiLinkTargetGroup[],
+): WikiLinkTargetRegistry {
+  return {
+    groups,
+    lookup: createWikiLinkTargetLookup(groups),
+  };
 }
 
 export function findMissingWikiLinkTargets(params: {
@@ -91,7 +118,11 @@ function replaceWikiLinks(markdown: string, language: LanguageCode): string {
   );
 }
 
-function wikiLinkPath(type: WikiLinkTargetType, slug: string, language: LanguageCode): string {
+export function wikiLinkPath(
+  type: WikiLinkTargetType,
+  slug: string,
+  language: LanguageCode,
+): string {
   if (type === 'articles') {
     return `/${language}/articles/${slug}`;
   }

@@ -532,7 +532,7 @@ export class ArticleFormComponent implements OnInit {
       .getTargets(this.currentLanguage())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (targets) => this.availableWikiLinkTargets.set(targets),
+        next: (registry) => this.availableWikiLinkTargets.set(registry.lookup),
         error: () => this.availableWikiLinkTargets.set(null),
       });
   }

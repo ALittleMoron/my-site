@@ -81,12 +81,13 @@ describe('ArticleFormComponent', () => {
     };
     wikiLinkTargetsService = {
       getTargets: jest.fn().mockReturnValue(
-        of(
-          new Map([
+        of({
+          groups: [],
+          lookup: new Map([
             ['articles', new Set(['typed-article'])],
             ['matrix', new Set(['known-question'])],
           ]),
-        ),
+        }),
       ),
     };
     articlesService = {

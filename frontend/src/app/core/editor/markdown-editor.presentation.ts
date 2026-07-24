@@ -3,6 +3,8 @@ import { EditorState, Range, type Extension } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { tokenizeMarkdownCode } from '../markdown/markdown-syntax-highlighter';
+import { parseWikiLink } from '../wiki-links/wiki-links';
+import { activeWikiLinkContext, type WikiLinkSourceRange } from './markdown-editor.wiki-links';
 
 export interface MarkdownVisibleRange {
   from: number;
@@ -12,6 +14,7 @@ export interface MarkdownVisibleRange {
 const inlineCodeDecoration = Decoration.mark({ class: 'cm-markdown-inline-code' });
 const lineDecorations = new Map<string, Decoration>();
 const prismTokenDecorations = new Map<string, Decoration>();
+const wikiLinkDecorations = new Map<string, Decoration>();
 const prismHighlightClasses: Readonly<Record<string, readonly string[]>> = {
   comment: ['tok-comment'],
   prolog: ['tok-comment'],
@@ -52,7 +55,12 @@ class MarkdownPresentationView {
   }
 
   update(update: ViewUpdate): void {
-    if (update.docChanged || update.viewportChanged) {
+    if (
+      update.docChanged ||
+      update.viewportChanged ||
+      update.selectionSet ||
+      syntaxTree(update.startState) !== syntaxTree(update.state)
+    ) {
       this.decorations = buildMarkdownPresentationDecorations(
         update.state,
         update.view.visibleRanges,
@@ -138,16 +146,158 @@ export function buildMarkdownPresentationDecorations(
             inlineRangeKeys.add(key);
             inlineRanges.push(inlineCodeDecoration.range(from, to));
           }
+          return;
+        }
+        if (node.name === 'Link') {
+          addCompletedWikiLinkDecorations(
+            state,
+            visibleRange,
+            node.node,
+            inlineRanges,
+            inlineRangeKeys,
+          );
         }
       },
     });
   }
+
+  addActiveWikiLinkDecorations(state, visibleRanges, inlineRanges, inlineRangeKeys);
 
   const ranges: Range<Decoration>[] = [...inlineRanges];
   for (const [position, classes] of lineClasses) {
     ranges.push(lineDecoration([...classes].join(' ')).range(position));
   }
   return Decoration.set(ranges, true);
+}
+
+function addCompletedWikiLinkDecorations(
+  state: EditorState,
+  visibleRange: MarkdownVisibleRange,
+  link: SyntaxNode,
+  ranges: Range<Decoration>[],
+  rangeKeys: Set<string>,
+): void {
+  const candidateFrom = link.from - 1;
+  const candidateTo = link.to + 1;
+  if (candidateFrom < 0 || candidateTo > state.doc.length) {
+    return;
+  }
+  const candidate = state.sliceDoc(candidateFrom, candidateTo);
+  const parsed = parseWikiLink(candidate);
+  if (parsed === null) {
+    return;
+  }
+
+  const domainFrom = candidateFrom + 2;
+  const colonFrom = domainFrom + parsed.type.length;
+  const slugFrom = colonFrom + 1;
+  const slugTo = slugFrom + parsed.slug.length;
+  addWikiLinkDecoration(
+    { from: candidateFrom, to: domainFrom },
+    visibleRange,
+    'cm-wiki-link-delimiter',
+    ranges,
+    rangeKeys,
+  );
+  addWikiLinkDecoration(
+    { from: domainFrom, to: colonFrom },
+    visibleRange,
+    'cm-wiki-link-domain',
+    ranges,
+    rangeKeys,
+  );
+  addWikiLinkDecoration(
+    { from: colonFrom, to: slugFrom },
+    visibleRange,
+    'cm-wiki-link-colon',
+    ranges,
+    rangeKeys,
+  );
+  addWikiLinkDecoration(
+    { from: slugFrom, to: slugTo },
+    visibleRange,
+    'cm-wiki-link-slug',
+    ranges,
+    rangeKeys,
+  );
+  if (state.sliceDoc(slugTo, slugTo + 1) === '|') {
+    addWikiLinkDecoration(
+      { from: slugTo, to: slugTo + 1 },
+      visibleRange,
+      'cm-wiki-link-label-separator',
+      ranges,
+      rangeKeys,
+    );
+    addWikiLinkDecoration(
+      { from: slugTo + 1, to: candidateTo - 2 },
+      visibleRange,
+      'cm-wiki-link-label',
+      ranges,
+      rangeKeys,
+    );
+  }
+  addWikiLinkDecoration(
+    { from: candidateTo - 2, to: candidateTo },
+    visibleRange,
+    'cm-wiki-link-delimiter',
+    ranges,
+    rangeKeys,
+  );
+}
+
+function addActiveWikiLinkDecorations(
+  state: EditorState,
+  visibleRanges: readonly MarkdownVisibleRange[],
+  ranges: Range<Decoration>[],
+  rangeKeys: Set<string>,
+): void {
+  const active = activeWikiLinkContext(state, state.selection.main.head);
+  if (active === null) {
+    return;
+  }
+  for (const visibleRange of visibleRanges) {
+    addActiveWikiLinkRange(active.opening, visibleRange, 'delimiter', ranges, rangeKeys);
+    addActiveWikiLinkRange(active.domain, visibleRange, 'domain', ranges, rangeKeys);
+    if (active.colon !== null) {
+      addActiveWikiLinkRange(active.colon, visibleRange, 'colon', ranges, rangeKeys);
+    }
+    if (active.slug !== null) {
+      addActiveWikiLinkRange(active.slug, visibleRange, 'slug', ranges, rangeKeys);
+    }
+  }
+}
+
+function addActiveWikiLinkRange(
+  range: WikiLinkSourceRange,
+  visibleRange: MarkdownVisibleRange,
+  semanticClass: 'delimiter' | 'domain' | 'colon' | 'slug',
+  ranges: Range<Decoration>[],
+  rangeKeys: Set<string>,
+): void {
+  addWikiLinkDecoration(
+    range,
+    visibleRange,
+    `cm-wiki-link-${semanticClass} cm-wiki-link-active`,
+    ranges,
+    rangeKeys,
+  );
+}
+
+function addWikiLinkDecoration(
+  range: WikiLinkSourceRange,
+  visibleRange: MarkdownVisibleRange,
+  className: string,
+  ranges: Range<Decoration>[],
+  rangeKeys: Set<string>,
+): void {
+  const from = Math.max(range.from, visibleRange.from);
+  const to = Math.min(range.to, visibleRange.to);
+  const key = `${from}:${to}:${className}`;
+  if (from >= to || rangeKeys.has(key)) {
+    return;
+  }
+  rangeKeys.add(key);
+  ranges.push(wikiLinkDecoration(className).range(from, to));
 }
 
 function addFencedCodeSyntax(
@@ -303,6 +453,16 @@ function prismTokenDecoration(className: string): Decoration {
   }
   const decoration = Decoration.mark({ class: className });
   prismTokenDecorations.set(className, decoration);
+  return decoration;
+}
+
+function wikiLinkDecoration(className: string): Decoration {
+  const existing = wikiLinkDecorations.get(className);
+  if (existing !== undefined) {
+    return existing;
+  }
+  const decoration = Decoration.mark({ class: className });
+  wikiLinkDecorations.set(className, decoration);
   return decoration;
 }
 

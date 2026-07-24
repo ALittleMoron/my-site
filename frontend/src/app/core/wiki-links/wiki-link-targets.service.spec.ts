@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { ApiClient } from '../http/api-client.service';
 import { WikiLinkTargetsService } from './wiki-link-targets.service';
+import { WikiLinkTargetRegistry } from './wiki-links';
 
 describe('WikiLinkTargetsService', () => {
   let service: WikiLinkTargetsService;
@@ -24,25 +25,93 @@ describe('WikiLinkTargetsService', () => {
   afterEach(() => httpMock.verify());
 
   it('loads typed wiki-link targets with explicit language', () => {
-    let articleTargets: ReadonlySet<string> | undefined;
-    let matrixTargets: ReadonlySet<string> | undefined;
+    let received: WikiLinkTargetRegistry | undefined;
 
-    service.getTargets('ru').subscribe((targets) => {
-      articleTargets = targets.get('articles');
-      matrixTargets = targets.get('matrix');
-    });
+    service.getTargets('ru').subscribe((registry) => (received = registry));
 
     const req = httpMock.expectOne((r) => r.url.endsWith('/api/admin/wiki-links/targets'));
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('language')).toBe('ru');
     req.flush({
       targets: [
-        { type: 'articles', slugs: ['typed-articles'] },
-        { type: 'matrix', slugs: ['how-to-write-function'] },
+        {
+          type: 'articles',
+          items: [
+            {
+              slug: 'typed-articles',
+              title: 'Типизированные статьи',
+              publishStatus: 'Published',
+            },
+          ],
+        },
+        {
+          type: 'matrix',
+          items: [
+            {
+              slug: 'how-to-write-function',
+              title: 'Как написать функцию',
+              publishStatus: 'Draft',
+            },
+          ],
+        },
       ],
     });
 
-    expect(articleTargets).toEqual(new Set(['typed-articles']));
-    expect(matrixTargets).toEqual(new Set(['how-to-write-function']));
+    expect(received?.groups).toEqual([
+      {
+        type: 'articles',
+        items: [
+          {
+            slug: 'typed-articles',
+            title: 'Типизированные статьи',
+            publishStatus: 'Published',
+          },
+        ],
+      },
+      {
+        type: 'matrix',
+        items: [
+          {
+            slug: 'how-to-write-function',
+            title: 'Как написать функцию',
+            publishStatus: 'Draft',
+          },
+        ],
+      },
+    ]);
+    expect(received?.lookup.get('articles')).toEqual(new Set(['typed-articles']));
+    expect(received?.lookup.get('matrix')).toEqual(new Set(['how-to-write-function']));
+  });
+
+  it('shares one HTTP request between subscribers for the same language', () => {
+    const first = jest.fn();
+    const second = jest.fn();
+
+    service.getTargets('ru').subscribe(first);
+    service.getTargets('ru').subscribe(second);
+
+    const requests = httpMock.match((request) =>
+      request.url.endsWith('/api/admin/wiki-links/targets'),
+    );
+    expect(requests).toHaveLength(1);
+    requests[0].flush({ targets: [] });
+
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches RU and EN registries separately', () => {
+    service.getTargets('ru').subscribe();
+    service.getTargets('en').subscribe();
+    service.getTargets('ru').subscribe();
+
+    const requests = httpMock.match((request) =>
+      request.url.endsWith('/api/admin/wiki-links/targets'),
+    );
+    expect(requests).toHaveLength(2);
+    expect(requests.map((request) => request.request.params.get('language'))).toEqual(['ru', 'en']);
+    for (const request of requests) {
+      request.flush({ targets: [] });
+    }
   });
 });

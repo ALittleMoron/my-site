@@ -215,11 +215,17 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
       ru:
         'Статьи, вопросы матрицы и RU→EN workspace перешли с Toast UI на общий ' +
         'CodeMirror-редактор: вкладки исходника и безопасного превью, независимые от раскладки ' +
-        'горячие клавиши, smart lists/fences, поиск и вставка нескольких изображений.',
+        'горячие клавиши, smart lists/fences, поиск и вставка нескольких изображений. ' +
+        'Wiki-ссылки получили синтаксическую подсветку и двухшаговое автодополнение домена и цели: ' +
+        'черновики и опубликованные материалы видны в одном списке, а вставка с клавиатуры ' +
+        'оставляет место для необязательной подписи.',
       en:
         'Articles, matrix questions, and the RU→EN workspace moved from Toast UI to a shared ' +
         'CodeMirror editor with source and sanitized-preview tabs, layout-independent shortcuts, ' +
-        'smart lists and fences, search, and ordered multi-image insertion.',
+        'smart lists and fences, search, and ordered multi-image insertion. Wiki-links now have ' +
+        'syntax-aware highlighting and two-stage domain/target completion: Draft and Published ' +
+        'content is discoverable together, while keyboard-first insertion leaves room for an ' +
+        'optional label.',
     },
     tagIds: ['admin', 'frontend', 'content', 'matrix', 'localization', 'quality'],
   },

@@ -1,4 +1,4 @@
-import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
+import { closeBrackets } from '@codemirror/autocomplete';
 import { history } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { bracketMatching, indentUnit, syntaxHighlighting } from '@codemirror/language';
@@ -14,6 +14,7 @@ import {
 } from '@codemirror/view';
 import { classHighlighter } from '@lezer/highlight';
 import { markdownPresentation } from './markdown-editor.presentation';
+import { markdownEditorWikiLinks } from './markdown-editor.wiki-links';
 
 export const markdownEditorLanguage = markdown({ base: markdownLanguage });
 
@@ -31,7 +32,7 @@ export const markdownEditorFoundationExtensions: readonly Extension[] = [
   highlightActiveLineGutter(),
   bracketMatching(),
   closeBrackets(),
-  autocompletion({ activateOnTyping: false }),
+  markdownEditorWikiLinks,
   search({ top: true }),
   highlightSelectionMatches(),
   syntaxHighlighting(classHighlighter),
