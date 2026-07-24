@@ -302,8 +302,12 @@
 }
 
 .question-detail :where(img, table),
-.articles-markdown :where(table) {
+.articles-markdown :where(img, table) {
   max-width: 100%;
+}
+
+.articles-markdown :where(img) {
+  height: auto;
 }
 
 .question-detail :where(pre, table),

@@ -66,16 +66,6 @@
   background: transparent;
 }
 
-.articles-markdown :where(img) {
-  max-width: 100%;
-  height: auto;
-}
-
-.articles-markdown :where(pre, table) {
-  max-width: 100%;
-  overflow-x: auto;
-}
-
 @media (max-width: 991.98px) {
   .articles-layout,
   .articles-layout-panel-open {
