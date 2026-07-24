@@ -163,18 +163,17 @@
                   {{ 'adminResumeWorkspace.field.language' | t }}
                   <span class="required-marker" aria-hidden="true">*</span>
                 </label>
-                <select
-                  id="resume-create-language"
-                  class="form-select"
-                  [class.is-invalid]="createFieldInvalid('language')"
-                  data-testid="resume-create-language"
+                <app-site-select
+                  inputId="resume-create-language"
+                  [options]="languageSelectOptions()"
+                  controlSize="default"
+                  appearance="default"
+                  [required]="true"
+                  [invalid]="createFieldInvalid('language')"
+                  [controlDisabled]="false"
+                  testId="resume-create-language"
                   formControlName="language"
-                >
-                  <option value="">{{ 'shared.notSet' | t }}</option>
-                  @for (language of languageOptions; track language.value) {
-                    <option [value]="language.value">{{ language.labelKey | t }}</option>
-                  }
-                </select>
+                />
                 @if (createFieldInvalid('language') && createFieldMessage('language'); as message) {
                   <div class="invalid-feedback d-block">{{ message }}</div>
                 }

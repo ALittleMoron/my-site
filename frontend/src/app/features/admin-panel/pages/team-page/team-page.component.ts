@@ -21,6 +21,10 @@ import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-sta
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
+import {
   AdminAction,
   AdminActionsDropdownComponent,
 } from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
@@ -80,6 +84,7 @@ const MANAGED_ACCOUNT_ROLE_OPTIONS: readonly ManagedAccountRoleOption[] = [
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './team-page.component.html',
@@ -128,6 +133,23 @@ export class TeamPageComponent implements OnInit {
       ? MANAGED_ACCOUNT_ROLE_OPTIONS
       : MANAGED_ACCOUNT_ROLE_OPTIONS.filter((role) => role.value === 'moderator'),
   );
+  readonly createRoleSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.roleOptions().map((role) => ({
+        value: role.value,
+        label: this.i18n.translate(role.labelKey),
+      })),
+    ];
+  });
+  readonly roleSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return this.roleOptions().map((role) => ({
+      value: role.value,
+      label: this.i18n.translate(role.labelKey),
+    }));
+  });
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
   readonly usernamePattern = ADMIN_ACCOUNT_USERNAME_PATTERN_ATTRIBUTE;
   readonly currentUsername = computed(() => this.auth.currentUser()?.username ?? '');

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { chooseSiteSelectOption } from '../../../../testing/site-select-testing';
 import { AdminMatrixStructure } from '../../models/matrix-question-workspace.model';
 import { MatrixQuestionWorkspaceService } from '../../services/matrix-question-workspace.service';
 import { AdminUnsavedChangesScope } from '../../services/admin-unsaved-changes.service';
@@ -90,7 +91,7 @@ describe('MatrixStructurePickerComponent', () => {
     const subsection = select('[data-testid="matrix-structure-subsection"]');
 
     expect(service.getStructure).toHaveBeenCalledWith('ru');
-    expect(sheet.textContent).toContain('Питон');
+    expect(fixture.nativeElement.textContent).toContain('Питон');
     expect(section.disabled).toBe(true);
     expect(subsection.disabled).toBe(true);
 
@@ -98,13 +99,13 @@ describe('MatrixStructurePickerComponent', () => {
     fixture.detectChanges();
 
     expect(section.disabled).toBe(false);
-    expect(section.textContent).toContain('Основы');
+    expect(fixture.nativeElement.textContent).toContain('Основы');
 
     choose(section, SECTION_ID);
     fixture.detectChanges();
 
     expect(subsection.disabled).toBe(false);
-    expect(subsection.textContent).toContain('Стиль');
+    expect(fixture.nativeElement.textContent).toContain('Стиль');
   });
 
   it('keeps unfinished inline-create drafts across a language reload', () => {
@@ -475,18 +476,15 @@ describe('MatrixStructurePickerComponent', () => {
       'ru',
     );
     expect(emit).toHaveBeenLastCalledWith(NEW_SUBSECTION_ID);
-    expect(select('[data-testid="matrix-structure-subsection"]').textContent).toContain(
-      'Типизация',
-    );
+    expect(fixture.nativeElement.textContent).toContain('Типизация');
   });
 
-  function select(selector: string): HTMLSelectElement {
-    return fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
+  function select(selector: string): HTMLButtonElement {
+    return fixture.nativeElement.querySelector(selector) as HTMLButtonElement;
   }
 
-  function choose(element: HTMLSelectElement, value: string): void {
-    element.value = value;
-    element.dispatchEvent(new Event('change'));
+  function choose(element: HTMLButtonElement, value: string): void {
+    chooseSiteSelectOption(fixture, `#${element.id}`, value);
   }
 
   function setInput(selector: string, value: string): void {

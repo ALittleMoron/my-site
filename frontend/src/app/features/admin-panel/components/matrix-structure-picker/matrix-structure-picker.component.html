@@ -22,22 +22,19 @@
       {{ 'matrix.form.sheet' | t }}
       <span class="required-marker" aria-hidden="true">*</span>
     </label>
-    <select
+    <app-site-select
       #sheetSelect
-      id="matrix-structure-sheet"
-      class="form-select"
-      data-testid="matrix-structure-sheet"
-      [disabled]="disabled || loading()"
+      inputId="matrix-structure-sheet"
+      [options]="sheetSelectOptions()"
+      controlSize="default"
+      appearance="default"
+      [required]="true"
+      [invalid]="false"
+      [controlDisabled]="disabled || loading()"
       [value]="selectedSheetId() ?? ''"
-      (change)="onSheetChange($any($event.target).value)"
-    >
-      <option value="" [selected]="selectedSheetId() === null">{{ 'shared.notSet' | t }}</option>
-      @for (sheet of structure().sheets; track sheet.id) {
-        <option [value]="sheet.id" [selected]="selectedSheetId() === sheet.id">
-          {{ sheet.name }}
-        </option>
-      }
-    </select>
+      testId="matrix-structure-sheet"
+      (valueChange)="onSheetChange($event)"
+    />
   </div>
 
   <div class="col-12 col-md-4">
@@ -45,22 +42,19 @@
       {{ 'matrix.form.section' | t }}
       <span class="required-marker" aria-hidden="true">*</span>
     </label>
-    <select
+    <app-site-select
       #sectionSelect
-      id="matrix-structure-section"
-      class="form-select"
-      data-testid="matrix-structure-section"
-      [disabled]="disabled || loading() || selectedSheetId() === null"
+      inputId="matrix-structure-section"
+      [options]="sectionSelectOptions()"
+      controlSize="default"
+      appearance="default"
+      [required]="true"
+      [invalid]="false"
+      [controlDisabled]="disabled || loading() || selectedSheetId() === null"
       [value]="selectedSectionId() ?? ''"
-      (change)="onSectionChange($any($event.target).value)"
-    >
-      <option value="" [selected]="selectedSectionId() === null">{{ 'shared.notSet' | t }}</option>
-      @for (section of selectedSections(); track section.id) {
-        <option [value]="section.id" [selected]="selectedSectionId() === section.id">
-          {{ section.name }}
-        </option>
-      }
-    </select>
+      testId="matrix-structure-section"
+      (valueChange)="onSectionChange($event)"
+    />
   </div>
 
   <div class="col-12 col-md-4">
@@ -68,24 +62,19 @@
       {{ 'matrix.form.subsection' | t }}
       <span class="required-marker" aria-hidden="true">*</span>
     </label>
-    <select
+    <app-site-select
       #subsectionSelect
-      id="matrix-structure-subsection"
-      class="form-select"
-      [class.is-invalid]="invalid"
-      [attr.aria-invalid]="invalid ? 'true' : null"
-      data-testid="matrix-structure-subsection"
-      [disabled]="disabled || loading() || selectedSectionId() === null"
+      inputId="matrix-structure-subsection"
+      [options]="subsectionSelectOptions()"
+      controlSize="default"
+      appearance="default"
+      [required]="true"
+      [invalid]="invalid"
+      [controlDisabled]="disabled || loading() || selectedSectionId() === null"
       [value]="selectedSubsectionId ?? ''"
-      (change)="onSubsectionChange($any($event.target).value)"
-    >
-      <option value="" [selected]="selectedSubsectionId === null">{{ 'shared.notSet' | t }}</option>
-      @for (subsection of selectedSubsections(); track subsection.id) {
-        <option [value]="subsection.id" [selected]="selectedSubsectionId === subsection.id">
-          {{ subsection.name }}
-        </option>
-      }
-    </select>
+      testId="matrix-structure-subsection"
+      (valueChange)="onSubsectionChange($event)"
+    />
   </div>
 </div>
 

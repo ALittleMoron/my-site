@@ -28,6 +28,10 @@ import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/l
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tabs/matrix-sheet-tabs.component';
 import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
+import {
   AdminAction,
   AdminActionsDropdownComponent,
 } from '../../components/admin-actions-dropdown/admin-actions-dropdown.component';
@@ -146,6 +150,7 @@ interface MatrixWorkspaceQueryState {
     AdminActionsDropdownComponent,
     MatrixQuestionFormComponent,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-questions-page.component.html',
@@ -248,6 +253,82 @@ export class MatrixQuestionsPageComponent implements OnInit {
     if (!sectionId) return [];
     return this.sectionOptions().find((option) => option.id === sectionId)?.subsections ?? [];
   });
+  readonly sheetSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.filterOptions().sheets.map((sheet) => ({
+        value: sheet.key,
+        label: sheet.label,
+      })),
+    ];
+  });
+  readonly gradeSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.gradeLabel(null) },
+      ...this.filterOptions().grades.map((grade) => ({
+        value: grade,
+        label: this.gradeLabel(grade),
+      })),
+    ];
+  });
+  readonly interviewFrequencySelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.interviewFrequencyLabel(null) },
+      ...this.filterOptions().interviewFrequencies.map((frequency) => ({
+        value: frequency,
+        label: this.interviewFrequencyLabel(frequency),
+      })),
+    ];
+  });
+  readonly sectionSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.sectionOptions().map((section) => ({
+        value: section.id,
+        label: section.label,
+      })),
+    ];
+  });
+  readonly subsectionSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.subsectionOptions().map((subsection) => ({
+        value: subsection.id,
+        label: subsection.label,
+      })),
+    ];
+  });
+  readonly publishStatusSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.filterOptions().publishStatuses.map((status) => ({
+        value: status,
+        label: this.publishStatusLabel(status),
+      })),
+    ];
+  });
+  readonly missingFieldsSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      { value: 'true', label: this.i18n.translate('adminMatrixWorkspace.hasMissingFields') },
+      { value: 'false', label: this.i18n.translate('adminMatrixWorkspace.noMissingFields') },
+    ];
+  });
+  readonly sortSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return SORTS.map((sort) => ({ value: sort, label: this.sortLabel(sort) }));
+  });
+  readonly pageSizeSelectOptions = PAGE_SIZES.map((pageSize) => ({
+    value: String(pageSize),
+    label: String(pageSize),
+  })) satisfies readonly SiteSelectOption[];
   readonly readonlyMatrixLabels = computed(() => {
     const language = this.previewLanguage();
     return {

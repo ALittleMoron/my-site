@@ -141,10 +141,15 @@
   z-index: 1090;
 }
 
+.form-control:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+}
+
 .form-bordered:focus {
   background-color: var(--main-bg-color) !important;
-  border-color: var(--secondary-component-color) !important;
-  box-shadow: 1px 1px 0.15em rgba(243, 244, 246) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color) !important;
   transform:
     border-color 0.1s easy-in-out,
     box-shadow 0.1s easy-in-out !important;

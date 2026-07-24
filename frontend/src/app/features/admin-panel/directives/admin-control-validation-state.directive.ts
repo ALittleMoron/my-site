@@ -3,8 +3,8 @@ import { NgControl } from '@angular/forms';
 import { controlInvalid } from '../utils/admin-validation';
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector -- Native controls need automatic validation state without per-field attributes.
-  selector: 'input[formControlName], textarea[formControlName], select[formControlName]',
+  // eslint-disable-next-line @angular-eslint/directive-selector -- Native text controls need automatic validation state without per-field attributes.
+  selector: 'input[formControlName], textarea[formControlName]',
   standalone: true,
   host: {
     '[class.is-invalid]': 'invalid',

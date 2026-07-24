@@ -49,6 +49,10 @@ import {
   readOptionalStringQuery,
   replaceAdminQueryParams,
 } from '../../utils/admin-query-state';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
 const IMPORT_FILE_ACCEPT =
@@ -91,6 +95,7 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
     EmptyStateComponent,
     MatrixQuestionFormComponent,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
@@ -170,6 +175,33 @@ export class MatrixQuestionQueuePageComponent implements OnInit {
     const activeSheet = this.filters().sheet;
     if (activeSheet !== '' && activeSheet !== 'notSet') options.add(activeSheet);
     return Array.from(options);
+  });
+  readonly sheetSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('adminMatrixQueue.filters.all') },
+      { value: 'notSet', label: this.i18n.translate('shared.notSet') },
+      ...this.sheetOptions().map((sheet) => ({ value: sheet, label: sheet })),
+    ];
+  });
+  readonly gradeSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('adminMatrixQueue.filters.all') },
+      { value: 'notSet', label: this.i18n.translate('shared.notSet') },
+      ...GRADES.map((grade) => ({ value: grade, label: this.gradeLabel(grade) })),
+    ];
+  });
+  readonly availabilitySelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('adminMatrixQueue.filters.all') },
+      {
+        value: 'available',
+        label: this.i18n.translate('adminMatrixQueue.filters.available'),
+      },
+      { value: 'claimed', label: this.i18n.translate('adminMatrixQueue.filters.claimed') },
+    ];
   });
   readonly filteredQuestions = computed(() => {
     const filters = this.filters();

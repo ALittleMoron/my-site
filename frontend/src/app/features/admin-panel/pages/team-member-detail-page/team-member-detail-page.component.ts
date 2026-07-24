@@ -20,6 +20,10 @@ import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import {
   AdminAction,
@@ -71,6 +75,7 @@ const MANAGED_ACCOUNT_ROLE_OPTIONS: readonly ManagedAccountRoleOption[] = [
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './team-member-detail-page.component.html',
@@ -115,6 +120,13 @@ export class TeamMemberDetailPageComponent implements OnInit {
       ? MANAGED_ACCOUNT_ROLE_OPTIONS
       : MANAGED_ACCOUNT_ROLE_OPTIONS.filter((role) => role.value === 'moderator'),
   );
+  readonly roleSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return this.roleOptions().map((role) => ({
+      value: role.value,
+      label: this.i18n.translate(role.labelKey),
+    }));
+  });
   readonly canRevokeOtherSessions = computed(() => {
     const account = this.account();
     return (

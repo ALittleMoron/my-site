@@ -33,6 +33,10 @@ import {
   LocalizedDatePickerLabels,
 } from '../../../../shared/ui/localized-date-picker/localized-date-picker.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 import { AdminControlValidationStateDirective } from '../../directives/admin-control-validation-state.directive';
 import {
   Resume,
@@ -235,6 +239,7 @@ const RESUME_EXPORT_FORMAT_OPTIONS: readonly ResumeExportFormatOption[] = [
     LocalizedDatePickerComponent,
     AdminControlValidationStateDirective,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './resume-detail-page.component.html',
@@ -259,6 +264,36 @@ export class AdminResumeDetailPageComponent implements OnInit {
   readonly currentStatusOptions = RESUME_CURRENT_STATUS_OPTIONS;
   readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
   readonly exportFormats = RESUME_EXPORT_FORMAT_OPTIONS;
+  readonly currentStatusSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return RESUME_CURRENT_STATUS_OPTIONS.map((option) => ({
+      value: option.value,
+      label: this.i18n.translate(option.labelKey),
+    }));
+  });
+  readonly languageSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...RESUME_LANGUAGE_OPTIONS.map((option) => ({
+        value: option.value,
+        label: this.i18n.translate(option.labelKey),
+      })),
+    ];
+  });
+  readonly exportFormatSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      {
+        value: '',
+        label: this.i18n.translate('adminResumeWorkspace.exportFormatPlaceholder'),
+      },
+      ...RESUME_EXPORT_FORMAT_OPTIONS.map((option) => ({
+        value: option.value,
+        label: this.i18n.translate(option.labelKey),
+      })),
+    ];
+  });
   readonly activeTab = signal<ResumeEditorTab>('profile');
   readonly mode = signal<ResumeEditorMode>('edit');
   readonly exportModalOpen = signal(false);

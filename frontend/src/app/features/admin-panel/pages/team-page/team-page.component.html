@@ -173,17 +173,17 @@
                   {{ 'adminTeamWorkspace.field.role' | t }}
                   <span class="required-marker" aria-hidden="true">*</span>
                 </label>
-                <select
-                  id="team-create-role"
-                  class="form-select"
-                  data-testid="team-create-role"
+                <app-site-select
+                  inputId="team-create-role"
+                  [options]="createRoleSelectOptions()"
+                  controlSize="default"
+                  appearance="default"
+                  [required]="true"
+                  [invalid]="createFieldInvalid('role')"
+                  [controlDisabled]="false"
+                  testId="team-create-role"
                   formControlName="role"
-                >
-                  <option value="">{{ 'shared.notSet' | t }}</option>
-                  @for (role of roleOptions(); track role.value) {
-                    <option [value]="role.value">{{ role.labelKey | t }}</option>
-                  }
-                </select>
+                />
                 @if (createFieldInvalid('role') && createFieldMessage('role'); as message) {
                   <div class="invalid-feedback d-block">{{ message }}</div>
                 }
@@ -272,16 +272,17 @@
             <label class="form-label" for="team-role-role">
               {{ 'adminTeamWorkspace.field.role' | t }}
             </label>
-            <select
-              id="team-role-role"
-              class="form-select"
-              data-testid="team-role-role"
+            <app-site-select
+              inputId="team-role-role"
+              [options]="roleSelectOptions()"
+              controlSize="default"
+              appearance="default"
+              [required]="true"
+              [invalid]="roleFieldInvalid('role')"
+              [controlDisabled]="false"
+              testId="team-role-role"
               formControlName="role"
-            >
-              @for (role of roleOptions(); track role.value) {
-                <option [value]="role.value">{{ role.labelKey | t }}</option>
-              }
-            </select>
+            />
             @if (roleFieldInvalid('role') && roleFieldMessage('role'); as message) {
               <div class="invalid-feedback d-block">{{ message }}</div>
             }

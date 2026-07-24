@@ -119,21 +119,18 @@
           <label class="form-label" for="matrix-question-suggestion-sheet">
             {{ 'matrix.form.sheet' | t }}
           </label>
-          <select
-            id="matrix-question-suggestion-sheet"
-            class="form-select form-bordered mb-3"
-            required
+          <app-site-select
+            inputId="matrix-question-suggestion-sheet"
+            class="mb-3"
+            [options]="suggestionSheetOptions()"
+            controlSize="default"
+            appearance="bordered"
+            [required]="true"
+            [invalid]="false"
             [value]="suggestionSheetKey() ?? ''"
-            [disabled]="suggestionSubmitting() || sheets().length === 0"
-            (change)="onQuestionSuggestionSheetChange($event)"
-          >
-            @if (sheets().length === 0) {
-              <option value="">{{ 'shared.notSet' | t }}</option>
-            }
-            @for (sheet of sheets(); track sheet.key) {
-              <option [value]="sheet.key">{{ sheet.name }}</option>
-            }
-          </select>
+            [controlDisabled]="suggestionSubmitting() || sheets().length === 0"
+            (valueChange)="onQuestionSuggestionSheetChange($event)"
+          />
 
           <label class="form-label" for="matrix-question-suggestion">
             {{ 'matrix.suggestion.question' | t }}

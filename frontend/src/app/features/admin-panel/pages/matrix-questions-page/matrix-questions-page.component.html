@@ -91,127 +91,134 @@
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-sheet">{{ 'matrix.form.sheet' | t }}</label>
-      <select
-        id="matrix-workspace-sheet"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-sheet"
+        [options]="sheetSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="sheetKey"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (sheet of filterOptions().sheets; track sheet.key) {
-          <option [value]="sheet.key">{{ sheet.label }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-grade">{{ 'matrix.form.grade' | t }}</label>
-      <select
-        id="matrix-workspace-grade"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-grade"
+        [options]="gradeSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="grade"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (grade of filterOptions().grades; track grade) {
-          <option [value]="grade">{{ gradeLabel(grade) }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-interview-frequency">
         {{ 'matrix.form.interviewFrequency' | t }}
       </label>
-      <select
-        id="matrix-workspace-interview-frequency"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-interview-frequency"
+        [options]="interviewFrequencySelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="interviewFrequency"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (frequency of filterOptions().interviewFrequencies; track frequency) {
-          <option [value]="frequency">{{ interviewFrequencyLabel(frequency) }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-section">
         {{ 'matrix.form.section' | t }}
       </label>
-      <select
-        id="matrix-workspace-section"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-section"
+        [options]="sectionSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="sectionId"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (section of sectionOptions(); track section.id) {
-          <option [value]="section.id">{{ section.label }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-subsection">
         {{ 'matrix.form.subsection' | t }}
       </label>
-      <select
-        id="matrix-workspace-subsection"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-subsection"
+        [options]="subsectionSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="subsectionId"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (subsection of subsectionOptions(); track subsection.id) {
-          <option [value]="subsection.id">{{ subsection.label }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-status">
         {{ 'adminMatrixWorkspace.status' | t }}
       </label>
-      <select
-        id="matrix-workspace-status"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-status"
+        [options]="publishStatusSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="publishStatus"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (status of filterOptions().publishStatuses; track status) {
-          <option [value]="status">{{ publishStatusLabel(status) }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-3">
       <label class="form-label" for="matrix-workspace-missing">
         {{ 'adminMatrixWorkspace.missingFields' | t }}
       </label>
-      <select
-        id="matrix-workspace-missing"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-missing"
+        [options]="missingFieldsSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="hasMissingFields"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        <option value="true">{{ 'adminMatrixWorkspace.hasMissingFields' | t }}</option>
-        <option value="false">{{ 'adminMatrixWorkspace.noMissingFields' | t }}</option>
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-3">
       <label class="form-label" for="matrix-workspace-sort">
         {{ 'adminMatrixWorkspace.sortLabel' | t }}
       </label>
-      <select id="matrix-workspace-sort" class="form-select form-select-sm" formControlName="sort">
-        @for (sort of sorts; track sort) {
-          <option [value]="sort">{{ sortLabel(sort) }}</option>
-        }
-      </select>
+      <app-site-select
+        inputId="matrix-workspace-sort"
+        [options]="sortSelectOptions()"
+        controlSize="small"
+        appearance="default"
+        [required]="true"
+        [invalid]="false"
+        [controlDisabled]="false"
+        formControlName="sort"
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-page-size">
         {{ 'adminMatrixWorkspace.pageSize' | t }}
       </label>
-      <select
-        id="matrix-workspace-page-size"
-        class="form-select form-select-sm"
+      <app-site-select
+        inputId="matrix-workspace-page-size"
+        [options]="pageSizeSelectOptions"
+        controlSize="small"
+        appearance="default"
+        [required]="true"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="pageSize"
-      >
-        @for (pageSize of pageSizes; track pageSize) {
-          <option [value]="pageSize">{{ pageSize }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-6 col-md-4 col-xl-2">
       <label class="form-label" for="matrix-workspace-from">{{

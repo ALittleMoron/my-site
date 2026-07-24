@@ -25,17 +25,17 @@
   </div>
   <div class="col-6 col-md-4 col-xl-2">
     <label class="form-label" for="admin-articles-tag">{{ 'articles.form.tags' | t }}</label>
-    <select
-      id="admin-articles-tag"
-      class="form-select form-select-sm"
+    <app-site-select
+      inputId="admin-articles-tag"
+      [options]="tagSelectOptions()"
+      controlSize="small"
+      appearance="default"
+      [required]="false"
+      [invalid]="false"
+      [controlDisabled]="false"
       [value]="tagSlug() ?? ''"
-      (change)="setTagSlug($any($event.target).value)"
-    >
-      <option value="">{{ 'shared.notSet' | t }}</option>
-      @for (tag of tags(); track tag.id) {
-        <option [value]="tag.slug">{{ tag.name }}</option>
-      }
-    </select>
+      (valueChange)="setTagSlug($event)"
+    />
   </div>
   <div class="col-6 col-md-4 col-xl-2">
     <label class="form-label" for="admin-articles-from">{{ 'articles.filters.from' | t }}</label>
@@ -73,17 +73,18 @@
     <label class="form-label" for="admin-articles-publish-status">
       {{ 'adminMatrixWorkspace.status' | t }}
     </label>
-    <select
-      id="admin-articles-publish-status"
-      data-testid="admin-articles-publish-status"
-      class="form-select form-select-sm"
+    <app-site-select
+      inputId="admin-articles-publish-status"
+      [options]="publishStatusSelectOptions()"
+      controlSize="small"
+      appearance="default"
+      [required]="false"
+      [invalid]="false"
+      [controlDisabled]="false"
       [value]="publishStatus() ?? ''"
-      (change)="setPublishStatus($any($event.target).value)"
-    >
-      <option value="">{{ 'shared.notSet' | t }}</option>
-      <option value="Draft">{{ 'enum.publishStatus.Draft' | t }}</option>
-      <option value="Published">{{ 'enum.publishStatus.Published' | t }}</option>
-    </select>
+      testId="admin-articles-publish-status"
+      (valueChange)="setPublishStatus($event)"
+    />
   </div>
   <div class="col-12 col-md-auto d-flex gap-2">
     <button type="submit" class="btn btn-secondary btn-sm">

@@ -11,6 +11,7 @@ import {
   UploadedMediaFile,
 } from '../../../../../../core/uploads/media-upload.service';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
+import { chooseSiteSelectOption } from '../../../../../../testing/site-select-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { ArticleDetail, ArticleTag } from '../../../../models/article-workspace.model';
 import { AdminUnsavedChangesScope } from '../../../../services/admin-unsaved-changes.service';
@@ -366,7 +367,7 @@ describe('ArticleFormComponent', () => {
     search.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[role="listbox"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.article-tag-suggestions')).toBeNull();
     expect(keyupSpy).not.toHaveBeenCalled();
   });
 
@@ -938,12 +939,7 @@ describe('ArticleFormComponent', () => {
   }
 
   function selectFolder(folderId: string): void {
-    const select = fixture.nativeElement.querySelector(
-      '[data-testid="article-folder-select"]',
-    ) as HTMLSelectElement;
-    select.value = folderId;
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '[data-testid="article-folder-select"]', folderId);
   }
 
   function uploadCoverFile(): File {

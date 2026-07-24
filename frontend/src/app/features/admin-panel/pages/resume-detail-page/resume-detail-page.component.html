@@ -160,20 +160,18 @@
             <label class="form-label" for="resume-export-format">
               {{ 'adminResumeWorkspace.exportFormat' | t }}
             </label>
-            <select
-              #exportFormatSelect
-              id="resume-export-format"
-              class="form-select form-select-sm"
-              data-testid="resume-export-format"
+            <app-site-select
+              inputId="resume-export-format"
+              [options]="exportFormatSelectOptions()"
+              controlSize="small"
+              appearance="default"
+              [required]="false"
+              [invalid]="false"
+              [controlDisabled]="exporting()"
               [value]="selectedExportFormat()"
-              [disabled]="exporting()"
-              (change)="selectExportFormat(exportFormatSelect.value)"
-            >
-              <option value="">{{ 'adminResumeWorkspace.exportFormatPlaceholder' | t }}</option>
-              @for (format of exportFormats; track format.value) {
-                <option [value]="format.value">{{ format.labelKey | t }}</option>
-              }
-            </select>
+              testId="resume-export-format"
+              (valueChange)="selectExportFormat($event)"
+            />
           </div>
 
           @if (exportError()) {
@@ -260,18 +258,18 @@
             <label class="form-label" for="resume-language">
               {{ 'adminResumeWorkspace.field.language' | t }}
             </label>
-            <select
-              id="resume-language"
-              class="form-select resume-language-select"
-              [class.is-invalid]="fieldInvalid(resumeForm.controls.language)"
-              data-testid="resume-language"
+            <app-site-select
+              inputId="resume-language"
+              class="resume-language-select"
+              [options]="languageSelectOptions()"
+              controlSize="default"
+              appearance="default"
+              [required]="true"
+              [invalid]="fieldInvalid(resumeForm.controls.language)"
+              [controlDisabled]="false"
+              testId="resume-language"
               formControlName="language"
-            >
-              <option value="">{{ 'shared.notSet' | t }}</option>
-              @for (language of languageOptions; track language.value) {
-                <option [value]="language.value">{{ language.labelKey | t }}</option>
-              }
-            </select>
+            />
             @if (
               fieldInvalid(resumeForm.controls.language) &&
                 fieldMessage(resumeForm.controls.language);
@@ -676,15 +674,16 @@
                         <label class="form-label" [for]="'resume-experience-current-' + index">
                           {{ 'adminResumeWorkspace.field.currentStatus' | t }}
                         </label>
-                        <select
-                          class="form-select"
-                          [id]="'resume-experience-current-' + index"
+                        <app-site-select
+                          [inputId]="'resume-experience-current-' + index"
+                          [options]="currentStatusSelectOptions()"
+                          controlSize="default"
+                          appearance="default"
+                          [required]="false"
+                          [invalid]="false"
+                          [controlDisabled]="false"
                           formControlName="currentStatus"
-                        >
-                          @for (option of currentStatusOptions; track option.value) {
-                            <option [value]="option.value">{{ option.labelKey | t }}</option>
-                          }
-                        </select>
+                        />
                       </div>
                       <div class="col-md-6">
                         <label

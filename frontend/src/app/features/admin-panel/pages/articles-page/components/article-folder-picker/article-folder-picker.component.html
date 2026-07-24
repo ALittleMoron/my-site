@@ -10,25 +10,18 @@
       {{ 'articles.form.folder' | t }}
       <span class="required-marker" aria-hidden="true">*</span>
     </label>
-    <select
-      id="articleFolderId"
-      class="form-select"
-      data-testid="article-folder-select"
-      [class.is-invalid]="invalid"
-      [attr.aria-invalid]="invalid ? 'true' : null"
-      [disabled]="disabled || loading()"
+    <app-site-select
+      inputId="articleFolderId"
+      [options]="folderSelectOptions()"
+      controlSize="default"
+      appearance="default"
+      [required]="true"
+      [invalid]="invalid"
+      [controlDisabled]="disabled || loading()"
       [value]="selectedFolderId"
-      required
-      aria-required="true"
-      (change)="onFolderChange($any($event.target).value)"
-    >
-      <option value="" [selected]="selectedFolderId === ''">{{ 'shared.notSet' | t }}</option>
-      @for (folder of folders(); track folder.id) {
-        <option [value]="folder.id" [selected]="selectedFolderId === folder.id">
-          {{ folder.name }}
-        </option>
-      }
-    </select>
+      testId="article-folder-select"
+      (valueChange)="onFolderChange($event)"
+    />
   </div>
 
   <div class="col-12 col-lg-8">

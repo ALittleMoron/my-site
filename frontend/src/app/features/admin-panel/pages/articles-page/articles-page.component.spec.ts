@@ -4,6 +4,10 @@ import { BehaviorSubject, of } from 'rxjs';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import {
+  chooseSiteSelectOption,
+  siteSelectOptionValues,
+} from '../../../../testing/site-select-testing';
+import {
   AdminArticleDetail,
   AdminArticleList,
   AdminArticlePayload,
@@ -182,19 +186,10 @@ describe('AdminArticlesPageComponent', () => {
   it('requests articles with the selected publication status', () => {
     fixture.detectChanges();
     service.listArticles.mockClear();
-    const publishStatus = fixture.nativeElement.querySelector(
-      '[data-testid="admin-articles-publish-status"]',
-    );
-
-    expect(publishStatus).toBeInstanceOf(HTMLSelectElement);
-    if (!(publishStatus instanceof HTMLSelectElement)) return;
-    expect(Array.from(publishStatus.options).map((option) => option.value)).toEqual([
-      '',
-      'Draft',
-      'Published',
-    ]);
-    publishStatus.value = 'Draft';
-    publishStatus.dispatchEvent(new Event('change'));
+    expect(
+      siteSelectOptionValues(fixture, '[data-testid="admin-articles-publish-status"]'),
+    ).toEqual(['', 'Draft', 'Published']);
+    chooseSiteSelectOption(fixture, '[data-testid="admin-articles-publish-status"]', 'Draft');
     fixture.nativeElement.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
 
     expect(service.listArticles).toHaveBeenLastCalledWith(

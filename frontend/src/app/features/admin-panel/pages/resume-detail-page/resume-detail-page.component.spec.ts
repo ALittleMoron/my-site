@@ -5,6 +5,7 @@ import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { chooseSiteSelectOption, siteSelectValue } from '../../../../testing/site-select-testing';
 import { Resume, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
@@ -244,11 +245,12 @@ describe('AdminResumeDetailPageComponent', () => {
     const languageField = fixture.nativeElement.querySelector(
       '.resume-language-field',
     ) as HTMLElement | null;
-    const languageSelect = elementByTestId<HTMLSelectElement>('resume-language');
+    const languageSelect = elementByTestId<HTMLButtonElement>('resume-language');
+    const languageSelectHost = languageSelect.closest('app-site-select');
 
     expect(languageField?.classList.contains('col-md-auto')).toBe(true);
     expect(languageSelect.classList.contains('form-select-sm')).toBe(false);
-    expect(languageSelect.classList.contains('resume-language-select')).toBe(true);
+    expect(languageSelectHost?.classList.contains('resume-language-select')).toBe(true);
   });
 
   it('renders top-level repeatable add actions after their lists', () => {
@@ -446,7 +448,7 @@ describe('AdminResumeDetailPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Формат');
     expect(fixture.nativeElement.textContent).toContain('Выберите формат');
-    expect(elementByTestId<HTMLSelectElement>('resume-export-format').value).toBe('');
+    expect(siteSelectValue(fixture, '[data-testid="resume-export-format"]')).toBe('');
     expect(elementByTestId<HTMLButtonElement>('resume-export-submit').disabled).toBe(true);
     expect(fixture.nativeElement.querySelector('.resume-export-modal .btn-warning')).toBeNull();
 
@@ -1354,25 +1356,34 @@ describe('AdminResumeDetailPageComponent', () => {
 
   function inputValue(testId: string): string {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement;
+    if (input instanceof HTMLButtonElement) {
+      return siteSelectValue(fixture, `[data-testid="${testId}"]`);
+    }
     return input.value;
   }
 
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement;
+    if (input instanceof HTMLButtonElement) {
+      chooseSiteSelectOption(fixture, `[data-testid="${testId}"]`, value);
+      return;
+    }
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
     fixture.detectChanges();
   }
 
   function setElementValueById(elementId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`#${elementId}`) as
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement;
+    if (input instanceof HTMLButtonElement) {
+      chooseSiteSelectOption(fixture, `#${elementId}`, value);
+      return;
+    }
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
     fixture.detectChanges();
   }
 

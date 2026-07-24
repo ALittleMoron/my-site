@@ -8,6 +8,7 @@ import {
   OnInit,
   Output,
   SimpleChanges,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -35,11 +36,20 @@ import {
   trimRequired,
   validationMessage,
 } from '../../../../utils/admin-validation';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../../../shared/ui/site-select/site-select.component';
 
 @Component({
   selector: 'app-article-folder-picker',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, AdminControlValidationStateDirective],
+  imports: [
+    ReactiveFormsModule,
+    TranslatePipe,
+    AdminControlValidationStateDirective,
+    SiteSelectComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-folder-picker.component.html',
 })
@@ -63,6 +73,13 @@ export class ArticleFolderPickerComponent implements OnInit, OnChanges {
   readonly creating = signal(false);
   readonly errorKey = signal<string | null>(null);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
+  readonly folderSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.folders().map((folder) => ({ value: folder.id, label: folder.name })),
+    ];
+  });
 
   readonly createForm = this.formBuilder.group({
     key: [

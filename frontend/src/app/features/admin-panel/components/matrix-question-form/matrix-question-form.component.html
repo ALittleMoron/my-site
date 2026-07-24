@@ -97,37 +97,46 @@
     </div>
     <div class="col-12 col-md-4">
       <label class="form-label" for="matrix-form-grade">{{ 'matrix.form.grade' | t }}</label>
-      <select id="matrix-form-grade" class="form-select" formControlName="grade">
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (grade of grades; track grade) {
-          <option [value]="grade">{{ gradeLabel(grade) }}</option>
-        }
-      </select>
+      <app-site-select
+        inputId="matrix-form-grade"
+        [options]="gradeSelectOptions()"
+        controlSize="default"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
+        formControlName="grade"
+      />
     </div>
     <div class="col-12 col-md-4">
       <label class="form-label" for="matrix-form-interview-frequency">
         {{ 'matrix.form.interviewFrequency' | t }}
       </label>
-      <select
-        id="matrix-form-interview-frequency"
-        class="form-select"
+      <app-site-select
+        inputId="matrix-form-interview-frequency"
+        [options]="interviewFrequencySelectOptions()"
+        controlSize="default"
+        appearance="default"
+        [required]="false"
+        [invalid]="false"
+        [controlDisabled]="false"
         formControlName="interviewFrequency"
-      >
-        <option value="">{{ 'shared.notSet' | t }}</option>
-        @for (frequency of interviewFrequencies; track frequency) {
-          <option [value]="frequency">{{ interviewFrequencyLabel(frequency) }}</option>
-        }
-      </select>
+      />
     </div>
     <div class="col-12 col-md-4">
       <label class="form-label" for="matrix-form-status">
         {{ 'adminMatrixWorkspace.status' | t }}
       </label>
-      <select id="matrix-form-status" class="form-select" formControlName="publishStatus">
-        @for (status of publishStatuses; track status) {
-          <option [value]="status">{{ publishStatusLabel(status) }}</option>
-        }
-      </select>
+      <app-site-select
+        inputId="matrix-form-status"
+        [options]="publishStatusSelectOptions()"
+        controlSize="default"
+        appearance="default"
+        [required]="true"
+        [invalid]="false"
+        [controlDisabled]="false"
+        formControlName="publishStatus"
+      />
     </div>
     <div class="col-12">
       <div class="d-flex flex-wrap align-items-center gap-2">

@@ -5,6 +5,7 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { ApiError } from '../../../../core/models/api-error.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { chooseSiteSelectOption } from '../../../../testing/site-select-testing';
 import { Resume, Resumes, ResumePayload } from '../../models/resume-workspace.model';
 import { ResumeWorkspaceService } from '../../services/resume-workspace.service';
 import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
@@ -239,7 +240,7 @@ describe('AdminResumesPageComponent', () => {
 
     const language = fixture.nativeElement.querySelector(
       '[data-testid="resume-create-language"]',
-    ) as HTMLSelectElement;
+    ) as HTMLButtonElement;
     const form = fixture.nativeElement.querySelector(
       '[data-testid="resume-create-form"]',
     ) as HTMLFormElement;
@@ -288,10 +289,13 @@ describe('AdminResumesPageComponent', () => {
 
   function setInputValue(testId: string, value: string): void {
     const input = fixture.nativeElement.querySelector(`[data-testid="${testId}"]`) as
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement;
+    if (input instanceof HTMLButtonElement) {
+      chooseSiteSelectOption(fixture, `[data-testid="${testId}"]`, value);
+      return;
+    }
     input.value = value;
     input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('change'));
   }
 });
 

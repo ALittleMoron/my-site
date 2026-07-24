@@ -7,6 +7,10 @@ import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import {
+  chooseSiteSelectOption,
+  siteSelectOptionValues,
+} from '../../../../testing/site-select-testing';
 import { ManagedAccount, ManagedAccountSession } from '../../models/team-workspace.model';
 import { TeamWorkspaceService } from '../../services/team-workspace.service';
 import { AdminUnsavedChangesService } from '../../services/admin-unsaved-changes.service';
@@ -300,16 +304,18 @@ describe('TeamMemberDetailPageComponent', () => {
   }
 
   function setInputValue(testId: string, value: string): void {
-    const input = elementByTestId<HTMLInputElement | HTMLSelectElement>(testId);
+    const input = elementByTestId<HTMLInputElement | HTMLButtonElement>(testId);
+    if (input instanceof HTMLButtonElement) {
+      chooseSiteSelectOption(fixture, `[data-testid="${testId}"]`, value);
+      return;
+    }
     input.value = value;
     input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 
   function selectOptionValues(testId: string): string[] {
-    const select = elementByTestId<HTMLSelectElement>(testId);
-    return Array.from(select.options).map((option) => option.value);
+    return siteSelectOptionValues(fixture, `[data-testid="${testId}"]`);
   }
 
   function submitForm(testId: string): void {

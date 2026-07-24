@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { chooseSiteSelectOption, siteSelectValue } from '../../../../testing/site-select-testing';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import {
   AdminMatrixQuestionDetailDto,
@@ -1066,10 +1067,7 @@ describe('MatrixQuestionFormComponent', () => {
   }
 
   function setSelect(selector: string, value: string): void {
-    const select = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
-    select.value = value;
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, selector, value);
   }
 
   function selectQuestionSubsection(subsectionId: string): void {
@@ -1149,8 +1147,7 @@ describe('MatrixQuestionFormComponent', () => {
   }
 
   function selectValue(selector: string): string {
-    const select = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
-    return select.value;
+    return siteSelectValue(fixture, selector);
   }
 
   function fieldColumn(selector: string): HTMLElement {

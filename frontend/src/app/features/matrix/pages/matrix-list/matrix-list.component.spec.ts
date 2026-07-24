@@ -12,6 +12,12 @@ import {
   MatrixSheet,
 } from '../../models/matrix-question.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
+import {
+  chooseSiteSelectOption,
+  siteSelectOptionValues,
+  siteSelectTrigger,
+  siteSelectValue,
+} from '../../../../testing/site-select-testing';
 
 const mockSheets: MatrixSheet[] = [
   { key: 'javascript', name: 'JavaScript' },
@@ -591,14 +597,11 @@ describe('MatrixListComponent', () => {
     component.openQuestionSuggestion();
     fixture.detectChanges();
 
-    const select = fixture.nativeElement.querySelector<HTMLSelectElement>(
-      '#matrix-question-suggestion-sheet',
-    );
+    const select = siteSelectTrigger(fixture, '#matrix-question-suggestion-sheet');
 
-    expect(select).toBeTruthy();
-    expect(select?.required).toBe(true);
-    expect(select?.value).toBe('javascript');
-    expect(Array.from(select?.options ?? []).map((option) => option.value)).toEqual([
+    expect(select.getAttribute('aria-required')).toBe('true');
+    expect(siteSelectValue(fixture, '#matrix-question-suggestion-sheet')).toBe('javascript');
+    expect(siteSelectOptionValues(fixture, '#matrix-question-suggestion-sheet')).toEqual([
       'javascript',
       'python',
     ]);
@@ -614,11 +617,7 @@ describe('MatrixListComponent', () => {
     component.openQuestionSuggestion();
     fixture.detectChanges();
 
-    const select = fixture.nativeElement.querySelector<HTMLSelectElement>(
-      '#matrix-question-suggestion-sheet',
-    )!;
-    select.value = 'python';
-    select.dispatchEvent(new Event('change'));
+    chooseSiteSelectOption(fixture, '#matrix-question-suggestion-sheet', 'python');
     component.setQuestionSuggestion('What is PEP 8?');
 
     component.sendQuestionSuggestion();

@@ -4,6 +4,11 @@ import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import {
+  chooseSiteSelectOption,
+  siteSelectOptionLabels,
+  siteSelectTrigger,
+} from '../../../../testing/site-select-testing';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
 import {
@@ -251,11 +256,7 @@ describe('MatrixQuestionsPageComponent', () => {
     ) as HTMLInputElement;
     search.value = 'typing';
     search.dispatchEvent(new Event('input'));
-    const frequency = fixture.nativeElement.querySelector(
-      '#matrix-workspace-interview-frequency',
-    ) as HTMLSelectElement;
-    frequency.value = 'rarely';
-    frequency.dispatchEvent(new Event('change'));
+    chooseSiteSelectOption(fixture, '#matrix-workspace-interview-frequency', 'rarely');
     fixture.nativeElement
       .querySelector<HTMLButtonElement>('[data-testid="matrix-workspace-apply"]')
       ?.click();
@@ -414,41 +415,28 @@ describe('MatrixQuestionsPageComponent', () => {
   });
 
   it('disables and resets dependent section filters from selected sheet and section', () => {
-    const sheet = fixture.nativeElement.querySelector(
-      '#matrix-workspace-sheet',
-    ) as HTMLSelectElement;
-    const section = fixture.nativeElement.querySelector(
-      '#matrix-workspace-section',
-    ) as HTMLSelectElement;
-    const subsection = fixture.nativeElement.querySelector(
-      '#matrix-workspace-subsection',
-    ) as HTMLSelectElement;
+    const section = siteSelectTrigger(fixture, '#matrix-workspace-section');
+    const subsection = siteSelectTrigger(fixture, '#matrix-workspace-subsection');
 
     expect(section.disabled).toBe(true);
     expect(subsection.disabled).toBe(true);
 
-    sheet.value = 'python';
-    sheet.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '#matrix-workspace-sheet', 'python');
 
     expect(section.disabled).toBe(false);
-    expect(section.textContent).toContain('Core');
-    expect(section.textContent).not.toContain('Queries');
+    expect(siteSelectOptionLabels(fixture, '#matrix-workspace-section')).toContain('Core');
+    expect(siteSelectOptionLabels(fixture, '#matrix-workspace-section')).not.toContain('Queries');
 
-    section.value = SECTION_ID;
-    section.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '#matrix-workspace-section', SECTION_ID);
     expect(subsection.disabled).toBe(false);
-    expect(subsection.textContent).toContain('Syntax');
+    expect(siteSelectOptionLabels(fixture, '#matrix-workspace-subsection')).toContain('Syntax');
 
-    sheet.value = 'sql';
-    sheet.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '#matrix-workspace-sheet', 'sql');
 
     expect(section.value).toBe('');
     expect(subsection.value).toBe('');
-    expect(section.textContent).toContain('Queries');
-    expect(section.textContent).not.toContain('Core');
+    expect(siteSelectOptionLabels(fixture, '#matrix-workspace-section')).toContain('Queries');
+    expect(siteSelectOptionLabels(fixture, '#matrix-workspace-section')).not.toContain('Core');
   });
 
   it('marks required fields and clears red border after a required value is entered', () => {
@@ -526,11 +514,7 @@ describe('MatrixQuestionsPageComponent', () => {
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Частый вопрос?');
     setInput('#matrix-form-question-en', 'Frequent question?');
-    const frequency = fixture.nativeElement.querySelector(
-      '#matrix-form-interview-frequency',
-    ) as HTMLSelectElement;
-    frequency.value = 'often';
-    frequency.dispatchEvent(new Event('change'));
+    chooseSiteSelectOption(fixture, '#matrix-form-interview-frequency', 'often');
 
     saveButton().click();
 

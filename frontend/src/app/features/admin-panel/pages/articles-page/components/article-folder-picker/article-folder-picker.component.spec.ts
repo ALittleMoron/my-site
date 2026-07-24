@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideI18nTesting } from '../../../../../../testing/i18n-testing';
+import { chooseSiteSelectOption } from '../../../../../../testing/site-select-testing';
 import { ArticleWorkspaceService } from '../../../../services/article-workspace.service';
 import { AdminUnsavedChangesScope } from '../../../../services/admin-unsaved-changes.service';
 import { ArticleFolderPickerComponent } from './article-folder-picker.component';
@@ -49,10 +50,7 @@ describe('ArticleFolderPickerComponent', () => {
       selectedNames.push(folderValue?.name ?? ''),
     );
 
-    const select = fixture.nativeElement.querySelector('#articleFolderId') as HTMLSelectElement;
-    select.value = 'folder-1';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '#articleFolderId', 'folder-1');
 
     expect(articlesService.getFolders).toHaveBeenCalledWith('ru');
     expect(selectedIds).toEqual(['folder-1']);

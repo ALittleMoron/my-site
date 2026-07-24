@@ -33,6 +33,10 @@ import { MatrixSheetTabsComponent } from '../../../../shared/ui/matrix-sheet-tab
 import { MatrixFilterBarComponent } from './components/matrix-filter-bar/matrix-filter-bar.component';
 import { MatrixGroupedGridComponent } from '../../../../shared/ui/matrix-grouped-grid/matrix-grouped-grid.component';
 import { MatrixQuestionDetailComponent } from './components/matrix-question-detail/matrix-question-detail.component';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 
 const CHOSEN_SHEET_KEY = 'chosenSheet';
 const LINE_BREAKS_PATTERN = /[\r\n]+/g;
@@ -52,6 +56,7 @@ const LINE_BREAKS_PATTERN = /[\r\n]+/g;
     RouterLink,
     TranslatePipe,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   templateUrl: './matrix-list.component.html',
   styleUrl: './matrix-list.component.scss',
@@ -123,6 +128,14 @@ export class MatrixListComponent implements OnInit {
     () => this.suggestionQuestion().trim().length > 0 && this.suggestionSheetKey() !== null,
   );
   readonly suggestionDuplicate = computed(() => this.suggestionError()?.status === 409);
+  readonly suggestionSheetOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    const sheets = this.sheets();
+    if (sheets.length === 0) {
+      return [{ value: '', label: this.i18n.translate('shared.notSet') }];
+    }
+    return sheets.map((sheet) => ({ value: sheet.key, label: sheet.name }));
+  });
   readonly readonlyMatrixLabels = computed(() => {
     this.i18n.language();
     return {
@@ -273,9 +286,8 @@ export class MatrixListComponent implements OnInit {
     this.setQuestionSuggestion(value);
   }
 
-  onQuestionSuggestionSheetChange(event: Event): void {
-    const target = event.target as HTMLSelectElement | null;
-    this.setQuestionSuggestionSheet(target?.value ?? '');
+  onQuestionSuggestionSheetChange(value: string): void {
+    this.setQuestionSuggestionSheet(value);
   }
 
   setQuestionSuggestionSheet(value: string): void {

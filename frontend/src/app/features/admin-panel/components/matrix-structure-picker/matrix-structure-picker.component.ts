@@ -12,7 +12,6 @@ import {
   inject,
   signal,
   viewChild,
-  ElementRef,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -43,6 +42,10 @@ import {
   trimRequired,
   validationMessage,
 } from '../../utils/admin-validation';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 
 interface MatrixStructureCreateFormValue {
   nameRu: string;
@@ -52,7 +55,12 @@ interface MatrixStructureCreateFormValue {
 @Component({
   selector: 'app-matrix-structure-picker',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslatePipe, AdminControlValidationStateDirective],
+  imports: [
+    ReactiveFormsModule,
+    TranslatePipe,
+    AdminControlValidationStateDirective,
+    SiteSelectComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-structure-picker.component.html',
 })
@@ -90,6 +98,33 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
     if (sectionId === null) return [];
     return this.selectedSections().find((section) => section.id === sectionId)?.subsections ?? [];
   });
+  readonly sheetSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.structure().sheets.map((sheet) => ({ value: sheet.id, label: sheet.name })),
+    ];
+  });
+  readonly sectionSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.selectedSections().map((section) => ({
+        value: section.id,
+        label: section.name,
+      })),
+    ];
+  });
+  readonly subsectionSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.selectedSubsections().map((subsection) => ({
+        value: subsection.id,
+        label: subsection.name,
+      })),
+    ];
+  });
 
   readonly sheetForm = this.formBuilder.group({
     key: [
@@ -123,11 +158,9 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   private sheetUnsavedSource: AdminUnsavedChangesSource | null = null;
   private sectionUnsavedSource: AdminUnsavedChangesSource | null = null;
   private subsectionUnsavedSource: AdminUnsavedChangesSource | null = null;
-  private readonly sheetSelect = viewChild.required<ElementRef<HTMLSelectElement>>('sheetSelect');
-  private readonly sectionSelect =
-    viewChild.required<ElementRef<HTMLSelectElement>>('sectionSelect');
-  private readonly subsectionSelect =
-    viewChild.required<ElementRef<HTMLSelectElement>>('subsectionSelect');
+  private readonly sheetSelect = viewChild.required<SiteSelectComponent>('sheetSelect');
+  private readonly sectionSelect = viewChild.required<SiteSelectComponent>('sectionSelect');
+  private readonly subsectionSelect = viewChild.required<SiteSelectComponent>('subsectionSelect');
 
   ngOnInit(): void {
     this.sheetUnsavedSource = this.unsavedChangesScope.registerSource(
@@ -180,11 +213,15 @@ export class MatrixStructurePickerComponent implements OnInit, OnChanges {
   }
 
   focusSubsection(): void {
-    const subsection = this.subsectionSelect().nativeElement;
-    const section = this.sectionSelect().nativeElement;
-    const sheet = this.sheetSelect().nativeElement;
-    const select = !subsection.disabled ? subsection : !section.disabled ? section : sheet;
-    select.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    const subsection = this.subsectionSelect();
+    const section = this.sectionSelect();
+    const sheet = this.sheetSelect();
+    const select = !subsection.effectiveDisabled()
+      ? subsection
+      : !section.effectiveDisabled()
+        ? section
+        : sheet;
+    select.scrollIntoView({ behavior: 'smooth', block: 'center' });
     select.focus({ preventScroll: true });
   }
 

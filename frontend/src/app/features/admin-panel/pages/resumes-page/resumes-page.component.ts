@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -17,6 +18,10 @@ import { NotificationService } from '../../../../core/notifications/notification
 import { EmptyStateComponent } from '../../../../shared/ui/empty-state/empty-state.component';
 import { ErrorMessageComponent } from '../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import {
   Resume,
@@ -67,6 +72,7 @@ const RESUME_LANGUAGE_OPTIONS: readonly ResumeLanguageOption[] = [
     ErrorMessageComponent,
     EmptyStateComponent,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './resumes-page.component.html',
@@ -103,6 +109,16 @@ export class AdminResumesPageComponent implements OnInit {
     summary: '',
   });
   readonly languageOptions = RESUME_LANGUAGE_OPTIONS;
+  readonly languageSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...RESUME_LANGUAGE_OPTIONS.map((option) => ({
+        value: option.value,
+        label: this.i18n.translate(option.labelKey),
+      })),
+    ];
+  });
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
 
   readonly createForm = this.formBuilder.group({

@@ -45,6 +45,10 @@ import {
   readPositiveIntegerQuery,
   replaceAdminQueryParams,
 } from '../../utils/admin-query-state';
+import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
 
 const PAGE_SIZE = 20;
 const ARTICLE_PUBLISH_STATUSES = ['Draft', 'Published'] as const;
@@ -79,6 +83,7 @@ interface ArticleQueryState {
     AdminActionsDropdownComponent,
     ArticleFormComponent,
     ModalScrollDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './articles-page.component.html',
@@ -114,6 +119,23 @@ export class AdminArticlesPageComponent implements OnInit {
   readonly filterApplyAttempted = signal(false);
   readonly publishedFromValid = signal(true);
   readonly publishedToValid = signal(true);
+  readonly tagSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...this.tags().map((tag) => ({ value: tag.slug, label: tag.name })),
+    ];
+  });
+  readonly publishStatusSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.i18n.translate('shared.notSet') },
+      ...ARTICLE_PUBLISH_STATUSES.map((status) => ({
+        value: status,
+        label: this.i18n.translate(`enum.publishStatus.${status}`),
+      })),
+    ];
+  });
   readonly dateLocale = computed(() => this.i18n.dateLocale());
   readonly datePickerLabels = computed<LocalizedDatePickerLabels>(() => ({
     placeholder: this.datePickerTranslation('placeholder'),

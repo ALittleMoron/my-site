@@ -11,6 +11,7 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ApiError } from '../../../../core/models/api-error.model';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
+import { chooseSiteSelectOption } from '../../../../testing/site-select-testing';
 import {
   AdminMatrixQuestionPayload,
   AdminMatrixStructure,
@@ -1449,10 +1450,7 @@ describe('MatrixQuestionQueuePageComponent', () => {
   }
 
   function setSelectValue(selector: string, value: string): void {
-    const element = select(selector);
-    element.value = value;
-    element.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, selector, value);
   }
 
   function expectStatistic(testId: string, expectedValue: string): void {
@@ -1484,15 +1482,8 @@ describe('MatrixQuestionQueuePageComponent', () => {
   }
 
   function fillValidCreateForm(): void {
-    const section = select('[data-testid="matrix-structure-section"]');
-    section.value = SECTION_ID;
-    section.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-
-    const subsection = select('[data-testid="matrix-structure-subsection"]');
-    subsection.value = SUBSECTION_ID;
-    subsection.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseSiteSelectOption(fixture, '[data-testid="matrix-structure-section"]', SECTION_ID);
+    chooseSiteSelectOption(fixture, '[data-testid="matrix-structure-subsection"]', SUBSECTION_ID);
   }
 
   function inputValue(selector: string): string {
@@ -1517,8 +1508,8 @@ describe('MatrixQuestionQueuePageComponent', () => {
     return fixture.nativeElement.querySelector<HTMLButtonElement>(selector)?.textContent?.trim();
   }
 
-  function select(selector: string): HTMLSelectElement {
-    const element = fixture.nativeElement.querySelector(selector) as HTMLSelectElement | null;
+  function select(selector: string): HTMLButtonElement {
+    const element = fixture.nativeElement.querySelector(selector) as HTMLButtonElement | null;
     if (element === null) {
       throw new Error(`Missing queue form select: ${selector}`);
     }

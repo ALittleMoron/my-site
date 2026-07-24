@@ -105,13 +105,19 @@ Never violate these boundaries:
 - Standalone, `OnPush`, `@Input()`/`@Output()` or signal `input()`/`output()` only — no service
   injection or feature/domain state. Keep logic UI-local.
 - Current primitives: `LoadingSpinnerComponent`, `ErrorMessageComponent`, `EmptyStateComponent`,
-  `LocalizedDatePickerComponent`.
+  `LocalizedDatePickerComponent`, `SiteSelectComponent`.
 - Use `LocalizedDatePickerComponent` for calendar-date fields because native date-picker popovers
   cannot be themed consistently with the site. Keep values as ISO `YYYY-MM-DD`, pass all labels
   from backend i18n, and use `controlSize="small"` when the picker sits beside compact inline
   controls. Preserve its modal dialog/grid semantics, roving focus, keyboard navigation, Angular
   Forms validation, and stylesheet-owned positioning; do not replace the native dialog top layer
   with runtime inline positioning that would weaken the strict CSP.
+- Use `SiteSelectComponent` for single-select controls instead of native `<select>`. Feature owners
+  must build localized `readonly SiteSelectOption[]` values and preserve transport/query values
+  exactly; the shared component must not inject `I18nService` or know feature enums. Keep its
+  select-only combobox/listbox ARIA contract, native-like keyboard/typeahead commit and cancel
+  behavior, Angular Forms/CVA integration, top-layer popover, and stylesheet-owned anchor
+  positioning. Do not add runtime inline positioning, visible search, or a separate mobile modal.
 
 ## Feature Structure
 

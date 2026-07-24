@@ -69,6 +69,10 @@ import {
 } from './matrix-question-readiness.model';
 import { MatrixQuestionReadinessPanelComponent } from './matrix-question-readiness-panel.component';
 import {
+  SiteSelectComponent,
+  SiteSelectOption,
+} from '../../../../shared/ui/site-select/site-select.component';
+import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
   isHttpUrl,
@@ -137,6 +141,7 @@ interface AdminMatrixResourceDraft {
     MatrixQuestionTranslationWorkspaceComponent,
     MatrixQuestionReadinessPanelComponent,
     AdminControlValidationStateDirective,
+    SiteSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-form.component.html',
@@ -189,6 +194,30 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   readonly grades = GRADES;
   readonly interviewFrequencies = INTERVIEW_FREQUENCIES;
   readonly publishStatuses = PUBLISH_STATUSES;
+  readonly gradeSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.gradeLabel(null) },
+      ...GRADES.map((grade) => ({ value: grade, label: this.gradeLabel(grade) })),
+    ];
+  });
+  readonly interviewFrequencySelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return [
+      { value: '', label: this.interviewFrequencyLabel(null) },
+      ...INTERVIEW_FREQUENCIES.map((frequency) => ({
+        value: frequency,
+        label: this.interviewFrequencyLabel(frequency),
+      })),
+    ];
+  });
+  readonly publishStatusSelectOptions = computed<readonly SiteSelectOption[]>(() => {
+    this.i18n.language();
+    return PUBLISH_STATUSES.map((status) => ({
+      value: status,
+      label: this.publishStatusLabel(status),
+    }));
+  });
   readonly formSubmitted = signal(false);
   readonly publishError = signal<string | null>(null);
   readonly resourceDrafts = signal<AdminMatrixResourceDraft[]>([]);
