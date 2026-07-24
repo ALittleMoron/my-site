@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from hashlib import md5
 from sys import stdout
 
 from sqlalchemy import (
@@ -27,6 +28,7 @@ from core.agent_access.enums import (
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum, RoleEnum
 from core.competency_matrix.schemas import CompetencyMatrixQuestionFingerprint
+from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
 from infra.postgresql.models import (
     AgentAuditEventModel,
@@ -34,6 +36,7 @@ from infra.postgresql.models import (
     AgentCertificateRotationModel,
     AgentClientModel,
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
@@ -45,6 +48,7 @@ from infra.postgresql.models import (
     CompetencyMatrixSubsectionModel,
     ContactMeModel,
     ExternalResourceModel,
+    FileModel,
     MatrixQuestionClaimModel,
     MatrixQuestionDraftCompletionModel,
     QueuedQuestionModel,
@@ -62,6 +66,8 @@ POSTGRESQL_ID = 2
 PYDANTIC_ID = 3
 GENERAL_TAG_START_ID = 4
 ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
+EXISTING_ARTICLE_CONTENT_FILE_ID = "00000000000000000000000000000001"
+EXISTING_ARTICLE_WITH_CONTENT_FILE_ID = md5(b"99", usedforsecurity=False).hexdigest()
 MATRIX_GRADE_BUCKET_MIDDLE = 2
 MATRIX_GRADE_BUCKET_MIDDLE_PLUS = 3
 MATRIX_FREQUENCY_BUCKET_RARELY = 2
@@ -91,8 +97,10 @@ QUERY_PLAN_SEEDED_MODELS = (
     ExternalResourceModel,
     ArticleReactionModel,
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleToTagSecondaryModel,
     ArticleModel,
+    FileModel,
     ArticleFolderModel,
     TagModel,
     ResumeModel,
@@ -147,6 +155,7 @@ async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile
     await insert_article_folders(connection=connection, profile=profile)
     await insert_articles(connection=connection, profile=profile)
     await insert_article_tag_links(connection=connection, profile=profile)
+    await insert_article_file_usage(connection=connection)
     await insert_article_analytics(connection=connection, profile=profile)
     await insert_article_reactions(connection=connection, profile=profile)
     await insert_resumes(connection=connection, profile=profile)
@@ -441,6 +450,30 @@ async def insert_article_tag_links(
             ["article_id", "tag_id"],
             union_all(target_select, general_select),
             include_defaults=False,
+        ),
+    )
+
+
+async def insert_article_file_usage(*, connection: AsyncConnection) -> None:
+    await connection.execute(
+        insert(FileModel.__table__).values(
+            id=EXISTING_ARTICLE_CONTENT_FILE_ID,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            namespace="query-plan",
+            relative_path="article-content-images/unchanged-content.png",
+            mime_type="image/png",
+            size_bytes=1,
+            name="Unchanged article content image",
+            original_name="unchanged-content.png",
+            original_sha256=None,
+        ),
+    )
+    await connection.execute(
+        insert(ArticleFileUsageModel.__table__).values(
+            id=hex_id(80_001),
+            article_id=EXISTING_ARTICLE_WITH_CONTENT_FILE_ID,
+            file_id=EXISTING_ARTICLE_CONTENT_FILE_ID,
+            usage=FilePurpose.ARTICLE_CONTENT_IMAGE,
         ),
     )
 
@@ -1068,10 +1101,12 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
     stdout.write("Running VACUUM ANALYZE for seeded query-plan tables\n")
     for table_name in (
         "articles__article_model",
+        "articles__article_file_usage_model",
         "articles__tag_model",
         "articles__article_to_tag_secondary_model",
         "articles__article_daily_analytics_model",
         "articles__article_reaction_model",
+        "files__file_model",
         "resumes__resume_model",
         "auth__auth_session_model",
         "competency_matrix__external_resource_model",

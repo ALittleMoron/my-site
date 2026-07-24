@@ -99,6 +99,7 @@ NEW_CONTACT_ID = "10000000000040008000000000000002"
 NEW_ARTICLE_ANALYTICS_VOTER = "query-plan-voter-hash"
 NEW_ARTICLE_FOLDER_ID = "10000000000040008000000000000003"
 EXISTING_ARTICLE_FOLDER_ID = "30000000000040008000000000000001"
+EXISTING_ARTICLE_CONTENT_FILE_ID = hex_id(1)
 NEW_TAG_ID = hex_id(90_000_001)
 NEW_MATRIX_ITEM_ID = hex_id(900_001)
 NEW_MATRIX_SHEET_KEY = "query-plan-new-sheet"
@@ -1150,7 +1151,7 @@ def write_article_for_existing_article() -> Article:
         metadata=empty_article_metadata(),
         created_at=SEED_NOW,
         updated_at=SEED_NOW,
-        content_file_ids=frozenset(),
+        content_file_ids=frozenset({EXISTING_ARTICLE_CONTENT_FILE_ID}),
         tags=Tags(values=[seed_tag(103), seed_tag(97), seed_tag(91)]),
     )
 

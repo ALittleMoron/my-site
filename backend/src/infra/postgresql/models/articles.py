@@ -253,7 +253,7 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
             publish_status=article.publish_status,
             created_at=article.created_at,
             updated_at=article.updated_at,
-            file_usage_links=ArticleFileUsageModel.file_usage_links_from_domain_schema(
+            file_usage_links=ArticleFileUsageModel.from_domain_schema(
                 article=article,
             ),
         )
@@ -275,9 +275,6 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         self.publish_status = article.publish_status
         self.published_at = article.published_at
         self.updated_at = article.updated_at
-        self.file_usage_links = ArticleFileUsageModel.file_usage_links_from_domain_schema(
-            article=article,
-        )
 
     def to_domain_schema(
         self,
@@ -458,7 +455,7 @@ class ArticleFileUsageModel(HexUuidIDMixin, BaseModel):
     )
 
     @classmethod
-    def file_usage_links_from_domain_schema(cls, article: Article) -> list[Self]:
+    def from_domain_schema(cls, article: Article) -> list[Self]:
         return [
             cls(
                 article_id=article.id,

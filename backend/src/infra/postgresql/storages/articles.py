@@ -44,6 +44,7 @@ from core.i18n.enums import LanguageEnum
 from infra.config.constants import constants
 from infra.postgresql.models import (
     ArticleDailyAnalyticsModel,
+    ArticleFileUsageModel,
     ArticleFolderModel,
     ArticleModel,
     ArticleReactionModel,
@@ -325,6 +326,10 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             article=article,
             existing_tag_links=model.tag_links,
         )
+        model.file_usage_links = self._build_file_usage_links(
+            article=article,
+            existing_file_usage_links=model.file_usage_links,
+        )
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
@@ -342,6 +347,20 @@ class ArticlesDatabaseStorage(ArticlesStorage):
             if tag.id in existing_tag_links_by_tag_id
             else ArticleToTagSecondaryModel.from_domain_schema(tag=tag)
             for tag in article.tags
+        ]
+
+    def _build_file_usage_links(
+        self,
+        *,
+        article: Article,
+        existing_file_usage_links: list[ArticleFileUsageModel],
+    ) -> list[ArticleFileUsageModel]:
+        existing_links_by_key = {
+            (link.file_id, link.usage): link for link in existing_file_usage_links
+        }
+        desired_links = ArticleFileUsageModel.from_domain_schema(article=article)
+        return [
+            existing_links_by_key.get((link.file_id, link.usage), link) for link in desired_links
         ]
 
     async def _get_article_model(self, *, slug: str, load_tag_links: bool) -> ArticleModel:

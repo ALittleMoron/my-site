@@ -12,7 +12,7 @@ class TestArticleFileUsageModel(TestCase):
             content_file_ids=frozenset({first_file_id, second_file_id}),
         )
 
-        links = ArticleFileUsageModel.file_usage_links_from_domain_schema(article=article)
+        links = ArticleFileUsageModel.from_domain_schema(article=article)
 
         assert [(link.article_id, link.file_id, link.usage) for link in links] == [
             (article.id, second_file_id, FilePurpose.ARTICLE_CONTENT_IMAGE),

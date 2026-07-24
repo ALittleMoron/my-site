@@ -169,6 +169,26 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         assert updated.content_file_ids == frozenset({second_content.id})
         assert list(usage_file_ids) == [second_content.id]
 
+    async def test_update_article_with_unchanged_file_usage_is_idempotent(self) -> None:
+        content_image = self.factory.core.stored_file(
+            file_id=114,
+            purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
+            relative_path="article-content-images/unchanged-content.png",
+            name="Unchanged content",
+            original_name="unchanged-content.png",
+        )
+        await self.storage_helper.create_file(content_image)
+        article = self.factory.core.article(
+            slug="unchanged-file-usage",
+            content_file_ids=frozenset({content_image.id}),
+        )
+        await self.storage_helper.ensure_article_folder(folder=article.folder)
+        created = await self.storage.create_article(article=article)
+
+        updated = await self.storage.update_article(article=created)
+
+        assert updated.content_file_ids == frozenset({content_image.id})
+
     async def test_update_article_with_unchanged_tags_is_idempotent(self) -> None:
         python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
         postgres = self.factory.core.tag(tag_id=self.factory.core.hex_id(2), slug="postgres")
