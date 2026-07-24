@@ -319,3 +319,15 @@
 .articles-markdown :where(pre, table) {
   overflow-x: auto;
 }
+
+.question-detail :where(table),
+.articles-markdown :where(table) {
+  margin-bottom: 1rem;
+  border-collapse: collapse;
+}
+
+.question-detail :where(th, td),
+.articles-markdown :where(th, td) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+}
