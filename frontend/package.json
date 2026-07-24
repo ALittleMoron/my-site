@@ -23,8 +23,14 @@
     "@angular/platform-server": "^22.0.7",
     "@angular/router": "^22.0.7",
     "@angular/ssr": "^22.0.7",
-    "@toast-ui/editor": "^3.2.2",
-    "@toast-ui/editor-plugin-code-syntax-highlight": "^3.1.0",
+    "@codemirror/autocomplete": "^6.20.2",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-markdown": "^6.5.1",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/search": "^6.0.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.4",
+    "@lezer/highlight": "^1.2.3",
     "bootstrap": "^5.3.8",
     "dompurify": "^3.4.12",
     "express": "^5.2.1",
@@ -60,14 +66,16 @@
     "@angular/cli": {
       "pacote": "21.5.0"
     },
-    "@toast-ui/editor": {
-      "dompurify": "3.4.11"
-    },
     "@tootallnate/once": "2.0.1",
     "ajv": {
       "fast-uri": "3.1.2"
     },
-    "body-parser": {
+    "body-parser@^1.20.0": {
+      ".": "1.20.6",
+      "qs": "6.15.2"
+    },
+    "body-parser@^2.0.0": {
+      ".": "2.3.0",
       "qs": "6.15.2"
     },
     "copy-webpack-plugin": {

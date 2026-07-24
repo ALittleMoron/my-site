@@ -394,13 +394,6 @@
 - [ ] Add Obsidian-compatible Markdown import/export for articles.
 - [ ] Add privacy-safe AI-assisted authoring for spelling, SEO hints, tags, and RU/EN consistency.
 - [ ] TTL (5 min) cache for analytics data
-- [ ] Obsidian-like article editor
-  - [x] Rich text editor
-  - [x] Tags
-  - [ ] Attachments
-  - [x] typed links with articles and matrix questions using `[[articles:<slug>]]` / `[[matrix:<slug>]]`
-  - [ ] Spell checking for Russian and English.
-  - [ ] Check and warn when a wiki-link references unpublished material.
 - [x] Security audit
   - [x] Moderators and admins can edit, add, and delete articles in the admin panel
   - [x] Regular users cannot view hidden articles
@@ -663,6 +656,41 @@ Flashcards should be implemented strictly after auth implementation for common u
 
 ### Other tasks
 
+- [ ] Complete the custom Obsidian-like Markdown editor roadmap.
+  - [x] Add the first stage: modular CodeMirror 6, source/preview tabs, the complete initial
+    physical-key command map, smart lists and fences, search, ordered multi-image insertion, and
+    centralized sanitized preview ([CodeMirror reference](https://codemirror.net/docs/ref/)).
+  - [x] Preserve article tags and typed article/matrix wiki links across the shared-editor
+    migration.
+  - [x] Highlight supported fenced-code languages consistently in source mode and sanitized
+    preview.
+  - [ ] Add an accessible fullscreen mode with a conventional expand/collapse icon, Escape exit,
+    focus and scroll restoration, page-scroll locking, responsive behavior, and no loss of
+    selection or unsaved content.
+  - [ ] Add a backend-synced editor profile for every authenticated content editor.
+    - [ ] Make hotkeys fully configurable with command search, multiple bindings, conflict
+      detection, and reset per command, section, or the whole profile.
+    - [ ] Add appearance settings for font family, font size, line height, readable width,
+      wrapping, line numbers, tab width, editor height, theme, and syntax palette.
+    - [ ] Add behavior settings for the default tab, spellcheck, auto-pairs, smart lists and
+      fences, Tab behavior, and image insertion.
+  - [ ] Add an accessible Markdown command palette with fuzzy search, current shortcuts,
+    recent/pinned commands, and a touch/mobile entry point
+    ([Obsidian hotkeys](https://obsidian.md/help/hotkeys),
+    [command palette](https://obsidian.md/help/plugins/command-palette)).
+  - [ ] Add typed wiki-link autocomplete for articles and matrix questions, target preview, and
+    missing/unpublished target warnings.
+  - [ ] Add a Markdown outline, heading navigation, and folding for heading, list, and code
+    sections.
+  - [ ] Add advanced table editing, callouts, footnotes, templates/snippets, math, and diagrams
+    only together with centralized renderer support and XSS regression tests
+    ([Obsidian Markdown syntax](https://obsidian.md/help/syntax)).
+  - [ ] Add the complete Markdown attachment workflow: progress, cancel, retry, required alt text,
+    existing-file reuse, and orphan cleanup
+    ([Obsidian attachments](https://obsidian.md/help/attachments)).
+  - [ ] Add RU/EN spelling and grammar assistance, word/character/read-time statistics, and
+    localized content diagnostics.
+  - [ ] Add editor profile import/export and settings synchronization between devices.
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [x] UI localisation
 - [x] Database localisation

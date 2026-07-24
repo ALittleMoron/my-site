@@ -236,6 +236,8 @@
           <app-markdown-editor
             #answerRuEditor
             [value]="questionForm.controls.answerRu.value"
+            [language]="'ru'"
+            [accessibleLabel]="'matrix.form.answerRu' | t"
             (valueChange)="setAnswerRu($event)"
           />
         </div>
@@ -261,6 +263,8 @@
           <app-markdown-editor
             #answerEnEditor
             [value]="questionForm.controls.answerEn.value"
+            [language]="'en'"
+            [accessibleLabel]="'matrix.form.answerEn' | t"
             (valueChange)="setAnswerEn($event)"
           />
         </div>
@@ -290,6 +294,8 @@
           <app-markdown-editor
             #explanationRuEditor
             [value]="questionForm.controls.interviewAnswerExplanationRu.value"
+            [language]="'ru'"
+            [accessibleLabel]="'matrix.form.interviewAnswerExplanationRu' | t"
             (valueChange)="setInterviewAnswerExplanationRu($event)"
           />
         </div>
@@ -323,6 +329,8 @@
           <app-markdown-editor
             #explanationEnEditor
             [value]="questionForm.controls.interviewAnswerExplanationEn.value"
+            [language]="'en'"
+            [accessibleLabel]="'matrix.form.interviewAnswerExplanationEn' | t"
             (valueChange)="setInterviewAnswerExplanationEn($event)"
           />
         </div>

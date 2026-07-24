@@ -2,6 +2,7 @@
 @use 'bootstrap/scss/bootstrap';
 @use './theme';
 @use './components';
+@use './markdown-editor';
 
 @include cdk.overlay();
 

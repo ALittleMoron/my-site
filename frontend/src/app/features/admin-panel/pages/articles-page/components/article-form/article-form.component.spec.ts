@@ -214,6 +214,18 @@ describe('ArticleFormComponent', () => {
     expect(elementValue('#articleTitleEn')).toBe('Second article');
   });
 
+  it('passes content language and localized labels to both Markdown editors', () => {
+    const editors = fixture.debugElement
+      .queryAll(By.directive(MarkdownEditorStubComponent))
+      .map((debugElement) => debugElement.componentInstance as MarkdownEditorStubComponent);
+
+    expect(editors.map((editor) => editor.language())).toEqual(['ru', 'en']);
+    expect(editors.map((editor) => editor.accessibleLabel())).toEqual([
+      'Содержимое RU',
+      'Содержимое EN',
+    ]);
+  });
+
   it('emits payload with selected tags', () => {
     const titleRu = fixture.debugElement.query(By.css('#articleTitleRu'))
       .nativeElement as HTMLInputElement;
@@ -1059,6 +1071,8 @@ describe('ArticleFormComponent', () => {
 })
 class MarkdownEditorStubComponent {
   readonly value = input<string>('');
+  readonly language = input.required<'ru' | 'en'>();
+  readonly accessibleLabel = input.required<string>();
   readonly valueChange = output<string>();
 }
 

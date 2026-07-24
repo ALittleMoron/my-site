@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
 import { NotificationService } from '../../../../core/notifications/notification.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -142,6 +143,18 @@ describe('MatrixQuestionTranslationWorkspaceComponent', () => {
     expect(text('[data-testid="matrix-translation-completeness"]')).toContain('2 / 4');
     expect(status('question:question')).toBe('identical');
     expect(status('resource:new--1:context')).toBe('notApplicable');
+  });
+
+  it('uses English content mode and localized names for translation Markdown editors', () => {
+    const editors = fixture.debugElement
+      .queryAll(By.directive(MarkdownEditorStubComponent))
+      .map((debugElement) => debugElement.componentInstance as MarkdownEditorStubComponent);
+
+    expect(editors.map((editor) => editor.language)).toEqual(['en', 'en']);
+    expect(editors.map((editor) => editor.accessibleLabel)).toEqual([
+      'Ответ',
+      'Объяснение ответа на собеседовании',
+    ]);
   });
 
   it('emits explicit review and renders the parent-controlled reviewed signature', () => {
@@ -347,5 +360,7 @@ function packageField(
 @Component({ selector: 'app-markdown-editor', standalone: true, template: '' })
 class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
+  @Input({ required: true }) language!: 'ru' | 'en';
+  @Input({ required: true }) accessibleLabel!: string;
   @Output() readonly valueChange = new EventEmitter<string>();
 }

@@ -30,7 +30,7 @@ Never violate these boundaries:
 | `core/http/api-client.service.ts`            | Typed `HttpClient` wrapper, sets base URL                              |
 | `core/interceptors/auth.interceptor.ts`      | Attaches in-memory PASETO access token unless request context opts out |
 | `core/interceptors/error.interceptor.ts`     | Maps `HttpErrorResponse`, refreshes once on protected 401s             |
-| `core/editor/markdown-editor.component.ts`   | Shared ToastUI Markdown editor with image upload hook                  |
+| `core/editor/markdown-editor.component.ts`   | Shared modular CodeMirror 6 Markdown editor with uploads and preview   |
 | `core/editor/editor-image-upload.service.ts` | Backend multipart upload flow for editor images                        |
 | `core/auth/auth.service.ts`                  | Login/logout/refresh, startup restore, role capability signals         |
 | `core/auth/auth-session.service.ts`          | Current account signal and derived local auth state                    |
@@ -98,6 +98,50 @@ Never violate these boundaries:
   preview labels should render from the saved/selected resume language using backend i18n bundles.
 - Do not localise other database/content text in this layer until the backend supports that content
   explicitly.
+
+## Markdown Editor Architecture
+
+- Treat the shared Markdown editor as an Obsidian-like, keyboard-first source-authoring product.
+  Markdown text remains the source of truth, while syntax-aware presentation makes headings,
+  inline and fenced code, lists, tasks, quotes, callouts, tables, and future supported constructs
+  easy to scan. The current product modes are source and centralized sanitized preview only; do
+  not add a toolbar, live preview, split view, WYSIWYG mode, or a per-consumer renderer without an
+  explicit product decision.
+- Build on direct modular CodeMirror 6 packages, not an Angular wrapper, `basicSetup`, a fork, or
+  copied internals. Use CodeMirror's public extension points—facets, compartments, state fields,
+  view plugins, syntax trees, decorations, keymaps, and transactions—so library upgrades and
+  future editor features remain replaceable at module boundaries.
+- Keep the Angular component an integration shell for browser/SSR lifecycle, required inputs and
+  outputs, focus and tab behavior, backend-driven i18n, and image-upload orchestration. Keep
+  commands, Markdown configuration, and semantic presentation in focused editor modules that do
+  not depend on Angular. Add substantial capabilities as cohesive extensions with tests instead
+  of accumulating unrelated logic in the component.
+- Apply authoring commands as minimal CodeMirror change sets. Never rebuild the whole document for
+  a local edit; preserve history, selections, snippets, upload anchors, scroll, and incremental
+  parser state. A full-document replacement is allowed only for a genuinely changed external
+  input value and must stay out of undo history.
+- Derive source-mode presentation from the CodeMirror syntax tree in a viewport-aware view plugin.
+  Use decorations and stable semantic classes rather than regex-scanning the entire document,
+  rewriting editor DOM, or maintaining a parallel document model. Product CSS owns visual design;
+  parser and transaction code own document semantics. Highlight fenced-code contents through the
+  centralized Prism language registry shared with preview; do not introduce a second source-mode
+  language registry or bundle every CodeMirror language package by default.
+- Pass Angular's CSP nonce into `EditorView.cspNonce` and let CodeMirror provide its runtime base
+  layout and accessibility rules. Compiled editor-scoped CSS may theme public CodeMirror classes
+  and stable `classHighlighter`/semantic classes, but must not copy or override CodeMirror's
+  internal base-theme mechanics.
+- Render preview only through `WikiLinkRendererService`, preserving typed wiki links, Prism
+  highlighting, and DOMPurify as the shared XSS boundary. Never add raw `[innerHTML]`, a second
+  Markdown parser, or consumer-specific sanitization.
+- Keep formatting actions in the typed command registry with stable command IDs and physical
+  `KeyboardEvent.code` mappings for RU/EN layouts. User-facing labels, key explanations, search
+  phrases, upload states, and errors come from backend i18n. Preserve IME composition, native
+  platform undo/redo/navigation, multi-selection, and the CodeMirror `Escape`, then `Tab`
+  keyboard-trap escape hatch.
+- Preserve readable padding, line numbers, line wrapping, light/dark variables, source/preview
+  focus restoration, validation classes, unsaved-value propagation, and image paste/drop/picker
+  ordering. New settings, palettes, syntax features, and attachment flows must extend these
+  foundations rather than bypass them.
 
 ## `shared/ui/` Rules
 

@@ -53,6 +53,78 @@ class TestI18nCatalog:
         assert english_messages["shared.datePicker.formatHint"] == "Date format: MM/DD/YYYY"
         assert english_messages["shared.datePicker.requiredDate"] == "Enter a date."
 
+    def test_markdown_editor_catalog_is_fully_localized(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+        required_keys = {
+            "markdownEditor.mode.aria",
+            "markdownEditor.mode.edit",
+            "markdownEditor.mode.preview",
+            "markdownEditor.preview.empty",
+            "markdownEditor.shortcuts.summary",
+            "markdownEditor.shortcuts.tabEscape",
+            "markdownEditor.shortcuts.modifierHintMac",
+            "markdownEditor.shortcuts.modifierHintOther",
+            "markdownEditor.shortcuts.group.view",
+            "markdownEditor.shortcuts.group.headings",
+            "markdownEditor.shortcuts.group.inline",
+            "markdownEditor.shortcuts.group.blocks",
+            "markdownEditor.shortcuts.group.media",
+            "markdownEditor.upload.uploading",
+            "markdownEditor.upload.failed",
+            "markdownEditor.upload.retry",
+            "markdownEditor.upload.dismiss",
+            "markdownEditor.search.find",
+            "markdownEditor.search.replace",
+            "markdownEditor.search.next",
+            "markdownEditor.search.previous",
+            "markdownEditor.search.all",
+            "markdownEditor.search.matchCase",
+            "markdownEditor.search.regexp",
+            "markdownEditor.search.byWord",
+            "markdownEditor.search.replaceAll",
+            "markdownEditor.search.close",
+            "markdownEditor.search.goToLine",
+            "markdownEditor.search.go",
+            "markdownEditor.search.currentMatch",
+            "markdownEditor.search.onLine",
+            "markdownEditor.search.replacedMatches",
+            "markdownEditor.search.replacedMatchOnLine",
+            "markdownEditor.command.togglePreview",
+            "markdownEditor.command.heading1",
+            "markdownEditor.command.heading2",
+            "markdownEditor.command.heading3",
+            "markdownEditor.command.heading4",
+            "markdownEditor.command.heading5",
+            "markdownEditor.command.heading6",
+            "markdownEditor.command.bold",
+            "markdownEditor.command.italic",
+            "markdownEditor.command.strikethrough",
+            "markdownEditor.command.quote",
+            "markdownEditor.command.unorderedList",
+            "markdownEditor.command.orderedList",
+            "markdownEditor.command.taskList",
+            "markdownEditor.command.horizontalRule",
+            "markdownEditor.command.link",
+            "markdownEditor.command.image",
+            "markdownEditor.command.inlineCode",
+            "markdownEditor.command.codeBlock",
+            "markdownEditor.command.table",
+            "markdownEditor.command.search",
+        }
+
+        assert required_keys <= russian_messages.keys()
+        assert required_keys <= english_messages.keys()
+        assert "Escape" in russian_messages["markdownEditor.shortcuts.tabEscape"]
+        assert "Tab" in english_messages["markdownEditor.shortcuts.tabEscape"]
+        assert "⌘" in russian_messages["markdownEditor.shortcuts.modifierHintMac"]
+        assert "⌘" in english_messages["markdownEditor.shortcuts.modifierHintMac"]
+        assert "keyboard trap" not in russian_messages["markdownEditor.shortcuts.tabEscape"]
+        assert (
+            russian_messages["markdownEditor.shortcuts.modifierHintOther"]
+            == "На Windows и Linux основная клавиша сочетаний — Ctrl."
+        )
+
     def test_shell_catalog_keeps_footer_contact_without_about_navigation(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

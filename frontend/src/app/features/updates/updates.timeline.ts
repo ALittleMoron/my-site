@@ -204,6 +204,26 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['admin', 'backend', 'frontend', 'infra', 'auth'],
   },
   {
+    id: 'custom-markdown-editor',
+    month: '2026-07',
+    order: 14,
+    title: {
+      ru: 'Markdown-редактор стал полностью своим',
+      en: 'Markdown authoring gained a custom editor',
+    },
+    summary: {
+      ru:
+        'Статьи, вопросы матрицы и RU→EN workspace перешли с Toast UI на общий ' +
+        'CodeMirror-редактор: вкладки исходника и безопасного превью, независимые от раскладки ' +
+        'горячие клавиши, smart lists/fences, поиск и вставка нескольких изображений.',
+      en:
+        'Articles, matrix questions, and the RU→EN workspace moved from Toast UI to a shared ' +
+        'CodeMirror editor with source and sanitized-preview tabs, layout-independent shortcuts, ' +
+        'smart lists and fences, search, and ordered multi-image insertion.',
+    },
+    tagIds: ['admin', 'frontend', 'content', 'matrix', 'localization', 'quality'],
+  },
+  {
     id: 'public-seo-layer',
     month: '2026-06',
     order: 10,

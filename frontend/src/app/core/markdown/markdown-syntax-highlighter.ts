@@ -17,6 +17,17 @@ export interface HighlightedMarkdownCode {
   language: string;
 }
 
+export interface MarkdownCodeToken {
+  from: number;
+  to: number;
+  types: readonly string[];
+}
+
+export interface TokenizedMarkdownCode {
+  language: string;
+  tokens: readonly MarkdownCodeToken[];
+}
+
 export type MarkdownPrism = typeof Prism & { manual: boolean };
 
 Prism.manual = true;
@@ -39,8 +50,53 @@ export function highlightMarkdownCode(
   };
 }
 
+export function tokenizeMarkdownCode(
+  code: string,
+  languageInfo: string | undefined,
+): TokenizedMarkdownCode | null {
+  const language = normalizedLanguage(languageInfo);
+  if (language === null) return null;
+
+  const grammar = MARKDOWN_PRISM.languages[language];
+  if (!grammar) return null;
+
+  const tokens: MarkdownCodeToken[] = [];
+  let offset = 0;
+
+  const visit = (stream: Prism.TokenStream, inheritedTypes: readonly string[]): void => {
+    if (typeof stream === 'string') {
+      const from = offset;
+      offset += stream.length;
+      if (from < offset && inheritedTypes.length > 0) {
+        tokens.push({ from, to: offset, types: inheritedTypes });
+      }
+      return;
+    }
+
+    if (Array.isArray(stream)) {
+      for (const token of stream) {
+        visit(token, inheritedTypes);
+      }
+      return;
+    }
+
+    const aliases = typeof stream.alias === 'string' ? [stream.alias] : (stream.alias ?? []);
+    const types = [...new Set([...inheritedTypes, stream.type, ...aliases])].filter(
+      isSafeTokenType,
+    );
+    visit(stream.content, types);
+  };
+
+  visit(MARKDOWN_PRISM.tokenize(code, grammar), []);
+  return { language, tokens };
+}
+
 function normalizedLanguage(languageInfo: string | undefined): string | null {
   const language = languageInfo?.trim().split(/\s+/, 1)[0].toLowerCase() ?? '';
   if (!/^[a-z][a-z0-9-]*$/.test(language)) return null;
   return language;
+}
+
+function isSafeTokenType(value: string): boolean {
+  return /^[a-z][a-z0-9-]*$/.test(value);
 }

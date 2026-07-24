@@ -112,6 +112,8 @@
               >
                 <app-markdown-editor
                   [value]="row.field.translation"
+                  [language]="'en'"
+                  [accessibleLabel]="fieldLabelKey(row.field) | t"
                   (valueChange)="updateTranslation(row.field, $event)"
                 />
               </div>

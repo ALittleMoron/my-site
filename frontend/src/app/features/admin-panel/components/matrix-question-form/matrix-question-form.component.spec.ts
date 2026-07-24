@@ -187,6 +187,20 @@ describe('MatrixQuestionFormComponent', () => {
     );
   });
 
+  it('passes language and localized labels to every Markdown editor', () => {
+    const editors = fixture.debugElement
+      .queryAll(By.directive(MarkdownEditorStubComponent))
+      .map((debugElement) => debugElement.componentInstance as MarkdownEditorStubComponent);
+
+    expect(editors.map((editor) => editor.language)).toEqual(['ru', 'en', 'ru', 'en']);
+    expect(editors.map((editor) => editor.accessibleLabel)).toEqual([
+      'Ответ RU',
+      'Ответ EN',
+      'Объяснение ответа на собеседовании RU',
+      'Объяснение ответа на собеседовании EN',
+    ]);
+  });
+
   it.each<MatrixQuestionControlValidationCase>([
     {
       description: 'slug pattern',
@@ -1185,6 +1199,8 @@ class MatrixStructurePickerStubComponent {
 })
 class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
+  @Input({ required: true }) language!: 'ru' | 'en';
+  @Input({ required: true }) accessibleLabel!: string;
   @Output() readonly valueChange = new EventEmitter<string>();
 
   readonly focus = jest.fn();

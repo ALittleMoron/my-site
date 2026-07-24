@@ -236,7 +236,7 @@
   white-space: pre;
 }
 
-:where(.markdown-code, .toastui-editor-contents, .toastui-editor-ww-container) {
+.markdown-code {
   .token.comment,
   .token.prolog,
   .token.doctype,
