@@ -22,6 +22,7 @@ import {
 } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { browserApiOriginInterceptor } from './core/interceptors/browser-api-origin.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { GlobalErrorHandler } from './core/error/global-error-handler';
 import { I18nService } from './core/i18n/i18n.service';
@@ -51,7 +52,9 @@ export const appConfig: ApplicationConfig = {
       withEventReplay(),
       withHttpTransferCacheOptions({ filter: shouldTransferCacheRequest }),
     ),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withInterceptors([authInterceptor, errorInterceptor, browserApiOriginInterceptor]),
+    ),
     provideAppInitializer(() => initializeAuth()),
     provideAppInitializer(() => initializeI18n()),
     { provide: TitleStrategy, useClass: LocalizedTitleStrategy },
@@ -86,6 +89,7 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
   return (
     pathname.startsWith('/api/articles/detail/') ||
     pathname.startsWith('/api/competency-matrix/items/public/') ||
+    pathname === '/api/articles/public-stats' ||
     pathname === '/api/articles/tags' ||
     pathname === '/api/articles/tree' ||
     pathname === '/api/articles'

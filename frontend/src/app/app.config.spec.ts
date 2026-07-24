@@ -21,6 +21,14 @@ describe('appConfig HTTP transfer cache filter', () => {
     ).toBe(true);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/articles/tags'))).toBe(true);
     expect(shouldTransferCacheRequest(new HttpRequest('GET', '/api/articles/tree'))).toBe(true);
+    expect(
+      shouldTransferCacheRequest(
+        new HttpRequest(
+          'GET',
+          '/api/articles/public-stats?articleIds=00000000-0000-0000-0000-000000000001',
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('excludes auth, private, analytics, and reaction requests', () => {
