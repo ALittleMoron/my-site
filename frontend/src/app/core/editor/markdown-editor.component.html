@@ -1,39 +1,80 @@
 <div class="markdown-editor-shell" tabindex="-1" (keydown)="onContainerKeydown($event)">
-  <div
-    class="markdown-editor-tabs"
-    role="tablist"
-    [attr.aria-label]="'markdownEditor.mode.aria' | t"
-  >
-    <button
-      type="button"
-      role="tab"
-      class="markdown-editor-tab"
-      data-testid="markdown-editor-edit-tab"
-      [id]="editTabId"
-      [attr.aria-selected]="mode() === 'edit'"
-      [attr.aria-controls]="sourcePanelId"
-      [attr.tabindex]="mode() === 'edit' ? 0 : -1"
-      (click)="selectMode('edit')"
-      (keydown)="onModeTabKeydown($event)"
+  <header #editorHeader class="markdown-editor-header" data-testid="markdown-editor-header">
+    <div
+      class="markdown-editor-tabs"
+      role="tablist"
+      [attr.aria-label]="'markdownEditor.mode.aria' | t"
     >
-      {{ 'markdownEditor.mode.edit' | t }}
-    </button>
-    <button
-      #previewTab
-      type="button"
-      role="tab"
-      class="markdown-editor-tab"
-      data-testid="markdown-editor-preview-tab"
-      [id]="previewTabId"
-      [attr.aria-selected]="mode() === 'preview'"
-      [attr.aria-controls]="previewPanelId"
-      [attr.tabindex]="mode() === 'preview' ? 0 : -1"
-      (click)="selectMode('preview')"
-      (keydown)="onModeTabKeydown($event)"
-    >
-      {{ 'markdownEditor.mode.preview' | t }}
-    </button>
-  </div>
+      <button
+        type="button"
+        role="tab"
+        class="markdown-editor-tab"
+        data-testid="markdown-editor-edit-tab"
+        [id]="editTabId"
+        [attr.aria-selected]="mode() === 'edit'"
+        [attr.aria-controls]="sourcePanelId"
+        [attr.tabindex]="mode() === 'edit' ? 0 : -1"
+        (click)="selectMode('edit')"
+        (keydown)="onModeTabKeydown($event)"
+      >
+        {{ 'markdownEditor.mode.edit' | t }}
+      </button>
+      <button
+        #previewTab
+        type="button"
+        role="tab"
+        class="markdown-editor-tab"
+        data-testid="markdown-editor-preview-tab"
+        [id]="previewTabId"
+        [attr.aria-selected]="mode() === 'preview'"
+        [attr.aria-controls]="previewPanelId"
+        [attr.tabindex]="mode() === 'preview' ? 0 : -1"
+        (click)="selectMode('preview')"
+        (keydown)="onModeTabKeydown($event)"
+      >
+        {{ 'markdownEditor.mode.preview' | t }}
+      </button>
+    </div>
+
+    @if (mode() === 'edit') {
+      <div
+        class="markdown-editor-toolbar"
+        data-testid="markdown-editor-toolbar"
+        role="toolbar"
+        [attr.aria-label]="'markdownEditor.toolbar.aria' | t"
+      >
+        @for (group of toolbarGroups; track group.id; let firstGroup = $first) {
+          <div
+            class="markdown-editor-toolbar-group"
+            role="group"
+            [attr.aria-label]="group.labelKey | t"
+          >
+            @for (command of group.commands; track command.id; let firstCommand = $first) {
+              <button
+                type="button"
+                class="markdown-editor-toolbar-button"
+                [attr.data-markdown-command]="command.id"
+                [attr.aria-label]="toolbarCommandLabel(command)"
+                [attr.title]="toolbarCommandLabel(command)"
+                [tabindex]="firstGroup && firstCommand ? 0 : -1"
+                (click)="executeToolbarCommand(command)"
+                (keydown)="onToolbarKeydown($event)"
+              >
+                <svg
+                  class="markdown-editor-toolbar-icon"
+                  aria-hidden="true"
+                  focusable="false"
+                  viewBox="0 0 24 24"
+                >
+                  <path [attr.d]="toolbarIconPath(command.id)"></path>
+                </svg>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </header>
 
   <section
     role="tabpanel"
@@ -79,77 +120,90 @@
     (change)="onImageInput($event)"
   />
 
-  <div class="markdown-editor-status" aria-live="polite" aria-atomic="true">
-    @if (wikiLinkRegistryUnavailable()) {
-      <span data-testid="markdown-editor-wiki-link-registry-error">
-        {{ 'markdownEditor.wikiLinks.registryUnavailable' | t }}
-      </span>
-    }
-    @if (uploading()) {
-      <span>{{ 'markdownEditor.upload.uploading' | t }}</span>
-    }
-    @for (upload of uploadErrors(); track upload.id) {
-      <div
-        class="markdown-editor-upload-error"
-        data-testid="markdown-editor-upload-error"
-        role="alert"
-      >
-        <span>
-          {{ 'markdownEditor.upload.failed' | t: { fileName: upload.file.name } }}
+  <footer #editorFooter class="markdown-editor-footer" data-testid="markdown-editor-footer">
+    <div class="markdown-editor-status" aria-live="polite" aria-atomic="true">
+      @if (wikiLinkRegistryUnavailable()) {
+        <span data-testid="markdown-editor-wiki-link-registry-error">
+          {{ 'markdownEditor.wikiLinks.registryUnavailable' | t }}
         </span>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-primary"
-          data-testid="markdown-editor-upload-retry"
-          (click)="retryUpload(upload.id)"
+      }
+      @if (uploading()) {
+        <span>{{ 'markdownEditor.upload.uploading' | t }}</span>
+      }
+      @for (upload of uploadErrors(); track upload.id) {
+        <div
+          class="markdown-editor-upload-error"
+          data-testid="markdown-editor-upload-error"
+          role="alert"
         >
-          {{ 'markdownEditor.upload.retry' | t }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          data-testid="markdown-editor-upload-dismiss"
-          (click)="dismissUpload(upload.id)"
-        >
-          {{ 'markdownEditor.upload.dismiss' | t }}
-        </button>
-      </div>
-    }
-  </div>
-
-  <details class="markdown-editor-shortcuts" data-testid="markdown-editor-shortcuts">
-    <summary>{{ 'markdownEditor.shortcuts.summary' | t }}</summary>
-    <div class="markdown-editor-shortcuts-intro">
-      <p>{{ shortcutModifierHintKey | t }}</p>
-      <p>{{ 'markdownEditor.shortcuts.tabEscape' | t }}</p>
-    </div>
-    <div class="markdown-editor-shortcut-grid">
-      @for (group of shortcutGroups; track group.id) {
-        <section
-          class="markdown-editor-shortcut-group"
-          data-testid="markdown-editor-shortcut-group"
-          [attr.aria-label]="group.labelKey | t"
-        >
-          <h4>{{ group.labelKey | t }}</h4>
-          <dl>
-            @for (command of group.commands; track command.id) {
-              <div class="markdown-editor-shortcut-row">
-                <dt>{{ command.labelKey | t }}</dt>
-                <dd>
-                  <kbd class="markdown-editor-shortcut" [attr.aria-label]="shortcutLabel(command)">
-                    @for (part of shortcutParts(command); track $index; let last = $last) {
-                      <span class="markdown-editor-keycap">{{ part }}</span>
-                      @if (!last) {
-                        <span class="markdown-editor-shortcut-plus" aria-hidden="true">+</span>
-                      }
-                    }
-                  </kbd>
-                </dd>
-              </div>
-            }
-          </dl>
-        </section>
+          <span>
+            {{ 'markdownEditor.upload.failed' | t: { fileName: upload.file.name } }}
+          </span>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary"
+            data-testid="markdown-editor-upload-retry"
+            (click)="retryUpload(upload.id)"
+          >
+            {{ 'markdownEditor.upload.retry' | t }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            data-testid="markdown-editor-upload-dismiss"
+            (click)="dismissUpload(upload.id)"
+          >
+            {{ 'markdownEditor.upload.dismiss' | t }}
+          </button>
+        </div>
       }
     </div>
-  </details>
+
+    <details class="markdown-editor-shortcuts" data-testid="markdown-editor-shortcuts">
+      <summary
+        data-testid="markdown-editor-shortcuts-summary"
+        (keydown)="onShortcutsKeydown($event)"
+        (keyup)="onShortcutsKeyup($event)"
+      >
+        {{ 'markdownEditor.shortcuts.summary' | t }}
+      </summary>
+      <div class="markdown-editor-shortcuts-panel">
+        <div class="markdown-editor-shortcuts-intro">
+          <p>{{ shortcutModifierHintKey | t }}</p>
+          <p>{{ 'markdownEditor.shortcuts.tabEscape' | t }}</p>
+        </div>
+        <div class="markdown-editor-shortcut-grid">
+          @for (group of shortcutGroups; track group.id) {
+            <section
+              class="markdown-editor-shortcut-group"
+              data-testid="markdown-editor-shortcut-group"
+              [attr.aria-label]="group.labelKey | t"
+            >
+              <h4>{{ group.labelKey | t }}</h4>
+              <dl>
+                @for (command of group.commands; track command.id) {
+                  <div class="markdown-editor-shortcut-row">
+                    <dt>{{ command.labelKey | t }}</dt>
+                    <dd>
+                      <kbd
+                        class="markdown-editor-shortcut"
+                        [attr.aria-label]="shortcutLabel(command)"
+                      >
+                        @for (part of shortcutParts(command); track $index; let last = $last) {
+                          <span class="markdown-editor-keycap">{{ part }}</span>
+                          @if (!last) {
+                            <span class="markdown-editor-shortcut-plus" aria-hidden="true">+</span>
+                          }
+                        }
+                      </kbd>
+                    </dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+        </div>
+      </div>
+    </details>
+  </footer>
 </div>

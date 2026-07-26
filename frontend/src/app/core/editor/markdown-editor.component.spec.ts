@@ -7,6 +7,7 @@ import { provideI18nTesting } from '../../testing/i18n-testing';
 import { WikiLinkTargetsService } from '../wiki-links/wiki-link-targets.service';
 import { createWikiLinkTargetRegistry } from '../wiki-links/wiki-links';
 import { EditorImageUploadService } from './editor-image-upload.service';
+import { MARKDOWN_EDITOR_SHORTCUT_GROUPS } from './markdown-editor.commands';
 import { MarkdownEditorComponent } from './markdown-editor.component';
 import { wikiLinkCompletionSource } from './markdown-editor.wiki-links';
 
@@ -14,6 +15,7 @@ const EDITOR_MESSAGES = {
   'markdownEditor.mode.aria': 'Режим Markdown-редактора',
   'markdownEditor.mode.edit': 'Редактор',
   'markdownEditor.mode.preview': 'Превью',
+  'markdownEditor.toolbar.aria': 'Действия Markdown-редактора',
   'markdownEditor.preview.empty': 'Нет содержимого для предпросмотра.',
   'markdownEditor.shortcuts.summary': 'Горячие клавиши',
   'markdownEditor.shortcuts.tabEscape': 'Нажмите Escape, затем Tab, чтобы выйти из редактора.',
@@ -38,6 +40,27 @@ const EDITOR_MESSAGES = {
   'markdownEditor.search.close': 'Закрыть',
   'markdownEditor.completions': 'Варианты',
   'markdownEditor.wikiLinks.registryUnavailable': 'Не удалось загрузить варианты wiki-ссылок.',
+  'markdownEditor.command.togglePreview': 'Редактор / Превью',
+  'markdownEditor.command.heading1': 'Заголовок 1',
+  'markdownEditor.command.heading2': 'Заголовок 2',
+  'markdownEditor.command.heading3': 'Заголовок 3',
+  'markdownEditor.command.heading4': 'Заголовок 4',
+  'markdownEditor.command.heading5': 'Заголовок 5',
+  'markdownEditor.command.heading6': 'Заголовок 6',
+  'markdownEditor.command.bold': 'Жирный',
+  'markdownEditor.command.italic': 'Курсив',
+  'markdownEditor.command.strikethrough': 'Зачёркнутый',
+  'markdownEditor.command.quote': 'Цитата',
+  'markdownEditor.command.unorderedList': 'Маркированный список',
+  'markdownEditor.command.orderedList': 'Нумерованный список',
+  'markdownEditor.command.taskList': 'Список задач',
+  'markdownEditor.command.horizontalRule': 'Горизонтальная линия',
+  'markdownEditor.command.link': 'Ссылка',
+  'markdownEditor.command.image': 'Изображение',
+  'markdownEditor.command.inlineCode': 'Строчный код',
+  'markdownEditor.command.codeBlock': 'Блок кода',
+  'markdownEditor.command.table': 'Таблица',
+  'markdownEditor.command.search': 'Поиск и замена',
   'enum.publishStatus.Draft': 'Черновик',
   'enum.publishStatus.Published': 'Опубликовано',
 };
@@ -430,6 +453,123 @@ describe('MarkdownEditorComponent', () => {
     expect(document.activeElement).toBe(previewTab);
   });
 
+  it('renders every source command as an accessible icon action and hides it in preview', () => {
+    const toolbar = query<HTMLElement>('[data-testid="markdown-editor-toolbar"]');
+    const expectedCommandIds = MARKDOWN_EDITOR_SHORTCUT_GROUPS.flatMap((group) =>
+      group.commandIds.filter((commandId) => commandId !== 'togglePreview'),
+    );
+    const commandButtons = Array.from(
+      toolbar.querySelectorAll<HTMLButtonElement>('[data-markdown-command]'),
+    );
+
+    expect(toolbar.getAttribute('aria-label')).toBe('Действия Markdown-редактора');
+    expect(commandButtons.map((button) => button.dataset['markdownCommand'])).toEqual(
+      expectedCommandIds,
+    );
+    expect(
+      toolbar
+        .querySelector<HTMLButtonElement>('[data-markdown-command="bold"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('Жирный (Ctrl + B)');
+    expect(
+      toolbar
+        .querySelector<HTMLButtonElement>('[data-markdown-command="bold"]')
+        ?.getAttribute('title'),
+    ).toBe('Жирный (Ctrl + B)');
+    expect(
+      commandButtons.every((button) => {
+        const icon = button.querySelector<SVGElement>('.markdown-editor-toolbar-icon');
+        return (
+          button.textContent?.trim() === '' &&
+          icon !== null &&
+          (icon.querySelector('path')?.getAttribute('d')?.length ?? 0) > 0
+        );
+      }),
+    ).toBe(true);
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="markdown-editor-toolbar"]'),
+    ).toBeNull();
+  });
+
+  it('uses roving focus across toolbar commands', () => {
+    const buttons = Array.from(
+      query<HTMLElement>(
+        '[data-testid="markdown-editor-toolbar"]',
+      ).querySelectorAll<HTMLButtonElement>('[data-markdown-command]'),
+    );
+    buttons[0]?.focus();
+
+    buttons[0]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.activeElement).toBe(buttons[1]);
+
+    buttons[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    expect(document.activeElement).toBe(buttons.at(-1));
+
+    buttons.at(-1)?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('applies toolbar commands through the current editor selection and restores focus', () => {
+    const view = editorView();
+    view.dispatch({ selection: { anchor: 0, head: 7 } });
+    query<HTMLButtonElement>('[data-markdown-command="bold"]').click();
+    fixture.detectChanges();
+
+    expect(view.state.doc.toString()).toBe('**Initial** **markdown**');
+    expect(document.activeElement).toBe(contentElement());
+  });
+
+  it('applies snippet toolbar commands through the shared command path', () => {
+    const view = editorView();
+    view.dispatch({ selection: { anchor: view.state.doc.length } });
+
+    query<HTMLButtonElement>('[data-markdown-command="table"]').click();
+    fixture.detectChanges();
+
+    expect(view.state.doc.toString()).toContain('|  |  |');
+    expect(view.state.doc.toString()).toContain('| --- | --- |');
+    expect(document.activeElement).toBe(contentElement());
+  });
+
+  it('opens search and image selection from toolbar actions', () => {
+    const imageInput = query<HTMLInputElement>('input[type="file"]');
+    const imagePicker = jest.spyOn(imageInput, 'click').mockImplementation(() => undefined);
+
+    query<HTMLButtonElement>('[data-markdown-command="search"]').click();
+    fixture.detectChanges();
+    const searchInput = query<HTMLInputElement>('.cm-search input[name="search"]');
+    expect(searchInput.placeholder).toBe('Найти');
+    expect(document.activeElement).toBe(searchInput);
+
+    query<HTMLButtonElement>('[data-markdown-command="image"]').click();
+    expect(imagePicker).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the image insertion position captured by the toolbar command', () => {
+    const emitted: string[] = [];
+    const view = editorView();
+    const imageInput = query<HTMLInputElement>('input[type="file"]');
+    const file = new File(['picked'], 'picked.png', { type: 'image/png' });
+    fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+    uploadService.uploadEditorImage.mockReturnValue(of('https://cdn.example.com/picked.png'));
+    jest.spyOn(imageInput, 'click').mockImplementation(() => undefined);
+    view.dispatch({ selection: { anchor: 8 } });
+
+    query<HTMLButtonElement>('[data-markdown-command="image"]').click();
+    view.dispatch({ selection: { anchor: 0 } });
+    Object.defineProperty(imageInput, 'files', { configurable: true, value: [file] });
+    imageInput.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(emitted.at(-1)).toBe(
+      'Initial ![picked.png](https://cdn.example.com/picked.png)**markdown**',
+    );
+  });
+
   it('renders unsaved Markdown through the sanitized centralized preview', () => {
     const warning = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     fixture.componentRef.setInput(
@@ -517,7 +657,7 @@ describe('MarkdownEditorComponent', () => {
     expect(query<HTMLElement>('[data-testid="markdown-editor-preview-panel"]').hidden).toBe(false);
   });
 
-  it('restores editor focus and scroll after toggling preview from the keyboard', () => {
+  it('restores editor focus without restoring editor-owned scroll', () => {
     const scroller = query<HTMLElement>('.cm-scroller');
     scroller.scrollTop = 84;
     contentElement().focus();
@@ -545,9 +685,58 @@ describe('MarkdownEditorComponent', () => {
       }),
     );
     fixture.detectChanges();
+    scroller.scrollTop = 11;
 
-    expect(scroller.scrollTop).toBe(84);
+    expect(scroller.scrollTop).toBe(11);
     expect(document.activeElement).toBe(contentElement());
+  });
+
+  it('preserves the nearest external scroll container when switching modes', () => {
+    const scrollContainer = document.createElement('div');
+    scrollContainer.style.overflowY = 'auto';
+    Object.defineProperty(scrollContainer, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    Object.defineProperty(scrollContainer, 'scrollHeight', {
+      configurable: true,
+      value: 12_000,
+    });
+    document.body.append(scrollContainer);
+    scrollContainer.append(fixture.nativeElement);
+    scrollContainer.scrollTop = 4_200;
+    const frameCallbacks: FrameRequestCallback[] = [];
+    const requestAnimationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frameCallbacks.push(callback);
+        return frameCallbacks.length;
+      });
+
+    fixture.componentInstance.selectMode('preview');
+    fixture.detectChanges();
+    scrollContainer.scrollTop = 3_943;
+    frameCallbacks.shift()?.(0);
+    scrollContainer.scrollTop = 3_943;
+    frameCallbacks.shift()?.(16);
+
+    expect(scrollContainer.scrollTop).toBe(4_200);
+
+    requestAnimationFrame.mockRestore();
+    scrollContainer.remove();
+  });
+
+  it('reports sticky header and footer heights as CodeMirror scroll margins', () => {
+    const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
+    const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
+    Object.defineProperty(header, 'offsetHeight', { configurable: true, value: 72 });
+    Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
+    const view = editorView();
+    const margins = view.state
+      .facet(EditorView.scrollMargins)
+      .map((provideMargins) => provideMargins(view));
+
+    expect(margins).toContainEqual({ top: 72, bottom: 48 });
   });
 
   it('opens localized CodeMirror search and contains editor shortcuts inside the editor', () => {
@@ -752,6 +941,26 @@ describe('MarkdownEditorComponent', () => {
     expect(shortcuts.querySelectorAll('.markdown-editor-keycap').length).toBeGreaterThan(20);
   });
 
+  it('closes the shortcut panel with Escape and restores summary focus', () => {
+    const shortcuts = query<HTMLDetailsElement>('[data-testid="markdown-editor-shortcuts"]');
+    const summary = query<HTMLElement>('[data-testid="markdown-editor-shortcuts-summary"]');
+    const outerKeyup = jest.fn();
+    fixture.nativeElement.addEventListener('keyup', outerKeyup);
+    summary.click();
+    expect(shortcuts.open).toBe(true);
+
+    summary.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+    summary.dispatchEvent(
+      new KeyboardEvent('keyup', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+
+    expect(shortcuts.open).toBe(false);
+    expect(document.activeElement).toBe(summary);
+    expect(outerKeyup).not.toHaveBeenCalled();
+  });
+
   function editorElement(): HTMLElement {
     return query<HTMLElement>('.cm-editor');
   }
@@ -855,5 +1064,5 @@ function replaceEditorDocument(view: EditorView, document: string, cursor: numbe
 }
 
 async function waitForAutocomplete(): Promise<void> {
-  await new Promise((resolve) => window.setTimeout(resolve, 230));
+  await new Promise((resolve) => window.setTimeout(resolve, 500));
 }

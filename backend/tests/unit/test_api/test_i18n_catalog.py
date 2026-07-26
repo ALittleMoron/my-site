@@ -60,6 +60,7 @@ class TestI18nCatalog:
             "markdownEditor.mode.aria",
             "markdownEditor.mode.edit",
             "markdownEditor.mode.preview",
+            "markdownEditor.toolbar.aria",
             "markdownEditor.preview.empty",
             "markdownEditor.shortcuts.summary",
             "markdownEditor.shortcuts.tabEscape",

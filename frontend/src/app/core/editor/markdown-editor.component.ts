@@ -18,7 +18,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  acceptCompletion,
   closeBracketsKeymap,
+  completionStatus,
   nextSnippetField,
   prevSnippetField,
   snippet,
@@ -77,6 +79,39 @@ interface ResolvedShortcutGroup {
   commands: readonly MarkdownEditorCommandDefinition[];
 }
 
+interface ExternalScrollSnapshot {
+  container: Element;
+  top: number;
+  left: number;
+}
+
+const MARKDOWN_EDITOR_TOOLBAR_ICON_PATHS = {
+  togglePreview: 'M4 5h7v14H4zM15 5h5v14h-5z',
+  search: 'M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0M16 16l4 4',
+  heading1: 'M4 5v14M12 5v14M4 12h8M16 11l2-2v10M16 19h4',
+  heading2: 'M4 5v14M12 5v14M4 12h8M16 11a2 2 0 1 1 4 0c0 1.5-4 4.5-4 8h4',
+  heading3: 'M4 5v14M12 5v14M4 12h8M16 10a2.5 2.5 0 1 1 2 4 2.5 2.5 0 1 1-2 4',
+  heading4: 'M4 5v14M12 5v14M4 12h8M20 19V9l-4 6h5',
+  heading5: 'M4 5v14M12 5v14M4 12h8M20 9h-4v4h2a3 3 0 1 1-2 5',
+  heading6: 'M4 5v14M12 5v14M4 12h8M20 9h-1c-2 0-3 2-3 5v2a3 3 0 1 0 3-3h-3',
+  bold: 'M7 4h6a4 4 0 0 1 0 8H7zm0 8h7a4 4 0 0 1 0 8H7z',
+  italic: 'M10 4h8M6 20h8M15 4 9 20',
+  strikethrough:
+    'M7 5h10M6 12h12M9 19h6M16 8c0-2-1.5-3-4-3S8 6 8 8c0 1.7 1.3 2.6 4 3.3 2.7.7 4 1.6 4 3.7 0 2-1.5 4-4 4s-4-1.5-4-3',
+  quote: 'M5 7h6v6H7c0 2 1 3 3 4M14 7h6v6h-4c0 2 1 3 3 4',
+  unorderedList: 'M5 6h.01M5 12h.01M5 18h.01M9 6h11M9 12h11M9 18h11',
+  orderedList: 'M4 5h1v3M4 8h2M4 11h2l-2 3h2M4 17h2l-2 3h2M10 6h10M10 12h10M10 18h10',
+  taskList: 'M3 4h5v5H3zM3 15h5v5H3zM4.5 6.5l1 1L8 5M11 6.5h10M11 17.5h10',
+  horizontalRule: 'M4 12h16',
+  link: 'M10 13a5 5 0 0 0 7.1.1l2-2A5 5 0 0 0 12 4l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1',
+  image:
+    'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2M11 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0M4 17l5-5 4 4 2-2 5 5',
+  inlineCode: 'M8 8 4 12l4 4M16 8l4 4-4 4M14 4l-4 16',
+  codeBlock: 'M8 8 4 12l4 4M16 8l4 4-4 4M13 5l-2 14',
+  table:
+    'M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1M3 9h18M3 15h18M9 4v16M15 4v16',
+} satisfies Readonly<Record<MarkdownEditorCommandId, string>>;
+
 let editorInstanceId = 0;
 
 @Component({
@@ -105,11 +140,16 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private syncingInput = false;
   private focusPending = false;
   private restoreEditorFocus = false;
-  private savedScrollTop = 0;
+  private consumeShortcutsEscapeKeyup = false;
+  private pendingImageInsertionPosition: number | null = null;
   private nextUploadId = 0;
   private currentWikiLinkCompletionData: WikiLinkCompletionData | null = null;
 
+  @ViewChild('editorHeader', { static: true })
+  private readonly editorHeader!: ElementRef<HTMLElement>;
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
+  @ViewChild('editorFooter', { static: true })
+  private readonly editorFooter!: ElementRef<HTMLElement>;
   @ViewChild('imageInput', { static: true })
   private readonly imageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('previewTab', { static: true })
@@ -135,6 +175,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   );
   readonly previewEmpty = computed(() => this.internalValue().trim() === '');
   readonly shortcutGroups = resolveShortcutGroups();
+  readonly toolbarGroups = resolveToolbarGroups(this.shortcutGroups);
   readonly shortcutModifierHintKey =
     this.editorPlatform() === 'mac'
       ? 'markdownEditor.shortcuts.modifierHintMac'
@@ -227,7 +268,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     });
     if (this.focusPending) {
       this.focusPending = false;
-      this.editorView.focus();
+      this.focusEditor(this.editorView);
     }
   }
 
@@ -242,26 +283,28 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       this.focusPending = true;
       return;
     }
-    this.restoreScrollAndFocus(true);
+    this.restoreFocus(true);
   }
 
   selectMode(mode: EditorMode): void {
     if (mode === this.mode()) {
       return;
     }
+    const externalScroll = this.captureExternalScroll();
     if (mode === 'preview') {
-      this.savedScrollTop = this.editorView?.scrollDOM.scrollTop ?? 0;
       this.restoreEditorFocus = this.editorView?.hasFocus ?? false;
       this.mode.set('preview');
       if (this.restoreEditorFocus) {
-        this.previewTab.nativeElement.focus();
+        this.previewTab.nativeElement.focus({ preventScroll: true });
       }
+      this.restoreExternalScroll(externalScroll);
       return;
     }
 
     this.mode.set('edit');
-    this.restoreScrollAndFocus(this.restoreEditorFocus);
+    this.restoreFocus(this.restoreEditorFocus);
     this.restoreEditorFocus = false;
+    this.restoreExternalScroll(externalScroll);
   }
 
   onModeTabKeydown(event: KeyboardEvent): void {
@@ -296,12 +339,81 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     this.selectMode(this.mode() === 'edit' ? 'preview' : 'edit');
   }
 
+  onToolbarKeydown(event: KeyboardEvent): void {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+    const toolbar = target.closest<HTMLElement>('[role="toolbar"]');
+    if (toolbar === null) {
+      return;
+    }
+    const buttons = Array.from(
+      toolbar.querySelectorAll<HTMLButtonElement>('[data-markdown-command]'),
+    );
+    const currentIndex = buttons.indexOf(target);
+    const nextIndex = toolbarButtonIndex(event.key, currentIndex, buttons.length);
+    if (nextIndex === null) {
+      return;
+    }
+    event.preventDefault();
+    buttons.forEach((button, index) => {
+      button.tabIndex = index === nextIndex ? 0 : -1;
+    });
+    buttons[nextIndex]?.focus();
+  }
+
+  executeToolbarCommand(command: MarkdownEditorCommandDefinition): void {
+    const view = this.editorView;
+    if (view === null || command.id === 'togglePreview') {
+      return;
+    }
+    const handled = this.executeCommand(command.id, view);
+    if (handled && command.id !== 'search' && command.id !== 'image') {
+      this.focusEditor(view);
+    }
+  }
+
+  toolbarCommandLabel(command: MarkdownEditorCommandDefinition): string {
+    return `${this.i18n.translate(command.labelKey)} (${this.shortcutLabel(command)})`;
+  }
+
+  toolbarIconPath(commandId: MarkdownEditorCommandId): string {
+    return MARKDOWN_EDITOR_TOOLBAR_ICON_PATHS[commandId];
+  }
+
+  onShortcutsKeydown(event: KeyboardEvent): void {
+    const summary = event.currentTarget;
+    if (!(summary instanceof HTMLElement)) {
+      return;
+    }
+    const details = summary.parentElement;
+    if (event.key !== 'Escape' || !(details instanceof HTMLDetailsElement) || !details.open) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.consumeShortcutsEscapeKeyup = true;
+    details.open = false;
+    summary.focus({ preventScroll: true });
+  }
+
+  onShortcutsKeyup(event: KeyboardEvent): void {
+    if (event.key !== 'Escape' || !this.consumeShortcutsEscapeKeyup) {
+      return;
+    }
+    this.consumeShortcutsEscapeKeyup = false;
+    this.consumeKeyboardEvent(event);
+  }
+
   onImageInput(event: Event): void {
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) {
       return;
     }
-    this.queueImageUploads(Array.from(input.files ?? []), this.currentCursor());
+    const insertionPosition = this.pendingImageInsertionPosition ?? this.currentCursor();
+    this.pendingImageInsertionPosition = null;
+    this.queueImageUploads(Array.from(input.files ?? []), insertionPosition);
     input.value = '';
   }
 
@@ -362,10 +474,14 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       this.contentAttributesCompartment.of(
         EditorView.contentAttributes.of(this.editorContentAttributes()),
       ),
+      EditorView.scrollMargins.of(() => ({
+        top: this.editorHeader.nativeElement.offsetHeight,
+        bottom: this.editorFooter.nativeElement.offsetHeight,
+      })),
       keymap.of([
         {
           key: 'Enter',
-          run: (view) => this.applySmartEnter(view),
+          run: (view) => this.applyEnter(view),
         },
         {
           key: 'Tab',
@@ -447,9 +563,13 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
     if (command === 'search') {
       openSearchPanel(view);
+      view.dom
+        .querySelector<HTMLInputElement>('.cm-search input[main-field]')
+        ?.focus({ preventScroll: true });
       return true;
     }
     if (command === 'image') {
+      this.pendingImageInsertionPosition = view.state.selection.main.head;
       this.imageInput.nativeElement.click();
       return true;
     }
@@ -503,6 +623,17 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
     this.dispatchTransaction(view, result);
     return true;
+  }
+
+  private applyEnter(view: EditorView): boolean {
+    const status = completionStatus(view.state);
+    if (status !== null) {
+      if (status === 'active') {
+        acceptCompletion(view);
+      }
+      return true;
+    }
+    return this.applySmartEnter(view);
   }
 
   private indentSelection(view: EditorView, direction: 'more' | 'less'): boolean {
@@ -634,14 +765,13 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     return this.editorView?.state.selection.main.head ?? 0;
   }
 
-  private restoreScrollAndFocus(shouldFocus: boolean): void {
+  private restoreFocus(shouldFocus: boolean): void {
     const view = this.editorView;
     if (view === null) {
       return;
     }
-    view.scrollDOM.scrollTop = this.savedScrollTop;
     if (shouldFocus) {
-      view.focus();
+      this.focusEditor(view);
       this.document.defaultView?.requestAnimationFrame(() => {
         if (
           !this.destroyRef.destroyed &&
@@ -649,10 +779,68 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
           this.mode() === 'edit' &&
           !view.hasFocus
         ) {
-          view.focus();
+          this.focusEditor(view);
         }
       });
     }
+  }
+
+  private focusEditor(view: EditorView): void {
+    view.contentDOM.focus({ preventScroll: true });
+  }
+
+  private captureExternalScroll(): ExternalScrollSnapshot | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+    const browserWindow = this.document.defaultView;
+    if (browserWindow === null) {
+      return null;
+    }
+
+    let container = this.editorHost.nativeElement.parentElement;
+    while (container !== null) {
+      const overflowY = browserWindow.getComputedStyle(container).overflowY;
+      if (
+        (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+        container.scrollHeight > container.clientHeight
+      ) {
+        return {
+          container,
+          top: container.scrollTop,
+          left: container.scrollLeft,
+        };
+      }
+      container = container.parentElement;
+    }
+
+    const pageScroller = this.document.scrollingElement;
+    if (!pageScroller) {
+      return null;
+    }
+    return {
+      container: pageScroller,
+      top: pageScroller.scrollTop,
+      left: pageScroller.scrollLeft,
+    };
+  }
+
+  private restoreExternalScroll(snapshot: ExternalScrollSnapshot | null): void {
+    const browserWindow = this.document.defaultView;
+    if (snapshot === null || browserWindow === null) {
+      return;
+    }
+    const restore = (): void => {
+      if (this.destroyRef.destroyed) {
+        return;
+      }
+      snapshot.container.scrollTop = snapshot.top;
+      snapshot.container.scrollLeft = snapshot.left;
+    };
+    browserWindow.requestAnimationFrame(() => {
+      restore();
+      browserWindow.requestAnimationFrame(restore);
+    });
   }
 
   private consumeKeyboardEvent(event: KeyboardEvent): void {
@@ -731,6 +919,17 @@ function resolveShortcutGroups(): readonly ResolvedShortcutGroup[] {
   }));
 }
 
+function resolveToolbarGroups(
+  shortcutGroups: readonly ResolvedShortcutGroup[],
+): readonly ResolvedShortcutGroup[] {
+  return shortcutGroups
+    .map((group) => ({
+      ...group,
+      commands: group.commands.filter((command) => command.id !== 'togglePreview'),
+    }))
+    .filter((group) => group.commands.length > 0);
+}
+
 function editorSelections(view: EditorView): readonly MarkdownSelection[] {
   return view.state.selection.ranges.map((selection) => ({
     anchor: selection.anchor,
@@ -743,6 +942,14 @@ function modeTabIndex(key: string, currentIndex: number, tabCount: number): numb
   if (key === 'End') return tabCount - 1;
   if (key === 'ArrowRight' || key === 'ArrowDown') return (currentIndex + 1) % tabCount;
   if (key === 'ArrowLeft' || key === 'ArrowUp') return (currentIndex - 1 + tabCount) % tabCount;
+  return null;
+}
+
+function toolbarButtonIndex(key: string, currentIndex: number, buttonCount: number): number | null {
+  if (key === 'Home') return 0;
+  if (key === 'End') return buttonCount - 1;
+  if (key === 'ArrowRight') return (currentIndex + 1) % buttonCount;
+  if (key === 'ArrowLeft') return (currentIndex - 1 + buttonCount) % buttonCount;
   return null;
 }
 

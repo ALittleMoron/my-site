@@ -3,15 +3,17 @@ app-markdown-editor {
 }
 
 .markdown-editor-shell {
+  --markdown-editor-frame-color: var(--border-color-solid);
+
   min-width: 0;
-  border: 1px solid var(--border-color-solid);
+  border: 1px solid var(--markdown-editor-frame-color);
   border-radius: 0.5rem;
   background: var(--surface-1);
-  overflow: clip;
+  isolation: isolate;
 }
 
 app-markdown-editor.is-invalid .markdown-editor-shell {
-  border-color: var(--danger-color);
+  --markdown-editor-frame-color: var(--danger-color);
 }
 
 .markdown-editor-tabs {
@@ -72,14 +74,17 @@ app-markdown-editor.is-invalid .markdown-editor-shell {
 }
 
 .markdown-editor-shortcuts {
-  padding: 0.8rem;
-  border-top: 1px solid var(--border-color-solid);
-  color: var(--text-secondary);
+  min-width: 0;
 }
 
 .markdown-editor-shortcuts summary {
+  padding: 0.65rem 0.8rem;
   cursor: pointer;
   color: var(--text-primary);
+}
+
+.markdown-editor-shortcuts[open] summary {
+  color: var(--accent-color);
 }
 
 .markdown-editor-shortcuts-intro {

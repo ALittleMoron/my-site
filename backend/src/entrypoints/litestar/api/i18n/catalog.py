@@ -73,6 +73,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "markdownEditor.mode.aria": "Режим Markdown-редактора",
         "markdownEditor.mode.edit": "Редактор",
         "markdownEditor.mode.preview": "Превью",
+        "markdownEditor.toolbar.aria": "Действия Markdown-редактора",
         "markdownEditor.preview.empty": "Нет содержимого для предпросмотра.",
         "markdownEditor.shortcuts.summary": "Горячие клавиши",
         "markdownEditor.shortcuts.tabEscape": (
@@ -1304,6 +1305,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "markdownEditor.mode.aria": "Markdown editor mode",
         "markdownEditor.mode.edit": "Editor",
         "markdownEditor.mode.preview": "Preview",
+        "markdownEditor.toolbar.aria": "Markdown editor actions",
         "markdownEditor.preview.empty": "There is no content to preview.",
         "markdownEditor.shortcuts.summary": "Keyboard shortcuts",
         "markdownEditor.shortcuts.tabEscape": (

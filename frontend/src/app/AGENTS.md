@@ -104,9 +104,16 @@ Never violate these boundaries:
 - Treat the shared Markdown editor as an Obsidian-like, keyboard-first source-authoring product.
   Markdown text remains the source of truth, while syntax-aware presentation makes headings,
   inline and fenced code, lists, tasks, quotes, callouts, tables, and future supported constructs
-  easy to scan. The current product modes are source and centralized sanitized preview only; do
-  not add a toolbar, live preview, split view, WYSIWYG mode, or a per-consumer renderer without an
-  explicit product decision.
+  easy to scan. The current product modes are source and centralized sanitized preview only.
+  Source mode has one wrapping icon toolbar derived from the same typed registry as hotkeys. Every
+  action keeps its localized accessible name and hover title; do not add another toolbar, live
+  preview, split view, WYSIWYG mode, or a per-consumer renderer without an explicit product decision.
+- Keep the editor auto-height with a `20rem` minimum: the page or modal owns vertical scrolling,
+  not CodeMirror or consumer wrappers. Keep the mode/command header and status/shortcut footer
+  sticky within the editor's bounds with zero visible scrollport-edge inset, including compensation
+  for `modal-body` padding. The sticky header must redraw the editor frame above its content so its
+  rounded border remains visible while the original frame scrolls away. Report both controls' live
+  heights through CodeMirror scroll margins so they do not hide the cursor.
 - Build on direct modular CodeMirror 6 packages, not an Angular wrapper, `basicSetup`, a fork, or
   copied internals. Use CodeMirror's public extension points—facets, compartments, state fields,
   view plugins, syntax trees, decorations, keymaps, and transactions—so library upgrades and

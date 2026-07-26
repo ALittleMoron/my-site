@@ -168,6 +168,10 @@ interface AdminMatrixResourceDraft {
         z-index: 2;
         background-color: var(--bs-body-bg);
       }
+
+      :host-context(.modal-body) .matrix-question-form-action-footer {
+        bottom: calc(0rem - var(--bs-modal-padding, 1rem));
+      }
     `,
   ],
 })

@@ -24,6 +24,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'markdownEditor.mode.aria': 'Режим Markdown-редактора',
   'markdownEditor.mode.edit': 'Редактор',
   'markdownEditor.mode.preview': 'Превью',
+  'markdownEditor.toolbar.aria': 'Действия Markdown-редактора',
   'markdownEditor.preview.empty': 'Нет содержимого для предпросмотра.',
   'markdownEditor.shortcuts.summary': 'Горячие клавиши',
   'markdownEditor.shortcuts.tabEscape':
