@@ -52,7 +52,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.15.22",
+    "ruff>=0.16.0",
     "vulture>=2.16",
 ]
 local = [
@@ -73,6 +73,8 @@ lint.ignore = [
     "RUF003",
     "RUF002",
     "B008",
+    "CPY001",
+    "PLR0917",
     "Q000",
     "S101",
     "PT016",

@@ -97,8 +97,10 @@ def render_markdown_summary(
             "",
             "## Query results",
             "",
-            "| Query | Storage method | Runtime ms | Warm median ms | SLA ms | Baseline ms | "
-            "Effective ms | Exceeded | Indexes | Seq scans | Blocking findings | Observations |",
+            (
+                "| Query | Storage method | Runtime ms | Warm median ms | SLA ms | Baseline ms | "
+                "Effective ms | Exceeded | Indexes | Seq scans | Blocking findings | Observations |"
+            ),
             "|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|",
         ),
     )

@@ -288,8 +288,10 @@ class TestQuestionQueueImportParser:
             ("questions.xls", "Unsupported import file extension: .xls."),
             (
                 "questions.json",
-                "Unsupported import file extension. Supported extensions: "
-                ".txt, .csv, .xlsx, .xlsm.",
+                (
+                    "Unsupported import file extension. Supported extensions: "
+                    ".txt, .csv, .xlsx, .xlsm."
+                ),
             ),
         ],
     )
