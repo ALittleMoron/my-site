@@ -57,10 +57,10 @@ dev = [
 ]
 local = [
     "ipython>=9.15.0",
-    "pre-commit>=4.6.0",
+    "pre-commit>=4.6.1",
 ]
 performance = [
-    "locust==2.46.0",
+    "locust==2.46.2",
 ]
 
 [tool.uv]
