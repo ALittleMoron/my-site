@@ -114,6 +114,11 @@ Never violate these boundaries:
   for `modal-body` padding. The sticky header must redraw the editor frame above its content so its
   rounded border remains visible while the original frame scrolls away. Report both controls' live
   heights through CodeMirror scroll margins so they do not hide the cursor.
+- Fullscreen is an app-owned fixed overlay on the existing editor shell, never a replacement editor
+  or the browser Fullscreen API. Preserve the same `EditorView`, document, history, selections,
+  source/preview mode, uploads, and unsaved value. Trap focus, use the shared reference-counted page
+  scroll lock, let editor-owned surfaces consume Escape first, and restore the nearest external
+  scroll position and the original focus without closing an owning modal.
 - Build on direct modular CodeMirror 6 packages, not an Angular wrapper, `basicSetup`, a fork, or
   copied internals. Use CodeMirror's public extension points—facets, compartments, state fields,
   view plugins, syntax trees, decorations, keymaps, and transactions—so library upgrades and

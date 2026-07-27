@@ -60,6 +60,8 @@ class TestI18nCatalog:
             "markdownEditor.mode.aria",
             "markdownEditor.mode.edit",
             "markdownEditor.mode.preview",
+            "markdownEditor.fullscreen.enter",
+            "markdownEditor.fullscreen.exit",
             "markdownEditor.toolbar.aria",
             "markdownEditor.preview.empty",
             "markdownEditor.shortcuts.summary",

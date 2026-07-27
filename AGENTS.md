@@ -22,7 +22,10 @@ Portfolio and articles site with a knowledge database
 
 - When library/API documentation, code generation, setup, or configuration steps are needed, search the internet without me having to explicitly ask. Prefer official documentation and primary sources, and cite the sources used in the response.
 - Do not perform any git action that changes repository state unless I explicitly ask for it. This includes `git add`, `git commit`, `git push`, `git stash`, branch creation, branch switching, rebasing, merging, resetting, checking out files, and similar mutating operations.
-- Do not modify existing TODO items. Record every new task as a separate TODO item instead of editing an existing one.
+- Do not modify the content or scope of existing TODO items. Record every new task as a separate
+  TODO item instead of editing an existing one. When an existing TODO item has been fully
+  implemented, change its checkbox from `[ ]` to `[x]`; updating completion status is not a content
+  modification and must not be skipped.
 - For non-trivial tasks, create and follow a Superpowers implementation plan before changing code or configuration. Trivial docs-only edits and direct answers do not require a plan.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.
 - Implement behavior changes and bug fixes with TDD by default: add or update the failing test first, then make it pass. If a test is not practical for the change, state why before implementing.

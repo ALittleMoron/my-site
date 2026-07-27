@@ -1,9 +1,14 @@
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { CSP_NONCE, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { CompletionContext } from '@codemirror/autocomplete';
+import { undo } from '@codemirror/commands';
+import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { of, throwError } from 'rxjs';
 import { provideI18nTesting } from '../../testing/i18n-testing';
+import { ModalPageScrollLockService } from '../layout/modal-page-scroll-lock.service';
 import { WikiLinkTargetsService } from '../wiki-links/wiki-link-targets.service';
 import { createWikiLinkTargetRegistry } from '../wiki-links/wiki-links';
 import { EditorImageUploadService } from './editor-image-upload.service';
@@ -15,6 +20,8 @@ const EDITOR_MESSAGES = {
   'markdownEditor.mode.aria': 'Режим Markdown-редактора',
   'markdownEditor.mode.edit': 'Редактор',
   'markdownEditor.mode.preview': 'Превью',
+  'markdownEditor.fullscreen.enter': 'Развернуть редактор на весь экран',
+  'markdownEditor.fullscreen.exit': 'Выйти из полноэкранного режима',
   'markdownEditor.toolbar.aria': 'Действия Markdown-редактора',
   'markdownEditor.preview.empty': 'Нет содержимого для предпросмотра.',
   'markdownEditor.shortcuts.summary': 'Горячие клавиши',
@@ -97,6 +104,8 @@ describe('MarkdownEditorComponent', () => {
   let fixture: ComponentFixture<MarkdownEditorComponent>;
   let uploadService: { uploadEditorImage: jest.Mock };
   let wikiLinkTargetsService: { getTargets: jest.Mock };
+  let acquirePageScrollLock: jest.Mock;
+  let releasePageScrollLock: jest.Mock;
 
   beforeEach(async () => {
     Object.defineProperty(Range.prototype, 'getClientRects', {
@@ -113,12 +122,18 @@ describe('MarkdownEditorComponent', () => {
           of(language === 'ru' ? RU_WIKI_LINK_REGISTRY : EN_WIKI_LINK_REGISTRY),
         ),
     };
+    releasePageScrollLock = jest.fn();
+    acquirePageScrollLock = jest.fn(() => releasePageScrollLock);
 
     await TestBed.configureTestingModule({
       imports: [MarkdownEditorComponent],
       providers: [
         { provide: CSP_NONCE, useValue: 'markdown-editor-test-nonce' },
         { provide: EditorImageUploadService, useValue: uploadService },
+        {
+          provide: ModalPageScrollLockService,
+          useValue: { acquire: acquirePageScrollLock },
+        },
         { provide: WikiLinkTargetsService, useValue: wikiLinkTargetsService },
         provideI18nTesting(EDITOR_MESSAGES),
       ],
@@ -451,6 +466,238 @@ describe('MarkdownEditorComponent', () => {
     editTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 
     expect(document.activeElement).toBe(previewTab);
+  });
+
+  it('exposes an accessible expand and collapse control in source and preview modes', () => {
+    const shell = query<HTMLElement>('[data-testid="markdown-editor-shell"]');
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+    const focusTrap = fixture.debugElement
+      .query(By.css('[data-testid="markdown-editor-shell"]'))
+      .injector.get(CdkTrapFocus);
+    const initialIconPath = toggle.querySelector('path')?.getAttribute('d');
+
+    expect(toggle.getAttribute('aria-label')).toBe('Развернуть редактор на весь экран');
+    expect(toggle.getAttribute('title')).toBe('Развернуть редактор на весь экран');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(shell.getAttribute('role')).toBeNull();
+    expect(shell.getAttribute('aria-modal')).toBeNull();
+    expect(focusTrap.enabled).toBe(false);
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(shell.classList).toContain('markdown-editor-fullscreen');
+    expect(shell.getAttribute('role')).toBe('dialog');
+    expect(shell.getAttribute('aria-modal')).toBe('true');
+    expect(shell.getAttribute('aria-label')).toBe('Содержимое статьи RU');
+    expect(toggle.getAttribute('aria-label')).toBe('Выйти из полноэкранного режима');
+    expect(toggle.getAttribute('title')).toBe('Выйти из полноэкранного режима');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.querySelector('path')?.getAttribute('d')).not.toBe(initialIconPath);
+    expect(acquirePageScrollLock).toHaveBeenCalledTimes(1);
+    expect(focusTrap.enabled).toBe(true);
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+
+    expect(query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]')).toBe(
+      toggle,
+    );
+    expect(fixture.componentInstance.mode()).toBe('preview');
+  });
+
+  it('exits fullscreen with Escape without closing an owning modal and restores focus', () => {
+    const frameCallbacks: FrameRequestCallback[] = [];
+    const requestAnimationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frameCallbacks.push(callback);
+        return frameCallbacks.length;
+      });
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+    const owningModalKeydown = jest.fn();
+    const owningModalKeyup = jest.fn();
+    fixture.nativeElement.addEventListener('keydown', owningModalKeydown);
+    document.addEventListener('keyup', owningModalKeyup);
+
+    toggle.click();
+    fixture.detectChanges();
+    frameCallbacks.shift()?.(0);
+    expect(document.activeElement).toBe(toggle);
+
+    const escape = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      code: 'Escape',
+      key: 'Escape',
+    });
+    toggle.dispatchEvent(escape);
+    fixture.detectChanges();
+    while (frameCallbacks.length > 0) {
+      frameCallbacks.shift()?.(16);
+    }
+    const escapeKeyup = new KeyboardEvent('keyup', {
+      bubbles: true,
+      cancelable: true,
+      code: 'Escape',
+      key: 'Escape',
+    });
+    opener.dispatchEvent(escapeKeyup);
+
+    expect(escape.defaultPrevented).toBe(true);
+    expect(escapeKeyup.defaultPrevented).toBe(true);
+    expect(owningModalKeydown).not.toHaveBeenCalled();
+    expect(owningModalKeyup).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(opener);
+    expect(query<HTMLElement>('[data-testid="markdown-editor-shell"]').classList).not.toContain(
+      'markdown-editor-fullscreen',
+    );
+    expect(releasePageScrollLock).toHaveBeenCalledTimes(1);
+
+    requestAnimationFrame.mockRestore();
+    document.removeEventListener('keyup', owningModalKeyup);
+    opener.remove();
+  });
+
+  it('lets an open editor surface consume Escape before fullscreen exits', () => {
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+    const shortcuts = query<HTMLDetailsElement>('[data-testid="markdown-editor-shortcuts"]');
+    const summary = query<HTMLElement>('[data-testid="markdown-editor-shortcuts-summary"]');
+    toggle.click();
+    fixture.detectChanges();
+    summary.click();
+    expect(shortcuts.open).toBe(true);
+
+    summary.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Escape',
+        key: 'Escape',
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(shortcuts.open).toBe(false);
+    expect(query<HTMLElement>('[data-testid="markdown-editor-shell"]').classList).toContain(
+      'markdown-editor-fullscreen',
+    );
+    expect(releasePageScrollLock).not.toHaveBeenCalled();
+  });
+
+  it('does not exit fullscreen while an IME composition owns Escape', () => {
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+    toggle.click();
+    fixture.detectChanges();
+
+    contentElement().dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Escape',
+        key: 'Escape',
+        isComposing: true,
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(query<HTMLElement>('[data-testid="markdown-editor-shell"]').classList).toContain(
+      'markdown-editor-fullscreen',
+    );
+    expect(releasePageScrollLock).not.toHaveBeenCalled();
+  });
+
+  it('restores the nearest external scroll container after fullscreen', () => {
+    const scrollContainer = document.createElement('div');
+    scrollContainer.style.overflowY = 'auto';
+    Object.defineProperty(scrollContainer, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    Object.defineProperty(scrollContainer, 'scrollHeight', {
+      configurable: true,
+      value: 12_000,
+    });
+    document.body.append(scrollContainer);
+    scrollContainer.append(fixture.nativeElement);
+    scrollContainer.scrollTop = 4_200;
+    const frameCallbacks: FrameRequestCallback[] = [];
+    const requestAnimationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frameCallbacks.push(callback);
+        return frameCallbacks.length;
+      });
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+
+    toggle.click();
+    fixture.detectChanges();
+    frameCallbacks.shift()?.(0);
+    scrollContainer.scrollTop = 135;
+    toggle.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Escape',
+        key: 'Escape',
+      }),
+    );
+    fixture.detectChanges();
+    while (frameCallbacks.length > 0) {
+      frameCallbacks.shift()?.(16);
+    }
+
+    expect(scrollContainer.scrollTop).toBe(4_200);
+
+    requestAnimationFrame.mockRestore();
+    scrollContainer.remove();
+  });
+
+  it('preserves unsaved document, history, and multi-selection across fullscreen', () => {
+    const emitted: string[] = [];
+    fixture.componentInstance.valueChange.subscribe((value) => emitted.push(value));
+    const view = editorView();
+    view.dispatch({
+      changes: { from: 0, insert: 'Draft ' },
+      selection: EditorSelection.create([EditorSelection.range(1, 4), EditorSelection.cursor(10)]),
+      userEvent: 'input.type',
+    });
+    const unsavedDocument = view.state.doc.toString();
+    const selections = view.state.selection.ranges.map(({ anchor, head }) => ({ anchor, head }));
+    const toggle = query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]');
+
+    toggle.click();
+    fixture.detectChanges();
+    toggle.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'Escape',
+        key: 'Escape',
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(editorView()).toBe(view);
+    expect(view.state.doc.toString()).toBe(unsavedDocument);
+    expect(view.state.selection.ranges.map(({ anchor, head }) => ({ anchor, head }))).toEqual(
+      selections,
+    );
+    expect(emitted).toEqual([unsavedDocument]);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe('Initial **markdown**');
+  });
+
+  it('releases its fullscreen page lock when destroyed', () => {
+    query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]').click();
+    fixture.detectChanges();
+
+    fixture.destroy();
+
+    expect(releasePageScrollLock).toHaveBeenCalledTimes(1);
   });
 
   it('renders every source command as an accessible icon action and hides it in preview', () => {
@@ -997,10 +1244,15 @@ describe('MarkdownEditorComponent', () => {
 
 describe('MarkdownEditorComponent on the server', () => {
   it('does not initialize CodeMirror or access browser-only editor APIs', async () => {
+    const acquirePageScrollLock = jest.fn();
     await TestBed.configureTestingModule({
       imports: [MarkdownEditorComponent],
       providers: [
         { provide: PLATFORM_ID, useValue: 'server' },
+        {
+          provide: ModalPageScrollLockService,
+          useValue: { acquire: acquirePageScrollLock },
+        },
         {
           provide: EditorImageUploadService,
           useValue: { uploadEditorImage: jest.fn() },
@@ -1020,6 +1272,14 @@ describe('MarkdownEditorComponent on the server', () => {
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(fixture.nativeElement.querySelector('.cm-editor')).toBeNull();
     expect(TestBed.inject(WikiLinkTargetsService).getTargets).not.toHaveBeenCalled();
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]')
+      ?.click();
+    fixture.detectChanges();
+    expect(acquirePageScrollLock).not.toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="markdown-editor-shell"]')?.classList,
+    ).not.toContain('markdown-editor-fullscreen');
     fixture.destroy();
   });
 });

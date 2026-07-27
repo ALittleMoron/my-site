@@ -1,4 +1,42 @@
 /* Product-level theming only; CodeMirror's nonce-bearing runtime base theme owns mechanics. */
+.markdown-editor-shell.markdown-editor-fullscreen {
+  --markdown-editor-sticky-edge-compensation: 0;
+
+  position: fixed;
+  inset: 0;
+  z-index: 1085;
+  display: flex;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 0;
+}
+
+.markdown-editor-fullscreen .markdown-editor-panel {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+.markdown-editor-fullscreen .markdown-editor-codemirror-host {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.markdown-editor-fullscreen .markdown-editor-panel .cm-editor {
+  flex: 1 1 auto;
+}
+
 .markdown-editor-shell .markdown-editor-header {
   position: sticky;
   top: var(--markdown-editor-sticky-edge-compensation, 0);

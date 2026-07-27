@@ -1,38 +1,69 @@
-<div class="markdown-editor-shell" tabindex="-1" (keydown)="onContainerKeydown($event)">
+<div
+  class="markdown-editor-shell"
+  data-testid="markdown-editor-shell"
+  tabindex="-1"
+  [class.markdown-editor-fullscreen]="fullscreen()"
+  [attr.role]="fullscreen() ? 'dialog' : null"
+  [attr.aria-modal]="fullscreen() ? 'true' : null"
+  [attr.aria-label]="fullscreen() ? accessibleLabel() : null"
+  [cdkTrapFocus]="fullscreen()"
+  (keydown)="onContainerKeydown($event)"
+>
   <header #editorHeader class="markdown-editor-header" data-testid="markdown-editor-header">
-    <div
-      class="markdown-editor-tabs"
-      role="tablist"
-      [attr.aria-label]="'markdownEditor.mode.aria' | t"
-    >
-      <button
-        type="button"
-        role="tab"
-        class="markdown-editor-tab"
-        data-testid="markdown-editor-edit-tab"
-        [id]="editTabId"
-        [attr.aria-selected]="mode() === 'edit'"
-        [attr.aria-controls]="sourcePanelId"
-        [attr.tabindex]="mode() === 'edit' ? 0 : -1"
-        (click)="selectMode('edit')"
-        (keydown)="onModeTabKeydown($event)"
+    <div class="markdown-editor-mode-bar">
+      <div
+        class="markdown-editor-tabs"
+        role="tablist"
+        [attr.aria-label]="'markdownEditor.mode.aria' | t"
       >
-        {{ 'markdownEditor.mode.edit' | t }}
-      </button>
+        <button
+          type="button"
+          role="tab"
+          class="markdown-editor-tab"
+          data-testid="markdown-editor-edit-tab"
+          [id]="editTabId"
+          [attr.aria-selected]="mode() === 'edit'"
+          [attr.aria-controls]="sourcePanelId"
+          [attr.tabindex]="mode() === 'edit' ? 0 : -1"
+          (click)="selectMode('edit')"
+          (keydown)="onModeTabKeydown($event)"
+        >
+          {{ 'markdownEditor.mode.edit' | t }}
+        </button>
+        <button
+          #previewTab
+          type="button"
+          role="tab"
+          class="markdown-editor-tab"
+          data-testid="markdown-editor-preview-tab"
+          [id]="previewTabId"
+          [attr.aria-selected]="mode() === 'preview'"
+          [attr.aria-controls]="previewPanelId"
+          [attr.tabindex]="mode() === 'preview' ? 0 : -1"
+          (click)="selectMode('preview')"
+          (keydown)="onModeTabKeydown($event)"
+        >
+          {{ 'markdownEditor.mode.preview' | t }}
+        </button>
+      </div>
       <button
-        #previewTab
+        #fullscreenToggle
         type="button"
-        role="tab"
-        class="markdown-editor-tab"
-        data-testid="markdown-editor-preview-tab"
-        [id]="previewTabId"
-        [attr.aria-selected]="mode() === 'preview'"
-        [attr.aria-controls]="previewPanelId"
-        [attr.tabindex]="mode() === 'preview' ? 0 : -1"
-        (click)="selectMode('preview')"
-        (keydown)="onModeTabKeydown($event)"
+        class="markdown-editor-fullscreen-toggle"
+        data-testid="markdown-editor-fullscreen-toggle"
+        [attr.aria-label]="fullscreenLabelKey() | t"
+        [attr.title]="fullscreenLabelKey() | t"
+        [attr.aria-pressed]="fullscreen()"
+        (click)="toggleFullscreen()"
       >
-        {{ 'markdownEditor.mode.preview' | t }}
+        <svg
+          class="markdown-editor-toolbar-icon"
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 24 24"
+        >
+          <path [attr.d]="fullscreenIconPath()"></path>
+        </svg>
       </button>
     </div>
 
@@ -84,7 +115,7 @@
     [attr.aria-labelledby]="editTabId"
     [hidden]="mode() !== 'edit'"
   >
-    <div #editorHost></div>
+    <div #editorHost class="markdown-editor-codemirror-host"></div>
   </section>
 
   <section

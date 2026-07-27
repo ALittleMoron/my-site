@@ -220,7 +220,9 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
         'черновики и опубликованные материалы видны в одном списке, а вставка с клавиатуры ' +
         'оставляет место для необязательной подписи. Редактор растёт вместе с текстом без ' +
         'внутренней вертикальной прокрутки, а sticky-панели режимов, компактных иконок всех ' +
-        'команд и справки по горячим клавишам остаются доступны в длинных документах.',
+        'команд и справки по горячим клавишам остаются доступны в длинных документах. Доступный ' +
+        'полноэкранный режим сохраняет текущий текст, выделения и историю отмены, удерживает ' +
+        'фокус внутри редактора и возвращает пользователя к прежнему месту формы после выхода.',
       en:
         'Articles, matrix questions, and the RU→EN workspace moved from Toast UI to a shared ' +
         'CodeMirror editor with source and sanitized-preview tabs, layout-independent shortcuts, ' +
@@ -229,7 +231,9 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
         'content is discoverable together, while keyboard-first insertion leaves room for an ' +
         'optional label. The editor now grows with its content instead of scrolling vertically ' +
         'inside itself, while sticky mode controls, a compact all-command icon toolbar, and the ' +
-        'shortcut reference remain available throughout long documents.',
+        'shortcut reference remain available throughout long documents. Accessible fullscreen ' +
+        'preserves the current text, selections, and undo history, keeps focus inside the editor, ' +
+        'and returns the author to the same place in the form on exit.',
     },
     tagIds: ['admin', 'frontend', 'content', 'matrix', 'localization', 'quality'],
   },

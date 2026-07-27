@@ -664,7 +664,7 @@ Flashcards should be implemented strictly after auth implementation for common u
     migration.
   - [x] Highlight supported fenced-code languages consistently in source mode and sanitized
     preview.
-  - [ ] Add an accessible fullscreen mode with a conventional expand/collapse icon, Escape exit,
+  - [x] Add an accessible fullscreen mode with a conventional expand/collapse icon, Escape exit,
     focus and scroll restoration, page-scroll locking, responsive behavior, and no loss of
     selection or unsaved content.
   - [ ] Add a backend-synced editor profile for every authenticated content editor.

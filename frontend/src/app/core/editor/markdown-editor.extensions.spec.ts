@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree } from '@codemirror/language';
 import {
   markdownEditorFoundationExtensions,
   markdownEditorLanguage,
@@ -19,8 +19,9 @@ describe('Markdown editor extensions', () => {
       ].join('\n'),
       extensions: [markdownEditorLanguage],
     });
-    const tree = syntaxTree(state).toString();
+    const tree = ensureSyntaxTree(state, state.doc.length, 1_000)?.toString();
 
+    expect(tree).toBeDefined();
     expect(tree).toContain('Table');
     expect(tree).toContain('Task');
     expect(tree).toContain('Strikethrough');

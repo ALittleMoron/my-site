@@ -1,4 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -38,6 +39,7 @@ import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
 import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
 import { TranslatePipe } from '../i18n/translate.pipe';
+import { ModalPageScrollLockService } from '../layout/modal-page-scroll-lock.service';
 import { WikiLinkRendererService } from '../wiki-links/wiki-link-renderer.service';
 import { WikiLinkTargetsService } from '../wiki-links/wiki-link-targets.service';
 import { parseWikiLinks, wikiLinkPath } from '../wiki-links/wiki-links';
@@ -85,6 +87,16 @@ interface ExternalScrollSnapshot {
   left: number;
 }
 
+interface FullscreenSnapshot {
+  focusedElement: Element | null;
+  externalScroll: ExternalScrollSnapshot | null;
+}
+
+const MARKDOWN_EDITOR_FULLSCREEN_ICON_PATHS = {
+  enter: 'M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5',
+  exit: 'M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5',
+} as const;
+
 const MARKDOWN_EDITOR_TOOLBAR_ICON_PATHS = {
   togglePreview: 'M4 5h7v14H4zM15 5h5v14h-5z',
   search: 'M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0M16 16l4 4',
@@ -117,7 +129,7 @@ let editorInstanceId = 0;
 @Component({
   selector: 'app-markdown-editor',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [CdkTrapFocus, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './markdown-editor.component.html',
   styleUrl: './markdown-editor.component.scss',
@@ -127,6 +139,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly wikiLinkRenderer = inject(WikiLinkRendererService);
   private readonly wikiLinkTargets = inject(WikiLinkTargetsService);
+  private readonly pageScrollLock = inject(ModalPageScrollLockService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
@@ -144,6 +157,16 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private pendingImageInsertionPosition: number | null = null;
   private nextUploadId = 0;
   private currentWikiLinkCompletionData: WikiLinkCompletionData | null = null;
+  private fullscreenSnapshot: FullscreenSnapshot | null = null;
+  private releaseFullscreenPageScroll: (() => void) | null = null;
+  private consumeFullscreenEscapeKeyup = false;
+  private readonly fullscreenEscapeKeyupListener = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.consumeFullscreenEscapeKeyup) {
+      return;
+    }
+    this.disarmFullscreenEscapeKeyup();
+    this.consumeKeyboardEvent(event);
+  };
 
   @ViewChild('editorHeader', { static: true })
   private readonly editorHeader!: ElementRef<HTMLElement>;
@@ -154,6 +177,8 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly imageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('previewTab', { static: true })
   private readonly previewTab!: ElementRef<HTMLButtonElement>;
+  @ViewChild('fullscreenToggle', { static: true })
+  private readonly fullscreenToggle!: ElementRef<HTMLButtonElement>;
 
   readonly value = input.required<string>();
   readonly language = input.required<LanguageCode>();
@@ -161,6 +186,15 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   readonly valueChange = output<string>();
 
   readonly mode = signal<EditorMode>('edit');
+  readonly fullscreen = signal(false);
+  readonly fullscreenLabelKey = computed(() =>
+    this.fullscreen() ? 'markdownEditor.fullscreen.exit' : 'markdownEditor.fullscreen.enter',
+  );
+  readonly fullscreenIconPath = computed(() =>
+    this.fullscreen()
+      ? MARKDOWN_EDITOR_FULLSCREEN_ICON_PATHS.exit
+      : MARKDOWN_EDITOR_FULLSCREEN_ICON_PATHS.enter,
+  );
   readonly internalValue = signal('');
   readonly uploads = signal<readonly ImageUpload[]>([]);
   readonly uploading = computed(() =>
@@ -273,6 +307,10 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.disarmFullscreenEscapeKeyup();
+    this.releaseFullscreenPageScroll?.();
+    this.releaseFullscreenPageScroll = null;
+    this.fullscreenSnapshot = null;
     this.editorView?.destroy();
   }
 
@@ -328,6 +366,17 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   onContainerKeydown(event: KeyboardEvent): void {
+    if (
+      this.fullscreen() &&
+      event.key === 'Escape' &&
+      !event.isComposing &&
+      !event.defaultPrevented
+    ) {
+      this.consumeKeyboardEvent(event);
+      this.armFullscreenEscapeKeyup();
+      this.exitFullscreen();
+      return;
+    }
     if (this.consumeComposingEditorShortcut(event)) {
       return;
     }
@@ -337,6 +386,17 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
     this.consumeKeyboardEvent(event);
     this.selectMode(this.mode() === 'edit' ? 'preview' : 'edit');
+  }
+
+  toggleFullscreen(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    if (this.fullscreen()) {
+      this.exitFullscreen();
+      return;
+    }
+    this.enterFullscreen();
   }
 
   onToolbarKeydown(event: KeyboardEvent): void {
@@ -763,6 +823,83 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   private currentCursor(): number {
     return this.editorView?.state.selection.main.head ?? 0;
+  }
+
+  private enterFullscreen(): void {
+    const browserWindow = this.document.defaultView;
+    if (browserWindow === null || this.fullscreen()) {
+      return;
+    }
+
+    this.fullscreenSnapshot = {
+      focusedElement: this.document.activeElement,
+      externalScroll: this.captureExternalScroll(),
+    };
+    this.releaseFullscreenPageScroll = this.pageScrollLock.acquire();
+    this.fullscreen.set(true);
+    browserWindow.requestAnimationFrame(() => {
+      if (this.destroyRef.destroyed || !this.fullscreen()) {
+        return;
+      }
+      const view = this.editorView;
+      view?.requestMeasure();
+      this.fullscreenToggle.nativeElement.focus({ preventScroll: true });
+      if (view !== null && this.mode() === 'edit') {
+        view.dispatch({
+          effects: EditorView.scrollIntoView(view.state.selection.main, { y: 'center' }),
+        });
+      }
+    });
+  }
+
+  private armFullscreenEscapeKeyup(): void {
+    if (this.consumeFullscreenEscapeKeyup) {
+      return;
+    }
+    this.consumeFullscreenEscapeKeyup = true;
+    this.document.addEventListener('keyup', this.fullscreenEscapeKeyupListener, true);
+  }
+
+  private disarmFullscreenEscapeKeyup(): void {
+    if (!this.consumeFullscreenEscapeKeyup) {
+      return;
+    }
+    this.consumeFullscreenEscapeKeyup = false;
+    this.document.removeEventListener('keyup', this.fullscreenEscapeKeyupListener, true);
+  }
+
+  private exitFullscreen(): void {
+    const snapshot = this.fullscreenSnapshot;
+    const browserWindow = this.document.defaultView;
+    if (!this.fullscreen() || snapshot === null || browserWindow === null) {
+      return;
+    }
+
+    this.fullscreen.set(false);
+    this.fullscreenSnapshot = null;
+    this.releaseFullscreenPageScroll?.();
+    this.releaseFullscreenPageScroll = null;
+    browserWindow.requestAnimationFrame(() => {
+      if (this.destroyRef.destroyed) {
+        return;
+      }
+      this.editorView?.requestMeasure();
+      this.restoreFullscreenFocus(snapshot.focusedElement);
+    });
+    this.restoreExternalScroll(snapshot.externalScroll);
+  }
+
+  private restoreFullscreenFocus(focusedElement: Element | null): void {
+    const browserWindow = this.document.defaultView;
+    if (
+      browserWindow !== null &&
+      focusedElement instanceof browserWindow.HTMLElement &&
+      focusedElement.isConnected
+    ) {
+      focusedElement.focus({ preventScroll: true });
+      return;
+    }
+    this.fullscreenToggle.nativeElement.focus({ preventScroll: true });
   }
 
   private restoreFocus(shouldFocus: boolean): void {
