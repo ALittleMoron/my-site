@@ -91,7 +91,7 @@
   - [ ] Move backend, frontend, and infrastructure into separate repositories
   - [ ] Configure independent image publishing for backend and frontend
   - [ ] Update deployment workflow to consume published images from the infrastructure repository
-- [ ] Bot protection for the site
+- [x] Bot protection for the site
   - [x] Basic nginx edge rate limits for login, contact, public articles, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
 - [x] Make frontend/matrix localStorage usage SSR-safe where services/components still access it directly.
@@ -232,6 +232,8 @@
 
 ### Frontend
 
+- [x] Replace native admin filter selects with accessible custom dropdowns whose open option list
+  follows the site's green active-color theme consistently across operating systems.
 - [x] Keep background pages fixed while every modal routes backdrop and chrome scrolling to its content.
 - [x] Make frontend adaptive and flexible to correctly opening on smartphones and thin screens.
 - [x] Optimize page load times (CSS/JS minification, image optimization). Consider CDN for static files.
@@ -710,8 +712,6 @@ Flashcards should be implemented strictly after auth implementation for common u
 ## Bugs
 
 - [ ] Fix initial bundle big size.
-- [ ] Replace native admin filter selects with accessible custom dropdowns whose open option list
-  follows the site's green active-color theme consistently across operating systems.
 - [x] Search does not work in "table" view mode (false positive; covered by frontend regression test)
 - [x] Resource search is suboptimal (optimized through existing PostgreSQL pg_trgm support)
 - [x] Production public UI QA
