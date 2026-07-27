@@ -160,6 +160,13 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private fullscreenSnapshot: FullscreenSnapshot | null = null;
   private releaseFullscreenPageScroll: (() => void) | null = null;
   private consumeFullscreenEscapeKeyup = false;
+  private readonly editorScrollMouseDownListener = (event: MouseEvent): void => {
+    const view = this.editorView;
+    if (view === null || event.target !== view.scrollDOM) {
+      return;
+    }
+    this.handleEditorMouseDown(event, view);
+  };
   private readonly fullscreenEscapeKeyupListener = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape' || !this.consumeFullscreenEscapeKeyup) {
       return;
@@ -296,6 +303,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
         extensions: this.editorExtensions(),
       }),
     });
+    this.editorView.scrollDOM.addEventListener('mousedown', this.editorScrollMouseDownListener);
     this.internalValue.set(this.value());
     this.editorView.dispatch({
       effects: setWikiLinkCompletionData.of(this.currentWikiLinkCompletionData),
@@ -311,6 +319,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     this.releaseFullscreenPageScroll?.();
     this.releaseFullscreenPageScroll = null;
     this.fullscreenSnapshot = null;
+    this.editorView?.scrollDOM.removeEventListener('mousedown', this.editorScrollMouseDownListener);
     this.editorView?.destroy();
   }
 
@@ -557,6 +566,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
         ...searchKeymap,
       ]),
       EditorView.domEventHandlers({
+        mousedown: (event, view) => this.handleEditorMouseDown(event, view),
         keydown: (event, view) => this.handleEditorKeydown(event, view),
         keyup: (event, view) => this.handleEditorKeyup(event, view),
         paste: (event, view) => this.handlePaste(event, view),
@@ -582,6 +592,25 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     const value = update.state.doc.toString();
     this.internalValue.set(value);
     this.valueChange.emit(value);
+  }
+
+  private handleEditorMouseDown(event: MouseEvent, view: EditorView): boolean {
+    if (event.button !== 0 || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+    const documentEnd = view.state.doc.length;
+    const documentEndCoordinates = view.coordsAtPos(documentEnd, -1);
+    if (documentEndCoordinates === null || event.clientY <= documentEndCoordinates.bottom) {
+      return false;
+    }
+
+    event.preventDefault();
+    view.dispatch({
+      selection: EditorSelection.cursor(documentEnd),
+      userEvent: 'select.pointer',
+    });
+    this.focusEditor(view);
+    return true;
   }
 
   private handleEditorKeydown(event: KeyboardEvent, view: EditorView): boolean {

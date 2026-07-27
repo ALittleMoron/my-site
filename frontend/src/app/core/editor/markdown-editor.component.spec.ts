@@ -247,6 +247,56 @@ describe('MarkdownEditorComponent', () => {
     expect(document.activeElement).toBe(contentElement());
   });
 
+  it('moves the cursor to the document end when the empty area below the last line is clicked', () => {
+    const view = editorView();
+    view.dispatch({ selection: { anchor: 0 } });
+    jest.spyOn(view, 'coordsAtPos').mockReturnValue({
+      left: 16,
+      right: 16,
+      top: 24,
+      bottom: 48,
+    });
+
+    const event = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: 80,
+      clientY: 160,
+    });
+    contentElement().dispatchEvent(event);
+
+    expect(view.state.selection.main.anchor).toBe(view.state.doc.length);
+    expect(document.activeElement).toBe(contentElement());
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('moves the cursor to the document end when the fullscreen area below the content is clicked', () => {
+    query<HTMLButtonElement>('[data-testid="markdown-editor-fullscreen-toggle"]').click();
+    fixture.detectChanges();
+    const view = editorView();
+    view.dispatch({ selection: { anchor: 0 } });
+    jest.spyOn(view, 'coordsAtPos').mockReturnValue({
+      left: 16,
+      right: 16,
+      top: 24,
+      bottom: 48,
+    });
+
+    const event = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: 80,
+      clientY: 640,
+    });
+    query<HTMLElement>('.cm-scroller').dispatchEvent(event);
+
+    expect(view.state.selection.main.anchor).toBe(view.state.doc.length);
+    expect(document.activeElement).toBe(contentElement());
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('updates content language and accessible name without rebuilding CodeMirror', () => {
     const editor = editorElement();
 
