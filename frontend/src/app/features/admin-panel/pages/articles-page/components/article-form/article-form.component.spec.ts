@@ -1074,6 +1074,7 @@ class MarkdownEditorStubComponent {
   readonly value = input<string>('');
   readonly language = input.required<'ru' | 'en'>();
   readonly accessibleLabel = input.required<string>();
+  readonly imageUploadsEnabled = input.required<boolean>();
   readonly valueChange = output<string>();
 }
 

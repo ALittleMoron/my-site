@@ -197,17 +197,17 @@ features/<name>/
 
 ## Existing Features
 
-| Feature           | Route                                                                                                                              | Description                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell, owner/admin/moderator article/matrix workspaces, and owner/admin resume/team workspaces; no SSR |
-| `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                                                       |
-| `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                           |
-| `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, and tags                                                   |
-| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public home and engineering case-study page; unprefixed compatibility route remains                                    |
-| `updates`         | `/ru/updates`, `/en/updates`                                                                                                       | SSR public static updates/changelog page; unprefixed compatibility route remains                                           |
-| `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                            |
-| `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                   |
-| `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                          |
+| Feature           | Route                                                                                                                              | Description                                                                                                                       |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `admin-panel`     | `/admin-panel`                                                                                                                     | Protected CSR admin shell, owner/admin/moderator article/matrix workspaces, and owner/admin People/resume/team workspaces; no SSR |
+| `auth`            | `/login`                                                                                                                           | Login page, no guard                                                                                                              |
+| `matrix`          | `/ru/competency-matrix`, `/en/competency-matrix`, `/ru/competency-matrix/questions/:slug`, `/en/competency-matrix/questions/:slug` | CSR/hydrated matrix overview, SSR public question detail; unprefixed compatibility route remains                                  |
+| `articles`        | `/ru/articles/:slug`, `/en/articles/:slug`                                                                                         | SSR public article detail, CSR public list, folders side-panel, and tags                                                          |
+| `site-case-study` | `/ru/how-this-site-is-built`, `/en/how-this-site-is-built`                                                                         | SSR public home and engineering case-study page; unprefixed compatibility route remains                                           |
+| `updates`         | `/ru/updates`, `/en/updates`                                                                                                       | SSR public static updates/changelog page; unprefixed compatibility route remains                                                  |
+| `sitemap`         | `/ru/sitemap`, `/en/sitemap`                                                                                                       | Static Angular sitemap page; XML sitemap is backend-generated at `/sitemap.xml`                                                   |
+| `not-found`       | `/404`                                                                                                                             | Wildcard redirect target                                                                                                          |
+| `shell`           | n/a                                                                                                                                | `SiteHeaderComponent`, `SiteFooterComponent` — not routed, used in `AppComponent`                                                 |
 
 ## Agent Client Administration
 
@@ -219,6 +219,19 @@ features/<name>/
 - Present agent-created matrix items as drafts requiring human review. Do not add direct private
   Agent API/MCP execution, publishing, generic CRUD, structure changes, URL fetching, shell/HTTP
   controls, or imply a claim grants broader authority.
+
+## Knowledge People
+
+- Keep People under the owner/admin-protected CSR routes
+  `/admin-panel/knowledge/people` and `/admin-panel/knowledge/people/:id`; never add these private
+  responses to SSR or transfer cache.
+- Use explicit typed People forms/models for person details, birthday, tags, relationships, photo,
+  and attachments. Do not introduce a schema-driven universal knowledge form renderer; future
+  knowledge types should own their typed feature facade and interaction design.
+- Read private photos/downloads only through protected blob responses and revoke every object URL
+  when it is replaced or no longer displayed. People descriptions may use the shared sanitized
+  Markdown editor, but image paste/drop/picker uploads must remain disabled because inline public
+  media would bypass the private knowledge-file workflow.
 
 ## Routing
 

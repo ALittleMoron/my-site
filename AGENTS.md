@@ -131,6 +131,14 @@ Portfolio and articles site with a knowledge database
 - When changing any library, dependency, runtime, or tool version, update the matching badges in `.github/badges/` in the same change.
 - Frontend npm installs must enforce peer dependency contracts. Resolve Angular, TypeScript, and tooling peer dependency conflicts in `frontend/package.json` and `frontend/package-lock.json` instead of using `--legacy-peer-deps` or `--force`, except for an explicitly documented temporary workaround with a TODO and removal plan.
 - Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
+- Keep the knowledge database as typed common `KnowledgeItem` data plus normalized one-to-one
+  extension tables and type-specific facades; do not replace it with a universal JSON/EAV field bag
+  or dynamic form system. Private knowledge remains owner/admin-only and isolated by the
+  authenticated `author_username` across API, database relationships, and files. Protected objects
+  belong in the separate internal-only bucket, never in public URLs or presigned responses.
+  Keep replacement/deletion cleanup post-commit, register newly uploaded private objects for
+  request rollback and commit-failure cleanup, and redact private knowledge paths/parameters from
+  request logs.
 - Performance and test tooling may import reusable application contracts from `backend/src`, such
   as enums, schemas, factories, and public helpers, but tooling-specific infrastructure must live
   with that tooling. Do not create performance-only or test-only support modules under

@@ -24,4 +24,11 @@ from .competency_matrix import ExternalResourceModel as ExternalResourceModel
 from .competency_matrix import QueuedQuestionModel as QueuedQuestionModel
 from .contacts import ContactMeModel as ContactMeModel
 from .files import FileModel as FileModel
+from .knowledge import KnowledgeFileModel as KnowledgeFileModel
+from .knowledge import KnowledgeItemModel as KnowledgeItemModel
+from .knowledge import KnowledgeItemTagModel as KnowledgeItemTagModel
+from .knowledge import KnowledgeTagModel as KnowledgeTagModel
+from .knowledge import PersonDetailsModel as PersonDetailsModel
+from .knowledge import PersonRelationshipModel as PersonRelationshipModel
+from .knowledge import PersonRelationshipTypeModel as PersonRelationshipTypeModel
 from .resumes import ResumeModel as ResumeModel

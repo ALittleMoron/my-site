@@ -444,7 +444,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
       - [ ] Files per category count - badge next to folder name with amount of files.
   - [ ] Calendar (separated page. List of all dates and people birthdays in interactive calendar)
   - [ ] Access
-    - [ ] V1: Owner/admin only, per-account knowledge items (users can see only their own items)
+    - [x] V1: Owner/admin only, per-account knowledge items (users can see only their own items)
     - [ ] V2: Public knowledge items, users access to shared dashboard
     - [ ] V3: All users public and private items, per user dashboard
 - [ ] Knowledge item
@@ -456,7 +456,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
     - [ ] Books to reread page
   - [ ] Companies
   - [ ] Dates
-  - [ ] People
+  - [x] People
   - [ ] Places
   - [ ] Projects
   - [ ] Recipes
@@ -465,6 +465,10 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
   - [ ] Techniques
   - [ ] Technologies
 - [ ] Export Obsidian vault to knowledge database
+- [ ] Add general knowledge database import/export workflows beyond the planned Obsidian vault transfer.
+- [ ] Add reminders for knowledge dates and birthdays.
+- [ ] Add extended knowledge database search across item types and fields.
+- [ ] Automate and test backup/restore for the private knowledge object bucket.
 
 ### Auth and Users
 

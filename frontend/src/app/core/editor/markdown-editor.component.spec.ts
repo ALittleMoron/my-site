@@ -143,6 +143,7 @@ describe('MarkdownEditorComponent', () => {
     fixture.componentRef.setInput('value', 'Initial **markdown**');
     fixture.componentRef.setInput('language', 'ru');
     fixture.componentRef.setInput('accessibleLabel', 'Содержимое статьи RU');
+    fixture.componentRef.setInput('imageUploadsEnabled', true);
     fixture.detectChanges();
   });
 
@@ -158,6 +159,20 @@ describe('MarkdownEditorComponent', () => {
     expect(contentElement().getAttribute('spellcheck')).toBe('true');
     expect(document.activeElement).not.toBe(contentElement());
     expect(fixture.nativeElement.querySelector('.toastui-editor-defaultUI')).toBeNull();
+  });
+
+  it('removes every image-upload entry point when uploads are disabled', () => {
+    fixture.componentRef.setInput('imageUploadsEnabled', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-markdown-command="image"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('input[type="file"]')).toBeNull();
+
+    contentElement().dispatchEvent(
+      pasteEvent([new File(['image'], 'private.png', { type: 'image/png' })]),
+    );
+
+    expect(uploadService.uploadEditorImage).not.toHaveBeenCalled();
   });
 
   it('exposes a CSP-safe theme hook with line numbers and forced wrapping', () => {
@@ -1318,6 +1333,7 @@ describe('MarkdownEditorComponent on the server', () => {
     fixture.componentRef.setInput('value', 'Server Markdown');
     fixture.componentRef.setInput('language', 'en');
     fixture.componentRef.setInput('accessibleLabel', 'Article content');
+    fixture.componentRef.setInput('imageUploadsEnabled', true);
 
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(fixture.nativeElement.querySelector('.cm-editor')).toBeNull();
@@ -1343,6 +1359,7 @@ function pasteEvent(files: readonly File[]): Event {
         type: file.type,
         getAsFile: () => file,
       })),
+      getData: () => '',
     },
   });
   return event;

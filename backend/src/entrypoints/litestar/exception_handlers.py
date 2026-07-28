@@ -50,6 +50,7 @@ from core.competency_matrix.exceptions import (
 )
 from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
+from core.knowledge.exceptions import InvalidKnowledgeDataError, KnowledgeConflictError
 from infra.healthcheck import ReadinessCheckError
 
 DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = {
@@ -80,6 +81,8 @@ DOMAIN_ERROR_MAPPING: dict[type[DomainError], type[BaseVerboseHTTPException]] = 
     ManagedAccountActionForbiddenError: ForbiddenHTTPException,
     ArticleFolderAlreadyExistsError: BadRequestHTTPException,
     ArticleFolderPriorityInvalidError: BadRequestHTTPException,
+    InvalidKnowledgeDataError: BadRequestHTTPException,
+    KnowledgeConflictError: ConflictHTTPException,
 }
 
 

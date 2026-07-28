@@ -28,6 +28,15 @@ class TestQueryPlanProfiles:
                 reactions=10_000,
             ),
             resumes=query_plan_models.ResumeCardinalities(resumes=250),
+            knowledge=query_plan_models.KnowledgeCardinalities(
+                items=5_000,
+                search_match_percentage=10,
+                tags=500,
+                item_tag_links=20_000,
+                relationship_types=100,
+                relationships=20_000,
+                files=10_000,
+            ),
             matrix=query_plan_models.MatrixCardinalities(
                 sheets=20,
                 sections_per_sheet=8,
@@ -61,6 +70,15 @@ class TestQueryPlanProfiles:
                 reactions=500_000,
             ),
             resumes=query_plan_models.ResumeCardinalities(resumes=50_000),
+            knowledge=query_plan_models.KnowledgeCardinalities(
+                items=200_000,
+                search_match_percentage=10,
+                tags=30_000,
+                item_tag_links=500_000,
+                relationship_types=10_000,
+                relationships=500_000,
+                files=500_000,
+            ),
             matrix=query_plan_models.MatrixCardinalities(
                 sheets=20,
                 sections_per_sheet=8,
@@ -86,6 +104,13 @@ class TestQueryPlanProfiles:
             "articles__article_daily_analytics_model": 100_000,
             "articles__article_reaction_model": 10_000,
             "resumes__resume_model": 250,
+            "knowledge__knowledge_item_model": 5_000,
+            "knowledge__knowledge_tag_model": 500,
+            "knowledge__knowledge_item_tag_model": 20_000,
+            "knowledge__person_details_model": 5_000,
+            "knowledge__person_relationship_type_model": 100,
+            "knowledge__person_relationship_model": 20_000,
+            "knowledge__knowledge_file_model": 10_000,
             "competency_matrix__competency_matrix_sheet_model": 20,
             "competency_matrix__competency_matrix_section_model": 160,
             "competency_matrix__competency_matrix_subsection_model": 1_920,
@@ -158,3 +183,121 @@ class TestQueryPlanProfiles:
         assert tuple(index.name for index in expectation.expected_indexes) == (
             "auth_sessions_username_lower_active_expiry_idx",
         )
+
+    def test_people_page_search_and_tags_forbids_large_relation_seq_scans(self) -> None:
+        scenario = next(
+            scenario
+            for scenario in STORAGE_SCENARIOS
+            if scenario.name == "people_page_search_and_tags"
+        )
+
+        realistic_expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.REALISTIC_PROFILE,
+        )
+        stress_expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.STRESS_PROFILE,
+        )
+
+        expected_forbidden_relations = (
+            "knowledge__knowledge_item_model",
+            "knowledge__knowledge_item_tag_model",
+            "knowledge__person_details_model",
+        )
+        assert realistic_expectation.forbidden_seq_scan_relations == expected_forbidden_relations
+        assert realistic_expectation.allow_seq_scan_reason is None
+        assert stress_expectation.forbidden_seq_scan_relations == expected_forbidden_relations
+        assert stress_expectation.allow_seq_scan_reason is None
+        for query_name in (
+            "people_page_search_and_tags__001",
+            "people_page_search_and_tags__002",
+        ):
+            expectation = scenario.plan_expectation(
+                policy=ABSOLUTE_SLA_POLICY,
+                query_name=query_name,
+                profile=query_plan_models.REALISTIC_PROFILE,
+            )
+            assert {index.name for index in expectation.expected_indexes} == {
+                "knowledge_item_tags_author_tag_item_idx",
+                "person_details_id_author_uniq",
+                "knowledge__knowledge_item_model_pkey",
+            }
+            stress_query_expectation = scenario.plan_expectation(
+                policy=ABSOLUTE_SLA_POLICY,
+                query_name=query_name,
+                profile=query_plan_models.STRESS_PROFILE,
+            )
+            assert {index.name for index in stress_query_expectation.expected_indexes} == {
+                "knowledge_item_tags_author_tag_item_idx",
+                "knowledge__person_details_model_pkey",
+                "knowledge__knowledge_item_model_pkey",
+            }
+
+    @pytest.mark.parametrize(
+        "scenario_name",
+        ["knowledge_tags_list", "people_relationship_types_list"],
+    )
+    def test_full_private_taxonomy_lists_allow_stress_sequential_scan(
+        self,
+        scenario_name: str,
+    ) -> None:
+        scenario = next(
+            scenario for scenario in STORAGE_SCENARIOS if scenario.name == scenario_name
+        )
+
+        realistic_expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.REALISTIC_PROFILE,
+        )
+        stress_expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.STRESS_PROFILE,
+        )
+
+        assert realistic_expectation.expected_indexes
+        assert realistic_expectation.forbidden_seq_scan_relations
+        assert stress_expectation.expected_indexes == ()
+        assert stress_expectation.forbidden_seq_scan_relations == ()
+        assert stress_expectation.allow_seq_scan_reason is not None
+
+    @pytest.mark.parametrize(
+        ("scenario_name", "expected_index"),
+        [
+            ("knowledge_tag_detail", "knowledge_tags_id_author_uniq"),
+            ("knowledge_tag_update", "knowledge_tags_id_author_uniq"),
+            ("knowledge_tag_delete", "knowledge_tags_id_author_uniq"),
+            (
+                "people_relationship_type_detail",
+                "person_relationship_types_id_author_uniq",
+            ),
+            (
+                "people_relationship_type_update",
+                "person_relationship_types_id_author_uniq",
+            ),
+            (
+                "people_relationship_type_delete",
+                "person_relationship_types_id_author_uniq",
+            ),
+        ],
+    )
+    def test_author_scoped_taxonomy_mutations_require_composite_index(
+        self,
+        scenario_name: str,
+        expected_index: str,
+    ) -> None:
+        scenario = next(
+            scenario for scenario in STORAGE_SCENARIOS if scenario.name == scenario_name
+        )
+
+        expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.STRESS_PROFILE,
+        )
+
+        assert tuple(index.name for index in expectation.expected_indexes) == (expected_index,)

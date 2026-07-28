@@ -234,6 +234,7 @@
             [class.article-markdown-editor-invalid]="articleFieldInvalid('contentRu')"
           >
             <app-markdown-editor
+              [imageUploadsEnabled]="true"
               [value]="form.controls.contentRu.value"
               [language]="'ru'"
               [accessibleLabel]="'articles.form.contentRu' | t"
@@ -340,6 +341,7 @@
             [class.article-markdown-editor-invalid]="articleFieldInvalid('contentEn')"
           >
             <app-markdown-editor
+              [imageUploadsEnabled]="true"
               [value]="form.controls.contentEn.value"
               [language]="'en'"
               [accessibleLabel]="'articles.form.contentEn' | t"

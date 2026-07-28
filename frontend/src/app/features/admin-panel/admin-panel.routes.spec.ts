@@ -55,4 +55,16 @@ describe('adminPanelRoutes', () => {
     expect(route).toBeDefined();
     expect(route?.canActivate).toEqual([teamGuard]);
   });
+
+  it('keeps both private People routes behind the team and unsaved-change guards', () => {
+    const routes = (adminPanelRoutes[0].children ?? []).filter((child) =>
+      child.path?.startsWith('knowledge/people'),
+    );
+
+    expect(routes.map((route) => route.path)).toEqual(['knowledge/people', 'knowledge/people/:id']);
+    for (const route of routes) {
+      expect(route.canActivate).toEqual([teamGuard]);
+      expect(route.canDeactivate).toEqual([adminUnsavedChangesGuard]);
+    }
+  });
 });

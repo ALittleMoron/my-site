@@ -74,7 +74,7 @@
         role="toolbar"
         [attr.aria-label]="'markdownEditor.toolbar.aria' | t"
       >
-        @for (group of toolbarGroups; track group.id; let firstGroup = $first) {
+        @for (group of toolbarGroups(); track group.id; let firstGroup = $first) {
           <div
             class="markdown-editor-toolbar-group"
             role="group"
@@ -141,15 +141,17 @@
     }
   </section>
 
-  <input
-    #imageInput
-    class="visually-hidden"
-    type="file"
-    accept="image/*"
-    multiple
-    tabindex="-1"
-    (change)="onImageInput($event)"
-  />
+  @if (imageUploadsEnabled()) {
+    <input
+      #imageInput
+      class="visually-hidden"
+      type="file"
+      accept="image/*"
+      multiple
+      tabindex="-1"
+      (change)="onImageInput($event)"
+    />
+  }
 
   <footer #editorFooter class="markdown-editor-footer" data-testid="markdown-editor-footer">
     <div class="markdown-editor-status" aria-live="polite" aria-atomic="true">
@@ -204,7 +206,7 @@
           <p>{{ 'markdownEditor.shortcuts.tabEscape' | t }}</p>
         </div>
         <div class="markdown-editor-shortcut-grid">
-          @for (group of shortcutGroups; track group.id) {
+          @for (group of shortcutGroups(); track group.id) {
             <section
               class="markdown-editor-shortcut-group"
               data-testid="markdown-editor-shortcut-group"

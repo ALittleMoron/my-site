@@ -18,6 +18,7 @@ class PathConstants:
 
 class MinioBucketNamesConstants:
     media: Literal["media"] = "media"
+    knowledge_private: Literal["knowledge-private"] = "knowledge-private"
 
 
 class ValkeyDatabaseConstants:
@@ -103,6 +104,43 @@ class FilesConstants:
     )
 
 
+class KnowledgeFilesConstants:
+    attachment_mime_types: frozenset[str] = frozenset({"*/*"})
+    photo_mime_types: frozenset[str] = frozenset(
+        {"image/jpeg", "image/png", "image/webp"},
+    )
+    attachment_max_size_bytes: int = 20 * 1024 * 1024
+    photo_max_size_bytes: int = 5 * 1024 * 1024
+    multipart_overhead_max_size_bytes: int = 64 * 1024
+    attachment_request_max_body_size_bytes: int = (
+        attachment_max_size_bytes + multipart_overhead_max_size_bytes
+    )
+    photo_request_max_body_size_bytes: int = (
+        photo_max_size_bytes + multipart_overhead_max_size_bytes
+    )
+    original_name_max_length: int = 255
+    mime_type_max_length: int = 255
+    photo_max_width_px: int = 2048
+    photo_max_height_px: int = 2048
+    photo_webp_quality: int = 82
+    photo_webp_method: int = 6
+    stream_chunk_size_bytes: int = 64 * 1024
+    attachment_folder: str = "attachments"
+    person_photo_folder: str = "person-photos"
+    content_disposition_header_name: Literal["Content-Disposition"] = "Content-Disposition"
+    content_type_options_header_name: Literal["X-Content-Type-Options"] = "X-Content-Type-Options"
+    content_type_options_header_value: Literal["nosniff"] = "nosniff"
+    cache_control_header_name: Literal["Cache-Control"] = "Cache-Control"
+    no_store_header_value: Literal["no-store"] = "no-store"
+
+
+class RequestLoggingConstants:
+    private_knowledge_path_prefix: Literal["/api/admin/knowledge"] = "/api/admin/knowledge"
+    private_knowledge_safe_path: Literal["/api/admin/knowledge/{private}"] = (
+        "/api/admin/knowledge/{private}"
+    )
+
+
 class ResumeExportConstants:
     fonts_dir: Path = PathConstants.infra_dir / "resume_export" / "fonts"
     font_regular_path: Path = fonts_dir / "NotoSans-Regular.ttf"
@@ -177,6 +215,8 @@ class AdminValidationConstants:
     article_content_max_length: int = 100_000
     matrix_long_text_max_length: int = 20_000
     resume_long_text_max_length: int = 10_000
+    knowledge_description_max_length: int = 100_000
+    knowledge_relationship_note_max_length: int = 10_000
 
 
 class AuthConstants:
@@ -218,6 +258,8 @@ class Constants:
     response_cache: ResponseCacheConstants = ResponseCacheConstants()
     taskiq: TaskiqConstants = TaskiqConstants()
     files: FilesConstants = FilesConstants()
+    knowledge_files: KnowledgeFilesConstants = KnowledgeFilesConstants()
+    request_logging: RequestLoggingConstants = RequestLoggingConstants()
     resume_export: ResumeExportConstants = ResumeExportConstants()
     search: SearchConstants = SearchConstants()
     question_queue_import: QuestionQueueImportConstants = QuestionQueueImportConstants()

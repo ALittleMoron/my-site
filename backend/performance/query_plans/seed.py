@@ -30,6 +30,8 @@ from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum
 from core.competency_matrix.schemas import CompetencyMatrixQuestionFingerprint
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
+from core.knowledge.files.enums import KnowledgeFileKind
+from core.knowledge.items.enums import KnowledgeItemKind
 from infra.postgresql.models import (
     AgentAuditEventModel,
     AgentCertificateModel,
@@ -49,8 +51,15 @@ from infra.postgresql.models import (
     ContactMeModel,
     ExternalResourceModel,
     FileModel,
+    KnowledgeFileModel,
+    KnowledgeItemModel,
+    KnowledgeItemTagModel,
+    KnowledgeTagModel,
     MatrixQuestionClaimModel,
     MatrixQuestionDraftCompletionModel,
+    PersonDetailsModel,
+    PersonRelationshipModel,
+    PersonRelationshipTypeModel,
     QueuedQuestionModel,
     ResumeModel,
     TagModel,
@@ -81,6 +90,8 @@ TARGET_RESOURCE_LINK_COUNT = 4
 EXISTING_MATRIX_ITEM_SEED_INDEX = 100
 ANALYTICS_DAY_BUCKET_COUNT = 1_095
 ANALYTICS_SOURCE_DAY_OFFSET = 61
+KNOWLEDGE_DELETABLE_TAG_NUMBER = 3
+KNOWLEDGE_GENERAL_TAG_START_NUMBER = KNOWLEDGE_DELETABLE_TAG_NUMBER + 1
 QUERY_PLAN_SEEDED_MODELS = (
     AgentAuditEventModel,
     MatrixQuestionDraftCompletionModel,
@@ -88,6 +99,13 @@ QUERY_PLAN_SEEDED_MODELS = (
     MatrixQuestionClaimModel,
     AgentCertificateModel,
     AgentClientModel,
+    PersonRelationshipModel,
+    PersonRelationshipTypeModel,
+    PersonDetailsModel,
+    KnowledgeItemTagModel,
+    KnowledgeFileModel,
+    KnowledgeTagModel,
+    KnowledgeItemModel,
     ResourceToItemSecondaryModel,
     QueuedQuestionModel,
     CompetencyMatrixItemModel,
@@ -144,6 +162,8 @@ async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile
         f"{cardinalities.articles.articles} articles, "
         f"{cardinalities.articles.tags} tags, "
         f"{cardinalities.articles.article_tag_links} article-tag links, "
+        f"{cardinalities.knowledge.items} people, "
+        f"{cardinalities.knowledge.relationships} person relationships, "
         f"{cardinalities.matrix.items} matrix items, "
         f"{cardinalities.matrix.resources} resources\n",
     )
@@ -159,6 +179,12 @@ async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile
     await insert_article_analytics(connection=connection, profile=profile)
     await insert_article_reactions(connection=connection, profile=profile)
     await insert_resumes(connection=connection, profile=profile)
+    await insert_knowledge_items(connection=connection, profile=profile)
+    await insert_knowledge_tags(connection=connection, profile=profile)
+    await insert_knowledge_item_tag_links(connection=connection, profile=profile)
+    await insert_person_relationship_types(connection=connection, profile=profile)
+    await insert_person_relationships(connection=connection, profile=profile)
+    await insert_knowledge_files(connection=connection, profile=profile)
     await insert_resources(connection=connection, profile=profile)
     await insert_competency_matrix_structure(connection=connection, profile=profile)
     await insert_competency_matrix_items(connection=connection, profile=profile)
@@ -605,6 +631,341 @@ async def insert_resumes(*, connection: AsyncConnection, profile: QueryPlanProfi
                 literal(SEED_NOW),
                 literal(SEED_NOW),
             ).select_from(series),
+        ),
+    )
+
+
+async def insert_knowledge_items(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.knowledge.items,
+        name="knowledge_item_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    target_person = (
+        func.mod(value, PERCENTAGE_BASE) < profile.cardinalities.knowledge.search_match_percentage
+    )
+    await connection.execute(
+        insert(KnowledgeItemModel.__table__).from_select(
+            [
+                "id",
+                "kind",
+                "author_username",
+                "display_name",
+                "description",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                hex_id_expr(value=value),
+                sql_cast(
+                    literal(KnowledgeItemKind.PERSON.name),
+                    KnowledgeItemModel.__table__.c.kind.type,
+                ),
+                literal(SEED_USERNAME),
+                case(
+                    (
+                        target_person,
+                        func.concat(literal("Lovelace Ada Searchneedle "), value),
+                    ),
+                    else_=func.concat(literal("Surname "), value, literal(" Name "), value),
+                ),
+                func.concat(literal("Private query-plan person description "), value),
+                literal(SEED_NOW) - value * literal(timedelta(seconds=2)),
+                literal(SEED_NOW) - value * literal(timedelta(seconds=1)),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+    await connection.execute(
+        insert(PersonDetailsModel.__table__).from_select(
+            [
+                "item_id",
+                "author_username",
+                "last_name",
+                "first_name",
+                "middle_name",
+                "email",
+                "phone",
+                "telegram",
+                "birthday_day",
+                "birthday_month",
+                "birthday_year",
+            ],
+            select(
+                hex_id_expr(value=value),
+                literal(SEED_USERNAME),
+                case(
+                    (target_person, literal("Lovelace Searchneedle")),
+                    else_=func.concat(literal("Surname "), value),
+                ),
+                case(
+                    (target_person, literal("Ada Searchneedle")),
+                    else_=func.concat(literal("Name "), value),
+                ),
+                case(
+                    (target_person, literal("Middle Searchneedle")),
+                    else_=literal(""),
+                ),
+                case(
+                    (
+                        target_person,
+                        func.concat(literal("searchneedle-"), value, literal("@example.com")),
+                    ),
+                    else_=func.concat(literal("person-"), value, literal("@example.com")),
+                ),
+                func.concat(literal("+7-900-"), value),
+                func.concat(literal("@person-"), value),
+                literal(15),
+                literal(1),
+                literal(1990),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_knowledge_tags(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.knowledge.tags,
+        name="knowledge_tag_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    await connection.execute(
+        insert(KnowledgeTagModel.__table__).from_select(
+            ["id", "author_username", "name", "created_at", "updated_at"],
+            select(
+                hex_id_expr(value=value),
+                literal(SEED_USERNAME),
+                case(
+                    (value == PYTHON_ID, literal("Work")),
+                    (value == POSTGRESQL_ID, literal("Important")),
+                    else_=func.concat(literal("Knowledge tag "), value),
+                ),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_knowledge_item_tag_links(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    knowledge = profile.cardinalities.knowledge
+    target_item_count = knowledge.items * knowledge.search_match_percentage // PERCENTAGE_BASE
+    target_series = generate_series_subquery(
+        end=knowledge.items,
+        name="knowledge_target_item_series",
+    )
+    target_value = sql_cast(target_series.c.value, Integer)
+    target_item_condition = (
+        func.mod(target_value, PERCENTAGE_BASE) < knowledge.search_match_percentage
+    )
+    target_links = union_all(
+        select(
+            hex_id_expr(value=target_value),
+            literal(hex_id(1)),
+            literal(SEED_USERNAME),
+            literal(SEED_NOW),
+            literal(SEED_NOW),
+        )
+        .select_from(target_series)
+        .where(target_item_condition),
+        select(
+            hex_id_expr(value=target_value),
+            literal(hex_id(2)),
+            literal(SEED_USERNAME),
+            literal(SEED_NOW),
+            literal(SEED_NOW),
+        )
+        .select_from(target_series)
+        .where(target_item_condition),
+    )
+    await connection.execute(
+        insert(KnowledgeItemTagModel.__table__).from_select(
+            ["item_id", "tag_id", "author_username", "created_at", "updated_at"],
+            target_links,
+            include_defaults=False,
+        ),
+    )
+
+    general_link_count = knowledge.item_tag_links - target_item_count * 2
+    general_series = generate_series_subquery(
+        end=general_link_count,
+        name="knowledge_item_tag_series",
+    )
+    value = sql_cast(general_series.c.value, Integer)
+    item_number = func.mod(value - 1, knowledge.items) + 1
+    link_round = sql_cast(func.floor((value - 1) / knowledge.items), Integer)
+    available_general_tag_count = knowledge.tags - KNOWLEDGE_GENERAL_TAG_START_NUMBER + 1
+    tag_number = (
+        func.mod(value + link_round * 97, available_general_tag_count)
+        + KNOWLEDGE_GENERAL_TAG_START_NUMBER
+    )
+    await connection.execute(
+        insert(KnowledgeItemTagModel.__table__).from_select(
+            ["item_id", "tag_id", "author_username", "created_at", "updated_at"],
+            select(
+                hex_id_expr(value=item_number),
+                hex_id_expr(value=tag_number),
+                literal(SEED_USERNAME),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(general_series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_person_relationship_types(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.knowledge.relationship_types,
+        name="person_relationship_type_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    symmetric = func.mod(value, 2) == 0
+    forward_name = func.concat(literal("Relationship "), value)
+    await connection.execute(
+        insert(PersonRelationshipTypeModel.__table__).from_select(
+            [
+                "id",
+                "author_username",
+                "is_symmetric",
+                "forward_name",
+                "reverse_name",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                hex_id_expr(value=value),
+                literal(SEED_USERNAME),
+                symmetric,
+                forward_name,
+                case(
+                    (symmetric, forward_name),
+                    else_=func.concat(literal("Reverse relationship "), value),
+                ),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_person_relationships(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    knowledge = profile.cardinalities.knowledge
+    series = generate_series_subquery(
+        end=knowledge.relationships,
+        name="person_relationship_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    source_number = func.mod(value - 1, knowledge.items) + 1
+    link_round = sql_cast(func.floor((value - 1) / knowledge.items), Integer)
+    target_number = func.mod(source_number + link_round, knowledge.items) + 1
+    relationship_type_number = func.mod(link_round, knowledge.relationship_types) + 1
+    await connection.execute(
+        insert(PersonRelationshipModel.__table__).from_select(
+            [
+                "id",
+                "author_username",
+                "source_person_id",
+                "target_person_id",
+                "relationship_type_id",
+                "note",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                hex_id_expr(value=1_000_000 + value),
+                literal(SEED_USERNAME),
+                hex_id_expr(value=source_number),
+                hex_id_expr(value=target_number),
+                hex_id_expr(value=relationship_type_number),
+                func.concat(literal("Query-plan relationship note "), value),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_knowledge_files(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    knowledge = profile.cardinalities.knowledge
+    series = generate_series_subquery(
+        end=knowledge.files,
+        name="knowledge_file_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    item_number = func.mod(value - 1, knowledge.items) + 1
+    file_round = sql_cast(func.floor((value - 1) / knowledge.items), Integer)
+    await connection.execute(
+        insert(KnowledgeFileModel.__table__).from_select(
+            [
+                "id",
+                "item_id",
+                "author_username",
+                "kind",
+                "relative_path",
+                "mime_type",
+                "size_bytes",
+                "name",
+                "original_name",
+                "original_sha256",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                hex_id_expr(value=2_000_000 + value),
+                hex_id_expr(value=item_number),
+                literal(SEED_USERNAME),
+                sql_cast(
+                    case(
+                        (
+                            file_round == 0,
+                            literal(KnowledgeFileKind.PERSON_PHOTO.name),
+                        ),
+                        else_=literal(KnowledgeFileKind.ATTACHMENT.name),
+                    ),
+                    KnowledgeFileModel.__table__.c.kind.type,
+                ),
+                func.concat(literal("query-plan/knowledge/"), value),
+                case(
+                    (file_round == 0, literal("image/webp")),
+                    else_=literal("application/octet-stream"),
+                ),
+                1_024 + func.mod(value, 4_096),
+                func.concat(literal("Knowledge file "), value),
+                func.concat(literal("knowledge-file-"), value, literal(".bin")),
+                func.lpad(func.to_hex(value), 64, literal("0")),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(series),
+            include_defaults=False,
         ),
     )
 
@@ -1108,6 +1469,13 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "articles__article_reaction_model",
         "files__file_model",
         "resumes__resume_model",
+        "knowledge__knowledge_item_model",
+        "knowledge__knowledge_tag_model",
+        "knowledge__knowledge_item_tag_model",
+        "knowledge__person_details_model",
+        "knowledge__person_relationship_type_model",
+        "knowledge__person_relationship_model",
+        "knowledge__knowledge_file_model",
         "auth__auth_session_model",
         "competency_matrix__external_resource_model",
         "competency_matrix__competency_matrix_item_model",

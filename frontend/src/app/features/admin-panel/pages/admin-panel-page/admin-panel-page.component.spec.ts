@@ -61,6 +61,8 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Вопросы');
     expect(fixture.nativeElement.textContent).toContain('Структура');
     expect(fixture.nativeElement.textContent).toContain('Очередь вопросов');
+    expect(fixture.nativeElement.textContent).toContain('База знаний');
+    expect(fixture.nativeElement.textContent).toContain('Люди');
     expect(fixture.nativeElement.textContent).not.toContain('Папки статей');
     expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
     expect(fixture.nativeElement.textContent).not.toContain('Структура матрицы');
@@ -76,6 +78,7 @@ describe('AdminPanelPageComponent', () => {
       'Рабочая область3',
       'Статьи4',
       'Матрица3',
+      'База знаний1',
     ]);
   });
 
@@ -85,6 +88,7 @@ describe('AdminPanelPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
+    expect(fixture.nativeElement.textContent).not.toContain('База знаний');
     expect(fixture.nativeElement.textContent).not.toContain('Команда');
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
     expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
@@ -104,6 +108,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Резюме');
     expect(fixture.nativeElement.textContent).toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('AI-агенты');
+    expect(fixture.nativeElement.textContent).toContain('База знаний');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

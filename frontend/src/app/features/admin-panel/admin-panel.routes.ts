@@ -98,6 +98,26 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'knowledge/people',
+        title: 'knowledgePeople.title',
+        canActivate: [teamGuard],
+        canDeactivate: [adminUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./knowledge/people/pages/people-list/people-list.component').then(
+            (m) => m.PeopleListComponent,
+          ),
+      },
+      {
+        path: 'knowledge/people/:id',
+        title: 'knowledgePeople.detailTitle',
+        canActivate: [teamGuard],
+        canDeactivate: [adminUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./knowledge/people/pages/person-detail/person-detail.component').then(
+            (m) => m.PersonDetailComponent,
+          ),
+      },
+      {
         path: 'workspace/tools',
         title: 'adminTools.title',
         canActivate: [teamGuard],

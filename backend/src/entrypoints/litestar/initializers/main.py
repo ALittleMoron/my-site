@@ -25,6 +25,7 @@ from entrypoints.litestar.middlewares.agent_audit import AgentOutcomeAuditMiddle
 from entrypoints.litestar.middlewares.auth import AuthenticationMiddleware
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
+    PrivacySafeLoggingMiddleware,
     RequestIdLoggingMiddleware,
 )
 from entrypoints.litestar.openapi_metadata import install_openapi_request_body_metadata
@@ -80,6 +81,14 @@ def create_openapi_config() -> OpenAPIConfig:
     )
 
 
+def create_logging_middleware_config() -> LoggingMiddlewareConfig:
+    return LoggingMiddlewareConfig(
+        request_log_fields=["path", "method", "path_params"],
+        response_log_fields=["status_code"],
+        middleware_class=PrivacySafeLoggingMiddleware,
+    )
+
+
 def create_plugins() -> list[PluginProtocol]:
     project_logging_config = loggers.build_project_logging_config(debug=settings.app.debug)
     logging_config = StructLoggingConfig(
@@ -93,10 +102,7 @@ def create_plugins() -> list[PluginProtocol]:
         StructlogPlugin(
             config=StructlogConfig(
                 structlog_logging_config=logging_config,
-                middleware_logging_config=LoggingMiddlewareConfig(
-                    request_log_fields=["path", "method", "query", "path_params"],
-                    response_log_fields=["status_code"],
-                ),
+                middleware_logging_config=create_logging_middleware_config(),
             ),
         ),
         PydanticPlugin(prefer_alias=True),

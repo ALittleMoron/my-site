@@ -170,6 +170,14 @@ ResumeLongText = Annotated[
     str,
     Field(max_length=constants.admin_validation.resume_long_text_max_length),
 ]
+KnowledgeDescriptionText = Annotated[
+    str,
+    Field(max_length=constants.admin_validation.knowledge_description_max_length),
+]
+KnowledgeRelationshipNoteText = Annotated[
+    str,
+    Field(max_length=constants.admin_validation.knowledge_relationship_note_max_length),
+]
 ShortText = Annotated[
     str,
     Field(max_length=constants.admin_validation.short_text_max_length),

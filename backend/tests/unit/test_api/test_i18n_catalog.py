@@ -154,6 +154,32 @@ class TestI18nCatalog:
         assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
         assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"
 
+    def test_people_workspace_catalog_has_complete_ru_en_chrome(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+        required_keys = {
+            "adminPanel.section.knowledge",
+            "adminPanel.section.people",
+            "knowledgePeople.title",
+            "knowledgePeople.create",
+            "knowledgePeople.section.basic",
+            "knowledgePeople.section.contacts",
+            "knowledgePeople.section.description",
+            "knowledgePeople.section.tags",
+            "knowledgePeople.section.relationships",
+            "knowledgePeople.section.attachments",
+            "knowledgePeople.relationshipTypes.manage",
+            "knowledgePeople.attachmentDownloadError",
+            "knowledgePeople.photoSaveError",
+        }
+
+        assert required_keys <= russian_messages.keys()
+        assert required_keys <= english_messages.keys()
+        assert (
+            russian_messages["adminPanel.section.knowledge"]
+            != english_messages["adminPanel.section.knowledge"]
+        )
+
     def test_matrix_draft_blocker_summary_labels_fit_the_summary_card(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

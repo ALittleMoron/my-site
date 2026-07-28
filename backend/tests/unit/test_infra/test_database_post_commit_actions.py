@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from infra.ioc.prodivers.database_provider import DatabaseProvider
-from infra.post_commit_actions import PostCommitActions
+from infra.post_commit_actions import PostCommitActions, RollbackActions
 from infra.postgresql import meta
 from infra.postgresql.transactions import DatabaseTransactionState
 
@@ -43,11 +43,13 @@ class TestDatabasePostCommitActions:
         )
         monkeypatch.setattr(meta, "sessionmaker", session_factory)
         action = AsyncMock(side_effect=lambda: events.append("post_commit"))
+        rollback_action = AsyncMock()
         post_commit_actions = PostCommitActions(actions=[action])
         provider = DatabaseProvider()
         generator = provider.provide_async_session(
             transaction_state=DatabaseTransactionState(rollback_required=False),
             post_commit_actions=post_commit_actions,
+            rollback_actions=RollbackActions(actions=[rollback_action]),
         )
 
         assert await anext(generator) is session
@@ -56,6 +58,7 @@ class TestDatabasePostCommitActions:
 
         assert events == ["commit", "post_commit"]
         action.assert_awaited_once_with()
+        rollback_action.assert_not_awaited()
 
     async def test_skips_actions_after_rollback(
         self,
@@ -72,6 +75,7 @@ class TestDatabasePostCommitActions:
         generator = provider.provide_async_session(
             transaction_state=DatabaseTransactionState(rollback_required=True),
             post_commit_actions=PostCommitActions(actions=[action]),
+            rollback_actions=RollbackActions(actions=[]),
         )
 
         assert await anext(generator) is session
@@ -99,6 +103,7 @@ class TestDatabasePostCommitActions:
         generator = provider.provide_async_session(
             transaction_state=DatabaseTransactionState(rollback_required=False),
             post_commit_actions=PostCommitActions(actions=[action]),
+            rollback_actions=RollbackActions(actions=[]),
         )
 
         assert await anext(generator) is session
@@ -106,3 +111,60 @@ class TestDatabasePostCommitActions:
             await generator.asend(None)
 
         action.assert_not_awaited()
+
+    @pytest.mark.parametrize("rollback_required", [False, True])
+    async def test_runs_rollback_actions_for_request_failure_or_marked_rollback(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        rollback_required: bool,
+    ) -> None:
+        session = AsyncMock(spec=AsyncSession)
+        session_factory = cast(
+            "async_sessionmaker[AsyncSession]",
+            SessionFactory(session=session),
+        )
+        monkeypatch.setattr(meta, "sessionmaker", session_factory)
+        action = AsyncMock()
+        provider = DatabaseProvider()
+        generator = provider.provide_async_session(
+            transaction_state=DatabaseTransactionState(
+                rollback_required=rollback_required,
+            ),
+            post_commit_actions=PostCommitActions(actions=[]),
+            rollback_actions=RollbackActions(actions=[action]),
+        )
+
+        assert await anext(generator) is session
+        sent_value = None if rollback_required else RuntimeError("request failed")
+        with pytest.raises(StopAsyncIteration):
+            await generator.asend(sent_value)
+
+        session.rollback.assert_awaited_once_with()
+        action.assert_awaited_once_with()
+
+    async def test_runs_rollback_actions_when_commit_fails_and_preserves_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        error_message = "commit failed"
+        session = AsyncMock(spec=AsyncSession)
+        session.commit.side_effect = RuntimeError(error_message)
+        session_factory = cast(
+            "async_sessionmaker[AsyncSession]",
+            SessionFactory(session=session),
+        )
+        monkeypatch.setattr(meta, "sessionmaker", session_factory)
+        action = AsyncMock()
+        provider = DatabaseProvider()
+        generator = provider.provide_async_session(
+            transaction_state=DatabaseTransactionState(rollback_required=False),
+            post_commit_actions=PostCommitActions(actions=[]),
+            rollback_actions=RollbackActions(actions=[action]),
+        )
+
+        assert await anext(generator) is session
+        with pytest.raises(RuntimeError, match=error_message):
+            await generator.asend(None)
+
+        session.rollback.assert_awaited_once_with()
+        action.assert_awaited_once_with()

@@ -164,6 +164,8 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('describes interview-answer-explanation editors as interview answer explanations', () => {
+    clickDisplayMode('ru-en');
+
     const russianLabel = fixture.nativeElement.querySelector(
       '#matrix-form-interview-answer-explanation-ru-label',
     ) as HTMLElement;
@@ -188,6 +190,8 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('passes language and localized labels to every Markdown editor', () => {
+    clickDisplayMode('ru-en');
+
     const editors = fixture.debugElement
       .queryAll(By.directive(MarkdownEditorStubComponent))
       .map((debugElement) => debugElement.componentInstance as MarkdownEditorStubComponent);
@@ -257,6 +261,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('shows invalid styling and localized feedback for the required subsection picker', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'draft-question');
     setInput('#matrix-form-question-ru', 'Вопрос?');
     setInput('#matrix-form-question-en', 'Question?');
@@ -269,6 +274,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('emits an incomplete draft payload with only minimum required fields', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
@@ -394,6 +400,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('does not create a question when discarding an unfinished nested draft is rejected', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
@@ -431,7 +438,7 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(inputValue('#matrix-form-slug')).toBe('queued-question-0007');
     expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8?');
-    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
+    expect(fixture.componentInstance.questionForm.controls.questionEn.value).toBe('What is PEP 8?');
     expect(selectValue('#matrix-form-grade')).toBe('Junior');
     expect(
       fixture.debugElement.query(By.directive(MatrixStructurePickerStubComponent)).componentInstance
@@ -461,6 +468,7 @@ describe('MatrixQuestionFormComponent', () => {
       },
     });
     fixture.detectChanges();
+    clickDisplayMode('ru-en');
 
     const editors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
 
@@ -494,7 +502,7 @@ describe('MatrixQuestionFormComponent', () => {
     });
   });
 
-  it('shows both localized field sets by default', () => {
+  it('shows only RU localized fields by default when creating a question', () => {
     fixture.componentRef.setInput('createInitialValue', {
       slug: 'queued-question-0007',
       subsectionId: SUBSECTION_ID,
@@ -518,21 +526,22 @@ describe('MatrixQuestionFormComponent', () => {
     fixture.detectChanges();
 
     expect(inputValue('#matrix-form-question-ru')).toBe('Что такое PEP 8?');
-    expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
+    expect(element('#matrix-form-question-en')).toBeNull();
     expect(element('#matrix-form-answer-ru')).not.toBeNull();
-    expect(element('#matrix-form-answer-en')).not.toBeNull();
+    expect(element('#matrix-form-answer-en')).toBeNull();
     expect(element('#matrix-form-interview-answer-explanation-ru')).not.toBeNull();
-    expect(element('#matrix-form-interview-answer-explanation-en')).not.toBeNull();
+    expect(element('#matrix-form-interview-answer-explanation-en')).toBeNull();
     expect(
       fixture.nativeElement
-        .querySelector('[data-testid="matrix-form-display-mode-ru-en"]')
+        .querySelector('[data-testid="matrix-form-display-mode-ru"]')
         ?.getAttribute('aria-pressed'),
     ).toBe('true');
     expect(
       fixture.debugElement
         .queryAll(By.directive(MarkdownEditorStubComponent))
         .map((editor) => editor.componentInstance.value),
-    ).toEqual(['## RU answer', '## EN answer', 'RU explanation', 'EN explanation']);
+    ).toEqual(['## RU answer', 'RU explanation']);
+    expect(fixture.componentInstance.questionForm.controls.questionEn.value).toBe('What is PEP 8?');
   });
 
   it('shows only RU localized fields by default when editing an existing question', () => {
@@ -761,6 +770,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('blocks invalid slug and long answer text before emitting', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'Invalid Slug');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
@@ -779,6 +789,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('blocks an incomplete published payload before emitting', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
@@ -801,6 +812,7 @@ describe('MatrixQuestionFormComponent', () => {
     );
 
     expect(generateButton?.disabled).toBe(true);
+    clickDisplayMode('en');
     setInput('#matrix-form-question-en', 'What is dependency injection?');
     fixture.detectChanges();
 
@@ -813,6 +825,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('lays out metadata, question text, and multiline fields in readable rows', () => {
+    clickDisplayMode('ru-en');
     fixture.componentInstance.attachResource(resource);
     fixture.detectChanges();
 
@@ -837,6 +850,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('blocks invalid new resource URL and too-long resource context', () => {
+    clickDisplayMode('ru-en');
     setInput('[data-testid="matrix-resource-new-name-ru"]', 'Документация');
     setInput('[data-testid="matrix-resource-new-name-en"]', 'Documentation');
     setInput('[data-testid="matrix-resource-new-url"]', 'ftp://example.com/docs');
@@ -919,6 +933,7 @@ describe('MatrixQuestionFormComponent', () => {
       setInvalidValue: () => setTextarea('#matrixResourceContextEn0', INVALID_MATRIX_TEXT),
     },
   ])('shows invalid styling and localized feedback for $description', (validationCase) => {
+    clickDisplayMode('ru-en');
     fixture.componentInstance.attachResource(resource);
     fixture.detectChanges();
     fillValidQuestionMinimum();
@@ -931,6 +946,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('adds, searches, edits context, and removes resources in the form payload', () => {
+    clickDisplayMode('ru-en');
     setInput('[data-testid="matrix-resource-search"]', 'python');
     fixture.detectChanges();
     expect(service.searchResources).toHaveBeenCalledWith('python', 10, 'ru');
@@ -957,6 +973,7 @@ describe('MatrixQuestionFormComponent', () => {
   });
 
   it('previews unsaved localized Markdown and attached resources as public content', () => {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-question-ru', 'Как работает typing?');
     setInput('#matrix-form-question-en', 'How does typing work?');
     setMarkdownEditor(
@@ -1092,6 +1109,7 @@ describe('MatrixQuestionFormComponent', () => {
   }
 
   function fillValidQuestionMinimum(): void {
+    clickDisplayMode('ru-en');
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Вопрос?');
@@ -1201,6 +1219,7 @@ class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
   @Input({ required: true }) language!: 'ru' | 'en';
   @Input({ required: true }) accessibleLabel!: string;
+  @Input({ required: true }) imageUploadsEnabled!: boolean;
   @Output() readonly valueChange = new EventEmitter<string>();
 
   readonly focus = jest.fn();

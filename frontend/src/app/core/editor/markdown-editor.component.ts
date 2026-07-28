@@ -180,8 +180,8 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
   @ViewChild('editorFooter', { static: true })
   private readonly editorFooter!: ElementRef<HTMLElement>;
-  @ViewChild('imageInput', { static: true })
-  private readonly imageInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('imageInput')
+  private readonly imageInput?: ElementRef<HTMLInputElement>;
   @ViewChild('previewTab', { static: true })
   private readonly previewTab!: ElementRef<HTMLButtonElement>;
   @ViewChild('fullscreenToggle', { static: true })
@@ -190,6 +190,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   readonly value = input.required<string>();
   readonly language = input.required<LanguageCode>();
   readonly accessibleLabel = input.required<string>();
+  readonly imageUploadsEnabled = input.required<boolean>();
   readonly valueChange = output<string>();
 
   readonly mode = signal<EditorMode>('edit');
@@ -215,8 +216,10 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     this.wikiLinkRenderer.render(this.internalValue(), this.language()),
   );
   readonly previewEmpty = computed(() => this.internalValue().trim() === '');
-  readonly shortcutGroups = resolveShortcutGroups();
-  readonly toolbarGroups = resolveToolbarGroups(this.shortcutGroups);
+  readonly shortcutGroups = computed(() =>
+    filterImageCommands(resolveShortcutGroups(), this.imageUploadsEnabled()),
+  );
+  readonly toolbarGroups = computed(() => resolveToolbarGroups(this.shortcutGroups()));
   readonly shortcutModifierHintKey =
     this.editorPlatform() === 'mac'
       ? 'markdownEditor.shortcuts.modifierHintMac'
@@ -476,6 +479,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   onImageInput(event: Event): void {
+    if (!this.imageUploadsEnabled()) {
+      return;
+    }
     const input = event.currentTarget;
     if (!(input instanceof HTMLInputElement)) {
       return;
@@ -658,8 +664,11 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       return true;
     }
     if (command === 'image') {
+      if (!this.imageUploadsEnabled()) {
+        return false;
+      }
       this.pendingImageInsertionPosition = view.state.selection.main.head;
-      this.imageInput.nativeElement.click();
+      this.imageInput?.nativeElement.click();
       return true;
     }
     if (command === 'link' || command === 'table') {
@@ -751,6 +760,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   private handlePaste(event: ClipboardEvent, view: EditorView): boolean {
+    if (!this.imageUploadsEnabled()) {
+      return false;
+    }
     const files = Array.from(event.clipboardData?.items ?? [])
       .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -765,6 +777,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   private handleDrop(event: DragEvent, view: EditorView): boolean {
+    if (!this.imageUploadsEnabled()) {
+      return false;
+    }
     const files = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
       file.type.startsWith('image/'),
     );
@@ -779,6 +794,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   private handleDragOver(event: DragEvent): boolean {
+    if (!this.imageUploadsEnabled()) {
+      return false;
+    }
     const hasImage = Array.from(event.dataTransfer?.items ?? []).some(
       (item) => item.kind === 'file' && item.type.startsWith('image/'),
     );
@@ -793,6 +811,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   private queueImageUploads(files: readonly File[], anchor: number): void {
+    if (!this.imageUploadsEnabled()) {
+      return;
+    }
     const images = files.filter((file) => file.type.startsWith('image/'));
     if (images.length === 0) {
       return;
@@ -1092,6 +1113,21 @@ function resolveToolbarGroups(
     .map((group) => ({
       ...group,
       commands: group.commands.filter((command) => command.id !== 'togglePreview'),
+    }))
+    .filter((group) => group.commands.length > 0);
+}
+
+function filterImageCommands(
+  shortcutGroups: readonly ResolvedShortcutGroup[],
+  imageUploadsEnabled: boolean,
+): readonly ResolvedShortcutGroup[] {
+  if (imageUploadsEnabled) {
+    return shortcutGroups;
+  }
+  return shortcutGroups
+    .map((group) => ({
+      ...group,
+      commands: group.commands.filter((command) => command.id !== 'image'),
     }))
     .filter((group) => group.commands.length > 0);
 }

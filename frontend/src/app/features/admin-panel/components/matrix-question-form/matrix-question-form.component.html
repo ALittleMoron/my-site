@@ -234,6 +234,7 @@
           [attr.aria-invalid]="fieldInvalid('answerRu') ? 'true' : null"
         >
           <app-markdown-editor
+            [imageUploadsEnabled]="true"
             #answerRuEditor
             [value]="questionForm.controls.answerRu.value"
             [language]="'ru'"
@@ -261,6 +262,7 @@
           [attr.aria-invalid]="fieldInvalid('answerEn') ? 'true' : null"
         >
           <app-markdown-editor
+            [imageUploadsEnabled]="true"
             #answerEnEditor
             [value]="questionForm.controls.answerEn.value"
             [language]="'en'"
@@ -292,6 +294,7 @@
           [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationRu') ? 'true' : null"
         >
           <app-markdown-editor
+            [imageUploadsEnabled]="true"
             #explanationRuEditor
             [value]="questionForm.controls.interviewAnswerExplanationRu.value"
             [language]="'ru'"
@@ -327,6 +330,7 @@
           [attr.aria-invalid]="fieldInvalid('interviewAnswerExplanationEn') ? 'true' : null"
         >
           <app-markdown-editor
+            [imageUploadsEnabled]="true"
             #explanationEnEditor
             [value]="questionForm.controls.interviewAnswerExplanationEn.value"
             [language]="'en'"

@@ -83,6 +83,33 @@ INDEX_RELATION_NAMES: Mapping[str, str] = {
         "competency_matrix__external_resource_model"
     ),
     "competency_matrix__queued_question_model_pkey": ("competency_matrix__queued_question_model"),
+    "knowledge__knowledge_file_model_pkey": "knowledge__knowledge_file_model",
+    "knowledge__knowledge_item_model_pkey": "knowledge__knowledge_item_model",
+    "knowledge__knowledge_item_tag_model_pkey": "knowledge__knowledge_item_tag_model",
+    "knowledge__knowledge_tag_model_pkey": "knowledge__knowledge_tag_model",
+    "knowledge__person_details_model_pkey": "knowledge__person_details_model",
+    "knowledge__person_relationship_model_pkey": "knowledge__person_relationship_model",
+    "knowledge__person_relationship_type_model_pkey": ("knowledge__person_relationship_type_model"),
+    "knowledge_files_author_item_kind_id_idx": "knowledge__knowledge_file_model",
+    "knowledge_files_id_author_uniq": "knowledge__knowledge_file_model",
+    "knowledge_item_tags_author_tag_item_idx": "knowledge__knowledge_item_tag_model",
+    "knowledge_items_author_kind_name_id_idx": "knowledge__knowledge_item_model",
+    "knowledge_items_author_kind_updated_id_idx": "knowledge__knowledge_item_model",
+    "knowledge_items_id_author_uniq": "knowledge__knowledge_item_model",
+    "knowledge_tags_id_author_uniq": "knowledge__knowledge_tag_model",
+    "knowledge_tags_author_name_id_idx": "knowledge__knowledge_tag_model",
+    "knowledge_tags_author_name_lower_uniq": "knowledge__knowledge_tag_model",
+    "knowledge_tags_name_trgm_idx": "knowledge__knowledge_tag_model",
+    "person_details_email_trgm_idx": "knowledge__person_details_model",
+    "person_details_first_name_trgm_idx": "knowledge__person_details_model",
+    "person_details_last_name_trgm_idx": "knowledge__person_details_model",
+    "person_details_middle_name_trgm_idx": "knowledge__person_details_model",
+    "person_details_id_author_uniq": "knowledge__person_details_model",
+    "person_relationship_types_id_author_uniq": ("knowledge__person_relationship_type_model"),
+    "person_relationship_types_author_name_id_idx": ("knowledge__person_relationship_type_model"),
+    "person_relationships_author_source_idx": "knowledge__person_relationship_model",
+    "person_relationships_author_target_idx": "knowledge__person_relationship_model",
+    "person_relationships_author_type_id_idx": "knowledge__person_relationship_model",
     "resumes__resume_model_pkey": "resumes__resume_model",
     "resumes_resume_author_updated_id_idx": "resumes__resume_model",
     "users_managed_accounts_list_idx": "auth__user_model",
@@ -160,5 +187,37 @@ ABSOLUTE_SLA_POLICY = QueryThresholdPolicy(
             names=("resumes_resume_author_updated_id_idx",),
         ),
         "resumes_list_workspace__002": (),
+        "knowledge_item_detail__001": expected_indexes_from_names(
+            names=("knowledge_items_id_author_uniq",),
+        ),
+        "knowledge_item_detail__002": expected_indexes_from_names(
+            names=("knowledge__knowledge_item_tag_model_pkey",),
+        ),
+        "knowledge_item_for_author__001": expected_indexes_from_names(
+            names=("knowledge_items_id_author_uniq",),
+        ),
+        "knowledge_item_for_author__002": expected_indexes_from_names(
+            names=("knowledge__knowledge_item_tag_model_pkey",),
+        ),
+        "knowledge_items_by_ids__001": expected_indexes_from_names(
+            names=("knowledge__knowledge_item_model_pkey",),
+        ),
+        "knowledge_items_by_ids__002": expected_indexes_from_names(
+            names=("knowledge__knowledge_item_tag_model_pkey",),
+        ),
+        "people_page_search_and_tags__001": expected_indexes_from_names(
+            names=(
+                "knowledge_item_tags_author_tag_item_idx",
+                "person_details_id_author_uniq",
+                "knowledge__knowledge_item_model_pkey",
+            ),
+        ),
+        "people_page_search_and_tags__002": expected_indexes_from_names(
+            names=(
+                "knowledge_item_tags_author_tag_item_idx",
+                "person_details_id_author_uniq",
+                "knowledge__knowledge_item_model_pkey",
+            ),
+        ),
     },
 )

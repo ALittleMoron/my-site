@@ -19,6 +19,7 @@ from entrypoints.litestar.api.contacts.endpoints import api_router as contacts_r
 from entrypoints.litestar.api.files.endpoints import admin_router as files_admin_router
 from entrypoints.litestar.api.healthcheck.endpoints import api_router as healthcheck_router
 from entrypoints.litestar.api.i18n.endpoints import api_router as i18n_router
+from entrypoints.litestar.api.knowledge.router import admin_router as knowledge_admin_router
 from entrypoints.litestar.api.resumes.endpoints import admin_router as resumes_admin_router
 from entrypoints.litestar.api.wiki_links.endpoints import admin_router as wiki_links_admin_router
 
@@ -32,6 +33,7 @@ admin_api_router = Router(
         files_admin_router,
         articles_admin_router,
         resumes_admin_router,
+        knowledge_admin_router,
         wiki_links_admin_router,
     ],
     tags=["admin api"],

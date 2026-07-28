@@ -229,6 +229,32 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Storages may `flush`, but must not `commit`; transaction ownership belongs to the DI/session provider.
 - Every DB model change must include a matching Alembic migration.
 
+## Knowledge Database
+
+- Model common knowledge metadata through the generic typed item contract and add normalized
+  one-to-one extension tables plus type-specific use-case facades. Do not add JSON/EAV attribute
+  bags, generic persisted field definitions, or storage methods named for one item type when the
+  operation is truly common.
+- Keep Knowledge implementations partitioned into matching `items`, `files`, and `people`
+  subpackages across core, Litestar API, PostgreSQL models/storages, and IOC providers. Keep the
+  Knowledge API root limited to router composition instead of rebuilding a cross-feature monolith.
+  Domain enums belong to the subpackage that owns their meaning; do not collect item-, file-, and
+  people-specific enums in a shared Knowledge root module.
+- Every knowledge list, lookup, join, mutation, taxonomy operation, relationship operation, and
+  file operation must include the authenticated `author_username` in its database predicate.
+  Preserve composite author foreign keys and cover guessed-ID/cross-author behavior with storage,
+  use-case, and API IDOR tests.
+- Keep People free-text search limited to first, middle, and last names plus email. Phone and
+  Telegram are stored contact fields and must not become search predicates or indexed search
+  targets without an explicit product-design change.
+- Private knowledge objects use the internal-only `knowledge-private` client and protected backend
+  streaming. Never return a public/presigned object URL, add anonymous bucket policy/CORS, or remove
+  S3 objects before transaction commit. Keep replacement/deletion cleanup post-commit and
+  best-effort. After a new private object upload succeeds, register it for request rollback and
+  commit-failure cleanup; never run that cleanup after a successful commit. Keep raw query values,
+  concrete private knowledge paths/path parameters, and private object details out of
+  request/cleanup logs.
+
 ## Performance
 
 - For backend changes that can realistically affect runtime performance, run

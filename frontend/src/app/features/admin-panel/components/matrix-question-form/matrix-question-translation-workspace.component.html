@@ -111,6 +111,7 @@
                 [attr.data-testid]="'matrix-translation-target-' + fieldTestId(row.field)"
               >
                 <app-markdown-editor
+                  [imageUploadsEnabled]="true"
                   [value]="row.field.translation"
                   [language]="'en'"
                   [accessibleLabel]="fieldLabelKey(row.field) | t"

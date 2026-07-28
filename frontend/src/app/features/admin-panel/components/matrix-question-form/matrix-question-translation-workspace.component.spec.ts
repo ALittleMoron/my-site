@@ -362,5 +362,6 @@ class MarkdownEditorStubComponent {
   @Input({ required: true }) value!: string;
   @Input({ required: true }) language!: 'ru' | 'en';
   @Input({ required: true }) accessibleLabel!: string;
+  @Input({ required: true }) imageUploadsEnabled!: boolean;
   @Output() readonly valueChange = new EventEmitter<string>();
 }

@@ -56,6 +56,7 @@ class TestDatabaseProviderTransactions:
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
             post_commit_actions=provider.provide_post_commit_actions(),
+            rollback_actions=provider.provide_rollback_actions(),
         )
 
         assert await anext(generator) is session
@@ -81,6 +82,7 @@ class TestDatabaseProviderTransactions:
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
             post_commit_actions=provider.provide_post_commit_actions(),
+            rollback_actions=provider.provide_rollback_actions(),
         )
 
         assert await anext(generator) is session
@@ -105,6 +107,7 @@ class TestDatabaseProviderTransactions:
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
             post_commit_actions=provider.provide_post_commit_actions(),
+            rollback_actions=provider.provide_rollback_actions(),
         )
 
         assert await anext(generator) is session
@@ -130,6 +133,7 @@ class TestDatabaseProviderTransactions:
         generator = provider.provide_async_session(
             transaction_state=transaction_state,
             post_commit_actions=provider.provide_post_commit_actions(),
+            rollback_actions=provider.provide_rollback_actions(),
         )
 
         assert await anext(generator) is session

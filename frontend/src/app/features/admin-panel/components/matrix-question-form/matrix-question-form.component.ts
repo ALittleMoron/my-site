@@ -231,7 +231,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   readonly newResourceUrl = signal('');
   readonly newResourceSubmitted = signal(false);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
-  readonly localizedDisplayMode = signal<MatrixQuestionDisplayMode>('ruEn');
+  readonly localizedDisplayMode = signal<MatrixQuestionDisplayMode>('ru');
   readonly viewMode = signal<MatrixQuestionViewMode>('edit');
   readonly previewLanguage = signal<LanguageCode>(this.currentLanguage());
   readonly previewLanguageLoading = signal(false);
@@ -871,7 +871,7 @@ export class MatrixQuestionFormComponent implements OnChanges, OnInit {
   private resetFromQuestion(): void {
     this.formSubmitted.set(false);
     this.publishError.set(null);
-    this.localizedDisplayMode.set(this.mode === 'edit' ? 'ru' : 'ruEn');
+    this.localizedDisplayMode.set('ru');
     this.viewMode.set('edit');
     this.previewLanguage.set(this.currentLanguage());
     this.previewLanguageLoading.set(false);

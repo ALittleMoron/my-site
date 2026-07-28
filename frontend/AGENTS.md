@@ -69,6 +69,10 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - Sanitize any backend or user-provided Markdown/HTML before binding it with `[innerHTML]`; SSR paths must not depend on browser-only sanitizer APIs.
 - Put reusable frontend upload helpers under `core/uploads/`, not `core/media/`; the latter matches
   a repository ignore pattern.
+- Fetch protected private-file content through authenticated APIs as `Blob` data. Browser object
+  URLs are short-lived capabilities: revoke superseded URLs and release all remaining URLs on
+  errors, navigation, and component destruction; never persist or expose them as backend object
+  URLs.
 - Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so public SSR detail pages can render without browser APIs.
 
 - Agent client registration, certificate metadata, revocation, scopes, and audit UI is owner-only.

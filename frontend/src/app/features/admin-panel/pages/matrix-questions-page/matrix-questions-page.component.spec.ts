@@ -490,6 +490,7 @@ describe('MatrixQuestionsPageComponent', () => {
   it('saves an incomplete draft with only the minimum required fields', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
+    showBothLocalizedFields();
     setInput('#matrix-form-slug', 'draft-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Неполный вопрос?');
@@ -510,6 +511,7 @@ describe('MatrixQuestionsPageComponent', () => {
   it('saves the selected interview frequency from the admin form', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
+    showBothLocalizedFields();
     setInput('#matrix-form-slug', 'frequent-question');
     selectQuestionSubsection(SUBSECTION_ID);
     setInput('#matrix-form-question-ru', 'Частый вопрос?');
@@ -549,6 +551,7 @@ describe('MatrixQuestionsPageComponent', () => {
   it('adds, searches, edits context, and removes resources in the admin form', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
+    showBothLocalizedFields();
 
     setInput('[data-testid="matrix-resource-search"]', 'python');
     fixture.detectChanges();
@@ -604,6 +607,7 @@ describe('MatrixQuestionsPageComponent', () => {
   it('generates slug only from the explicit button action', () => {
     fixture.componentInstance.openCreate();
     fixture.detectChanges();
+    showBothLocalizedFields();
     const slug = fixture.nativeElement.querySelector('#matrix-form-slug') as HTMLInputElement;
     const generateButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
       (button): button is HTMLButtonElement =>
@@ -684,6 +688,17 @@ describe('MatrixQuestionsPageComponent', () => {
     const form = fixture.debugElement.query(By.directive(MatrixQuestionFormComponent))
       .componentInstance as MatrixQuestionFormComponent;
     form.selectQuestionSubsection(subsectionId);
+    fixture.detectChanges();
+  }
+
+  function showBothLocalizedFields(): void {
+    const button = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      '[data-testid="matrix-form-display-mode-ru-en"]',
+    );
+    if (button === null) {
+      throw new Error('No RU+EN display mode button');
+    }
+    button.click();
     fixture.detectChanges();
   }
 

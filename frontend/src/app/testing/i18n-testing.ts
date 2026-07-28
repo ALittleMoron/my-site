@@ -136,6 +136,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminPanel.section.resumes': 'Резюме',
   'adminPanel.section.agentClients': 'AI-агенты',
   'adminPanel.section.tools': 'Инструменты',
+  'adminPanel.section.knowledge': 'База знаний',
+  'adminPanel.section.people': 'Люди',
   'adminTools.title': 'Служебные инструменты',
   'adminTools.description': 'Ручные операции и наблюдаемое состояние сервисов.',
   'adminTools.cache.title': 'Кэш ответов',

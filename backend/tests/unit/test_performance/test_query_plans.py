@@ -7,6 +7,8 @@ import pytest
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 
+from core.knowledge.people.enums import PersonListSort
+from core.knowledge.people.schemas import PersonFilters
 from core.resumes.schemas import ResumeFilters
 from performance.query_plans import (
     PlanExpectation,
@@ -247,6 +249,10 @@ class TestQueryCapture:
         assert ("UserAccountDatabaseStorage", "get_user_by_username") in identifiers
         assert ("ContactMeDatabaseStorage", "create_contact_me_request") in identifiers
         assert ("ResumesDatabaseStorage", "list_resumes") in identifiers
+        assert ("KnowledgeItemsDatabaseStorage", "get_item") in identifiers
+        assert ("KnowledgeFilesDatabaseStorage", "get_file") in identifiers
+        assert ("PeopleDatabaseStorage", "list_person_page") in identifiers
+        assert ("PeopleDatabaseStorage", "list_matching_person_ids") not in identifiers
         assert ("ArticlesDatabaseStorage", "_get_article_model") not in identifiers
 
     def test_storage_scenarios_cover_every_discovered_storage_method(self) -> None:
@@ -262,6 +268,20 @@ class TestQueryCapture:
         }
         assert ("ResumesDatabaseStorage", "list_resumes") in {
             (method.storage_class, method.method_name) for method in coverage.covered_methods
+        }
+        knowledge_storage_classes = {
+            "KnowledgeItemsDatabaseStorage",
+            "KnowledgeFilesDatabaseStorage",
+            "PeopleDatabaseStorage",
+        }
+        assert {
+            (method.storage_class, method.method_name)
+            for method in coverage.covered_methods
+            if method.storage_class in knowledge_storage_classes
+        } == {
+            (method.storage_class, method.method_name)
+            for method in coverage.discovered_methods
+            if method.storage_class in knowledge_storage_classes
         }
 
     def test_update_article_scenario_reuses_seeded_article_tags(self) -> None:
@@ -297,6 +317,47 @@ class TestQueryCapture:
             page=1,
             page_size=20,
             search_query=None,
+            author_username="benchmark",
+        )
+
+    async def test_people_page_scenario_combines_broad_search_and_tags(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        captured_filters: PersonFilters | None = None
+
+        class FakePeopleDatabaseStorage:
+            def __init__(self, *, session: object) -> None:
+                self.session = session
+
+            async def list_person_page(
+                self,
+                *,
+                filters: PersonFilters,
+            ) -> tuple[list[str], int]:
+                nonlocal captured_filters
+                captured_filters = filters
+                return [], 0
+
+        monkeypatch.setattr(
+            query_plan_scenarios,
+            "PeopleDatabaseStorage",
+            FakePeopleDatabaseStorage,
+        )
+
+        await query_plan_scenarios.run_list_person_page_search_and_tags(
+            cast("Any", object()),
+        )
+
+        assert captured_filters == PersonFilters(
+            page=3,
+            page_size=20,
+            sort=PersonListSort.UPDATED_NEWEST,
+            search_query="searchneedle",
+            tag_ids=(
+                query_plan_scenarios.EXISTING_KNOWLEDGE_TAG_ID,
+                query_plan_scenarios.SECOND_KNOWLEDGE_TAG_ID,
+            ),
             author_username="benchmark",
         )
 
@@ -781,6 +842,15 @@ def make_query_plan_profile() -> query_plan_models.QueryPlanProfile:
                 reactions=10,
             ),
             resumes=query_plan_models.ResumeCardinalities(resumes=10),
+            knowledge=query_plan_models.KnowledgeCardinalities(
+                items=101,
+                search_match_percentage=10,
+                tags=10,
+                item_tag_links=202,
+                relationship_types=10,
+                relationships=101,
+                files=202,
+            ),
             matrix=query_plan_models.MatrixCardinalities(
                 sheets=1,
                 sections_per_sheet=1,

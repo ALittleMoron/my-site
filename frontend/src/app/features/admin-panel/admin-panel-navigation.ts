@@ -107,4 +107,18 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
       },
     ],
   },
+  {
+    key: 'knowledge',
+    labelKey: 'adminPanel.section.knowledge',
+    pages: [
+      {
+        key: 'knowledge-people',
+        labelKey: 'adminPanel.section.people',
+        route: '/admin-panel/knowledge/people',
+        badgeTextKey: null,
+        adminOnly: true,
+        ownerOnly: false,
+      },
+    ],
+  },
 ];

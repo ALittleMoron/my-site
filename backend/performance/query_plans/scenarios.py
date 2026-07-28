@@ -51,6 +51,30 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
+from core.knowledge.files.enums import KnowledgeFileKind
+from core.knowledge.files.schemas import KnowledgeFile
+from core.knowledge.items.enums import KnowledgeItemKind
+from core.knowledge.items.schemas import (
+    KnowledgeItem,
+    KnowledgeItemCreateParams,
+    KnowledgeItemUpdateParams,
+    KnowledgeTag,
+    KnowledgeTagCreateParams,
+)
+from core.knowledge.people.enums import (
+    PersonListSort,
+    PersonRelationshipDirection,
+)
+from core.knowledge.people.schemas import (
+    PersonBirthday,
+    PersonDetails,
+    PersonFilters,
+    PersonRelationshipCreateParams,
+    PersonRelationshipType,
+    PersonRelationshipTypeCreateParams,
+    PersonRelationshipTypeUpdateParams,
+    PersonRelationshipUpdateParams,
+)
 from core.resumes.schemas import (
     Resume,
     ResumeContent,
@@ -67,6 +91,11 @@ from infra.postgresql.storages.articles import (
 from infra.postgresql.storages.auth import AuthDatabaseStorage, AuthSessionDatabaseStorage
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
+from infra.postgresql.storages.knowledge.files import KnowledgeFilesDatabaseStorage
+from infra.postgresql.storages.knowledge.items import KnowledgeItemsDatabaseStorage
+from infra.postgresql.storages.knowledge.people import (
+    PeopleDatabaseStorage,
+)
 from infra.postgresql.storages.resumes import ResumesDatabaseStorage
 from infra.postgresql.storages.users import UserAccountDatabaseStorage
 from performance.query_plans.expectations import (
@@ -82,6 +111,7 @@ from performance.query_plans.models import (
     QueryThresholdGroup,
     StorageMethod,
 )
+from performance.query_plans.seed import KNOWLEDGE_DELETABLE_TAG_NUMBER
 
 ScenarioRunner = Callable[[AsyncSession], Awaitable[None]]
 
@@ -106,6 +136,18 @@ NEW_MATRIX_SHEET_KEY = "query-plan-new-sheet"
 NEW_RESUME_TITLE = "Query plan new resume"
 EXISTING_RESUME_ID = hex_id(100)
 DELETABLE_RESUME_ID = hex_id(101)
+EXISTING_PERSON_ID = hex_id(100)
+RELATED_PERSON_ID = hex_id(101)
+UPDATED_RELATED_PERSON_ID = hex_id(200)
+EXISTING_KNOWLEDGE_TAG_ID = hex_id(1)
+SECOND_KNOWLEDGE_TAG_ID = hex_id(2)
+DELETABLE_KNOWLEDGE_TAG_ID = hex_id(KNOWLEDGE_DELETABLE_TAG_NUMBER)
+EXISTING_RELATIONSHIP_TYPE_ID = hex_id(1)
+SECOND_RELATIONSHIP_TYPE_ID = hex_id(2)
+DELETABLE_RELATIONSHIP_TYPE_ID = hex_id(100)
+EXISTING_RELATIONSHIP_ID = hex_id(1_000_100)
+EXISTING_KNOWLEDGE_FILE_ID = hex_id(2_000_100)
+NEW_KNOWLEDGE_FILE_ID = hex_id(9_000_001)
 PYTHON_TAG_ID = hex_id(1)
 POSTGRESQL_TAG_ID = hex_id(2)
 PYDANTIC_TAG_ID = hex_id(3)
@@ -1112,6 +1154,457 @@ async def run_search_resources(*, session: AsyncSession, search_name: str) -> No
     )
 
 
+def seeded_knowledge_tag(*, tag_id: str, name: str) -> KnowledgeTag:
+    return KnowledgeTag(
+        id=tag_id,
+        author_username=SEED_USERNAME,
+        name=name,
+        created_at=SEED_NOW,
+        updated_at=SEED_NOW,
+    )
+
+
+def seeded_knowledge_item(*, item_id: str) -> KnowledgeItem:
+    return KnowledgeItem(
+        id=item_id,
+        kind=KnowledgeItemKind.PERSON,
+        author_username=SEED_USERNAME,
+        display_name="Surname 100 Name 100",
+        description="Private query-plan person description 100",
+        tags=[
+            seeded_knowledge_tag(
+                tag_id=EXISTING_KNOWLEDGE_TAG_ID,
+                name="Work",
+            ),
+        ],
+        created_at=SEED_NOW,
+        updated_at=SEED_NOW,
+    )
+
+
+def seeded_person_details(*, item_id: str) -> PersonDetails:
+    return PersonDetails(
+        item_id=item_id,
+        last_name="Updated surname",
+        first_name="Updated name",
+        middle_name="Updated middle",
+        email="updated@example.com",
+        phone="+7-900-updated",
+        telegram="@updated",
+        birthday=PersonBirthday(day=29, month=2, year=2000),
+    )
+
+
+def seeded_relationship_type(*, relationship_type_id: str) -> PersonRelationshipType:
+    return PersonRelationshipType(
+        id=relationship_type_id,
+        author_username=SEED_USERNAME,
+        is_symmetric=False,
+        forward_name="Relationship 1",
+        reverse_name="Reverse relationship 1",
+        created_at=SEED_NOW,
+        updated_at=SEED_NOW,
+    )
+
+
+def seeded_knowledge_file(*, file_id: str) -> KnowledgeFile:
+    return KnowledgeFile(
+        id=file_id,
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+        kind=KnowledgeFileKind.PERSON_PHOTO,
+        relative_path="query-plan/knowledge/100",
+        mime_type="image/webp",
+        size_bytes=1_124,
+        name="Knowledge file 100",
+        original_name="knowledge-file-100.bin",
+        original_sha256=f"{100:064x}",
+        created_at=SEED_NOW,
+        updated_at=SEED_NOW,
+    )
+
+
+async def run_get_knowledge_item(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).get_item(
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+        kind=KnowledgeItemKind.PERSON,
+    )
+
+
+async def run_get_knowledge_item_for_author(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).get_item_for_author(
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_knowledge_items_by_ids(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).get_items_by_ids(
+        item_ids={hex_id(value) for value in range(100, 120)},
+        author_username=SEED_USERNAME,
+        kind=KnowledgeItemKind.PERSON,
+    )
+
+
+async def run_create_knowledge_item(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).create_item(
+        params=KnowledgeItemCreateParams(
+            kind=KnowledgeItemKind.PERSON,
+            author_username=SEED_USERNAME,
+            display_name="Query Plan New Person",
+            description="",
+        ),
+    )
+
+
+async def run_update_knowledge_item(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).update_item(
+        item=seeded_knowledge_item(item_id=EXISTING_PERSON_ID),
+        params=KnowledgeItemUpdateParams(
+            display_name="Updated Person",
+            description="Updated private Markdown",
+        ),
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_delete_knowledge_item(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).delete_item(
+        item_id=hex_id(4_999),
+        author_username=SEED_USERNAME,
+        kind=KnowledgeItemKind.PERSON,
+    )
+
+
+async def run_touch_knowledge_items(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).touch_items(
+        item_ids={EXISTING_PERSON_ID, RELATED_PERSON_ID},
+        author_username=SEED_USERNAME,
+        kind=KnowledgeItemKind.PERSON,
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_replace_knowledge_item_tags(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).replace_item_tags(
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+        tag_ids=[EXISTING_KNOWLEDGE_TAG_ID, SECOND_KNOWLEDGE_TAG_ID],
+    )
+
+
+async def run_list_knowledge_tags(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).list_tags(
+        author_username=SEED_USERNAME,
+        search_query=None,
+    )
+
+
+async def run_search_knowledge_tags(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).list_tags(
+        author_username=SEED_USERNAME,
+        search_query="Knowledge tag 321",
+    )
+
+
+async def run_get_knowledge_tag(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).get_tag(
+        tag_id=EXISTING_KNOWLEDGE_TAG_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_knowledge_tags_by_ids(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).get_tags_by_ids(
+        tag_ids={EXISTING_KNOWLEDGE_TAG_ID, SECOND_KNOWLEDGE_TAG_ID},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_find_knowledge_tag_by_name(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).find_tag_by_name(
+        name="Work",
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_knowledge_tag(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).create_tag(
+        params=KnowledgeTagCreateParams(
+            name="Query Plan New Tag",
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_update_knowledge_tag(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).update_tag(
+        tag=seeded_knowledge_tag(
+            tag_id=EXISTING_KNOWLEDGE_TAG_ID,
+            name="Work",
+        ),
+        name="Updated Work",
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_is_knowledge_tag_used(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).is_tag_used(
+        tag_id=EXISTING_KNOWLEDGE_TAG_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_delete_knowledge_tag(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).delete_tag(
+        tag_id=DELETABLE_KNOWLEDGE_TAG_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_load_knowledge_item_tags(session: AsyncSession) -> None:
+    await KnowledgeItemsDatabaseStorage(session=session).load_item_tags(
+        item_ids={hex_id(value) for value in range(100, 120)},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_knowledge_item_files(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).list_item_files(
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_knowledge_files_for_items(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).list_files_for_items(
+        item_ids={hex_id(value) for value in range(100, 120)},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_knowledge_file(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).get_file(
+        file_id=EXISTING_KNOWLEDGE_FILE_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_knowledge_file(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).create_file(
+        file=KnowledgeFile(
+            id=NEW_KNOWLEDGE_FILE_ID,
+            item_id=EXISTING_PERSON_ID,
+            author_username=SEED_USERNAME,
+            kind=KnowledgeFileKind.ATTACHMENT,
+            relative_path="query-plan/knowledge/new-attachment",
+            mime_type="application/octet-stream",
+            size_bytes=2_048,
+            name="New query-plan attachment",
+            original_name="new-query-plan-attachment.bin",
+            original_sha256="f" * 64,
+            created_at=SEED_NOW,
+            updated_at=SEED_NOW,
+        ),
+    )
+
+
+async def run_update_knowledge_file_name(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).update_file_name(
+        file=seeded_knowledge_file(file_id=EXISTING_KNOWLEDGE_FILE_ID),
+        name="Updated file name",
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_delete_knowledge_file(session: AsyncSession) -> None:
+    await KnowledgeFilesDatabaseStorage(session=session).delete_file(
+        file=seeded_knowledge_file(file_id=EXISTING_KNOWLEDGE_FILE_ID),
+    )
+
+
+async def run_list_person_page_search_and_tags(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_person_page(
+        filters=PersonFilters(
+            page=3,
+            page_size=20,
+            sort=PersonListSort.UPDATED_NEWEST,
+            search_query="searchneedle",
+            tag_ids=(EXISTING_KNOWLEDGE_TAG_ID, SECOND_KNOWLEDGE_TAG_ID),
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_list_person_details(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_details(
+        item_ids=[hex_id(value) for value in range(100, 120)],
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_person_details(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).get_details(
+        item_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_person_details(session: AsyncSession) -> None:
+    item = await KnowledgeItemsDatabaseStorage(session=session).create_item(
+        params=KnowledgeItemCreateParams(
+            kind=KnowledgeItemKind.PERSON,
+            author_username=SEED_USERNAME,
+            display_name="Created Details Person",
+            description="",
+        ),
+    )
+    await PeopleDatabaseStorage(session=session).create_details(
+        details=seeded_person_details(item_id=item.id),
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_update_person_details(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).update_details(
+        details=seeded_person_details(item_id=EXISTING_PERSON_ID),
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_person_relationships(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_relationships(
+        person_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_person_relationships_by_ids(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).get_relationships_by_ids(
+        relationship_ids={EXISTING_RELATIONSHIP_ID},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_related_person_ids(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_related_person_ids(
+        person_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_person_relationships(session: AsyncSession) -> None:
+    relationship_type = seeded_relationship_type(
+        relationship_type_id=EXISTING_RELATIONSHIP_TYPE_ID,
+    )
+    await PeopleDatabaseStorage(session=session).create_relationships(
+        person_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+        values=[
+            PersonRelationshipCreateParams(
+                related_person_id=UPDATED_RELATED_PERSON_ID,
+                relationship_type_id=relationship_type.id,
+                direction=PersonRelationshipDirection.FORWARD,
+                note="New query-plan relationship",
+            ),
+        ],
+        relationship_types={relationship_type.id: relationship_type},
+        created_at=SEED_NOW,
+    )
+
+
+async def run_update_person_relationships(session: AsyncSession) -> None:
+    relationship_type = seeded_relationship_type(
+        relationship_type_id=SECOND_RELATIONSHIP_TYPE_ID,
+    )
+    await PeopleDatabaseStorage(session=session).update_relationships(
+        person_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+        values=[
+            PersonRelationshipUpdateParams(
+                id=EXISTING_RELATIONSHIP_ID,
+                related_person_id=UPDATED_RELATED_PERSON_ID,
+                relationship_type_id=relationship_type.id,
+                direction=PersonRelationshipDirection.FORWARD,
+                note="Updated query-plan relationship",
+            ),
+        ],
+        relationship_types={relationship_type.id: relationship_type},
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_delete_person_relationships(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).delete_relationships(
+        relationship_ids={EXISTING_RELATIONSHIP_ID},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_person_relationship_types(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_relationship_types(
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_person_relationship_type(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).get_relationship_type(
+        relationship_type_id=EXISTING_RELATIONSHIP_TYPE_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_person_relationship_types_by_ids(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).get_relationship_types_by_ids(
+        relationship_type_ids={
+            EXISTING_RELATIONSHIP_TYPE_ID,
+            SECOND_RELATIONSHIP_TYPE_ID,
+        },
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_person_relationship_type(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).create_relationship_type(
+        params=PersonRelationshipTypeCreateParams(
+            author_username=SEED_USERNAME,
+            is_symmetric=False,
+            forward_name="Mentor",
+            reverse_name="Mentee",
+        ),
+    )
+
+
+async def run_update_person_relationship_type(session: AsyncSession) -> None:
+    relationship_type = seeded_relationship_type(
+        relationship_type_id=EXISTING_RELATIONSHIP_TYPE_ID,
+    )
+    await PeopleDatabaseStorage(session=session).update_relationship_type(
+        relationship_type=relationship_type,
+        params=PersonRelationshipTypeUpdateParams(
+            is_symmetric=False,
+            forward_name="Updated relationship",
+            reverse_name="Updated reverse relationship",
+        ),
+        updated_at=SEED_NOW + timedelta(minutes=1),
+    )
+
+
+async def run_is_person_relationship_type_used(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).is_relationship_type_used(
+        relationship_type_id=EXISTING_RELATIONSHIP_TYPE_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_delete_person_relationship_type(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).delete_relationship_type(
+        relationship_type_id=DELETABLE_RELATIONSHIP_TYPE_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
 def article_id(value: int) -> str:
     return md5(str(value).encode(), usedforsecurity=False).hexdigest()
 
@@ -1296,6 +1789,422 @@ def scenario(  # noqa: PLR0913
 
 
 STORAGE_SCENARIOS = (
+    *(
+        scenario(
+            name=name,
+            storage_class=storage_class,
+            method_name=method_name,
+            group=group,
+            expected_index_names=expected_index_names,
+            forbidden_seq_scan_relations=forbidden_seq_scan_relations,
+            allow_seq_scan_reason=None,
+            run=runner,
+        )
+        for (
+            name,
+            storage_class,
+            method_name,
+            group,
+            expected_index_names,
+            forbidden_seq_scan_relations,
+            runner,
+        ) in (
+            (
+                "knowledge_item_detail",
+                "KnowledgeItemsDatabaseStorage",
+                "get_item",
+                QueryThresholdGroup.POINT_READ,
+                (),
+                (),
+                run_get_knowledge_item,
+            ),
+            (
+                "knowledge_item_for_author",
+                "KnowledgeItemsDatabaseStorage",
+                "get_item_for_author",
+                QueryThresholdGroup.POINT_READ,
+                (),
+                (),
+                run_get_knowledge_item_for_author,
+            ),
+            (
+                "knowledge_items_by_ids",
+                "KnowledgeItemsDatabaseStorage",
+                "get_items_by_ids",
+                QueryThresholdGroup.POINT_READ,
+                (),
+                (),
+                run_get_knowledge_items_by_ids,
+            ),
+            (
+                "knowledge_item_create",
+                "KnowledgeItemsDatabaseStorage",
+                "create_item",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_knowledge_item,
+            ),
+            (
+                "knowledge_item_update",
+                "KnowledgeItemsDatabaseStorage",
+                "update_item",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_items_id_author_uniq",),
+                ("knowledge__knowledge_item_model",),
+                run_update_knowledge_item,
+            ),
+            (
+                "knowledge_item_delete",
+                "KnowledgeItemsDatabaseStorage",
+                "delete_item",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_items_id_author_uniq",),
+                ("knowledge__knowledge_item_model",),
+                run_delete_knowledge_item,
+            ),
+            (
+                "knowledge_items_touch",
+                "KnowledgeItemsDatabaseStorage",
+                "touch_items",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge__knowledge_item_model_pkey",),
+                ("knowledge__knowledge_item_model",),
+                run_touch_knowledge_items,
+            ),
+            (
+                "knowledge_item_tags_replace",
+                "KnowledgeItemsDatabaseStorage",
+                "replace_item_tags",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_replace_knowledge_item_tags,
+            ),
+            (
+                "knowledge_tags_list",
+                "KnowledgeItemsDatabaseStorage",
+                "list_tags",
+                QueryThresholdGroup.LIST_READ,
+                ("knowledge_tags_author_name_id_idx",),
+                ("knowledge__knowledge_tag_model",),
+                run_list_knowledge_tags,
+            ),
+            (
+                "knowledge_tags_search",
+                "KnowledgeItemsDatabaseStorage",
+                "list_tags",
+                QueryThresholdGroup.SEARCH,
+                ("knowledge_tags_name_trgm_idx",),
+                ("knowledge__knowledge_tag_model",),
+                run_search_knowledge_tags,
+            ),
+            (
+                "knowledge_tag_detail",
+                "KnowledgeItemsDatabaseStorage",
+                "get_tag",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_tags_id_author_uniq",),
+                ("knowledge__knowledge_tag_model",),
+                run_get_knowledge_tag,
+            ),
+            (
+                "knowledge_tags_by_ids",
+                "KnowledgeItemsDatabaseStorage",
+                "get_tags_by_ids",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge__knowledge_tag_model_pkey",),
+                ("knowledge__knowledge_tag_model",),
+                run_get_knowledge_tags_by_ids,
+            ),
+            (
+                "knowledge_tag_by_name",
+                "KnowledgeItemsDatabaseStorage",
+                "find_tag_by_name",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_tags_author_name_lower_uniq",),
+                ("knowledge__knowledge_tag_model",),
+                run_find_knowledge_tag_by_name,
+            ),
+            (
+                "knowledge_tag_create",
+                "KnowledgeItemsDatabaseStorage",
+                "create_tag",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_knowledge_tag,
+            ),
+            (
+                "knowledge_tag_update",
+                "KnowledgeItemsDatabaseStorage",
+                "update_tag",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_tags_id_author_uniq",),
+                ("knowledge__knowledge_tag_model",),
+                run_update_knowledge_tag,
+            ),
+            (
+                "knowledge_tag_used",
+                "KnowledgeItemsDatabaseStorage",
+                "is_tag_used",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_item_tags_author_tag_item_idx",),
+                ("knowledge__knowledge_item_tag_model",),
+                run_is_knowledge_tag_used,
+            ),
+            (
+                "knowledge_tag_delete",
+                "KnowledgeItemsDatabaseStorage",
+                "delete_tag",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_tags_id_author_uniq",),
+                ("knowledge__knowledge_tag_model",),
+                run_delete_knowledge_tag,
+            ),
+            (
+                "knowledge_item_tags_batch",
+                "KnowledgeItemsDatabaseStorage",
+                "load_item_tags",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge__knowledge_item_tag_model_pkey",),
+                ("knowledge__knowledge_item_tag_model",),
+                run_load_knowledge_item_tags,
+            ),
+            (
+                "knowledge_files_for_item",
+                "KnowledgeFilesDatabaseStorage",
+                "list_item_files",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_files_author_item_kind_id_idx",),
+                ("knowledge__knowledge_file_model",),
+                run_list_knowledge_item_files,
+            ),
+            (
+                "knowledge_files_for_items",
+                "KnowledgeFilesDatabaseStorage",
+                "list_files_for_items",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_files_author_item_kind_id_idx",),
+                ("knowledge__knowledge_file_model",),
+                run_list_knowledge_files_for_items,
+            ),
+            (
+                "knowledge_file_detail",
+                "KnowledgeFilesDatabaseStorage",
+                "get_file",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge_files_id_author_uniq",),
+                ("knowledge__knowledge_file_model",),
+                run_get_knowledge_file,
+            ),
+            (
+                "knowledge_file_create",
+                "KnowledgeFilesDatabaseStorage",
+                "create_file",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_knowledge_file,
+            ),
+            (
+                "knowledge_file_update_name",
+                "KnowledgeFilesDatabaseStorage",
+                "update_file_name",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_files_id_author_uniq",),
+                ("knowledge__knowledge_file_model",),
+                run_update_knowledge_file_name,
+            ),
+            (
+                "knowledge_file_delete",
+                "KnowledgeFilesDatabaseStorage",
+                "delete_file",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge_files_id_author_uniq",),
+                ("knowledge__knowledge_file_model",),
+                run_delete_knowledge_file,
+            ),
+            (
+                "people_page_search_and_tags",
+                "PeopleDatabaseStorage",
+                "list_person_page",
+                QueryThresholdGroup.SEARCH,
+                (),
+                (
+                    "knowledge__knowledge_item_model",
+                    "knowledge__knowledge_item_tag_model",
+                    "knowledge__person_details_model",
+                ),
+                run_list_person_page_search_and_tags,
+            ),
+            (
+                "people_details_batch",
+                "PeopleDatabaseStorage",
+                "list_details",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge__person_details_model_pkey",),
+                ("knowledge__person_details_model",),
+                run_list_person_details,
+            ),
+            (
+                "people_detail",
+                "PeopleDatabaseStorage",
+                "get_details",
+                QueryThresholdGroup.POINT_READ,
+                ("person_details_id_author_uniq",),
+                ("knowledge__person_details_model",),
+                run_get_person_details,
+            ),
+            (
+                "people_details_create",
+                "PeopleDatabaseStorage",
+                "create_details",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_person_details,
+            ),
+            (
+                "people_details_update",
+                "PeopleDatabaseStorage",
+                "update_details",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("person_details_id_author_uniq",),
+                ("knowledge__person_details_model",),
+                run_update_person_details,
+            ),
+            (
+                "people_relationships_list",
+                "PeopleDatabaseStorage",
+                "list_relationships",
+                QueryThresholdGroup.LIST_READ,
+                (
+                    "person_relationships_author_source_idx",
+                    "person_relationships_author_target_idx",
+                ),
+                ("knowledge__person_relationship_model",),
+                run_list_person_relationships,
+            ),
+            (
+                "people_relationships_by_ids",
+                "PeopleDatabaseStorage",
+                "get_relationships_by_ids",
+                QueryThresholdGroup.POINT_READ,
+                (
+                    "knowledge__person_relationship_model_pkey",
+                    "knowledge__person_relationship_type_model_pkey",
+                ),
+                (
+                    "knowledge__person_relationship_model",
+                    "knowledge__person_relationship_type_model",
+                ),
+                run_get_person_relationships_by_ids,
+            ),
+            (
+                "people_related_ids",
+                "PeopleDatabaseStorage",
+                "list_related_person_ids",
+                QueryThresholdGroup.POINT_READ,
+                (
+                    "person_relationships_author_source_idx",
+                    "person_relationships_author_target_idx",
+                ),
+                ("knowledge__person_relationship_model",),
+                run_list_related_person_ids,
+            ),
+            (
+                "people_relationships_create",
+                "PeopleDatabaseStorage",
+                "create_relationships",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_person_relationships,
+            ),
+            (
+                "people_relationships_update",
+                "PeopleDatabaseStorage",
+                "update_relationships",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge__person_relationship_model_pkey",),
+                ("knowledge__person_relationship_model",),
+                run_update_person_relationships,
+            ),
+            (
+                "people_relationships_delete",
+                "PeopleDatabaseStorage",
+                "delete_relationships",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("knowledge__person_relationship_model_pkey",),
+                ("knowledge__person_relationship_model",),
+                run_delete_person_relationships,
+            ),
+            (
+                "people_relationship_types_list",
+                "PeopleDatabaseStorage",
+                "list_relationship_types",
+                QueryThresholdGroup.LIST_READ,
+                ("person_relationship_types_author_name_id_idx",),
+                ("knowledge__person_relationship_type_model",),
+                run_list_person_relationship_types,
+            ),
+            (
+                "people_relationship_type_detail",
+                "PeopleDatabaseStorage",
+                "get_relationship_type",
+                QueryThresholdGroup.POINT_READ,
+                ("person_relationship_types_id_author_uniq",),
+                ("knowledge__person_relationship_type_model",),
+                run_get_person_relationship_type,
+            ),
+            (
+                "people_relationship_types_by_ids",
+                "PeopleDatabaseStorage",
+                "get_relationship_types_by_ids",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge__person_relationship_type_model_pkey",),
+                ("knowledge__person_relationship_type_model",),
+                run_get_person_relationship_types_by_ids,
+            ),
+            (
+                "people_relationship_type_create",
+                "PeopleDatabaseStorage",
+                "create_relationship_type",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_person_relationship_type,
+            ),
+            (
+                "people_relationship_type_update",
+                "PeopleDatabaseStorage",
+                "update_relationship_type",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("person_relationship_types_id_author_uniq",),
+                ("knowledge__person_relationship_type_model",),
+                run_update_person_relationship_type,
+            ),
+            (
+                "people_relationship_type_used",
+                "PeopleDatabaseStorage",
+                "is_relationship_type_used",
+                QueryThresholdGroup.POINT_READ,
+                ("person_relationships_author_type_id_idx",),
+                ("knowledge__person_relationship_model",),
+                run_is_person_relationship_type_used,
+            ),
+            (
+                "people_relationship_type_delete",
+                "PeopleDatabaseStorage",
+                "delete_relationship_type",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("person_relationship_types_id_author_uniq",),
+                ("knowledge__person_relationship_type_model",),
+                run_delete_person_relationship_type,
+            ),
+        )
+    ),
     *(
         scenario(
             name=name,

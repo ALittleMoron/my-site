@@ -15,6 +15,7 @@ from core.competency_matrix.enums import (
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
+from core.knowledge.people.enums import PersonListSort
 
 
 def build_examples(*values: object) -> list[Example]:
@@ -113,6 +114,32 @@ PageSizeQuery: TypeAlias = Annotated[
         examples=(20,),
         ge=1,
         le=100,
+        min_items=None,
+        max_items=None,
+    ),
+]
+PersonListSortQuery: TypeAlias = Annotated[
+    PersonListSort,
+    api_query_parameter(
+        name="sort",
+        title="People sort",
+        description="Stable ordering for the private people workspace.",
+        examples=(PersonListSort.UPDATED_NEWEST.value,),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+KnowledgeTagIdsQuery: TypeAlias = Annotated[
+    list[str] | None,
+    api_query_parameter(
+        name="tagIds",
+        title="Knowledge tag identifiers",
+        description="Optional tag identifiers combined with AND semantics.",
+        examples=(["00000000000000000000000000000001"],),
+        ge=None,
+        le=None,
         min_items=None,
         max_items=None,
     ),
@@ -254,6 +281,51 @@ AgentClientIdPath: TypeAlias = Annotated[
         name="client_id",
         title="Agent client ID",
         description="Agent client identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+PersonIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="person_id",
+        title="Person ID",
+        description="Private person identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+KnowledgeItemIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="item_id",
+        title="Knowledge item ID",
+        description="Private knowledge item identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+KnowledgeFileIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="file_id",
+        title="Knowledge file ID",
+        description="Private author-scoped knowledge file identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+KnowledgeTagIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="tag_id",
+        title="Knowledge tag ID",
+        description="Author-scoped knowledge tag identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+PersonRelationshipTypeIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="relationship_type_id",
+        title="Person relationship type ID",
+        description="Author-scoped relationship type identifier.",
         examples=("00000000000000000000000000000001",),
     ),
 ]

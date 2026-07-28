@@ -907,6 +907,18 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.modal-xl')).toBeTruthy();
     expect(inputValue('#matrix-form-slug')).toBe(`queued-question-${QUESTION_ID}`);
     expect(inputValue('#matrix-form-question-ru')).toBe('What is PEP 8?');
+    expect(fixture.nativeElement.querySelector('#matrix-form-question-en')).toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-testid="matrix-form-display-mode-ru"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+
+    fixture.nativeElement
+      .querySelector<HTMLButtonElement>('[data-testid="matrix-form-display-mode-ru-en"]')
+      ?.click();
+    fixture.detectChanges();
+
     expect(inputValue('#matrix-form-question-en')).toBe('What is PEP 8?');
     expect(select('[data-testid="matrix-structure-sheet"]').value).toBe(SHEET_ID);
   });
