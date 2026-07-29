@@ -58,6 +58,17 @@ describe('Markdown editor presentation', () => {
     );
   });
 
+  it('decorates an escaped table-safe label separator separately', () => {
+    const classes = wikiLinkClasses('[[matrix:known-question\\|Custom label]]');
+
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: '\\|', className: 'cm-wiki-link-label-separator' }),
+        expect.objectContaining({ text: 'Custom label', className: 'cm-wiki-link-label' }),
+      ]),
+    );
+  });
+
   it('decorates multiple visible wiki-links', () => {
     const document = '[[articles:first-article]] and [[matrix:second-question]]';
     const classes = wikiLinkClasses(document);

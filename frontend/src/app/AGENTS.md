@@ -104,10 +104,12 @@ Never violate these boundaries:
 - Treat the shared Markdown editor as an Obsidian-like, keyboard-first source-authoring product.
   Markdown text remains the source of truth, while syntax-aware presentation makes headings,
   inline and fenced code, lists, tasks, quotes, callouts, tables, and future supported constructs
-  easy to scan. The current product modes are source and centralized sanitized preview only.
-  Source mode has one wrapping icon toolbar derived from the same typed registry as hotkeys. Every
-  action keeps its localized accessible name and hover title; do not add another toolbar, live
-  preview, split view, WYSIWYG mode, or a per-consumer renderer without an explicit product decision.
+  easy to scan. The product has three global modes on one `EditorView`: Editor enables structural
+  pseudo-renderers, Source exposes plain Markdown with basic syntax highlighting, and Preview uses
+  the centralized sanitized renderer. Both authoring modes share one wrapping icon toolbar derived
+  from the same typed registry as hotkeys. Every action keeps its localized accessible name and
+  hover title; do not add another toolbar, live split view, WYSIWYG mode, or a per-consumer renderer
+  without an explicit product decision.
 - Keep the editor auto-height with a `20rem` minimum: the page or modal owns vertical scrolling,
   not CodeMirror or consumer wrappers. Keep the mode/command header and status/shortcut footer
   sticky within the editor's bounds with zero visible scrollport-edge inset, including compensation
@@ -116,9 +118,9 @@ Never violate these boundaries:
   heights through CodeMirror scroll margins so they do not hide the cursor.
 - Fullscreen is an app-owned fixed overlay on the existing editor shell, never a replacement editor
   or the browser Fullscreen API. Preserve the same `EditorView`, document, history, selections,
-  source/preview mode, uploads, and unsaved value. Trap focus, use the shared reference-counted page
-  scroll lock, let editor-owned surfaces consume Escape first, and restore the nearest external
-  scroll position and the original focus without closing an owning modal.
+  Editor/Source/Preview mode, uploads, and unsaved value. Trap focus, use the shared
+  reference-counted page scroll lock, let editor-owned surfaces consume Escape first, and restore
+  the nearest external scroll position and the original focus without closing an owning modal.
 - Build on direct modular CodeMirror 6 packages, not an Angular wrapper, `basicSetup`, a fork, or
   copied internals. Use CodeMirror's public extension points—facets, compartments, state fields,
   view plugins, syntax trees, decorations, keymaps, and transactions—so library upgrades and
@@ -130,14 +132,57 @@ Never violate these boundaries:
   of accumulating unrelated logic in the component.
 - Apply authoring commands as minimal CodeMirror change sets. Never rebuild the whole document for
   a local edit; preserve history, selections, snippets, upload anchors, scroll, and incremental
-  parser state. A full-document replacement is allowed only for a genuinely changed external
-  input value and must stay out of undo history.
-- Derive source-mode presentation from the CodeMirror syntax tree in a viewport-aware view plugin.
+  parser state. A table structural command may replace only its owning table in one undoable
+  transaction, and explicit table formatting may canonicalize that table. A full-document
+  replacement is allowed only for a genuinely changed external input value and must stay out of
+  undo history.
+- Derive Editor-mode presentation from the CodeMirror syntax tree in a viewport-aware view plugin.
   Use decorations and stable semantic classes rather than regex-scanning the entire document,
-  rewriting editor DOM, or maintaining a parallel document model. Product CSS owns visual design;
-  parser and transaction code own document semantics. Highlight fenced-code contents through the
-  centralized Prism language registry shared with preview; do not introduce a second source-mode
-  language registry or bundle every CodeMirror language package by default.
+  rewriting editor DOM, or maintaining a parallel document model. Product CSS and extension-scoped
+  CodeMirror themes own visual design; parser and transaction code own document semantics.
+  Highlight fenced-code contents through the centralized Prism language registry shared with
+  preview; do not introduce a second source-mode language registry or bundle every CodeMirror
+  language package by default.
+- Keep editor-only compiled theme files attached to the lazy standalone editor component; do not
+  import them from `styles/main.scss` or another initial stylesheet. Keep each theme slice within
+  the existing component-style budget instead of raising bundle budgets.
+- Keep interactive Markdown tables in the Angular-independent table extension. Gate them on valid
+  Lezer `Table` nodes, keep cell content as real Markdown source, use public block wrappers,
+  decorations, widgets, state effects, public tooltip/gutter APIs, and transactions, and leave
+  malformed tables untouched. Cell selection is one contiguous rectangular `anchor`/`head` range:
+  same-cell pointer gestures remain native text editing, crossing a cell boundary starts table
+  selection, Shift extends it, and Escape or an outside click clears it. Delete, Backspace, and Cut
+  must adapt in one undoable transaction: the whole grid deletes the table, full-width ranges
+  delete rows and may promote the next row to header, full-height ranges delete columns, and partial
+  ranges clear only cell contents. Keep edge-only add controls and Pointer Events drag handles out
+  of table geometry. The table must remain a quiet continuation of the editor, not a bordered or
+  elevated card. Keep each semantic row on its own CodeMirror source line and lay its semantic cells
+  out as one responsive equal-track grid; do not use CSS table formatting that can merge unrelated
+  editor lines into one visual row. Empty and populated cells share a stable minimum row height,
+  every track may shrink without creating a phantom cell or horizontal page overflow, and controls
+  stay inside the editor viewport and transparent until their own edge hover/focus target is reached.
+  Remove the Markdown delimiter and its line break from Editor-mode height geometry with a direct
+  block replacement; never collapse that source line with `display: none`. Block wrappers must not
+  use vertical margins because CodeMirror cannot reliably include collapsing margins in its height
+  map; reserve edge-control space with measured padding instead. Normalize uneven rows to the common
+  column count and show one gutter number for the whole table only in Editor mode. Clicking an empty
+  cell or an edge control and typing in any cell must not scroll the owning page. Keep the focused
+  cell unambiguous with a source-position caret drawn through a public CodeMirror layer, never an
+  inline content widget. At a visible cell end, keep the DOM selection associated with that cell
+  instead of the next one so repeated Chrome and Firefox input cannot drift across the grid.
+  Drag handles must remain absolute siblings outside editable cell marks, expose distinct hit areas
+  for every row and column, and show both pickup and drop state without changing grid geometry.
+  Cross-cell selection must collapse CodeMirror's ordinary document selection so only the bounded
+  rectangular overlay remains. Preserve one protected blank Markdown line after a table: input on
+  that terminator must move following prose after the separator in the same undoable transaction,
+  and deletion must not collapse the separator and turn prose into a table row. Editor and Preview
+  must consume that same unchanged source contract. Arrow navigation must stay cell-aware inside
+  the grid without skipping or misaligning ordinary source lines around a table. Preserve TSV/CSV
+  clipboard, keyboard navigation, context-menu accessibility, alignment, sorting, touch controls,
+  and one-step undo. Keep the table theme extension-scoped so it stays in the lazy authoring bundle
+  instead of the global initial stylesheet. Do not add formulas, merged cells, typed columns,
+  filters, persisted widths, a second
+  editor, or raw DOM mutation.
 - Pass Angular's CSP nonce into `EditorView.cspNonce` and let CodeMirror provide its runtime base
   layout and accessibility rules. Compiled editor-scoped CSS may theme public CodeMirror classes
   and stable `classHighlighter`/semantic classes, but must not copy or override CodeMirror's
@@ -150,10 +195,10 @@ Never violate these boundaries:
   phrases, upload states, and errors come from backend i18n. Preserve IME composition, native
   platform undo/redo/navigation, multi-selection, and the CodeMirror `Escape`, then `Tab`
   keyboard-trap escape hatch.
-- Preserve readable padding, line numbers, line wrapping, light/dark variables, source/preview
-  focus restoration, validation classes, unsaved-value propagation, and image paste/drop/picker
-  ordering. New settings, palettes, syntax features, and attachment flows must extend these
-  foundations rather than bypass them.
+- Preserve readable padding, line numbers, line wrapping, light/dark variables,
+  Editor/Source/Preview focus restoration, validation classes, unsaved-value propagation, and image
+  paste/drop/picker ordering. New settings, palettes, syntax features, and attachment flows must
+  extend these foundations rather than bypass them.
 
 ## `shared/ui/` Rules
 

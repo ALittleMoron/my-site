@@ -697,6 +697,34 @@ Flashcards should be implemented strictly after auth implementation for common u
   - [ ] Add RU/EN spelling and grammar assistance, word/character/read-time statistics, and
     localized content diagnostics.
   - [ ] Add editor profile import/export and settings synchronization between devices.
+- [x] Add interactive source-preserving Markdown tables with Editor/Source/Preview modes,
+  row/column selection and structural actions, keyboard navigation, drag reordering, alignment,
+  natural sorting, TSV/CSV clipboard exchange, table-safe typed wiki-link labels, and accessible
+  mobile controls.
+- [x] Refine interactive Markdown tables with Obsidian-like rectangular cell selection, adaptive
+  Delete/Backspace/Cut semantics, edge-only add controls, Pointer Events row/column reordering,
+  shared column geometry, a keyboard-accessible context menu, and one Editor-mode gutter number
+  per table block.
+- [x] Integrate interactive Markdown tables visually into the editor: remove card-like chrome and
+  anonymous CSS table cells, keep empty rows stable, use content-based widths and quiet edge
+  controls, and prevent vertical arrow navigation from skipping ordinary lines across a table.
+- [x] Recover stable Markdown-table editing after the visual integration: keep every semantic row
+  on its own CodeMirror source line, make empty cells directly editable without page-scroll jumps,
+  constrain adaptive columns and edge controls to the editor viewport, protect structural pipes,
+  keep the final body row, and cover bidirectional cell selection and single-step column insertion.
+- [x] Remove the Markdown delimiter from the rendered line geometry, show an explicit caret and
+  active state for empty table cells, and keep the first ordinary line after a table aligned with
+  its CodeMirror gutter number.
+- [x] Stabilize table-cell input across browsers: keep page scroll fixed while typing, show a
+  source-position caret in populated and empty cells, replace the delimiter with a measured
+  zero-height block, and protect the blank Markdown terminator that keeps following prose outside
+  the table in Editor and Preview.
+- [x] Eliminate the remaining cross-browser table interaction drift: keep repeated input and the
+  cleared-cell caret in the addressed cell, move drag controls outside editable marks, give every
+  row and column a distinct reachable handle with pickup/drop feedback, and suppress ordinary
+  CodeMirror selection artifacts during rectangular cell drag.
+- [x] Move the admin-only Markdown editor theme out of the global stylesheet so CodeMirror,
+  interactive tables, and editor styling stay lazy without raising the initial-bundle budget.
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [x] UI localisation
 - [x] Database localisation

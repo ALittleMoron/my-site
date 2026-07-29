@@ -19,6 +19,7 @@ import { wikiLinkCompletionSource } from './markdown-editor.wiki-links';
 const EDITOR_MESSAGES = {
   'markdownEditor.mode.aria': 'Режим Markdown-редактора',
   'markdownEditor.mode.edit': 'Редактор',
+  'markdownEditor.mode.source': 'Исходник',
   'markdownEditor.mode.preview': 'Превью',
   'markdownEditor.fullscreen.enter': 'Развернуть редактор на весь экран',
   'markdownEditor.fullscreen.exit': 'Выйти из полноэкранного режима',
@@ -48,6 +49,7 @@ const EDITOR_MESSAGES = {
   'markdownEditor.completions': 'Варианты',
   'markdownEditor.wikiLinks.registryUnavailable': 'Не удалось загрузить варианты wiki-ссылок.',
   'markdownEditor.command.togglePreview': 'Редактор / Превью',
+  'markdownEditor.command.toggleSource': 'Редактор / Исходник',
   'markdownEditor.command.heading1': 'Заголовок 1',
   'markdownEditor.command.heading2': 'Заголовок 2',
   'markdownEditor.command.heading3': 'Заголовок 3',
@@ -68,6 +70,32 @@ const EDITOR_MESSAGES = {
   'markdownEditor.command.codeBlock': 'Блок кода',
   'markdownEditor.command.table': 'Таблица',
   'markdownEditor.command.search': 'Поиск и замена',
+  'markdownEditor.table.table': 'Таблица',
+  'markdownEditor.table.row': 'Строка',
+  'markdownEditor.table.column': 'Столбец',
+  'markdownEditor.table.range': 'Выбранные ячейки',
+  'markdownEditor.table.menu': 'Меню таблицы',
+  'markdownEditor.table.addRow': 'Добавить строку',
+  'markdownEditor.table.addColumn': 'Добавить столбец',
+  'markdownEditor.table.moveRow': 'Переместить строку',
+  'markdownEditor.table.moveColumn': 'Переместить столбец',
+  'markdownEditor.table.insertBefore': 'Вставить перед',
+  'markdownEditor.table.insertAfter': 'Вставить после',
+  'markdownEditor.table.duplicate': 'Дублировать',
+  'markdownEditor.table.clear': 'Очистить',
+  'markdownEditor.table.copy': 'Копировать',
+  'markdownEditor.table.cut': 'Вырезать',
+  'markdownEditor.table.delete': 'Удалить',
+  'markdownEditor.table.moveBefore': 'Переместить назад',
+  'markdownEditor.table.moveAfter': 'Переместить вперёд',
+  'markdownEditor.table.sortAscending': 'Сортировать по возрастанию',
+  'markdownEditor.table.sortDescending': 'Сортировать по убыванию',
+  'markdownEditor.table.alignLeft': 'Выровнять по левому краю',
+  'markdownEditor.table.alignCenter': 'Выровнять по центру',
+  'markdownEditor.table.alignRight': 'Выровнять по правому краю',
+  'markdownEditor.table.format': 'Форматировать таблицу',
+  'markdownEditor.table.deleteTable': 'Удалить таблицу',
+  'markdownEditor.table.clipboardFailed': 'Не удалось записать данные в буфер обмена.',
   'enum.publishStatus.Draft': 'Черновик',
   'enum.publishStatus.Published': 'Опубликовано',
 };
@@ -217,9 +245,6 @@ describe('MarkdownEditorComponent', () => {
         'def answer(value):',
         '    return value + 25',
         '```',
-        '| Name | Value |',
-        '| --- | --- |',
-        '| Answer | 25 |',
         '',
         '---',
       ].join('\n'),
@@ -241,9 +266,6 @@ describe('MarkdownEditorComponent', () => {
     expect(lineContaining('```python').classList).toContain('cm-markdown-code-fence');
     expect(lineContaining('def answer').classList).toContain('cm-markdown-code-block');
     expect(lineContaining('return value').classList).toContain('cm-markdown-code-block');
-    expect(lineContaining('| Name | Value |').classList).toContain('cm-markdown-table');
-    expect(lineContaining('| --- | --- |').classList).toContain('cm-markdown-table');
-    expect(lineContaining('| Answer | 25 |').classList).toContain('cm-markdown-table');
     expect(lines.find((line) => line.textContent === '---')?.classList).toContain(
       'cm-markdown-horizontal-rule',
     );
@@ -523,12 +545,124 @@ describe('MarkdownEditorComponent', () => {
     expect(document.activeElement).toBe(contentElement());
   });
 
+  it('switches between editor, raw source, and preview without rebuilding CodeMirror', () => {
+    fixture.componentRef.setInput(
+      'value',
+      '# Heading\n\n| Name | Value |\n| --- | --- |\n| Ada | **42** |',
+    );
+    fixture.detectChanges();
+    const view = editorView();
+    const sourceTab = query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]');
+    const editTab = query<HTMLButtonElement>('[data-testid="markdown-editor-edit-tab"]');
+
+    expect(view.dom.querySelector('[role="table"]')).not.toBeNull();
+
+    sourceTab.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.mode()).toBe('source');
+    expect(editorView()).toBe(view);
+    expect(view.dom.querySelector('[role="table"]')).toBeNull();
+    expect(view.state.doc.toString()).toContain('| Ada | **42** |');
+    expect(view.dom.querySelector('.cm-markdown-heading')).toBeNull();
+    expect(view.dom.querySelector('.tok-heading')).not.toBeNull();
+
+    editTab.click();
+    fixture.detectChanges();
+
+    expect(editorView()).toBe(view);
+    expect(view.dom.querySelector('[role="table"]')).not.toBeNull();
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+    expect(editorView()).toBe(view);
+    expect(
+      query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').innerHTML,
+    ).toContain('<table>');
+  });
+
+  it('keeps prose typed on the final table terminator outside the table in Editor and Preview', () => {
+    const table = '| Name | Value |\n| --- | --- |\n| Ada | 42 |\n';
+    fixture.componentRef.setInput('value', table);
+    fixture.detectChanges();
+    const view = editorView();
+    view.dispatch({
+      changes: { from: view.state.doc.length, insert: 'After table' },
+      selection: EditorSelection.cursor(view.state.doc.length + 'After table'.length),
+      scrollIntoView: true,
+      userEvent: 'input.type',
+    });
+    fixture.detectChanges();
+
+    expect(view.state.doc.toString()).toBe(`${table}\nAfter table`);
+    expect(view.dom.querySelector('[role="table"]')?.textContent).not.toContain('After table');
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+    const preview = query<HTMLElement>('[data-testid="markdown-editor-preview-content"]');
+    expect(preview.querySelector('table tbody')?.textContent).not.toContain('After table');
+    expect(preview.querySelector('p')?.textContent).toBe('After table');
+  });
+
+  it('preserves document, history, selection, and the last authoring mode across all modes', () => {
+    const view = editorView();
+    view.dispatch({
+      changes: { from: 0, insert: 'Draft ' },
+      selection: EditorSelection.range(1, 4),
+      userEvent: 'input.type',
+    });
+    const selection = view.state.selection.main;
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]').click();
+    fixture.detectChanges();
+    query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
+    fixture.detectChanges();
+
+    query<HTMLElement>('[data-testid="markdown-editor-shell"]').dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        code: 'KeyE',
+        key: 'e',
+        ctrlKey: true,
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.mode()).toBe('source');
+    expect(editorView()).toBe(view);
+    expect(view.state.selection.main).toEqual(selection);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe('Initial **markdown**');
+  });
+
+  it('toggles editor and raw source with Mod+Shift+E', () => {
+    const event = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      code: 'KeyE',
+      key: 'E',
+      ctrlKey: true,
+      shiftKey: true,
+    });
+
+    contentElement().dispatchEvent(event);
+    fixture.detectChanges();
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(fixture.componentInstance.mode()).toBe('source');
+  });
+
   it('supports keyboard navigation between the mode tabs', () => {
     const editTab = query<HTMLButtonElement>('[data-testid="markdown-editor-edit-tab"]');
+    const sourceTab = query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]');
     const previewTab = query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]');
     editTab.focus();
 
     editTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+    expect(document.activeElement).toBe(sourceTab);
+    sourceTab.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
 
     expect(document.activeElement).toBe(previewTab);
   });
@@ -768,7 +902,9 @@ describe('MarkdownEditorComponent', () => {
   it('renders every source command as an accessible icon action and hides it in preview', () => {
     const toolbar = query<HTMLElement>('[data-testid="markdown-editor-toolbar"]');
     const expectedCommandIds = MARKDOWN_EDITOR_SHORTCUT_GROUPS.flatMap((group) =>
-      group.commandIds.filter((commandId) => commandId !== 'togglePreview'),
+      group.commandIds.filter(
+        (commandId) => commandId !== 'togglePreview' && commandId !== 'toggleSource',
+      ),
     );
     const commandButtons = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('[data-markdown-command]'),
@@ -1121,6 +1257,24 @@ describe('MarkdownEditorComponent', () => {
       '![first.png](https://cdn.example.com/first.png)' +
         '![second.png](https://cdn.example.com/second.png)' +
         'Initial **markdown**',
+    );
+  });
+
+  it('keeps image paste available inside an interactive table cell', () => {
+    fixture.componentRef.setInput('value', '| H |\n| --- |\n| A |');
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    const view = editorView();
+    view.dispatch({
+      selection: { anchor: view.state.doc.toString().indexOf('A') },
+    });
+    const file = new File(['table'], 'table.png', { type: 'image/png' });
+
+    contentElement().dispatchEvent(pasteEvent([file]));
+
+    expect(uploadService.uploadEditorImage).toHaveBeenCalledWith(file);
+    expect(view.state.doc.toString()).toContain(
+      '| ![table.png](https://cdn.example.com/image.png)A |',
     );
   });
 

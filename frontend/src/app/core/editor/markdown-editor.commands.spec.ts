@@ -103,6 +103,12 @@ describe('Markdown editor commands', () => {
     });
     expect(command('link', 'a [label]', selection(0, 9)).value).toBe('[a \\[label\\]](https://)');
     expect(command('table', '', selection(0)).value).toBe('|  |  |\n| --- | --- |\n|  |  |');
+    expect(command('table', 'Name\tValue\nAda\t42', selection(0, 17)).value).toBe(
+      '| Name | Value |\n| --- | --- |\n| Ada | 42 |',
+    );
+    expect(command('table', 'Name,"Quoted value"\nAda,"say ""hi"""', selection(0, 37)).value).toBe(
+      '| Name | Quoted value |\n| --- | --- |\n| Ada | say "hi" |',
+    );
     expect(command('horizontalRule', 'beforeafter', selection(6)).value).toBe(
       'before\n\n---\n\nafter',
     );
@@ -198,6 +204,7 @@ describe('Markdown editor commands', () => {
       ),
     ).toEqual({
       togglePreview: 'Mod+E',
+      toggleSource: 'Mod+Shift+E',
       heading1: 'Mod+Alt+1',
       heading2: 'Mod+Alt+2',
       heading3: 'Mod+Alt+3',

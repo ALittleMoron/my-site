@@ -220,16 +220,22 @@ function addCompletedWikiLinkDecorations(
     ranges,
     rangeKeys,
   );
-  if (state.sliceDoc(slugTo, slugTo + 1) === '|') {
+  const labelSeparator = state.sliceDoc(slugTo, slugTo + 2);
+  const labelSeparatorLength = labelSeparator.startsWith('\\|')
+    ? 2
+    : labelSeparator.startsWith('|')
+      ? 1
+      : 0;
+  if (labelSeparatorLength > 0) {
     addWikiLinkDecoration(
-      { from: slugTo, to: slugTo + 1 },
+      { from: slugTo, to: slugTo + labelSeparatorLength },
       visibleRange,
       'cm-wiki-link-label-separator',
       ranges,
       rangeKeys,
     );
     addWikiLinkDecoration(
-      { from: slugTo + 1, to: candidateTo - 2 },
+      { from: slugTo + labelSeparatorLength, to: candidateTo - 2 },
       visibleRange,
       'cm-wiki-link-label',
       ranges,

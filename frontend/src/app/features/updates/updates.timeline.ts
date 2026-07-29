@@ -236,8 +236,24 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     summary: {
       ru:
         'Статьи, вопросы матрицы и RU→EN workspace перешли с Toast UI на общий ' +
-        'CodeMirror-редактор: вкладки исходника и безопасного превью, независимые от раскладки ' +
-        'горячие клавиши, smart lists/fences, поиск и вставка нескольких изображений. ' +
+        'CodeMirror-редактор: отдельные режимы редактора с псевдорендерами, чистого исходника и ' +
+        'безопасного превью, независимые от раскладки горячие клавиши, smart lists/fences, поиск ' +
+        'и вставка нескольких изображений. Markdown-таблицы стали интерактивными, но сохранили ' +
+        'обычный переносимый исходник: ячейки выделяются прямоугольным диапазоном, Delete и Cut ' +
+        'адаптивно очищают ячейки или удаляют полностью выбранные строки, столбцы и таблицу, ' +
+        'добавление доступно через плюсики на нижней и правой гранях, а строки и столбцы ' +
+        'переставляются за крайние drag handles с заметными маркерами захвата и места вставки. ' +
+        'Сетка выглядит частью редактора без отдельной ' +
+        'карточки и фантомных столбцов: адаптивные колонки и плюсики остаются в ширине редактора, ' +
+        'пустые ячейки открываются без скачка страницы, а строки до и после таблицы не перекрываются. ' +
+        'Активная ячейка показывает каретку на позиции ввода даже без текста, удерживает повторный ' +
+        'ввод в той же ячейке в Chrome и Firefox и не прокручивает страницу при печати. ' +
+        'Markdown-разделитель не занимает визуальную строку, а защищённая ' +
+        'пустая строка после таблицы не даёт следующему тексту стать её новой строкой в редакторе ' +
+        'или превью; сам текст совпадает со своим номером в gutter. ' +
+        'Пустые строки сохраняют высоту, а стрелки не перескакивают через обычный текст рядом с ' +
+        'таблицей. Контекстное меню объединяет структурные ' +
+        'операции, сортировку и выравнивание, а TSV/CSV можно копировать и вставлять. ' +
         'Wiki-ссылки получили синтаксическую подсветку и двухшаговое автодополнение домена и цели: ' +
         'черновики и опубликованные материалы видны в одном списке, а вставка с клавиатуры ' +
         'оставляет место для необязательной подписи. Редактор растёт вместе с текстом без ' +
@@ -247,8 +263,23 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
         'фокус внутри редактора и возвращает пользователя к прежнему месту формы после выхода.',
       en:
         'Articles, matrix questions, and the RU→EN workspace moved from Toast UI to a shared ' +
-        'CodeMirror editor with source and sanitized-preview tabs, layout-independent shortcuts, ' +
-        'smart lists and fences, search, and ordered multi-image insertion. Wiki-links now have ' +
+        'CodeMirror editor with separate pseudo-rendered Editor, plain Source, and sanitized ' +
+        'Preview modes, layout-independent shortcuts, smart lists and fences, search, and ordered ' +
+        'multi-image insertion. Markdown tables are now interactive while retaining portable plain ' +
+        'source: cells form rectangular selections; Delete and Cut adaptively clear cells or remove ' +
+        'fully selected rows, columns, and the whole table; edge-only plus controls add rows and ' +
+        'columns; and edge drag handles reorder them with visible pickup and drop markers. The grid ' +
+        'now reads as part of the editor ' +
+        'without card chrome or phantom columns: responsive columns and plus controls stay within ' +
+        'the editor width, empty cells open without jumping the page, and lines around a table are ' +
+        'not covered. The active cell keeps a caret at the input position even when empty, keeps ' +
+        'repeated Chrome and Firefox input in the addressed cell, and does not move the page while ' +
+        'typing. The Markdown delimiter takes no visual row, while a protected blank ' +
+        'line after the table keeps following prose out of the grid in both Editor and Preview and ' +
+        'aligned with its gutter number. Empty rows keep ' +
+        'their height, and arrow navigation does not skip ordinary ' +
+        'text around a table. A context menu groups structural actions, ' +
+        'sorting, and alignment, while TSV and CSV remain available through the clipboard. Wiki-links now have ' +
         'syntax-aware highlighting and two-stage domain/target completion: Draft and Published ' +
         'content is discoverable together, while keyboard-first insertion leaves room for an ' +
         'optional label. The editor now grows with its content instead of scrolling vertically ' +

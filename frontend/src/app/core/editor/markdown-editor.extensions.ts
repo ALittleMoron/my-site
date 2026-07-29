@@ -13,7 +13,6 @@ import {
   lineNumbers,
 } from '@codemirror/view';
 import { classHighlighter } from '@lezer/highlight';
-import { markdownPresentation } from './markdown-editor.presentation';
 import { markdownEditorWikiLinks } from './markdown-editor.wiki-links';
 
 export const markdownEditorLanguage = markdown({ base: markdownLanguage });
@@ -23,7 +22,6 @@ export const markdownEditorFoundationExtensions: readonly Extension[] = [
   EditorView.editorAttributes.of({ class: 'markdown-editor-static-theme' }),
   indentUnit.of('  '),
   markdownEditorLanguage,
-  markdownPresentation,
   history(),
   lineNumbers(),
   drawSelection(),

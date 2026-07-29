@@ -1,5 +1,8 @@
+import { parseMarkdownTableClipboard } from './markdown-table';
+
 export type MarkdownEditorCommandId =
   | 'togglePreview'
+  | 'toggleSource'
   | 'heading1'
   | 'heading2'
   | 'heading3'
@@ -101,6 +104,14 @@ export const MARKDOWN_EDITOR_COMMANDS: readonly MarkdownEditorCommandDefinition[
     false,
     false,
     'Mod+E',
+  ),
+  commandDefinition(
+    'toggleSource',
+    'markdownEditor.command.toggleSource',
+    'KeyE',
+    false,
+    true,
+    'Mod+Shift+E',
   ),
   commandDefinition(
     'heading1',
@@ -219,7 +230,7 @@ export const MARKDOWN_EDITOR_SHORTCUT_GROUPS: readonly MarkdownEditorShortcutGro
   {
     id: 'view',
     labelKey: 'markdownEditor.shortcuts.group.view',
-    commandIds: ['togglePreview', 'search'],
+    commandIds: ['togglePreview', 'toggleSource', 'search'],
   },
   {
     id: 'headings',
@@ -736,13 +747,36 @@ function insertTable(
   value: string,
   selections: readonly MarkdownSelection[],
 ): MarkdownTransactionResult {
-  const table = '|  |  |\n| --- | --- |\n|  |  |';
   const edits = selections.map((selection, selectionIndex) => {
     const from = Math.min(selection.anchor, selection.head);
     const to = Math.max(selection.anchor, selection.head);
+    const table = markdownTableFromSelection(value.slice(from, to));
     return selectionEdit(from, to, table, 2, 2, false, selectionIndex);
   });
   return transactionFromSelectionEdits(edits);
+}
+
+function markdownTableFromSelection(selectedText: string): string {
+  if (
+    selectedText.length === 0 ||
+    (!selectedText.includes('\t') &&
+      !selectedText.includes(',') &&
+      !selectedText.includes('\n') &&
+      !selectedText.includes('\r'))
+  ) {
+    return '|  |  |\n| --- | --- |\n|  |  |';
+  }
+  const grid = parseMarkdownTableClipboard(selectedText).rows;
+  const columnCount = Math.max(...grid.map((row) => row.length), 0);
+  if (grid.length === 0 || columnCount === 0) {
+    return '|  |  |\n| --- | --- |\n|  |  |';
+  }
+  const row = (cells: readonly string[]): string =>
+    `| ${Array.from({ length: columnCount }, (_, index) => cells[index] ?? '').join(' | ')} |`;
+  const header = row(grid[0] ?? []);
+  const delimiter = row(Array<string>(columnCount).fill('---'));
+  const bodyRows = grid.length > 1 ? grid.slice(1).map(row) : [row([])];
+  return [header, delimiter, ...bodyRows].join('\n');
 }
 
 function toggleCodeBlock(

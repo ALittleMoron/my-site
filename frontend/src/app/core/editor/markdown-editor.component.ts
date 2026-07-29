@@ -9,6 +9,7 @@ import {
   ElementRef,
   OnDestroy,
   PLATFORM_ID,
+  ViewEncapsulation,
   ViewChild,
   computed,
   effect,
@@ -63,9 +64,12 @@ import {
   markdownEditorCspExtension,
   markdownEditorFoundationExtensions,
 } from './markdown-editor.extensions';
+import { markdownPresentation } from './markdown-editor.presentation';
+import { markdownTableEditor, type MarkdownTableEditorConfig } from './markdown-editor.tables';
 import { WikiLinkCompletionData, setWikiLinkCompletionData } from './markdown-editor.wiki-links';
 
-type EditorMode = 'edit' | 'preview';
+type AuthoringMode = 'edit' | 'source';
+type EditorMode = AuthoringMode | 'preview';
 type UploadStatus = 'queued' | 'uploading' | 'error';
 
 interface ImageUpload {
@@ -99,6 +103,7 @@ const MARKDOWN_EDITOR_FULLSCREEN_ICON_PATHS = {
 
 const MARKDOWN_EDITOR_TOOLBAR_ICON_PATHS = {
   togglePreview: 'M4 5h7v14H4zM15 5h5v14h-5z',
+  toggleSource: 'M8 8 4 12l4 4M16 8l4 4-4 4',
   search: 'M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0M16 16l4 4',
   heading1: 'M4 5v14M12 5v14M4 12h8M16 11l2-2v10M16 19h4',
   heading2: 'M4 5v14M12 5v14M4 12h8M16 11a2 2 0 1 1 4 0c0 1.5-4 4.5-4 8h4',
@@ -131,8 +136,15 @@ let editorInstanceId = 0;
   standalone: true,
   imports: [CdkTrapFocus, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   templateUrl: './markdown-editor.component.html',
-  styleUrl: './markdown-editor.component.scss',
+  styleUrls: [
+    './markdown-editor.component.scss',
+    './markdown-editor.theme-shell.scss',
+    './markdown-editor.theme-foundation.scss',
+    './markdown-editor.theme-presentation.scss',
+    './markdown-editor.theme-highlighting.scss',
+  ],
 })
 export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly imageUpload = inject(EditorImageUploadService);
@@ -146,9 +158,11 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   private readonly cspNonce = inject(CSP_NONCE);
   private readonly contentAttributesCompartment = new Compartment();
   private readonly phrasesCompartment = new Compartment();
+  private readonly presentationCompartment = new Compartment();
   private readonly instanceId = ++editorInstanceId;
   readonly sourcePanelId = `markdown-editor-source-${this.instanceId}`;
   readonly previewPanelId = `markdown-editor-preview-${this.instanceId}`;
+  private lastAuthoringMode: AuthoringMode = 'edit';
   private editorView: EditorView | null = null;
   private syncingInput = false;
   private focusPending = false;
@@ -225,6 +239,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       ? 'markdownEditor.shortcuts.modifierHintMac'
       : 'markdownEditor.shortcuts.modifierHintOther';
   readonly editTabId = `markdown-editor-edit-tab-${this.instanceId}`;
+  readonly sourceTabId = `markdown-editor-source-tab-${this.instanceId}`;
   readonly previewTabId = `markdown-editor-preview-tab-${this.instanceId}`;
 
   constructor() {
@@ -250,6 +265,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const contentAttributes = this.editorContentAttributes();
       const phrases = this.searchPhrases();
+      const presentation = this.authoringPresentationExtensions(this.lastAuthoringMode);
       const view = this.editorView;
       if (view === null) {
         return;
@@ -260,6 +276,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
             EditorView.contentAttributes.of(contentAttributes),
           ),
           this.phrasesCompartment.reconfigure(EditorState.phrases.of(phrases)),
+          this.presentationCompartment.reconfigure(presentation),
         ],
       });
     });
@@ -327,7 +344,9 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   focus(): void {
-    this.mode.set('edit');
+    if (this.mode() === 'preview') {
+      this.selectMode(this.lastAuthoringMode);
+    }
     const view = this.editorView;
     if (view === null) {
       this.focusPending = true;
@@ -351,8 +370,11 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    this.mode.set('edit');
-    this.restoreFocus(this.restoreEditorFocus);
+    const restoreEditorFocus = this.restoreEditorFocus;
+    this.lastAuthoringMode = mode;
+    this.reconfigureAuthoringPresentation(mode);
+    this.mode.set(mode);
+    this.restoreFocus(restoreEditorFocus);
     this.restoreEditorFocus = false;
     this.restoreExternalScroll(externalScroll);
   }
@@ -393,11 +415,16 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       return;
     }
     const command = findMarkdownEditorCommand(event, this.editorPlatform());
-    if (command !== 'togglePreview') {
+    if (command !== 'togglePreview' && command !== 'toggleSource') {
       return;
     }
     this.consumeKeyboardEvent(event);
-    this.selectMode(this.mode() === 'edit' ? 'preview' : 'edit');
+    if (command === 'togglePreview') {
+      this.selectMode(this.mode() === 'preview' ? this.lastAuthoringMode : 'preview');
+      return;
+    }
+    const currentAuthoring = this.mode() === 'preview' ? this.lastAuthoringMode : this.mode();
+    this.selectMode(currentAuthoring === 'edit' ? 'source' : 'edit');
   }
 
   toggleFullscreen(): void {
@@ -545,6 +572,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     return [
       ...markdownEditorFoundationExtensions,
       markdownEditorCspExtension(this.cspNonce),
+      this.presentationCompartment.of(this.authoringPresentationExtensions('edit')),
       this.phrasesCompartment.of(EditorState.phrases.of(this.searchPhrases())),
       this.contentAttributesCompartment.of(
         EditorView.contentAttributes.of(this.editorContentAttributes()),
@@ -656,6 +684,10 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       this.selectMode('preview');
       return true;
     }
+    if (command === 'toggleSource') {
+      this.selectMode(this.mode() === 'source' ? 'edit' : 'source');
+      return true;
+    }
     if (command === 'search') {
       openSearchPanel(view);
       view.dom
@@ -703,6 +735,18 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
     const selection = view.state.selection.main;
     const selectedText = view.state.sliceDoc(selection.from, selection.to);
+    if (command === 'table' && selectedText.length > 0) {
+      const result = applyMarkdownCommandTransaction(
+        command,
+        view.state.doc.toString(),
+        editorSelections(view),
+      );
+      if (result === null) {
+        return false;
+      }
+      this.dispatchTransaction(view, result);
+      return true;
+    }
     const template =
       command === 'link'
         ? linkSnippet(selectedText)
@@ -894,7 +938,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       const view = this.editorView;
       view?.requestMeasure();
       this.fullscreenToggle.nativeElement.focus({ preventScroll: true });
-      if (view !== null && this.mode() === 'edit') {
+      if (view !== null && this.mode() !== 'preview') {
         view.dispatch({
           effects: EditorView.scrollIntoView(view.state.selection.main, { y: 'center' }),
         });
@@ -963,7 +1007,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
         if (
           !this.destroyRef.destroyed &&
           this.editorView === view &&
-          this.mode() === 'edit' &&
+          this.mode() !== 'preview' &&
           !view.hasFocus
         ) {
           this.focusEditor(view);
@@ -1083,6 +1127,56 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     };
   }
 
+  private authoringPresentationExtensions(mode: AuthoringMode): Extension {
+    if (mode === 'source') {
+      return [];
+    }
+    return [
+      markdownPresentation,
+      markdownTableEditor({
+        locale: this.language(),
+        phrases: this.markdownTablePhrases(),
+      }),
+    ];
+  }
+
+  private markdownTablePhrases(): MarkdownTableEditorConfig['phrases'] {
+    return {
+      table: this.i18n.translate('markdownEditor.table.table'),
+      row: this.i18n.translate('markdownEditor.table.row'),
+      column: this.i18n.translate('markdownEditor.table.column'),
+      range: this.i18n.translate('markdownEditor.table.range'),
+      menu: this.i18n.translate('markdownEditor.table.menu'),
+      addRow: this.i18n.translate('markdownEditor.table.addRow'),
+      addColumn: this.i18n.translate('markdownEditor.table.addColumn'),
+      moveRow: this.i18n.translate('markdownEditor.table.moveRow'),
+      moveColumn: this.i18n.translate('markdownEditor.table.moveColumn'),
+      insertBefore: this.i18n.translate('markdownEditor.table.insertBefore'),
+      insertAfter: this.i18n.translate('markdownEditor.table.insertAfter'),
+      duplicate: this.i18n.translate('markdownEditor.table.duplicate'),
+      clear: this.i18n.translate('markdownEditor.table.clear'),
+      copy: this.i18n.translate('markdownEditor.table.copy'),
+      cut: this.i18n.translate('markdownEditor.table.cut'),
+      delete: this.i18n.translate('markdownEditor.table.delete'),
+      moveBefore: this.i18n.translate('markdownEditor.table.moveBefore'),
+      moveAfter: this.i18n.translate('markdownEditor.table.moveAfter'),
+      sortAscending: this.i18n.translate('markdownEditor.table.sortAscending'),
+      sortDescending: this.i18n.translate('markdownEditor.table.sortDescending'),
+      alignLeft: this.i18n.translate('markdownEditor.table.alignLeft'),
+      alignCenter: this.i18n.translate('markdownEditor.table.alignCenter'),
+      alignRight: this.i18n.translate('markdownEditor.table.alignRight'),
+      format: this.i18n.translate('markdownEditor.table.format'),
+      deleteTable: this.i18n.translate('markdownEditor.table.deleteTable'),
+      clipboardFailed: this.i18n.translate('markdownEditor.table.clipboardFailed'),
+    };
+  }
+
+  private reconfigureAuthoringPresentation(mode: AuthoringMode): void {
+    this.editorView?.dispatch({
+      effects: this.presentationCompartment.reconfigure(this.authoringPresentationExtensions(mode)),
+    });
+  }
+
   private updateWikiLinkCompletionData(data: WikiLinkCompletionData | null): void {
     this.currentWikiLinkCompletionData = data;
     this.editorView?.dispatch({ effects: setWikiLinkCompletionData.of(data) });
@@ -1112,7 +1206,9 @@ function resolveToolbarGroups(
   return shortcutGroups
     .map((group) => ({
       ...group,
-      commands: group.commands.filter((command) => command.id !== 'togglePreview'),
+      commands: group.commands.filter(
+        (command) => command.id !== 'togglePreview' && command.id !== 'toggleSource',
+      ),
     }))
     .filter((group) => group.commands.length > 0);
 }

@@ -31,6 +31,20 @@
           {{ 'markdownEditor.mode.edit' | t }}
         </button>
         <button
+          type="button"
+          role="tab"
+          class="markdown-editor-tab"
+          data-testid="markdown-editor-source-tab"
+          [id]="sourceTabId"
+          [attr.aria-selected]="mode() === 'source'"
+          [attr.aria-controls]="sourcePanelId"
+          [attr.tabindex]="mode() === 'source' ? 0 : -1"
+          (click)="selectMode('source')"
+          (keydown)="onModeTabKeydown($event)"
+        >
+          {{ 'markdownEditor.mode.source' | t }}
+        </button>
+        <button
           #previewTab
           type="button"
           role="tab"
@@ -67,7 +81,7 @@
       </button>
     </div>
 
-    @if (mode() === 'edit') {
+    @if (mode() !== 'preview') {
       <div
         class="markdown-editor-toolbar"
         data-testid="markdown-editor-toolbar"
@@ -112,8 +126,8 @@
     data-testid="markdown-editor-source-panel"
     class="markdown-editor-panel"
     [id]="sourcePanelId"
-    [attr.aria-labelledby]="editTabId"
-    [hidden]="mode() !== 'edit'"
+    [attr.aria-labelledby]="mode() === 'source' ? sourceTabId : editTabId"
+    [hidden]="mode() === 'preview'"
   >
     <div #editorHost class="markdown-editor-codemirror-host"></div>
   </section>

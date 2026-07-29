@@ -29,6 +29,36 @@ describe('wiki links', () => {
     ]);
   });
 
+  it.each([
+    {
+      type: 'articles' as const,
+      slug: 'typed-articles',
+      label: 'Typed article',
+      path: '/en/articles/typed-articles',
+    },
+    {
+      type: 'matrix' as const,
+      slug: 'angular-forms',
+      label: 'Angular forms',
+      path: '/en/competency-matrix/questions/angular-forms',
+    },
+  ])('parses and renders an escaped label separator for $type links', (link) => {
+    const markdown = `[[${link.type}:${link.slug}\\|${link.label}]]`;
+
+    expect(parseWikiLinks(markdown)).toEqual([
+      {
+        type: link.type,
+        slug: link.slug,
+        label: link.label,
+        raw: markdown,
+      },
+    ]);
+
+    expect(renderMarkdownWithWikiLinks(markdown, 'en', sanitizeHtml)).toContain(
+      `<a href="${link.path}">${link.label}</a>`,
+    );
+  });
+
   it('ignores legacy untyped and unknown-prefixed wiki links', () => {
     expect(
       parseWikiLinks('Read [[typed-articles]], [[unknown:typed-articles]], and [[articles:OK]].'),

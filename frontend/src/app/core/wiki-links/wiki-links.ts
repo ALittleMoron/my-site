@@ -31,7 +31,8 @@ export interface WikiLinkTargetRegistry {
   lookup: WikiLinkTargetLookup;
 }
 
-const WIKI_LINK_PATTERN = /\[\[(articles|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\n]+))?\]\]/g;
+const WIKI_LINK_PATTERN =
+  /\[\[(articles|matrix):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\\?\|([^\]\n]+))?\]\]/g;
 const DEFAULT_CODE_RENDERER = new Renderer();
 const MARKDOWN_RENDERER = new Renderer();
 

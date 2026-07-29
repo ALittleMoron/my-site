@@ -59,6 +59,7 @@ class TestI18nCatalog:
         required_keys = {
             "markdownEditor.mode.aria",
             "markdownEditor.mode.edit",
+            "markdownEditor.mode.source",
             "markdownEditor.mode.preview",
             "markdownEditor.fullscreen.enter",
             "markdownEditor.fullscreen.exit",
@@ -94,6 +95,7 @@ class TestI18nCatalog:
             "markdownEditor.search.replacedMatches",
             "markdownEditor.search.replacedMatchOnLine",
             "markdownEditor.command.togglePreview",
+            "markdownEditor.command.toggleSource",
             "markdownEditor.command.heading1",
             "markdownEditor.command.heading2",
             "markdownEditor.command.heading3",
@@ -114,10 +116,44 @@ class TestI18nCatalog:
             "markdownEditor.command.codeBlock",
             "markdownEditor.command.table",
             "markdownEditor.command.search",
+            "markdownEditor.table.table",
+            "markdownEditor.table.row",
+            "markdownEditor.table.column",
+            "markdownEditor.table.range",
+            "markdownEditor.table.menu",
+            "markdownEditor.table.addRow",
+            "markdownEditor.table.addColumn",
+            "markdownEditor.table.moveRow",
+            "markdownEditor.table.moveColumn",
+            "markdownEditor.table.insertBefore",
+            "markdownEditor.table.insertAfter",
+            "markdownEditor.table.duplicate",
+            "markdownEditor.table.clear",
+            "markdownEditor.table.copy",
+            "markdownEditor.table.cut",
+            "markdownEditor.table.delete",
+            "markdownEditor.table.moveBefore",
+            "markdownEditor.table.moveAfter",
+            "markdownEditor.table.sortAscending",
+            "markdownEditor.table.sortDescending",
+            "markdownEditor.table.alignLeft",
+            "markdownEditor.table.alignCenter",
+            "markdownEditor.table.alignRight",
+            "markdownEditor.table.format",
+            "markdownEditor.table.deleteTable",
+            "markdownEditor.table.clipboardFailed",
         }
 
         assert required_keys <= russian_messages.keys()
         assert required_keys <= english_messages.keys()
+        removed_table_keys = {
+            "markdownEditor.table.selectRow",
+            "markdownEditor.table.selectColumn",
+            "markdownEditor.table.selectedRows",
+            "markdownEditor.table.selectedColumns",
+        }
+        assert removed_table_keys.isdisjoint(russian_messages.keys())
+        assert removed_table_keys.isdisjoint(english_messages.keys())
         assert "Escape" in russian_messages["markdownEditor.shortcuts.tabEscape"]
         assert "Tab" in english_messages["markdownEditor.shortcuts.tabEscape"]
         assert "⌘" in russian_messages["markdownEditor.shortcuts.modifierHintMac"]
