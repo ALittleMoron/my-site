@@ -46,19 +46,6 @@
   padding: 0;
 }
 
-.markdown-editor-shell .markdown-editor-static-theme .cm-selectionBackground {
-  background: rgba(var(--accent-color-rgb), 0.18);
-}
-
-.markdown-editor-shell .markdown-editor-static-theme.cm-focused .cm-selectionBackground {
-  background: rgba(var(--accent-color-rgb), 0.3);
-}
-
-.markdown-editor-shell .markdown-editor-static-theme .cm-cursor,
-.markdown-editor-shell .markdown-editor-static-theme .cm-dropCursor {
-  border-left-color: var(--accent-color);
-}
-
 .markdown-editor-shell .markdown-editor-static-theme .cm-activeLine {
   background: rgba(var(--accent-color-rgb), 0.055);
 }

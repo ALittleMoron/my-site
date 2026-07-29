@@ -36,7 +36,7 @@ import {
   Transaction,
   type Extension,
 } from '@codemirror/state';
-import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
+import { EditorView, drawSelection, keymap, type ViewUpdate } from '@codemirror/view';
 import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
 import { TranslatePipe } from '../i18n/translate.pipe';
@@ -142,6 +142,7 @@ let editorInstanceId = 0;
     './markdown-editor.component.scss',
     './markdown-editor.theme-shell.scss',
     './markdown-editor.theme-foundation.scss',
+    './markdown-editor.theme-selection.scss',
     './markdown-editor.theme-presentation.scss',
     './markdown-editor.theme-highlighting.scss',
   ],
@@ -1129,7 +1130,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   private authoringPresentationExtensions(mode: AuthoringMode): Extension {
     if (mode === 'source') {
-      return [];
+      return drawSelection();
     }
     return [
       markdownPresentation,

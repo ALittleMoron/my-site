@@ -6,7 +6,6 @@ import { highlightSelectionMatches, search } from '@codemirror/search';
 import { EditorState, type Extension } from '@codemirror/state';
 import {
   EditorView,
-  drawSelection,
   dropCursor,
   highlightActiveLine,
   highlightActiveLineGutter,
@@ -24,7 +23,6 @@ export const markdownEditorFoundationExtensions: readonly Extension[] = [
   markdownEditorLanguage,
   history(),
   lineNumbers(),
-  drawSelection(),
   dropCursor(),
   highlightActiveLine(),
   highlightActiveLineGutter(),

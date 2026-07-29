@@ -660,7 +660,11 @@ Flashcards should be implemented strictly after auth implementation for common u
 - [ ] Security audit
   - [ ] User cannot edit another user's course progress
 
-### Other tasks
+### Editor platform
+
+The shared editor is currently Markdown-first. Treat it as a reusable editor platform so future
+modes, such as programming-course assignment workspaces, can reuse only the relevant foundation
+instead of inheriting every Markdown-specific feature.
 
 - [ ] Complete the custom Obsidian-like Markdown editor roadmap.
   - [x] Add the first stage: modular CodeMirror 6, source/preview tabs, the complete initial
@@ -723,8 +727,36 @@ Flashcards should be implemented strictly after auth implementation for common u
   cleared-cell caret in the addressed cell, move drag controls outside editable marks, give every
   row and column a distinct reachable handle with pickup/drop feedback, and suppress ordinary
   CodeMirror selection artifacts during rectangular cell drag.
+- [x] Keep horizontal navigation inside pseudo-rendered Markdown tables on the owning page's
+  current position by scrolling the rendered target cell instead of hidden source geometry.
+- [x] Keep outer horizontal table arrows inside the pseudo-rendered grid instead of letting the
+  browser move the caret into zero-height Markdown structure and jump the owning page upward.
+- [x] Keep vertical navigation between pseudo-rendered table rows on the owning page's current
+  position by scrolling the rendered target cell instead of hidden source geometry.
+- [x] Keep ArrowDown entry from the ordinary line above a pseudo-rendered table from scrolling the
+  owning page to hidden Markdown source geometry.
+- [x] Establish invariant-driven Markdown-table regression coverage for forbidden caret positions,
+  redirected input, navigation recovery, rectangular and cross-boundary selections, varied cell
+  content, and single blinking-cursor rendering.
+- [x] Harden every Markdown-editor interaction around tables with exhaustive mixed text/table
+  selection, theme-aware native highlighting, cell and boundary navigation, whitespace editing,
+  deletion, line breaks, indentation, modifiers, hotkeys, IME, clipboard, and multi-selection
+  regression matrices.
+- [ ] Restore readable green-tinted selection in both Markdown Editor and Source modes without
+  geometric table-selection artifacts or duplicate layers.
+- [ ] Keep the Markdown table caret to one normal cell-line height when ArrowLeft moves from a
+  right empty cell into a left empty cell in headers and body rows.
+- [ ] Make ArrowUp from the top-left Markdown table cell deterministic and directionally correct
+  for empty and populated cells, every table shape, and the exact visible line above the table.
+- [ ] Add balanced horizontal insets around pseudo-rendered Markdown tables without breaking
+  viewport containment, controls, caret, or selection geometry.
+- [ ] Restrict Markdown table terminator protection to the final empty line at document EOF and
+  keep all lines after a table normally editable when later content exists.
 - [x] Move the admin-only Markdown editor theme out of the global stylesheet so CodeMirror,
   interactive tables, and editor styling stay lazy without raising the initial-bundle budget.
+
+### Other tasks
+
 - [ ] Split monorepo into separate repos: front, back, infra.
 - [x] UI localisation
 - [x] Database localisation

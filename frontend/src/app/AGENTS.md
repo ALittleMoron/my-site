@@ -173,16 +173,18 @@ Never violate these boundaries:
   Drag handles must remain absolute siblings outside editable cell marks, expose distinct hit areas
   for every row and column, and show both pickup and drop state without changing grid geometry.
   Cross-cell selection must collapse CodeMirror's ordinary document selection so only the bounded
-  rectangular overlay remains. Preserve one protected blank Markdown line after a table: input on
-  that terminator must move following prose after the separator in the same undoable transaction,
-  and deletion must not collapse the separator and turn prose into a table row. Editor and Preview
-  must consume that same unchanged source contract. Arrow navigation must stay cell-aware inside
-  the grid without skipping or misaligning ordinary source lines around a table. Preserve TSV/CSV
-  clipboard, keyboard navigation, context-menu accessibility, alignment, sorting, touch controls,
-  and one-step undo. Keep the table theme extension-scoped so it stays in the lazy authoring bundle
-  instead of the global initial stylesheet. Do not add formulas, merged cells, typed columns,
-  filters, persisted widths, a second
-  editor, or raw DOM mutation.
+  rectangular overlay remains. When a table ends at document EOF, preserve one final protected
+  blank Markdown line as the valid place to type outside the grid. When later content exists, every
+  line after the table remains ordinary editable content; terminator protection must not spread to
+  the first or second following line. Input on a protected EOF terminator must move following prose
+  after the separator in the same undoable transaction, and deletion must not collapse the
+  separator and turn prose into a table row. Editor and Preview must consume that same unchanged
+  source contract. Arrow navigation must stay cell-aware inside the grid without skipping or
+  misaligning ordinary source lines around a table. Preserve TSV/CSV clipboard, keyboard
+  navigation, context-menu accessibility, alignment, sorting, touch controls, and one-step undo.
+  Keep the table theme extension-scoped so it stays in the lazy authoring bundle instead of the
+  global initial stylesheet. Do not add formulas, merged cells, typed columns, filters, persisted
+  widths, a second editor, or raw DOM mutation.
 - Pass Angular's CSP nonce into `EditorView.cspNonce` and let CodeMirror provide its runtime base
   layout and accessibility rules. Compiled editor-scoped CSS may theme public CodeMirror classes
   and stable `classHighlighter`/semantic classes, but must not copy or override CodeMirror's
@@ -199,6 +201,106 @@ Never violate these boundaries:
   Editor/Source/Preview focus restoration, validation classes, unsaved-value propagation, and image
   paste/drop/picker ordering. New settings, palettes, syntax features, and attachment flows must
   extend these foundations rather than bypass them.
+
+## Editor Platform Quality and Testing Standard
+
+- Apply this standard to the current Markdown-first editor and every future Editor platform mode,
+  including any programming-course assignment editor that reuses only part of the shared
+  foundation. A mode may omit irrelevant Markdown features, but every behavior it does expose must
+  meet the same regression standard.
+- Treat the Editor platform as a high-risk interaction system. Test every observable behavior and
+  every meaningful equivalence class, including combinations, boundary states, and sequences that
+  were not part of the original bug report. Do not limit a change to one happy path or the exact
+  reproduction the user happened to find.
+- Do not spend coverage effort on unsupported external tampering such as a user manually deleting
+  editor-owned DOM nodes. Do cover all interactions available through the product, browser input,
+  CodeMirror transactions, commands, pointer/keyboard events, clipboard, focus, and mode changes.
+- Use TDD for every editor behavior change or bug fix. Add the smallest focused failing behavioral
+  test first, expand it into the complete parameterized regression matrix, confirm that it fails
+  for the expected reason, and only then edit production code.
+- Before implementation, identify the shared invariant behind all reported symptoms. Fix that
+  invariant once; do not accumulate special cases for ArrowLeft, ArrowRight, ArrowUp, ArrowDown,
+  Space, a particular row count, one browser timing path, or one source spelling.
+- An existing green suite is not proof that a reported editor bug is fixed. The suite has already
+  missed real cursor, selection, scrolling, whitespace, and table-boundary regressions. Every
+  report requires a new failing regression test even when nearby tests pass.
+- Never weaken, delete, skip, narrow, or rewrite an existing test merely to accept a new
+  implementation. If a previous expectation conflicts with the clarified product contract, record
+  the contract change explicitly and replace it with stronger coverage for both the new behavior
+  and the old regression boundary.
+- Build parameterized interaction matrices across every applicable dimension:
+  - Editor, Source, and Preview modes;
+  - focused and unfocused state, normal and fullscreen layout, page and modal ownership;
+  - document start, middle, and end, with zero, one, and multiple visible lines before and after the
+    edited construct;
+  - empty, short, long, partially filled, and malformed content;
+  - ASCII, Cyrillic, other Unicode, emoji, punctuation, escaped delimiters, links, inline/fenced
+    code, Markdown syntax, and leading, trailing, repeated, or replacement whitespace;
+  - forward and reverse direction;
+  - collapsed, non-empty, rectangular, cross-boundary, and multiple selections;
+  - a fresh editor, repeated actions in one editor, undo/redo, and repeated equivalent editors
+    after CodeMirror measurement/update cycles.
+- For interactive tables, cover the full applicable cross-product of header, first/middle/final
+  body row; first/middle/final column; one, two, and many semantic rows and columns; even and uneven
+  rows; empty and populated cells; canonical spaces, `||`, `| |`, `|cell|`, missing outer pipes,
+  and rows without a trailing pipe; and tables at every document boundary.
+- Enumerate every valid and forbidden table caret position. Valid positions are authored cell
+  content, the valid empty-cell input position, and ordinary visible lines outside the table.
+  Forbidden positions include leading/trailing/inter-cell pipes, the delimiter row, structural
+  padding, hidden line-break geometry, and positions beyond an editable cell edge. Test direct
+  selection, input, deletion, and all navigation directions from every class.
+- If CodeMirror or browser geometry temporarily yields a forbidden caret position, test that
+  recovery is deterministic and direction-aware. It must reach the intended adjacent cell or
+  immediately adjacent ordinary line, never an arbitrary globally "next" position.
+- Cover all selection shapes in both directions: part/all of ordinary text, part/all of one cell,
+  adjacent and non-adjacent source cell content, semantic single cell, partial/full row,
+  partial/full column, rectangular group, whole table, delimiter/pipe boundaries, prose entering or
+  leaving a table, prose surrounding part/all of a table, whole document, and disjoint
+  multi-selection.
+- For every applicable selection shape, verify rendering, replacement, typing, Backspace, Delete,
+  Cut, Copy, undo, redo, structural protection, and selection direction. Assert that ordinary text
+  selection does not create a full-editor geometric block, semantic rectangular selection stays
+  inside its selected cells, selected content remains readable in light/dark themes, and duplicate
+  selection layers do not appear.
+- Cover every keyboard action inside content, at both edges of every cell, at all grid edges, and on
+  adjacent ordinary lines: ArrowLeft/Right/Up/Down, Shift/Alt-or-Option/Ctrl/Meta plus every arrow,
+  Tab, Shift+Tab, Enter, Shift+Enter, Space and repeated/replacement spaces, Backspace, Delete, Home,
+  End, PageUp, PageDown, Insert, Escape, native undo/redo, and every registered editor hotkey on RU
+  and EN physical keyboard layouts.
+- Preserve and test native IME composition, platform navigation/modifiers, browser text selection,
+  spellcheck-facing content, clipboard behavior, drag/drop, pointer/touch input, focus transitions,
+  and the CodeMirror Escape then Tab keyboard-trap escape hatch. A custom editor keymap must not
+  consume a native interaction outside its exact contract.
+- Assert complete observable state after each action, not just a boolean return: exact document
+  source; selection anchor, head, association, and range count; active semantic cell; table
+  validity and dimensions; scroll request and rendered target; caret/selection layer count and
+  bounds; focus; history grouping; and exact one-step undo/redo result.
+- Cursor and selection visuals are behavior. Test that exactly the intended cursor(s) exist, no
+  duplicate native/custom cursor appears, empty and populated cell carets remain within one cell
+  line, blinking/custom layers address the correct source position, and selection/caret geometry
+  cannot span unrelated rows or cells.
+- Scrolling is behavior. Test both transaction `scrollIntoView` intent and the rendered DOM target.
+  Hidden Markdown geometry must never move the owning page when the visible destination is a
+  pseudo-rendered cell. Do not "fix" this by disabling scrolling for one key while leaving the same
+  invalid geometry reachable by other actions.
+- For timing-dependent or intermittent reports, never write probabilistic or flaky assertions.
+  Recreate the same initial state repeatedly, drive all relevant CodeMirror update/measurement
+  phases deterministically, and require the same exact outcome on every iteration.
+- Prefer public CodeMirror state, transactions, commands, events, stable semantic classes, and
+  rendered behavior over private helpers or copied internals. Do not assert source-code strings,
+  private method names, arbitrary DOM nesting, or exact implementation details.
+- JSDOM cannot prove real browser selection color, caret geometry, font metrics, or page scrolling.
+  Automate every state/DOM contract it can represent, keep production build/style-budget checks
+  green, and list the remaining real-browser visual checks explicitly. Do not perform manual
+  browser testing until the user requests it for the current editor change.
+- Treat line/branch coverage as a diagnostic, not a substitute for the interaction matrix. Aim for
+  literal 100% coverage of changed editor behavior and review every uncovered changed branch.
+  Report exact coverage honestly and never describe it as 100% unless it is literally 100%.
+- After each focused red/green cycle, run all related editor suites to catch immediate interaction
+  regressions. Before completion, run the complete frontend tests and coverage, formatting, lint,
+  type checking, and production build through existing Make targets, then perform a dedicated
+  self-review for missing combinations, weakened tests, flaky timing, browser-only gaps, and
+  violations of these standards.
 
 ## `shared/ui/` Rules
 

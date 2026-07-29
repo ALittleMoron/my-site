@@ -218,6 +218,16 @@ describe('MarkdownEditorComponent', () => {
     expect(announcement.getAttribute('aria-live')).toBe('polite');
   });
 
+  it('uses native selection in table-aware Editor mode and keeps drawn multi-selection in Source', () => {
+    expect(editorElement().querySelector('.cm-selectionLayer')).toBeNull();
+
+    query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]').click();
+    fixture.detectChanges();
+
+    expect(editorElement().querySelector('.cm-selectionLayer')).not.toBeNull();
+    expect(editorElement().querySelector('.cm-markdown-table-cursor-layer')).toBeNull();
+  });
+
   it('passes the Angular CSP nonce to CodeMirror runtime styles', () => {
     const editorView = EditorView.findFromDOM(contentElement());
     const runtimeStyles = Array.from(document.head.querySelectorAll('style')).filter((style) =>

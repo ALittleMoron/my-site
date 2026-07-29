@@ -42,6 +42,8 @@ const phrases: MarkdownTableEditorConfig['phrases'] = {
 
 const config: MarkdownTableEditorConfig = { locale: 'en', phrases };
 const VALID_TABLE = '| Name | Value |\n| --- | ---: |\n| A | 2 |\n| B | 10 |';
+const originalScrollIntoView = Reflect.get(HTMLElement.prototype, 'scrollIntoView') as
+  HTMLElement['scrollIntoView'] | undefined;
 
 describe('Markdown table editor extension', () => {
   const views: EditorView[] = [];
@@ -49,6 +51,14 @@ describe('Markdown table editor extension', () => {
   afterEach(() => {
     views.splice(0).forEach((view) => view.destroy());
     document.body.replaceChildren();
+    if (originalScrollIntoView === undefined) {
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    } else {
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+        configurable: true,
+        value: originalScrollIntoView,
+      });
+    }
   });
 
   it('renders only valid Lezer Table nodes as an accessible, normalized responsive grid', () => {
@@ -264,7 +274,7 @@ describe('Markdown table editor extension', () => {
     });
 
     expect(view.state.doc.toString()).toBe(`${VALID_TABLE}\n`);
-    expect(view.state.selection.main.head).toBe(VALID_TABLE.length);
+    expect(view.state.selection.main.head).toBe(VALID_TABLE.length + 1);
     expect(undo(view)).toBe(true);
     expect(view.state.doc.toString()).toBe('');
   });
@@ -725,6 +735,221 @@ describe('Markdown table editor extension', () => {
     setCursor(view, headerStart + 1);
     expect(key(view, 'ArrowRight').defaultPrevented).toBe(false);
     expect(view.state.selection.main.head).toBe(headerStart + 1);
+  });
+
+  it('keeps horizontal arrows inside the outer table edges', () => {
+    const source = 'before\n\n| ABC | D |\n| --- | --- |\n| xy | zzzz |\n\nafter';
+    const view = createView(source, views);
+    const firstCellStart = source.indexOf('ABC');
+    const lastCellEnd = source.indexOf('zzzz') + 'zzzz'.length;
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+
+    setCursor(view, firstCellStart);
+    expect(key(view, 'ArrowLeft').defaultPrevented).toBe(true);
+    expect(view.state.selection.main.head).toBe(firstCellStart);
+
+    setCursor(view, lastCellEnd);
+    expect(key(view, 'ArrowRight').defaultPrevented).toBe(true);
+    expect(view.state.selection.main.head).toBe(lastCellEnd);
+    expect(scrollRenderedCell).not.toHaveBeenCalled();
+  });
+
+  it('does not trap vertical arrows at the outer table edges', () => {
+    const source = 'before\n\n| ABC | D |\n| --- | --- |\n| xy | zzzz |\n\nafter';
+    const view = createView(source, views);
+    const firstRowPosition = source.indexOf('ABC') + 1;
+    const lastRowPosition = source.indexOf('xy') + 1;
+
+    setCursor(view, firstRowPosition);
+    expect(key(view, 'ArrowUp').defaultPrevented).toBe(false);
+    expect(view.state.selection.main.head).toBe(firstRowPosition);
+
+    setCursor(view, lastRowPosition);
+    expect(key(view, 'ArrowDown').defaultPrevented).toBe(false);
+    expect(view.state.selection.main.head).toBe(lastRowPosition);
+  });
+
+  it('scrolls rendered target cells instead of hidden source geometry in both directions', () => {
+    const source = '| ABC | D |\n| --- | --- |\n| xy | zzzz |';
+    const view = createView(source, views);
+    const previousCellEnd = source.indexOf('ABC') + 'ABC'.length;
+    const currentCellStart = source.indexOf('D');
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+    const scrollRequests: boolean[] = [];
+    view.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((update) => {
+          scrollRequests.push(
+            ...update.transactions.map((transaction) => transaction.scrollIntoView),
+          );
+        }),
+      ),
+    });
+    setCursor(view, currentCellStart);
+    scrollRequests.splice(0);
+
+    expect(key(view, 'ArrowLeft').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(previousCellEnd);
+    expect(view.state.selection.main.assoc).toBe(-1);
+    expect(scrollRequests).toEqual([false]);
+    expect(scrollRenderedCell).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 0, 0));
+
+    expect(key(view, 'ArrowRight').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(currentCellStart);
+    expect(scrollRequests).toEqual([false, false]);
+    expect(scrollRenderedCell).toHaveBeenCalledTimes(2);
+    expect(scrollRenderedCell.mock.instances[1]).toBe(cell(view, 0, 1));
+  });
+
+  it('scrolls rendered target cells instead of hidden source geometry vertically', () => {
+    const source = '| ABC | D |\n| --- | --- |\n| xy | zzzz |';
+    const view = createView(source, views);
+    const headerPosition = source.indexOf('ABC') + 1;
+    const bodyPosition = source.indexOf('xy') + 1;
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+    const scrollRequests: boolean[] = [];
+    view.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((update) => {
+          scrollRequests.push(
+            ...update.transactions.map((transaction) => transaction.scrollIntoView),
+          );
+        }),
+      ),
+    });
+    setCursor(view, headerPosition);
+    scrollRequests.splice(0);
+
+    expect(key(view, 'ArrowDown').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(bodyPosition);
+    expect(scrollRequests).toEqual([false]);
+    expect(scrollRenderedCell).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 1, 0));
+
+    expect(key(view, 'ArrowUp').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(headerPosition);
+    expect(scrollRequests).toEqual([false, false]);
+    expect(scrollRenderedCell).toHaveBeenCalledTimes(2);
+    expect(scrollRenderedCell.mock.instances[1]).toBe(cell(view, 0, 0));
+  });
+
+  it('enters the rendered table from the ordinary line above without scrolling source geometry', () => {
+    const source = 'above\n\n| ABC | D |\n| --- | --- |\n| xy | zzzz |';
+    const view = createView(source, views);
+    const lineAbove = view.state.doc.line(2);
+    const headerPosition = source.indexOf('ABC') + 1;
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+    const scrollRequests: boolean[] = [];
+    view.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((update) => {
+          scrollRequests.push(
+            ...update.transactions.map((transaction) => transaction.scrollIntoView),
+          );
+        }),
+      ),
+    });
+    setCursor(view, lineAbove.from);
+    jest.spyOn(view, 'moveVertically').mockReturnValue(EditorSelection.cursor(headerPosition));
+    scrollRequests.splice(0);
+
+    expect(key(view, 'ArrowDown').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(headerPosition);
+    expect(scrollRequests).toEqual([false]);
+    expect(scrollRenderedCell).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 0, 0));
+  });
+
+  it('enters the rendered table without source scrolling after a vertical geometry jump', () => {
+    const source = 'above\n\n| ABC | D |\n| --- | --- |\n| xy | zzzz |';
+    const view = createView(source, views);
+    const lineAbove = view.state.doc.line(2);
+    const headerStart = source.indexOf('ABC');
+    const bodyStart = source.indexOf('xy');
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+    const scrollRequests: boolean[] = [];
+    view.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((update) => {
+          scrollRequests.push(
+            ...update.transactions.map((transaction) => transaction.scrollIntoView),
+          );
+        }),
+      ),
+    });
+    setCursor(view, lineAbove.from);
+    jest.spyOn(view, 'moveVertically').mockReturnValue(EditorSelection.cursor(bodyStart));
+    scrollRequests.splice(0);
+
+    expect(key(view, 'ArrowDown').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(headerStart);
+    expect(scrollRequests).toEqual([false]);
+    expect(scrollRenderedCell).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 0, 0));
+  });
+
+  it('uses the rendered adjacent row when a horizontal arrow crosses a row boundary', () => {
+    const source = '| ABC | D |\n| --- | --- |\n| xy | zzzz |';
+    const view = createView(source, views);
+    const secondHeaderEnd = source.indexOf('D') + 'D'.length;
+    const firstBodyStart = source.indexOf('xy');
+    const scrollRenderedCell = jest.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollRenderedCell,
+    });
+
+    setCursor(view, secondHeaderEnd);
+    expect(key(view, 'ArrowRight').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(firstBodyStart);
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 1, 0));
+
+    setCursor(view, firstBodyStart);
+    scrollRenderedCell.mockClear();
+    expect(key(view, 'ArrowLeft').defaultPrevented).toBe(true);
+
+    expect(view.state.selection.main.head).toBe(secondHeaderEnd);
+    expect(scrollRenderedCell.mock.instances[0]).toBe(cell(view, 0, 1));
   });
 
   it('repairs a vertical geometry jump from ordinary text below a table', () => {

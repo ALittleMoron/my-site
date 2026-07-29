@@ -153,6 +153,12 @@ interface TableLayout {
   readonly semanticRows: readonly TableRowLayout[];
 }
 
+interface TableCaretTarget {
+  readonly position: number;
+  readonly layout: TableLayout;
+  readonly cell: TableCellLayout | null;
+}
+
 interface SelectionContext {
   readonly layout: TableLayout;
   readonly selection: MarkdownTableCellRange;
@@ -932,7 +938,7 @@ export function markdownTableEditor(config: MarkdownTableEditorConfig): Extensio
   const fromEditorContent =
     (command: Command): Command =>
     (view) =>
-      editorContentHasFocus(view) && command(view);
+      editorContentHasFocus(view) && !view.composing && command(view);
   return [
     markdownTableEditorTheme,
     markdownTableCursorLayer,
@@ -2169,6 +2175,21 @@ function navigateTableArrow(
   if (completionStatus(view.state) !== null || !view.state.selection.main.empty) {
     return false;
   }
+  const recovery = nextEditableTablePosition(view.state, view.state.selection.main.head);
+  if (recovery !== null) {
+    view.dispatch({
+      selection: EditorSelection.cursor(recovery.position),
+      scrollIntoView: false,
+      userEvent: 'select',
+    });
+    if (recovery.cell !== null) {
+      renderedTableCell(view, recovery.layout.from, recovery.cell)?.scrollIntoView?.({
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+    return true;
+  }
   const active = activeTableCell(view.state);
   if (active === null) {
     return direction === 'up' || direction === 'down'
@@ -2208,7 +2229,9 @@ function navigateTableArrow(
 
   const target = active.layout.semanticRows[rowIndex]?.cells[columnIndex];
   if (target === undefined) {
-    return false;
+    // Editor mode hides the structural pipes around the grid. Letting CodeMirror handle a
+    // horizontal edge would move the caret into that zero-height source and scroll the page to it.
+    return horizontal;
   }
   const cursor =
     targetPosition === 'start'
@@ -2217,9 +2240,16 @@ function navigateTableArrow(
         ? target.to
         : target.cursor + Math.min(targetPosition, target.to - target.from);
   view.dispatch({
-    selection: EditorSelection.cursor(cursor),
-    scrollIntoView: true,
+    // Keep CodeMirror's geometry on the previous cell side of the hidden Markdown boundary.
+    selection: EditorSelection.create([
+      EditorSelection.cursor(cursor, targetPosition === 'end' ? -1 : 0),
+    ]),
+    scrollIntoView: false,
     userEvent: 'select',
+  });
+  renderedTableCell(view, active.layout.from, target)?.scrollIntoView?.({
+    block: 'nearest',
+    inline: 'nearest',
   });
   return true;
 }
@@ -2230,7 +2260,20 @@ function repairSkippedTableLineMovement(view: EditorView, direction: 'up' | 'dow
   const currentLine = view.state.doc.lineAt(selection.head);
   const movedLine = view.state.doc.lineAt(moved.head);
   if (Math.abs(currentLine.number - movedLine.number) <= 1) {
-    return false;
+    const target = tableCellAtPosition(view.state, moved.head);
+    if (target === null) {
+      return false;
+    }
+    view.dispatch({
+      selection: EditorSelection.create([moved]),
+      scrollIntoView: false,
+      userEvent: 'select',
+    });
+    renderedTableCell(view, target.layout.from, target.cell)?.scrollIntoView?.({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    return true;
   }
   const movementFrom = Math.min(selection.head, moved.head);
   const movementTo = Math.max(selection.head, moved.head);
@@ -2243,8 +2286,23 @@ function repairSkippedTableLineMovement(view: EditorView, direction: 'up' | 'dow
   }
   const targetLine = view.state.doc.line(targetLineNumber);
   const column = selection.head - currentLine.from;
+  const targetPosition = targetLine.from + Math.min(column, targetLine.length);
+  const target = tableCellAtPosition(view.state, targetPosition);
+  if (target !== null) {
+    const cursor = Math.max(target.cell.cursor, Math.min(targetPosition, target.cell.to));
+    view.dispatch({
+      selection: EditorSelection.cursor(cursor),
+      scrollIntoView: false,
+      userEvent: 'select',
+    });
+    renderedTableCell(view, target.layout.from, target.cell)?.scrollIntoView?.({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+    return true;
+  }
   view.dispatch({
-    selection: EditorSelection.cursor(targetLine.from + Math.min(column, targetLine.length)),
+    selection: EditorSelection.cursor(targetPosition),
     scrollIntoView: true,
     userEvent: 'select',
   });
@@ -2475,35 +2533,53 @@ function focusEditorWithoutScroll(view: EditorView): void {
 }
 
 function protectTableStructure(transaction: Transaction): Transaction | readonly TransactionSpec[] {
-  if (!transaction.docChanged) {
-    return transaction;
+  const stabilizedWhitespace = stabilizedTableWhitespaceInput(transaction);
+  if (stabilizedWhitespace !== null) {
+    return [stabilizedWhitespace];
+  }
+  const redirectedInput = redirectedTableInput(transaction);
+  if (redirectedInput !== null) {
+    return [redirectedInput];
   }
   if (
+    transaction.docChanged &&
     transaction.annotation(tableStructureChange) !== true &&
     transactionTouchesProtectedStructure(transaction)
   ) {
     return [];
   }
 
-  const terminatorRepairs = tableTerminatorTypingRepairs(transaction);
+  const terminatorRepairs = transaction.docChanged ? tableTerminatorTypingRepairs(transaction) : [];
   const endRepair =
-    terminatorRepairs.length === 0 && hasNewTableEndingAtDocumentEnd(transaction)
+    transaction.docChanged &&
+    terminatorRepairs.length === 0 &&
+    hasNewTableEndingAtDocumentEnd(transaction)
       ? [{ from: transaction.newDoc.length, insert: '\n' }]
       : [];
   const repairs = [...terminatorRepairs, ...endRepair];
+  const normalizedSelection =
+    endRepair.length > 0
+      ? transaction.newSelection
+      : normalizeTableCaretSelection(transaction.state, transaction.newSelection);
   const suppressInputScroll =
     transaction.scrollIntoView &&
     transaction.isUserEvent('input') &&
     (activeTableCell(transaction.startState) !== null || terminatorRepairs.length > 0);
-  const selection = stabilizedTableInputSelection(transaction);
-  if (repairs.length === 0 && !suppressInputScroll && selection === transaction.newSelection) {
+  const selection = stabilizedTableInputSelection(transaction, normalizedSelection);
+  const suppressStructuralSelectionScroll = normalizedSelection !== transaction.newSelection;
+  if (
+    repairs.length === 0 &&
+    !suppressInputScroll &&
+    !suppressStructuralSelectionScroll &&
+    selection === transaction.newSelection
+  ) {
     return transaction;
   }
 
   return [
     transactionAsSpec(
       transaction,
-      suppressInputScroll ? false : transaction.scrollIntoView,
+      suppressInputScroll || suppressStructuralSelectionScroll ? false : transaction.scrollIntoView,
       selection,
     ),
     ...(repairs.length === 0
@@ -2512,17 +2588,130 @@ function protectTableStructure(transaction: Transaction): Transaction | readonly
           {
             changes: repairs,
             sequential: true,
+            ...(endRepair.length === 0
+              ? {}
+              : {
+                  selection: EditorSelection.cursor(transaction.newDoc.length + 1),
+                }),
           } satisfies TransactionSpec,
         ]),
   ];
 }
 
-function stabilizedTableInputSelection(transaction: Transaction): EditorSelection {
-  const selection = transaction.newSelection;
+function stabilizedTableWhitespaceInput(transaction: Transaction): TransactionSpec | null {
+  if (
+    !transaction.docChanged ||
+    !transaction.isUserEvent('input') ||
+    transaction.annotation(tableStructureChange) === true ||
+    transaction.startState.selection.ranges.length !== 1 ||
+    !transaction.startState.selection.main.empty
+  ) {
+    return null;
+  }
+  const position = transaction.startState.selection.main.head;
+  const active = editableTableCellAtPosition(transaction.startState, position);
+  if (active === null) {
+    return null;
+  }
+  let insertedText: string | null = null;
+  let changeCount = 0;
+  transaction.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    changeCount += 1;
+    const text = inserted.toString();
+    if (fromA === position && toA === position && /^[\t ]+$/u.test(text)) {
+      insertedText = text;
+    }
+  });
+  if (changeCount !== 1 || insertedText === null) {
+    return null;
+  }
+  const leadingPadding =
+    position === active.cell.from &&
+    transaction.startState.sliceDoc(Math.max(0, position - 1), position) === '|'
+      ? ' '
+      : '';
+  const line = transaction.startState.doc.lineAt(position);
+  const endsAtSeparator =
+    transaction.startState.sliceDoc(
+      position,
+      Math.min(position + 1, transaction.startState.doc.length),
+    ) === '|';
+  const trailingPadding =
+    position === active.cell.to && (endsAtSeparator || line.to === position) ? ' ' : '';
+  if (leadingPadding.length === 0 && trailingPadding.length === 0) {
+    return null;
+  }
+  const insertion = `${leadingPadding}${insertedText}${trailingPadding}`;
+  return {
+    changes: { from: position, insert: insertion },
+    selection: EditorSelection.cursor(position + insertion.length - trailingPadding.length),
+    effects: transaction.effects,
+    annotations: transactionAnnotations(transaction),
+    scrollIntoView: false,
+  };
+}
+
+function redirectedTableInput(transaction: Transaction): TransactionSpec | null {
+  if (
+    !transaction.docChanged ||
+    !transaction.isUserEvent('input') ||
+    transaction.annotation(tableStructureChange) === true ||
+    transaction.startState.selection.ranges.length !== 1 ||
+    !transaction.startState.selection.main.empty
+  ) {
+    return null;
+  }
+  const position = transaction.startState.selection.main.head;
+  const target = nextEditableTablePosition(transaction.startState, position);
+  if (target === null) {
+    return null;
+  }
+  let insertedText: string | null = null;
+  let changeCount = 0;
+  transaction.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    changeCount += 1;
+    if (fromA === position && toA === position && inserted.length > 0) {
+      insertedText = inserted.toString();
+    }
+  });
+  if (changeCount !== 1 || insertedText === null) {
+    return null;
+  }
+  const needsTerminator =
+    insertedText[0] !== '\n' &&
+    insertedText[0] !== '\r' &&
+    isTableTerminatorPosition(transaction.startState, target.position);
+  const insertion = needsTerminator ? `\n${insertedText}` : insertedText;
+  return {
+    changes: { from: target.position, insert: insertion },
+    selection: EditorSelection.cursor(target.position + insertion.length),
+    effects: transaction.effects,
+    annotations: transactionAnnotations(transaction),
+    scrollIntoView: false,
+  };
+}
+
+function normalizeTableCaretSelection(
+  state: EditorState,
+  selection: EditorSelection,
+): EditorSelection {
+  if (selection.ranges.length !== 1 || !selection.main.empty) {
+    return selection;
+  }
+  const target = nextEditableTablePosition(state, selection.main.head);
+  return target === null
+    ? selection
+    : EditorSelection.create([EditorSelection.cursor(target.position)]);
+}
+
+function stabilizedTableInputSelection(
+  transaction: Transaction,
+  selection: EditorSelection,
+): EditorSelection {
   if (!transaction.isUserEvent('input') || selection.ranges.length !== 1 || !selection.main.empty) {
     return selection;
   }
-  const active = activeTableCell(transaction.state);
+  const active = editableTableCellAtPosition(transaction.state, selection.main.head);
   if (active === null) {
     return selection;
   }
@@ -2558,6 +2747,16 @@ function transactionAsSpec(
   scrollIntoView: boolean,
   selection: EditorSelection,
 ): TransactionSpec {
+  return {
+    changes: transaction.changes,
+    selection,
+    effects: transaction.effects,
+    annotations: transactionAnnotations(transaction),
+    scrollIntoView,
+  };
+}
+
+function transactionAnnotations(transaction: Transaction): readonly Annotation<unknown>[] {
   const annotations: Annotation<unknown>[] = [];
   const userEvent = transaction.annotation(Transaction.userEvent);
   const addToHistory = transaction.annotation(Transaction.addToHistory);
@@ -2575,13 +2774,7 @@ function transactionAsSpec(
   if (structureChange !== undefined) {
     annotations.push(tableStructureChange.of(structureChange));
   }
-  return {
-    changes: transaction.changes,
-    selection,
-    effects: transaction.effects,
-    annotations,
-    scrollIntoView,
-  };
+  return annotations;
 }
 
 function tableTerminatorTypingRepairs(
@@ -2638,20 +2831,38 @@ function activeTableCell(
   if (state.selection.ranges.length !== 1) {
     return null;
   }
-  const position = state.selection.main.head;
+  return editableTableCellAtPosition(state, state.selection.main.head);
+}
+
+function editableTableCellAtPosition(
+  state: EditorState,
+  position: number,
+): { readonly layout: TableLayout; readonly cell: TableCellLayout } | null {
   const layout = tableAtPosition(state, position);
   if (layout === null) {
     return null;
   }
   for (const row of layout.semanticRows) {
     for (const cell of row.cells) {
-      if (!cell.virtual && position >= cell.from && position <= cell.to) {
-        return { layout, cell };
-      }
-      if (!cell.virtual && position === cell.cursor) {
+      if (editableCellContainsPosition(cell, position)) {
         return { layout, cell };
       }
     }
+  }
+  return null;
+}
+
+function tableCellAtPosition(
+  state: EditorState,
+  position: number,
+): { readonly layout: TableLayout; readonly cell: TableCellLayout } | null {
+  const editable = editableTableCellAtPosition(state, position);
+  if (editable !== null) {
+    return editable;
+  }
+  const layout = tableAtPosition(state, position);
+  if (layout === null) {
+    return null;
   }
   const containingRow = layout.semanticRows.find(
     (row) => position >= row.from && position <= row.to,
@@ -2665,6 +2876,47 @@ function activeTableCell(
     return { layout, cell: nearest };
   }
   return null;
+}
+
+function nextEditableTablePosition(state: EditorState, position: number): TableCaretTarget | null {
+  const layout = tableAtPosition(state, position);
+  if (layout === null || editableTableCellAtPosition(state, position) !== null) {
+    return null;
+  }
+  const rowIndex = layout.rows.findIndex((row) => position >= row.from && position <= row.to);
+  if (rowIndex === -1) {
+    return null;
+  }
+  for (let index = rowIndex; index < layout.rows.length; index += 1) {
+    const row = requiredValue(layout.rows, index);
+    if (row.semanticIndex === null) {
+      continue;
+    }
+    const cells = row.cells.filter((cell) => !cell.virtual);
+    for (const cell of cells) {
+      const start = cell.from === cell.to ? cell.cursor : cell.from;
+      if (index > rowIndex || start > position) {
+        return { position: start, layout, cell };
+      }
+    }
+  }
+  const lastCell = layout.semanticRows
+    .at(-1)
+    ?.cells.filter((cell) => !cell.virtual)
+    .at(-1);
+  if (layout.to >= state.doc.length || state.sliceDoc(layout.to, layout.to + 1) !== '\n') {
+    return lastCell === undefined ? null : { position: lastCell.to, layout, cell: lastCell };
+  }
+  return { position: layout.to + 1, layout, cell: null };
+}
+
+function editableCellContainsPosition(cell: TableCellLayout, position: number): boolean {
+  if (cell.virtual) {
+    return false;
+  }
+  return cell.from === cell.to
+    ? position === cell.cursor
+    : position >= cell.from && position <= cell.to;
 }
 
 function selectedTableContext(state: EditorState): SelectionContext | null {
@@ -2757,20 +3009,17 @@ function buildRowLayout(
   }
   const cells: TableCellLayout[] = row.cells.map((cell, columnIndex) => {
     const sourceFrom = cursor;
-    const from = cursor + cell.before.length;
-    const to = from + cell.markdown.length;
-    cursor = to + cell.after.length;
-    const cellCursor =
-      cell.markdown.length === 0 ? sourceFrom + Math.floor((cursor - sourceFrom) / 2) : from;
-    const renderFrom =
-      cell.markdown.length === 0
-        ? cellCursor < cursor
-          ? cellCursor
-          : cellCursor > sourceFrom
-            ? cellCursor - 1
-            : cellCursor
-        : from;
-    const renderTo = cell.markdown.length === 0 && renderFrom < cursor ? renderFrom + 1 : to;
+    const markdownFrom = cursor + cell.before.length;
+    const markdownTo = markdownFrom + cell.markdown.length;
+    cursor = markdownTo + cell.after.length;
+    const rawCell = `${cell.before}${cell.markdown}${cell.after}`;
+    const leadingStructuralSpace = rawCell.length > 1 && startsWithWhitespace(rawCell) ? 1 : 0;
+    const trailingStructuralSpace = endsWithWhitespace(rawCell) ? 1 : 0;
+    const from = Math.min(cursor, sourceFrom + leadingStructuralSpace);
+    const to = Math.max(from, cursor - trailingStructuralSpace);
+    const cellCursor = from;
+    const renderFrom = from === to && from === cursor && from > sourceFrom ? from - 1 : from;
+    const renderTo = from === to && renderFrom < cursor ? renderFrom + 1 : to;
     if (columnIndex < row.cells.length - 1) {
       cursor += 1;
     }
@@ -2815,6 +3064,14 @@ function buildRowLayout(
     cells,
     structuralRanges,
   };
+}
+
+function startsWithWhitespace(value: string): boolean {
+  return value.length > 0 && /\s/u.test(value[0] ?? '');
+}
+
+function endsWithWhitespace(value: string): boolean {
+  return value.length > 0 && /\s/u.test(value.at(-1) ?? '');
 }
 
 function cellOffset(
@@ -2898,10 +3155,7 @@ function insertionTouchesHiddenStructure(state: EditorState, position: number): 
   if (row === undefined || row.semanticIndex === null) {
     return true;
   }
-  return !row.cells.some(
-    (cell) =>
-      !cell.virtual && ((position >= cell.from && position <= cell.to) || position === cell.cursor),
-  );
+  return !row.cells.some((cell) => editableCellContainsPosition(cell, position));
 }
 
 function selectionCellPosition(layout: TableLayout, selection: MarkdownTableCellRange): number {

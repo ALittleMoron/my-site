@@ -1,0 +1,16 @@
+.markdown-editor-shell .markdown-editor-static-theme :where(.cm-content, .cm-content *)::selection {
+  color: currentColor;
+  background-color: rgba(var(--accent-color-rgb), 0.28);
+}
+
+.markdown-editor-shell .markdown-editor-static-theme .cm-selectionBackground {
+  background: rgba(var(--accent-color-rgb), 0.18);
+}
+
+.markdown-editor-shell .markdown-editor-static-theme.cm-focused .cm-selectionBackground {
+  background: rgba(var(--accent-color-rgb), 0.3);
+}
+
+.markdown-editor-shell .markdown-editor-static-theme :where(.cm-cursor, .cm-dropCursor) {
+  border-left-color: var(--accent-color);
+}
