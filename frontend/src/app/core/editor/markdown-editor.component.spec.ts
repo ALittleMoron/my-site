@@ -3,9 +3,9 @@ import { CSP_NONCE, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { CompletionContext } from '@codemirror/autocomplete';
-import { undo } from '@codemirror/commands';
+import { undo, undoDepth } from '@codemirror/commands';
 import { EditorSelection } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView, type Rect } from '@codemirror/view';
 import { of, throwError } from 'rxjs';
 import { provideI18nTesting } from '../../testing/i18n-testing';
 import { ModalPageScrollLockService } from '../layout/modal-page-scroll-lock.service';
@@ -128,6 +128,78 @@ const EN_WIKI_LINK_REGISTRY = createWikiLinkTargetRegistry([
   },
 ]);
 
+interface StickyMarginScenario {
+  label: string;
+  top: string;
+  bottom: string;
+  expectedTop: number;
+  expectedBottom: number;
+}
+
+interface StickyMarginContext {
+  mode: 'edit' | 'source';
+  focused: boolean;
+  fullscreen: boolean;
+}
+
+const STICKY_MARGIN_SCENARIOS: readonly StickyMarginScenario[] = [
+  { label: 'zero displacement', top: '0px', bottom: '0px', expectedTop: 72, expectedBottom: 48 },
+  {
+    label: 'top-only displacement',
+    top: '24px',
+    bottom: '0px',
+    expectedTop: 96,
+    expectedBottom: 48,
+  },
+  {
+    label: 'bottom-only displacement',
+    top: '0px',
+    bottom: '16px',
+    expectedTop: 72,
+    expectedBottom: 64,
+  },
+  {
+    label: 'combined displacement',
+    top: '24px',
+    bottom: '16px',
+    expectedTop: 96,
+    expectedBottom: 64,
+  },
+  {
+    label: 'negative displacement',
+    top: '-24px',
+    bottom: '-16px',
+    expectedTop: 72,
+    expectedBottom: 48,
+  },
+  {
+    label: 'automatic displacement',
+    top: 'auto',
+    bottom: 'auto',
+    expectedTop: 72,
+    expectedBottom: 48,
+  },
+  { label: 'empty displacement', top: '', bottom: '', expectedTop: 72, expectedBottom: 48 },
+  {
+    label: 'invalid displacement',
+    top: 'invalid',
+    bottom: 'not-a-length',
+    expectedTop: 72,
+    expectedBottom: 48,
+  },
+];
+
+const STICKY_MARGIN_CONTEXTS: readonly StickyMarginContext[] = [
+  { mode: 'edit', focused: false, fullscreen: false },
+  { mode: 'edit', focused: true, fullscreen: false },
+  { mode: 'source', focused: false, fullscreen: false },
+  { mode: 'source', focused: true, fullscreen: false },
+  { mode: 'edit', focused: false, fullscreen: true },
+  { mode: 'edit', focused: true, fullscreen: true },
+  { mode: 'source', focused: false, fullscreen: true },
+  { mode: 'source', focused: true, fullscreen: true },
+];
+
 describe('MarkdownEditorComponent', () => {
   let fixture: ComponentFixture<MarkdownEditorComponent>;
   let uploadService: { uploadEditorImage: jest.Mock };
@@ -175,7 +247,13 @@ describe('MarkdownEditorComponent', () => {
     fixture.detectChanges();
   });
 
-  afterEach(() => fixture.destroy());
+  afterEach(() => {
+    fixture.destroy();
+    document
+      .querySelectorAll('[data-testid="markdown-editor-sticky-margin-focus-sink"]')
+      .forEach((element) => element.remove());
+    jest.restoreAllMocks();
+  });
 
   it('creates a CodeMirror Markdown source editor without taking focus', () => {
     const editor = editorElement();
@@ -1184,18 +1262,104 @@ describe('MarkdownEditorComponent', () => {
     scrollContainer.remove();
   });
 
-  it('reports sticky header and footer heights as CodeMirror scroll margins', () => {
-    const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
-    const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
-    Object.defineProperty(header, 'offsetHeight', { configurable: true, value: 72 });
-    Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
-    const view = editorView();
-    const margins = view.state
-      .facet(EditorView.scrollMargins)
-      .map((provideMargins) => provideMargins(view));
+  it.each(STICKY_MARGIN_SCENARIOS)(
+    'reports editor chrome plus $label as live CodeMirror scroll margins',
+    ({ top, bottom, expectedTop, expectedBottom }) => {
+      const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
+      const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
+      Object.defineProperty(header, 'offsetHeight', { configurable: true, value: 72 });
+      Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
+      const resolvedOffsets = { top, bottom };
+      const getComputedStyle = mockResolvedStickyOffsets(header, footer, resolvedOffsets);
+      const view = editorView();
 
-    expect(margins).toContainEqual({ top: 72, bottom: 48 });
-  });
+      expect(providedScrollMargins(view)).toContainEqual({
+        top: expectedTop,
+        bottom: expectedBottom,
+      });
+
+      getComputedStyle.mockRestore();
+    },
+  );
+
+  it.each(STICKY_MARGIN_CONTEXTS)(
+    'keeps scroll-margin reads live and state-neutral in $mode mode, focused=$focused, fullscreen=$fullscreen',
+    ({ mode, focused, fullscreen }) => {
+      const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
+      const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
+      const focusSink = document.createElement('button');
+      focusSink.dataset['testid'] = 'markdown-editor-sticky-margin-focus-sink';
+      document.body.append(focusSink);
+      const requestAnimationFrame = jest
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((callback) => {
+          callback(0);
+          return 1;
+        });
+      Object.defineProperty(header, 'offsetHeight', { configurable: true, value: 72 });
+      Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
+      if (mode === 'source') {
+        fixture.componentInstance.selectMode('source');
+        fixture.detectChanges();
+      }
+      if (fullscreen) {
+        fixture.componentInstance.toggleFullscreen();
+        fixture.detectChanges();
+      }
+      const view = editorView();
+      if (focused) {
+        contentElement().focus();
+      } else {
+        focusSink.focus();
+      }
+      const resolvedOffsets = {
+        top: fullscreen ? '0px' : '24px',
+        bottom: fullscreen ? '0px' : '16px',
+      };
+      const getComputedStyle = mockResolvedStickyOffsets(header, footer, resolvedOffsets);
+      const documentBefore = view.state.doc.toString();
+      const selectionBefore = view.state.selection;
+      const historyBefore = undoDepth(view.state);
+      const focusBefore = view.hasFocus;
+      const modeBefore = fixture.componentInstance.mode();
+      const expectedInitialMargins = fullscreen ? { top: 72, bottom: 48 } : { top: 96, bottom: 64 };
+
+      expect(providedScrollMargins(view)).toContainEqual(expectedInitialMargins);
+      expect(fixture.componentInstance.mode()).toBe(modeBefore);
+      expect(view.hasFocus).toBe(focusBefore);
+
+      resolvedOffsets.top = fullscreen ? '0px' : '40px';
+      resolvedOffsets.bottom = fullscreen ? '0px' : '30px';
+      const expectedUpdatedMargins = fullscreen
+        ? { top: 72, bottom: 48 }
+        : { top: 112, bottom: 78 };
+
+      expect(providedScrollMargins(view)).toContainEqual(expectedUpdatedMargins);
+      expect(editorView()).toBe(view);
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+      expect(fixture.componentInstance.mode()).toBe(modeBefore);
+      expect(view.hasFocus).toBe(focusBefore);
+
+      fixture.componentInstance.selectMode('preview');
+      fixture.detectChanges();
+      fixture.componentInstance.selectMode(mode === 'edit' ? 'source' : 'edit');
+      fixture.detectChanges();
+
+      expect(providedScrollMargins(view)).toContainEqual(expectedUpdatedMargins);
+      expect(editorView()).toBe(view);
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+      expect(fixture.componentInstance.mode()).toBe(mode === 'edit' ? 'source' : 'edit');
+      expect(view.hasFocus).toBe(focusBefore);
+
+      getComputedStyle.mockRestore();
+      requestAnimationFrame.mockRestore();
+      focusSink.remove();
+    },
+  );
 
   it('opens localized CodeMirror search and contains editor shortcuts inside the editor', () => {
     const outerListener = jest.fn();
@@ -1468,6 +1632,34 @@ describe('MarkdownEditorComponent', () => {
       throw new Error(`Missing element: ${selector}`);
     }
     return element;
+  }
+
+  function mockResolvedStickyOffsets(
+    header: HTMLElement,
+    footer: HTMLElement,
+    resolvedOffsets: { top: string; bottom: string },
+  ): jest.SpiedFunction<Window['getComputedStyle']> {
+    const nativeGetComputedStyle = window.getComputedStyle.bind(window);
+    return jest.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudoElement) => {
+      const computedStyle = nativeGetComputedStyle(element, pseudoElement);
+      if (element === header) {
+        Object.defineProperty(computedStyle, 'top', {
+          configurable: true,
+          value: resolvedOffsets.top,
+        });
+      }
+      if (element === footer) {
+        Object.defineProperty(computedStyle, 'bottom', {
+          configurable: true,
+          value: resolvedOffsets.bottom,
+        });
+      }
+      return computedStyle;
+    });
+  }
+
+  function providedScrollMargins(view: EditorView): readonly (Partial<Rect> | null)[] {
+    return view.state.facet(EditorView.scrollMargins).map((provideMargins) => provideMargins(view));
   }
 });
 

@@ -36,7 +36,7 @@ import {
   Transaction,
   type Extension,
 } from '@codemirror/state';
-import { EditorView, drawSelection, keymap, type ViewUpdate } from '@codemirror/view';
+import { EditorView, drawSelection, keymap, type Rect, type ViewUpdate } from '@codemirror/view';
 import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
 import { TranslatePipe } from '../i18n/translate.pipe';
@@ -193,6 +193,8 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
   @ViewChild('editorHeader', { static: true })
   private readonly editorHeader!: ElementRef<HTMLElement>;
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
+  @ViewChild('editorShell', { static: true })
+  private readonly editorShell!: ElementRef<HTMLElement>;
   @ViewChild('editorFooter', { static: true })
   private readonly editorFooter!: ElementRef<HTMLElement>;
   @ViewChild('imageInput')
@@ -578,10 +580,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       this.contentAttributesCompartment.of(
         EditorView.contentAttributes.of(this.editorContentAttributes()),
       ),
-      EditorView.scrollMargins.of(() => ({
-        top: this.editorHeader.nativeElement.offsetHeight,
-        bottom: this.editorFooter.nativeElement.offsetHeight,
-      })),
+      EditorView.scrollMargins.of(() => this.editorScrollMargins()),
       keymap.of([
         {
           key: 'Enter',
@@ -610,6 +609,27 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       }),
       EditorView.updateListener.of((update) => this.handleEditorUpdate(update)),
     ];
+  }
+
+  private editorScrollMargins(): Pick<Rect, 'top' | 'bottom'> {
+    const browserWindow = this.editorShell.nativeElement.ownerDocument.defaultView;
+    let topDisplacement = 0;
+    let bottomDisplacement = 0;
+    if (browserWindow !== null) {
+      const resolvedTop = Number.parseFloat(
+        browserWindow.getComputedStyle(this.editorHeader.nativeElement).top,
+      );
+      const resolvedBottom = Number.parseFloat(
+        browserWindow.getComputedStyle(this.editorFooter.nativeElement).bottom,
+      );
+      topDisplacement = Number.isFinite(resolvedTop) && resolvedTop > 0 ? resolvedTop : 0;
+      bottomDisplacement =
+        Number.isFinite(resolvedBottom) && resolvedBottom > 0 ? resolvedBottom : 0;
+    }
+    return {
+      top: this.editorHeader.nativeElement.offsetHeight + topDisplacement,
+      bottom: this.editorFooter.nativeElement.offsetHeight + bottomDisplacement,
+    };
   }
 
   private handleEditorUpdate(update: ViewUpdate): void {

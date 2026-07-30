@@ -112,10 +112,13 @@ Never violate these boundaries:
   without an explicit product decision.
 - Keep the editor auto-height with a `20rem` minimum: the page or modal owns vertical scrolling,
   not CodeMirror or consumer wrappers. Keep the mode/command header and status/shortcut footer
-  sticky within the editor's bounds with zero visible scrollport-edge inset, including compensation
-  for `modal-body` padding. The sticky header must redraw the editor frame above its content so its
-  rounded border remains visible while the original frame scrolls away. Report both controls' live
-  heights through CodeMirror scroll margins so they do not hide the cursor.
+  sticky within the editor's bounds at the visible scrollport edges, including inherited measured
+  external top/bottom sticky insets and compensation for `modal-body` padding. External inset
+  publishers must remain owner-scoped and CSP-safe without inline styles, and fullscreen must reset
+  all external insets and edge compensation. The sticky header must redraw the editor frame above
+  its content so its rounded border remains visible while the original frame scrolls away. Report
+  both controls' live heights plus positive resolved external displacement through CodeMirror
+  scroll margins so they do not hide the cursor.
 - Fullscreen is an app-owned fixed overlay on the existing editor shell, never a replacement editor
   or the browser Fullscreen API. Preserve the same `EditorView`, document, history, selections,
   Editor/Source/Preview mode, uploads, and unsaved value. Trap focus, use the shared

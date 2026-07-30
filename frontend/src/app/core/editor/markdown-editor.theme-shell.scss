@@ -1,6 +1,9 @@
 /* Product-level theming only; CodeMirror's nonce-bearing runtime base theme owns mechanics. */
 .markdown-editor-shell.markdown-editor-fullscreen {
-  --markdown-editor-sticky-edge-compensation: 0;
+  --markdown-editor-sticky-top-inset: 0rem;
+  --markdown-editor-sticky-bottom-inset: 0rem;
+  --markdown-editor-sticky-top-edge-compensation: 0rem;
+  --markdown-editor-sticky-bottom-edge-compensation: 0rem;
 
   position: fixed;
   inset: 0;
@@ -39,7 +42,10 @@
 
 .markdown-editor-shell .markdown-editor-header {
   position: sticky;
-  top: var(--markdown-editor-sticky-edge-compensation, 0);
+  top: calc(
+    var(--markdown-editor-sticky-top-inset, 0rem) +
+      var(--markdown-editor-sticky-top-edge-compensation, 0rem)
+  );
   z-index: 600;
   min-width: 0;
   background: var(--surface-2);
@@ -116,7 +122,10 @@
 
 .markdown-editor-shell .markdown-editor-footer {
   position: sticky;
-  bottom: var(--markdown-editor-sticky-edge-compensation, 0);
+  bottom: calc(
+    var(--markdown-editor-sticky-bottom-inset, 0rem) +
+      var(--markdown-editor-sticky-bottom-edge-compensation, 0rem)
+  );
   z-index: 601;
   min-width: 0;
   color: var(--text-secondary);
@@ -127,7 +136,9 @@
 }
 
 .modal-body app-markdown-editor {
-  --markdown-editor-sticky-edge-compensation: calc(0rem - var(--bs-modal-padding, 1rem));
+  --markdown-editor-sticky-top-inset: 0rem;
+  --markdown-editor-sticky-top-edge-compensation: calc(0rem - var(--bs-modal-padding, 1rem));
+  --markdown-editor-sticky-bottom-edge-compensation: calc(0rem - var(--bs-modal-padding, 1rem));
 }
 
 .markdown-editor-shell .markdown-editor-shortcuts-panel {

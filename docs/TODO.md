@@ -701,6 +701,8 @@ instead of inheriting every Markdown-specific feature.
   - [ ] Add RU/EN spelling and grammar assistance, word/character/read-time statistics, and
     localized content diagnostics.
   - [ ] Add editor profile import/export and settings synchronization between devices.
+- [x] Prevent shared Markdown editor sticky chrome from colliding with fixed navigation and
+  measured sticky form/action footers across page, modal, and fullscreen contexts.
 - [x] Add interactive source-preserving Markdown tables with Editor/Source/Preview modes,
   row/column selection and structural actions, keyboard navigation, drag reordering, alignment,
   natural sorting, TSV/CSV clipboard exchange, table-safe typed wiki-link labels, and accessible

@@ -6,6 +6,7 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { chooseSiteSelectOption, siteSelectValue } from '../../../../testing/site-select-testing';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
+import { MarkdownEditorStickyBottomInsetDirective } from '../../../../core/editor/markdown-editor.sticky-bottom-inset.directive';
 import {
   AdminMatrixQuestionDetailDto,
   AdminMatrixQuestionPayload,
@@ -107,6 +108,27 @@ describe('MatrixQuestionFormComponent', () => {
 
     expect(footer).not.toBeNull();
     expect(submit?.textContent?.trim()).toBe('Создать и к следующему');
+  });
+
+  it('scopes the measured action-footer inset to the owning form and all localized editors', () => {
+    clickDisplayMode('ru-en');
+    const form = fixture.debugElement.query(By.css('form')).nativeElement as HTMLFormElement;
+    const footer = fixture.debugElement.query(
+      By.directive(MarkdownEditorStickyBottomInsetDirective),
+    );
+    const insetDirective = footer.injector.get(MarkdownEditorStickyBottomInsetDirective);
+    const editors = fixture.debugElement.queryAll(By.directive(MarkdownEditorStubComponent));
+
+    expect(insetDirective.appMarkdownEditorStickyBottomInset()).toBe(form);
+    expect(editors).toHaveLength(4);
+    expect(editors.every((editor) => form.contains(editor.nativeElement as HTMLElement))).toBe(
+      true,
+    );
+    expect(
+      fixture.nativeElement
+        .querySelector<HTMLElement>('[data-testid="matrix-form-action-footer"]')
+        ?.hasAttribute('style'),
+    ).toBe(false);
   });
 
   it('shows or hides the cancel action explicitly', () => {

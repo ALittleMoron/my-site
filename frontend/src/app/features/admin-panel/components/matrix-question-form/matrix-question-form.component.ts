@@ -29,6 +29,7 @@ import {
 import { EMPTY, catchError, map } from 'rxjs';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MarkdownEditorComponent } from '../../../../core/editor/markdown-editor.component';
+import { MarkdownEditorStickyBottomInsetDirective } from '../../../../core/editor/markdown-editor.sticky-bottom-inset.directive';
 import { LanguageCode } from '../../../../core/i18n/i18n.model';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
@@ -135,6 +136,7 @@ interface AdminMatrixResourceDraft {
   imports: [
     ReactiveFormsModule,
     MarkdownEditorComponent,
+    MarkdownEditorStickyBottomInsetDirective,
     TranslatePipe,
     MatrixStructurePickerComponent,
     MatrixQuestionPublicPreviewComponent,
