@@ -44,6 +44,139 @@ const config: MarkdownTableEditorConfig = { locale: 'en', phrases };
 const VALID_TABLE = '| Name | Value |\n| --- | ---: |\n| A | 2 |\n| B | 10 |';
 const ROW_DRAG_SOURCE = '| H |\n| --- |\n| A |\n| B |\n| C |';
 const COLUMN_DRAG_SOURCE = '| A | B | C | D |\n| :--- | :---: | ---: | --- |\n| 1 | 2 | 3 | 4 |';
+const TABLE_CELL_CLEARING_CASES = [
+  {
+    name: 'the only header cell at the document start and end',
+    source: '| ASCII |\n| --- |',
+    row: 0,
+    column: 0,
+    content: 'ASCII',
+    replacement: 'rewritten',
+  },
+  {
+    name: 'the first compact header cell at the document start',
+    source: '|Русский|middle|final|\n|---|---|---|\n|one|two|three|\n\nafter',
+    row: 0,
+    column: 0,
+    content: 'Русский',
+    replacement: 'Новый',
+  },
+  {
+    name: 'a middle header cell without outer pipes at the document end',
+    source: 'before\n\nfirst | naïve | final\n--- | --- | ---\none | two | three',
+    row: 0,
+    column: 1,
+    content: 'naïve',
+    replacement: 'café',
+  },
+  {
+    name: 'the final header cell between ordinary lines',
+    source:
+      'before\n\n| first | middle | punctuation!? |\n| --- | --- | --- |\n| one | two | three |\n\nafter',
+    row: 0,
+    column: 2,
+    content: 'punctuation!?',
+    replacement: 'braces{}',
+  },
+  {
+    name: 'the first cell of the first body row',
+    source: '| H1 | H2 |\n| --- | --- |\n| **bold** | value |\n| final | row |',
+    row: 1,
+    column: 0,
+    content: '**bold**',
+    replacement: '_italic_',
+  },
+  {
+    name: 'a middle cell of the first body row containing an escaped pipe',
+    source: '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left | a\\|b | right |\n\noutside',
+    row: 1,
+    column: 1,
+    content: 'a\\|b',
+    replacement: 'x\\|y',
+  },
+  {
+    name: 'the final cell of a middle body row without a trailing pipe',
+    source:
+      'before\n\nH1 | H2 | H3\n--- | --- | ---\nA1 | A2 | A3\nB1 | B2 | emoji 🧭\nC1 | C2 | C3\n\nafter',
+    emptySource:
+      'before\n\nH1 | H2 | H3\n--- | --- | ---\nA1 | A2 | A3\nB1 | B2 |  |\nC1 | C2 | C3\n\nafter',
+    row: 2,
+    column: 2,
+    content: 'emoji 🧭',
+    replacement: '👩‍💻',
+  },
+  {
+    name: 'the first cell of the final body row without outer pipes',
+    source: 'H1 | H2\n--- | ---\nA1 | A2\n`code` | final',
+    emptySource: 'H1 | H2\n--- | ---\nA1 | A2\n| | final',
+    row: 2,
+    column: 0,
+    content: '`code`',
+    replacement: 'plain',
+  },
+  {
+    name: 'the final compact cell of the final body row at the document end',
+    source: '|H1|H2|H3|\n|---|---|---|\n|A1|A2|A3|\n|B1|B2|日本語|',
+    row: 2,
+    column: 2,
+    content: '日本語',
+    replacement: '更新',
+  },
+] as const;
+const TABLE_CELL_CLEARING_OPERATIONS = [
+  {
+    name: 'backward deletion',
+    userEvent: 'delete.backward',
+    selection: 'end',
+  },
+  {
+    name: 'forward deletion',
+    userEvent: 'delete.forward',
+    selection: 'start',
+  },
+  {
+    name: 'forward selected-content deletion',
+    userEvent: 'delete.selection',
+    selection: 'forward',
+  },
+  {
+    name: 'reverse selected-content deletion',
+    userEvent: 'delete.selection',
+    selection: 'reverse',
+  },
+  {
+    name: 'clipboard cut deletion',
+    userEvent: 'delete.cut',
+    selection: 'forward',
+  },
+] as const;
+const DELIMITER_LAYOUT_CASES = [
+  {
+    name: 'header-only table at the document start',
+    source: '| H |\n| --- |',
+    rows: 1,
+    columns: 1,
+    width: '48rem',
+    containerClass: '',
+  },
+  {
+    name: 'two-column table between ordinary lines in a narrow modal',
+    source: 'before\n\n| H1 | H2 |\n| --- | ---: |\n| A1 | A2 |\n\nafter',
+    rows: 2,
+    columns: 2,
+    width: '22rem',
+    containerClass: 'modal-body',
+  },
+  {
+    name: 'uneven many-column table at the document end in fullscreen',
+    source:
+      'before\n\n| H1 | H2 | H3 | H4 |\n| --- | :---: | ---: | --- |\n| A1 |\n| B1 | B2 | B3 | B4 |',
+    rows: 3,
+    columns: 4,
+    width: '100vw',
+    containerClass: 'markdown-editor-fullscreen',
+  },
+] as const;
 const POINTER_TYPES = ['mouse', 'touch', 'pen'] as const;
 const ROW_DRAG_CASES = POINTER_TYPES.flatMap((pointerType) =>
   Array.from({ length: 4 }, (_, sourceIndex) =>
@@ -178,6 +311,77 @@ describe('Markdown table editor extension', () => {
     expect(getComputedStyle(addRow).backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(getComputedStyle(addRow).borderTopWidth).toBe('0px');
   });
+
+  it.each(DELIMITER_LAYOUT_CASES)(
+    'renders one compact inert header delimiter without changing $name',
+    ({ source, rows, columns, width, containerClass }) => {
+      const view = createView(source, views, true);
+      const original = view.state.doc.toString();
+      const container = view.dom.parentElement!;
+      container.className = containerClass;
+      container.style.width = width;
+      const table = view.dom.querySelector<HTMLElement>('.cm-markdown-table-editor')!;
+      const delimiter = table.querySelector<HTMLElement>('.cm-markdown-table-delimiter-block');
+      const delimiterLine = table.querySelector<HTMLElement>(
+        '.cm-line.cm-markdown-table-delimiter-line',
+      );
+      const semanticRows = [...table.querySelectorAll<HTMLElement>('[role="row"]')];
+      const headerCells = [...table.querySelectorAll<HTMLElement>('[role="columnheader"]')];
+      const bodyCells = [...table.querySelectorAll<HTMLElement>('[role="cell"]')];
+      const controls = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-control')];
+
+      expect(delimiter).not.toBeNull();
+      expect(delimiter?.getAttribute('aria-hidden')).toBe('true');
+      expect(delimiter?.textContent).toBe('');
+      expect(getComputedStyle(delimiter!).width).toBe('0px');
+      expect(getComputedStyle(delimiter!).minWidth).toBe('0');
+      expect(getComputedStyle(delimiter!).height).toBe('0px');
+      expect(getComputedStyle(delimiter!).minHeight).toBe('0');
+      expect(getComputedStyle(delimiter!).pointerEvents).toBe('none');
+      expect(delimiterLine).not.toBeNull();
+      expect(delimiterLine?.getAttribute('aria-hidden')).toBe('true');
+      expect(getComputedStyle(delimiterLine!).height).toBe('0px');
+      expect(getComputedStyle(delimiterLine!).minHeight).toBe('0');
+      expect(getComputedStyle(delimiterLine!).padding).toBe('0px');
+      expect(
+        delimiterLine?.querySelector('[data-table-cell], .cm-markdown-table-control'),
+      ).toBeNull();
+      expect(semanticRows).toHaveLength(rows);
+      expect(headerCells).toHaveLength(columns);
+      expect(
+        headerCells.every(
+          (cell) =>
+            getComputedStyle(cell).backgroundImage.includes('linear-gradient') &&
+            getComputedStyle(cell).backgroundPosition === 'bottom' &&
+            getComputedStyle(cell).backgroundRepeat === 'no-repeat' &&
+            getComputedStyle(cell).backgroundSize === '100% 3px' &&
+            getComputedStyle(cell).borderBottomStyle === 'solid' &&
+            getComputedStyle(cell).borderBottomWidth === '1px',
+        ),
+      ).toBe(true);
+      expect(
+        bodyCells.every(
+          (cell) =>
+            getComputedStyle(cell).backgroundSize !== '100% 3px' &&
+            getComputedStyle(cell).borderBottomWidth === '1px',
+        ),
+      ).toBe(true);
+      expect(
+        semanticRows.every(
+          (row) => row.querySelectorAll('[data-table-cell="true"]').length === columns,
+        ),
+      ).toBe(true);
+      expect(controls.every((control) => !delimiterLine?.contains(control))).toBe(true);
+      expect(view.state.doc.toString()).toBe(original);
+
+      headerCells[0]?.classList.add(
+        'cm-markdown-table-cell-active',
+        'cm-markdown-table-cell-selected',
+      );
+      expect(getComputedStyle(headerCells[0]!).backgroundImage).toContain('linear-gradient');
+      expect(getComputedStyle(headerCells[0]!).backgroundSize).toBe('100% 3px');
+    },
+  );
 
   it.each([
     {
@@ -422,6 +626,184 @@ describe('Markdown table editor extension', () => {
     expect(authoredWhitespace).not.toBeNull();
     expect(view.posAtDOM(authoredWhitespace!, 0)).toBe(from);
     expect(view.contentDOM.querySelector('.cm-markdown-table-caret')).toBeNull();
+  });
+
+  it.each(
+    TABLE_CELL_CLEARING_CASES.flatMap((fixture) =>
+      TABLE_CELL_CLEARING_OPERATIONS.map((operation) => ({ fixture, operation })),
+    ),
+  )('keeps the cursor in $fixture.name after $operation.name', ({ fixture, operation }) => {
+    const view = createView(fixture.source, views);
+    const from = fixture.source.indexOf(fixture.content);
+    const to = from + fixture.content.length;
+    const emptySource =
+      'emptySource' in fixture
+        ? fixture.emptySource
+        : `${fixture.source.slice(0, from)}${fixture.source.slice(to)}`;
+    const scrollRequests: boolean[] = [];
+    const initialSelection =
+      operation.selection === 'start'
+        ? EditorSelection.cursor(from)
+        : operation.selection === 'end'
+          ? EditorSelection.cursor(to)
+          : operation.selection === 'forward'
+            ? EditorSelection.range(from, to)
+            : EditorSelection.range(to, from);
+    view.dispatch({ selection: initialSelection, userEvent: 'select' });
+    view.focus();
+    view.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((update) => {
+          scrollRequests.push(
+            ...update.transactions
+              .filter((transaction) => transaction.docChanged)
+              .map((transaction) => transaction.scrollIntoView),
+          );
+        }),
+      ),
+    });
+
+    view.dispatch({
+      changes: { from, to, insert: '' },
+      selection: EditorSelection.cursor(from),
+      scrollIntoView: true,
+      userEvent: operation.userEvent,
+    });
+
+    const activeCell = cell(view, fixture.row, fixture.column);
+    const emptyCursor = Number(activeCell.dataset['cellFrom']);
+    const replacementSource = `${emptySource.slice(0, emptyCursor)}${fixture.replacement}${emptySource.slice(emptyCursor)}`;
+    expect(view.state.doc.toString()).toBe(emptySource);
+    expect(view.state.selection.ranges).toHaveLength(1);
+    expect(view.state.selection.main.anchor).toBe(emptyCursor);
+    expect(view.state.selection.main.head).toBe(emptyCursor);
+    expect(view.state.selection.main.assoc).toBe(1);
+    expect(activeCell.dataset['emptyCell']).toBe('true');
+    expect(activeCell.dataset['activeCell']).toBe('true');
+    expect(view.dom.querySelectorAll('[data-active-cell="true"]')).toHaveLength(1);
+    expect(view.dom.classList).toContain('cm-markdown-table-cursor-owned');
+    expect(view.dom.querySelectorAll('.cm-markdown-table-cursor-layer')).toHaveLength(1);
+    expect(view.contentDOM.querySelector('.cm-markdown-table-caret')).toBeNull();
+    expect(scrollRequests).toEqual([false]);
+
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(fixture.source);
+    expect(redo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(emptySource);
+    const redoCursor = Number(cell(view, fixture.row, fixture.column).dataset['cellFrom']);
+    expect(view.state.selection.ranges).toHaveLength(1);
+    expect(view.state.selection.main.anchor).toBe(redoCursor);
+    expect(view.state.selection.main.head).toBe(redoCursor);
+    expect(view.state.selection.main.assoc).toBe(1);
+
+    scrollRequests.length = 0;
+    view.dispatch(view.state.replaceSelection(fixture.replacement), {
+      annotations: Transaction.userEvent.of('input.type'),
+      scrollIntoView: true,
+    });
+
+    expect(view.state.doc.toString()).toBe(replacementSource);
+    expect(cell(view, fixture.row, fixture.column).dataset['activeCell']).toBe('true');
+    expect(view.state.selection.main.head).toBe(emptyCursor + fixture.replacement.length);
+    expect(scrollRequests).toEqual([false]);
+  });
+
+  it.each([
+    {
+      name: 'repeated Backspace in a canonical middle cell',
+      source: '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left | rewrite | right |',
+      emptySource: '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left |  | right |',
+      row: 1,
+      column: 1,
+      content: 'rewrite',
+      direction: 'backward',
+      userEvent: 'delete.backward',
+    },
+    {
+      name: 'repeated Delete in a final cell without a trailing pipe',
+      source: '| H1 | H2 |\n| --- | --- |\n| left | rewrite',
+      emptySource: '| H1 | H2 |\n| --- | --- |\n| left |  |',
+      row: 1,
+      column: 1,
+      content: 'rewrite',
+      direction: 'forward',
+      userEvent: 'delete.forward',
+    },
+  ] as const)(
+    'keeps the same cell through $name and one-step undo/redo',
+    ({ source, emptySource, row, column, content, direction, userEvent }) => {
+      const view = createView(source, views);
+      const from = source.indexOf(content);
+      setCursor(view, direction === 'backward' ? from + content.length : from);
+
+      let remainingCharacters = content.length;
+      while (remainingCharacters > 0) {
+        const position = view.state.selection.main.head;
+        const change =
+          direction === 'backward'
+            ? { from: position - 1, to: position, insert: '' }
+            : { from: position, to: position + 1, insert: '' };
+        view.dispatch({
+          changes: change,
+          selection: EditorSelection.cursor(direction === 'backward' ? position - 1 : position),
+          scrollIntoView: true,
+          userEvent,
+        });
+
+        expect(cell(view, row, column).dataset['activeCell']).toBe('true');
+        expect(view.dom.querySelectorAll('[data-active-cell="true"]')).toHaveLength(1);
+        remainingCharacters -= 1;
+      }
+
+      const emptyCursor = Number(cell(view, row, column).dataset['cellFrom']);
+      expect(view.state.doc.toString()).toBe(emptySource);
+      expect(view.state.selection.main.head).toBe(emptyCursor);
+      expect(view.state.selection.main.assoc).toBe(1);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(emptySource);
+      expect(view.state.selection.main.head).toBe(
+        Number(cell(view, row, column).dataset['cellFrom']),
+      );
+      expect(view.state.selection.main.assoc).toBe(1);
+    },
+  );
+
+  it('does not retain a cleared-cell target when the next edit moves to another cell', () => {
+    const source = '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left | middle | right |';
+    const view = createView(source, views);
+    const middleFrom = source.indexOf('middle');
+    const rightFrom = source.indexOf('right');
+    setCursor(view, middleFrom + 'middle'.length);
+
+    view.dispatch({
+      changes: { from: middleFrom, to: middleFrom + 'middle'.length, insert: '' },
+      selection: EditorSelection.cursor(middleFrom),
+      userEvent: 'delete.backward',
+    });
+    setCursor(view, rightFrom - 'middle'.length + 2);
+    view.dispatch(view.state.replaceSelection('X'), {
+      annotations: Transaction.userEvent.of('input.type'),
+    });
+
+    expect(view.state.doc.toString()).toBe(
+      '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left |  | riXght |',
+    );
+    expect(cell(view, 1, 2).dataset['activeCell']).toBe('true');
+    expect(cell(view, 1, 1).dataset['activeCell']).toBeUndefined();
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(
+      '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left |  | right |',
+    );
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(redo(view)).toBe(true);
+    expect(redo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(
+      '| H1 | H2 | H3 |\n| --- | --- | --- |\n| left |  | riXght |',
+    );
+    expect(cell(view, 1, 2).dataset['activeCell']).toBe('true');
   });
 
   it('preserves a protected blank terminator and moves following prose outside the table', () => {
@@ -1886,7 +2268,7 @@ describe('Markdown table editor extension', () => {
     expect(view.state.selection.main.head).toBe(previousLine.to);
   });
 
-  it('hides delimiter and continuation line numbers while preserving the first table number', () => {
+  it('shows a compact delimiter, hides its line number, and preserves surrounding line geometry', () => {
     const source = `before\n${VALID_TABLE}\n\nafter`;
     const view = createView(source, views, true);
     const continuationMarkers = [
@@ -1895,6 +2277,8 @@ describe('Markdown table editor extension', () => {
     const gutterElements = [...view.dom.querySelectorAll<HTMLElement>('.cm-gutterElement')];
     const headerBlock = view.lineBlockAt(source.indexOf('| Name'));
     const firstBodyBlock = view.lineBlockAt(source.indexOf('| A |'));
+    const finalBodyBlock = view.lineBlockAt(source.indexOf('| B |'));
+    const afterBlock = view.lineBlockAt(source.indexOf('after'));
 
     expect(continuationMarkers.map((marker) => marker.textContent)).toEqual(['3', '5']);
     expect(
@@ -1917,9 +2301,17 @@ describe('Markdown table editor extension', () => {
     expect(getComputedStyle(delimiterLine!).lineHeight).toBe('0');
     expect(getComputedStyle(delimiterLine!).padding).toBe('0px');
     expect(
+      [...view.dom.querySelectorAll<HTMLElement>('[role="columnheader"]')].every(
+        (cell) =>
+          getComputedStyle(cell).backgroundSize === '100% 3px' &&
+          getComputedStyle(cell).borderBottomWidth === '1px',
+      ),
+    ).toBe(true);
+    expect(
       view.dom.querySelectorAll('.cm-markdown-table-editor > .cm-markdown-table-row'),
     ).toHaveLength(3);
     expect(firstBodyBlock.top).toBe(headerBlock.top + headerBlock.height);
+    expect(afterBlock.top).toBeGreaterThanOrEqual(finalBodyBlock.top + finalBodyBlock.height);
   });
 
   it('keeps structural actions available for range-aware context commands', () => {

@@ -36,7 +36,14 @@ import {
   Transaction,
   type Extension,
 } from '@codemirror/state';
-import { EditorView, drawSelection, keymap, type Rect, type ViewUpdate } from '@codemirror/view';
+import {
+  EditorView,
+  drawSelection,
+  keymap,
+  panels,
+  type Rect,
+  type ViewUpdate,
+} from '@codemirror/view';
 import { LanguageCode } from '../i18n/i18n.model';
 import { I18nService } from '../i18n/i18n.service';
 import { TranslatePipe } from '../i18n/translate.pipe';
@@ -192,6 +199,8 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('editorHeader', { static: true })
   private readonly editorHeader!: ElementRef<HTMLElement>;
+  @ViewChild('editorTopPanels', { static: true })
+  private readonly editorTopPanels!: ElementRef<HTMLElement>;
   @ViewChild('editorHost', { static: true }) private readonly editorHost!: ElementRef<HTMLElement>;
   @ViewChild('editorShell', { static: true })
   private readonly editorShell!: ElementRef<HTMLElement>;
@@ -580,6 +589,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
       this.contentAttributesCompartment.of(
         EditorView.contentAttributes.of(this.editorContentAttributes()),
       ),
+      panels({ topContainer: this.editorTopPanels.nativeElement }),
       EditorView.scrollMargins.of(() => this.editorScrollMargins()),
       keymap.of([
         {
@@ -711,7 +721,7 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
     }
     if (command === 'search') {
       openSearchPanel(view);
-      view.dom
+      this.editorTopPanels.nativeElement
         .querySelector<HTMLInputElement>('.cm-search input[main-field]')
         ?.focus({ preventScroll: true });
       return true;

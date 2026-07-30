@@ -142,6 +142,13 @@ interface StickyMarginContext {
   fullscreen: boolean;
 }
 
+interface SearchPanelContext {
+  mode: 'edit' | 'source';
+  fullscreen: boolean;
+  opener: 'command-shortcut' | 'toolbar';
+  theme: 'light' | 'dark';
+}
+
 const STICKY_MARGIN_SCENARIOS: readonly StickyMarginScenario[] = [
   { label: 'zero displacement', top: '0px', bottom: '0px', expectedTop: 72, expectedBottom: 48 },
   {
@@ -200,6 +207,25 @@ const STICKY_MARGIN_CONTEXTS: readonly StickyMarginContext[] = [
   { mode: 'source', focused: true, fullscreen: true },
 ];
 
+const SEARCH_PANEL_CONTEXTS: readonly SearchPanelContext[] = [
+  { mode: 'edit', fullscreen: false, opener: 'toolbar', theme: 'light' },
+  { mode: 'edit', fullscreen: false, opener: 'command-shortcut', theme: 'light' },
+  { mode: 'edit', fullscreen: false, opener: 'toolbar', theme: 'dark' },
+  { mode: 'edit', fullscreen: false, opener: 'command-shortcut', theme: 'dark' },
+  { mode: 'source', fullscreen: false, opener: 'toolbar', theme: 'light' },
+  { mode: 'source', fullscreen: false, opener: 'command-shortcut', theme: 'light' },
+  { mode: 'source', fullscreen: false, opener: 'toolbar', theme: 'dark' },
+  { mode: 'source', fullscreen: false, opener: 'command-shortcut', theme: 'dark' },
+  { mode: 'edit', fullscreen: true, opener: 'toolbar', theme: 'light' },
+  { mode: 'edit', fullscreen: true, opener: 'command-shortcut', theme: 'light' },
+  { mode: 'edit', fullscreen: true, opener: 'toolbar', theme: 'dark' },
+  { mode: 'edit', fullscreen: true, opener: 'command-shortcut', theme: 'dark' },
+  { mode: 'source', fullscreen: true, opener: 'toolbar', theme: 'light' },
+  { mode: 'source', fullscreen: true, opener: 'command-shortcut', theme: 'light' },
+  { mode: 'source', fullscreen: true, opener: 'toolbar', theme: 'dark' },
+  { mode: 'source', fullscreen: true, opener: 'command-shortcut', theme: 'dark' },
+];
+
 describe('MarkdownEditorComponent', () => {
   let fixture: ComponentFixture<MarkdownEditorComponent>;
   let uploadService: { uploadEditorImage: jest.Mock };
@@ -249,6 +275,7 @@ describe('MarkdownEditorComponent', () => {
 
   afterEach(() => {
     fixture.destroy();
+    document.documentElement.removeAttribute('data-bs-theme');
     document
       .querySelectorAll('[data-testid="markdown-editor-sticky-margin-focus-sink"]')
       .forEach((element) => element.remove());
@@ -673,6 +700,18 @@ describe('MarkdownEditorComponent', () => {
     expect(view.dom.querySelectorAll('.cm-markdown-table-add-column')).toHaveLength(2);
     expect(view.dom.querySelectorAll('button.cm-markdown-table-add-column')).toHaveLength(1);
     expect(view.dom.querySelectorAll('.cm-markdown-table-add-row')).toHaveLength(1);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-delimiter-block')).toHaveLength(1);
+    expect(
+      getComputedStyle(view.dom.querySelector<HTMLElement>('.cm-markdown-table-delimiter-block')!)
+        .height,
+    ).toBe('0px');
+    expect(
+      [...view.dom.querySelectorAll<HTMLElement>('[role="columnheader"]')].every(
+        (cell) =>
+          getComputedStyle(cell).backgroundSize === '100% 3px' &&
+          getComputedStyle(cell).borderBottomWidth === '1px',
+      ),
+    ).toBe(true);
 
     sourceTab.click();
     fixture.detectChanges();
@@ -684,6 +723,7 @@ describe('MarkdownEditorComponent', () => {
     expect(view.dom.querySelector('.cm-markdown-table-column-handle')).toBeNull();
     expect(view.dom.querySelector('.cm-markdown-table-add-column')).toBeNull();
     expect(view.dom.querySelector('.cm-markdown-table-add-row')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-delimiter-block')).toBeNull();
     expect(view.state.doc.toString()).toContain('| Ada | **42** |');
     expect(view.dom.querySelector('.cm-markdown-heading')).toBeNull();
     expect(view.dom.querySelector('.tok-heading')).not.toBeNull();
@@ -698,6 +738,18 @@ describe('MarkdownEditorComponent', () => {
     expect(view.dom.querySelectorAll('.cm-markdown-table-add-column')).toHaveLength(2);
     expect(view.dom.querySelectorAll('button.cm-markdown-table-add-column')).toHaveLength(1);
     expect(view.dom.querySelectorAll('.cm-markdown-table-add-row')).toHaveLength(1);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-delimiter-block')).toHaveLength(1);
+    expect(
+      getComputedStyle(view.dom.querySelector<HTMLElement>('.cm-markdown-table-delimiter-block')!)
+        .height,
+    ).toBe('0px');
+    expect(
+      [...view.dom.querySelectorAll<HTMLElement>('[role="columnheader"]')].every(
+        (cell) =>
+          getComputedStyle(cell).backgroundSize === '100% 3px' &&
+          getComputedStyle(cell).borderBottomWidth === '1px',
+      ),
+    ).toBe(true);
 
     query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
     fixture.detectChanges();
@@ -711,6 +763,11 @@ describe('MarkdownEditorComponent', () => {
     expect(
       query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').querySelector(
         '.cm-markdown-table-add-column, .cm-markdown-table-add-row',
+      ),
+    ).toBeNull();
+    expect(
+      query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').querySelector(
+        '.cm-markdown-table-delimiter-block',
       ),
     ).toBeNull();
     expect(
@@ -1428,6 +1485,230 @@ describe('MarkdownEditorComponent', () => {
     expect(outerListener).not.toHaveBeenCalled();
   });
 
+  it.each(SEARCH_PANEL_CONTEXTS)(
+    'keeps the $theme search panel in the sticky header in $mode mode, fullscreen=$fullscreen, opened by $opener',
+    ({ mode, fullscreen, opener, theme }) => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      if (mode === 'source') {
+        query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]').click();
+        fixture.detectChanges();
+      }
+      if (fullscreen) {
+        fixture.componentInstance.toggleFullscreen();
+        fixture.detectChanges();
+      }
+      const view = editorView();
+      view.dispatch({ selection: { anchor: 2, head: 6 } });
+      const documentBefore = view.state.doc.toString();
+      const selectionBefore = view.state.selection;
+      const historyBefore = undoDepth(view.state);
+      const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
+      const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
+      const topPanels = query<HTMLElement>('[data-testid="markdown-editor-top-panels"]');
+
+      openSearch(opener);
+
+      const searchPanel = query<HTMLElement>('.cm-panel.cm-search');
+      const searchInput = query<HTMLInputElement>('.cm-search input[name="search"]');
+      expect(searchPanel.closest('[data-testid="markdown-editor-top-panels"]')).toBe(topPanels);
+      expect(topPanels.parentElement).toBe(header);
+      expect(topPanels.hidden).toBe(false);
+      expect(
+        view.themeClasses
+          .split(' ')
+          .filter(Boolean)
+          .every((className) => topPanels.classList.contains(className)),
+      ).toBe(true);
+      expect(document.activeElement).toBe(searchInput);
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+      expect(fixture.componentInstance.mode()).toBe(mode);
+
+      Object.defineProperty(header, 'offsetHeight', { configurable: true, value: 96 });
+      Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
+      const resolvedOffsets = {
+        top: fullscreen ? '0px' : '24px',
+        bottom: fullscreen ? '0px' : '16px',
+      };
+      const searchPanelStylesMock = mockResolvedStickyOffsets(header, footer, resolvedOffsets);
+
+      expect(providedScrollMargins(view)).toContainEqual(
+        fullscreen ? { top: 96, bottom: 48 } : { top: 120, bottom: 64 },
+      );
+
+      searchPanelStylesMock.mockRestore();
+    },
+  );
+
+  it.each(['edit', 'source'] as const)(
+    'hides an open search panel in Preview and restores it in $mode without replacing editor state',
+    (mode) => {
+      if (mode === 'source') {
+        fixture.componentInstance.selectMode('source');
+        fixture.detectChanges();
+      }
+      const view = editorView();
+      view.dispatch({ selection: { anchor: 3 } });
+      openSearch('toolbar');
+      const topPanels = query<HTMLElement>('[data-testid="markdown-editor-top-panels"]');
+      const searchPanel = query<HTMLElement>('.cm-panel.cm-search');
+      const documentBefore = view.state.doc.toString();
+      const selectionBefore = view.state.selection;
+      const historyBefore = undoDepth(view.state);
+
+      fixture.componentInstance.selectMode('preview');
+      fixture.detectChanges();
+
+      expect(topPanels.hidden).toBe(true);
+      expect(topPanels.contains(searchPanel)).toBe(true);
+
+      fixture.componentInstance.selectMode(mode);
+      fixture.detectChanges();
+
+      expect(topPanels.hidden).toBe(false);
+      expect(topPanels.contains(searchPanel)).toBe(true);
+      expect(editorView()).toBe(view);
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+    },
+  );
+
+  it.each(SEARCH_PANEL_CONTEXTS)(
+    'uses the site accent for every search control in $theme $mode mode, fullscreen=$fullscreen',
+    ({ mode, fullscreen, opener, theme }) => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      if (mode === 'source') {
+        fixture.componentInstance.selectMode('source');
+        fixture.detectChanges();
+      }
+      if (fullscreen) {
+        fixture.componentInstance.toggleFullscreen();
+        fixture.detectChanges();
+      }
+      const shell = query<HTMLElement>('[data-testid="markdown-editor-shell"]');
+      shell.style.setProperty('--accent-color', 'rgb(22, 162, 73)');
+      shell.style.setProperty('--bs-focus-ring-color', 'rgba(22, 162, 73, 0.25)');
+      openSearch(opener);
+      const searchPanel = query<HTMLElement>('.cm-panel.cm-search');
+      const textFields = Array.from(
+        searchPanel.querySelectorAll<HTMLInputElement>('.cm-textfield'),
+      );
+      const checkboxes = Array.from(
+        searchPanel.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+      );
+      const buttons = Array.from(searchPanel.querySelectorAll<HTMLButtonElement>('button'));
+
+      expect(textFields.map((field) => field.name)).toEqual(['search', 'replace']);
+      expect(checkboxes.map((checkbox) => checkbox.name)).toEqual(['case', 're', 'word']);
+      expect(buttons.map((button) => button.name)).toEqual([
+        'next',
+        'prev',
+        'select',
+        'replace',
+        'replaceAll',
+        'close',
+      ]);
+
+      for (const textField of textFields) {
+        textField.focus();
+        const focusedInputStyle = getComputedStyle(textField);
+        expect(document.activeElement).toBe(textField);
+        expect(focusedInputStyle.borderColor).toBe('var(--accent-color)');
+        expect(focusedInputStyle.boxShadow).toBe('0 0 0 0.2rem var(--bs-focus-ring-color)');
+      }
+      for (const checkbox of checkboxes) {
+        checkbox.focus();
+        const focusedCheckboxStyle = getComputedStyle(checkbox);
+        expect(focusedCheckboxStyle.accentColor).toBe('var(--accent-color)');
+        expect(focusedCheckboxStyle.outline).toBe('0.2rem solid var(--bs-focus-ring-color)');
+        expect(focusedCheckboxStyle.outlineOffset).toBe('0.1rem');
+      }
+      for (const button of buttons) {
+        button.focus();
+        const focusedButtonStyle = getComputedStyle(button);
+        expect(focusedButtonStyle.outline).toBe('0.2rem solid var(--bs-focus-ring-color)');
+        expect(focusedButtonStyle.outlineOffset).toBe('0.1rem');
+      }
+    },
+  );
+
+  it.each([
+    { mode: 'edit', fullscreen: false },
+    { mode: 'source', fullscreen: false },
+    { mode: 'edit', fullscreen: true },
+    { mode: 'source', fullscreen: true },
+  ] as const)(
+    'closes and reopens external search without stale chrome margins in $mode mode, fullscreen=$fullscreen',
+    ({ mode, fullscreen }) => {
+      if (mode === 'source') {
+        fixture.componentInstance.selectMode('source');
+        fixture.detectChanges();
+      }
+      if (fullscreen) {
+        fixture.componentInstance.toggleFullscreen();
+        fixture.detectChanges();
+      }
+      const view = editorView();
+      view.dispatch({ selection: { anchor: 4, head: 9 } });
+      const documentBefore = view.state.doc.toString();
+      const selectionBefore = view.state.selection;
+      const historyBefore = undoDepth(view.state);
+      const header = query<HTMLElement>('[data-testid="markdown-editor-header"]');
+      const footer = query<HTMLElement>('[data-testid="markdown-editor-footer"]');
+      let headerHeight = 96;
+      Object.defineProperty(header, 'offsetHeight', {
+        configurable: true,
+        get: () => headerHeight,
+      });
+      Object.defineProperty(footer, 'offsetHeight', { configurable: true, value: 48 });
+      const resolvedOffsets = {
+        top: fullscreen ? '0px' : '24px',
+        bottom: fullscreen ? '0px' : '16px',
+      };
+      const searchPanelStylesMock = mockResolvedStickyOffsets(header, footer, resolvedOffsets);
+
+      openSearch('toolbar');
+      const searchInput = query<HTMLInputElement>('.cm-search input[name="search"]');
+      expect(providedScrollMargins(view)).toContainEqual(
+        fullscreen ? { top: 96, bottom: 48 } : { top: 120, bottom: 64 },
+      );
+
+      searchInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          key: 'Escape',
+        }),
+      );
+      fixture.detectChanges();
+      headerHeight = 72;
+
+      expect(fixture.nativeElement.querySelector('.cm-panel.cm-search')).toBeNull();
+      expect(document.activeElement).toBe(contentElement());
+      expect(providedScrollMargins(view)).toContainEqual(
+        fullscreen ? { top: 72, bottom: 48 } : { top: 96, bottom: 64 },
+      );
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+
+      openSearch('command-shortcut');
+
+      expect(query<HTMLElement>('.cm-panel.cm-search')).not.toBeNull();
+      expect(document.activeElement).toBe(
+        query<HTMLInputElement>('.cm-search input[name="search"]'),
+      );
+      expect(editorView()).toBe(view);
+      expect(view.state.doc.toString()).toBe(documentBefore);
+      expect(view.state.selection.eq(selectionBefore)).toBe(true);
+      expect(undoDepth(view.state)).toBe(historyBefore);
+
+      searchPanelStylesMock.mockRestore();
+    },
+  );
+
   it('suppresses matching shortcuts during IME composition without changing content', () => {
     const emitted: string[] = [];
     const outerListener = jest.fn();
@@ -1709,6 +1990,25 @@ describe('MarkdownEditorComponent', () => {
 
   function providedScrollMargins(view: EditorView): readonly (Partial<Rect> | null)[] {
     return view.state.facet(EditorView.scrollMargins).map((provideMargins) => provideMargins(view));
+  }
+
+  function openSearch(opener: SearchPanelContext['opener']): void {
+    if (opener === 'toolbar') {
+      query<HTMLButtonElement>('[data-markdown-command="search"]').click();
+    } else {
+      const platform = jest.spyOn(window.navigator, 'platform', 'get').mockReturnValue('MacIntel');
+      contentElement().dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          cancelable: true,
+          code: 'KeyF',
+          key: 'а',
+          metaKey: true,
+        }),
+      );
+      platform.mockRestore();
+    }
+    fixture.detectChanges();
   }
 });
 

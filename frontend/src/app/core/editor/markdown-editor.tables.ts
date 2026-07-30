@@ -3,6 +3,7 @@ import {
   hasNextSnippetField,
   hasPrevSnippetField,
 } from '@codemirror/autocomplete';
+import { invertedEffects } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import {
   Annotation,
@@ -33,8 +34,9 @@ import {
   ViewPlugin,
   WidgetType,
   type Command,
-  type Tooltip,
   type Rect,
+  type Tooltip,
+  type ViewUpdate,
 } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import {
@@ -159,6 +161,29 @@ interface TableCaretTarget {
   readonly cell: TableCellLayout | null;
 }
 
+interface ClearedTableCellRepair {
+  readonly changes: readonly { readonly from: number; readonly insert: string }[];
+  readonly cursor: number;
+}
+
+interface ClearedTableCellContext {
+  readonly layout: TableLayout;
+  readonly cell: TableCellLayout;
+  readonly row: TableRowLayout;
+  readonly sourceRow: MarkdownTableRow;
+}
+
+interface TableCaretHistoryTarget {
+  readonly tableFrom: number;
+  readonly row: number;
+  readonly column: number;
+}
+
+interface TableCaretHistoryTransition {
+  readonly from: TableCaretHistoryTarget | null;
+  readonly to: TableCaretHistoryTarget | null;
+}
+
 interface SelectionContext {
   readonly layout: TableLayout;
   readonly selection: MarkdownTableCellRange;
@@ -197,6 +222,8 @@ interface TableMenuItem {
   readonly action: MarkdownTableEditorAction;
   readonly axis: MarkdownTableSelectionAxis | null;
 }
+
+const TABLE_HEADER_DELIMITER_HEIGHT_PX = 3;
 
 const markdownTableEditorTheme = EditorView.theme({
   '.cm-markdown-table-editor': {
@@ -307,11 +334,15 @@ const markdownTableEditorTheme = EditorView.theme({
     border: '0',
   },
   "[role='columnheader'].cm-markdown-table-cell": {
-    background: 'transparent',
+    backgroundImage:
+      'linear-gradient(rgba(var(--accent-color-rgb), 0.38), rgba(var(--accent-color-rgb), 0.38))',
+    backgroundPosition: 'bottom',
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: `100% ${TABLE_HEADER_DELIMITER_HEIGHT_PX}px`,
     fontWeight: '650',
   },
   '.cm-markdown-table-cell-selected': {
-    background: 'var(--markdown-editor-selection-semantic)',
+    backgroundColor: 'var(--markdown-editor-selection-semantic)',
   },
   '.cm-markdown-table-cell-selected::after': {
     position: 'absolute',
@@ -556,6 +587,18 @@ const emptySelection: MarkdownTableEditorSelection = {
 const setMarkdownTableSelection = StateEffect.define<MarkdownTableEditorSelection>();
 const setMarkdownTableDrag = StateEffect.define<TableDragState | null>();
 const setMarkdownTableMenu = StateEffect.define<TableMenuState | null>();
+const setTableCaretHistoryTarget = StateEffect.define<TableCaretHistoryTransition>({
+  map: (transition, changes) => ({
+    from:
+      transition.from === null
+        ? null
+        : { ...transition.from, tableFrom: changes.mapPos(transition.from.tableFrom, 1) },
+    to:
+      transition.to === null
+        ? null
+        : { ...transition.to, tableFrom: changes.mapPos(transition.to.tableFrom, 1) },
+  }),
+});
 const pointerSelections = new WeakMap<EditorView, PointerSelectionSession>();
 
 const markdownTableEditorConfig = Facet.define<
@@ -617,6 +660,19 @@ const markdownTableMenuState = StateField.define<TableMenuState | null>({
             create: (view) => createTableMenu(view, menu),
           },
     ),
+});
+
+const tableCaretHistoryTargetState = StateField.define<TableCaretHistoryTarget | null>({
+  create: () => null,
+  update: (target, transaction) => {
+    let next = target;
+    for (const effect of transaction.effects) {
+      if (effect.is(setTableCaretHistoryTarget)) {
+        next = effect.value.to;
+      }
+    }
+    return next;
+  },
 });
 
 class TableContinuationGutterMarker extends GutterMarker {
@@ -1006,6 +1062,20 @@ export function markdownTableEditor(config: MarkdownTableEditorConfig): Extensio
     markdownTableDragState,
     markdownTableMenuState,
     markdownTableGutterState,
+    tableCaretHistoryTargetState,
+    invertedEffects.of((transaction) =>
+      transaction.effects.flatMap((effect) =>
+        effect.is(setTableCaretHistoryTarget)
+          ? [
+              setTableCaretHistoryTarget.of({
+                from: effect.value.to,
+                to: effect.value.from,
+              }),
+            ]
+          : [],
+      ),
+    ),
+    EditorView.updateListener.of(repairTableCaretAfterDocumentChange),
     ViewPlugin.fromClass(TableOutsidePointerPlugin),
     EditorState.transactionFilter.of((transaction) => protectTableStructure(transaction)),
     decorationsField,
@@ -2684,27 +2754,53 @@ function protectTableStructure(transaction: Transaction): Transaction | readonly
     return [];
   }
 
+  const clearedCell = clearedTableCellContext(transaction);
+  const clearedCellRepair =
+    clearedCell === null ? null : clearedTableCellRepair(transaction, clearedCell);
+  const historyTarget =
+    clearedCell === null
+      ? null
+      : {
+          tableFrom: clearedCell.layout.from,
+          row: clearedCell.cell.rowIndex,
+          column: clearedCell.cell.columnIndex,
+        };
+  const effects =
+    historyTarget === null
+      ? transaction.effects
+      : [
+          ...transaction.effects,
+          setTableCaretHistoryTarget.of({
+            from: transaction.startState.field(tableCaretHistoryTargetState),
+            to: historyTarget,
+          }),
+        ];
   const terminatorRepairs = transaction.docChanged ? tableTerminatorTypingRepairs(transaction) : [];
   const endRepair =
     transaction.docChanged &&
+    clearedCellRepair === null &&
     terminatorRepairs.length === 0 &&
     hasNewTableEndingAtDocumentEnd(transaction)
       ? [{ from: transaction.newDoc.length, insert: '\n' }]
       : [];
-  const repairs = [...terminatorRepairs, ...endRepair];
+  const repairs = [...(clearedCellRepair?.changes ?? []), ...terminatorRepairs, ...endRepair];
   const normalizedSelection =
     endRepair.length > 0
       ? transaction.newSelection
       : normalizeTableCaretSelection(transaction.state, transaction.newSelection);
-  const suppressInputScroll =
+  const suppressContentEditScroll =
     transaction.scrollIntoView &&
-    transaction.isUserEvent('input') &&
+    isTableContentEdit(transaction) &&
     (activeTableCell(transaction.startState) !== null || terminatorRepairs.length > 0);
-  const selection = stabilizedTableInputSelection(transaction, normalizedSelection);
+  const selection =
+    clearedCellRepair === null
+      ? stabilizedTableContentEditSelection(transaction, normalizedSelection)
+      : EditorSelection.create([EditorSelection.cursor(clearedCellRepair.cursor, 1)]);
   const suppressStructuralSelectionScroll = normalizedSelection !== transaction.newSelection;
   if (
     repairs.length === 0 &&
-    !suppressInputScroll &&
+    historyTarget === null &&
+    !suppressContentEditScroll &&
     !suppressStructuralSelectionScroll &&
     selection === transaction.newSelection
   ) {
@@ -2714,8 +2810,11 @@ function protectTableStructure(transaction: Transaction): Transaction | readonly
   return [
     transactionAsSpec(
       transaction,
-      suppressInputScroll || suppressStructuralSelectionScroll ? false : transaction.scrollIntoView,
+      suppressContentEditScroll || suppressStructuralSelectionScroll
+        ? false
+        : transaction.scrollIntoView,
       selection,
+      effects,
     ),
     ...(repairs.length === 0
       ? []
@@ -2723,14 +2822,77 @@ function protectTableStructure(transaction: Transaction): Transaction | readonly
           {
             changes: repairs,
             sequential: true,
-            ...(endRepair.length === 0
-              ? {}
-              : {
-                  selection: EditorSelection.cursor(transaction.newDoc.length + 1),
-                }),
+            ...(clearedCellRepair !== null
+              ? { selection: EditorSelection.cursor(clearedCellRepair.cursor, 1) }
+              : endRepair.length === 0
+                ? {}
+                : {
+                    selection: EditorSelection.cursor(transaction.newDoc.length + 1),
+                  }),
           } satisfies TransactionSpec,
         ]),
   ];
+}
+
+function clearedTableCellContext(transaction: Transaction): ClearedTableCellContext | null {
+  if (
+    !transaction.docChanged ||
+    !isTableContentEdit(transaction) ||
+    transaction.startState.selection.ranges.length !== 1
+  ) {
+    return null;
+  }
+  const active = activeTableCell(transaction.startState);
+  if (active === null || active.cell.virtual || active.cell.from === active.cell.to) {
+    return null;
+  }
+  let clearsCell = false;
+  let changeCount = 0;
+  transaction.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    changeCount += 1;
+    clearsCell = inserted.length === 0 && fromA <= active.cell.from && toA >= active.cell.to;
+  });
+  if (changeCount !== 1 || !clearsCell) {
+    return null;
+  }
+  const row = active.layout.semanticRows[active.cell.rowIndex];
+  const sourceRow =
+    active.cell.rowIndex === 0
+      ? active.layout.table.header
+      : active.layout.table.body[active.cell.rowIndex - 1];
+  if (row === undefined || sourceRow === undefined) {
+    return null;
+  }
+  return { layout: active.layout, cell: active.cell, row, sourceRow };
+}
+
+function clearedTableCellRepair(
+  transaction: Transaction,
+  context: ClearedTableCellContext,
+): ClearedTableCellRepair | null {
+  const { layout, cell, row, sourceRow } = context;
+  const leadingPosition = transaction.changes.mapPos(row.from + sourceRow.prefix.length, -1);
+  const trailingPosition = transaction.changes.mapPos(row.to, 1);
+  const addLeadingPipe = cell.columnIndex === 0 && !sourceRow.leadingPipe;
+  const addTrailingPipe =
+    cell.columnIndex === layout.table.columnCount - 1 && !sourceRow.trailingPipe;
+  if (!addLeadingPipe && !addTrailingPipe) {
+    return null;
+  }
+  const cursorBeforeRepair = transaction.changes.mapPos(cell.from, -1);
+  if (addLeadingPipe && addTrailingPipe && leadingPosition === trailingPosition) {
+    return {
+      changes: [{ from: leadingPosition, insert: '||' }],
+      cursor: leadingPosition + 1,
+    };
+  }
+  return {
+    changes: [
+      ...(addLeadingPipe ? [{ from: leadingPosition, insert: '|' }] : []),
+      ...(addTrailingPipe ? [{ from: trailingPosition, insert: ' |' }] : []),
+    ],
+    cursor: cursorBeforeRepair + (addLeadingPipe && leadingPosition <= cursorBeforeRepair ? 1 : 0),
+  };
 }
 
 function stabilizedTableWhitespaceInput(transaction: Transaction): TransactionSpec | null {
@@ -2839,14 +3001,24 @@ function normalizeTableCaretSelection(
     : EditorSelection.create([EditorSelection.cursor(target.position)]);
 }
 
-function stabilizedTableInputSelection(
+function stabilizedTableContentEditSelection(
   transaction: Transaction,
   selection: EditorSelection,
 ): EditorSelection {
-  if (!transaction.isUserEvent('input') || selection.ranges.length !== 1 || !selection.main.empty) {
+  if (!isTableContentEdit(transaction)) {
     return selection;
   }
-  const active = editableTableCellAtPosition(transaction.state, selection.main.head);
+  return stabilizedTableCaretSelection(transaction.state, selection);
+}
+
+function stabilizedTableCaretSelection(
+  state: EditorState,
+  selection: EditorSelection,
+): EditorSelection {
+  if (selection.ranges.length !== 1 || !selection.main.empty) {
+    return selection;
+  }
+  const active = editableTableCellAtPosition(state, selection.main.head);
   if (active === null) {
     return selection;
   }
@@ -2860,6 +3032,44 @@ function stabilizedTableInputSelection(
   return assoc === selection.main.assoc
     ? selection
     : EditorSelection.create([EditorSelection.cursor(position, assoc)]);
+}
+
+function isTableContentEdit(transaction: Transaction): boolean {
+  return transaction.isUserEvent('input') || transaction.isUserEvent('delete');
+}
+
+function repairTableCaretAfterDocumentChange(update: ViewUpdate): void {
+  if (!update.docChanged) {
+    return;
+  }
+  const target = update.state.field(tableCaretHistoryTargetState);
+  const layout = target === null ? null : tableByFrom(update.state, target.tableFrom);
+  const cell =
+    target === null || layout === null
+      ? null
+      : (layout.semanticRows[target.row]?.cells[target.column] ?? null);
+  const selection =
+    cell === null || cell.virtual
+      ? stabilizedTableCaretSelection(update.state, update.state.selection)
+      : EditorSelection.create([EditorSelection.cursor(cell.cursor, 1)]);
+  const effects =
+    target === null
+      ? []
+      : [
+          setTableCaretHistoryTarget.of({
+            from: target,
+            to: null,
+          }),
+        ];
+  if (selection.eq(update.state.selection, true) && effects.length === 0) {
+    return;
+  }
+  update.view.dispatch({
+    selection,
+    effects,
+    annotations: Transaction.addToHistory.of(false),
+    scrollIntoView: false,
+  });
 }
 
 function transactionTouchesProtectedStructure(transaction: Transaction): boolean {
@@ -2881,11 +3091,12 @@ function transactionAsSpec(
   transaction: Transaction,
   scrollIntoView: boolean,
   selection: EditorSelection,
+  effects: readonly StateEffect<unknown>[],
 ): TransactionSpec {
   return {
     changes: transaction.changes,
     selection,
-    effects: transaction.effects,
+    effects,
     annotations: transactionAnnotations(transaction),
     scrollIntoView,
   };

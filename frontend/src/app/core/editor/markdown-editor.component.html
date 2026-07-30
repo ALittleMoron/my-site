@@ -120,6 +120,12 @@
         }
       </div>
     }
+    <div
+      #editorTopPanels
+      class="markdown-editor-top-panels markdown-editor-static-theme"
+      data-testid="markdown-editor-top-panels"
+      [hidden]="mode() === 'preview'"
+    ></div>
   </header>
 
   <section

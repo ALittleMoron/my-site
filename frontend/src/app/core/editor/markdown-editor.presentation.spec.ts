@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state';
-import { ensureSyntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTreeAvailable } from '@codemirror/language';
 import { markdownEditorLanguage } from './markdown-editor.extensions';
 import { buildMarkdownPresentationDecorations } from './markdown-editor.presentation';
 
@@ -7,11 +7,7 @@ describe('Markdown editor presentation', () => {
   it('builds semantic decorations only for visible document ranges', () => {
     const document = ['# Outside viewport', '', 'plain', '', '## Visible heading'].join('\n');
     const visibleFrom = document.indexOf('## Visible');
-    const state = EditorState.create({
-      doc: document,
-      extensions: [markdownEditorLanguage],
-    });
-    ensureCompleteMarkdownParse(state);
+    const state = completelyParsedMarkdownState(document);
     const decorations = buildMarkdownPresentationDecorations(state, [
       { from: visibleFrom, to: document.length },
     ]);
@@ -138,12 +134,7 @@ function wikiLinkClasses(
   visibleRanges: readonly { from: number; to: number }[] = [{ from: 0, to: document.length }],
   cursor: number = document.length,
 ): DecorationClass[] {
-  const state = EditorState.create({
-    doc: document,
-    selection: { anchor: cursor },
-    extensions: [markdownEditorLanguage],
-  });
-  ensureCompleteMarkdownParse(state);
+  const state = completelyParsedMarkdownState(document, cursor);
   const decorations = buildMarkdownPresentationDecorations(state, visibleRanges);
   const classes: DecorationClass[] = [];
 
@@ -160,8 +151,21 @@ function wikiLinkClasses(
   return classes;
 }
 
-function ensureCompleteMarkdownParse(state: EditorState): void {
+function completelyParsedMarkdownState(
+  document: string,
+  cursor: number = document.length,
+): EditorState {
+  const state = EditorState.create({
+    doc: document,
+    selection: { anchor: cursor },
+    extensions: [markdownEditorLanguage],
+  });
   if (ensureSyntaxTree(state, state.doc.length, 1000) === null) {
     throw new Error('Markdown syntax tree did not finish parsing');
   }
+  const parsedState = state.update().state;
+  if (!syntaxTreeAvailable(parsedState, parsedState.doc.length)) {
+    throw new Error('Markdown syntax tree was not committed to editor state');
+  }
+  return parsedState;
 }

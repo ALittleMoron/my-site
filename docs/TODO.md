@@ -763,6 +763,15 @@ instead of inheriting every Markdown-specific feature.
   row/column drag hit areas and table geometry.
 - [x] Make Markdown presentation decoration tests force a complete public CodeMirror parse instead
   of depending on the shared background-parser time budget.
+- [x] Add a compact Markdown table header/body delimiter on the existing header-cell boundary
+  without reintroducing hidden source-row height, shifting controls, or changing document flow.
+- [x] Make Markdown presentation tests commit their forced public CodeMirror parse through a pure
+  editor-state update so parser timing cannot make the suite intermittent.
+- [x] Keep the caret in the same Markdown table cell after deleting or replacing all of its
+  content, with a complete regression matrix for cell positions, source forms, input paths,
+  selection state, scrolling, and undo/redo.
+- [x] Keep Markdown search/replace in the editor's sticky header stack and theme its focus and
+  checkbox states with the site's green accent across authoring modes and fullscreen.
 
 ### Other tasks
 
