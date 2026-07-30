@@ -296,15 +296,39 @@ describe('MarkdownEditorComponent', () => {
     expect(announcement.getAttribute('aria-live')).toBe('polite');
   });
 
-  it('uses native selection in table-aware Editor mode and keeps drawn multi-selection in Source', () => {
+  it('uses a theme-scoped native selection in Editor and drawn multi-selection in Source', () => {
+    expect(editorElement().classList).toContain('cm-markdown-editor-selection-native');
+    expect(editorElement().classList).not.toContain('cm-markdown-editor-selection-drawn');
     expect(editorElement().querySelector('.cm-selectionLayer')).toBeNull();
 
     query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]').click();
     fixture.detectChanges();
 
+    expect(editorElement().classList).toContain('cm-markdown-editor-selection-drawn');
+    expect(editorElement().classList).not.toContain('cm-markdown-editor-selection-native');
     expect(editorElement().querySelector('.cm-selectionLayer')).not.toBeNull();
     expect(editorElement().querySelector('.cm-markdown-table-cursor-layer')).toBeNull();
   });
+
+  it.each([
+    { theme: 'light', mode: 'edit', renderer: 'native', drawn: false },
+    { theme: 'light', mode: 'source', renderer: 'drawn', drawn: true },
+    { theme: 'dark', mode: 'edit', renderer: 'native', drawn: false },
+    { theme: 'dark', mode: 'source', renderer: 'drawn', drawn: true },
+  ] as const)(
+    'keeps the $renderer selection renderer scoped in $theme $mode mode',
+    ({ theme, mode, renderer, drawn }) => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      if (mode === 'source') {
+        query<HTMLButtonElement>('[data-testid="markdown-editor-source-tab"]').click();
+        fixture.detectChanges();
+      }
+
+      expect(editorElement().classList).toContain(`cm-markdown-editor-selection-${renderer}`);
+      expect(editorElement().querySelector('.cm-selectionLayer') !== null).toBe(drawn);
+      document.documentElement.removeAttribute('data-bs-theme');
+    },
+  );
 
   it('passes the Angular CSP nonce to CodeMirror runtime styles', () => {
     const editorView = EditorView.findFromDOM(contentElement());
@@ -644,6 +668,11 @@ describe('MarkdownEditorComponent', () => {
     const editTab = query<HTMLButtonElement>('[data-testid="markdown-editor-edit-tab"]');
 
     expect(view.dom.querySelector('[role="table"]')).not.toBeNull();
+    expect(view.dom.querySelectorAll('.cm-markdown-table-row-handle')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-column-handle')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-add-column')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('button.cm-markdown-table-add-column')).toHaveLength(1);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-add-row')).toHaveLength(1);
 
     sourceTab.click();
     fixture.detectChanges();
@@ -651,6 +680,10 @@ describe('MarkdownEditorComponent', () => {
     expect(fixture.componentInstance.mode()).toBe('source');
     expect(editorView()).toBe(view);
     expect(view.dom.querySelector('[role="table"]')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-row-handle')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-column-handle')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-add-column')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-add-row')).toBeNull();
     expect(view.state.doc.toString()).toContain('| Ada | **42** |');
     expect(view.dom.querySelector('.cm-markdown-heading')).toBeNull();
     expect(view.dom.querySelector('.tok-heading')).not.toBeNull();
@@ -660,10 +693,26 @@ describe('MarkdownEditorComponent', () => {
 
     expect(editorView()).toBe(view);
     expect(view.dom.querySelector('[role="table"]')).not.toBeNull();
+    expect(view.dom.querySelectorAll('.cm-markdown-table-row-handle')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-column-handle')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-add-column')).toHaveLength(2);
+    expect(view.dom.querySelectorAll('button.cm-markdown-table-add-column')).toHaveLength(1);
+    expect(view.dom.querySelectorAll('.cm-markdown-table-add-row')).toHaveLength(1);
 
     query<HTMLButtonElement>('[data-testid="markdown-editor-preview-tab"]').click();
     fixture.detectChanges();
     expect(editorView()).toBe(view);
+    expect(query<HTMLElement>('[data-testid="markdown-editor-source-panel"]').hidden).toBe(true);
+    expect(
+      query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').querySelector(
+        '.cm-markdown-table-row-handle, .cm-markdown-table-column-handle',
+      ),
+    ).toBeNull();
+    expect(
+      query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').querySelector(
+        '.cm-markdown-table-add-column, .cm-markdown-table-add-row',
+      ),
+    ).toBeNull();
     expect(
       query<HTMLElement>('[data-testid="markdown-editor-preview-content"]').innerHTML,
     ).toContain('<table>');

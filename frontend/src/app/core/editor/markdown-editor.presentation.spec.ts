@@ -1,4 +1,5 @@
 import { EditorState } from '@codemirror/state';
+import { ensureSyntaxTree } from '@codemirror/language';
 import { markdownEditorLanguage } from './markdown-editor.extensions';
 import { buildMarkdownPresentationDecorations } from './markdown-editor.presentation';
 
@@ -10,6 +11,7 @@ describe('Markdown editor presentation', () => {
       doc: document,
       extensions: [markdownEditorLanguage],
     });
+    ensureCompleteMarkdownParse(state);
     const decorations = buildMarkdownPresentationDecorations(state, [
       { from: visibleFrom, to: document.length },
     ]);
@@ -141,6 +143,7 @@ function wikiLinkClasses(
     selection: { anchor: cursor },
     extensions: [markdownEditorLanguage],
   });
+  ensureCompleteMarkdownParse(state);
   const decorations = buildMarkdownPresentationDecorations(state, visibleRanges);
   const classes: DecorationClass[] = [];
 
@@ -155,4 +158,10 @@ function wikiLinkClasses(
     }
   });
   return classes;
+}
+
+function ensureCompleteMarkdownParse(state: EditorState): void {
+  if (ensureSyntaxTree(state, state.doc.length, 1000) === null) {
+    throw new Error('Markdown syntax tree did not finish parsing');
+  }
 }

@@ -1150,9 +1150,13 @@ export class MarkdownEditorComponent implements AfterViewInit, OnDestroy {
 
   private authoringPresentationExtensions(mode: AuthoringMode): Extension {
     if (mode === 'source') {
-      return drawSelection();
+      return [
+        EditorView.editorAttributes.of({ class: 'cm-markdown-editor-selection-drawn' }),
+        drawSelection(),
+      ];
     }
     return [
+      EditorView.editorAttributes.of({ class: 'cm-markdown-editor-selection-native' }),
       markdownPresentation,
       markdownTableEditor({
         locale: this.language(),

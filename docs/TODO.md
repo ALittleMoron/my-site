@@ -744,18 +744,25 @@ instead of inheriting every Markdown-specific feature.
   selection, theme-aware native highlighting, cell and boundary navigation, whitespace editing,
   deletion, line breaks, indentation, modifiers, hotkeys, IME, clipboard, and multi-selection
   regression matrices.
-- [ ] Restore readable green-tinted selection in both Markdown Editor and Source modes without
+- [x] Restore readable green-tinted selection in both Markdown Editor and Source modes without
   geometric table-selection artifacts or duplicate layers.
-- [ ] Keep the Markdown table caret to one normal cell-line height when ArrowLeft moves from a
+- [x] Keep the Markdown table caret to one normal cell-line height when ArrowLeft moves from a
   right empty cell into a left empty cell in headers and body rows.
-- [ ] Make ArrowUp from the top-left Markdown table cell deterministic and directionally correct
+- [x] Make ArrowUp from the top-left Markdown table cell deterministic and directionally correct
   for empty and populated cells, every table shape, and the exact visible line above the table.
-- [ ] Add balanced horizontal insets around pseudo-rendered Markdown tables without breaking
+- [x] Add balanced horizontal insets around pseudo-rendered Markdown tables without breaking
   viewport containment, controls, caret, or selection geometry.
-- [ ] Restrict Markdown table terminator protection to the final empty line at document EOF and
+- [x] Restrict Markdown table terminator protection to the final empty line at document EOF and
   keep all lines after a table normally editable when later content exists.
 - [x] Move the admin-only Markdown editor theme out of the global stylesheet so CodeMirror,
   interactive tables, and editor styling stay lazy without raising the initial-bundle budget.
+- [x] Restore the missing top and inline-end outer borders of pseudo-rendered Markdown tables.
+- [x] Restore row/column drag-and-drop hit-area alignment in Markdown tables and cover every
+  supported pickup, target, selection, pointer, boundary, cancellation, and undo/redo scenario.
+- [x] Make Markdown table edge-add controls use the complete table boundary while preserving
+  row/column drag hit areas and table geometry.
+- [x] Make Markdown presentation decoration tests force a complete public CodeMirror parse instead
+  of depending on the shared background-parser time budget.
 
 ### Other tasks
 

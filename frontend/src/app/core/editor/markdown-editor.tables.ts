@@ -176,8 +176,14 @@ interface TableDragState {
   readonly tableFrom: number;
   readonly axis: MarkdownTableSelectionAxis;
   readonly indices: readonly number[];
+  readonly pointerId: number;
   readonly targetIndex: number | null;
   readonly targetGap: number | null;
+}
+
+interface TableControlGeometry {
+  readonly inlineStart: string | null;
+  readonly inlineSize: string | null;
 }
 
 interface TableMenuState {
@@ -201,7 +207,7 @@ const markdownTableEditorTheme = EditorView.theme({
     minWidth: '0',
     boxSizing: 'border-box',
     margin: '0',
-    padding: '0 0 0.75rem',
+    padding: '0 1rem 0.75rem',
     color: 'var(--text-primary)',
     background: 'transparent',
     border: '0',
@@ -211,6 +217,7 @@ const markdownTableEditorTheme = EditorView.theme({
     fontSize: '1em',
   },
   '.cm-markdown-table-row.cm-line': {
+    position: 'relative',
     display: 'grid',
     gridAutoFlow: 'column',
     gridAutoColumns: 'minmax(0, 1fr)',
@@ -240,9 +247,23 @@ const markdownTableEditorTheme = EditorView.theme({
     overflowWrap: 'anywhere',
     color: 'var(--text-primary)',
     background: 'transparent',
-    borderInlineStart: '1px solid var(--border-color-solid)',
-    borderBottom: '1px solid var(--border-color-solid)',
+    borderInlineStartWidth: '1px',
+    borderInlineStartStyle: 'solid',
+    borderInlineStartColor: 'var(--border-color-solid)',
+    borderBottomWidth: '1px',
+    borderBottomStyle: 'solid',
+    borderBottomColor: 'var(--border-color-solid)',
     whiteSpace: 'pre-wrap',
+  },
+  '.cm-markdown-table-cell-first-row': {
+    borderTopWidth: '1px',
+    borderTopStyle: 'solid',
+    borderTopColor: 'var(--border-color-solid)',
+  },
+  '.cm-markdown-table-cell-last-column': {
+    borderInlineEndWidth: '1px',
+    borderInlineEndStyle: 'solid',
+    borderInlineEndColor: 'var(--border-color-solid)',
   },
   '.cm-markdown-table-cell-active': {
     caretColor: 'var(--accent-color)',
@@ -285,15 +306,12 @@ const markdownTableEditorTheme = EditorView.theme({
     lineHeight: '0',
     border: '0',
   },
-  '.cm-markdown-table-cell:first-of-type': {
-    borderInlineStart: '0',
-  },
   "[role='columnheader'].cm-markdown-table-cell": {
     background: 'transparent',
     fontWeight: '650',
   },
   '.cm-markdown-table-cell-selected': {
-    background: 'rgba(var(--accent-color-rgb), 0.16)',
+    background: 'var(--markdown-editor-selection-semantic)',
   },
   '.cm-markdown-table-cell-selected::after': {
     position: 'absolute',
@@ -368,20 +386,20 @@ const markdownTableEditorTheme = EditorView.theme({
     cursor: 'grabbing',
   },
   '.cm-markdown-table-row-handle': {
-    top: '50%',
-    left: '-0.25rem',
-    width: '1.25rem',
-    height: '2.5rem',
+    top: '0',
+    bottom: '0',
+    left: '-1rem',
+    width: '1rem',
+    height: 'auto',
     borderRadius: '0.2rem',
     cursor: 'grab',
-    transform: 'translateY(-50%)',
     touchAction: 'none',
   },
   '.cm-markdown-table-column-handle': {
     top: '-1rem',
-    width: '2.5rem',
+    width: 'auto',
     height: '1.25rem',
-    marginInlineStart: '-1.25rem',
+    marginInlineStart: '0',
     borderRadius: '0.2rem',
     cursor: 'grab',
     touchAction: 'none',
@@ -447,7 +465,7 @@ const markdownTableEditorTheme = EditorView.theme({
   },
   '.cm-markdown-table-add-row': {
     right: '0',
-    bottom: '0',
+    bottom: '-0.75rem',
     left: '0',
     width: 'auto',
     height: '0.75rem',
@@ -512,13 +530,13 @@ const markdownTableEditorTheme = EditorView.theme({
     '.cm-markdown-table-row-handle': {
       left: '-1.55rem',
       width: '2.75rem',
-      height: '2.75rem',
+      height: 'auto',
     },
     '.cm-markdown-table-column-handle': {
       top: '-1.55rem',
-      width: '2.75rem',
+      width: 'auto',
       height: '2.75rem',
-      marginInlineStart: '-1.375rem',
+      marginInlineStart: '0',
     },
     '.cm-markdown-table-add-row': {
       minHeight: '2.75rem',
@@ -566,12 +584,13 @@ export const markdownTableSelectionState = StateField.define<MarkdownTableEditor
 const markdownTableDragState = StateField.define<TableDragState | null>({
   create: () => null,
   update: (value, transaction) => {
+    let next = transaction.docChanged ? null : value;
     for (const effect of transaction.effects) {
       if (effect.is(setMarkdownTableDrag)) {
-        return effect.value;
+        next = effect.value;
       }
     }
-    return value;
+    return next;
   },
 });
 
@@ -620,7 +639,7 @@ class TableControlWidget extends WidgetType {
     readonly tableFrom: number,
     readonly index: number | null,
     readonly classes: string,
-    readonly inlineStart: string | null,
+    readonly geometry: TableControlGeometry,
   ) {
     super();
   }
@@ -632,7 +651,8 @@ class TableControlWidget extends WidgetType {
       this.tableFrom === other.tableFrom &&
       this.index === other.index &&
       this.classes === other.classes &&
-      this.inlineStart === other.inlineStart
+      this.geometry.inlineStart === other.geometry.inlineStart &&
+      this.geometry.inlineSize === other.geometry.inlineSize
     );
   }
 
@@ -652,7 +672,6 @@ class TableControlWidget extends WidgetType {
 
   private updateButton(button: HTMLButtonElement): HTMLButtonElement {
     button.className = this.classes;
-    button.setAttribute('aria-label', this.label);
     button.title = this.label;
     button.dataset['tableAction'] = this.action;
     button.dataset['tableFrom'] = this.tableFrom.toString();
@@ -669,13 +688,47 @@ class TableControlWidget extends WidgetType {
     } else {
       button.removeAttribute('aria-grabbed');
     }
-    if (this.inlineStart === null) {
+    button.setAttribute('aria-label', this.label);
+    if (this.geometry.inlineStart === null) {
       button.style.removeProperty('inset-inline-start');
     } else {
-      button.style.insetInlineStart = this.inlineStart;
+      button.style.insetInlineStart = this.geometry.inlineStart;
+    }
+    if (this.geometry.inlineSize === null) {
+      button.style.removeProperty('inline-size');
+    } else {
+      button.style.inlineSize = this.geometry.inlineSize;
     }
     button.textContent = this.action === 'add-row' || this.action === 'add-column' ? '+' : '';
     return button;
+  }
+}
+
+class TableColumnEdgeSegmentWidget extends WidgetType {
+  constructor(
+    readonly label: string,
+    readonly tableFrom: number,
+  ) {
+    super();
+  }
+
+  override eq(other: TableColumnEdgeSegmentWidget): boolean {
+    return this.label === other.label && this.tableFrom === other.tableFrom;
+  }
+
+  override toDOM(): HTMLElement {
+    const segment = document.createElement('span');
+    segment.className = 'cm-markdown-table-control cm-markdown-table-add-column';
+    segment.title = this.label;
+    segment.dataset['tableAction'] = 'add-column';
+    segment.dataset['tableFrom'] = this.tableFrom.toString();
+    segment.setAttribute('aria-hidden', 'true');
+    segment.textContent = '+';
+    return segment;
+  }
+
+  override ignoreEvent(): boolean {
+    return false;
   }
 }
 
@@ -845,8 +898,10 @@ function tableCursorCoordinates(
   element: HTMLElement,
 ): Rect {
   const position = view.state.selection.main.head;
-  const side =
-    cell.from < cell.to && position >= cell.to ? -1 : view.state.selection.main.assoc || 1;
+  if (cell.from === cell.to) {
+    return fallbackCellCaretCoordinates(element, false);
+  }
+  const side = position >= cell.to ? -1 : view.state.selection.main.assoc || 1;
   const nativeCoordinates = view.coordsAtPos(position, side);
   const bounds = element.getBoundingClientRect();
   if (nativeCoordinates !== null && rectBelongsToCell(nativeCoordinates, bounds)) {
@@ -859,12 +914,13 @@ function tableCursorCoordinates(
 }
 
 function rectBelongsToCell(rect: Rect, cell: DOMRect): boolean {
+  const tolerance = 1;
   return (
     rect.bottom > rect.top &&
-    rect.left >= cell.left - 1 &&
-    rect.left <= cell.right + 1 &&
-    rect.bottom >= cell.top &&
-    rect.top <= cell.bottom
+    rect.left >= cell.left - tolerance &&
+    rect.left <= cell.right + tolerance &&
+    rect.top >= cell.top - tolerance &&
+    rect.bottom <= cell.bottom + tolerance
   );
 }
 
@@ -994,6 +1050,8 @@ export function markdownTableEditor(config: MarkdownTableEditorConfig): Extensio
       pointerdown: (event, view) => handlePointerDown(event, view),
       pointermove: (event, view) => handlePointerMove(event, view),
       pointerup: (event, view) => handlePointerUp(event, view),
+      pointercancel: (event, view) => cancelTableDrag(event, view),
+      lostpointercapture: (event, view) => cancelTableDrag(event, view),
       click: (event, view) => handleClick(event, view),
       contextmenu: (event, view) => handleContextMenu(event, view),
       keydown: (event, view) => handleEditorKeyDown(event, view),
@@ -1249,7 +1307,7 @@ function buildDecorations(
         layout.from,
         rowIndex,
         dragHandleClasses(drag, layout.from, 'row', rowIndex),
-        null,
+        { inlineStart: null, inlineSize: null },
       );
       ranges.push(
         Decoration.widget({
@@ -1257,6 +1315,37 @@ function buildDecorations(
           side: -400,
         }).range(requiredValue(row.cells, 0).renderFrom),
       );
+      ranges.push(
+        Decoration.widget({
+          widget:
+            rowIndex === 0
+              ? new TableControlWidget(
+                  config.phrases.addColumn,
+                  'add-column',
+                  layout.from,
+                  null,
+                  'cm-markdown-table-control cm-markdown-table-add-column',
+                  { inlineStart: null, inlineSize: null },
+                )
+              : new TableColumnEdgeSegmentWidget(config.phrases.addColumn, layout.from),
+          side: -2000,
+        }).range(requiredValue(row.cells, 0).renderFrom),
+      );
+      if (rowIndex === layout.table.body.length) {
+        ranges.push(
+          Decoration.widget({
+            widget: new TableControlWidget(
+              config.phrases.addRow,
+              'add-row',
+              layout.from,
+              null,
+              'cm-markdown-table-control cm-markdown-table-add-row',
+              { inlineStart: null, inlineSize: null },
+            ),
+            side: -1900,
+          }).range(requiredValue(row.cells, 0).renderFrom),
+        );
+      }
       for (const structuralRange of row.structuralRanges) {
         const replacement = Decoration.replace({ inclusive: false }).range(
           structuralRange.from,
@@ -1319,7 +1408,10 @@ function buildDecorations(
                 layout.from,
                 cell.columnIndex,
                 dragHandleClasses(drag, layout.from, 'column', cell.columnIndex),
-                `${(cell.columnIndex / layout.table.columnCount) * 100}%`,
+                {
+                  inlineStart: `${(cell.columnIndex / layout.table.columnCount) * 100}%`,
+                  inlineSize: `${(1 / layout.table.columnCount) * 100}%`,
+                },
               ),
               side: -500 + cell.columnIndex,
             }).range(cell.renderFrom),
@@ -1327,32 +1419,6 @@ function buildDecorations(
         }
       }
     }
-    ranges.push(
-      Decoration.widget({
-        widget: new TableControlWidget(
-          config.phrases.addColumn,
-          'add-column',
-          layout.from,
-          null,
-          'cm-markdown-table-control cm-markdown-table-add-column',
-          null,
-        ),
-        side: -2000,
-      }).range(layout.from),
-    );
-    ranges.push(
-      Decoration.widget({
-        widget: new TableControlWidget(
-          config.phrases.addRow,
-          'add-row',
-          layout.from,
-          null,
-          'cm-markdown-table-control cm-markdown-table-add-row',
-          null,
-        ),
-        side: 2000,
-      }).range(layout.to),
-    );
   }
   return {
     decorations: Decoration.set(ranges, true),
@@ -1382,6 +1448,8 @@ function tableCellClasses(
     cell.columnIndex <= bounds.maxColumn;
   return [
     'cm-markdown-table-cell',
+    cell.rowIndex === 0 ? 'cm-markdown-table-cell-first-row' : '',
+    cell.columnIndex === layout.table.columnCount - 1 ? 'cm-markdown-table-cell-last-column' : '',
     `cm-markdown-table-align-${layout.table.alignments[cell.columnIndex] ?? 'none'}`,
     active ? 'cm-markdown-table-cell-active' : '',
     selected ? 'cm-markdown-table-cell-selected' : '',
@@ -1469,6 +1537,9 @@ function handlePointerDown(event: PointerEvent, view: EditorView): boolean {
   if (control !== null) {
     const action = control.dataset['tableAction'];
     if (action === 'drag-row' || action === 'drag-column') {
+      if (!(control instanceof HTMLButtonElement) || !event.isPrimary || event.button !== 0) {
+        return false;
+      }
       return startTableDrag(event, view, control, action === 'drag-row' ? 'row' : 'column');
     }
     if (action === 'add-row' || action === 'add-column') {
@@ -1549,30 +1620,26 @@ function dispatchTableCursor(view: EditorView, position: number): boolean {
 }
 
 function handlePointerMove(event: PointerEvent, view: EditorView): boolean {
-  const pointerTarget = pointerTargetAtCoordinates(event, view);
   const drag = view.state.field(markdownTableDragState);
   if (drag !== null) {
-    const handle = tableDragHandle(pointerTarget);
-    if (handle === null) {
-      return true;
-    }
-    const tableFrom = numberData(handle, 'tableFrom');
-    const index = numberData(handle, 'index');
-    const action = handle.dataset['tableAction'];
-    const axis = action === 'drag-row' ? 'row' : action === 'drag-column' ? 'column' : null;
-    if (tableFrom !== drag.tableFrom || index === null || axis !== drag.axis) {
-      return true;
+    if (event.pointerId !== drag.pointerId) {
+      return false;
     }
     event.preventDefault();
-    const targetGap = tableDropGap(event, handle, axis, index);
-    if (drag.targetIndex !== index || drag.targetGap !== targetGap) {
+    const target = tableDragTarget(event, view, drag);
+    if (drag.targetIndex !== (target?.index ?? null) || drag.targetGap !== (target?.gap ?? null)) {
       view.dispatch({
-        effects: setMarkdownTableDrag.of({ ...drag, targetIndex: index, targetGap }),
+        effects: setMarkdownTableDrag.of({
+          ...drag,
+          targetIndex: target?.index ?? null,
+          targetGap: target?.gap ?? null,
+        }),
         userEvent: 'select.pointer',
       });
     }
     return true;
   }
+  const pointerTarget = pointerTargetAtCoordinates(event, view);
   const session = pointerSelections.get(view);
   if (session === undefined || session.pointerId !== event.pointerId) {
     return false;
@@ -1603,16 +1670,26 @@ function handlePointerMove(event: PointerEvent, view: EditorView): boolean {
 }
 
 function pointerTargetAtCoordinates(event: PointerEvent, view: EditorView): EventTarget | null {
-  return (
-    view.dom.ownerDocument.elementFromPoint?.(event.clientX, event.clientY) ?? event.target ?? null
-  );
+  const ownerDocument = view.dom.ownerDocument;
+  const elementFromPoint = ownerDocument.elementFromPoint;
+  return typeof elementFromPoint === 'function'
+    ? elementFromPoint.call(ownerDocument, event.clientX, event.clientY)
+    : event.target;
 }
 
 function handlePointerUp(event: PointerEvent, view: EditorView): boolean {
   const drag = view.state.field(markdownTableDragState);
   if (drag !== null) {
+    if (event.pointerId !== drag.pointerId) {
+      return false;
+    }
     event.preventDefault();
-    return finishTableDrag(view, drag);
+    const target = tableDragTarget(event, view, drag);
+    return finishTableDrag(view, {
+      ...drag,
+      targetIndex: target?.index ?? null,
+      targetGap: target?.gap ?? null,
+    });
   }
   const session = pointerSelections.get(view);
   if (session === undefined || session.pointerId !== event.pointerId) {
@@ -1631,6 +1708,18 @@ function handlePointerUp(event: PointerEvent, view: EditorView): boolean {
     clearCellSelection(view);
   }
   return session.crossedCell;
+}
+
+function cancelTableDrag(event: PointerEvent, view: EditorView): boolean {
+  const drag = view.state.field(markdownTableDragState);
+  if (drag === null || event.pointerId !== drag.pointerId) {
+    return false;
+  }
+  view.dispatch({
+    effects: setMarkdownTableDrag.of(null),
+    userEvent: 'select.pointer',
+  });
+  return true;
 }
 
 function handleClick(event: MouseEvent, view: EditorView): boolean {
@@ -1800,6 +1889,7 @@ function startTableDrag(
   }
   event.preventDefault();
   handle.focus({ preventScroll: true });
+  handle.setPointerCapture?.(event.pointerId);
   const context = selectedTableContext(view.state);
   const indices = selectedIndicesForDrag(layout, context, axis, index);
   view.dispatch({
@@ -1807,6 +1897,7 @@ function startTableDrag(
       tableFrom,
       axis,
       indices,
+      pointerId: event.pointerId,
       targetIndex: index,
       targetGap: index,
     }),
@@ -1879,6 +1970,25 @@ function selectedIndicesForDrag(
     return inclusiveIndices(bounds.minColumn, bounds.maxColumn);
   }
   return [index];
+}
+
+function tableDragTarget(
+  event: PointerEvent,
+  view: EditorView,
+  drag: TableDragState,
+): { readonly index: number; readonly gap: number } | null {
+  const handle = tableDragHandle(pointerTargetAtCoordinates(event, view));
+  if (handle === null) {
+    return null;
+  }
+  const tableFrom = numberData(handle, 'tableFrom');
+  const index = numberData(handle, 'index');
+  const action = handle.dataset['tableAction'];
+  const axis = action === 'drag-row' ? 'row' : action === 'drag-column' ? 'column' : null;
+  if (tableFrom !== drag.tableFrom || index === null || axis !== drag.axis) {
+    return null;
+  }
+  return { index, gap: tableDropGap(event, handle, axis, index) };
 }
 
 function tableDropGap(
@@ -2200,6 +2310,9 @@ function navigateTableArrow(
   const activeStart = active.cell.from === active.cell.to ? active.cell.cursor : active.cell.from;
   const activeEnd = active.cell.from === active.cell.to ? active.cell.cursor : active.cell.to;
   const horizontal = direction === 'left' || direction === 'right';
+  if (direction === 'up' && active.cell.rowIndex === 0) {
+    return leaveTableAbove(view, active.layout, position - activeStart);
+  }
   if (
     horizontal &&
     ((direction === 'left' && position > activeStart) ||
@@ -2250,6 +2363,21 @@ function navigateTableArrow(
   renderedTableCell(view, active.layout.from, target)?.scrollIntoView?.({
     block: 'nearest',
     inline: 'nearest',
+  });
+  return true;
+}
+
+function leaveTableAbove(view: EditorView, layout: TableLayout, visualColumn: number): boolean {
+  const headerLine = view.state.doc.lineAt(layout.from);
+  if (headerLine.number === 1) {
+    return true;
+  }
+  const targetLine = view.state.doc.line(headerLine.number - 1);
+  const targetPosition = targetLine.from + Math.min(Math.max(visualColumn, 0), targetLine.length);
+  view.dispatch({
+    selection: EditorSelection.cursor(targetPosition),
+    scrollIntoView: true,
+    userEvent: 'select',
   });
   return true;
 }
@@ -2405,6 +2533,13 @@ function protectOrDeleteTableStructure(
 }
 
 function closeTableSurface(view: EditorView): boolean {
+  if (view.state.field(markdownTableDragState) !== null) {
+    view.dispatch({
+      effects: setMarkdownTableDrag.of(null),
+      userEvent: 'select',
+    });
+    return true;
+  }
   if (view.state.field(markdownTableMenuState) !== null) {
     closeTableMenu(view);
     return true;
@@ -2800,17 +2935,10 @@ function tableTerminatorTypingRepairs(
 }
 
 function isTableTerminatorPosition(state: EditorState, position: number): boolean {
-  return findTableLayouts(state).some((layout) => {
-    if (
-      layout.to >= state.doc.length ||
-      state.sliceDoc(layout.to, layout.to + 1) !== '\n' ||
-      position !== layout.to + 1
-    ) {
-      return false;
-    }
-    const terminatorLine = state.doc.lineAt(position);
-    return terminatorLine.from === position && terminatorLine.length === 0;
-  });
+  return (
+    position === state.doc.length &&
+    findTableLayouts(state).some((layout) => tableTerminatorRange(state, layout) !== null)
+  );
 }
 
 function hasNewTableEndingAtDocumentEnd(transaction: Transaction): boolean {
@@ -2961,10 +3089,19 @@ function findTableLayouts(state: EditorState): readonly TableLayout[] {
 
 function tableLayout(state: EditorState, node: SyntaxNode): TableLayout | null {
   const source = state.sliceDoc(node.from, node.to);
-  const table = parseMarkdownTable(source);
-  if (table === null) {
+  const parsedTable = parseMarkdownTable(source);
+  if (parsedTable === null) {
     return null;
   }
+  const firstProseRow = parsedTable.body.findIndex((row) => !isExplicitTableBodyRow(row));
+  const table =
+    firstProseRow === -1
+      ? parsedTable
+      : {
+          ...parsedTable,
+          body: parsedTable.body.slice(0, firstProseRow),
+          trailingNewline: false,
+        };
   const sourceRows = [table.header, table.delimiter, ...table.body];
   const rows: TableRowLayout[] = [];
   let lineFrom = node.from;
@@ -2985,7 +3122,7 @@ function tableLayout(state: EditorState, node: SyntaxNode): TableLayout | null {
   });
   return {
     from: node.from,
-    to: node.to,
+    to: node.from + serializeMarkdownTable(table).length,
     table,
     rows,
     semanticRows: rows.filter(
@@ -2993,6 +3130,10 @@ function tableLayout(state: EditorState, node: SyntaxNode): TableLayout | null {
         row.semanticIndex !== null,
     ),
   };
+}
+
+function isExplicitTableBodyRow(row: MarkdownTableRow): boolean {
+  return row.leadingPipe || row.trailingPipe || row.cells.length > 1;
 }
 
 function buildRowLayout(
@@ -3133,15 +3274,18 @@ function tableTerminatorRange(
   state: EditorState,
   layout: TableLayout,
 ): { readonly from: number; readonly to: number } | null {
-  if (layout.to >= state.doc.length || state.sliceDoc(layout.to, layout.to + 1) !== '\n') {
+  if (
+    layout.to >= state.doc.length ||
+    !/^(?:\r?\n)+$/u.test(state.sliceDoc(layout.to, state.doc.length))
+  ) {
     return null;
   }
-  const blankLine = state.doc.lineAt(layout.to + 1);
-  if (blankLine.from !== layout.to + 1 || blankLine.length !== 0) {
+  const finalLine = state.doc.line(state.doc.lines);
+  if (finalLine.from !== state.doc.length || finalLine.length !== 0 || finalLine.number === 1) {
     return null;
   }
-  const to = blankLine.to < state.doc.length ? blankLine.to + 1 : state.doc.length;
-  return { from: layout.to, to };
+  const precedingLine = state.doc.line(finalLine.number - 1);
+  return { from: precedingLine.to, to: finalLine.from };
 }
 
 function insertionTouchesHiddenStructure(state: EditorState, position: number): boolean {
@@ -3201,16 +3345,16 @@ function remapMovedIndices(
   return moving.map((_, offset) => first + offset);
 }
 
-function tableControl(target: EventTarget | null): HTMLButtonElement | null {
-  return target instanceof Element
-    ? target.closest<HTMLButtonElement>('button[data-table-action]')
-    : null;
+function tableControl(target: EventTarget | null): HTMLElement | null {
+  return target instanceof Element ? target.closest<HTMLElement>('[data-table-action]') : null;
 }
 
 function tableDragHandle(target: EventTarget | null): HTMLButtonElement | null {
   const control = tableControl(target);
   const action = control?.dataset['tableAction'];
-  return action === 'drag-row' || action === 'drag-column' ? control : null;
+  return control instanceof HTMLButtonElement && (action === 'drag-row' || action === 'drag-column')
+    ? control
+    : null;
 }
 
 function tableCellElement(target: EventTarget | null): HTMLElement | null {

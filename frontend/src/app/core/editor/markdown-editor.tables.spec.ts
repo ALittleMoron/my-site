@@ -1,4 +1,4 @@
-import { history, undo } from '@codemirror/commands';
+import { history, redo, undo } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { EditorSelection, EditorState, StateEffect, Transaction } from '@codemirror/state';
 import { EditorView, lineNumbers } from '@codemirror/view';
@@ -42,6 +42,41 @@ const phrases: MarkdownTableEditorConfig['phrases'] = {
 
 const config: MarkdownTableEditorConfig = { locale: 'en', phrases };
 const VALID_TABLE = '| Name | Value |\n| --- | ---: |\n| A | 2 |\n| B | 10 |';
+const ROW_DRAG_SOURCE = '| H |\n| --- |\n| A |\n| B |\n| C |';
+const COLUMN_DRAG_SOURCE = '| A | B | C | D |\n| :--- | :---: | ---: | --- |\n| 1 | 2 | 3 | 4 |';
+const POINTER_TYPES = ['mouse', 'touch', 'pen'] as const;
+const ROW_DRAG_CASES = POINTER_TYPES.flatMap((pointerType) =>
+  Array.from({ length: 4 }, (_, sourceIndex) =>
+    Array.from({ length: 5 }, (_, targetGap) => {
+      const rows = reorderValues(['H', 'A', 'B', 'C'], [sourceIndex], targetGap);
+      return {
+        name: `${pointerType} row ${sourceIndex + 1} to gap ${targetGap}`,
+        pointerType,
+        sourceIndex,
+        targetIndex: Math.min(targetGap, 3),
+        placement: targetGap === 4 ? 'after' : 'before',
+        expected: singleColumnTable(rows),
+        moved: remappedIndices([sourceIndex], targetGap, 4),
+      } as const;
+    }),
+  ).flat(),
+);
+const COLUMN_DRAG_CASES = POINTER_TYPES.flatMap((pointerType) =>
+  Array.from({ length: 4 }, (_, sourceIndex) =>
+    Array.from({ length: 5 }, (_, targetGap) => {
+      const order = reorderValues([0, 1, 2, 3], [sourceIndex], targetGap);
+      return {
+        name: `${pointerType} column ${sourceIndex + 1} to gap ${targetGap}`,
+        pointerType,
+        sourceIndex,
+        targetIndex: Math.min(targetGap, 3),
+        placement: targetGap === 4 ? 'after' : 'before',
+        expected: reorderedColumnTable(order),
+        moved: remappedIndices([sourceIndex], targetGap, 4),
+      } as const;
+    }),
+  ).flat(),
+);
 const originalScrollIntoView = Reflect.get(HTMLElement.prototype, 'scrollIntoView') as
   HTMLElement['scrollIntoView'] | undefined;
 
@@ -81,6 +116,18 @@ describe('Markdown table editor extension', () => {
     expect(getComputedStyle(cell(view, 1, 0)).display).toBe('block');
     expect(view.dom.querySelectorAll('.cm-markdown-table-editor')).toHaveLength(1);
     expect(view.state.doc.toString()).toContain('| malformed |\n| nope |');
+  });
+
+  it.each([
+    '| malformed |\n| nope |',
+    '| A | B |\n| -- | -- |\n| one | two |',
+    'ordinary | prose\nwithout a delimiter',
+  ])('does not expose drag hit areas for malformed table source %#', (source) => {
+    const view = createView(source, views);
+
+    expect(view.dom.querySelector('.cm-markdown-table-editor')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-row-handle')).toBeNull();
+    expect(view.dom.querySelector('.cm-markdown-table-column-handle')).toBeNull();
   });
 
   it('keeps only semantic cells in each visible grid row', () => {
@@ -131,6 +178,146 @@ describe('Markdown table editor extension', () => {
     expect(getComputedStyle(addRow).backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(getComputedStyle(addRow).borderTopWidth).toBe('0px');
   });
+
+  it.each([
+    {
+      name: 'one populated column',
+      source: '| H |\n| --- |\n| value |',
+      rows: 2,
+      columns: 1,
+    },
+    {
+      name: 'two columns with an empty body cell',
+      source: '| H1 | H2 |\n| --- | --- |\n| value |  |',
+      rows: 2,
+      columns: 2,
+    },
+    {
+      name: 'three uneven columns',
+      source: '| H1 | H2 | H3 |\n| --- | --- | --- |\n| only one |',
+      rows: 2,
+      columns: 3,
+    },
+  ])('draws a complete outer border around $name', ({ source, rows, columns }) => {
+    const view = createView(source, views);
+    const cells = [...view.dom.querySelectorAll<HTMLElement>('[data-table-cell="true"]')];
+
+    expect(cells).toHaveLength(rows * columns);
+    for (let row = 0; row < rows; row += 1) {
+      const firstCell = cell(view, row, 0);
+      const lastCell = cell(view, row, columns - 1);
+
+      expect(getComputedStyle(lastCell).borderInlineEndWidth).toBe('1px');
+      expect(getComputedStyle(firstCell).borderInlineStartWidth).toBe('1px');
+    }
+    for (let column = 0; column < columns; column += 1) {
+      expect(getComputedStyle(cell(view, 0, column)).borderTopWidth).toBe('1px');
+      expect(getComputedStyle(cell(view, rows - 1, column)).borderBottomWidth).toBe('1px');
+    }
+  });
+
+  it.each([
+    {
+      name: 'normal short grid with a gutter',
+      source: '| H1 | H2 |\n| --- | --- |\n| A1 | A2 |',
+      width: '60rem',
+      containerClass: '',
+      withLineNumbers: true,
+      columns: 2,
+    },
+    {
+      name: 'narrow empty grid without a gutter',
+      source: '|  |  |  |\n| --- | --- | --- |\n|  |  |  |',
+      width: '18rem',
+      containerClass: '',
+      withLineNumbers: false,
+      columns: 3,
+    },
+    {
+      name: 'modal many-column grid',
+      source:
+        '| H1 | H2 | H3 | H4 | H5 | H6 |\n| --- | --- | --- | --- | --- | --- |\n| A1 | A2 | A3 | A4 | A5 | A6 |',
+      width: '32rem',
+      containerClass: 'modal-body',
+      withLineNumbers: true,
+      columns: 6,
+    },
+    {
+      name: 'fullscreen uneven grid',
+      source:
+        '| H1 | H2 | H3 | H4 |\n| --- | --- | --- | --- |\n| only one |\n| A1 | A2 | A3 | A4 |',
+      width: '100vw',
+      containerClass: 'markdown-editor-fullscreen',
+      withLineNumbers: false,
+      columns: 4,
+    },
+  ])(
+    'keeps balanced insets and all table layers contained for a $name',
+    ({ source, width, containerClass, withLineNumbers, columns }) => {
+      const view = createView(source, views, withLineNumbers);
+      const container = view.dom.parentElement!;
+      container.className = containerClass;
+      container.style.width = width;
+      const table = view.dom.querySelector<HTMLElement>('.cm-markdown-table-editor')!;
+      const tableStyles = getComputedStyle(table);
+      const inlineStart = Number.parseFloat(tableStyles.paddingLeft);
+      const inlineEnd = Number.parseFloat(tableStyles.paddingRight);
+      const renderedRows = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-row')];
+      const addColumnSegments = [
+        ...table.querySelectorAll<HTMLElement>('.cm-markdown-table-add-column'),
+      ];
+
+      expect(inlineStart).toBeGreaterThan(0);
+      expect(inlineEnd).toBe(inlineStart);
+      expect(tableStyles.boxSizing).toBe('border-box');
+      expect(tableStyles.width).toBe('100%');
+      expect(tableStyles.maxWidth).toBe('100%');
+      expect(tableStyles.minWidth).toBe('0');
+      expect(
+        renderedRows.every(
+          (row) =>
+            getComputedStyle(row).width === '100%' &&
+            row.querySelectorAll('[data-table-cell="true"]').length === columns,
+        ),
+      ).toBe(true);
+      expect(addColumnSegments).toHaveLength(renderedRows.length);
+      expect(addColumnSegments.map((segment) => segment.parentElement)).toEqual(renderedRows);
+      expect(
+        addColumnSegments.every(
+          (segment) =>
+            getComputedStyle(segment).top === '0px' && getComputedStyle(segment).bottom === '0px',
+        ),
+      ).toBe(true);
+      expect(table.querySelectorAll('button.cm-markdown-table-add-column')).toHaveLength(1);
+      expect(
+        [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-control')].every(
+          (control) =>
+            control.closest('.cm-markdown-table-editor') === table &&
+            getComputedStyle(control).position === 'absolute',
+        ),
+      ).toBe(true);
+      expect(
+        [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-row-handle')].every(
+          (handle) =>
+            getComputedStyle(handle.parentElement!).position === 'relative' &&
+            getComputedStyle(handle).top === '0px' &&
+            getComputedStyle(handle).bottom === '0px',
+        ),
+      ).toBe(true);
+      expect(
+        [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-column-handle')].map(
+          (handle) => handle.style.inlineSize,
+        ),
+      ).toEqual(Array<string>(columns).fill(`${(1 / columns) * 100}%`));
+
+      selectCells(view, [0, 0], [1, columns - 1]);
+
+      expect(view.dom.querySelectorAll('.cm-markdown-table-cell-selected')).toHaveLength(
+        columns * 2,
+      );
+      expect(view.dom.querySelector('.cm-selectionLayer')).toBeNull();
+    },
+  );
 
   it('enters and edits an authored empty cell without requesting a scroll', () => {
     const view = createView('| H | V |\n| --- | --- |\n|  | value |', views);
@@ -279,22 +466,152 @@ describe('Markdown table editor extension', () => {
     expect(view.state.doc.toString()).toBe('');
   });
 
-  it('does not allow following prose to consume the protected table separator', () => {
-    const source = `${VALID_TABLE}\n\nfollowing prose`;
+  it.each(
+    [
+      {
+        name: 'the first blank line before prose',
+        suffix: '\n\nfollowing prose',
+        deletionOffset: 1,
+      },
+      {
+        name: 'the first of two blank lines before prose',
+        suffix: '\n\n\nfollowing prose',
+        deletionOffset: 1,
+      },
+      {
+        name: 'the second of two blank lines before prose',
+        suffix: '\n\n\nfollowing prose',
+        deletionOffset: 2,
+      },
+      {
+        name: 'prose immediately after the table',
+        suffix: '\nfollowing prose',
+        deletionOffset: 1,
+      },
+    ].flatMap((testCase) =>
+      (['backward', 'forward'] as const).map((direction) => ({ ...testCase, direction })),
+    ),
+  )(
+    'deletes $name in the $direction direction with one-step undo and redo',
+    ({ suffix, deletionOffset, direction }) => {
+      const source = `${VALID_TABLE}${suffix}`;
+      const from = VALID_TABLE.length + deletionOffset;
+      const to = from + 1;
+      const expected = `${source.slice(0, from)}${source.slice(to)}`;
+      const view = createView(source, views);
+      view.dispatch({
+        selection:
+          direction === 'backward' ? EditorSelection.cursor(to) : EditorSelection.cursor(from),
+        userEvent: 'select',
+      });
+
+      view.dispatch({
+        changes: { from, to, insert: '' },
+        selection: EditorSelection.cursor(from),
+        userEvent: direction === 'backward' ? 'delete.backward' : 'delete.forward',
+      });
+
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(expected);
+    },
+  );
+
+  it('protects only the final empty EOF line when multiple blank lines follow the table', () => {
+    const source = `${VALID_TABLE}\n\n`;
     const view = createView(source, views);
-    const secondSeparatorBreak = VALID_TABLE.length + 1;
+    const earlierBreak = VALID_TABLE.length;
+    const finalBreak = source.length - 1;
 
     view.dispatch({
-      changes: {
-        from: secondSeparatorBreak,
-        to: secondSeparatorBreak + 1,
-        insert: '',
-      },
-      selection: EditorSelection.cursor(secondSeparatorBreak),
+      changes: { from: earlierBreak, to: earlierBreak + 1, insert: '' },
+      selection: EditorSelection.cursor(earlierBreak),
+      userEvent: 'delete.forward',
+    });
+
+    expect(view.state.doc.toString()).toBe(`${VALID_TABLE}\n`);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+
+    view.dispatch({
+      changes: { from: finalBreak, to: finalBreak + 1, insert: '' },
+      selection: EditorSelection.cursor(finalBreak),
       userEvent: 'delete.backward',
     });
 
     expect(view.state.doc.toString()).toBe(source);
+  });
+
+  it.each([
+    {
+      name: 'the first line after a table',
+      source: `${VALID_TABLE}\n\nlater`,
+      position: VALID_TABLE.length + 1,
+    },
+    {
+      name: 'the second line after a table',
+      source: `${VALID_TABLE}\n\n\nlater`,
+      position: VALID_TABLE.length + 2,
+    },
+  ])(
+    'inserts text and Enter normally on $name when later content exists',
+    ({ source, position }) => {
+      const view = createView(source, views);
+
+      view.dispatch({
+        changes: { from: position, insert: 'editable' },
+        selection: EditorSelection.cursor(position + 'editable'.length),
+        userEvent: 'input.type',
+      });
+      const withText = `${source.slice(0, position)}editable${source.slice(position)}`;
+
+      expect(view.state.doc.toString()).toBe(withText);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(withText);
+
+      const enterPosition = position + 'editable'.length;
+      view.dispatch({
+        changes: { from: enterPosition, insert: '\n' },
+        selection: EditorSelection.cursor(enterPosition + 1),
+        userEvent: 'input',
+      });
+
+      const withEnter = `${withText.slice(0, enterPosition)}\n${withText.slice(enterPosition)}`;
+      expect(view.state.doc.toString()).toBe(withEnter);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(withText);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(withEnter);
+    },
+  );
+
+  it.each([
+    { name: 'forward first following line', line: 'first', reverse: false },
+    { name: 'reverse first following line', line: 'first', reverse: true },
+    { name: 'forward second following line', line: 'second', reverse: false },
+    { name: 'reverse second following line', line: 'second', reverse: true },
+  ])('replaces a $name without protecting ordinary post-table content', ({ line, reverse }) => {
+    const source = `${VALID_TABLE}\nfirst\nsecond\nlater`;
+    const from = source.indexOf(line);
+    const to = from + line.length;
+    const selection = reverse ? EditorSelection.range(to, from) : EditorSelection.range(from, to);
+    const view = createView(source, views);
+    view.dispatch({ selection, userEvent: 'select' });
+
+    view.dispatch(view.state.replaceSelection('changed'), {
+      annotations: Transaction.userEvent.of('input.type'),
+    });
+
+    const expected = `${source.slice(0, from)}changed${source.slice(to)}`;
+    expect(view.state.doc.toString()).toBe(expected);
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(source);
+    expect(redo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(expected);
   });
 
   it('keeps the following source line outside the table wrapper', () => {
@@ -365,11 +682,13 @@ describe('Markdown table editor extension', () => {
     };
 
     const up = selectCellsWithPointer(view, [1, 0], [2, 1]);
+    const selectedStart = cell(view, 1, 0);
+    const selectedEnd = cell(view, 2, 1);
 
     expect(up.defaultPrevented).toBe(true);
-    expect(getComputedStyle(start).borderInlineStartWidth).toBe(before.start);
-    expect(getComputedStyle(end).borderInlineEndWidth).toBe(before.end);
-    expect(getComputedStyle(end).borderBottomWidth).toBe(before.bottom);
+    expect(getComputedStyle(selectedStart).borderInlineStartWidth).toBe(before.start);
+    expect(getComputedStyle(selectedEnd).borderInlineEndWidth).toBe(before.end);
+    expect(getComputedStyle(selectedEnd).borderBottomWidth).toBe(before.bottom);
   });
 
   it('selects right-to-left and clears the native browser selection after crossing cells', () => {
@@ -574,39 +893,146 @@ describe('Markdown table editor extension', () => {
     ]);
   });
 
-  it('positions every row handle against its own row without affecting cell geometry', () => {
-    const view = createView(VALID_TABLE, views);
+  it.each([
+    {
+      name: 'header-only table at document start',
+      source: '| H |\n| --- |',
+      rows: 1,
+    },
+    {
+      name: 'one body row at document end',
+      source: 'before\n\n| H |\n| --- |\n| value |',
+      rows: 2,
+    },
+    {
+      name: 'empty, populated, and uneven rows between ordinary lines',
+      source: 'before\n\n| A | B | C |\n|---|---|---|\n|||\n| one | two |\n| final |\n\nafter',
+      rows: 4,
+    },
+  ])('covers the complete add-column edge and add-row boundary for $name', ({ source, rows }) => {
+    const view = createView(source, views);
     const table = view.dom.querySelector<HTMLElement>('.cm-markdown-table-editor')!;
+    const renderedRows = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-row')];
+    const addColumns = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-add-column')];
+    const addRows = [...table.querySelectorAll<HTMLButtonElement>('.cm-markdown-table-add-row')];
+
+    expect(renderedRows).toHaveLength(rows);
+    expect(addColumns).toHaveLength(rows);
+    expect(addRows).toHaveLength(1);
+    expect(table.querySelectorAll('[aria-label="Add column"]')).toHaveLength(1);
+    for (const [index, addColumn] of addColumns.entries()) {
+      expect(addColumn.parentElement).toBe(renderedRows[index]);
+      expect(getComputedStyle(addColumn).top).toBe('0px');
+      expect(getComputedStyle(addColumn).right).toBe('0px');
+      expect(getComputedStyle(addColumn).bottom).toBe('0px');
+      expect(getComputedStyle(addColumn).height).toBe('auto');
+      if (index === 0) {
+        expect(addColumn).toBeInstanceOf(HTMLButtonElement);
+        expect(addColumn.getAttribute('aria-label')).toBe('Add column');
+        expect(addColumn.getAttribute('aria-hidden')).toBeNull();
+      } else {
+        expect(addColumn).toBeInstanceOf(HTMLSpanElement);
+        expect(addColumn.getAttribute('aria-label')).toBeNull();
+        expect(addColumn.getAttribute('aria-hidden')).toBe('true');
+        expect(addColumn.tabIndex).toBe(-1);
+      }
+    }
+    expect(addRows[0]!.parentElement).toBe(renderedRows.at(-1));
+    expect(getComputedStyle(addRows[0]!).right).toBe('0px');
+    expect(getComputedStyle(addRows[0]!).bottom).toBe('-0.75rem');
+    expect(getComputedStyle(addRows[0]!).left).toBe('0px');
+    expect(getComputedStyle(addRows[0]!).width).toBe('auto');
+
+    const original = view.state.doc.toString();
+    const originalColumnCount = table.querySelectorAll('[role="columnheader"]').length;
+    expect(
+      pointer(addColumns.at(-1)!, 'pointerdown', { pointerType: 'mouse' }).defaultPrevented,
+    ).toBe(true);
+    addColumns.at(-1)!.click();
+    expect(view.dom.querySelectorAll('[role="columnheader"]')).toHaveLength(
+      originalColumnCount + 1,
+    );
+    expect(undo(view)).toBe(true);
+    expect(view.state.doc.toString()).toBe(original);
+  });
+
+  it.each([
+    {
+      name: 'header-only table at document start',
+      source: '| H |\n| --- |',
+      rows: 1,
+    },
+    {
+      name: 'one populated body row',
+      source: '| H |\n| --- |\n| value |',
+      rows: 2,
+    },
+    {
+      name: 'empty, populated, and uneven body rows between ordinary lines',
+      source: 'before\n\n| A | B | C |\n|---|---|---|\n|||\n| one | two |\n| final |\n\nafter',
+      rows: 4,
+    },
+  ])('gives every semantic row its own full-height drag hit area for $name', ({ source, rows }) => {
+    const view = createView(source, views);
+    const table = view.dom.querySelector<HTMLElement>('.cm-markdown-table-editor')!;
+    const renderedRows = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-row')];
     const handles = [...table.querySelectorAll<HTMLElement>('.cm-markdown-table-row-handle')];
 
-    expect(handles.map((handle) => getComputedStyle(handle).top)).toEqual(['50%', '50%', '50%']);
-    expect(handles.map((handle) => getComputedStyle(handle).left)).toEqual([
-      '-0.25rem',
-      '-0.25rem',
-      '-0.25rem',
-    ]);
-    expect(handles.every((handle) => handle.closest('[data-table-cell]') === null)).toBe(true);
-    expect(
-      handles.every((handle) => handle.parentElement?.classList.contains('cm-markdown-table-row')),
-    ).toBe(true);
+    expect(renderedRows).toHaveLength(rows);
+    expect(handles).toHaveLength(rows);
+    for (const [index, handle] of handles.entries()) {
+      const ownerRow = renderedRows[index]!;
 
-    const emptyView = createView('| H | V |\n| --- | --- |\n|  | value |', views);
-    expect(button(emptyView, 'Move row 2').closest('[data-table-cell]')).toBeNull();
+      expect(handle.parentElement).toBe(ownerRow);
+      expect(handle.closest('[data-table-cell]')).toBeNull();
+      expect(getComputedStyle(ownerRow).position).toBe('relative');
+      expect(getComputedStyle(handle).top).toBe('0px');
+      expect(getComputedStyle(handle).bottom).toBe('0px');
+      expect(getComputedStyle(handle).height).toBe('auto');
+      expect(getComputedStyle(handle).left).toBe('-1rem');
+      expect(getComputedStyle(handle).width).toBe('1rem');
+      expect(getComputedStyle(handle).transform).toBe('');
+    }
   });
 
-  it('positions every column handle at its own grid boundary', () => {
-    const view = createView('| A | B | C |\n| --- | --- | --- |\n| 1 | 2 | 3 |', views);
-    const handles = [
-      ...view.dom.querySelectorAll<HTMLButtonElement>('.cm-markdown-table-column-handle'),
-    ];
+  it.each([
+    {
+      name: 'one column',
+      source: '| A |\n| --- |\n| 1 |',
+      starts: ['0%'],
+      widths: ['100%'],
+    },
+    {
+      name: 'two columns with an empty cell',
+      source: '| A |  |\n| --- | --- |\n| 1 | 2 |',
+      starts: ['0%', '50%'],
+      widths: ['50%', '50%'],
+    },
+    {
+      name: 'three uneven columns',
+      source: '| A | B | C |\n| --- | --- | --- |\n| 1 |',
+      starts: ['0%', '33.33333333333333%', '66.66666666666666%'],
+      widths: ['33.33333333333333%', '33.33333333333333%', '33.33333333333333%'],
+    },
+  ])(
+    'covers the complete rendered width of every semantic column for $name',
+    ({ source, starts, widths }) => {
+      const view = createView(source, views);
+      const headerRow = cell(view, 0, 0).closest<HTMLElement>('.cm-markdown-table-row')!;
+      const handles = [
+        ...view.dom.querySelectorAll<HTMLButtonElement>('.cm-markdown-table-column-handle'),
+      ];
 
-    expect(handles.map((handle) => handle.style.insetInlineStart)).toEqual([
-      '0%',
-      '33.33333333333333%',
-      '66.66666666666666%',
-    ]);
-    expect(new Set(handles.map((handle) => handle.style.insetInlineStart)).size).toBe(3);
-  });
+      expect(handles.map((handle) => handle.parentElement)).toEqual(
+        Array<HTMLElement>(handles.length).fill(headerRow),
+      );
+      expect(handles.map((handle) => handle.style.insetInlineStart)).toEqual(starts);
+      expect(handles.map((handle) => handle.style.inlineSize)).toEqual(widths);
+      expect(
+        handles.map((handle) => Number.parseFloat(getComputedStyle(handle).marginInlineStart)),
+      ).toEqual(Array<number>(handles.length).fill(0));
+    },
+  );
 
   it.each(['mouse', 'touch'] as const)(
     'moves rows with one Pointer Events transaction for %s',
@@ -652,6 +1078,498 @@ describe('Markdown table editor extension', () => {
     pointer(body, 'pointermove', { pointerType: 'mouse', clientY: 69 });
     pointer(body, 'pointerup', { pointerType: 'mouse', clientY: 69 });
     expect(view.state.doc.toString()).toBe('| 3 | 1 | 2 |\n| --- | --- | --- |\n| C | A | B |');
+  });
+
+  it.each(ROW_DRAG_CASES)(
+    'moves $name with exact source, selection, terminal state, undo, and redo',
+    ({ pointerType, sourceIndex, targetIndex, placement, expected, moved }) => {
+      const view = createView(ROW_DRAG_SOURCE, views);
+      const source = button(view, `Move row ${sourceIndex + 1}`);
+      const target = button(view, `Move row ${targetIndex + 1}`);
+
+      dragPointer(source, target, 'row', placement, pointerType);
+
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+      expect(
+        [...view.dom.querySelectorAll('.cm-markdown-table-row-handle')].every(
+          (handle) => handle.getAttribute('aria-grabbed') === 'false',
+        ),
+      ).toBe(true);
+      if (expected === ROW_DRAG_SOURCE) {
+        expect(undo(view)).toBe(false);
+        return;
+      }
+      const selection = view.state.field(markdownTableSelectionState);
+      expect(selection.anchor).toEqual({ row: moved[0], column: 0 });
+      expect(selection.head).toEqual({ row: moved[0], column: 0 });
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(ROW_DRAG_SOURCE);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(expected);
+    },
+  );
+
+  it.each(COLUMN_DRAG_CASES)(
+    'moves $name with alignments, exact selection, terminal state, undo, and redo',
+    ({ pointerType, sourceIndex, targetIndex, placement, expected, moved }) => {
+      const view = createView(COLUMN_DRAG_SOURCE, views);
+      const source = button(view, `Move column ${sourceIndex + 1}`);
+      const target = button(view, `Move column ${targetIndex + 1}`);
+
+      dragPointer(source, target, 'column', placement, pointerType);
+
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+      expect(
+        [...view.dom.querySelectorAll('.cm-markdown-table-column-handle')].every(
+          (handle) => handle.getAttribute('aria-grabbed') === 'false',
+        ),
+      ).toBe(true);
+      if (expected === COLUMN_DRAG_SOURCE) {
+        expect(undo(view)).toBe(false);
+        return;
+      }
+      const selection = view.state.field(markdownTableSelectionState);
+      expect(selection.anchor).toEqual({ row: 0, column: moved[0] });
+      expect(selection.head).toEqual({ row: 1, column: moved[0] });
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(COLUMN_DRAG_SOURCE);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(expected);
+    },
+  );
+
+  it.each(POINTER_TYPES)(
+    'keeps the only semantic row and column stable for every %s drop side',
+    (pointerType) => {
+      const source = '| only |\n| --- |';
+      for (const axis of ['row', 'column'] as const) {
+        for (const placement of ['before', 'after'] as const) {
+          const view = createView(source, views);
+          const label = axis === 'row' ? 'Move row 1' : 'Move column 1';
+
+          dragPointer(button(view, label), button(view, label), axis, placement, pointerType);
+
+          expect(view.state.doc.toString()).toBe(source);
+          expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+          expect(undo(view)).toBe(false);
+        }
+      }
+    },
+  );
+
+  it('moves rows and columns in the smallest reorderable two-by-two table', () => {
+    const source = '| H1 | H2 |\n| --- | ---: |\n| B1 | B2 |';
+    const rowView = createView(source, views);
+
+    dragPointer(
+      button(rowView, 'Move row 2'),
+      button(rowView, 'Move row 1'),
+      'row',
+      'before',
+      'touch',
+    );
+    expect(rowView.state.doc.toString()).toBe('| B1 | B2 |\n| --- | ---: |\n| H1 | H2 |');
+    expect(undo(rowView)).toBe(true);
+    expect(rowView.state.doc.toString()).toBe(source);
+
+    const columnView = createView(source, views);
+    dragPointer(
+      button(columnView, 'Move column 2'),
+      button(columnView, 'Move column 1'),
+      'column',
+      'before',
+      'pen',
+    );
+    expect(columnView.state.doc.toString()).toBe('| H2 | H1 |\n| ---: | --- |\n| B2 | B1 |');
+    expect(undo(columnView)).toBe(true);
+    expect(columnView.state.doc.toString()).toBe(source);
+  });
+
+  it.each([
+    { name: 'document start', prefix: '', suffix: '\n\nafter' },
+    { name: 'document middle', prefix: 'before\n\n', suffix: '\n\nafter' },
+    { name: 'document end', prefix: 'before\n\n', suffix: '' },
+  ])('moves the exact table range at $name', ({ prefix, suffix }) => {
+    const table = '| H1 | H2 |\n| --- | --- |\n| A1 | A2 |\n| B1 | B2 |';
+    const rowView = createView(`${prefix}${table}${suffix}`, views);
+    dragPointer(
+      button(rowView, 'Move row 3'),
+      button(rowView, 'Move row 1'),
+      'row',
+      'before',
+      'mouse',
+    );
+    expect(rowView.state.doc.toString()).toBe(
+      `${prefix}| B1 | B2 |\n| --- | --- |\n| H1 | H2 |\n| A1 | A2 |${suffix}`,
+    );
+    expect(undo(rowView)).toBe(true);
+    expect(rowView.state.doc.toString()).toBe(`${prefix}${table}${suffix}`);
+
+    const columnView = createView(`${prefix}${table}${suffix}`, views);
+    dragPointer(
+      button(columnView, 'Move column 2'),
+      button(columnView, 'Move column 1'),
+      'column',
+      'before',
+      'mouse',
+    );
+    expect(columnView.state.doc.toString()).toBe(
+      `${prefix}| H2 | H1 |\n| --- | --- |\n| A2 | A1 |\n| B2 | B1 |${suffix}`,
+    );
+    expect(undo(columnView)).toBe(true);
+    expect(columnView.state.doc.toString()).toBe(`${prefix}${table}${suffix}`);
+  });
+
+  it.each([
+    {
+      name: 'compact empty and populated rows without canonical spaces',
+      source: '|H|V|\n|---|---|\n||\n|Бета|🙂|',
+      handle: 'Move row 3',
+      target: 'Move row 1',
+      axis: 'row',
+      expected: '|Бета|🙂|\n|---|---|\n|H|V|\n||',
+    },
+    {
+      name: 'rows with missing outer pipes and no trailing pipe',
+      source: 'H1 | H2\n--- | ---\nA | B\nC | D',
+      handle: 'Move row 3',
+      target: 'Move row 1',
+      axis: 'row',
+      expected: 'C | D\n--- | ---\nH1 | H2\nA | B',
+    },
+    {
+      name: 'columns in rows without trailing pipes',
+      source: '| H1 | H2\n| :--- | ---:\n| A | B',
+      handle: 'Move column 2',
+      target: 'Move column 1',
+      axis: 'column',
+      expected: '| H2| H1 \n| ---:| :--- \n| B| A ',
+    },
+  ] as const)(
+    'preserves authored Markdown spelling while dragging $name',
+    ({ source, handle, target, axis, expected }) => {
+      const view = createView(source, views);
+
+      dragPointer(button(view, handle), button(view, target), axis, 'before', 'mouse');
+
+      expect(view.state.doc.toString()).toBe(expected);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(expected);
+    },
+  );
+
+  it.each([
+    {
+      name: 'forward-selected body rows',
+      axis: 'row',
+      anchor: [1, 0],
+      head: [2, 3],
+      handle: 'Move row 2',
+      target: 'Move row 4',
+      expectedRows: [0, 3, 1, 2],
+      expectedColumns: [0, 1, 2, 3],
+      expectedAnchor: { row: 2, column: 0 },
+      expectedHead: { row: 3, column: 3 },
+    },
+    {
+      name: 'reverse-selected header and first body row',
+      axis: 'row',
+      anchor: [1, 3],
+      head: [0, 0],
+      handle: 'Move row 1',
+      target: 'Move row 4',
+      expectedRows: [2, 3, 0, 1],
+      expectedColumns: [0, 1, 2, 3],
+      expectedAnchor: { row: 2, column: 0 },
+      expectedHead: { row: 3, column: 3 },
+    },
+    {
+      name: 'forward-selected first and middle columns',
+      axis: 'column',
+      anchor: [0, 0],
+      head: [3, 1],
+      handle: 'Move column 1',
+      target: 'Move column 4',
+      expectedRows: [0, 1, 2, 3],
+      expectedColumns: [2, 3, 0, 1],
+      expectedAnchor: { row: 0, column: 2 },
+      expectedHead: { row: 3, column: 3 },
+    },
+    {
+      name: 'reverse-selected middle and final columns',
+      axis: 'column',
+      anchor: [3, 3],
+      head: [0, 2],
+      handle: 'Move column 4',
+      target: 'Move column 1',
+      expectedRows: [0, 1, 2, 3],
+      expectedColumns: [2, 3, 0, 1],
+      expectedAnchor: { row: 0, column: 0 },
+      expectedHead: { row: 3, column: 1 },
+    },
+  ] as const)(
+    'moves $name as one contiguous block',
+    ({
+      axis,
+      anchor,
+      head,
+      handle,
+      target,
+      expectedRows,
+      expectedColumns,
+      expectedAnchor,
+      expectedHead,
+    }) => {
+      const source = fourByFourTable([0, 1, 2, 3], [0, 1, 2, 3]);
+      const view = createView(source, views);
+      selectCells(view, anchor, head);
+
+      dragPointer(
+        button(view, handle),
+        button(view, target),
+        axis,
+        axis === 'row' ? 'after' : target.endsWith('4') ? 'after' : 'before',
+        'mouse',
+      );
+
+      expect(view.state.doc.toString()).toBe(fourByFourTable(expectedRows, expectedColumns));
+      expect(view.state.field(markdownTableSelectionState).anchor).toEqual(expectedAnchor);
+      expect(view.state.field(markdownTableSelectionState).head).toEqual(expectedHead);
+      expect(undo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(source);
+      expect(redo(view)).toBe(true);
+      expect(view.state.doc.toString()).toBe(fourByFourTable(expectedRows, expectedColumns));
+    },
+  );
+
+  it.each([
+    {
+      name: 'a row outside a full-row selection',
+      axis: 'row',
+      anchor: [1, 0],
+      head: [2, 3],
+      handle: 'Move row 4',
+      target: 'Move row 1',
+      placement: 'before',
+      expectedRows: [3, 0, 1, 2],
+      expectedColumns: [0, 1, 2, 3],
+    },
+    {
+      name: 'one row inside a partial-row selection',
+      axis: 'row',
+      anchor: [1, 1],
+      head: [2, 3],
+      handle: 'Move row 2',
+      target: 'Move row 4',
+      placement: 'after',
+      expectedRows: [0, 2, 3, 1],
+      expectedColumns: [0, 1, 2, 3],
+    },
+    {
+      name: 'a column outside a full-column selection',
+      axis: 'column',
+      anchor: [0, 1],
+      head: [3, 2],
+      handle: 'Move column 4',
+      target: 'Move column 1',
+      placement: 'before',
+      expectedRows: [0, 1, 2, 3],
+      expectedColumns: [3, 0, 1, 2],
+    },
+    {
+      name: 'one column inside a partial-column selection',
+      axis: 'column',
+      anchor: [1, 1],
+      head: [3, 2],
+      handle: 'Move column 2',
+      target: 'Move column 4',
+      placement: 'after',
+      expectedRows: [0, 1, 2, 3],
+      expectedColumns: [0, 2, 3, 1],
+    },
+  ] as const)(
+    'moves only $name',
+    ({ axis, anchor, head, handle, target, placement, expectedRows, expectedColumns }) => {
+      const view = createView(fourByFourTable([0, 1, 2, 3], [0, 1, 2, 3]), views);
+      selectCells(view, anchor, head);
+
+      dragPointer(button(view, handle), button(view, target), axis, placement, 'touch');
+
+      expect(view.state.doc.toString()).toBe(fourByFourTable(expectedRows, expectedColumns));
+    },
+  );
+
+  it.each([
+    { name: 'secondary mouse button', button: 2, isPrimary: true },
+    { name: 'middle mouse button', button: 1, isPrimary: true },
+    { name: 'non-primary touch', button: 0, isPrimary: false },
+  ])('does not start a drag for $name', ({ button: mouseButton, isPrimary }) => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const handle = button(view, 'Move row 2');
+
+    pointer(handle, 'pointerdown', {
+      pointerType: 'mouse',
+      button: mouseButton,
+      isPrimary,
+    });
+
+    expect(handle.getAttribute('aria-grabbed')).toBe('false');
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+  });
+
+  it('captures the originating pointer so release outside the narrow edge remains observable', () => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const handle = button(view, 'Move row 2');
+    const capture = jest.fn();
+    handle.setPointerCapture = capture;
+
+    pointer(handle, 'pointerdown', { pointerType: 'touch', pointerId: 7 });
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(7);
+  });
+
+  it.each(['pointercancel', 'lostpointercapture', 'Escape', 'document change'] as const)(
+    'clears drag state without moving on %s',
+    (terminal) => {
+      const view = createView(ROW_DRAG_SOURCE, views);
+      const source = button(view, 'Move row 2');
+      const target = button(view, 'Move row 4');
+
+      pointer(source, 'pointerdown', { pointerType: 'mouse', pointerId: 7 });
+      pointAtDropTarget(target, 'row');
+      pointer(target, 'pointermove', { pointerType: 'mouse', pointerId: 7, clientY: 199 });
+      expect(view.dom.querySelector('.cm-markdown-table-drop-after')).not.toBeNull();
+
+      if (terminal === 'Escape') {
+        key(view, 'Escape');
+      } else if (terminal === 'document change') {
+        view.dispatch({ changes: { from: ROW_DRAG_SOURCE.indexOf('H') + 1, insert: 'X' } });
+      } else {
+        pointer(source, terminal, { pointerType: 'mouse', pointerId: 7 });
+      }
+
+      expect(view.state.doc.toString()).toBe(
+        terminal === 'document change' ? ROW_DRAG_SOURCE.replace('H', 'HX') : ROW_DRAG_SOURCE,
+      );
+      expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+      expect(view.dom.querySelector('.cm-markdown-table-drop-after')).toBeNull();
+    },
+  );
+
+  it('binds a drag to its originating pointer and ignores a different pointer release', () => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const source = button(view, 'Move row 2');
+    const target = button(view, 'Move row 4');
+
+    pointer(source, 'pointerdown', { pointerType: 'touch', pointerId: 7 });
+    pointAtDropTarget(target, 'row');
+    pointer(target, 'pointermove', { pointerType: 'touch', pointerId: 8, clientY: 199 });
+    expect(target.classList).not.toContain('cm-markdown-table-drop-after');
+    pointer(target, 'pointermove', { pointerType: 'touch', pointerId: 7, clientY: 199 });
+    pointer(target, 'pointerup', { pointerType: 'touch', pointerId: 8, clientY: 199 });
+
+    expect(view.state.doc.toString()).toBe(ROW_DRAG_SOURCE);
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).not.toBeNull();
+
+    pointer(target, 'pointerup', { pointerType: 'touch', pointerId: 7, clientY: 199 });
+    expect(view.state.doc.toString()).toBe('| H |\n| --- |\n| B |\n| C |\n| A |');
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+  });
+
+  it('ignores cancellation from another pointer and cancellation without an active drag', () => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const source = button(view, 'Move row 2');
+
+    pointer(source, 'pointerdown', { pointerType: 'touch', pointerId: 7 });
+    pointer(source, 'pointercancel', { pointerType: 'touch', pointerId: 8 });
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).not.toBeNull();
+
+    pointer(source, 'pointercancel', { pointerType: 'touch', pointerId: 7 });
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+
+    pointer(source, 'pointercancel', { pointerType: 'touch', pointerId: 7 });
+    expect(view.state.doc.toString()).toBe(ROW_DRAG_SOURCE);
+  });
+
+  it('clears a previous target when the pointer leaves the originating table or axis', () => {
+    const secondTable = '| X | Y |\n| --- | --- |\n| 9 | 10 |';
+    const view = createView(`${COLUMN_DRAG_SOURCE}\n\n${secondTable}`, views);
+    const source = buttonInTable(view, 0, 'Move column 1');
+    const validTarget = buttonInTable(view, 0, 'Move column 4');
+    const otherAxis = buttonInTable(view, 0, 'Move row 2');
+    const otherTable = buttonInTable(view, 1, 'Move column 2');
+
+    pointer(source, 'pointerdown', { pointerType: 'mouse' });
+    pointAtDropTarget(validTarget, 'column');
+    pointer(validTarget, 'pointermove', { pointerType: 'mouse', clientX: 199 });
+    expect(validTarget.classList).toContain('cm-markdown-table-drop-after');
+
+    pointer(otherAxis, 'pointermove', { pointerType: 'mouse' });
+    expect(view.dom.querySelector('.cm-markdown-table-drop-after')).toBeNull();
+    pointer(otherTable, 'pointermove', { pointerType: 'mouse' });
+    expect(view.dom.querySelector('.cm-markdown-table-drop-after')).toBeNull();
+    pointer(otherTable, 'pointerup', { pointerType: 'mouse' });
+
+    expect(view.state.doc.toString()).toBe(`${COLUMN_DRAG_SOURCE}\n\n${secondTable}`);
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+  });
+
+  it('cancels a drop released outside a valid hit area after visiting one', () => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const source = button(view, 'Move row 2');
+    const validTarget = button(view, 'Move row 4');
+
+    pointer(source, 'pointerdown', { pointerType: 'mouse' });
+    pointAtDropTarget(validTarget, 'row');
+    pointer(validTarget, 'pointermove', { pointerType: 'mouse', clientY: 199 });
+    pointer(view.contentDOM, 'pointermove', { pointerType: 'mouse' });
+    pointer(view.contentDOM, 'pointerup', { pointerType: 'mouse' });
+
+    expect(view.state.doc.toString()).toBe(ROW_DRAG_SOURCE);
+    expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+  });
+
+  it('resolves a captured pointer from viewport coordinates and clears it outside the viewport', () => {
+    const view = createView(ROW_DRAG_SOURCE, views);
+    const source = button(view, 'Move row 2');
+    const target = button(view, 'Move row 4');
+    const originalElementFromPoint = document.elementFromPoint;
+    const elementFromPoint = jest.fn<HTMLElement | null, [number, number]>();
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: elementFromPoint,
+    });
+
+    try {
+      pointer(source, 'pointerdown', { pointerType: 'mouse' });
+      pointAtDropTarget(target, 'row');
+      elementFromPoint.mockReturnValue(target);
+      pointer(source, 'pointermove', { pointerType: 'mouse', clientY: 199 });
+      expect(target.classList).toContain('cm-markdown-table-drop-after');
+
+      elementFromPoint.mockReturnValue(null);
+      pointer(source, 'pointermove', { pointerType: 'mouse', clientY: -1 });
+      expect(view.dom.querySelector('.cm-markdown-table-drop-before')).toBeNull();
+      expect(view.dom.querySelector('.cm-markdown-table-drop-after')).toBeNull();
+      pointer(source, 'pointerup', { pointerType: 'mouse', clientY: -1 });
+
+      expect(view.state.doc.toString()).toBe(ROW_DRAG_SOURCE);
+      expect(view.dom.querySelector('.cm-markdown-table-drag-source')).toBeNull();
+    } finally {
+      if (originalElementFromPoint === undefined) {
+        Reflect.deleteProperty(document, 'elementFromPoint');
+      } else {
+        Object.defineProperty(document, 'elementFromPoint', {
+          configurable: true,
+          value: originalElementFromPoint,
+        });
+      }
+    }
   });
 
   it('copies, cuts, and pastes from the top-left selected cell', () => {
@@ -758,15 +1676,16 @@ describe('Markdown table editor extension', () => {
     expect(scrollRenderedCell).not.toHaveBeenCalled();
   });
 
-  it('does not trap vertical arrows at the outer table edges', () => {
+  it('leaves the top edge explicitly while preserving native movement below the table', () => {
     const source = 'before\n\n| ABC | D |\n| --- | --- |\n| xy | zzzz |\n\nafter';
     const view = createView(source, views);
     const firstRowPosition = source.indexOf('ABC') + 1;
     const lastRowPosition = source.indexOf('xy') + 1;
+    const adjacentLineAbove = view.state.doc.line(2);
 
     setCursor(view, firstRowPosition);
-    expect(key(view, 'ArrowUp').defaultPrevented).toBe(false);
-    expect(view.state.selection.main.head).toBe(firstRowPosition);
+    expect(key(view, 'ArrowUp').defaultPrevented).toBe(true);
+    expect(view.state.selection.main.head).toBe(adjacentLineAbove.from);
 
     setCursor(view, lastRowPosition);
     expect(key(view, 'ArrowDown').defaultPrevented).toBe(false);
@@ -1053,6 +1972,46 @@ function button(view: EditorView, label: string): HTMLButtonElement {
   return result;
 }
 
+function buttonInTable(view: EditorView, tableIndex: number, label: string): HTMLButtonElement {
+  const table = view.dom.querySelectorAll<HTMLElement>('.cm-markdown-table-editor')[tableIndex];
+  const result = table?.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+  if (result === null || result === undefined) {
+    throw new Error(`Missing button ${label} in table ${tableIndex}`);
+  }
+  return result;
+}
+
+function dragPointer(
+  source: HTMLButtonElement,
+  target: HTMLButtonElement,
+  axis: 'row' | 'column',
+  placement: 'before' | 'after',
+  pointerType: (typeof POINTER_TYPES)[number],
+): void {
+  pointer(source, 'pointerdown', { pointerType });
+  pointAtDropTarget(target, axis);
+  const coordinate = placement === 'before' ? 101 : 199;
+  pointer(target, 'pointermove', {
+    pointerType,
+    ...(axis === 'row' ? { clientY: coordinate } : { clientX: coordinate }),
+  });
+  pointer(target, 'pointerup', {
+    pointerType,
+    ...(axis === 'row' ? { clientY: coordinate } : { clientX: coordinate }),
+  });
+}
+
+function pointAtDropTarget(target: HTMLElement, axis: 'row' | 'column'): void {
+  const start = 100;
+  const size = 100;
+  mockBounds(target, {
+    left: axis === 'column' ? start : 0,
+    top: axis === 'row' ? start : 0,
+    width: axis === 'column' ? size : 20,
+    height: axis === 'row' ? size : 20,
+  });
+}
+
 function selectCells(
   view: EditorView,
   anchor: readonly [number, number],
@@ -1074,12 +2033,15 @@ function selectCellsWithPointer(
 
 function pointer(
   target: HTMLElement,
-  type: 'pointerdown' | 'pointermove' | 'pointerup',
+  type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel' | 'lostpointercapture',
   options: {
-    pointerType: 'mouse' | 'touch';
+    pointerType: (typeof POINTER_TYPES)[number];
     shiftKey?: boolean;
     clientX?: number;
     clientY?: number;
+    pointerId?: number;
+    button?: number;
+    isPrimary?: boolean;
   },
 ): MouseEvent {
   const event = new MouseEvent(type, {
@@ -1088,9 +2050,11 @@ function pointer(
     shiftKey: options.shiftKey,
     clientX: options.clientX,
     clientY: options.clientY,
+    button: options.button,
   });
   Object.defineProperty(event, 'pointerType', { value: options.pointerType });
-  Object.defineProperty(event, 'pointerId', { value: 1 });
+  Object.defineProperty(event, 'pointerId', { value: options.pointerId ?? 1 });
+  Object.defineProperty(event, 'isPrimary', { value: options.isPrimary ?? true });
   target.dispatchEvent(event);
   return event;
 }
@@ -1146,4 +2110,54 @@ function mockBounds(
       toJSON: (): string => '',
     }),
   });
+}
+
+function reorderValues<Value>(
+  values: readonly Value[],
+  selectedIndices: readonly number[],
+  targetGap: number,
+): Value[] {
+  const selected = new Set(selectedIndices);
+  const moving = selectedIndices.map((index) => values[index]!);
+  const remaining = values.filter((_, index) => !selected.has(index));
+  const removedBeforeGap = selectedIndices.filter((index) => index < targetGap).length;
+  const insertionIndex = Math.max(0, Math.min(targetGap - removedBeforeGap, remaining.length));
+  return [...remaining.slice(0, insertionIndex), ...moving, ...remaining.slice(insertionIndex)];
+}
+
+function remappedIndices(
+  selectedIndices: readonly number[],
+  targetGap: number,
+  length: number,
+): readonly number[] {
+  const removedBeforeGap = selectedIndices.filter((index) => index < targetGap).length;
+  const first = Math.max(0, Math.min(targetGap, length) - removedBeforeGap);
+  return selectedIndices.map((_, offset) => first + offset);
+}
+
+function singleColumnTable(rows: readonly string[]): string {
+  const [header, ...body] = rows;
+  return [`| ${header} |`, '| --- |', ...body.map((value) => `| ${value} |`)].join('\n');
+}
+
+function reorderedColumnTable(order: readonly number[]): string {
+  const headers = ['A', 'B', 'C', 'D'];
+  const delimiters = [':---', ':---:', '---:', '---'];
+  const body = ['1', '2', '3', '4'];
+  return [
+    `| ${order.map((index) => headers[index]).join(' | ')} |`,
+    `| ${order.map((index) => delimiters[index]).join(' | ')} |`,
+    `| ${order.map((index) => body[index]).join(' | ')} |`,
+  ].join('\n');
+}
+
+function fourByFourTable(rowOrder: readonly number[], columnOrder: readonly number[]): string {
+  const rows = rowOrder.map((row) => columnOrder.map((column) => `R${row + 1}C${column + 1}`));
+  const [header, ...body] = rows;
+  const delimiter = columnOrder.map(() => '---');
+  return [
+    `| ${header?.join(' | ')} |`,
+    `| ${delimiter.join(' | ')} |`,
+    ...body.map((row) => `| ${row.join(' | ')} |`),
+  ].join('\n');
 }

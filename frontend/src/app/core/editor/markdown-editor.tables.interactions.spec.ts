@@ -1,4 +1,5 @@
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { syntaxTree } from '@codemirror/language';
 import { EditorSelection, EditorState, StateEffect, Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
@@ -37,6 +38,10 @@ const phrases: MarkdownTableEditorConfig['phrases'] = {
 };
 
 const config: MarkdownTableEditorConfig = { locale: 'en', phrases };
+const originalRangeGetClientRects = Reflect.get(Range.prototype, 'getClientRects') as
+  Range['getClientRects'] | undefined;
+const originalRangeGetBoundingClientRect = Reflect.get(Range.prototype, 'getBoundingClientRect') as
+  Range['getBoundingClientRect'] | undefined;
 const NAVIGATION_SOURCE = [
   'above one',
   'above two',
@@ -228,6 +233,15 @@ const whitespaceNavigationCases: readonly {
   },
 ];
 
+interface TopRowArrowUpCase {
+  readonly name: string;
+  readonly source: string;
+  readonly linesAbove: number;
+  readonly offset: number;
+}
+
+const topRowArrowUpCases: readonly TopRowArrowUpCase[] = buildTopRowArrowUpCases();
+
 describe('Markdown table keyboard and editing interaction matrix', () => {
   const views: EditorView[] = [];
   let originalScrollIntoView: typeof HTMLElement.prototype.scrollIntoView;
@@ -238,6 +252,14 @@ describe('Markdown table keyboard and editing interaction matrix', () => {
       configurable: true,
       value: jest.fn(),
     });
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [],
+    });
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => zeroRect(),
+    });
   });
 
   afterEach(() => {
@@ -247,6 +269,22 @@ describe('Markdown table keyboard and editing interaction matrix', () => {
       configurable: true,
       value: originalScrollIntoView,
     });
+    if (originalRangeGetClientRects === undefined) {
+      Reflect.deleteProperty(Range.prototype, 'getClientRects');
+    } else {
+      Object.defineProperty(Range.prototype, 'getClientRects', {
+        configurable: true,
+        value: originalRangeGetClientRects,
+      });
+    }
+    if (originalRangeGetBoundingClientRect === undefined) {
+      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+    } else {
+      Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value: originalRangeGetBoundingClientRect,
+      });
+    }
   });
 
   it.each(horizontalBoundaryCases)(
@@ -343,19 +381,48 @@ describe('Markdown table keyboard and editing interaction matrix', () => {
     },
   );
 
-  it.each([
-    { name: 'ArrowUp from the header', coordinate: { row: 0, column: 1 }, key: 'ArrowUp' },
-    { name: 'ArrowDown from the final row', coordinate: { row: 2, column: 1 }, key: 'ArrowDown' },
-  ] as const)('does not trap $name at a vertical grid edge', ({ coordinate, key: keyValue }) => {
+  it('does not trap ArrowDown at the final grid edge', () => {
     const view = createView(NAVIGATION_SOURCE, views);
-    const position = cellMetrics(view, coordinate).start;
+    const position = cellMetrics(view, { row: 2, column: 1 }).start;
     setCursor(view, position);
 
-    const event = key(view, keyValue);
+    const event = key(view, 'ArrowDown');
 
     expect(event.defaultPrevented).toBe(false);
     expect(view.state.selection.main.head).toBe(position);
   });
+
+  it.each(topRowArrowUpCases)(
+    'leaves $name deterministically for the exact adjacent visible line',
+    async ({ source, linesAbove, offset }) => {
+      for (let repetition = 0; repetition < 3; repetition += 1) {
+        const view = createView(source, views);
+        const header = cellMetrics(view, { row: 0, column: 0 });
+        const initialPosition = header.start + offset;
+        const scrollRequests = captureScrollRequests(view);
+        setCursor(view, initialPosition);
+        view.requestMeasure();
+        await flushEditorMeasure();
+        scrollRequests.splice(0);
+
+        const event = key(view, 'ArrowUp');
+        const expectedPosition =
+          linesAbove === 0 ? initialPosition : adjacentLinePosition(view.state, linesAbove, offset);
+
+        expect(event.defaultPrevented).toBe(true);
+        expect(view.state.selection.main).toEqual(EditorSelection.cursor(expectedPosition));
+        expect(scrollRequests).toEqual(linesAbove === 0 ? [] : [true]);
+        if (linesAbove === 0) {
+          expect(cell(view, { row: 0, column: 0 }).classList).toContain(
+            'cm-markdown-table-cell-active',
+          );
+        } else {
+          expect(view.state.doc.lineAt(expectedPosition).number).toBe(linesAbove);
+          expect(view.dom.querySelectorAll('.cm-markdown-table-cell-active')).toHaveLength(0);
+        }
+      }
+    },
+  );
 
   it.each([
     {
@@ -864,8 +931,10 @@ function cell(view: EditorView, coordinate: CellCoordinate): HTMLElement {
   const selector = `[data-table-cell="true"][data-row="${coordinate.row}"][data-column="${coordinate.column}"]`;
   let result = view.dom.querySelector<HTMLElement>(selector);
   if (result === null) {
+    const targetPosition = tableCellLinePosition(view.state, coordinate);
     view.dispatch({
-      selection: EditorSelection.cursor(view.state.doc.length),
+      selection: EditorSelection.cursor(targetPosition),
+      scrollIntoView: true,
       userEvent: 'select',
     });
     result = view.dom.querySelector<HTMLElement>(selector);
@@ -874,6 +943,18 @@ function cell(view: EditorView, coordinate: CellCoordinate): HTMLElement {
     throw new Error(`Missing cell ${coordinate.row}:${coordinate.column}`);
   }
   return result;
+}
+
+function tableCellLinePosition(state: EditorState, coordinate: CellCoordinate): number {
+  const cursor = syntaxTree(state).cursor();
+  do {
+    if (cursor.name === 'Table') {
+      const headerLine = state.doc.lineAt(cursor.from);
+      const lineNumber = headerLine.number + (coordinate.row === 0 ? 0 : coordinate.row + 1);
+      return state.doc.line(Math.min(lineNumber, state.doc.lines)).from;
+    }
+  } while (cursor.next());
+  return state.selection.main.head;
 }
 
 function cellMetrics(
@@ -936,6 +1017,74 @@ function captureScrollRequests(view: EditorView): boolean[] {
     ),
   });
   return requests;
+}
+
+function buildTopRowArrowUpCases(): readonly TopRowArrowUpCase[] {
+  return [false, true].flatMap((populated) =>
+    [2, 4].flatMap((semanticRows) =>
+      [1, 2, 4].flatMap((columnCount) =>
+        [0, 1, 3].flatMap((linesAbove) =>
+          (populated ? [0, 2, 4] : [0]).map((offset) => ({
+            name: `${populated ? 'populated' : 'empty'} top-left cell at offset ${offset}, ${semanticRows} rows, ${columnCount} columns, ${linesAbove} lines above`,
+            source: topRowArrowUpSource({
+              populated,
+              semanticRows,
+              columnCount,
+              linesAbove,
+            }),
+            linesAbove,
+            offset,
+          })),
+        ),
+      ),
+    ),
+  );
+}
+
+function topRowArrowUpSource(options: {
+  readonly populated: boolean;
+  readonly semanticRows: number;
+  readonly columnCount: number;
+  readonly linesAbove: number;
+}): string {
+  const header = Array.from({ length: options.columnCount }, (_, column) =>
+    column === 0 ? (options.populated ? 'ABCD' : '') : `H${column + 1}`,
+  );
+  const delimiter = Array.from({ length: options.columnCount }, () => '---');
+  const body = Array.from({ length: options.semanticRows - 1 }, (_, row) =>
+    Array.from({ length: options.columnCount }, (_, column) => `R${row + 1}C${column + 1}`),
+  );
+  const table = [header, delimiter, ...body].map((cells) => `| ${cells.join(' | ')} |`).join('\n');
+  const linesAbove = Array.from(
+    { length: options.linesAbove },
+    (_, index) => `above line ${index + 1}`,
+  );
+  return [...linesAbove, table].join('\n');
+}
+
+function adjacentLinePosition(state: EditorState, lineNumber: number, column: number): number {
+  const line = state.doc.line(lineNumber);
+  return line.from + Math.min(column, line.length);
+}
+
+function flushEditorMeasure(): Promise<void> {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+function zeroRect(): DOMRect {
+  return {
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    toJSON: (): string => '',
+  };
 }
 
 function renderedRows(view: EditorView): number {

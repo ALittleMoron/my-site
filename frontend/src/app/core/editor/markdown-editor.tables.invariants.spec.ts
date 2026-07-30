@@ -193,7 +193,7 @@ describe('Markdown table editor invariants', () => {
   });
 
   it.each(caretInvariantCases)(
-    'redirects typing from $name to the next editable position',
+    'redirects typing from $name to the exact next editable position',
     ({ position, expected, outsideTable }) => {
       const view = createView(STRUCTURAL_SOURCE, views, position);
 
@@ -204,11 +204,18 @@ describe('Markdown table editor invariants', () => {
         userEvent: 'input.type',
       });
 
-      const insertion = outsideTable ? '\nX' : 'X';
+      const insertion = 'X';
       expect(view.state.doc.toString()).toBe(
         `${STRUCTURAL_SOURCE.slice(0, expected)}${insertion}${STRUCTURAL_SOURCE.slice(expected)}`,
       );
       expect(view.state.selection.main.head).toBe(expected + insertion.length);
+      if (outsideTable) {
+        expect(
+          [...view.dom.querySelectorAll<HTMLElement>('[data-table-cell="true"]')]
+            .map((tableCell) => tableCell.textContent)
+            .join(''),
+        ).not.toContain('X');
+      }
     },
   );
 
@@ -345,6 +352,76 @@ describe('Markdown table editor invariants', () => {
 
     expect(view.dom.querySelectorAll('.cm-markdown-table-cursor')).toHaveLength(1);
   });
+
+  it.each([
+    {
+      name: 'canonical header cells in a two-row table',
+      source: '|  |  |\n| --- | --- |\n| body | value |',
+      row: 0,
+    },
+    {
+      name: 'compact header cells in a many-row table',
+      source: '|||\n|---|---|\n| first | value |\n| second | value |',
+      row: 0,
+    },
+    {
+      name: 'canonical body cells in a two-row table',
+      source: '| H1 | H2 |\n| --- | --- |\n|  |  |',
+      row: 1,
+    },
+    {
+      name: 'compact middle-body cells in a many-row table',
+      source: '| H1 | H2 |\n|---|---|\n|||\n| final | value |',
+      row: 1,
+    },
+  ])(
+    'keeps one cell-line caret across repeated ArrowLeft moves between $name',
+    async ({ source, row }) => {
+      const view = createView(source, views, 0);
+      const nativeBounds = HTMLElement.prototype.getBoundingClientRect;
+      const bounds = jest
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: HTMLElement): DOMRect {
+          const cellRow = Number(this.dataset['row']);
+          const cellColumn = Number(this.dataset['column']);
+          return this.dataset['tableCell'] === 'true' &&
+            Number.isInteger(cellRow) &&
+            Number.isInteger(cellColumn)
+            ? positionedRect(cellRow, cellColumn)
+            : nativeBounds.call(this);
+        });
+      const coordinates = jest.spyOn(view, 'coordsAtPos').mockReturnValue({
+        left: 10,
+        right: 10,
+        top: row * 40 - 80,
+        bottom: row * 40 + 120,
+      });
+
+      try {
+        for (let repetition = 0; repetition < 3; repetition += 1) {
+          setCursor(view, Number(cell(view, row, 1).dataset['cellFrom']));
+          const event = key(view, 'ArrowLeft');
+          await flushEditorMeasure();
+
+          const activeLeft = cell(view, row, 0);
+          const marker = view.dom.querySelector<HTMLElement>('.cm-markdown-table-cursor');
+          const markerHeight = Number.parseFloat(marker?.style.height ?? '');
+
+          expect(event.defaultPrevented).toBe(true);
+          expect(view.state.selection.main.head).toBe(Number(activeLeft.dataset['cellFrom']));
+          expect(activeLeft.classList).toContain('cm-markdown-table-cell-active');
+          expect(view.dom.querySelectorAll('.cm-markdown-table-cell-active')).toHaveLength(1);
+          expect(visiblePrimaryCursors(view)).toHaveLength(1);
+          expect(Number.isFinite(markerHeight)).toBe(true);
+          expect(markerHeight).toBeGreaterThan(0);
+          expect(markerHeight).toBeLessThanOrEqual(40);
+        }
+      } finally {
+        coordinates.mockRestore();
+        bounds.mockRestore();
+      }
+    },
+  );
 });
 
 function buildCaretInvariantCases(source: string): readonly CaretInvariantCase[] {
@@ -659,22 +736,27 @@ function visiblePrimaryCursors(view: EditorView): readonly HTMLElement[] {
 }
 
 function mockBounds(target: HTMLElement, row: number, column: number): void {
-  const left = column * 120;
-  const top = row * 40;
+  const bounds = positionedRect(row, column);
   Object.defineProperty(target, 'getBoundingClientRect', {
     configurable: true,
-    value: () => ({
-      left,
-      right: left + 120,
-      top,
-      bottom: top + 40,
-      width: 120,
-      height: 40,
-      x: left,
-      y: top,
-      toJSON: (): string => '',
-    }),
+    value: () => bounds,
   });
+}
+
+function positionedRect(row: number, column: number): DOMRect {
+  const left = column * 120;
+  const top = row * 40;
+  return {
+    left,
+    right: left + 120,
+    top,
+    bottom: top + 40,
+    width: 120,
+    height: 40,
+    x: left,
+    y: top,
+    toJSON: (): string => '',
+  };
 }
 
 function flushEditorMeasure(): Promise<void> {
