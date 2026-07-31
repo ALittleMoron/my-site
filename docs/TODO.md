@@ -842,3 +842,12 @@ instead of inheriting every Markdown-specific feature.
   `verbose_http_exceptions` mapping to the Litestar entrypoint layer.
 - [ ] Remove application-level id generators and rely on database-generated identifiers.
 - [ ] Move functions from endpoints (to response classes or to other classes)
+- [ ] Refactor core use cases to remove every private helper method: keep orchestration in public
+  use-case methods, move entity invariants to domain schemas/value objects, and move shared
+  cross-use-case behavior to domain services.
+- [ ] Refactor localized read-facing core contracts so projected entities carry language-neutral
+  fields such as `title`, `name`, and `content` instead of parallel `*_ru` / `*_en` fields; select
+  the requested localization before constructing read models while keeping write/persistence
+  translation contracts explicit where both languages are required.
+- [ ] Add upgrade and downgrade migration coverage for revision
+  `0004_add_backend_owned_file_metadata`.

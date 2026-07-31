@@ -1,7 +1,8 @@
 # Backend Instructions
 
-Unless a section states a broader scope, these rules apply to backend Python code under
-`backend/**/*.py`.
+These rules apply to all backend-owned code, configuration, tooling, documentation, and supporting
+files under `backend/`. Keep shared cross-project configuration and common infrastructure outside
+`backend/`.
 
 ## Code Style
 
@@ -14,12 +15,12 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   production code, tests, migrations, scripts, and performance tooling; there are no exceptions.
   Give every class a clear public name and control module exports through import/export boundaries
   rather than private class naming.
-- Keep reusable backend tuning values, parser rules, supported formats, limits, headers, and other
-  code-owned constants in `backend/src/infra/config/constants.py`; do not create feature-specific
-  constants modules or module-local constants for those values in services, storages, parsers, or
-  adapters. Core code must receive such values through schemas/constructor parameters or IOC
-  wiring, while infra and entrypoint code may import `constants` directly when that layer owns the
-  wiring.
+- Keep environment/configuration values, shared operational limits, and configurable policy values
+  in `backend/src/infra/config/constants.py`. Domain invariants, parser-specific rules, adapter-local
+  mappings, and other implementation constants belong with the domain, parser, or adapter that owns
+  them. Core code must receive infrastructure-owned configuration through schemas, constructor
+  parameters, or IOC wiring, while infra and entrypoint code may import `constants` directly when
+  that layer owns the wiring.
 
 ## Layers
 
@@ -32,6 +33,14 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 | Config | `backend/src/infra/config/` | Pydantic settings, logging setup |
 | File storage | `backend/src/infra/s3/` | S3-compatible files adapter for MinIO |
 
+## Tooling Boundaries
+
+- Performance and test tooling may import reusable application contracts from `backend/src`, such
+  as enums, schemas, factories, and public helpers, but tooling-specific infrastructure must live
+  with that tooling. Do not create performance-only or test-only support modules under
+  `backend/src`; keep performance support under `backend/performance/` and test support under
+  `backend/tests/`.
+
 ## Operation Boundaries
 
 - Do not model entity mutation methods as `upsert` when the behavior can create, update,
@@ -41,14 +50,15 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 
 ## Business Logic Boundaries
 
-- Business logic must live in domain use cases under `backend/src/core/**/use_cases.py`.
-  Shared domain behavior may live in explicit core domain services when a use case would otherwise
-  duplicate meaningful logic.
+- Business-operation orchestration and flows that coordinate multiple storages belong in domain use
+  cases under `backend/src/core/**/use_cases.py`. Invariants and behavior owned by one entity or
+  value object belong on that domain object. Shared cross-use-case domain behavior belongs in an
+  explicit core domain service.
 - When an existing use-case operation already represents the business action, reuse it with
   explicit parameters that model transport/auth/quota differences instead of adding a parallel
   use-case method for the same action. Do not use sentinel values such as arbitrarily large quotas;
   make the variation explicit in the parameter contract.
-- API controllers, Litestar handlers, schemas, Dishka providers, storages, ORM models, settings,
+- API controllers, Litestar handlers, API schemas, Dishka providers, storages, ORM models, settings,
   event dispatchers, and infrastructure adapters must not own business decisions. They may validate
   transport shape, map data, wire dependencies, persist/load data, or call a use case.
 - Request-level access checks and input checks that can be decided before entering a use case should
@@ -70,12 +80,12 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Prefer moving meaningful multi-parameter object creation into methods on the object that owns
   that creation logic, or into the owning use case when the object is an aggregate/read model.
   Do not extract creation solely for tiny objects with too few fields to justify the extra method.
-- Aggregating core objects such as article lists, article trees, analytics summaries, and similar
-  use-case-shaped read models must be assembled in core use cases or on the owning core object.
-  Storage adapters must return persisted entities or narrow row/data objects needed for assembly;
-  they must not collect, group, paginate, or summarize those rows into complex core aggregates.
-  Simple one-field containers such as `Tags(values=...)` and `ExternalResources(values=...)`
-  may remain at storage boundaries when they only wrap loaded values.
+- Storage adapters may filter, group, paginate, count, and otherwise aggregate data when those
+  operations are part of the database query shape. They should return persisted entities or narrow
+  row/query results. Product-facing composition, cross-storage assembly, and business decisions must
+  remain in core use cases or on the owning core object. Simple containers such as
+  `Tags(values=...)` and `ExternalResources(values=...)` may remain at storage boundaries when they
+  only wrap loaded values.
 
 ## HTTP and Schemas
 
@@ -91,8 +101,11 @@ Unless a section states a broader scope, these rules apply to backend Python cod
 - Public discovery response assembly, such as sitemap URL collection, sitemap XML rendering, and
   robots.txt rendering, must not live in `endpoints.py` controller modules. Keep it in a neighboring
   `backend/src/entrypoints/litestar/**` module owned by the HTTP entrypoint layer, not in `core`.
-- API schemas must inherit from the shared schema bases and explicitly map to/from domain objects with `to_schema` / `from_domain_schema`.
-- Use `to_domain_schema` / `from_domain_schema` for same-concept conversions between API schemas, ORM models, and core domain schemas when the method signature already identifies the exact source/target type. Use a more specific conversion method name only when the conversion changes the semantic entity, such as attached resource -> plain external resource.
+- API schemas must inherit from the shared schema bases and map explicitly between API, ORM, and
+  core representations. Use `to_domain_schema` for conversion to the same core concept and
+  `from_domain_schema` for conversion from it when the method signature identifies the exact
+  source/target type. Use a specific semantic conversion name only when the conversion changes the
+  concept, such as attached resource -> plain external resource.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
 
 ## Response Caching
@@ -200,27 +213,35 @@ Unless a section states a broader scope, these rules apply to backend Python cod
   whether the authored text actually matches the selected language.
   Do not add generic translation tables, production defaults, or fallback language behavior unless
   an explicit design change asks for them.
-- Core article, tag, and competency matrix domain entities must not store localized projection fields
-  such as `title`, `content`, `folder`, `name`, or localized matrix text. Keep canonical RU/EN
-  fields on the domain object and build localized public values in response schemas or explicit read
-  models using `LanguageEnum`.
+- Localized read-facing core entities and read models should carry language-neutral projected fields
+  such as `title`, `content`, `folder`, `name`, and localized matrix text, selected for the requested
+  `LanguageEnum` before those objects are constructed. Write and persistence contracts may retain
+  explicit RU/EN fields when both translations are required. Do not require canonical RU/EN fields
+  on every read-facing core entity.
 - Article SEO metadata belongs to the article contract, not to a generic translation table.
   Keep the explicit nullable fields `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
   `seo_description_en`, `cover_image_file_id`, `cover_image_alt_ru`, and `cover_image_alt_en` on
   article write/domain/storage contracts. `cover_image_url` is computed for read responses from the
   managed `FileModel` metadata. Article create/update API payloads must require the `metadata`
   object itself while allowing individual metadata fields to be null, with no production defaults.
-- Read/write APIs that expose localized article, tag, or competency matrix content must use the
-  backend language enum and require explicit `LanguageEnum`/`language` selection where localized
-  values are returned.
+- Read/write APIs that expose localized article, article-folder, tag, or competency matrix content
+  must use the backend language enum and require explicit `LanguageEnum`/`language` selection where
+  localized values are returned.
 - Supported UI languages must be modeled with a backend enum. Do not accept arbitrary language
   strings in production API/settings code.
 - The default UI language must be configured explicitly through the required
   `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
 - Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
   and cover new languages/keys with catalog parity tests.
-- Content localisation beyond articles, article tags, competency matrix content, and resumes remains
-  future work until explicitly designed.
+- Content localisation beyond articles, article tags, article folders, competency matrix content,
+  and resumes remains future work until explicitly designed.
+
+## Article Analytics
+
+- Keep article analytics privacy-safe unless an explicit design change says otherwise. Do not store
+  raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party
+  analytics identifiers. Use referrers only for immediate coarse source classification, and store
+  only article-scoped derived identifiers for anonymous reactions.
 
 ## Persistence
 

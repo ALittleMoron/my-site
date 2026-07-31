@@ -4,14 +4,17 @@ These rules apply to backend tests under `backend/tests/**/*.py`.
 
 ## Philosophy
 
-TDD. Tests drive implementation. Unit tests cover all logic branches. Integration tests cover success paths only.
+TDD. Tests drive implementation. Unit tests cover isolated logic branches. Integration tests cover
+behavior that requires real PostgreSQL, real middleware, or their transaction and concurrency
+semantics.
 
 ## Unit vs. Integration Tests
 
 | Type | Definition | Directory |
 |---|---|---|
 | Unit | Single layer in isolation. Uses mock storages/providers. | `backend/tests/unit/` |
-| Integration | DB storages + core together, no mocks. Happy path only. | `backend/tests/integration/` |
+| DB integration | Storage and core behavior against real PostgreSQL; HTTP is not required. | `backend/tests/integration/` |
+| HTTP full-stack integration | Selected HTTP paths through real middleware, use cases, appropriate real providers, and PostgreSQL. | `backend/tests/integration/` |
 | Migration | Alembic revision upgrade/downgrade behavior against real PostgreSQL. | `backend/tests/migrations/` |
 
 ## Unit Tests
@@ -24,14 +27,19 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 
 ## Integration Tests
 
-- Test the full stack: HTTP -> handler -> use case -> real DB (no mocks anywhere).
-- Happy path only.
+- Use DB integration tests for storage, SQL, transaction, and concurrency behavior that requires real
+  PostgreSQL; these tests do not need to traverse HTTP or instantiate unrelated providers.
+- Use selected HTTP full-stack integration tests when behavior depends on the real handler,
+  middleware, dependency wiring, use case, and PostgreSQL path. Use the appropriate real Dishka
+  providers for the stack under test rather than replacing that path with mocks.
+- Cover success, failure, security, transaction, and concurrency paths in integration tests when the
+  behavior specifically requires real PostgreSQL or middleware. Keep isolated branch logic in unit
+  tests.
 - Real PostgreSQL test DB (`my_site_database_test`) — tests under `backend/tests/integration/`
   are auto-migrated to `heads` via their package conftest.
-- Real Dishka providers (not mocks).
 - Inherit `StorageTestCase` for DB assertion helpers; session auto-rollbacks after each test.
 - Alembic migration tests live outside `integration/` under `backend/tests/migrations/`, with one
-  file per revision such as `test_0001.py`; each file should cover upgrade and downgrade behavior
+  file per revision named `test_<revision>.py`; each file should cover upgrade and downgrade behavior
   and explicitly call migration helpers for the revision under test.
 
 ## Migration Tests
@@ -43,8 +51,10 @@ TDD. Tests drive implementation. Unit tests cover all logic branches. Integratio
 - Do not import application ORM models in migration tests. Use only SQLAlchemy Core tables,
   columns, expressions, and query builder constructs because later revisions may remove or reshape
   ORM models that older migration tests still need to exercise.
-- Raw SQL is prohibited completely in migration tests: do not use handwritten SQL strings,
-  `sqlalchemy.text()`, `op.execute()` with SQL strings, or `connection.exec_driver_sql()`.
+- Use SQLAlchemy Core tables, expressions, and query builder constructs in migration tests by
+  default. A narrow, documented raw-SQL exception is allowed only when a test must exercise
+  PostgreSQL DDL or an expression that cannot be represented by the typed operations available in
+  the project. Raw DML remains prohibited when SQLAlchemy Core can express the operation.
 
 ## Commands
 
@@ -116,12 +126,14 @@ the shared base schema.
   behavior, generated schema, security boundary, migration/data result, query-plan coverage, or a
   real Make-backed smoke path instead.
 
-## Coverage Target
+## Coverage Expectations
 
-95% — driven by unit tests and database integration tests.
-
-Core layer should be 100% coverage.
+- Review task-relevant coverage while implementing a change and fully cover changed core behavior.
+  Repository-wide numeric thresholds and coverage gates belong in the test or CI configuration, not
+  in `AGENTS.md`.
 
 ## Test File Naming
 
-`test_<action>_<expected_result>.py` — e.g. `test_create_item_returns_201.py`, `test_create_item_rejects_empty_title.py`
+- Name ordinary test files `test_<feature_or_component>.py`.
+- Name test functions and methods `test_<action>_<expected_result>`.
+- Name migration test files `test_<revision>.py`.

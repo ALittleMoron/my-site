@@ -1,6 +1,7 @@
 # Frontend Instructions
 
-These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/**/*.html`, and `frontend/**/*.scss`.
+These rules apply to all frontend-owned application code, configuration, tooling, and documentation
+under `frontend/`. Shared repository infrastructure and configuration must live outside `frontend/`.
 
 ## Stack
 
@@ -32,7 +33,9 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - `OnPush` change detection — no exceptions
 - `inject()` over constructor injection
 - Standalone only — no `NgModule`
-- No logic in templates. Move conditions and transforms to component class or `computed()`
+- Keep business logic and complex transformations out of templates. Simple Angular control flow,
+  property access, and presentation expressions may stay in the template; move reusable or
+  non-obvious derivation to the component class or `computed()`.
 - Semantic HTML. Accessibility attributes where meaningful (`aria-label`, `role`, etc.)
 - Add co-located `.spec.ts` for new components and services unless the behavior is truly trivial.
 - Treat public reading/detail views differently from management workspaces: keep detail pages focused
@@ -40,9 +43,12 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
   workspace-only controls unless they are directly needed for the detail workflow.
 - Icon-only controls must expose an accessible name and make their current state clear through icon,
   title, ARIA state, or surrounding context.
-- Prefer native form controls for standard input types. When users need format guidance, provide
-  visible localized hints and titles instead of replacing the control or adding custom parsing unless
-  the product behavior explicitly requires it.
+- Prefer an established shared custom form control when required product visuals or interaction
+  logic cannot be implemented correctly with a native control. Otherwise use the native control.
+  Custom controls must preserve native-grade accessibility, keyboard behavior, Angular Forms
+  integration, validation, SSR safety, and CSP compatibility.
+- When users only need format guidance, keep the native control and provide visible localized hints
+  and titles instead of adding custom parsing.
 
 ## State
 
@@ -74,12 +80,6 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
   errors, navigation, and component destruction; never persist or expose them as backend object
   URLs.
 - Keep direct `localStorage` access in core services; feature components may use it only for local UI preferences and must cover that behavior with tests. All storage, `window`, `document.defaultView`, timer, analytics, reaction, upload, and DOM-download behavior must be guarded so public SSR detail pages can render without browser APIs.
-
-- Agent client registration, certificate metadata, revocation, scopes, and audit UI is owner-only.
-  The browser may submit a locally generated CSR and display the returned certificate once, but it
-  must never generate, receive, persist, or display a client private key. It must not offer direct
-  private Agent API/MCP execution, publication, generic CRUD, structure mutation, URL fetching,
-  shell, or other generic-agent-access controls.
 
 ## SSR and Browser APIs
 
@@ -131,7 +131,8 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 
 ## Frontend Testing
 
-These testing rules apply when editing `frontend/src/**/*.spec.ts`.
+These rules apply to frontend validation. The unit-test-specific guidance applies when editing
+`frontend/src/**/*.spec.ts`.
 
 ### Manual Browser Checks
 
@@ -157,7 +158,7 @@ Jest via `jest-preset-angular`. No Karma, no browser. Fast, CI-friendly.
 | Presentational components | Inputs render correctly, outputs emit on interaction |
 | Services | Correct endpoint called, response mapped to model |
 | `ApiClient` | Base URL prepended, error shape passed through |
-| Guards | Return value (stub guard returns `true`) |
+| Guards | Allow, redirect, error, and authentication-restoration behavior required by the guard contract |
 
 ### What Not to Test
 
@@ -179,7 +180,7 @@ TestBed.configureTestingModule({
 });
 ```
 
-- Use `jasmine.createSpyObj` or `jest.fn()` for service mocks.
+- Use `jest.fn()` for service mocks.
 - Test via rendered DOM state, not internal signal values.
 - Trigger CD with `fixture.detectChanges()`.
 
@@ -193,6 +194,9 @@ TestBed.configureTestingModule({
 - Test: correct URL called, response mapped to expected model shape.
 - Always call `httpMock.verify()` after each test.
 - When changing SSR route config, server entrypoints, public detail SEO, or transfer-cache behavior, update focused unit tests and `make ssr-smoke`.
+- Review task-relevant coverage for every implementation change. Fully cover changed critical
+  behavior, especially shared core and Markdown editor logic; repository coverage thresholds belong
+  in test configuration, not in this file.
 
 ### Signals in Tests
 
@@ -204,6 +208,7 @@ TestBed.configureTestingModule({
 
 `<subject>.component.spec.ts` / `<subject>.service.spec.ts` — co-located with source file.
 
-### No E2E
+### End-to-End Tests
 
-E2e tests are a separate future project. Do not scaffold Cypress or Playwright here.
+Do not introduce or scaffold an end-to-end framework without an explicit project-level testing
+strategy decision.

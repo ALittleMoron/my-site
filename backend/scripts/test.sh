@@ -125,7 +125,7 @@ case "$action" in
         reset_base_test_database
         run_pytest_cov_serial tests/migrations/
         run_with_test_env uv run coverage xml
-        run_with_test_env uv run coverage report --fail-under=60
+        run_with_test_env uv run coverage report --fail-under=85
         ;;
     *)
         echo "Unknown test action: $action" >&2

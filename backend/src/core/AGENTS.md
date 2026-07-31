@@ -13,10 +13,10 @@ Never violate these boundaries:
   framework/infrastructure packages.
 - `backend/src/core/**` must not import from `infra/postgresql/`, `entrypoints/`, `infra/ioc/`, `infra/s3`, or any outer layers.
 - Do not add new imports from `infra.config` or logging into core; pass configurable values through parameters or injected abstractions.
-- Keep reusable parser rules, supported formats, limits, headers, and other code-owned constants in
-  `backend/src/infra/config/constants.py`. Core code must receive those values through schemas,
-  constructor parameters, or IOC wiring, never by importing infra config or creating feature-local
-  constants modules.
+- Core-owned domain invariants and parser-specific rules belong with their owning domain objects or
+  parsers. Environment/configuration values, shared operational limits, and configurable policies
+  remain in `backend/src/infra/config/constants.py` and must reach core through schemas, constructor
+  parameters, or IOC wiring; core must never import infra config.
 - Core exception modules must stay free of `verbose_http_exceptions` imports.
 
 ## Shared Core Files
@@ -33,7 +33,7 @@ generators.py   # Shared generators
 
 ## Domain Structure
 
-Common files per domain in `backend/core/<domain>/`. Not all files are required.
+Common files per domain in `backend/src/core/<domain>/`. Not all files are required.
 
 ```text
 schemas.py              # domain models (dataclasses or class with init dunder method)
@@ -46,7 +46,7 @@ readers.py              # Reader interfaces
 enums.py                # Domain enumerations
 types.py                # Domain type aliases or NewType
 services.py             # Domain services - shared business logic, uses in use cases
-event_dispatchers.py    # Domain event dispatchers - kafka or rest event publishers
+event_dispatchers.py    # Domain event/reporting interfaces; concrete transports live outside core
 ```
 
 ## Domain Rules
@@ -57,8 +57,8 @@ event_dispatchers.py    # Domain event dispatchers - kafka or rest event publish
 - Use cases must not define private helper methods. Keep straightforward field checks directly in
   the public use-case method, move domain-entity checks onto the relevant domain schema/value
   object, and perform storage reads plus DB-derived decisions directly inside the public use-case
-  method. The only exception is small non-complex logic that is repeated across multiple methods in
-  the same use case.
+  method. Move shared cross-use-case behavior into a domain service; there are no private-helper
+  exceptions for use cases.
 - When an operation has both a target entity identifier and a current actor identifier, the public
   use-case method must read both domain entities when actor permissions are relevant, then call a
   public permission/check method on the actor or target domain schema. Do not encode actor-vs-target

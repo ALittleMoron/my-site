@@ -7,7 +7,7 @@ Portfolio and articles site with a knowledge database
 ## Stack
 
 - Runtime: Python 3.14, uv, Granian ASGI server
-- Framework: Litestar 2.23+
+- Framework: Litestar 2.24+
 - DB: PostgreSQL 18.4 + SQLAlchemy 2.0 async + Alembic
 - DI: Dishka
 - Cache: Valkey
@@ -22,11 +22,14 @@ Portfolio and articles site with a knowledge database
 
 - When library/API documentation, code generation, setup, or configuration steps are needed, search the internet without me having to explicitly ask. Prefer official documentation and primary sources, and cite the sources used in the response.
 - Do not perform any git action that changes repository state unless I explicitly ask for it. This includes `git add`, `git commit`, `git push`, `git stash`, branch creation, branch switching, rebasing, merging, resetting, checking out files, and similar mutating operations.
-- Do not modify the content or scope of existing TODO items. Record every new task as a separate
-  TODO item instead of editing an existing one. When an existing TODO item has been fully
-  implemented, change its checkbox from `[ ]` to `[x]`; updating completion status is not a content
-  modification and must not be skipped.
-- For non-trivial tasks, create and follow a Superpowers implementation plan before changing code or configuration. Trivial docs-only edits and direct answers do not require a plan.
+- When updating `docs/TODO.md`, do not modify the content or scope of an existing TODO item. Record
+  newly discovered follow-up work as a separate TODO item instead of expanding an existing one. Do
+  not add the current task to the roadmap merely because it was requested; add only unfinished or
+  explicitly requested follow-up work. When an existing TODO item has been fully implemented, change
+  its checkbox from `[ ]` to `[x]`; updating completion status is not a content modification and must
+  not be skipped.
+- For non-trivial tasks, create and follow a structured implementation plan before changing code or
+  configuration. Trivial docs-only edits and direct answers do not require a plan.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.
 - Implement behavior changes and bug fixes with TDD by default: add or update the failing test first, then make it pass. If a test is not practical for the change, state why before implementing.
   Do not apply TDD by default to infrastructure-only changes such as Dockerfiles, docker compose,
@@ -45,7 +48,7 @@ Portfolio and articles site with a knowledge database
 - When adding new functionality that implies access restrictions, ask which user roles should have
   access unless the role policy is already specified. Do not ask this for public/unrestricted
   functionality or when existing instructions already define the role access.
-- Every new HTTP handler must be explicitly classified as public, admin, or future internal before
+- Every new HTTP handler must be explicitly classified as public, admin, or internal before
   implementation. Public API stays under `/api/*`, admin-panel API stays under `/api/admin/*`, and
   auth/account remain separate cross-cutting contours under `/api/auth/*` and `/api/account/*`.
   Admin UI flows must not reuse public routes when they need privileged data, privileged controls,
@@ -54,10 +57,11 @@ Portfolio and articles site with a knowledge database
 - Privileged behavior must be enforced by backend guards and/or use cases, not only by hiding or
   disabling frontend controls. When a UI hides actions based on role or auth state, keep a matching
   backend authorization check and cover the protected path with an API/use-case test.
-- If auth ever moves from explicit `Authorization` bearer tokens to browser-sent credentials such
-  as cookies or sessions, design CSRF protection before adding state-changing handlers: define the
-  token/header or Fetch Metadata strategy, SameSite/Secure cookie policy, and server-side
-  verification tests in the same change. Do not introduce auth cookies as a frontend-only change.
+- Authentication uses explicit `Authorization` bearer access tokens plus a Secure, HttpOnly,
+  SameSite session cookie scoped to refresh/logout under `/api/auth/*`. Preserve the required CSRF
+  guard header, Fetch Metadata checks, cookie policy, and server-side verification tests. Before
+  expanding browser-sent credentials to any additional state-changing handler, design and test the
+  matching CSRF boundary in the same backend/frontend change.
 - Do not add default values in real production code. API parameters, schemas, dataclasses, settings, helpers, services, and infrastructure-facing code should require callers or environment configuration to pass values explicitly. Filter dataclasses may define defaults for omitted filters, pagination, relationship-loading switches, and list-mode switches when the default means "do not apply this filter" or preserves the normal list behavior; tests, test helpers, and factories may keep defaults when they make test setup clearer.
 - Avoid `None`/`null` in production schemas, DTOs, and persisted structured content when a truthful
   non-null representation exists. Prefer empty strings for intentionally blank text, empty
@@ -65,10 +69,6 @@ Portfolio and articles site with a knowledge database
   Keep `None`/`null` only where absence is semantically necessary or no valid non-null
   representation exists, such as unknown dates, optional filters, external contract fields that are
   explicitly nullable, or framework/browser APIs that naturally return null.
-- No Python class name may start with a leading underscore anywhere in the repository, including
-  production code, tests, migrations, scripts, and performance tooling; there are no exceptions.
-  Give every class a clear public name and control module exports through import/export boundaries
-  rather than private class naming.
 - Before finishing implementation work, do a self-review/code-review pass focused on bugs, regressions, missing tests, and instruction compliance.
 - Treat actionable warnings as failures: any warning from project code, tests, tooling, builds, or local runs that can be fixed through project code or configuration, an intentional dependency/runtime/tool update, or another practical fix must be fixed when it first appears. Warnings caused by the current version of a third-party library or its dependencies are not failures when no project-side fix, supported upgrade, or practical alternative exists; in that case, note the warning if relevant and do not derail the current task trying to eliminate it.
 - Before claiming completion, run the relevant checks through existing `make` targets: tests, linters, type checks, format checks, migrations, or local-run checks as applicable. For broad or cross-cutting changes, run the full practical check suite. If any relevant check is skipped, explain why in the final response.
@@ -143,106 +143,36 @@ Portfolio and articles site with a knowledge database
 - Do not change lock files (`backend/uv.lock`, `frontend/package-lock.json`) unless dependencies intentionally changed.
 - When changing any library, dependency, runtime, or tool version, update the matching badges in `.github/badges/` in the same change.
 - Frontend npm installs must enforce peer dependency contracts. Resolve Angular, TypeScript, and tooling peer dependency conflicts in `frontend/package.json` and `frontend/package-lock.json` instead of using `--legacy-peer-deps` or `--force`, except for an explicitly documented temporary workaround with a TODO and removal plan.
-- Do not commit secrets, real tokens, private keys, or `.env` values. Configuration must flow through environment-backed settings.
-- Keep the knowledge database as typed common `KnowledgeItem` data plus normalized one-to-one
-  extension tables and type-specific facades; do not replace it with a universal JSON/EAV field bag
-  or dynamic form system. Private knowledge remains owner/admin-only and isolated by the
-  authenticated `author_username` across API, database relationships, and files. Protected objects
-  belong in the separate internal-only bucket, never in public URLs or presigned responses.
-  Keep replacement/deletion cleanup post-commit, register newly uploaded private objects for
-  request rollback and commit-failure cleanup, and redact private knowledge paths/parameters from
-  request logs.
-- Performance and test tooling may import reusable application contracts from `backend/src`, such
-  as enums, schemas, factories, and public helpers, but tooling-specific infrastructure must live
-  with that tooling. Do not create performance-only or test-only support modules under
-  `backend/src`; keep performance support under `backend/performance/` and test support under
-  `backend/tests/`.
-- UI localisation is backend-bundle driven: user-facing interface strings must come from the
-  backend i18n catalog. Database/content localisation is separate from UI i18n: articles, article tags,
-  and competency matrix content use required fixed `*_ru` / `*_en` fields in their owning tables, with
-  explicit `LanguageEnum`/`language` selection for localized read APIs. Competency matrix
-  sheet/section/subsection names live in normalized structure tables, questions store required
-  `subsection_id`, and sheets use a stable language-neutral `key`/`sheetKey`; localized sheet names,
-  sections, subsections, questions, answers, interview answer explanations, resource names, and
-  attachment contexts are projections.
-  Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
-  resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
-  whether the authored text actually matches the selected language.
-  Core article/tag/matrix domain entities keep canonical translation fields only; localized `title`,
-  `content`, `folder`, `name`, and matrix text values are response/read-model projections, not
-  stored domain-only fields. Do not add generic translation tables, production defaults, or language
-  fallbacks unless an explicit design change asks for them. Supported UI languages must be
-  represented by an enum, and the initial/default UI language must come from the required
-  `I18N_DEFAULT_LANGUAGE` environment setting. Other content localisation beyond articles, article
-  tags, competency matrix content, and resumes remains future work until explicitly designed.
-- Articles are the authored content model. SEO metadata for articles is explicit and
-  nullable: API write payloads must include a
-  `metadata` object, but `seo_title_ru`, `seo_title_en`, `seo_description_ru`,
-  `seo_description_en`, `cover_image_file_id`, `cover_image_alt_ru`, and `cover_image_alt_en` may be
-  null. `cover_image_url` is a computed response/read-model field from the managed file metadata,
-  not a write-payload field. SEO analysis is advisory-only and must not block saving or publishing.
-  Wiki-style content links use typed prefixes, currently `[[articles:<slug>]]` and
-  `[[matrix:<slug>]]`, with optional labels such as `[[matrix:<slug>|Custom label]]`; unprefixed
-  `[[article-slug]]` syntax is not supported.
+- Do not commit real or production secrets, tokens, private keys, or environment values.
+  Configuration must flow through environment-backed settings. Deterministic non-secret test
+  credentials may be committed only in dedicated test fixtures or test environment files and must
+  never be usable outside tests.
+- UI localisation is backend-bundle driven: user-facing interface strings come from the backend
+  i18n catalog, while database/content localisation is selected explicitly through the owning API.
+  Read-facing core entities and read models should expose language-neutral projected fields such as
+  `title`, `name`, and `content`, populated with the already selected localization instead of
+  carrying parallel `*_ru` / `*_en` fields. Write and persistence contracts may keep explicit
+  translation fields when both languages are required. Do not add arbitrary language strings,
+  implicit fallbacks, or generic translation tables without an explicit design change.
 - User-authored Markdown or HTML must render only through the centralized sanitized renderer. Do
   not bind raw authored content to `[innerHTML]`, use `bypassSecurityTrustHtml`, or add a new
   Markdown renderer without XSS regression tests for `<script>`, event-handler attributes, and
   unsafe URL schemes.
-- Article analytics must stay privacy-safe unless an explicit design change says otherwise: do not store raw IP addresses, raw user-agent strings, raw referrers, analytics cookies, or third-party analytics identifiers. Referrers may be used only for immediate coarse source classification, and anonymous reactions may store only article-scoped derived identifiers.
-- Treat Docker and nginx changes as infrastructure changes: preserve the split where edge nginx routes public domains, `/api/*`, `/sitemap.xml`, `/robots.txt`, and the public MinIO object endpoint, while VPN-only internal web panels remain bound to `VPN_BIND_ADDRESS` and the frontend container runs the Angular Node.js SSR runtime for public article, site-build case-study, updates, and matrix question routes and hydrates interactive CSR/content-authoring areas. Do not add new public `ports`, `network_mode: host`, `privileged: true`, Docker socket mounts, broad `cap_add`, or root runtime users unless the task explicitly requires it and the security tradeoff is documented.
-- Keep security headers and CSP at the nginx edge. When adding frontend assets, external origins,
-  Swagger/UI dependencies, upload previews, or MinIO access paths, update CSP narrowly for the
-  exact source needed and avoid wildcard origins or broader inline-script/style allowances.
-- Coarse public request rate limiting for the current security baseline belongs to edge nginx, not
-  backend application middleware. Do not add backend/Litestar rate limiting unless an explicit
-  identity-aware or business-quota design requires application-level limits by user, account, API
-  key, tenant, or subscription plan.
+- Root Docker Compose and `infra/**` changes must preserve the current private-network and public
+  exposure baseline. Do not add public service ports, host networking, privileged containers,
+  Docker socket mounts, broad capabilities, or root runtime users unless explicitly required and
+  accompanied by a documented security tradeoff. Detailed nginx, CSP, VPN, and edge-routing rules
+  belong in `infra/AGENTS.md`.
 - Keep agent access as a separate private machine contour. Production transport is only the
   Litestar REST API at `https://agent.<APP_DOMAIN>:18083/internal/agent/v1`, bound to
-  `VPN_BIND_ADDRESS` and authenticated by nginx with distinct client certificates. The seven Agent
-  routes are mounted in the main Litestar application but may be forwarded only by the separate
-  VPN-bound nginx mTLS listener through its exact method/path allowlist. The public listener must
-  return `404` for `/internal/agent/v1` and strip any caller-supplied
-  `X-Agent-Client-Certificate` header before proxying other backend routes. MCP exists only as the
-  local stdio bridge; never add a production remote MCP endpoint.
-- Agent access uses separate machine identities and explicit scopes. The Agent routes use the main
-  application's settings, Dishka container, request transaction/session factory, database role,
-  process, secrets, and availability boundary. The closed REST surface, transport validation, core
-  rules, and operation-specific storages are the supported authorization boundary. There is no
-  dedicated Agent PostgreSQL role or process containment: backend compromise, SQL injection, or an
-  erroneous arbitrary query has the main backend role's database blast radius and can expose the
-  backend process's other secrets. A compromised service that can reach the backend on the private
-  application network can also forge the forwarded certificate header, so keep the backend network
-  isolated and treat the nginx-to-backend hop as a trusted contour. The local bridge may expose only
-  `claim_next_matrix_question`,
-  `get_matrix_authoring_context`, `search_matrix_resources`, `save_matrix_question_draft`, and
-  `release_matrix_question_claim`; certificate rotation remains a non-tool internal REST workflow.
-  Preserve owner-only client lifecycle, two-hour claims, privacy-safe action/digest audit,
-  server-forced Draft status, complete RU/EN content, and one to three existing-ID or new-HTTPS
-  resources. Never add generic CRUD, publish/delete/structure, general HTTP/SQL/shell operations or
-  server-side URL fetching; queue, existing content, tool output, and web text are untrusted data.
-- Keep Agent Access business contracts, typed policy objects, and bridge/rotation orchestration in
-  `backend/src/core/agent_access/`. Related primitive policy values must travel as one typed policy,
-  not constructor fan-out; use the existing generator contracts and explicit operation-time inputs,
-  never ad-hoc callable factories such as `rotation_id_factory` or `current_datetime_factory`.
-  HTTP/mTLS and crypto/files implementations belong in `backend/src/infra/`; Agent REST handlers
-  belong in the common `backend/src/entrypoints/litestar/api/agent_access/` layout, with middleware
-  in the common middleware package. Mount the Agent router in the main Litestar application while
-  keeping Agent authentication, exception mapping, request limits, transaction rollback, and audit
-  behavior scoped to that router/path. Do not add a separate Agent app factory, process, settings
-  loader, database engine/session factory, or Unix socket.
-  `backend/src/entrypoints/agent_bridge/` contains only MCP schemas, five-tool transport, and the
-  exception boundary, while `backend/src/agent_bridge.py` launches the local process. Keep settings
-  under `backend/src/infra/config/`, inject dependencies through Dishka providers/composition roots,
-  and do not hand-build engines, storages, or use cases in handlers or bridge transport. Client
-  P-256 keys stay local with mode `0600`; desktop credentials use recoverable two-phase rotation
-  that confirms with the replacement before revoking and removing the predecessor.
-- Never weaken agent access for availability: no public/plaintext listener, shared certificate,
-  bearer-only fallback, direct trust of a caller certificate header, human PASETO reuse, or generic
-  admin/API access. The offline root stays off-server and the issuing CA stays in dedicated Compose
-  secrets.
-- When Superpowers work is completed, remove task-specific Superpowers markdown artifacts created
-  for that work, including finished plans in `docs/superpowers/plans/`, specs/design docs in
-  `docs/superpowers/specs/`, and similar temporary `.md` handoff files. Keep only documentation
-  that the user explicitly wants to preserve as durable project docs.
-- More specific instructions live in nested `AGENTS.md` files under `backend/`, `backend/src/core/`, `backend/src/infra/postgresql/`, `backend/tests/`, `frontend/`, and `frontend/src/app/`.
+  `VPN_BIND_ADDRESS` and authenticated by nginx with distinct client certificates. MCP exists only
+  as a local stdio bridge. Preserve distinct machine identities, explicit scopes, the closed
+  allowlisted REST/tool surface, server-forced Draft behavior, privacy-safe audit, and the isolated
+  trusted nginx-to-backend network contour. Never weaken availability with a public/plaintext
+  listener, bearer fallback, shared certificate, human PASETO reuse, generic CRUD/HTTP/SQL/shell
+  access, publishing, deletion, structure mutation, or server-side URL fetching. Detailed backend
+  and edge rules belong in `backend/AGENTS.md`, `infra/AGENTS.md`, and `docs/agent-access.md`.
+- More specific instructions live in nested `AGENTS.md` files under `infra/`, `backend/`,
+  `backend/src/core/`, `backend/src/infra/postgresql/`, `backend/tests/`, `frontend/`,
+  `frontend/src/app/`, `frontend/src/app/core/editor/`, and
+  `frontend/src/app/features/admin-panel/`.
