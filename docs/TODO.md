@@ -666,6 +666,8 @@ The shared editor is currently Markdown-first. Treat it as a reusable editor pla
 modes, such as programming-course assignment workspaces, can reuse only the relevant foundation
 instead of inheriting every Markdown-specific feature.
 
+Graph views, plugin APIs, and plugin-system support are explicitly out of scope for this roadmap.
+
 - [ ] Complete the custom Obsidian-like Markdown editor roadmap.
   - [x] Add the first stage: modular CodeMirror 6, source/preview tabs, the complete initial
     physical-key command map, smart lists and fences, search, ordered multi-image insertion, and
@@ -690,17 +692,86 @@ instead of inheriting every Markdown-specific feature.
     [command palette](https://obsidian.md/help/plugins/command-palette)).
   - [ ] Add typed wiki-link autocomplete for articles and matrix questions, target preview, and
     missing/unpublished target warnings.
+    - [x] Autocomplete typed article and matrix targets and show each target's localized title and
+      publication status in the completion list.
+    - [ ] Add shared inline missing/unpublished target diagnostics and a content preview without
+      making an unavailable target registry look like an empty registry.
+  - [ ] Add selection-aware typed wiki-link insertion and deep heading targets
+    ([Obsidian internal links](https://obsidian.md/help/links)).
+    - [ ] Turn selected text into the custom label when the author types `[[` and then chooses an
+      article or matrix target.
+    - [ ] Autocomplete headings in the current document and in a selected target, persist stable
+      localized fragments, and warn when a referenced heading no longer exists.
+  - [ ] Safely refactor typed wiki links when an article or matrix slug changes.
+    - [ ] Show the affected localized documents and reference count before confirming a slug
+      change.
+    - [ ] Rewrite authorized references transactionally while preserving labels, publication
+      rules, revision history, and an auditable failure result for every reference not changed.
   - [ ] Add a Markdown outline, heading navigation, and folding for heading, list, and code
     sections.
   - [ ] Add advanced table editing, callouts, footnotes, templates/snippets, math, and diagrams
     only together with centralized renderer support and XSS regression tests
     ([Obsidian Markdown syntax](https://obsidian.md/help/syntax)).
+    - [x] Complete the advanced source-preserving table-editing portion through the dedicated
+      interactive Markdown table work below.
+    - [ ] Add renderer-backed callouts with commands for inserting, wrapping, changing type, and
+      creating accessible nested or collapsible callouts.
+    - [ ] Add renderer-backed block and inline footnotes with source navigation between each
+      reference and definition.
+    - [ ] Add reusable templates/snippets with preview, explicit insertion position, and
+      placeholder navigation without introducing a second content model.
+    - [ ] Add math and diagrams through the centralized sanitized renderer with explicit resource
+      limits and safe failure states for malformed or expensive input.
   - [ ] Add the complete Markdown attachment workflow: progress, cancel, retry, required alt text,
     existing-file reuse, and orphan cleanup
     ([Obsidian attachments](https://obsidian.md/help/attachments)).
+    - [x] Support ordered image insertion from the picker, paste, and drop flows with a visible
+      uploading state plus retry and dismiss actions after failure.
+    - [ ] Add per-file progress, in-flight cancellation, required alt-text authoring, existing-file
+      selection, and deterministic cleanup of uploads abandoned before a successful save.
+  - [ ] Extend Markdown attachments to safe media embeds and author-controlled image presentation
+    ([Obsidian embeds](https://obsidian.md/help/embeds)).
+    - [ ] Insert and preview supported PDF, audio, and video attachments without exposing private
+      object URLs or bypassing consumer-specific upload restrictions.
+    - [ ] Let authors set accessible image alt text, caption, and bounded display dimensions while
+      keeping the stored Markdown portable and the public layout responsive.
   - [ ] Add RU/EN spelling and grammar assistance, word/character/read-time statistics, and
     localized content diagnostics.
+    - [x] Enable native browser spelling with the active RU/EN content language on the shared
+      editor surface.
+    - [ ] Add grammar assistance, shared word/character/read-time statistics, and localized
+      diagnostics with clear source ranges and advisory-only failure behavior.
   - [ ] Add editor profile import/export and settings synchronization between devices.
+  - [ ] Add a true source-preserving Live Preview mode that hides inactive Markdown syntax and
+    reveals the exact delimiters around the active cursor or selection
+    ([Obsidian editing modes](https://obsidian.md/help/edit-and-read)).
+    - [ ] Render headings, emphasis, links, lists, tasks, callouts, code, media, and other supported
+      syntax inline without replacing the canonical Markdown document.
+    - [ ] Preserve selection, history, IME, clipboard, screen-reader output, scroll position, wiki
+      link completion, and interactive-table invariants while syntax appears or disappears.
+  - [ ] Convert pasted rich HTML into sanitized portable Markdown while retaining an explicit
+    plain-text paste path ([Obsidian editor settings](https://obsidian.md/help/settings)).
+    - [ ] Preserve supported headings, paragraphs, emphasis, lists, links, tables, quotes, and code
+      while dropping scripts, event handlers, unsafe URL schemes, unsupported styles, and hidden
+      content.
+    - [ ] Keep image paste routed through the existing ordered upload workflow and make every
+      conversion result one undoable CodeMirror transaction.
+  - [ ] Make task-list checkboxes interactive in Editor and author preview modes.
+    - [ ] Toggle the exact canonical `[ ]` or `[x]` marker through an undoable transaction without
+      disturbing selection, scroll, nested-list structure, or surrounding Markdown.
+    - [ ] Support pointer and keyboard activation with an accessible state while keeping public
+      reading views non-mutating.
+  - [ ] Add Obsidian-style `==highlight==` and author-only `%%comment%%` syntax through the shared
+    parser, commands, presentation, and sanitized renderer
+    ([Obsidian formatting syntax](https://obsidian.md/help/syntax)).
+    - [ ] Render highlights accessibly and preserve their delimiters in Source and active Live
+      Preview editing contexts.
+    - [ ] Keep comments visible to authors where appropriate but remove them from public preview,
+      rendered pages, excerpts, SEO analysis, search indexing, and public exports.
+  - [ ] Add theme-aware indentation guides for nested Markdown lists and other supported indented
+    blocks ([Obsidian editor settings](https://obsidian.md/help/settings)).
+    - [ ] Keep guides correct across wrapped lines, folding, multi-selection, responsive layouts,
+      fullscreen mode, and both light and dark themes without creating editable fake geometry.
 - [x] Prevent shared Markdown editor sticky chrome from colliding with fixed navigation and
   measured sticky form/action footers across page, modal, and fullscreen contexts.
 - [x] Add interactive source-preserving Markdown tables with Editor/Source/Preview modes,
