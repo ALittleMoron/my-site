@@ -18,6 +18,7 @@ const PERSON: PersonDetail = {
   description: '',
   tags: [],
   relationships: [],
+  relatedDates: [],
   photo: null,
   attachments: [],
   createdAt: '2026-01-01T00:00:00+00:00',

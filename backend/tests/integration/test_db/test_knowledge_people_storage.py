@@ -6,6 +6,7 @@ from sqlalchemy import event, insert
 from sqlalchemy.engine import Connection
 
 from core.auth.enums import RoleEnum
+from core.knowledge.dates.storages import KnowledgeDatesStorage
 from core.knowledge.exceptions import (
     KnowledgeConflictError,
     KnowledgeFileNotFoundError,
@@ -36,6 +37,7 @@ from core.knowledge.people.use_cases import (
     PersonRelationshipTypesUseCase,
 )
 from infra.postgresql.models import KnowledgeItemModel, PersonDetailsModel
+from infra.postgresql.storages.knowledge.dates import KnowledgeDatesDatabaseStorage
 from infra.postgresql.storages.knowledge.files import KnowledgeFilesDatabaseStorage
 from infra.postgresql.storages.knowledge.items import KnowledgeItemsDatabaseStorage
 from infra.postgresql.storages.knowledge.people import (
@@ -89,12 +91,16 @@ class TestKnowledgePeopleStorage(StorageTestCase):
         )
         self.item_storage = KnowledgeItemsDatabaseStorage(session=self.db_session)
         self.people_storage = PeopleDatabaseStorage(session=self.db_session)
+        self.dates_storage: KnowledgeDatesStorage = KnowledgeDatesDatabaseStorage(
+            session=self.db_session,
+        )
         self.file_storage = KnowledgeFilesDatabaseStorage(session=self.db_session)
         self.item_service = KnowledgeItemCrudService(storage=self.item_storage)
         self.people_use_case = PeopleUseCase(
             item_service=self.item_service,
             item_storage=self.item_storage,
             people_storage=self.people_storage,
+            dates_storage=self.dates_storage,
             file_storage=self.file_storage,
         )
         self.tags_use_case = KnowledgeTagsUseCase(storage=self.item_storage)

@@ -63,6 +63,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Очередь вопросов');
     expect(fixture.nativeElement.textContent).toContain('База знаний');
     expect(fixture.nativeElement.textContent).toContain('Люди');
+    expect(fixture.nativeElement.textContent).toContain('Даты');
     expect(fixture.nativeElement.textContent).not.toContain('Папки статей');
     expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
     expect(fixture.nativeElement.textContent).not.toContain('Структура матрицы');
@@ -78,7 +79,7 @@ describe('AdminPanelPageComponent', () => {
       'Рабочая область3',
       'Статьи4',
       'Матрица3',
-      'База знаний1',
+      'База знаний2',
     ]);
   });
 
@@ -109,6 +110,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('AI-агенты');
     expect(fixture.nativeElement.textContent).toContain('База знаний');
+    expect(fixture.nativeElement.textContent).toContain('Даты');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

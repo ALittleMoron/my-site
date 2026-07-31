@@ -30,11 +30,14 @@ class TestQueryPlanProfiles:
             resumes=query_plan_models.ResumeCardinalities(resumes=250),
             knowledge=query_plan_models.KnowledgeCardinalities(
                 items=5_000,
+                dates=5_000,
                 search_match_percentage=10,
                 tags=500,
                 item_tag_links=20_000,
+                date_tag_links=20_000,
                 relationship_types=100,
                 relationships=20_000,
+                date_person_links=20_000,
                 files=10_000,
             ),
             matrix=query_plan_models.MatrixCardinalities(
@@ -72,11 +75,14 @@ class TestQueryPlanProfiles:
             resumes=query_plan_models.ResumeCardinalities(resumes=50_000),
             knowledge=query_plan_models.KnowledgeCardinalities(
                 items=200_000,
+                dates=200_000,
                 search_match_percentage=10,
                 tags=30_000,
                 item_tag_links=500_000,
+                date_tag_links=500_000,
                 relationship_types=10_000,
                 relationships=500_000,
+                date_person_links=500_000,
                 files=500_000,
             ),
             matrix=query_plan_models.MatrixCardinalities(
@@ -104,10 +110,12 @@ class TestQueryPlanProfiles:
             "articles__article_daily_analytics_model": 100_000,
             "articles__article_reaction_model": 10_000,
             "resumes__resume_model": 250,
-            "knowledge__knowledge_item_model": 5_000,
+            "knowledge__knowledge_item_model": 10_000,
             "knowledge__knowledge_tag_model": 500,
-            "knowledge__knowledge_item_tag_model": 20_000,
+            "knowledge__knowledge_item_tag_model": 40_000,
             "knowledge__person_details_model": 5_000,
+            "knowledge__date_details_model": 5_000,
+            "knowledge__date_person_model": 20_000,
             "knowledge__person_relationship_type_model": 100,
             "knowledge__person_relationship_model": 20_000,
             "knowledge__knowledge_file_model": 10_000,
@@ -222,8 +230,8 @@ class TestQueryPlanProfiles:
             )
             assert {index.name for index in expectation.expected_indexes} == {
                 "knowledge_item_tags_author_tag_item_idx",
-                "person_details_id_author_uniq",
-                "knowledge__knowledge_item_model_pkey",
+                "knowledge_items_id_author_uniq",
+                "knowledge__person_details_model_pkey",
             }
             stress_query_expectation = scenario.plan_expectation(
                 policy=ABSOLUTE_SLA_POLICY,
@@ -235,6 +243,75 @@ class TestQueryPlanProfiles:
                 "knowledge__person_details_model_pkey",
                 "knowledge__knowledge_item_model_pkey",
             }
+
+    def test_dates_query_plan_scenarios_cover_calendar_and_backlink_indexes(self) -> None:
+        calendar = next(
+            scenario
+            for scenario in STORAGE_SCENARIOS
+            if scenario.name == "knowledge_dates_page_calendar"
+        )
+        backlink = next(
+            scenario
+            for scenario in STORAGE_SCENARIOS
+            if scenario.name == "knowledge_date_ids_for_person"
+        )
+        search = next(
+            scenario
+            for scenario in STORAGE_SCENARIOS
+            if scenario.name == "knowledge_dates_page_search"
+        )
+
+        calendar_page_expectation = calendar.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name="knowledge_dates_page_calendar__001",
+            profile=query_plan_models.REALISTIC_PROFILE,
+        )
+        assert {index.name for index in calendar_page_expectation.expected_indexes} == {
+            "date_details_author_calendar_item_idx",
+            "knowledge__knowledge_item_model_pkey",
+        }
+        assert calendar.forbidden_seq_scan_relations == ()
+        search_count_expectation = search.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name="knowledge_dates_page_search__002",
+            profile=query_plan_models.REALISTIC_PROFILE,
+        )
+        assert tuple(index.name for index in search_count_expectation.expected_indexes) == (
+            "knowledge_items_display_name_trgm_idx",
+        )
+        assert tuple(index.name for index in backlink.expected_indexes) == (
+            "date_people_author_person_date_idx",
+        )
+        assert backlink.forbidden_seq_scan_relations == (
+            "knowledge__date_person_model",
+            "knowledge__date_details_model",
+        )
+
+    def test_dates_filtered_page_accepts_stress_details_pk_or_composite_index(self) -> None:
+        scenario = next(
+            scenario
+            for scenario in STORAGE_SCENARIOS
+            if scenario.name == "knowledge_dates_page_search_tags_person"
+        )
+
+        stress_expectation = scenario.plan_expectation(
+            policy=ABSOLUTE_SLA_POLICY,
+            query_name=None,
+            profile=query_plan_models.STRESS_PROFILE,
+        )
+
+        assert {index.name for index in stress_expectation.expected_indexes} == {
+            "knowledge_item_tags_author_tag_item_idx",
+            "date_people_author_person_date_idx",
+            "knowledge__knowledge_item_model_pkey",
+        }
+        assert stress_expectation.forbidden_seq_scan_relations == (
+            "knowledge__knowledge_item_model",
+            "knowledge__knowledge_item_tag_model",
+            "knowledge__date_details_model",
+            "knowledge__date_person_model",
+        )
+        assert stress_expectation.allow_seq_scan_reason is None
 
     @pytest.mark.parametrize(
         "scenario_name",

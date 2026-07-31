@@ -67,6 +67,12 @@ class KnowledgeItemModel(HexUuidIDMixin, AuditMixin, BaseModel):
             func.lower(display_name).label("display_name_lower"),
             "id",
         ),
+        Index(
+            "knowledge_items_display_name_trgm_idx",
+            func.lower(display_name).label("display_name_lower_trgm"),
+            postgresql_using="gin",
+            postgresql_ops={"display_name_lower_trgm": "gin_trgm_ops"},
+        ),
         CheckConstraint(
             "char_length(description) <= 100000",
             name="knowledge_items_description_length_check",

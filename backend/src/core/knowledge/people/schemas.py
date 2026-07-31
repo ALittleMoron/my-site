@@ -4,6 +4,7 @@ from datetime import date, datetime
 from math import ceil
 from typing import Self
 
+from core.knowledge.dates.schemas import KnowledgeDateReference
 from core.knowledge.exceptions import InvalidKnowledgeDataError
 from core.knowledge.files.schemas import KnowledgeFile
 from core.knowledge.items.schemas import KnowledgeItem, KnowledgeTag
@@ -130,6 +131,7 @@ class Person:
     item: KnowledgeItem
     details: PersonDetails
     relationships: list[PersonRelationshipView]
+    related_dates: list[KnowledgeDateReference]
     photo: KnowledgeFile | None
     attachments: list[KnowledgeFile]
 

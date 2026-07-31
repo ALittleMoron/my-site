@@ -180,6 +180,11 @@ class TestQueryCapture:
                 {"profile": profile},
                 ("grade_enum", "interview_frequency_enum", "publish_status_enum"),
             ),
+            (
+                query_plan_seed.insert_knowledge_dates,
+                {"profile": profile},
+                ("knowledge_item_kind_enum",),
+            ),
         )
 
         for seed_function, kwargs, enum_type_names in expectations:
@@ -251,6 +256,7 @@ class TestQueryCapture:
         assert ("ResumesDatabaseStorage", "list_resumes") in identifiers
         assert ("KnowledgeItemsDatabaseStorage", "get_item") in identifiers
         assert ("KnowledgeFilesDatabaseStorage", "get_file") in identifiers
+        assert ("KnowledgeDatesDatabaseStorage", "list_date_page") in identifiers
         assert ("PeopleDatabaseStorage", "list_person_page") in identifiers
         assert ("PeopleDatabaseStorage", "list_matching_person_ids") not in identifiers
         assert ("ArticlesDatabaseStorage", "_get_article_model") not in identifiers
@@ -272,6 +278,7 @@ class TestQueryCapture:
         knowledge_storage_classes = {
             "KnowledgeItemsDatabaseStorage",
             "KnowledgeFilesDatabaseStorage",
+            "KnowledgeDatesDatabaseStorage",
             "PeopleDatabaseStorage",
         }
         assert {
@@ -844,11 +851,14 @@ def make_query_plan_profile() -> query_plan_models.QueryPlanProfile:
             resumes=query_plan_models.ResumeCardinalities(resumes=10),
             knowledge=query_plan_models.KnowledgeCardinalities(
                 items=101,
+                dates=101,
                 search_match_percentage=10,
                 tags=10,
                 item_tag_links=202,
+                date_tag_links=202,
                 relationship_types=10,
                 relationships=101,
+                date_person_links=202,
                 files=202,
             ),
             matrix=query_plan_models.MatrixCardinalities(

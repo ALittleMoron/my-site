@@ -19,6 +19,9 @@ from core.knowledge.people.schemas import (
     PersonSummary,
     PersonUpdateParams,
 )
+from entrypoints.litestar.api.knowledge.dates.schemas import (
+    KnowledgeDateReferenceResponseSchema,
+)
 from entrypoints.litestar.api.knowledge.files.schemas import KnowledgeFileResponseSchema
 from entrypoints.litestar.api.knowledge.items.schemas import KnowledgeTagResponseSchema
 from entrypoints.litestar.api.schemas import CamelCaseSchema
@@ -332,6 +335,10 @@ class PersonResponseSchema(CamelCaseSchema):
         list[PersonRelationshipResponseSchema],
         Field(title="Relationships"),
     ]
+    related_dates: Annotated[
+        list[KnowledgeDateReferenceResponseSchema],
+        Field(title="Related memorable dates"),
+    ]
     photo: Annotated[KnowledgeFileResponseSchema | None, Field(title="Photo")]
     attachments: Annotated[list[KnowledgeFileResponseSchema], Field(title="Attachments")]
     created_at: Annotated[str, Field(title="Created at")]
@@ -363,6 +370,10 @@ class PersonResponseSchema(CamelCaseSchema):
                 relationships=[
                     PersonRelationshipResponseSchema.from_domain_schema(schema=relationship)
                     for relationship in schema.relationships
+                ],
+                related_dates=[
+                    KnowledgeDateReferenceResponseSchema.from_domain_schema(schema=value)
+                    for value in schema.related_dates
                 ],
                 photo=(
                     KnowledgeFileResponseSchema.from_domain_schema(schema=schema.photo)

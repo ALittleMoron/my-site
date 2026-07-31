@@ -216,6 +216,13 @@ class TestI18nCatalog:
             != english_messages["adminPanel.section.knowledge"]
         )
 
+    def test_dates_optional_year_label_does_not_repeat_optionality(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["knowledgeDates.year"] == "Год начала"
+        assert english_messages["knowledgeDates.year"] == "First year"
+
     def test_matrix_draft_blocker_summary_labels_fit_the_summary_card(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)

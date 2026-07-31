@@ -167,20 +167,24 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     month: '2026-07',
     order: 8,
     title: {
-      ru: 'База знаний получила приватный раздел людей',
-      en: 'The knowledge base gained a private People workspace',
+      ru: 'База знаний получила приватные разделы людей и дат',
+      en: 'The knowledge base gained private People and Dates workspaces',
     },
     summary: {
       ru:
         'Владельцы и администраторы могут вести изолированные по автору карточки людей: ' +
         'контакты и дни рождения, теги, типизированные связи, Markdown-заметки, фото и ' +
-        'вложения. Приватные файлы хранятся отдельно от публичного media bucket, читаются ' +
-        'только через проверяющий автора backend stream, а публичный S3 edge отвечает 404.',
+        'вложения. Памятные ежегодные даты получили календарную сортировку, связи с людьми, ' +
+        'теги, заметки и приватные вложения; в карточках людей видны обратные ссылки. ' +
+        'Приватные файлы хранятся отдельно от публичного media bucket, читаются только через ' +
+        'проверяющий автора backend stream, а публичный S3 edge отвечает 404.',
       en:
         'Owners and administrators can maintain author-isolated people records with contacts ' +
         'and birthdays, tags, typed relationships, Markdown notes, photos, and attachments. ' +
-        'Private files stay separate from the public media bucket, are read only through an ' +
-        'author-checking backend stream, and return 404 at the public S3 edge.',
+        'Annual memorable dates gained calendar sorting, links to people, tags, notes, and ' +
+        'private attachments, with read-only backlinks on people records. Private files stay ' +
+        'separate from the public media bucket, are read only through an author-checking backend ' +
+        'stream, and return 404 at the public S3 edge.',
     },
     tagIds: ['admin', 'frontend', 'backend', 'security', 'infra'],
   },

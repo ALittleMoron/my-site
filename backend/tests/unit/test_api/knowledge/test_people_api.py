@@ -50,6 +50,7 @@ def person_response(*, person_id: str = "1" * 32) -> Person:
             birthday=None,
         ),
         relationships=[],
+        related_dates=[],
         photo=None,
         attachments=[],
     )

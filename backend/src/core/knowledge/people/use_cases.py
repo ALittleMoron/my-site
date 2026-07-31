@@ -1,6 +1,8 @@
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
+from core.knowledge.dates.schemas import KnowledgeDateReference
+from core.knowledge.dates.storages import KnowledgeDatesStorage
 from core.knowledge.exceptions import (
     InvalidKnowledgeDataError,
     KnowledgeConflictError,
@@ -39,6 +41,7 @@ class PeopleUseCase:
     item_service: KnowledgeItemCrudService
     item_storage: KnowledgeItemsStorage
     people_storage: PeopleStorage
+    dates_storage: KnowledgeDatesStorage
     file_storage: KnowledgeFilesStorage
 
     async def list_people(self, *, filters: PersonFilters) -> PeoplePage:
@@ -121,6 +124,10 @@ class PeopleUseCase:
             kind=KnowledgeItemKind.PERSON,
         )
         display_names = {related.id: related.display_name for related in related_items}
+        related_dates = await self.list_related_dates(
+            person_id=person_id,
+            author_username=author_username,
+        )
         files = await self.file_storage.list_item_files(
             item_id=person_id,
             author_username=author_username,
@@ -144,11 +151,52 @@ class PeopleUseCase:
                 )
                 for relationship in relationships
             ],
+            related_dates=related_dates,
             photo=next(
                 (file for file in files if file.kind == KnowledgeFileKind.PERSON_PHOTO),
                 None,
             ),
             attachments=[file for file in files if file.kind == KnowledgeFileKind.ATTACHMENT],
+        )
+
+    async def list_related_dates(
+        self,
+        *,
+        person_id: str,
+        author_username: str,
+    ) -> list[KnowledgeDateReference]:
+        date_ids = await self.dates_storage.list_date_ids_for_person(
+            person_id=person_id,
+            author_username=author_username,
+        )
+        if not date_ids:
+            return []
+        items = await self.item_storage.get_items_by_ids(
+            item_ids=set(date_ids),
+            author_username=author_username,
+            kind=KnowledgeItemKind.DATE,
+        )
+        details = await self.dates_storage.list_details(
+            item_ids=date_ids,
+            author_username=author_username,
+        )
+        items_by_id = {item.id: item for item in items}
+        details_by_id = {value.item_id: value for value in details}
+        return sorted(
+            [
+                KnowledgeDateReference(
+                    id=date_id,
+                    display_name=items_by_id[date_id].display_name,
+                    date=details_by_id[date_id].date,
+                )
+                for date_id in date_ids
+            ],
+            key=lambda value: (
+                value.date.month,
+                value.date.day,
+                value.display_name.casefold(),
+                value.id,
+            ),
         )
 
     async def create_person(self, *, params: PersonQuickCreateParams) -> Person:
@@ -329,6 +377,10 @@ class PeopleUseCase:
             person_id=person_id,
             author_username=author_username,
         )
+        related_date_ids = await self.dates_storage.list_date_ids_for_person(
+            person_id=person_id,
+            author_username=author_username,
+        )
         files = await self.file_storage.list_item_files(
             item_id=person_id,
             author_username=author_username,
@@ -338,11 +390,18 @@ class PeopleUseCase:
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
         )
+        updated_at = datetime.now(tz=UTC)
         await self.item_storage.touch_items(
             item_ids=related_ids,
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=updated_at,
+        )
+        await self.item_storage.touch_items(
+            item_ids=set(related_date_ids),
+            author_username=author_username,
+            kind=KnowledgeItemKind.DATE,
+            updated_at=updated_at,
         )
         return tuple(file.relative_path for file in files)
 

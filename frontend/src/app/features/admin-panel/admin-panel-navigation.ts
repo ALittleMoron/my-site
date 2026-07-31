@@ -119,6 +119,14 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         adminOnly: true,
         ownerOnly: false,
       },
+      {
+        key: 'knowledge-dates',
+        labelKey: 'adminPanel.section.dates',
+        route: '/admin-panel/knowledge/dates',
+        badgeTextKey: null,
+        adminOnly: true,
+        ownerOnly: false,
+      },
     ],
   },
 ];

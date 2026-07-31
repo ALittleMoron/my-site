@@ -48,6 +48,12 @@ export interface PersonRelationship {
   updatedAt: string;
 }
 
+export interface KnowledgeDateReference {
+  id: string;
+  displayName: string;
+  date: PersonBirthday;
+}
+
 export interface PersonSummary {
   id: string;
   displayName: string;
@@ -80,6 +86,7 @@ export interface PersonDetail {
   description: string;
   tags: readonly KnowledgeTag[];
   relationships: readonly PersonRelationship[];
+  relatedDates: readonly KnowledgeDateReference[];
   photo: KnowledgeFile | null;
   attachments: readonly KnowledgeFile[];
   createdAt: string;

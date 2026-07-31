@@ -84,6 +84,8 @@ INDEX_RELATION_NAMES: Mapping[str, str] = {
     ),
     "competency_matrix__queued_question_model_pkey": ("competency_matrix__queued_question_model"),
     "knowledge__knowledge_file_model_pkey": "knowledge__knowledge_file_model",
+    "knowledge__date_details_model_pkey": "knowledge__date_details_model",
+    "knowledge__date_person_model_pkey": "knowledge__date_person_model",
     "knowledge__knowledge_item_model_pkey": "knowledge__knowledge_item_model",
     "knowledge__knowledge_item_tag_model_pkey": "knowledge__knowledge_item_tag_model",
     "knowledge__knowledge_tag_model_pkey": "knowledge__knowledge_tag_model",
@@ -92,10 +94,15 @@ INDEX_RELATION_NAMES: Mapping[str, str] = {
     "knowledge__person_relationship_type_model_pkey": ("knowledge__person_relationship_type_model"),
     "knowledge_files_author_item_kind_id_idx": "knowledge__knowledge_file_model",
     "knowledge_files_id_author_uniq": "knowledge__knowledge_file_model",
+    "date_details_author_calendar_item_idx": "knowledge__date_details_model",
+    "date_details_id_author_uniq": "knowledge__date_details_model",
+    "date_people_author_date_person_idx": "knowledge__date_person_model",
+    "date_people_author_person_date_idx": "knowledge__date_person_model",
     "knowledge_item_tags_author_tag_item_idx": "knowledge__knowledge_item_tag_model",
     "knowledge_items_author_kind_name_id_idx": "knowledge__knowledge_item_model",
     "knowledge_items_author_kind_updated_id_idx": "knowledge__knowledge_item_model",
     "knowledge_items_id_author_uniq": "knowledge__knowledge_item_model",
+    "knowledge_items_display_name_trgm_idx": "knowledge__knowledge_item_model",
     "knowledge_tags_id_author_uniq": "knowledge__knowledge_tag_model",
     "knowledge_tags_author_name_id_idx": "knowledge__knowledge_tag_model",
     "knowledge_tags_author_name_lower_uniq": "knowledge__knowledge_tag_model",
@@ -208,14 +215,45 @@ ABSOLUTE_SLA_POLICY = QueryThresholdPolicy(
         "people_page_search_and_tags__001": expected_indexes_from_names(
             names=(
                 "knowledge_item_tags_author_tag_item_idx",
-                "person_details_id_author_uniq",
-                "knowledge__knowledge_item_model_pkey",
+                "knowledge_items_id_author_uniq",
+                "knowledge__person_details_model_pkey",
             ),
         ),
         "people_page_search_and_tags__002": expected_indexes_from_names(
             names=(
                 "knowledge_item_tags_author_tag_item_idx",
-                "person_details_id_author_uniq",
+                "knowledge_items_id_author_uniq",
+                "knowledge__person_details_model_pkey",
+            ),
+        ),
+        "knowledge_dates_page_calendar__001": expected_indexes_from_names(
+            names=(
+                "date_details_author_calendar_item_idx",
+                "knowledge__knowledge_item_model_pkey",
+            ),
+        ),
+        "knowledge_dates_page_search__001": expected_indexes_from_names(
+            names=(
+                "knowledge_items_author_kind_name_id_idx",
+                "date_details_id_author_uniq",
+            ),
+        ),
+        "knowledge_dates_page_search__002": expected_indexes_from_names(
+            names=("knowledge_items_display_name_trgm_idx",),
+        ),
+        "knowledge_dates_page_search_tags_person__001": expected_indexes_from_names(
+            names=(
+                "knowledge_item_tags_author_tag_item_idx",
+                "date_people_author_person_date_idx",
+                "date_details_id_author_uniq",
+                "knowledge__knowledge_item_model_pkey",
+            ),
+        ),
+        "knowledge_dates_page_search_tags_person__002": expected_indexes_from_names(
+            names=(
+                "knowledge_item_tags_author_tag_item_idx",
+                "date_people_author_person_date_idx",
+                "date_details_id_author_uniq",
                 "knowledge__knowledge_item_model_pkey",
             ),
         ),

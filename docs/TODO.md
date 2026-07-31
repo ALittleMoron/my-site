@@ -455,7 +455,7 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
     - [ ] Books by categories page
     - [ ] Books to reread page
   - [ ] Companies
-  - [ ] Dates
+  - [x] Dates
   - [x] People
   - [ ] Places
   - [ ] Projects

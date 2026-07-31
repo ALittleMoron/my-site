@@ -170,6 +170,10 @@ function mapPerson(person: PersonDetail): PersonDetail {
       ...relationship,
       relationshipType: { ...relationship.relationshipType },
     })),
+    relatedDates: person.relatedDates.map((value) => ({
+      ...value,
+      date: { ...value.date },
+    })),
     photo: person.photo === null ? null : { ...person.photo },
     attachments: person.attachments.map((file) => ({ ...file })),
   };

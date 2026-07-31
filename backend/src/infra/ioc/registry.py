@@ -18,6 +18,7 @@ from infra.ioc.prodivers.files_provider import FilesProvider
 from infra.ioc.prodivers.general_provider import GeneralProvider
 from infra.ioc.prodivers.healthcheck_provider import HealthcheckProvider
 from infra.ioc.prodivers.knowledge import (
+    KnowledgeDatesProvider,
     KnowledgeFilesProvider,
     KnowledgeItemsProvider,
     KnowledgePeopleProvider,
@@ -66,6 +67,7 @@ def get_providers() -> Iterable[Provider]:
         ResumesProvider(),
         KnowledgeItemsProvider(),
         KnowledgeFilesProvider(),
+        KnowledgeDatesProvider(),
         KnowledgePeopleProvider(),
         WikiLinksProvider(),
         ResponseCacheWarmProvider(),

@@ -67,4 +67,16 @@ describe('adminPanelRoutes', () => {
       expect(route.canDeactivate).toEqual([adminUnsavedChangesGuard]);
     }
   });
+
+  it('keeps both private Dates routes behind the team and unsaved-change guards', () => {
+    const routes = (adminPanelRoutes[0].children ?? []).filter((child) =>
+      child.path?.startsWith('knowledge/dates'),
+    );
+
+    expect(routes.map((route) => route.path)).toEqual(['knowledge/dates', 'knowledge/dates/:id']);
+    for (const route of routes) {
+      expect(route.canActivate).toEqual([teamGuard]);
+      expect(route.canDeactivate).toEqual([adminUnsavedChangesGuard]);
+    }
+  });
 });

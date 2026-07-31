@@ -1,3 +1,4 @@
+from .knowledge import KnowledgeDatesDatabaseStorage as KnowledgeDatesDatabaseStorage
 from .knowledge import KnowledgeFilesDatabaseStorage as KnowledgeFilesDatabaseStorage
 from .knowledge import KnowledgeItemsDatabaseStorage as KnowledgeItemsDatabaseStorage
 from .knowledge import PeopleDatabaseStorage as PeopleDatabaseStorage

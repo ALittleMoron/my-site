@@ -9,6 +9,10 @@ class PersonNotFoundError(EntryNotFoundError):
     message = "Person not found"
 
 
+class KnowledgeDateNotFoundError(EntryNotFoundError):
+    message = "Knowledge date not found"
+
+
 class KnowledgeTagNotFoundError(EntryNotFoundError):
     message = "Knowledge tag not found"
 

@@ -118,6 +118,26 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
+        path: 'knowledge/dates',
+        title: 'knowledgeDates.title',
+        canActivate: [teamGuard],
+        canDeactivate: [adminUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./knowledge/dates/pages/dates-list/dates-list.component').then(
+            (m) => m.DatesListComponent,
+          ),
+      },
+      {
+        path: 'knowledge/dates/:id',
+        title: 'knowledgeDates.detailTitle',
+        canActivate: [teamGuard],
+        canDeactivate: [adminUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./knowledge/dates/pages/date-detail/date-detail.component').then(
+            (m) => m.DateDetailComponent,
+          ),
+      },
+      {
         path: 'workspace/tools',
         title: 'adminTools.title',
         canActivate: [teamGuard],

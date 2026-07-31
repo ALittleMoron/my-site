@@ -1,8 +1,8 @@
 # Knowledge Database
 
-The knowledge database is a private owner/admin workspace. Version 1 starts with People while
-keeping the common item, taxonomy, file, and access boundaries reusable for future knowledge types.
-It is not a public content API and is not part of Angular SSR.
+The knowledge database is a private owner/admin workspace. Its first typed item workspaces are
+People and Dates, while the common item, taxonomy, file, and access boundaries remain reusable for
+future knowledge types. It is not a public content API and is not part of Angular SSR.
 
 ## Architecture
 
@@ -12,17 +12,22 @@ The model uses a typed extension pattern:
   tags, and timestamps.
 - `PersonDetails` is a required one-to-one extension of a `person` item and owns person-specific
   names, contact fields, and birthday.
+- `KnowledgeDateDetails` is a required one-to-one extension of a `date` item and owns a recurring
+  calendar day/month plus an optional non-future first year.
+- Date-to-Person links are author-scoped normalized many-to-many rows. Dates own link editing;
+  People expose read-only backlinks.
 - People-specific relationships and relationship types stay in their own normalized tables.
-- The core layer exposes generic knowledge-item and file contracts plus a typed `PeopleUseCase`
-  facade. PostgreSQL, S3, Litestar, and Angular remain outside the core model.
+- The core layer exposes generic knowledge-item and file contracts plus typed `PeopleUseCase` and
+  `KnowledgeDatesUseCase` facades. PostgreSQL, S3, Litestar, and Angular remain outside the core
+  model.
 
 Knowledge code is physically partitioned by ownership:
 
-- `core/knowledge/{items,files,people}` contains the matching domain enums, schemas, contracts,
+- `core/knowledge/{items,files,people,dates}` contains the matching domain enums, schemas, contracts,
   services, and use cases.
-- `entrypoints/litestar/api/knowledge/{items,files,people}` contains transport schemas and
+- `entrypoints/litestar/api/knowledge/{items,files,people,dates}` contains transport schemas and
   controllers; `knowledge/router.py` only composes those controllers.
-- `infra/postgresql/{models,storages}/knowledge/{items,files,people}` and
+- `infra/postgresql/{models,storages}/knowledge/{items,files,people,dates}` and
   `infra/ioc/prodivers/knowledge/` mirror the same boundaries.
 
 Future item types should add their own typed one-to-one extension and feature facade. A universal
@@ -33,8 +38,8 @@ searchability, type safety, and explicit product behavior, so it is not the exte
 
 All knowledge endpoints are admin-classified under `/api/admin/knowledge/*`, guarded for owner and
 administrator roles, excluded from OpenAPI, and returned with `Cache-Control: no-store`.
-`/admin-panel/knowledge/people` and its detail route are protected CSR routes; they are never SSR or
-Angular transfer-cache inputs.
+`/admin-panel/knowledge/people`, `/admin-panel/knowledge/dates`, and their detail routes are
+protected CSR routes; they are never SSR or Angular transfer-cache inputs.
 
 Knowledge data is private per author account. `author_username` is part of every list, lookup,
 mutation, relationship, tag, and file predicate. Composite foreign keys repeat the author beside
@@ -44,12 +49,15 @@ use-case, and API IDOR tests and must be preserved for every new knowledge type.
 
 ## PostgreSQL Model
 
-Migration `0014_add_knowledge_people_and_private_files.py` adds:
+Migrations `0014_add_knowledge_people_and_private_files.py` and
+`0015_add_knowledge_dates.py` add:
 
 | Table | Purpose and main invariants |
 | --- | --- |
-| `knowledge__knowledge_item_model` | Common item with `KnowledgeItemKind.PERSON`, author, display name, description up to 100,000 characters, timestamps, and unique `(id, author_username)`. |
+| `knowledge__knowledge_item_model` | Common item with `KnowledgeItemKind.PERSON` or `DATE`, author, display name, description up to 100,000 characters, timestamps, and unique `(id, author_username)`. |
 | `knowledge__person_details_model` | Required one-to-one person extension keyed by `item_id`; composite item/author FK; required first and last names; blankable email, phone, and Telegram contact fields; optional all-or-nothing day/month birthday with optional year; calendar-valid and non-future dated birthdays. |
+| `knowledge__date_details_model` | Required one-to-one Date extension; calendar-valid required day/month, optional year, composite item/author FK, and author/calendar index. |
+| `knowledge__date_person_model` | Author-scoped Date↔Person links with composite FKs, cascade cleanup, and indexes for both date-side loading and Person backlinks. |
 | `knowledge__knowledge_tag_model` | Author-owned taxonomy; case-insensitive unique name per author. |
 | `knowledge__knowledge_item_tag_model` | Author-scoped many-to-many item/tag link; item deletion cascades and an in-use tag is restricted from deletion. |
 | `knowledge__person_relationship_type_model` | Author-owned symmetric or directional labels. Symmetric types use one identical forward/reverse label; directional types require both. |
@@ -58,13 +66,18 @@ Migration `0014_add_knowledge_people_and_private_files.py` adds:
 
 List and relation indexes start with `author_username`. Stable list indexes support name and
 updated-at sorting, item-tag membership, file lookup, and relationship traversal from either side.
-GIN trigram indexes cover case-insensitive tag, first/middle/last name, and email search.
+GIN trigram indexes cover the common item display name plus case-insensitive tag,
+first/middle/last name, and email search.
 A partial unique index allows at most one `PERSON_PHOTO` for a person. Composite author FKs and
 unique keys prevent cross-author references even if application validation regresses.
 
 People list search covers person names and email only; phone and Telegram remain intentionally
 non-searchable contact fields. Multiple tag IDs use AND semantics. Supported sorts are
 newest/oldest update and ascending/descending name, with explicit pagination.
+
+Dates list search covers the common display name. Multiple tag IDs use AND semantics and an
+optional `relatedPersonId` applies an author-scoped backlink filter. Supported sorts are recurring
+calendar order, newest/oldest update, and ascending/descending name, with explicit pagination.
 
 ## Admin API
 
@@ -81,6 +94,19 @@ People:
 | `POST` | `/api/admin/knowledge/people/relationship-types` | Create a symmetric or directional type. |
 | `PUT` | `/api/admin/knowledge/people/relationship-types/{typeId}` | Replace an existing type. |
 | `DELETE` | `/api/admin/knowledge/people/relationship-types/{typeId}` | Delete an unused type. |
+
+Person detail responses also include required `relatedDates` backlinks. Link mutations remain
+Date-owned.
+
+Dates:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/admin/knowledge/dates` | Paginated search, AND-tag and Person filters, plus calendar/update/name sorting. |
+| `POST` | `/api/admin/knowledge/dates` | Quick-create from a display name and annual date. |
+| `GET` | `/api/admin/knowledge/dates/{dateId}` | Full date, tags, related People, private attachments, and timestamps. |
+| `PUT` | `/api/admin/knowledge/dates/{dateId}` | Replace the date, description, tags, and People links. |
+| `DELETE` | `/api/admin/knowledge/dates/{dateId}` | Delete the Date graph and schedule attachment cleanup after commit. |
 
 Taxonomy and private files:
 
@@ -133,13 +159,19 @@ The lazy CSR routes are:
   pagination, loading/error/empty/populated states, quick create, tag management, and delete.
 - `/admin-panel/knowledge/people/:id` — typed person form, day/month birthday with optional year,
   Markdown description, tags, symmetric/directional relationships, relationship type management,
-  photo, attachments, protected downloads, and unsaved-change protection.
+  Date backlinks, photo, attachments, protected downloads, and unsaved-change protection.
+- `/admin-panel/knowledge/dates` — URL-synchronized search, AND-tag and Person filters, calendar
+  sorting, pagination, related People, quick create, and delete.
+- `/admin-panel/knowledge/dates/:id` — typed recurring-date form, People links, Markdown
+  description, shared tags, private attachments, protected downloads, and unsaved-change
+  protection.
 
 The workspace uses explicit typed forms and feature models. It does not render a schema-driven
 universal form. Protected photos are fetched as blobs and displayed through short-lived browser
 object URLs; old URLs are revoked on replacement, navigation, errors, and component destruction.
-The shared Markdown editor has image uploads disabled for People descriptions, because inline
-images would bypass the private knowledge-file workflow.
+The shared Markdown editor has image uploads disabled for People and Dates descriptions, because
+inline images would bypass the private knowledge-file workflow. A shared locale-aware annual-date
+formatter renders day/month values with or without the optional year in both workspaces.
 
 ## Operations
 
@@ -151,14 +183,15 @@ private `knowledge-private` bucket. After a deployment:
    and no bucket CORS configuration.
 3. From the public side, confirm both
    `https://s3.<APP_DOMAIN>/knowledge-private` and a path below it return `404`.
-4. As an owner/admin, upload and download a small photo and attachment through the People UI.
-   Confirm photo replacement and person deletion remove obsolete objects after the request commits.
+4. As an owner/admin, upload and download a small photo and attachment through the People UI and an
+   attachment through Dates. Confirm replacement/deletion removes obsolete objects only after the
+   request commits.
 5. Confirm the knowledge controllers are absent from `/api/docs/openapi.json` and private responses
    carry `no-store`.
 
 Run `make security-infra`, `make query-plans-realistic`, and the relevant backend/frontend test
-targets after changing this contour. Query-plan fixtures cover realistic and stress People lists,
-details, tags, relationships, and files.
+targets after changing this contour. Query-plan fixtures cover realistic and stress People and
+Dates lists, details, tags, relationships/backlinks, calendar/name search indexes, and files.
 
 ## Backup And Restore
 

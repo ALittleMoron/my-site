@@ -51,6 +51,12 @@ from core.competency_matrix.schemas import (
 from core.contacts.schemas import ContactMe
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
+from core.knowledge.dates.enums import KnowledgeDateListSort
+from core.knowledge.dates.schemas import (
+    KnowledgeDateDetails,
+    KnowledgeDateFilters,
+    KnowledgeDateValue,
+)
 from core.knowledge.files.enums import KnowledgeFileKind
 from core.knowledge.files.schemas import KnowledgeFile
 from core.knowledge.items.enums import KnowledgeItemKind
@@ -91,6 +97,7 @@ from infra.postgresql.storages.articles import (
 from infra.postgresql.storages.auth import AuthDatabaseStorage, AuthSessionDatabaseStorage
 from infra.postgresql.storages.competency_matrix import CompetencyMatrixDatabaseStorage
 from infra.postgresql.storages.contacts import ContactMeDatabaseStorage
+from infra.postgresql.storages.knowledge.dates import KnowledgeDatesDatabaseStorage
 from infra.postgresql.storages.knowledge.files import KnowledgeFilesDatabaseStorage
 from infra.postgresql.storages.knowledge.items import KnowledgeItemsDatabaseStorage
 from infra.postgresql.storages.knowledge.people import (
@@ -111,7 +118,10 @@ from performance.query_plans.models import (
     QueryThresholdGroup,
     StorageMethod,
 )
-from performance.query_plans.seed import KNOWLEDGE_DELETABLE_TAG_NUMBER
+from performance.query_plans.seed import (
+    KNOWLEDGE_DATE_ITEM_OFFSET,
+    KNOWLEDGE_DELETABLE_TAG_NUMBER,
+)
 
 ScenarioRunner = Callable[[AsyncSession], Awaitable[None]]
 
@@ -139,6 +149,8 @@ DELETABLE_RESUME_ID = hex_id(101)
 EXISTING_PERSON_ID = hex_id(100)
 RELATED_PERSON_ID = hex_id(101)
 UPDATED_RELATED_PERSON_ID = hex_id(200)
+EXISTING_KNOWLEDGE_DATE_ID = hex_id(KNOWLEDGE_DATE_ITEM_OFFSET + 100)
+RELATED_KNOWLEDGE_DATE_ID = hex_id(KNOWLEDGE_DATE_ITEM_OFFSET + 101)
 EXISTING_KNOWLEDGE_TAG_ID = hex_id(1)
 SECOND_KNOWLEDGE_TAG_ID = hex_id(2)
 DELETABLE_KNOWLEDGE_TAG_ID = hex_id(KNOWLEDGE_DELETABLE_TAG_NUMBER)
@@ -1195,6 +1207,13 @@ def seeded_person_details(*, item_id: str) -> PersonDetails:
     )
 
 
+def seeded_knowledge_date_details(*, item_id: str) -> KnowledgeDateDetails:
+    return KnowledgeDateDetails(
+        item_id=item_id,
+        date=KnowledgeDateValue(day=15, month=1, year=None),
+    )
+
+
 def seeded_relationship_type(*, relationship_type_id: str) -> PersonRelationshipType:
     return PersonRelationshipType(
         id=relationship_type_id,
@@ -1421,6 +1440,109 @@ async def run_update_knowledge_file_name(session: AsyncSession) -> None:
 async def run_delete_knowledge_file(session: AsyncSession) -> None:
     await KnowledgeFilesDatabaseStorage(session=session).delete_file(
         file=seeded_knowledge_file(file_id=EXISTING_KNOWLEDGE_FILE_ID),
+    )
+
+
+async def run_list_knowledge_date_page(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_date_page(
+        filters=KnowledgeDateFilters(
+            page=1,
+            page_size=20,
+            sort=KnowledgeDateListSort.DATE_ASC,
+            search_query="searchneedle",
+            tag_ids=(EXISTING_KNOWLEDGE_TAG_ID, SECOND_KNOWLEDGE_TAG_ID),
+            related_person_id=EXISTING_PERSON_ID,
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_list_knowledge_date_page_calendar(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_date_page(
+        filters=KnowledgeDateFilters(
+            page=3,
+            page_size=20,
+            sort=KnowledgeDateListSort.DATE_ASC,
+            search_query=None,
+            tag_ids=(),
+            related_person_id=None,
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_search_knowledge_date_page(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_date_page(
+        filters=KnowledgeDateFilters(
+            page=3,
+            page_size=20,
+            sort=KnowledgeDateListSort.NAME_ASC,
+            search_query="searchneedle",
+            tag_ids=(),
+            related_person_id=None,
+            author_username=SEED_USERNAME,
+        ),
+    )
+
+
+async def run_list_knowledge_date_details(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_details(
+        item_ids=[hex_id(KNOWLEDGE_DATE_ITEM_OFFSET + value) for value in range(100, 120)],
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_get_knowledge_date_details(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).get_details(
+        item_id=EXISTING_KNOWLEDGE_DATE_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_create_knowledge_date_details(session: AsyncSession) -> None:
+    item = await KnowledgeItemsDatabaseStorage(session=session).create_item(
+        params=KnowledgeItemCreateParams(
+            kind=KnowledgeItemKind.DATE,
+            author_username=SEED_USERNAME,
+            display_name="Created Query Plan Date",
+            description="",
+        ),
+    )
+    await KnowledgeDatesDatabaseStorage(session=session).create_details(
+        details=seeded_knowledge_date_details(item_id=item.id),
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_update_knowledge_date_details(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).update_details(
+        details=KnowledgeDateDetails(
+            item_id=EXISTING_KNOWLEDGE_DATE_ID,
+            date=KnowledgeDateValue(day=16, month=1, year=2000),
+        ),
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_knowledge_date_person_links(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_person_links(
+        date_ids={EXISTING_KNOWLEDGE_DATE_ID, RELATED_KNOWLEDGE_DATE_ID},
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_knowledge_date_ids_for_person(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_date_ids_for_person(
+        person_id=EXISTING_PERSON_ID,
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_replace_knowledge_date_person_links(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).replace_person_links(
+        date_id=EXISTING_KNOWLEDGE_DATE_ID,
+        person_ids=[RELATED_PERSON_ID, UPDATED_RELATED_PERSON_ID],
+        author_username=SEED_USERNAME,
     )
 
 
@@ -2024,6 +2146,104 @@ STORAGE_SCENARIOS = (
                 ("knowledge_files_id_author_uniq",),
                 ("knowledge__knowledge_file_model",),
                 run_delete_knowledge_file,
+            ),
+            (
+                "knowledge_dates_page_calendar",
+                "KnowledgeDatesDatabaseStorage",
+                "list_date_page",
+                QueryThresholdGroup.LIST_READ,
+                (),
+                (),
+                run_list_knowledge_date_page_calendar,
+            ),
+            (
+                "knowledge_dates_page_search",
+                "KnowledgeDatesDatabaseStorage",
+                "list_date_page",
+                QueryThresholdGroup.SEARCH,
+                (),
+                ("knowledge__knowledge_item_model",),
+                run_search_knowledge_date_page,
+            ),
+            (
+                "knowledge_dates_page_search_tags_person",
+                "KnowledgeDatesDatabaseStorage",
+                "list_date_page",
+                QueryThresholdGroup.SEARCH,
+                (),
+                (
+                    "knowledge__knowledge_item_model",
+                    "knowledge__knowledge_item_tag_model",
+                    "knowledge__date_details_model",
+                    "knowledge__date_person_model",
+                ),
+                run_list_knowledge_date_page,
+            ),
+            (
+                "knowledge_date_details_batch",
+                "KnowledgeDatesDatabaseStorage",
+                "list_details",
+                QueryThresholdGroup.POINT_READ,
+                ("knowledge__date_details_model_pkey",),
+                ("knowledge__date_details_model",),
+                run_list_knowledge_date_details,
+            ),
+            (
+                "knowledge_date_detail",
+                "KnowledgeDatesDatabaseStorage",
+                "get_details",
+                QueryThresholdGroup.POINT_READ,
+                ("date_details_id_author_uniq",),
+                ("knowledge__date_details_model",),
+                run_get_knowledge_date_details,
+            ),
+            (
+                "knowledge_date_details_create",
+                "KnowledgeDatesDatabaseStorage",
+                "create_details",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                (),
+                run_create_knowledge_date_details,
+            ),
+            (
+                "knowledge_date_details_update",
+                "KnowledgeDatesDatabaseStorage",
+                "update_details",
+                QueryThresholdGroup.SMALL_WRITE,
+                ("date_details_id_author_uniq",),
+                ("knowledge__date_details_model",),
+                run_update_knowledge_date_details,
+            ),
+            (
+                "knowledge_date_person_links",
+                "KnowledgeDatesDatabaseStorage",
+                "list_person_links",
+                QueryThresholdGroup.POINT_READ,
+                ("date_people_author_date_person_idx",),
+                ("knowledge__date_person_model",),
+                run_list_knowledge_date_person_links,
+            ),
+            (
+                "knowledge_date_ids_for_person",
+                "KnowledgeDatesDatabaseStorage",
+                "list_date_ids_for_person",
+                QueryThresholdGroup.POINT_READ,
+                ("date_people_author_person_date_idx",),
+                (
+                    "knowledge__date_person_model",
+                    "knowledge__date_details_model",
+                ),
+                run_list_knowledge_date_ids_for_person,
+            ),
+            (
+                "knowledge_date_person_links_replace",
+                "KnowledgeDatesDatabaseStorage",
+                "replace_person_links",
+                QueryThresholdGroup.SMALL_WRITE,
+                (),
+                ("knowledge__date_person_model",),
+                run_replace_knowledge_date_person_links,
             ),
             (
                 "people_page_search_and_tags",

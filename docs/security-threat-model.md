@@ -144,7 +144,7 @@ Important boundaries:
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
   refresh the session's idle expiration within the session's absolute lifetime cap, and revoke the
   current session on logout.
-- Knowledge People APIs are owner/admin-only, absent from OpenAPI, uncached, and private per
+- Knowledge People and Dates APIs are owner/admin-only, absent from OpenAPI, uncached, and private per
   `author_username`. The backend is the only application reader of `knowledge-private`; public
   MinIO routing denies the bucket's exact path and every path below it.
 - Auth sessions store server-side secret hashes, current effective expiration timestamps, original
@@ -202,7 +202,7 @@ Important boundaries:
    queue item for at most two hours, treats queue/web text as untrusted data, reads matrix context,
    references an existing resource ID or a new HTTPS URL without server-side fetching, and
    atomically creates a server-forced draft. Each action receives a privacy-safe audit record.
-14. Private People read/write: an owner/admin sends an authenticated request to
+14. Private knowledge read/write: an owner/admin sends an authenticated request to
    `/api/admin/knowledge/*`; the backend derives `author_username` from the token, includes it in
    every database predicate, and returns only that author's item graph. Protected file reads repeat
    the author check, stream bytes from the internal MinIO client, and return `no-store` responses;
@@ -214,13 +214,13 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| A caller guesses a person, relationship, tag, or file ID belonging to another author. | Every knowledge storage lookup and mutation includes `author_username`; composite item/author, tag/author, relationship-type/author, and file/author constraints prevent cross-author graph construction; foreign and absent IDs share not-found behavior; IDOR paths are covered at storage, use-case, and API levels. | A backend compromise, SQL injection, erroneous unrestricted query, or direct database access bypasses application predicates. The application and database use the main backend identity rather than a separately contained knowledge-data role. |
+| A caller guesses a Date, Person, relationship, tag, or file ID belonging to another author. | Every knowledge storage lookup and mutation includes `author_username`; composite item/author, Date/Person, tag/author, relationship-type/author, and file/author constraints prevent cross-author graph construction; wrong-kind, foreign, and absent IDs share not-found behavior; IDOR paths are covered at storage, use-case, and API levels. | A backend compromise, SQL injection, erroneous unrestricted query, or direct database access bypasses application predicates. The application and database use the main backend identity rather than a separately contained knowledge-data role. |
 | Private photos or attachments become reachable through the public MinIO endpoint. | Private objects use a separate `knowledge-private` bucket through the authenticated internal S3 client; initialization removes bucket policy and CORS; responses contain only a protected backend `contentPath`, never a public or presigned URL; public nginx returns `404` for both the exact bucket path and its prefix. | MinIO root credentials, host access, private-network compromise, or a future routing/policy regression can expose objects. Verify policy/CORS and public exact/prefix denial after deploy and restore. |
 | Search terms, contact data, filenames, or object keys leak through logs, URLs, caches, SSR, or API discovery. | The main nginx access log uses method, a normalized URI label, protocol, and status without raw request/query values; nginx and Litestar replace every `/api/admin/knowledge/*` concrete path with one safe label and omit its path parameters; knowledge responses use `Cache-Control: no-store`; the workspace is CSR-only and excluded from Angular transfer cache; controllers are excluded from OpenAPI; file responses do not reveal MinIO URLs. | Infrastructure with privileged traffic/storage access or application exception paths can still observe sensitive metadata. Do not put private values in path segments or add them to metric labels, exception messages, audit fields, or future log fields. |
 | A malicious image or active attachment exploits decoding or browser content handling. | Photos are limited to JPEG/PNG/WebP and 5 MiB, fully decoded with Pillow, MIME-verified, rejected when animated or decompression-bomb-like, bounded to 2048×2048, and re-encoded to WebP. Attachments are limited to 20 MiB and forced to `application/octet-stream` attachment delivery. File responses add `nosniff` and sanitized `Content-Disposition`; Markdown preview uses the centralized sanitizer and People disables inline image uploads. | Image decoders and authorized downloads can still contain unknown vulnerabilities or malicious documents opened in external applications. Keep Pillow patched, do not inline arbitrary attachments, and treat downloaded files as untrusted. |
-| Private data leaks through SSR, OpenAPI, browser object URLs, or intermediary/browser caches. | People routes are protected CSR routes; private endpoints are absent from OpenAPI and carry `no-store`; protected blobs are fetched only after authorization and browser object URLs are revoked when replaced or no longer needed. | Browser/device compromise, malicious extensions, screenshots, memory inspection, or a successful XSS can read data available to the authenticated session. CSP and URL revocation reduce exposure but cannot protect a compromised endpoint. |
+| Private data leaks through SSR, OpenAPI, browser object URLs, or intermediary/browser caches. | People and Dates routes are protected CSR routes; private endpoints are absent from OpenAPI and carry `no-store`; protected blobs are fetched only after authorization and browser object URLs are revoked when replaced or no longer needed. | Browser/device compromise, malicious extensions, screenshots, memory inspection, or a successful XSS can read data available to the authenticated session. CSP and URL revocation reduce exposure but cannot protect a compromised endpoint. |
 | A failed transaction deletes a still-referenced object, or an uploaded object becomes orphaned after rollback/commit failure. | Replacement/deletion cleanup remains post-commit and best effort, so rollback preserves referenced bytes. A successful new upload registers a separate request-scoped rollback action that deletes only the new object when the request rolls back or commit fails; successful commit does not run it, and no-throw cleanup preserves the original failure. | Failed best-effort cleanup can still leave private orphan objects. Operational reconciliation, backup retention, and deletion verification remain necessary. |
-| Database, backup, or host media reveals private People data. | Access is limited to authenticated application/operations contours; backups must be encrypted and non-public; MinIO and PostgreSQL have no public service ports. | People fields and object bytes have no application-layer encryption. Database administrators, MinIO credentials, backup readers, or full host compromise can read them; encryption-at-rest supplied by the host/storage provider does not create per-record separation from those actors. |
+| Database, backup, or host media reveals private knowledge data. | Access is limited to authenticated application/operations contours; backups must be encrypted and non-public; MinIO and PostgreSQL have no public service ports. | People/Date fields and object bytes have no application-layer encryption. Database administrators, MinIO credentials, backup readers, or full host compromise can read them; encryption-at-rest supplied by the host/storage provider does not create per-record separation from those actors. |
 
 ### Spoofing
 
@@ -346,7 +346,7 @@ Important boundaries:
 8. A normally configured Codex workspace may retain separately approved shell, filesystem, web, or
    private-connector authority. The MCP boundary limits the site, not every capability of the local
    agent process; an isolated profile/workspace reduces this residual risk.
-9. Private People data and protected object bytes are not encrypted at the application layer.
+9. Private People/Date data and protected object bytes are not encrypted at the application layer.
    Backend, database, MinIO-root, backup-reader, or host compromise can disclose the complete
    per-author dataset despite normal IDOR and edge controls.
 

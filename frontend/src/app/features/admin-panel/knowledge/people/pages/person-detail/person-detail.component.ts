@@ -20,7 +20,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../../../../../core/models/api-error.model';
 import { I18nService } from '../../../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../../../core/i18n/translate.pipe';
@@ -28,6 +28,7 @@ import { MarkdownEditorComponent } from '../../../../../../core/editor/markdown-
 import { NotificationService } from '../../../../../../core/notifications/notification.service';
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
+import { formatAnnualDate } from '../../../shared/annual-date';
 import {
   SiteSelectComponent,
   SiteSelectOption,
@@ -51,6 +52,7 @@ import {
 import {
   KnowledgeFile,
   KnowledgeTag,
+  PersonBirthday,
   PersonDetail,
   PersonRelationshipDirection,
   PersonRelationshipType,
@@ -97,6 +99,7 @@ type RelationshipFormGroup = FormGroup<RelationshipFormControls>;
     SiteSelectComponent,
     AdminActionsDropdownComponent,
     AdminControlValidationStateDirective,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './person-detail.component.html',
@@ -843,6 +846,10 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
       unitDisplay: 'short',
       maximumFractionDigits: 2,
     }).format(sizeBytes / (1024 * 1024));
+  }
+
+  annualDateLabel(value: PersonBirthday): string {
+    return formatAnnualDate(value, this.i18n.dateLocale());
   }
 
   onTagDraftInput(event: Event): void {

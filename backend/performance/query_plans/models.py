@@ -47,11 +47,14 @@ class ResumeCardinalities:
 @dataclass(frozen=True, slots=True)
 class KnowledgeCardinalities:
     items: int
+    dates: int
     search_match_percentage: int
     tags: int
     item_tag_links: int
+    date_tag_links: int
     relationship_types: int
     relationships: int
+    date_person_links: int
     files: int
 
 
@@ -119,10 +122,16 @@ class QueryPlanProfile:
             "articles__article_daily_analytics_model": cardinalities.articles.daily_analytics,
             "articles__article_reaction_model": cardinalities.articles.reactions,
             "resumes__resume_model": cardinalities.resumes.resumes,
-            "knowledge__knowledge_item_model": cardinalities.knowledge.items,
+            "knowledge__knowledge_item_model": (
+                cardinalities.knowledge.items + cardinalities.knowledge.dates
+            ),
             "knowledge__knowledge_tag_model": cardinalities.knowledge.tags,
-            "knowledge__knowledge_item_tag_model": cardinalities.knowledge.item_tag_links,
+            "knowledge__knowledge_item_tag_model": (
+                cardinalities.knowledge.item_tag_links + cardinalities.knowledge.date_tag_links
+            ),
             "knowledge__person_details_model": cardinalities.knowledge.items,
+            "knowledge__date_details_model": cardinalities.knowledge.dates,
+            "knowledge__date_person_model": cardinalities.knowledge.date_person_links,
             "knowledge__person_relationship_type_model": (
                 cardinalities.knowledge.relationship_types
             ),
@@ -245,11 +254,14 @@ REALISTIC_PROFILE = QueryPlanProfile(
         resumes=ResumeCardinalities(resumes=250),
         knowledge=KnowledgeCardinalities(
             items=5_000,
+            dates=5_000,
             search_match_percentage=10,
             tags=500,
             item_tag_links=20_000,
+            date_tag_links=20_000,
             relationship_types=100,
             relationships=20_000,
+            date_person_links=20_000,
             files=10_000,
         ),
         matrix=MatrixCardinalities(
@@ -286,11 +298,14 @@ STRESS_PROFILE = QueryPlanProfile(
         resumes=ResumeCardinalities(resumes=50_000),
         knowledge=KnowledgeCardinalities(
             items=200_000,
+            dates=200_000,
             search_match_percentage=10,
             tags=30_000,
             item_tag_links=500_000,
+            date_tag_links=500_000,
             relationship_types=10_000,
             relationships=500_000,
+            date_person_links=500_000,
             files=500_000,
         ),
         matrix=MatrixCardinalities(
@@ -347,6 +362,32 @@ STRESS_PROFILE = QueryPlanProfile(
                 "knowledge__knowledge_item_model",
                 "knowledge__knowledge_item_tag_model",
                 "knowledge__person_details_model",
+            ),
+            allow_seq_scan_reason=None,
+        ),
+        # The filtered Dates page uses the author-qualified details index for
+        # the count query and the globally unique details PK for the page query.
+        # Keep the common selective path mandatory and forbid a details seq scan.
+        "knowledge_dates_page_search_tags_person": ScenarioPlanShapeOverride(
+            expected_indexes=(
+                ExpectedIndex(
+                    name="knowledge_item_tags_author_tag_item_idx",
+                    relation_name="knowledge__knowledge_item_tag_model",
+                ),
+                ExpectedIndex(
+                    name="date_people_author_person_date_idx",
+                    relation_name="knowledge__date_person_model",
+                ),
+                ExpectedIndex(
+                    name="knowledge__knowledge_item_model_pkey",
+                    relation_name="knowledge__knowledge_item_model",
+                ),
+            ),
+            forbidden_seq_scan_relations=(
+                "knowledge__knowledge_item_model",
+                "knowledge__knowledge_item_tag_model",
+                "knowledge__date_details_model",
+                "knowledge__date_person_model",
             ),
             allow_seq_scan_reason=None,
         ),

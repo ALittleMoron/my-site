@@ -20,6 +20,7 @@ from core.contacts.use_cases import ContactsUseCase
 from core.files.file_name_generators import FileNameGenerator
 from core.files.services import FileService
 from core.generators import HexUuidIdGenerator
+from core.knowledge.dates.use_cases import KnowledgeDatesUseCase
 from core.knowledge.files.clients import (
     KnowledgeFileObjectCleaner,
     KnowledgeFileRollbackRegistrar,
@@ -136,6 +137,10 @@ class IocContainerHelper:
 
     async def get_people_use_case(self) -> Mock:
         use_case = await self.container.get(PeopleUseCase)
+        return cast("Mock", use_case)
+
+    async def get_knowledge_dates_use_case(self) -> Mock:
+        use_case = await self.container.get(KnowledgeDatesUseCase)
         return cast("Mock", use_case)
 
     async def get_knowledge_files_use_case(self) -> Mock:

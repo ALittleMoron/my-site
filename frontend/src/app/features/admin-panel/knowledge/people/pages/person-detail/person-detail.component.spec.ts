@@ -23,6 +23,13 @@ const PERSON: PersonDetail = {
   description: '<script>alert(1)</script>',
   tags: [],
   relationships: [],
+  relatedDates: [
+    {
+      id: 'date-1',
+      displayName: 'Годовщина',
+      date: { day: 29, month: 2, year: null },
+    },
+  ],
   photo: null,
   attachments: [],
   createdAt: '2026-01-01T00:00:00+00:00',
@@ -95,6 +102,15 @@ describe('PersonDetailComponent', () => {
     const editor = fixture.debugElement.query(By.directive(MarkdownEditorStubComponent))
       .componentInstance as MarkdownEditorStubComponent;
     expect(editor.imageUploadsEnabled()).toBe(false);
+  });
+
+  it('renders read-only memorable-date backlinks with localized dates', () => {
+    const link = fixture.nativeElement.querySelector(
+      'a[href="/admin-panel/knowledge/dates/date-1"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(link?.textContent).toContain('Годовщина');
+    expect(fixture.nativeElement.textContent).toContain('29');
   });
 
   it('loads and saves Telegram from the sticky form action footer', () => {

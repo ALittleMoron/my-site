@@ -51,6 +51,8 @@ from infra.postgresql.models import (
     ContactMeModel,
     ExternalResourceModel,
     FileModel,
+    KnowledgeDateDetailsModel,
+    KnowledgeDatePersonModel,
     KnowledgeFileModel,
     KnowledgeItemModel,
     KnowledgeItemTagModel,
@@ -92,6 +94,7 @@ ANALYTICS_DAY_BUCKET_COUNT = 1_095
 ANALYTICS_SOURCE_DAY_OFFSET = 61
 KNOWLEDGE_DELETABLE_TAG_NUMBER = 3
 KNOWLEDGE_GENERAL_TAG_START_NUMBER = KNOWLEDGE_DELETABLE_TAG_NUMBER + 1
+KNOWLEDGE_DATE_ITEM_OFFSET = 3_000_000
 QUERY_PLAN_SEEDED_MODELS = (
     AgentAuditEventModel,
     MatrixQuestionDraftCompletionModel,
@@ -99,6 +102,8 @@ QUERY_PLAN_SEEDED_MODELS = (
     MatrixQuestionClaimModel,
     AgentCertificateModel,
     AgentClientModel,
+    KnowledgeDatePersonModel,
+    KnowledgeDateDetailsModel,
     PersonRelationshipModel,
     PersonRelationshipTypeModel,
     PersonDetailsModel,
@@ -163,7 +168,9 @@ async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile
         f"{cardinalities.articles.tags} tags, "
         f"{cardinalities.articles.article_tag_links} article-tag links, "
         f"{cardinalities.knowledge.items} people, "
+        f"{cardinalities.knowledge.dates} dates, "
         f"{cardinalities.knowledge.relationships} person relationships, "
+        f"{cardinalities.knowledge.date_person_links} date-person links, "
         f"{cardinalities.matrix.items} matrix items, "
         f"{cardinalities.matrix.resources} resources\n",
     )
@@ -180,10 +187,13 @@ async def seed_profile(*, connection: AsyncConnection, profile: QueryPlanProfile
     await insert_article_reactions(connection=connection, profile=profile)
     await insert_resumes(connection=connection, profile=profile)
     await insert_knowledge_items(connection=connection, profile=profile)
+    await insert_knowledge_dates(connection=connection, profile=profile)
     await insert_knowledge_tags(connection=connection, profile=profile)
     await insert_knowledge_item_tag_links(connection=connection, profile=profile)
+    await insert_knowledge_date_tag_links(connection=connection, profile=profile)
     await insert_person_relationship_types(connection=connection, profile=profile)
     await insert_person_relationships(connection=connection, profile=profile)
+    await insert_knowledge_date_person_links(connection=connection, profile=profile)
     await insert_knowledge_files(connection=connection, profile=profile)
     await insert_resources(connection=connection, profile=profile)
     await insert_competency_matrix_structure(connection=connection, profile=profile)
@@ -728,6 +738,69 @@ async def insert_knowledge_items(
     )
 
 
+async def insert_knowledge_dates(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    series = generate_series_subquery(
+        end=profile.cardinalities.knowledge.dates,
+        name="knowledge_date_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    target_date = (
+        func.mod(value, PERCENTAGE_BASE) < profile.cardinalities.knowledge.search_match_percentage
+    )
+    await connection.execute(
+        insert(KnowledgeItemModel.__table__).from_select(
+            [
+                "id",
+                "kind",
+                "author_username",
+                "display_name",
+                "description",
+                "created_at",
+                "updated_at",
+            ],
+            select(
+                hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + value),
+                sql_cast(
+                    literal(KnowledgeItemKind.DATE.name),
+                    KnowledgeItemModel.__table__.c.kind.type,
+                ),
+                literal(SEED_USERNAME),
+                case(
+                    (
+                        target_date,
+                        func.concat(literal("Anniversary Searchneedle "), value),
+                    ),
+                    else_=func.concat(literal("Memorable date "), value),
+                ),
+                func.concat(literal("Private query-plan date description "), value),
+                literal(SEED_NOW) - value * literal(timedelta(seconds=2)),
+                literal(SEED_NOW) - value * literal(timedelta(seconds=1)),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+    await connection.execute(
+        insert(KnowledgeDateDetailsModel.__table__).from_select(
+            ["item_id", "author_username", "day", "month", "year"],
+            select(
+                hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + value),
+                literal(SEED_USERNAME),
+                func.mod(value - 1, 28) + 1,
+                func.mod(value - 1, 12) + 1,
+                case(
+                    (func.mod(value, 2) == 0, literal(None)),
+                    else_=literal(2000),
+                ),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
 async def insert_knowledge_tags(
     *,
     connection: AsyncConnection,
@@ -828,6 +901,77 @@ async def insert_knowledge_item_tag_links(
     )
 
 
+async def insert_knowledge_date_tag_links(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    knowledge = profile.cardinalities.knowledge
+    target_date_count = knowledge.dates * knowledge.search_match_percentage // PERCENTAGE_BASE
+    target_series = generate_series_subquery(
+        end=knowledge.dates,
+        name="knowledge_target_date_series",
+    )
+    target_value = sql_cast(target_series.c.value, Integer)
+    target_date_condition = (
+        func.mod(target_value, PERCENTAGE_BASE) < knowledge.search_match_percentage
+    )
+    target_links = union_all(
+        select(
+            hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + target_value),
+            literal(hex_id(1)),
+            literal(SEED_USERNAME),
+            literal(SEED_NOW),
+            literal(SEED_NOW),
+        )
+        .select_from(target_series)
+        .where(target_date_condition),
+        select(
+            hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + target_value),
+            literal(hex_id(2)),
+            literal(SEED_USERNAME),
+            literal(SEED_NOW),
+            literal(SEED_NOW),
+        )
+        .select_from(target_series)
+        .where(target_date_condition),
+    )
+    await connection.execute(
+        insert(KnowledgeItemTagModel.__table__).from_select(
+            ["item_id", "tag_id", "author_username", "created_at", "updated_at"],
+            target_links,
+            include_defaults=False,
+        ),
+    )
+
+    general_link_count = knowledge.date_tag_links - target_date_count * 2
+    general_series = generate_series_subquery(
+        end=general_link_count,
+        name="knowledge_date_tag_series",
+    )
+    value = sql_cast(general_series.c.value, Integer)
+    date_number = func.mod(value - 1, knowledge.dates) + 1
+    link_round = sql_cast(func.floor((value - 1) / knowledge.dates), Integer)
+    available_general_tag_count = knowledge.tags - KNOWLEDGE_GENERAL_TAG_START_NUMBER + 1
+    tag_number = (
+        func.mod(value + link_round * 97, available_general_tag_count)
+        + KNOWLEDGE_GENERAL_TAG_START_NUMBER
+    )
+    await connection.execute(
+        insert(KnowledgeItemTagModel.__table__).from_select(
+            ["item_id", "tag_id", "author_username", "created_at", "updated_at"],
+            select(
+                hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + date_number),
+                hex_id_expr(value=tag_number),
+                literal(SEED_USERNAME),
+                literal(SEED_NOW),
+                literal(SEED_NOW),
+            ).select_from(general_series),
+            include_defaults=False,
+        ),
+    )
+
+
 async def insert_person_relationship_types(
     *,
     connection: AsyncConnection,
@@ -904,6 +1048,33 @@ async def insert_person_relationships(
                 func.concat(literal("Query-plan relationship note "), value),
                 literal(SEED_NOW),
                 literal(SEED_NOW),
+            ).select_from(series),
+            include_defaults=False,
+        ),
+    )
+
+
+async def insert_knowledge_date_person_links(
+    *,
+    connection: AsyncConnection,
+    profile: QueryPlanProfile,
+) -> None:
+    knowledge = profile.cardinalities.knowledge
+    series = generate_series_subquery(
+        end=knowledge.date_person_links,
+        name="knowledge_date_person_series",
+    )
+    value = sql_cast(series.c.value, Integer)
+    date_number = func.mod(value - 1, knowledge.dates) + 1
+    link_round = sql_cast(func.floor((value - 1) / knowledge.dates), Integer)
+    person_number = func.mod(date_number - 1 + link_round, knowledge.items) + 1
+    await connection.execute(
+        insert(KnowledgeDatePersonModel.__table__).from_select(
+            ["date_item_id", "person_item_id", "author_username"],
+            select(
+                hex_id_expr(value=KNOWLEDGE_DATE_ITEM_OFFSET + date_number),
+                hex_id_expr(value=person_number),
+                literal(SEED_USERNAME),
             ).select_from(series),
             include_defaults=False,
         ),
@@ -1473,6 +1644,8 @@ async def vacuum_analyze_seeded_tables(*, connection: AsyncConnection) -> None:
         "knowledge__knowledge_tag_model",
         "knowledge__knowledge_item_tag_model",
         "knowledge__person_details_model",
+        "knowledge__date_details_model",
+        "knowledge__date_person_model",
         "knowledge__person_relationship_type_model",
         "knowledge__person_relationship_model",
         "knowledge__knowledge_file_model",

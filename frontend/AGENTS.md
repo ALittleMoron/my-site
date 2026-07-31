@@ -97,6 +97,10 @@ These rules apply to frontend Angular files under `frontend/**/*.ts`, `frontend/
 - `FormControl<T>` and `FormGroup<T>` — always typed
 - No `any` in form types
 - Single field -> `FormControl<T>`. Multiple related fields -> `FormGroup`
+- Mark required form-field labels with
+  `<span class="required-marker text-danger" aria-hidden="true">*</span>` and keep the control's
+  native or component-level required semantics in sync. Do not append `(optional)` or localized
+  equivalents to optional labels; the absence of the required marker communicates optionality.
 - User-triggered saves, creates, updates, deletes, imports, exports, validation checks, and other
   state-changing or validation-gated actions must always produce explicit user feedback on every
   blocked, failed, and successful path. Do not silently return from invalid forms or skipped

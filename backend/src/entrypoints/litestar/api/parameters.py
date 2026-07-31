@@ -15,6 +15,7 @@ from core.competency_matrix.enums import (
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
+from core.knowledge.dates.enums import KnowledgeDateListSort
 from core.knowledge.people.enums import PersonListSort
 
 
@@ -125,6 +126,32 @@ PersonListSortQuery: TypeAlias = Annotated[
         title="People sort",
         description="Stable ordering for the private people workspace.",
         examples=(PersonListSort.UPDATED_NEWEST.value,),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+KnowledgeDateListSortQuery: TypeAlias = Annotated[
+    KnowledgeDateListSort,
+    api_query_parameter(
+        name="sort",
+        title="Dates sort",
+        description="Stable ordering for the private memorable dates workspace.",
+        examples=(KnowledgeDateListSort.DATE_ASC.value,),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+RelatedPersonIdQuery: TypeAlias = Annotated[
+    str | None,
+    api_query_parameter(
+        name="relatedPersonId",
+        title="Related person identifier",
+        description="Optional author-scoped person backlink filter.",
+        examples=("00000000000000000000000000000001",),
         ge=None,
         le=None,
         min_items=None,
@@ -290,6 +317,15 @@ PersonIdPath: TypeAlias = Annotated[
         name="person_id",
         title="Person ID",
         description="Private person identifier.",
+        examples=("00000000000000000000000000000001",),
+    ),
+]
+KnowledgeDateIdPath: TypeAlias = Annotated[
+    str,
+    api_path_parameter(
+        name="date_id",
+        title="Knowledge date ID",
+        description="Private memorable date identifier.",
         examples=("00000000000000000000000000000001",),
     ),
 ]

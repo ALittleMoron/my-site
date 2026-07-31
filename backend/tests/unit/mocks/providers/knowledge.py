@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 from dishka import Provider, Scope, provide
 
+from core.knowledge.dates.use_cases import KnowledgeDatesUseCase
 from core.knowledge.files.clients import (
     KnowledgeFileObjectCleaner,
     KnowledgeFileRollbackRegistrar,
@@ -32,6 +33,10 @@ class MockKnowledgeProvider(Provider):
     @provide(scope=Scope.APP)
     async def provide_people_use_case(self) -> PeopleUseCase:
         return Mock(spec=PeopleUseCase)
+
+    @provide(scope=Scope.APP)
+    async def provide_knowledge_dates_use_case(self) -> KnowledgeDatesUseCase:
+        return Mock(spec=KnowledgeDatesUseCase)
 
     @provide(scope=Scope.APP)
     async def provide_knowledge_tags_use_case(self) -> KnowledgeTagsUseCase:

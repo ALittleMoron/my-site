@@ -3,6 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from core.knowledge.dates.schemas import KnowledgeDateDetails, KnowledgeDateValue
+from core.knowledge.dates.storages import KnowledgeDatesStorage
 from core.knowledge.exceptions import (
     InvalidKnowledgeDataError,
     KnowledgeConflictError,
@@ -148,6 +150,8 @@ class TestPeopleUseCase(TestCase):
         self.item_service = Mock(spec=KnowledgeItemCrudService)
         self.item_storage = Mock(spec=KnowledgeItemsStorage)
         self.people_storage = Mock(spec=PeopleStorage)
+        self.dates_storage = Mock(spec=KnowledgeDatesStorage)
+        self.dates_storage.list_date_ids_for_person.return_value = []
         self.file_storage = Mock(spec=KnowledgeFilesStorage)
         self.file_storage.list_files_for_items.return_value = []
         self.file_storage.list_item_files.return_value = []
@@ -155,7 +159,67 @@ class TestPeopleUseCase(TestCase):
             item_service=self.item_service,
             item_storage=self.item_storage,
             people_storage=self.people_storage,
+            dates_storage=self.dates_storage,
             file_storage=self.file_storage,
+        )
+
+    async def test_get_person_projects_related_dates_in_calendar_order(self) -> None:
+        person_id = self.factory.core.hex_id(1)
+        january_id = self.factory.core.hex_id(2)
+        december_id = self.factory.core.hex_id(3)
+        item = knowledge_item(item_id=person_id, display_name="Иванов Иван")
+        january_item = KnowledgeItem(
+            id=january_id,
+            kind=KnowledgeItemKind.DATE,
+            author_username="owner",
+            display_name="Новый год",
+            description="",
+            tags=[],
+            created_at=CURRENT_DATETIME,
+            updated_at=CURRENT_DATETIME,
+        )
+        december_item = KnowledgeItem(
+            id=december_id,
+            kind=KnowledgeItemKind.DATE,
+            author_username="owner",
+            display_name="Годовщина",
+            description="",
+            tags=[],
+            created_at=CURRENT_DATETIME,
+            updated_at=CURRENT_DATETIME,
+        )
+        self.item_service.get_item.return_value = item
+        self.people_storage.get_details.return_value = person_details(item_id=person_id)
+        self.people_storage.list_relationships.return_value = []
+        self.item_storage.get_items_by_ids.side_effect = [
+            [],
+            [december_item, january_item],
+        ]
+        self.dates_storage.list_date_ids_for_person.return_value = [
+            december_id,
+            january_id,
+        ]
+        self.dates_storage.list_details.return_value = [
+            KnowledgeDateDetails(
+                item_id=december_id,
+                date=KnowledgeDateValue(day=31, month=12, year=None),
+            ),
+            KnowledgeDateDetails(
+                item_id=january_id,
+                date=KnowledgeDateValue(day=1, month=1, year=2020),
+            ),
+        ]
+
+        person = await self.use_case.get_person(
+            person_id=person_id,
+            author_username="owner",
+        )
+
+        assert [value.id for value in person.related_dates] == [january_id, december_id]
+        self.item_storage.get_items_by_ids.assert_any_await(
+            item_ids={january_id, december_id},
+            author_username="owner",
+            kind=KnowledgeItemKind.DATE,
         )
 
     async def test_list_validates_tags_then_fetches_and_reorders_only_page_items(self) -> None:
