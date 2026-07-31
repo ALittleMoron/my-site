@@ -39,6 +39,7 @@ import {
   trimRequired,
   validationMessage,
 } from '../../../../utils/admin-validation';
+import { formatFileSize } from '../../../shared/file-size';
 import {
   KnowledgeTag,
   PeopleListFilters,
@@ -449,12 +450,7 @@ export class PeopleListComponent implements OnInit, OnDestroy {
   }
 
   fileSize(sizeBytes: number): string {
-    return new Intl.NumberFormat(this.i18n.dateLocale(), {
-      style: 'unit',
-      unit: 'kilobyte',
-      unitDisplay: 'short',
-      maximumFractionDigits: 1,
-    }).format(sizeBytes / 1024);
+    return formatFileSize(sizeBytes, this.i18n.dateLocale());
   }
 
   onTagDraftInput(event: Event): void {

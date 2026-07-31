@@ -113,6 +113,72 @@ describe('PersonDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('29');
   });
 
+  it('collapses long relationship and memorable-date lists and can reveal every item', () => {
+    const relationshipType = {
+      id: 'relationship-type-1',
+      isSymmetric: true,
+      forwardName: 'Знакомый',
+      reverseName: 'Знакомый',
+      createdAt: PERSON.createdAt,
+      updatedAt: PERSON.updatedAt,
+    };
+    peopleService['getPerson'].mockReturnValue(
+      of({
+        ...PERSON,
+        relationships: Array.from({ length: 6 }, (_, index) => ({
+          id: `relationship-${index + 1}`,
+          relatedPersonId: `related-person-${index + 1}`,
+          relatedPersonDisplayName: `Человек ${index + 1}`,
+          relationshipType,
+          direction: 'forward' as const,
+          label: relationshipType.forwardName,
+          note: '',
+          createdAt: PERSON.createdAt,
+          updatedAt: PERSON.updatedAt,
+        })),
+        relatedDates: Array.from({ length: 11 }, (_, index) => ({
+          id: `date-${index + 1}`,
+          displayName: `Дата ${index + 1}`,
+          date: { day: index + 1, month: 1, year: null },
+        })),
+      }),
+    );
+
+    fixture.componentInstance.loadPerson();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="person-relationship-row-"]'),
+    ).toHaveLength(5);
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="person-related-date-"]'),
+    ).toHaveLength(10);
+
+    const relationshipToggle = fixture.nativeElement.querySelector(
+      '[data-testid="person-relationships-toggle"]',
+    ) as HTMLButtonElement;
+    const relatedDatesToggle = fixture.nativeElement.querySelector(
+      '[data-testid="person-related-dates-toggle"]',
+    ) as HTMLButtonElement;
+    relationshipToggle.click();
+    relatedDatesToggle.click();
+    fixture.detectChanges();
+
+    expect(relationshipToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(relatedDatesToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="person-relationship-row-"]'),
+    ).toHaveLength(6);
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="person-related-date-"]'),
+    ).toHaveLength(11);
+  });
+
+  it('uses bytes for a sub-kilobyte attachment instead of rounding it to zero megabytes', () => {
+    expect(fixture.componentInstance.fileSize(512)).toContain('Б');
+    expect(fixture.componentInstance.fileSize(512)).not.toContain('МБ');
+  });
+
   it('loads and saves Telegram from the sticky form action footer', () => {
     const component = fixture.componentInstance;
     const telegramInput = fixture.nativeElement.querySelector(

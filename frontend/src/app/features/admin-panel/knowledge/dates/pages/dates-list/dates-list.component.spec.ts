@@ -121,6 +121,39 @@ describe('DatesListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Семья');
   });
 
+  it('shows ten related People per Date row until the row is expanded', () => {
+    datesResponse = of({
+      totalCount: 1,
+      totalPages: 3,
+      dates: [
+        {
+          ...DATE,
+          relatedPeople: Array.from({ length: 11 }, (_, index) => ({
+            id: `person-${index + 1}`,
+            displayName: `Человек ${index + 1}`,
+          })),
+        },
+      ],
+    });
+    fixture = TestBed.createComponent(DatesListComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="dates-related-person-date-1-"]'),
+    ).toHaveLength(10);
+
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-testid="dates-related-people-toggle-date-1"]',
+    ) as HTMLButtonElement;
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="dates-related-person-date-1-"]'),
+    ).toHaveLength(11);
+  });
+
   it('shows loading, error notification, and retry state', () => {
     const response = new Subject<KnowledgeDatesPage>();
     datesResponse = response;

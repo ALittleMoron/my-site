@@ -77,6 +77,16 @@ describe('DateDetailComponent', () => {
     peopleService = {
       listTags: jest.fn().mockReturnValue(of(DATE.tags)),
       listPeople: jest.fn().mockReturnValue(of({ totalCount: 1, totalPages: 1, people: [PERSON] })),
+      createTag: jest.fn().mockReturnValue(
+        of({
+          id: 'tag-2',
+          name: 'Друзья',
+          createdAt: DATE.createdAt,
+          updatedAt: DATE.updatedAt,
+        }),
+      ),
+      updateTag: jest.fn(),
+      deleteTag: jest.fn(),
     };
     notifications = { success: jest.fn(), error: jest.fn() };
 
@@ -153,6 +163,93 @@ describe('DateDetailComponent', () => {
       personIds: ['person-2'],
     });
     expect(notifications.success).toHaveBeenCalled();
+  });
+
+  it('adds People from search suggestions instead of rendering every candidate as a button', () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="date-person-suggestion-person-2"]'),
+    ).toBeNull();
+
+    const search = fixture.nativeElement.querySelector(
+      '[data-testid="date-people-search"]',
+    ) as HTMLInputElement;
+    search.value = 'Пётр';
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const suggestion = fixture.nativeElement.querySelector(
+      '[data-testid="date-person-suggestion-person-2"]',
+    ) as HTMLButtonElement;
+    expect(search.getAttribute('role')).toBe('combobox');
+    expect(suggestion).not.toBeNull();
+    suggestion.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedPeople()).toContainEqual({
+      id: 'person-2',
+      displayName: 'Пётр Петров',
+    });
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="date-person-suggestion-person-2"]'),
+    ).toBeNull();
+  });
+
+  it('collapses more than ten related People and reveals the complete list on demand', () => {
+    datesService.getDate.mockReturnValue(
+      of({
+        ...DATE,
+        relatedPeople: Array.from({ length: 11 }, (_, index) => ({
+          id: `person-${index + 1}`,
+          displayName: `Человек ${index + 1}`,
+        })),
+      }),
+    );
+    fixture.componentInstance.loadDate();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="date-related-person-"]'),
+    ).toHaveLength(10);
+
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-testid="date-related-people-toggle"]',
+    ) as HTMLButtonElement;
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-testid^="date-related-person-"]'),
+    ).toHaveLength(11);
+  });
+
+  it('creates a knowledge tag from Date tag management', () => {
+    const manage = fixture.nativeElement.querySelector(
+      '[data-testid="date-tags-manage"]',
+    ) as HTMLButtonElement;
+    expect(manage).not.toBeNull();
+    manage.click();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="date-tag-draft"]',
+    ) as HTMLInputElement;
+    input.value = ' Друзья ';
+    input.dispatchEvent(new Event('input'));
+    (
+      fixture.nativeElement.querySelector('[data-testid="date-tag-save"]') as HTMLButtonElement
+    ).click();
+
+    expect(peopleService.createTag).toHaveBeenCalledWith('Друзья');
+  });
+
+  it('shows a one-kilobyte attachment in kilobytes instead of zero megabytes', () => {
+    const size = fixture.nativeElement.querySelector(
+      '[data-testid="date-attachment-size-file-1"]',
+    ) as HTMLElement;
+
+    expect(size.textContent?.toLocaleUpperCase('ru-RU')).toContain('КБ');
+    expect(size.textContent?.toLocaleUpperCase('ru-RU')).not.toContain('МБ');
   });
 
   it('rejects an invalid future date before saving', () => {

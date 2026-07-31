@@ -57,6 +57,7 @@ const SORTS: readonly KnowledgeDateListSort[] = [
   'nameDesc',
 ];
 const PAGE_SIZES = [20, 50, 100] as const;
+const RELATED_PEOPLE_PREVIEW_LIMIT = 10;
 
 @Component({
   selector: 'app-dates-list',
@@ -102,6 +103,7 @@ export class DatesListComponent implements OnInit {
   readonly createSubmitted = signal(false);
   readonly createError = signal<ApiError | null>(null);
   readonly deletePendingId = signal<string | null>(null);
+  readonly expandedRelatedPeopleDateIds = signal<ReadonlySet<string>>(new Set());
   readonly createSnapshot = signal({
     displayName: '',
     date: { day: '', month: '', year: '' },
@@ -215,6 +217,7 @@ export class DatesListComponent implements OnInit {
             this.goToPage(Math.max(1, page.totalPages));
             return;
           }
+          this.expandedRelatedPeopleDateIds.set(new Set());
           this.page.set(page);
           this.loading.set(false);
         },
@@ -414,6 +417,32 @@ export class DatesListComponent implements OnInit {
       return;
     }
     throw new Error(`Unsupported Dates list action: ${actionId}`);
+  }
+
+  relatedPeopleForRow(value: KnowledgeDateSummary): KnowledgeDateSummary['relatedPeople'] {
+    return this.relatedPeopleExpanded(value.id)
+      ? value.relatedPeople
+      : value.relatedPeople.slice(0, RELATED_PEOPLE_PREVIEW_LIMIT);
+  }
+
+  relatedPeopleCollapsible(value: KnowledgeDateSummary): boolean {
+    return value.relatedPeople.length > RELATED_PEOPLE_PREVIEW_LIMIT;
+  }
+
+  relatedPeopleExpanded(dateId: string): boolean {
+    return this.expandedRelatedPeopleDateIds().has(dateId);
+  }
+
+  toggleRelatedPeople(dateId: string): void {
+    this.expandedRelatedPeopleDateIds.update((expandedDateIds) => {
+      const nextExpandedDateIds = new Set(expandedDateIds);
+      if (nextExpandedDateIds.has(dateId)) {
+        nextExpandedDateIds.delete(dateId);
+      } else {
+        nextExpandedDateIds.add(dateId);
+      }
+      return nextExpandedDateIds;
+    });
   }
 
   createNameInvalid(): boolean {

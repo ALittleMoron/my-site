@@ -29,6 +29,7 @@ import { NotificationService } from '../../../../../../core/notifications/notifi
 import { ErrorMessageComponent } from '../../../../../../shared/ui/error-message/error-message.component';
 import { LoadingSpinnerComponent } from '../../../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { formatAnnualDate } from '../../../shared/annual-date';
+import { formatFileSize } from '../../../shared/file-size';
 import {
   SiteSelectComponent,
   SiteSelectOption,
@@ -87,6 +88,9 @@ interface RelationshipFormControls {
 
 type RelationshipFormGroup = FormGroup<RelationshipFormControls>;
 
+const RELATIONSHIP_PREVIEW_LIMIT = 5;
+const RELATED_DATE_PREVIEW_LIMIT = 10;
+
 @Component({
   selector: 'app-person-detail',
   standalone: true,
@@ -122,6 +126,7 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
   private photoObjectUrl: string | null = null;
   private photoLoadGeneration = 0;
   private peopleSearchGeneration = 0;
+  private readonly relationshipFormsVersion = signal(0);
 
   readonly loading = signal(true);
   readonly error = signal<ApiError | null>(null);
@@ -154,6 +159,8 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
     forwardName: '',
     reverseName: '',
   });
+  readonly relationshipsExpanded = signal(false);
+  readonly relatedDatesExpanded = signal(false);
 
   readonly personForm = this.formBuilder.group({
     lastName: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
@@ -184,6 +191,28 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
     relationships: this.relationshipSnapshot(),
     deletedRelationshipIds: this.deletedRelationshipIds(),
   }));
+  readonly relationshipCount = computed(() => {
+    this.relationshipFormsVersion();
+    return this.relationshipForms.length;
+  });
+  readonly visibleRelationshipForms = computed(() => {
+    this.relationshipFormsVersion();
+    return this.relationshipsExpanded()
+      ? this.relationshipForms.controls
+      : this.relationshipForms.controls.slice(0, RELATIONSHIP_PREVIEW_LIMIT);
+  });
+  readonly relationshipsCollapsible = computed(
+    () => this.relationshipCount() > RELATIONSHIP_PREVIEW_LIMIT,
+  );
+  readonly visibleRelatedDates = computed(() => {
+    const relatedDates = this.person()?.relatedDates ?? [];
+    return this.relatedDatesExpanded()
+      ? relatedDates
+      : relatedDates.slice(0, RELATED_DATE_PREVIEW_LIMIT);
+  });
+  readonly relatedDatesCollapsible = computed(
+    () => (this.person()?.relatedDates.length ?? 0) > RELATED_DATE_PREVIEW_LIMIT,
+  );
   private readonly mainSourceActive = computed(() => this.person() !== null && !this.loading());
   readonly filteredTags = computed(() => {
     const query = this.tagSearch().trim().toLocaleLowerCase();
@@ -362,6 +391,9 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
     this.personForm.markAllAsTouched();
     this.relationshipForms.markAllAsTouched();
     if (this.personForm.invalid || this.relationshipForms.invalid) {
+      if (this.relationshipForms.invalid) {
+        this.relationshipsExpanded.set(true);
+      }
       this.notifications.error(this.i18n.translate('knowledgePeople.validationError'));
       return;
     }
@@ -451,6 +483,8 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
 
   addRelationship(): void {
     this.relationshipForms.push(this.createRelationshipForm());
+    this.relationshipFormsVersion.update((version) => version + 1);
+    this.relationshipsExpanded.set(true);
   }
 
   removeRelationship(index: number): void {
@@ -459,6 +493,18 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
       this.deletedRelationshipIds.update((ids) => [...new Set([...ids, persistedId])]);
     }
     this.relationshipForms.removeAt(index);
+    this.relationshipFormsVersion.update((version) => version + 1);
+    if (this.relationshipForms.length <= RELATIONSHIP_PREVIEW_LIMIT) {
+      this.relationshipsExpanded.set(false);
+    }
+  }
+
+  toggleRelationshipsExpanded(): void {
+    this.relationshipsExpanded.update((expanded) => !expanded);
+  }
+
+  toggleRelatedDatesExpanded(): void {
+    this.relatedDatesExpanded.update((expanded) => !expanded);
   }
 
   relationshipLabel(index: number): string {
@@ -840,12 +886,7 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
   }
 
   fileSize(sizeBytes: number): string {
-    return new Intl.NumberFormat(this.i18n.dateLocale(), {
-      style: 'unit',
-      unit: 'megabyte',
-      unitDisplay: 'short',
-      maximumFractionDigits: 2,
-    }).format(sizeBytes / (1024 * 1024));
+    return formatFileSize(sizeBytes, this.i18n.dateLocale());
   }
 
   annualDateLabel(value: PersonBirthday): string {
@@ -886,6 +927,8 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
     });
     this.selectedTagIds.set(person.tags.map((tag) => tag.id));
     this.deletedRelationshipIds.set([]);
+    this.relationshipsExpanded.set(false);
+    this.relatedDatesExpanded.set(false);
     this.relationshipForms.clear();
     for (const relationship of person.relationships) {
       this.relationshipForms.push(
@@ -898,6 +941,7 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
         }),
       );
     }
+    this.relationshipFormsVersion.update((version) => version + 1);
     this.formSnapshot.set(this.personForm.getRawValue());
     this.relationshipSnapshot.set(this.relationshipForms.getRawValue());
     this.mainUnsavedSource.commit();

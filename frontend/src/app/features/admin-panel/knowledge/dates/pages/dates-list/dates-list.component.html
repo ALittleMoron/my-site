@@ -136,16 +136,34 @@
               </td>
               <td>{{ annualDateLabel(value.date) }}</td>
               <td>
-                @for (person of value.relatedPeople; track person.id) {
-                  <a
-                    class="d-block"
-                    [routerLink]="['/admin-panel/knowledge/people', person.id]"
-                    queryParamsHandling="preserve"
+                <div [id]="'dates-related-people-' + value.id">
+                  @for (person of relatedPeopleForRow(value); track person.id) {
+                    <a
+                      class="d-block"
+                      [routerLink]="['/admin-panel/knowledge/people', person.id]"
+                      queryParamsHandling="preserve"
+                      [attr.data-testid]="'dates-related-person-' + value.id + '-' + person.id"
+                    >
+                      {{ person.displayName }}
+                    </a>
+                  } @empty {
+                    <span class="text-body-secondary">{{ 'shared.notSet' | t }}</span>
+                  }
+                </div>
+                @if (relatedPeopleCollapsible(value)) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm px-0"
+                    [attr.data-testid]="'dates-related-people-toggle-' + value.id"
+                    [attr.aria-controls]="'dates-related-people-' + value.id"
+                    [attr.aria-expanded]="relatedPeopleExpanded(value.id)"
+                    (click)="toggleRelatedPeople(value.id)"
                   >
-                    {{ person.displayName }}
-                  </a>
-                } @empty {
-                  <span class="text-body-secondary">{{ 'shared.notSet' | t }}</span>
+                    {{
+                      (relatedPeopleExpanded(value.id) ? 'shared.showLess' : 'shared.showAll')
+                        | t: { count: value.relatedPeople.length }
+                    }}
+                  </button>
                 }
               </td>
               <td>

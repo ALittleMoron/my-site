@@ -72,7 +72,9 @@ Portfolio and articles site with a knowledge database
 - Before finishing implementation work, do a self-review/code-review pass focused on bugs, regressions, missing tests, and instruction compliance.
 - Treat actionable warnings as failures: any warning from project code, tests, tooling, builds, or local runs that can be fixed through project code or configuration, an intentional dependency/runtime/tool update, or another practical fix must be fixed when it first appears. Warnings caused by the current version of a third-party library or its dependencies are not failures when no project-side fix, supported upgrade, or practical alternative exists; in that case, note the warning if relevant and do not derail the current task trying to eliminate it.
 - Before claiming completion, run the relevant checks through existing `make` targets: tests, linters, type checks, format checks, migrations, or local-run checks as applicable. For broad or cross-cutting changes, run the full practical check suite. If any relevant check is skipped, explain why in the final response.
-- After each code or configuration change, explicitly check whether infrastructure, documentation, CI/CD, and relevant `AGENTS.md` instructions must be updated; keep them consistent with the change.
+- After each code, configuration, documentation, infrastructure, or instruction change, explicitly
+  check whether infrastructure, documentation, CI/CD, and relevant `AGENTS.md` instructions must be
+  updated; keep them consistent with the change.
   - At minimum, search related terms in `docs/`, `.github/`, root README-style files, and nested `AGENTS.md` files before finishing.
   - After changes in code, architecture, implementation approach, accepted engineering decisions,
     quality/security/operations posture, roadmap, or "what next" direction, explicitly analyze
@@ -91,7 +93,18 @@ Portfolio and articles site with a knowledge database
     details. Prefer grouping related changes under an existing larger milestone, such as auth,
     matrix, deployment, quality, localization, or content workflows, instead of creating a separate
     updates entry for every task.
-  - After every code, configuration, documentation, infrastructure, or instruction change, explicitly ask whether the change should be captured in the relevant `AGENTS.md`. Do not silently decide that `AGENTS.md` does not need an update.
+  - Treat every user correction and every explicit generally applicable instruction as a candidate
+    for durable project guidance. At the end of each task, determine whether it is likely to remain
+    useful in future sessions.
+  - Review the applicable `AGENTS.md` files for accuracy and relevance. Recommend only reusable
+    guidance; avoid narrow or task-specific instructions unless they document an important
+    exception or materially improve the description of the codebase, its conventions, or the
+    correct approach to working with the project.
+  - In every final task response, include a separate chat-only `AGENTS.md candidates` section. For
+    each candidate, state the concise proposed rule, the exact `AGENTS.md` file where it belongs,
+    and why recording it would be useful. If there are no candidates, say so explicitly. Proposals
+    may be written in Russian, but content added to an `AGENTS.md` file must be in English. Do not
+    write a candidate to any `AGENTS.md` file until the user explicitly approves it.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
 - Never bypass Make targets for tests or checks. Test, lint, type-check, security, format-check,

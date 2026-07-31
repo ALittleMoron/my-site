@@ -217,9 +217,12 @@
 
       <section class="card card-body mb-3" data-testid="person-related-dates">
         <h3 class="h5">{{ 'knowledgePeople.section.relatedDates' | t }}</h3>
-        <ul class="list-group list-group-flush">
-          @for (relatedDate of person()!.relatedDates; track relatedDate.id) {
-            <li class="list-group-item px-0 d-flex flex-wrap justify-content-between gap-2">
+        <ul id="person-related-dates-list" class="list-group list-group-flush">
+          @for (relatedDate of visibleRelatedDates(); track relatedDate.id) {
+            <li
+              class="list-group-item px-0 d-flex flex-wrap justify-content-between gap-2"
+              [attr.data-testid]="'person-related-date-' + relatedDate.id"
+            >
               <a
                 [routerLink]="['/admin-panel/knowledge/dates', relatedDate.id]"
                 queryParamsHandling="preserve"
@@ -234,6 +237,21 @@
             </li>
           }
         </ul>
+        @if (relatedDatesCollapsible()) {
+          <button
+            type="button"
+            class="btn btn-link btn-sm align-self-start px-0 mt-2"
+            data-testid="person-related-dates-toggle"
+            aria-controls="person-related-dates-list"
+            [attr.aria-expanded]="relatedDatesExpanded()"
+            (click)="toggleRelatedDatesExpanded()"
+          >
+            {{
+              (relatedDatesExpanded() ? 'shared.showLess' : 'shared.showAll')
+                | t: { count: person()!.relatedDates.length }
+            }}
+          </button>
+        }
       </section>
 
       <section class="card card-body mb-3">
@@ -297,13 +315,17 @@
             (input)="searchPeople(relationshipSearch.value)"
           />
         </div>
-        <div>
+        <div id="person-relationships-list">
           @for (
-            relationship of relationshipForms.controls;
+            relationship of visibleRelationshipForms();
             track relationship;
             let index = $index
           ) {
-            <div class="border rounded p-3 mb-3" [formGroup]="relationship">
+            <div
+              class="border rounded p-3 mb-3"
+              [formGroup]="relationship"
+              [attr.data-testid]="'person-relationship-row-' + index"
+            >
               <div class="row g-3">
                 <div class="col-12 col-lg-4">
                   <label class="form-label" [for]="'relationship-person-' + index">{{
@@ -378,6 +400,21 @@
             <p class="text-body-secondary mb-0">{{ 'knowledgePeople.relationships.empty' | t }}</p>
           }
         </div>
+        @if (relationshipsCollapsible()) {
+          <button
+            type="button"
+            class="btn btn-link btn-sm align-self-start px-0"
+            data-testid="person-relationships-toggle"
+            aria-controls="person-relationships-list"
+            [attr.aria-expanded]="relationshipsExpanded()"
+            (click)="toggleRelationshipsExpanded()"
+          >
+            {{
+              (relationshipsExpanded() ? 'shared.showLess' : 'shared.showAll')
+                | t: { count: relationshipCount() }
+            }}
+          </button>
+        }
       </section>
 
       <section class="card card-body mb-3">

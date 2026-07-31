@@ -39,6 +39,7 @@ import {
 import { KnowledgeFile, KnowledgeTag, PersonSummary } from '../../../people/models/people.model';
 import { PeopleService } from '../../../people/services/people.service';
 import { annualDateValidator } from '../../../shared/annual-date';
+import { formatFileSize } from '../../../shared/file-size';
 import {
   KnowledgeDateDetail,
   KnowledgeDateUpdatePayload,
@@ -55,6 +56,8 @@ interface DateFormValue {
   };
   description: string;
 }
+
+const RELATED_PEOPLE_PREVIEW_LIMIT = 10;
 
 @Component({
   selector: 'app-date-detail',
@@ -85,6 +88,7 @@ export class DateDetailComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly unsavedScope = inject(AdminUnsavedChangesService).createScope(this.destroyRef);
   private readonly mainUnsavedSource: AdminUnsavedChangesSource;
+  private readonly tagDraftUnsavedSource: AdminUnsavedChangesSource;
   private dateId = '';
   private peopleSearchGeneration = 0;
 
@@ -101,6 +105,16 @@ export class DateDetailComponent implements OnInit {
   readonly attachmentUploading = signal(false);
   readonly attachmentError = signal<string | null>(null);
   readonly formSnapshot = signal<DateFormValue>(emptyDateFormValue());
+  readonly relatedPeopleExpanded = signal(false);
+  readonly peopleSearchQuery = signal('');
+  readonly peopleSearchLoading = signal(false);
+  readonly peopleSuggestionsOpen = signal(false);
+  readonly activePeopleSuggestionIndex = signal(-1);
+  readonly tagSearch = signal('');
+  readonly tagDialogOpen = signal(false);
+  readonly tagDraft = signal('');
+  readonly tagEditingId = signal<string | null>(null);
+  readonly tagSubmitting = signal(false);
 
   readonly dateForm = this.formBuilder.group({
     displayName: ['', [trimRequired, Validators.maxLength(ADMIN_VALIDATION_LIMITS.shortText)]],
@@ -119,7 +133,21 @@ export class DateDetailComponent implements OnInit {
     tagIds: this.selectedTagIds(),
     personIds: this.selectedPeople().map((person) => person.id),
   }));
+  readonly visibleSelectedPeople = computed(() =>
+    this.relatedPeopleExpanded()
+      ? this.selectedPeople()
+      : this.selectedPeople().slice(0, RELATED_PEOPLE_PREVIEW_LIMIT),
+  );
+  readonly relatedPeopleCollapsible = computed(
+    () => this.selectedPeople().length > RELATED_PEOPLE_PREVIEW_LIMIT,
+  );
   private readonly mainSourceActive = computed(() => this.date() !== null && !this.loading());
+  readonly filteredTags = computed(() => {
+    const query = this.tagSearch().trim().toLocaleLowerCase();
+    return query === ''
+      ? this.tags()
+      : this.tags().filter((tag) => tag.name.toLocaleLowerCase().includes(query));
+  });
   readonly dayOptions: readonly SiteSelectOption[] = Array.from({ length: 31 }, (_, index) => ({
     value: String(index + 1),
     label: String(index + 1),
@@ -151,6 +179,10 @@ export class DateDetailComponent implements OnInit {
       this.mainSnapshot,
       this.mainSourceActive,
     );
+    this.tagDraftUnsavedSource = this.unsavedScope.registerSource(
+      this.tagDraft,
+      this.tagDialogOpen,
+    );
     this.dateForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.formSnapshot.set(this.dateForm.getRawValue());
     });
@@ -160,7 +192,6 @@ export class DateDetailComponent implements OnInit {
     this.dateId = this.route.snapshot.paramMap.get('id') ?? '';
     this.loadDate();
     this.loadTags();
-    this.searchPeople('');
   }
 
   loadDate(): void {
@@ -195,6 +226,15 @@ export class DateDetailComponent implements OnInit {
 
   searchPeople(query: string): void {
     const generation = ++this.peopleSearchGeneration;
+    this.peopleSearchQuery.set(query);
+    if (query.trim() === '') {
+      this.resetPeopleSearch();
+      return;
+    }
+    this.peopleSearchLoading.set(true);
+    this.personCandidates.set([]);
+    this.peopleSuggestionsOpen.set(false);
+    this.activePeopleSuggestionIndex.set(-1);
     this.peopleService
       .listPeople({
         page: 1,
@@ -207,15 +247,65 @@ export class DateDetailComponent implements OnInit {
       .subscribe({
         next: (page) => {
           if (generation === this.peopleSearchGeneration) {
+            this.peopleSearchLoading.set(false);
             this.personCandidates.set(page.people);
+            this.peopleSuggestionsOpen.set(true);
+            this.activePeopleSuggestionIndex.set(this.availablePeople().length > 0 ? 0 : -1);
           }
         },
         error: () => {
           if (generation === this.peopleSearchGeneration) {
+            this.peopleSearchLoading.set(false);
+            this.personCandidates.set([]);
+            this.peopleSuggestionsOpen.set(false);
+            this.activePeopleSuggestionIndex.set(-1);
             this.notifications.error(this.i18n.translate('knowledgeDates.peopleSearchError'));
           }
         },
       });
+  }
+
+  onPeopleSearchInput(event: Event): void {
+    const target = event.currentTarget;
+    if (target instanceof HTMLInputElement) {
+      this.searchPeople(target.value);
+    }
+  }
+
+  onPeopleSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.peopleSuggestionsOpen.set(false);
+      this.activePeopleSuggestionIndex.set(-1);
+      return;
+    }
+    const suggestions = this.availablePeople();
+    if (!this.peopleSuggestionsOpen() || suggestions.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.activePeopleSuggestionIndex.update((index) => (index + 1) % suggestions.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.activePeopleSuggestionIndex.update((index) =>
+        index <= 0 ? suggestions.length - 1 : index - 1,
+      );
+      return;
+    }
+    if (event.key === 'Enter') {
+      const person = suggestions[this.activePeopleSuggestionIndex()];
+      if (person !== undefined) {
+        event.preventDefault();
+        this.addPerson(person);
+      }
+    }
+  }
+
+  activePeopleSuggestionId(): string | null {
+    const person = this.availablePeople()[this.activePeopleSuggestionIndex()];
+    return person === undefined ? null : `date-person-suggestion-${person.id}`;
   }
 
   saveDate(): void {
@@ -309,6 +399,90 @@ export class DateDetailComponent implements OnInit {
     );
   }
 
+  openTagDialog(): void {
+    this.tagDraft.set('');
+    this.tagEditingId.set(null);
+    this.tagDraftUnsavedSource.commit();
+    this.tagDialogOpen.set(true);
+  }
+
+  closeTagDialog(): void {
+    if (!this.tagSubmitting() && this.unsavedScope.confirmDiscardExcept([this.mainUnsavedSource])) {
+      this.tagDialogOpen.set(false);
+    }
+  }
+
+  editTag(tag: KnowledgeTag): void {
+    this.tagEditingId.set(tag.id);
+    this.tagDraft.set(tag.name);
+    this.tagDraftUnsavedSource.commit();
+  }
+
+  saveTag(): void {
+    const name = this.tagDraft().trim();
+    if (name === '') {
+      this.notifications.error(this.i18n.translate('knowledgePeople.tags.nameRequired'));
+      return;
+    }
+    this.tagSubmitting.set(true);
+    const request =
+      this.tagEditingId() === null
+        ? this.peopleService.createTag(name)
+        : this.peopleService.updateTag(this.tagEditingId()!, name);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.tagSubmitting.set(false);
+        this.tagDraft.set('');
+        this.tagEditingId.set(null);
+        this.tagDraftUnsavedSource.commit();
+        this.notifications.success(this.i18n.translate('knowledgePeople.tags.saveSuccess'));
+        this.loadTags();
+      },
+      error: () => {
+        this.tagSubmitting.set(false);
+        this.notifications.error(this.i18n.translate('knowledgePeople.tags.saveError'));
+      },
+    });
+  }
+
+  deleteTag(tag: KnowledgeTag): void {
+    const browserWindow = this.document.defaultView;
+    if (
+      browserWindow === null ||
+      !browserWindow.confirm(
+        this.i18n.translate('knowledgePeople.tags.deleteConfirm', { name: tag.name }),
+      )
+    ) {
+      return;
+    }
+    this.peopleService
+      .deleteTag(tag.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.selectedTagIds.update((ids) => ids.filter((id) => id !== tag.id));
+          this.notifications.success(this.i18n.translate('knowledgePeople.tags.deleteSuccess'));
+          this.loadTags();
+        },
+        error: () =>
+          this.notifications.error(this.i18n.translate('knowledgePeople.tags.deleteConflict')),
+      });
+  }
+
+  onTagDraftInput(event: Event): void {
+    const target = event.currentTarget;
+    if (target instanceof HTMLInputElement) {
+      this.tagDraft.set(target.value);
+    }
+  }
+
+  onTagSearchInput(event: Event): void {
+    const target = event.currentTarget;
+    if (target instanceof HTMLInputElement) {
+      this.tagSearch.set(target.value);
+    }
+  }
+
   addPerson(person: PersonSummary): void {
     if (this.selectedPeople().some((value) => value.id === person.id)) {
       return;
@@ -317,10 +491,21 @@ export class DateDetailComponent implements OnInit {
       ...values,
       { id: person.id, displayName: person.displayName },
     ]);
+    if (this.selectedPeople().length > RELATED_PEOPLE_PREVIEW_LIMIT) {
+      this.relatedPeopleExpanded.set(true);
+    }
+    this.resetPeopleSearch();
   }
 
   removePerson(personId: string): void {
     this.selectedPeople.update((values) => values.filter((value) => value.id !== personId));
+    if (this.selectedPeople().length <= RELATED_PEOPLE_PREVIEW_LIMIT) {
+      this.relatedPeopleExpanded.set(false);
+    }
+  }
+
+  toggleRelatedPeopleExpanded(): void {
+    this.relatedPeopleExpanded.update((expanded) => !expanded);
   }
 
   uploadAttachment(event: Event): void {
@@ -452,12 +637,7 @@ export class DateDetailComponent implements OnInit {
   }
 
   fileSize(sizeBytes: number): string {
-    return new Intl.NumberFormat(this.i18n.dateLocale(), {
-      style: 'unit',
-      unit: 'megabyte',
-      unitDisplay: 'short',
-      maximumFractionDigits: 2,
-    }).format(sizeBytes / (1024 * 1024));
+    return formatFileSize(sizeBytes, this.i18n.dateLocale());
   }
 
   private patchDate(value: KnowledgeDateDetail): void {
@@ -472,8 +652,18 @@ export class DateDetailComponent implements OnInit {
     });
     this.selectedTagIds.set(value.tags.map((tag) => tag.id));
     this.selectedPeople.set(value.relatedPeople.map((person) => ({ ...person })));
+    this.relatedPeopleExpanded.set(false);
     this.formSnapshot.set(this.dateForm.getRawValue());
     this.mainUnsavedSource.commit();
+  }
+
+  private resetPeopleSearch(): void {
+    this.peopleSearchGeneration += 1;
+    this.peopleSearchQuery.set('');
+    this.peopleSearchLoading.set(false);
+    this.personCandidates.set([]);
+    this.peopleSuggestionsOpen.set(false);
+    this.activePeopleSuggestionIndex.set(-1);
   }
 
   private buildPayload(): KnowledgeDateUpdatePayload {

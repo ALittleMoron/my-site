@@ -160,11 +160,17 @@ The lazy CSR routes are:
 - `/admin-panel/knowledge/people/:id` — typed person form, day/month birthday with optional year,
   Markdown description, tags, symmetric/directional relationships, relationship type management,
   Date backlinks, photo, attachments, protected downloads, and unsaved-change protection.
+  Relationship forms show five rows initially, while the one-line Date backlinks show ten; longer
+  lists expose an explicit show-all/collapse control.
 - `/admin-panel/knowledge/dates` — URL-synchronized search, AND-tag and Person filters, calendar
-  sorting, pagination, related People, quick create, and delete.
-- `/admin-panel/knowledge/dates/:id` — typed recurring-date form, People links, Markdown
-  description, shared tags, private attachments, protected downloads, and unsaved-change
-  protection.
+  sorting, pagination, related People with ten initially visible links per row, quick create, and
+  delete.
+- `/admin-panel/knowledge/dates/:id` — typed recurring-date form, searchable People suggestions,
+  People links with ten initially visible rows, shared tag selection and management, Markdown
+  description, private attachments, protected downloads, and unsaved-change protection.
+
+Knowledge file sizes use the smallest meaningful localized unit: bytes below 1 KiB, kilobytes below
+1 MiB, then megabytes, gigabytes, and terabytes.
 
 The workspace uses explicit typed forms and feature models. It does not render a schema-driven
 universal form. Protected photos are fetched as blobs and displayed through short-lived browser

@@ -109,9 +109,25 @@
       </section>
 
       <section class="card card-body mb-3">
-        <h3 class="h5">{{ 'knowledgeDates.section.tags' | t }}</h3>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h3 class="h5 mb-0">{{ 'knowledgeDates.section.tags' | t }}</h3>
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            data-testid="date-tags-manage"
+            (click)="openTagDialog()"
+          >
+            {{ 'knowledgePeople.tags.manage' | t }}
+          </button>
+        </div>
+        <input
+          class="form-control form-control-sm mb-3"
+          [value]="tagSearch()"
+          [attr.aria-label]="'knowledgePeople.tags.search' | t"
+          (input)="onTagSearchInput($event)"
+        />
         <div class="d-flex flex-wrap gap-2">
-          @for (tag of tags(); track tag.id) {
+          @for (tag of filteredTags(); track tag.id) {
             <label class="form-check form-check-inline m-0">
               <input
                 class="form-check-input"
@@ -122,7 +138,7 @@
               <span class="form-check-label">{{ tag.name }}</span>
             </label>
           } @empty {
-            <span class="text-body-secondary">{{ 'shared.notSet' | t }}</span>
+            <span class="text-body-secondary">{{ 'knowledgePeople.tags.empty' | t }}</span>
           }
         </div>
       </section>
@@ -132,15 +148,68 @@
         <label class="form-label" for="date-people-search">{{
           'knowledgeDates.peopleSearch' | t
         }}</label>
-        <input
-          id="date-people-search"
-          class="form-control form-control-sm mb-3"
-          #peopleSearch
-          (input)="searchPeople(peopleSearch.value)"
-        />
-        <ul class="list-group mb-3">
-          @for (person of selectedPeople(); track person.id) {
-            <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+        <div class="date-people-search position-relative mb-3">
+          <input
+            id="date-people-search"
+            type="search"
+            class="form-control form-control-sm"
+            autocomplete="off"
+            data-testid="date-people-search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="date-people-suggestions"
+            [attr.aria-expanded]="peopleSuggestionsOpen()"
+            [attr.aria-activedescendant]="activePeopleSuggestionId()"
+            [value]="peopleSearchQuery()"
+            [placeholder]="'knowledgeDates.peopleSearchPlaceholder' | t"
+            (input)="onPeopleSearchInput($event)"
+            (keydown)="onPeopleSearchKeydown($event)"
+            (keyup.escape)="$event.stopPropagation()"
+          />
+          @if (peopleSuggestionsOpen()) {
+            <div
+              id="date-people-suggestions"
+              class="date-people-suggestions list-group position-absolute start-0 end-0 shadow-sm"
+              role="listbox"
+            >
+              @for (person of availablePeople(); track person.id; let index = $index) {
+                <button
+                  [id]="'date-person-suggestion-' + person.id"
+                  type="button"
+                  class="list-group-item list-group-item-action"
+                  [class.active]="activePeopleSuggestionIndex() === index"
+                  [attr.aria-selected]="activePeopleSuggestionIndex() === index"
+                  [attr.data-testid]="'date-person-suggestion-' + person.id"
+                  role="option"
+                  (click)="addPerson(person)"
+                >
+                  {{ person.displayName }}
+                </button>
+              } @empty {
+                <div
+                  class="list-group-item text-body-secondary"
+                  role="option"
+                  aria-disabled="true"
+                  aria-selected="false"
+                >
+                  {{ 'shared.empty' | t }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="form-text mb-3">{{ 'knowledgeDates.peopleSearchHint' | t }}</div>
+        @if (peopleSearchLoading()) {
+          <p class="small text-body-secondary" role="status">
+            {{ 'knowledgeDates.peopleSearching' | t }}
+          </p>
+        }
+        <ul id="date-related-people-list" class="list-group mb-2">
+          @for (person of visibleSelectedPeople(); track person.id) {
+            <li
+              class="list-group-item d-flex justify-content-between align-items-center gap-2"
+              [attr.data-testid]="'date-related-person-' + person.id"
+            >
               <a
                 [routerLink]="['/admin-panel/knowledge/people', person.id]"
                 queryParamsHandling="preserve"
@@ -161,17 +230,21 @@
             </li>
           }
         </ul>
-        <div class="d-flex flex-wrap gap-2">
-          @for (person of availablePeople(); track person.id) {
-            <button
-              type="button"
-              class="btn btn-outline-secondary btn-sm"
-              (click)="addPerson(person)"
-            >
-              {{ 'shared.add' | t }}: {{ person.displayName }}
-            </button>
-          }
-        </div>
+        @if (relatedPeopleCollapsible()) {
+          <button
+            type="button"
+            class="btn btn-link btn-sm align-self-start px-0"
+            data-testid="date-related-people-toggle"
+            aria-controls="date-related-people-list"
+            [attr.aria-expanded]="relatedPeopleExpanded()"
+            (click)="toggleRelatedPeopleExpanded()"
+          >
+            {{
+              (relatedPeopleExpanded() ? 'shared.showLess' : 'shared.showAll')
+                | t: { count: selectedPeople().length }
+            }}
+          </button>
+        }
       </section>
 
       <section class="card card-body mb-3">
@@ -196,7 +269,10 @@
             <li class="list-group-item d-flex flex-wrap justify-content-between gap-3">
               <span>
                 <strong>{{ attachment.name }}</strong>
-                <small class="d-block text-body-secondary">
+                <small
+                  class="d-block text-body-secondary"
+                  [attr.data-testid]="'date-attachment-size-' + attachment.id"
+                >
                   {{ attachment.originalName }} · {{ fileSize(attachment.sizeBytes) }}
                 </small>
               </span>
@@ -243,5 +319,72 @@
         </button>
       </div>
     </form>
+  }
+
+  @if (tagDialogOpen()) {
+    <div
+      class="modal d-block bg-dark bg-opacity-50"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'knowledgePeople.tags.manage' | t"
+      tabindex="0"
+      (click)="closeTagDialog()"
+      (keyup.escape)="closeTagDialog()"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered"
+        role="document"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()"
+      >
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="h5 modal-title">{{ 'knowledgePeople.tags.manage' | t }}</h3>
+            <button
+              type="button"
+              class="btn-close"
+              [attr.aria-label]="'shared.close' | t"
+              (click)="closeTagDialog()"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group mb-3">
+              <input
+                class="form-control"
+                data-testid="date-tag-draft"
+                [attr.aria-label]="'knowledgePeople.tags.name' | t"
+                [value]="tagDraft()"
+                (input)="onTagDraftInput($event)"
+              />
+              <button
+                type="button"
+                class="btn btn-success"
+                data-testid="date-tag-save"
+                [disabled]="tagSubmitting()"
+                (click)="saveTag()"
+              >
+                {{ tagEditingId() === null ? ('shared.add' | t) : ('shared.save' | t) }}
+              </button>
+            </div>
+            <ul class="list-group">
+              @for (tag of tags(); track tag.id) {
+                <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                  <span>{{ tag.name }}</span>
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" (click)="editTag(tag)">
+                      {{ 'shared.edit' | t }}
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" (click)="deleteTag(tag)">
+                      {{ 'shared.delete' | t }}
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   }
 </div>
