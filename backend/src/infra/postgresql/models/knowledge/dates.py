@@ -10,18 +10,19 @@ from sqlalchemy import (
     UniqueConstraint,
     and_,
     case,
-    column,
     func,
     or_,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
 from core.knowledge.dates.schemas import (
     KnowledgeDateDetails,
     KnowledgeDatePersonLink,
     KnowledgeDateValue,
 )
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
+from infra.postgresql.models.knowledge.items import KnowledgeItemModel
+from infra.postgresql.models.knowledge.people import PersonDetailsModel
 
 
 class KnowledgeDateDetailsModel(BaseModel):
@@ -33,59 +34,58 @@ class KnowledgeDateDetailsModel(BaseModel):
     month: Mapped[int] = mapped_column(Integer)
     year: Mapped[int | None] = mapped_column(Integer)
 
-    __table_args__ = (
-        UniqueConstraint("item_id", "author_username", name="date_details_id_author_uniq"),
-        ForeignKeyConstraint(
-            ["item_id", "author_username"],
-            [
-                "knowledge__knowledge_item_model.id",
-                "knowledge__knowledge_item_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="date_details_item_author_fk",
-        ),
-        CheckConstraint(
-            and_(
-                column("day").between(1, 31),
-                column("month").between(1, 12),
-                or_(column("year").is_(None), column("year").between(1, 9999)),
-                column("day")
-                <= case(
-                    (column("month").in_((1, 3, 5, 7, 8, 10, 12)), 31),
-                    (column("month").in_((4, 6, 9, 11)), 30),
-                    (column("year").is_(None), 29),
-                    (
-                        or_(
-                            column("year") % 400 == 0,
-                            and_(
-                                column("year") % 4 == 0,
-                                column("year") % 100 != 0,
-                            ),
-                        ),
-                        29,
-                    ),
-                    else_=28,
-                ),
-                or_(
-                    column("year").is_(None),
-                    func.make_date(
-                        column("year"),
-                        column("month"),
-                        column("day"),
-                    )
-                    <= func.current_date(),
-                ),
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.item_id,
+                cls.author_username,
+                name="date_details_id_author_uniq",
             ),
-            name="date_details_calendar_check",
-        ),
-        Index(
-            "date_details_author_calendar_item_idx",
-            "author_username",
-            "month",
-            "day",
-            "item_id",
-        ),
-    )
+            ForeignKeyConstraint(
+                [cls.item_id, cls.author_username],
+                [KnowledgeItemModel.id, KnowledgeItemModel.author_username],
+                ondelete="CASCADE",
+                name="date_details_item_author_fk",
+            ),
+            CheckConstraint(
+                and_(
+                    cls.day.between(1, 31),
+                    cls.month.between(1, 12),
+                    or_(cls.year.is_(None), cls.year.between(1, 9999)),
+                    cls.day
+                    <= case(
+                        (cls.month.in_((1, 3, 5, 7, 8, 10, 12)), 31),
+                        (cls.month.in_((4, 6, 9, 11)), 30),
+                        (cls.year.is_(None), 29),
+                        (
+                            or_(
+                                cls.year % 400 == 0,
+                                and_(
+                                    cls.year % 4 == 0,
+                                    cls.year % 100 != 0,
+                                ),
+                            ),
+                            29,
+                        ),
+                        else_=28,
+                    ),
+                    or_(
+                        cls.year.is_(None),
+                        func.make_date(cls.year, cls.month, cls.day) <= func.current_date(),
+                    ),
+                ),
+                name="date_details_calendar_check",
+            ),
+            Index(
+                "date_details_author_calendar_item_idx",
+                cls.author_username,
+                cls.month,
+                cls.day,
+                cls.item_id,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(
@@ -116,39 +116,36 @@ class KnowledgeDatePersonModel(BaseModel):
     person_item_id: Mapped[str] = mapped_column(String(length=32))
     author_username: Mapped[str] = mapped_column(String(length=255))
 
-    __table_args__ = (
-        PrimaryKeyConstraint("date_item_id", "person_item_id"),
-        ForeignKeyConstraint(
-            ["date_item_id", "author_username"],
-            [
-                "knowledge__date_details_model.item_id",
-                "knowledge__date_details_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="date_people_date_author_fk",
-        ),
-        ForeignKeyConstraint(
-            ["person_item_id", "author_username"],
-            [
-                "knowledge__person_details_model.item_id",
-                "knowledge__person_details_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="date_people_person_author_fk",
-        ),
-        Index(
-            "date_people_author_person_date_idx",
-            "author_username",
-            "person_item_id",
-            "date_item_id",
-        ),
-        Index(
-            "date_people_author_date_person_idx",
-            "author_username",
-            "date_item_id",
-            "person_item_id",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            PrimaryKeyConstraint(cls.date_item_id, cls.person_item_id),
+            ForeignKeyConstraint(
+                [cls.date_item_id, cls.author_username],
+                [KnowledgeDateDetailsModel.item_id, KnowledgeDateDetailsModel.author_username],
+                ondelete="CASCADE",
+                name="date_people_date_author_fk",
+            ),
+            ForeignKeyConstraint(
+                [cls.person_item_id, cls.author_username],
+                [PersonDetailsModel.item_id, PersonDetailsModel.author_username],
+                ondelete="CASCADE",
+                name="date_people_person_author_fk",
+            ),
+            Index(
+                "date_people_author_person_date_idx",
+                cls.author_username,
+                cls.person_item_id,
+                cls.date_item_id,
+            ),
+            Index(
+                "date_people_author_date_person_idx",
+                cls.author_username,
+                cls.date_item_id,
+                cls.person_item_id,
+            ),
+        )
 
     def to_domain_schema(self) -> KnowledgeDatePersonLink:
         return KnowledgeDatePersonLink(

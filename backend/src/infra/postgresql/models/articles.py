@@ -12,17 +12,16 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
     inspect,
-    text,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.schemas import Article, ArticleFolder, ArticleMetadata, Tag, Tags
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.files import FileModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 from infra.postgresql.models.mixins.priority import PriorityMixin
@@ -47,24 +46,27 @@ class ArticleFolderModel(PriorityMixin, HexUuidIDMixin, BaseModel):
         doc="Articles assigned to this folder",
     )
 
-    __table_args__ = (
-        Index(
-            "articles_folder_key_lower_uniq",
-            func.lower(key).label("folder_key_lower"),
-            unique=True,
-        ),
-        Index("articles_folder_priority_id_idx", "priority", "id"),
-        Index(
-            "articles_folder_name_ru_idx",
-            func.lower(name_ru).label("folder_name_ru_lower"),
-            "id",
-        ),
-        Index(
-            "articles_folder_name_en_idx",
-            func.lower(name_en).label("folder_name_en_lower"),
-            "id",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "articles_folder_key_lower_uniq",
+                func.lower(cls.key).label("folder_key_lower"),
+                unique=True,
+            ),
+            Index("articles_folder_priority_id_idx", cls.priority, cls.id),
+            Index(
+                "articles_folder_name_ru_idx",
+                func.lower(cls.name_ru).label("folder_name_ru_lower"),
+                cls.id,
+            ),
+            Index(
+                "articles_folder_name_en_idx",
+                func.lower(cls.name_en).label("folder_name_en_lower"),
+                cls.id,
+            ),
+        )
 
     def __str__(self) -> str:
         return f'Article folder "{self.key}"'
@@ -185,48 +187,51 @@ class ArticleModel(PublishMixin, HexUuidIDMixin, AuditMixin, BaseModel):
         doc="Managed files used by article content",
     )
 
-    __table_args__ = (
-        Index(
-            "articles_article_search_vector_gin_idx",
-            search_vector_ru,
-            postgresql_using="gin",
-        ),
-        Index(
-            "articles_article_search_vector_en_gin_idx",
-            search_vector_en,
-            postgresql_using="gin",
-        ),
-        Index(
-            "articles_article_publish_status_published_at_idx",
-            "publish_status",
-            "published_at",
-        ),
-        Index(
-            "articles_article_publish_status_published_updated_idx",
-            "publish_status",
-            text("published_at DESC NULLS LAST"),
-            text("updated_at DESC"),
-        ),
-        Index("articles_article_cover_image_file_idx", "cover_image_file_id"),
-        Index(
-            "articles_article_tree_folder_ru_published_idx",
-            "folder_id",
-            text("published_at DESC NULLS LAST"),
-            text("updated_at DESC"),
-            "title_ru",
-            postgresql_include=("slug", "publish_status"),
-            postgresql_where=text("publish_status = 'PUBLISHED'"),
-        ),
-        Index(
-            "articles_article_tree_folder_en_published_idx",
-            "folder_id",
-            text("published_at DESC NULLS LAST"),
-            text("updated_at DESC"),
-            "title_en",
-            postgresql_include=("slug", "publish_status"),
-            postgresql_where=text("publish_status = 'PUBLISHED'"),
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "articles_article_search_vector_gin_idx",
+                cls.search_vector_ru,
+                postgresql_using="gin",
+            ),
+            Index(
+                "articles_article_search_vector_en_gin_idx",
+                cls.search_vector_en,
+                postgresql_using="gin",
+            ),
+            Index(
+                "articles_article_publish_status_published_at_idx",
+                cls.publish_status,
+                cls.published_at,
+            ),
+            Index(
+                "articles_article_publish_status_published_updated_idx",
+                cls.publish_status,
+                cls.published_at.desc().nulls_last(),
+                cls.updated_at.desc(),
+            ),
+            Index("articles_article_cover_image_file_idx", cls.cover_image_file_id),
+            Index(
+                "articles_article_tree_folder_ru_published_idx",
+                cls.folder_id,
+                cls.published_at.desc().nulls_last(),
+                cls.updated_at.desc(),
+                cls.title_ru,
+                postgresql_include=(cls.slug, cls.publish_status),
+                postgresql_where=cls.publish_status == PublishStatusEnum.PUBLISHED,
+            ),
+            Index(
+                "articles_article_tree_folder_en_published_idx",
+                cls.folder_id,
+                cls.published_at.desc().nulls_last(),
+                cls.updated_at.desc(),
+                cls.title_en,
+                postgresql_include=(cls.slug, cls.publish_status),
+                postgresql_where=cls.publish_status == PublishStatusEnum.PUBLISHED,
+            ),
+        )
 
     def __str__(self) -> str:
         return f'Article "{self.title_en}"'
@@ -344,26 +349,30 @@ class TagModel(HexUuidIDMixin, AuditMixin, BaseModel):
         index=True,
         doc="Stable tag slug used in filters",
     )
-    __table_args__ = (
-        Index(
-            "articles_tag_name_ru_trgm_idx",
-            func.lower(name_ru).label("name_ru_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "articles_tag_name_en_trgm_idx",
-            func.lower(name_en).label("name_en_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"name_en_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "articles_tag_slug_trgm_idx",
-            func.lower(slug).label("slug_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"slug_lower": "gin_trgm_ops"},
-        ),
-    )
+
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "articles_tag_name_ru_trgm_idx",
+                func.lower(cls.name_ru).label("name_ru_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "articles_tag_name_en_trgm_idx",
+                func.lower(cls.name_en).label("name_en_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"name_en_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "articles_tag_slug_trgm_idx",
+                func.lower(cls.slug).label("slug_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"slug_lower": "gin_trgm_ops"},
+            ),
+        )
 
     def __str__(self) -> str:
         return f'Tag "{self.name_en}"'
@@ -409,7 +418,10 @@ class ArticleToTagSecondaryModel(HexUuidIDMixin, BaseModel):
         doc="Linked tag",
     )
 
-    __table_args__ = (UniqueConstraint("article_id", "tag_id", name="articles_article_tag_uniq"),)
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (UniqueConstraint(cls.article_id, cls.tag_id, name="articles_article_tag_uniq"),)
 
     @classmethod
     def from_domain_schema(cls, tag: Tag) -> Self:
@@ -444,15 +456,18 @@ class ArticleFileUsageModel(HexUuidIDMixin, BaseModel):
         doc="Linked managed file",
     )
 
-    __table_args__ = (
-        UniqueConstraint(
-            "article_id",
-            "file_id",
-            "usage",
-            name="articles_file_usage_article_file_usage_uniq",
-        ),
-        Index("articles_file_usage_file_idx", "file_id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.article_id,
+                cls.file_id,
+                cls.usage,
+                name="articles_file_usage_article_file_usage_uniq",
+            ),
+            Index("articles_file_usage_file_idx", cls.file_id),
+        )
 
     @classmethod
     def from_domain_schema(cls, article: Article) -> list[Self]:
@@ -494,14 +509,17 @@ class ArticleDailyAnalyticsModel(HexUuidIDMixin, BaseModel):
 
     article: Mapped[ArticleModel] = relationship(doc="Tracked article")
 
-    __table_args__ = (
-        UniqueConstraint(
-            "article_id",
-            "date",
-            "source_category",
-            name="articles_daily_analytics_article_date_source_uniq",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.article_id,
+                cls.date,
+                cls.source_category,
+                name="articles_daily_analytics_article_date_source_uniq",
+            ),
+        )
 
 
 class ArticleReactionModel(HexUuidIDMixin, AuditMixin, BaseModel):
@@ -524,10 +542,13 @@ class ArticleReactionModel(HexUuidIDMixin, AuditMixin, BaseModel):
 
     article: Mapped[ArticleModel] = relationship(doc="Reacted article")
 
-    __table_args__ = (
-        UniqueConstraint(
-            "article_id",
-            "article_scoped_voter_hash",
-            name="articles_reaction_article_voter_uniq",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.article_id,
+                cls.article_scoped_voter_hash,
+                name="articles_reaction_article_voter_uniq",
+            ),
+        )

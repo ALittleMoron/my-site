@@ -1,13 +1,13 @@
 from typing import Self
 
 from sqlalchemy import Enum, Index, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 
 from core.files.enums import FilePurpose
 from core.files.schemas import StoredFile
 from core.files.types import Namespace
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
@@ -49,20 +49,28 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
         doc="SHA-256 hash of the original uploaded bytes, before processing",
     )
 
-    __table_args__ = (
-        UniqueConstraint(
-            "namespace",
-            "relative_path",
-            name="files_file_namespace_relative_path_uniq",
-        ),
-        Index("files_file_purpose_created_id_idx", "purpose", "created_at", "id"),
-        Index(
-            "files_file_namespace_purpose_original_sha256_idx",
-            "namespace",
-            "purpose",
-            "original_sha256",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.namespace,
+                cls.relative_path,
+                name="files_file_namespace_relative_path_uniq",
+            ),
+            Index(
+                "files_file_purpose_created_id_idx",
+                cls.purpose,
+                cls.created_at,
+                cls.id,
+            ),
+            Index(
+                "files_file_namespace_purpose_original_sha256_idx",
+                cls.namespace,
+                cls.purpose,
+                cls.original_sha256,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, file: StoredFile) -> Self:

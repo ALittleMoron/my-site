@@ -12,7 +12,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.agent_access.enums import (
@@ -30,7 +30,7 @@ from core.agent_access.schemas import (
     MatrixQuestionDraftCompletion,
 )
 from core.competency_matrix.schemas import MatrixQuestionClaimSummary
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.competency_matrix import QueuedQuestionModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
@@ -54,10 +54,17 @@ class AgentClientModel(HexUuidIDMixin, BaseModel):
         doc="Permanent revocation timestamp",
     )
 
-    __table_args__ = (
-        Index("agent_client_name_lower_uniq", func.lower(name).label("name_lower"), unique=True),
-        Index("agent_client_status_created_idx", status, created_at, "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "agent_client_name_lower_uniq",
+                func.lower(cls.name).label("name_lower"),
+                unique=True,
+            ),
+            Index("agent_client_status_created_idx", cls.status, cls.created_at, cls.id),
+        )
 
     @classmethod
     def from_domain_schema(cls, schema: AgentClient) -> Self:
@@ -116,10 +123,23 @@ class AgentCertificateModel(HexUuidIDMixin, BaseModel):
 
     client: Mapped[AgentClientModel] = relationship(doc="Owning agent client")
 
-    __table_args__ = (
-        Index("agent_certificate_client_expiry_idx", agent_client_id, expires_at, "id"),
-        Index("agent_certificate_revoked_expiry_idx", revoked_at, expires_at, "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "agent_certificate_client_expiry_idx",
+                cls.agent_client_id,
+                cls.expires_at,
+                cls.id,
+            ),
+            Index(
+                "agent_certificate_revoked_expiry_idx",
+                cls.revoked_at,
+                cls.expires_at,
+                cls.id,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, schema: AgentCertificate) -> Self:
@@ -169,11 +189,14 @@ class MatrixQuestionClaimModel(HexUuidIDMixin, BaseModel):
 
     question: Mapped[QueuedQuestionModel] = relationship(doc="Claimed queue item")
 
-    __table_args__ = (
-        UniqueConstraint("agent_client_id", name="matrix_question_claim_client_uniq"),
-        UniqueConstraint("queue_item_id", name="matrix_question_claim_queue_item_uniq"),
-        Index("matrix_question_claim_expiry_idx", expires_at, "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(cls.agent_client_id, name="matrix_question_claim_client_uniq"),
+            UniqueConstraint(cls.queue_item_id, name="matrix_question_claim_queue_item_uniq"),
+            Index("matrix_question_claim_expiry_idx", cls.expires_at, cls.id),
+        )
 
     def to_domain_schema(self) -> MatrixQuestionClaim:
         return MatrixQuestionClaim(
@@ -221,14 +244,17 @@ class MatrixQuestionDraftCompletionModel(BaseModel):
         doc="Draft completion timestamp",
     )
 
-    __table_args__ = (
-        Index(
-            "matrix_question_draft_completion_client_completed_idx",
-            agent_client_id,
-            completed_at,
-            claim_id,
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "matrix_question_draft_completion_client_completed_idx",
+                cls.agent_client_id,
+                cls.completed_at,
+                cls.claim_id,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, schema: MatrixQuestionDraftCompletion) -> Self:
@@ -287,28 +313,31 @@ class AgentCertificateRotationModel(BaseModel):
         doc="Replacement installation confirmation timestamp",
     )
 
-    __table_args__ = (
-        UniqueConstraint(
-            "replacement_certificate_id",
-            name="agent_certificate_rotation_replacement_uniq",
-        ),
-        CheckConstraint(
-            current_certificate_id != replacement_certificate_id,
-            name="agent_certificate_rotation_distinct_certificates_check",
-        ),
-        Index(
-            "agent_certificate_rotation_pending_current_uniq",
-            current_certificate_id,
-            unique=True,
-            postgresql_where=confirmed_at.is_(None),
-        ),
-        Index(
-            "agent_certificate_rotation_client_created_idx",
-            agent_client_id,
-            created_at,
-            rotation_id,
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.replacement_certificate_id,
+                name="agent_certificate_rotation_replacement_uniq",
+            ),
+            CheckConstraint(
+                cls.current_certificate_id != cls.replacement_certificate_id,
+                name="agent_certificate_rotation_distinct_certificates_check",
+            ),
+            Index(
+                "agent_certificate_rotation_pending_current_uniq",
+                cls.current_certificate_id,
+                unique=True,
+                postgresql_where=cls.confirmed_at.is_(None),
+            ),
+            Index(
+                "agent_certificate_rotation_client_created_idx",
+                cls.agent_client_id,
+                cls.created_at,
+                cls.rotation_id,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, schema: AgentCertificateRotation) -> Self:
@@ -371,11 +400,25 @@ class AgentAuditEventModel(HexUuidIDMixin, BaseModel):
         doc="Audit event timestamp",
     )
 
-    __table_args__ = (
-        Index("agent_audit_client_created_idx", agent_client_id, created_at, "id"),
-        Index("agent_audit_action_result_created_idx", action, result, created_at, "id"),
-        Index("agent_audit_created_idx", created_at, "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "agent_audit_client_created_idx",
+                cls.agent_client_id,
+                cls.created_at,
+                cls.id,
+            ),
+            Index(
+                "agent_audit_action_result_created_idx",
+                cls.action,
+                cls.result,
+                cls.created_at,
+                cls.id,
+            ),
+            Index("agent_audit_created_idx", cls.created_at, cls.id),
+        )
 
     def to_domain_schema(self) -> AgentAuditEvent:
         return AgentAuditEvent(

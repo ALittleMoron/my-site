@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Self
 
 from sqlalchemy import Boolean, Enum, ForeignKey, Index, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
@@ -11,7 +11,7 @@ from core.auth.enums import AuthSessionAuthMethodEnum, AuthSessionDeviceTypeEnum
 from core.auth.schemas import AuthSession, AuthSessionClientMetadata, User
 from core.auth.types import SessionSecretHash
 from core.schemas import Secret
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
@@ -34,26 +34,29 @@ class UserModel(BaseModel):
         doc="Whether the user may authenticate",
     )
 
-    __table_args__ = (
-        Index("users_username_idx", username),
-        Index(
-            "users_username_lower_uniq",
-            func.lower(username).label("username_lower"),
-            unique=True,
-        ),
-        Index(
-            "users_managed_accounts_list_idx",
-            role,
-            func.lower(username).label("username_lower"),
-            username,
-        ),
-        Index(
-            "users_single_owner_uniq",
-            role,
-            unique=True,
-            postgresql_where=role == RoleEnum.OWNER,
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index("users_username_idx", cls.username),
+            Index(
+                "users_username_lower_uniq",
+                func.lower(cls.username).label("username_lower"),
+                unique=True,
+            ),
+            Index(
+                "users_managed_accounts_list_idx",
+                cls.role,
+                func.lower(cls.username).label("username_lower"),
+                cls.username,
+            ),
+            Index(
+                "users_single_owner_uniq",
+                cls.role,
+                unique=True,
+                postgresql_where=cls.role == RoleEnum.OWNER,
+            ),
+        )
 
     def to_domain_schema(self) -> User:
         return User(
@@ -135,27 +138,30 @@ class AuthSessionModel(HexUuidIDMixin, AuditMixin, BaseModel):
         doc="Privacy-safe coarse device type",
     )
 
-    __table_args__ = (
-        UniqueConstraint("secret_hash", name="auth_sessions_secret_hash_uniq"),
-        Index(
-            "auth_sessions_username_lower_active_expiry_idx",
-            func.lower(username).label("username_lower"),
-            is_revoked,
-            expires_at,
-            absolute_expires_at,
-        ),
-        Index("auth_sessions_expiry_idx", expires_at),
-        Index("auth_sessions_absolute_expiry_idx", absolute_expires_at),
-        Index(
-            "auth_sessions_username_lower_active_last_used_idx",
-            func.lower(username).label("username_lower"),
-            is_revoked,
-            expires_at,
-            absolute_expires_at,
-            last_used_at.desc(),
-            "id",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(cls.secret_hash, name="auth_sessions_secret_hash_uniq"),
+            Index(
+                "auth_sessions_username_lower_active_expiry_idx",
+                func.lower(cls.username).label("username_lower"),
+                cls.is_revoked,
+                cls.expires_at,
+                cls.absolute_expires_at,
+            ),
+            Index("auth_sessions_expiry_idx", cls.expires_at),
+            Index("auth_sessions_absolute_expiry_idx", cls.absolute_expires_at),
+            Index(
+                "auth_sessions_username_lower_active_last_used_idx",
+                func.lower(cls.username).label("username_lower"),
+                cls.is_revoked,
+                cls.expires_at,
+                cls.absolute_expires_at,
+                cls.last_used_at.desc(),
+                cls.id,
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, schema: AuthSession) -> Self:

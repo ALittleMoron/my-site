@@ -10,9 +10,13 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    and_,
+    case,
     func,
+    literal,
+    or_,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 
 from core.knowledge.people.schemas import (
@@ -22,7 +26,8 @@ from core.knowledge.people.schemas import (
     PersonRelationshipType,
     PersonRelationshipTypeCreateParams,
 )
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
+from infra.postgresql.models.knowledge.items import KnowledgeItemModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
@@ -41,86 +46,119 @@ class PersonDetailsModel(BaseModel):
     birthday_month: Mapped[int | None] = mapped_column(Integer)
     birthday_year: Mapped[int | None] = mapped_column(Integer)
 
-    __table_args__ = (
-        UniqueConstraint("item_id", "author_username", name="person_details_id_author_uniq"),
-        ForeignKeyConstraint(
-            ["item_id", "author_username"],
-            [
-                "knowledge__knowledge_item_model.id",
-                "knowledge__knowledge_item_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="person_details_item_author_fk",
-        ),
-        CheckConstraint(
-            "("
-            "birthday_day IS NULL AND birthday_month IS NULL AND birthday_year IS NULL"
-            ") OR ("
-            "birthday_day IS NOT NULL AND birthday_month IS NOT NULL"
-            " AND birthday_day BETWEEN 1 AND 31"
-            " AND birthday_month BETWEEN 1 AND 12"
-            " AND (birthday_year IS NULL OR birthday_year BETWEEN 1 AND 9999)"
-            " AND birthday_day <= CASE"
-            " WHEN birthday_month IN (1, 3, 5, 7, 8, 10, 12) THEN 31"
-            " WHEN birthday_month IN (4, 6, 9, 11) THEN 30"
-            " WHEN birthday_year IS NULL THEN 29"
-            " WHEN birthday_year % 400 = 0"
-            "   OR (birthday_year % 4 = 0 AND birthday_year % 100 <> 0) THEN 29"
-            " ELSE 28 END"
-            " AND (birthday_year IS NULL"
-            "   OR make_date(birthday_year, birthday_month, birthday_day) <= CURRENT_DATE)"
-            ")",
-            name="person_details_birthday_check",
-        ),
-        Index(
-            "person_details_author_name_search_idx",
-            "author_username",
-            func.lower(last_name).label("last_name_lower"),
-            func.lower(first_name).label("first_name_lower"),
-            "item_id",
-        ),
-        Index(
-            "person_details_author_email_item_idx",
-            "author_username",
-            func.lower(email).label("email_lower"),
-            "item_id",
-        ),
-        Index(
-            "person_details_author_birthday_item_idx",
-            "author_username",
-            "birthday_month",
-            "birthday_day",
-            "item_id",
-        ),
-        Index(
-            "person_details_last_name_trgm_idx",
-            func.lower(last_name).label("last_name_lower_trgm"),
-            postgresql_using="gin",
-            postgresql_ops={"last_name_lower_trgm": "gin_trgm_ops"},
-        ),
-        Index(
-            "person_details_first_name_trgm_idx",
-            func.lower(first_name).label("first_name_lower_trgm"),
-            postgresql_using="gin",
-            postgresql_ops={"first_name_lower_trgm": "gin_trgm_ops"},
-        ),
-        Index(
-            "person_details_middle_name_trgm_idx",
-            func.lower(middle_name).label("middle_name_lower_trgm"),
-            postgresql_using="gin",
-            postgresql_ops={"middle_name_lower_trgm": "gin_trgm_ops"},
-        ),
-        Index(
-            "person_details_email_trgm_idx",
-            func.lower(email).label("email_lower_trgm"),
-            postgresql_using="gin",
-            postgresql_ops={"email_lower_trgm": "gin_trgm_ops"},
-        ),
-        CheckConstraint(
-            "char_length(trim(last_name)) > 0 AND char_length(trim(first_name)) > 0",
-            name="person_details_required_names_check",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.item_id,
+                cls.author_username,
+                name="person_details_id_author_uniq",
+            ),
+            ForeignKeyConstraint(
+                [cls.item_id, cls.author_username],
+                [KnowledgeItemModel.id, KnowledgeItemModel.author_username],
+                ondelete="CASCADE",
+                name="person_details_item_author_fk",
+            ),
+            CheckConstraint(
+                or_(
+                    and_(
+                        cls.birthday_day.is_(None),
+                        cls.birthday_month.is_(None),
+                        cls.birthday_year.is_(None),
+                    ),
+                    and_(
+                        cls.birthday_day.is_not(None),
+                        cls.birthday_month.is_not(None),
+                        cls.birthday_day.between(1, 31),
+                        cls.birthday_month.between(1, 12),
+                        or_(
+                            cls.birthday_year.is_(None),
+                            cls.birthday_year.between(1, 9999),
+                        ),
+                        cls.birthday_day
+                        <= case(
+                            (cls.birthday_month.in_((1, 3, 5, 7, 8, 10, 12)), 31),
+                            (cls.birthday_month.in_((4, 6, 9, 11)), 30),
+                            (cls.birthday_year.is_(None), 29),
+                            (
+                                or_(
+                                    cls.birthday_year % 400 == 0,
+                                    and_(
+                                        cls.birthday_year % 4 == 0,
+                                        cls.birthday_year % 100 != 0,
+                                    ),
+                                ),
+                                29,
+                            ),
+                            else_=28,
+                        ),
+                        or_(
+                            cls.birthday_year.is_(None),
+                            func.make_date(
+                                cls.birthday_year,
+                                cls.birthday_month,
+                                cls.birthday_day,
+                            )
+                            <= func.current_date(),
+                        ),
+                    ),
+                ),
+                name="person_details_birthday_check",
+            ),
+            Index(
+                "person_details_author_name_search_idx",
+                cls.author_username,
+                func.lower(cls.last_name).label("last_name_lower"),
+                func.lower(cls.first_name).label("first_name_lower"),
+                cls.item_id,
+            ),
+            Index(
+                "person_details_author_email_item_idx",
+                cls.author_username,
+                func.lower(cls.email).label("email_lower"),
+                cls.item_id,
+            ),
+            Index(
+                "person_details_author_birthday_item_idx",
+                cls.author_username,
+                cls.birthday_month,
+                cls.birthday_day,
+                cls.item_id,
+            ),
+            Index(
+                "person_details_last_name_trgm_idx",
+                func.lower(cls.last_name).label("last_name_lower_trgm"),
+                postgresql_using="gin",
+                postgresql_ops={"last_name_lower_trgm": "gin_trgm_ops"},
+            ),
+            Index(
+                "person_details_first_name_trgm_idx",
+                func.lower(cls.first_name).label("first_name_lower_trgm"),
+                postgresql_using="gin",
+                postgresql_ops={"first_name_lower_trgm": "gin_trgm_ops"},
+            ),
+            Index(
+                "person_details_middle_name_trgm_idx",
+                func.lower(cls.middle_name).label("middle_name_lower_trgm"),
+                postgresql_using="gin",
+                postgresql_ops={"middle_name_lower_trgm": "gin_trgm_ops"},
+            ),
+            Index(
+                "person_details_email_trgm_idx",
+                func.lower(cls.email).label("email_lower_trgm"),
+                postgresql_using="gin",
+                postgresql_ops={"email_lower_trgm": "gin_trgm_ops"},
+            ),
+            CheckConstraint(
+                and_(
+                    func.char_length(func.trim(cls.last_name)) > 0,
+                    func.char_length(func.trim(cls.first_name)) > 0,
+                ),
+                name="person_details_required_names_check",
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, *, details: PersonDetails, author_username: str) -> Self:
@@ -169,29 +207,37 @@ class PersonRelationshipTypeModel(HexUuidIDMixin, AuditMixin, BaseModel):
     forward_name: Mapped[str] = mapped_column(String(length=255))
     reverse_name: Mapped[str] = mapped_column(String(length=255))
 
-    __table_args__ = (
-        UniqueConstraint(
-            "id",
-            "author_username",
-            name="person_relationship_types_id_author_uniq",
-        ),
-        CheckConstraint(
-            "("
-            "is_symmetric AND char_length(trim(forward_name)) > 0"
-            " AND reverse_name = forward_name"
-            ") OR ("
-            "NOT is_symmetric AND char_length(trim(forward_name)) > 0"
-            " AND char_length(trim(reverse_name)) > 0"
-            ")",
-            name="person_relationship_types_names_check",
-        ),
-        Index(
-            "person_relationship_types_author_name_id_idx",
-            "author_username",
-            func.lower(forward_name).label("forward_name_lower"),
-            "id",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.id,
+                cls.author_username,
+                name="person_relationship_types_id_author_uniq",
+            ),
+            CheckConstraint(
+                or_(
+                    and_(
+                        cls.is_symmetric,
+                        func.char_length(func.trim(cls.forward_name)) > 0,
+                        cls.reverse_name == cls.forward_name,
+                    ),
+                    and_(
+                        ~cls.is_symmetric,
+                        func.char_length(func.trim(cls.forward_name)) > 0,
+                        func.char_length(func.trim(cls.reverse_name)) > 0,
+                    ),
+                ),
+                name="person_relationship_types_names_check",
+            ),
+            Index(
+                "person_relationship_types_author_name_id_idx",
+                cls.author_username,
+                func.lower(cls.forward_name).label("forward_name_lower"),
+                cls.id,
+            ),
+        )
 
     @classmethod
     def from_create_params(cls, *, params: PersonRelationshipTypeCreateParams) -> Self:
@@ -223,69 +269,63 @@ class PersonRelationshipModel(HexUuidIDMixin, AuditMixin, BaseModel):
     relationship_type_id: Mapped[str] = mapped_column(String(length=32))
     note: Mapped[str] = mapped_column(Text)
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["source_person_id", "author_username"],
-            [
-                "knowledge__person_details_model.item_id",
-                "knowledge__person_details_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="person_relationships_source_author_fk",
-        ),
-        ForeignKeyConstraint(
-            ["target_person_id", "author_username"],
-            [
-                "knowledge__person_details_model.item_id",
-                "knowledge__person_details_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="person_relationships_target_author_fk",
-        ),
-        ForeignKeyConstraint(
-            ["relationship_type_id", "author_username"],
-            [
-                "knowledge__person_relationship_type_model.id",
-                "knowledge__person_relationship_type_model.author_username",
-            ],
-            ondelete="RESTRICT",
-            name="person_relationships_type_author_fk",
-        ),
-        CheckConstraint(
-            "source_person_id <> target_person_id",
-            name="person_relationships_not_self_check",
-        ),
-        Index(
-            "person_relationships_author_pair_type_uniq",
-            "author_username",
-            func.least(source_person_id, target_person_id),
-            func.greatest(source_person_id, target_person_id),
-            "relationship_type_id",
-            unique=True,
-        ),
-        Index(
-            "person_relationships_author_source_idx",
-            "author_username",
-            "source_person_id",
-            "id",
-        ),
-        Index(
-            "person_relationships_author_target_idx",
-            "author_username",
-            "target_person_id",
-            "id",
-        ),
-        Index(
-            "person_relationships_author_type_id_idx",
-            "author_username",
-            "relationship_type_id",
-            "id",
-        ),
-        CheckConstraint(
-            "char_length(note) <= 10000",
-            name="person_relationships_note_length_check",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            ForeignKeyConstraint(
+                [cls.source_person_id, cls.author_username],
+                [PersonDetailsModel.item_id, PersonDetailsModel.author_username],
+                ondelete="CASCADE",
+                name="person_relationships_source_author_fk",
+            ),
+            ForeignKeyConstraint(
+                [cls.target_person_id, cls.author_username],
+                [PersonDetailsModel.item_id, PersonDetailsModel.author_username],
+                ondelete="CASCADE",
+                name="person_relationships_target_author_fk",
+            ),
+            ForeignKeyConstraint(
+                [cls.relationship_type_id, cls.author_username],
+                [PersonRelationshipTypeModel.id, PersonRelationshipTypeModel.author_username],
+                ondelete="RESTRICT",
+                name="person_relationships_type_author_fk",
+            ),
+            CheckConstraint(
+                cls.source_person_id != cls.target_person_id,
+                name="person_relationships_not_self_check",
+            ),
+            Index(
+                "person_relationships_author_pair_type_uniq",
+                cls.author_username,
+                func.least(cls.source_person_id, cls.target_person_id),
+                func.greatest(cls.source_person_id, cls.target_person_id),
+                cls.relationship_type_id,
+                unique=True,
+            ),
+            Index(
+                "person_relationships_author_source_idx",
+                cls.author_username,
+                cls.source_person_id,
+                cls.id,
+            ),
+            Index(
+                "person_relationships_author_target_idx",
+                cls.author_username,
+                cls.target_person_id,
+                cls.id,
+            ),
+            Index(
+                "person_relationships_author_type_id_idx",
+                cls.author_username,
+                cls.relationship_type_id,
+                cls.id,
+            ),
+            CheckConstraint(
+                func.char_length(cls.note) <= literal(10_000),
+                name="person_relationships_note_length_check",
+            ),
+        )
 
     def to_domain_schema(
         self,

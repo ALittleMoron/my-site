@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Self
 
-from sqlalchemy import Enum, ForeignKey, Index, LargeBinary, String, UniqueConstraint, func, text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Enum, ForeignKey, Index, LargeBinary, String, UniqueConstraint, func, or_
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
@@ -21,7 +21,7 @@ from core.competency_matrix.schemas import (
     QueuedCompetencyMatrixQuestionCreateParams,
 )
 from core.enums import PublishStatusEnum
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 from infra.postgresql.models.mixins.priority import PriorityMixin
 from infra.postgresql.models.mixins.publish import PublishMixin
@@ -41,26 +41,29 @@ class ExternalResourceModel(HexUuidIDMixin, BaseModel):
         doc="Resource URL",
     )
 
-    __table_args__ = (
-        Index(
-            "cm_external_resource_name_ru_trgm_idx",
-            func.lower(name_ru).label("name_ru_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "cm_external_resource_name_en_trgm_idx",
-            func.lower(name_en).label("name_en_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"name_en_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "cm_external_resource_url_trgm_idx",
-            func.lower(url).label("url_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"url_lower": "gin_trgm_ops"},
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "cm_external_resource_name_ru_trgm_idx",
+                func.lower(cls.name_ru).label("name_ru_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"name_ru_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "cm_external_resource_name_en_trgm_idx",
+                func.lower(cls.name_en).label("name_en_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"name_en_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "cm_external_resource_url_trgm_idx",
+                func.lower(cls.url).label("url_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"url_lower": "gin_trgm_ops"},
+            ),
+        )
 
     def __str__(self) -> str:
         return f'External resource "{self.name_en}"'
@@ -105,10 +108,13 @@ class CompetencyMatrixSheetModel(PriorityMixin, HexUuidIDMixin, BaseModel):
         doc="Sheet sections",
     )
 
-    __table_args__ = (
-        Index("cm_sheet_key_lower_idx", func.lower(key).label("sheet_key_lower")),
-        Index("cm_sheet_priority_idx", "priority", "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index("cm_sheet_key_lower_idx", func.lower(cls.key).label("sheet_key_lower")),
+            Index("cm_sheet_priority_idx", cls.priority, cls.id),
+        )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSheet:
         return CompetencyMatrixStructureSheet(
@@ -149,13 +155,29 @@ class CompetencyMatrixSectionModel(PriorityMixin, HexUuidIDMixin, BaseModel):
         doc="Section subsections",
     )
 
-    __table_args__ = (
-        UniqueConstraint("sheet_id", "name_ru", name="cm_section_sheet_name_ru_uniq"),
-        UniqueConstraint("sheet_id", "name_en", name="cm_section_sheet_name_en_uniq"),
-        Index("cm_section_sheet_en_idx", sheet_id, name_en, "id"),
-        Index("cm_section_sheet_ru_idx", sheet_id, name_ru, "id"),
-        Index("cm_section_sheet_priority_idx", "sheet_id", "priority", "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.sheet_id,
+                cls.name_ru,
+                name="cm_section_sheet_name_ru_uniq",
+            ),
+            UniqueConstraint(
+                cls.sheet_id,
+                cls.name_en,
+                name="cm_section_sheet_name_en_uniq",
+            ),
+            Index("cm_section_sheet_en_idx", cls.sheet_id, cls.name_en, cls.id),
+            Index("cm_section_sheet_ru_idx", cls.sheet_id, cls.name_ru, cls.id),
+            Index(
+                "cm_section_sheet_priority_idx",
+                cls.sheet_id,
+                cls.priority,
+                cls.id,
+            ),
+        )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSection:
         return CompetencyMatrixStructureSection(
@@ -190,13 +212,29 @@ class CompetencyMatrixSubsectionModel(PriorityMixin, HexUuidIDMixin, BaseModel):
         doc="Competency matrix questions in this subsection",
     )
 
-    __table_args__ = (
-        UniqueConstraint("section_id", "name_ru", name="cm_subsection_section_name_ru_uniq"),
-        UniqueConstraint("section_id", "name_en", name="cm_subsection_section_name_en_uniq"),
-        Index("cm_subsection_section_en_idx", section_id, name_en, "id"),
-        Index("cm_subsection_section_ru_idx", section_id, name_ru, "id"),
-        Index("cm_subsection_section_priority_idx", "section_id", "priority", "id"),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(
+                cls.section_id,
+                cls.name_ru,
+                name="cm_subsection_section_name_ru_uniq",
+            ),
+            UniqueConstraint(
+                cls.section_id,
+                cls.name_en,
+                name="cm_subsection_section_name_en_uniq",
+            ),
+            Index("cm_subsection_section_en_idx", cls.section_id, cls.name_en, cls.id),
+            Index("cm_subsection_section_ru_idx", cls.section_id, cls.name_ru, cls.id),
+            Index(
+                "cm_subsection_section_priority_idx",
+                cls.section_id,
+                cls.priority,
+                cls.id,
+            ),
+        )
 
     def to_domain_schema(self) -> CompetencyMatrixStructureSubsection:
         return CompetencyMatrixStructureSubsection(
@@ -291,67 +329,70 @@ class CompetencyMatrixItemModel(PublishMixin, HexUuidIDMixin, BaseModel):
         doc="Question subsection",
     )
 
-    __table_args__ = (
-        Index(
-            "cmi_subsection_status_grade_idx",
-            subsection_id,
-            "publish_status",
-            grade,
-            "id",
-        ),
-        Index(
-            "cmi_workspace_status_published_at_idx",
-            "publish_status",
-            text("published_at DESC NULLS LAST"),
-            "id",
-        ),
-        Index(
-            "cmi_workspace_subsection_status_grade_idx",
-            subsection_id,
-            "publish_status",
-            grade,
-            "id",
-        ),
-        Index(
-            "cmi_workspace_missing_fields_idx",
-            text(
-                "(length(TRIM(BOTH FROM slug)) = 0 OR "
-                "grade IS NULL OR "
-                "length(TRIM(BOTH FROM question_ru)) = 0 OR "
-                "length(TRIM(BOTH FROM question_en)) = 0 OR "
-                "length(TRIM(BOTH FROM answer_ru)) = 0 OR "
-                "length(TRIM(BOTH FROM answer_en)) = 0 OR "
-                "length(TRIM(BOTH FROM interview_answer_explanation_ru)) = 0 OR "
-                "length(TRIM(BOTH FROM interview_answer_explanation_en)) = 0)",
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "cmi_subsection_status_grade_idx",
+                cls.subsection_id,
+                cls.publish_status,
+                cls.grade,
+                cls.id,
             ),
-        ),
-        Index(
-            "cmi_workspace_slug_trgm_idx",
-            func.lower(slug).label("workspace_slug_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"workspace_slug_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "cmi_workspace_question_ru_trgm_idx",
-            func.lower(question_ru).label("workspace_question_ru_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"workspace_question_ru_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "cmi_workspace_question_en_trgm_idx",
-            func.lower(question_en).label("workspace_question_en_lower"),
-            postgresql_using="gin",
-            postgresql_ops={"workspace_question_en_lower": "gin_trgm_ops"},
-        ),
-        Index(
-            "cmi_question_ru_fingerprint_idx",
-            question_ru_fingerprint,
-        ),
-        Index(
-            "cmi_question_en_fingerprint_idx",
-            question_en_fingerprint,
-        ),
-    )
+            Index(
+                "cmi_workspace_status_published_at_idx",
+                cls.publish_status,
+                cls.published_at.desc().nulls_last(),
+                cls.id,
+            ),
+            Index(
+                "cmi_workspace_subsection_status_grade_idx",
+                cls.subsection_id,
+                cls.publish_status,
+                cls.grade,
+                cls.id,
+            ),
+            Index(
+                "cmi_workspace_missing_fields_idx",
+                or_(
+                    func.length(func.trim(cls.slug)) == 0,
+                    cls.grade.is_(None),
+                    func.length(func.trim(cls.question_ru)) == 0,
+                    func.length(func.trim(cls.question_en)) == 0,
+                    func.length(func.trim(cls.answer_ru)) == 0,
+                    func.length(func.trim(cls.answer_en)) == 0,
+                    func.length(func.trim(cls.interview_answer_explanation_ru)) == 0,
+                    func.length(func.trim(cls.interview_answer_explanation_en)) == 0,
+                ),
+            ),
+            Index(
+                "cmi_workspace_slug_trgm_idx",
+                func.lower(cls.slug).label("workspace_slug_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"workspace_slug_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "cmi_workspace_question_ru_trgm_idx",
+                func.lower(cls.question_ru).label("workspace_question_ru_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"workspace_question_ru_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "cmi_workspace_question_en_trgm_idx",
+                func.lower(cls.question_en).label("workspace_question_en_lower"),
+                postgresql_using="gin",
+                postgresql_ops={"workspace_question_en_lower": "gin_trgm_ops"},
+            ),
+            Index(
+                "cmi_question_ru_fingerprint_idx",
+                cls.question_ru_fingerprint,
+            ),
+            Index(
+                "cmi_question_en_fingerprint_idx",
+                cls.question_en_fingerprint,
+            ),
+        )
 
     def __str__(self) -> str:
         return f"[{self.subsection.section.name_en} - {self.subsection.name_en}] {self.question_en}"
@@ -473,11 +514,14 @@ class QueuedQuestionModel(HexUuidIDMixin, BaseModel):
         doc="Queue insertion time",
     )
 
-    __table_args__ = (
-        Index("cm_queued_question_fifo_idx", created_at),
-        Index("cm_queued_question_suggested_by_idx", suggested_by_username),
-        Index("cm_queued_question_fingerprint_idx", question_fingerprint),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index("cm_queued_question_fifo_idx", cls.created_at),
+            Index("cm_queued_question_suggested_by_idx", cls.suggested_by_username),
+            Index("cm_queued_question_fingerprint_idx", cls.question_fingerprint),
+        )
 
     @classmethod
     def from_create_params(
@@ -560,7 +604,10 @@ class ResourceToItemSecondaryModel(HexUuidIDMixin, BaseModel):
         doc="External resource",
     )
 
-    __table_args__ = (UniqueConstraint("item_id", "resource_id", name="cm_resource_item_uniq"),)
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (UniqueConstraint(cls.item_id, cls.resource_id, name="cm_resource_item_uniq"),)
 
     @classmethod
     def from_domain_schema(cls, schema: AttachedExternalResource) -> Self:

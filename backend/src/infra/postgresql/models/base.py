@@ -1,5 +1,8 @@
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.schema import SchemaItem
 from sqlalchemy_dev_utils.mixins.general import BetterReprMixin, TableNameMixin
+
+type TableArgs = tuple[SchemaItem, ...]
 
 
 class BaseModel(BetterReprMixin, TableNameMixin, DeclarativeBase):

@@ -8,13 +8,17 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    and_,
+    func,
+    literal,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 
 from core.knowledge.files.enums import KnowledgeFileKind
 from core.knowledge.files.schemas import KnowledgeFile
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
+from infra.postgresql.models.knowledge.items import KnowledgeItemModel
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
@@ -33,43 +37,46 @@ class KnowledgeFileModel(HexUuidIDMixin, AuditMixin, BaseModel):
     original_name: Mapped[str] = mapped_column(String(length=255))
     original_sha256: Mapped[str] = mapped_column(String(length=64))
 
-    __table_args__ = (
-        UniqueConstraint("id", "author_username", name="knowledge_files_id_author_uniq"),
-        ForeignKeyConstraint(
-            ["item_id", "author_username"],
-            [
-                "knowledge__knowledge_item_model.id",
-                "knowledge__knowledge_item_model.author_username",
-            ],
-            ondelete="CASCADE",
-            name="knowledge_files_item_author_fk",
-        ),
-        Index(
-            "knowledge_files_author_item_kind_id_idx",
-            "author_username",
-            "item_id",
-            "kind",
-            "id",
-        ),
-        Index(
-            "knowledge_files_one_person_photo_idx",
-            "item_id",
-            unique=True,
-            postgresql_where=kind == KnowledgeFileKind.PERSON_PHOTO,
-        ),
-        CheckConstraint(
-            "size_bytes >= 0",
-            name="knowledge_files_non_negative_size_check",
-        ),
-        CheckConstraint(
-            "char_length(trim(name)) > 0 AND char_length(trim(original_name)) > 0",
-            name="knowledge_files_names_check",
-        ),
-        CheckConstraint(
-            "char_length(original_sha256) = 64",
-            name="knowledge_files_sha256_length_check",
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            UniqueConstraint(cls.id, cls.author_username, name="knowledge_files_id_author_uniq"),
+            ForeignKeyConstraint(
+                [cls.item_id, cls.author_username],
+                [KnowledgeItemModel.id, KnowledgeItemModel.author_username],
+                ondelete="CASCADE",
+                name="knowledge_files_item_author_fk",
+            ),
+            Index(
+                "knowledge_files_author_item_kind_id_idx",
+                cls.author_username,
+                cls.item_id,
+                cls.kind,
+                cls.id,
+            ),
+            Index(
+                "knowledge_files_one_person_photo_idx",
+                cls.item_id,
+                unique=True,
+                postgresql_where=cls.kind == KnowledgeFileKind.PERSON_PHOTO,
+            ),
+            CheckConstraint(
+                cls.size_bytes >= 0,
+                name="knowledge_files_non_negative_size_check",
+            ),
+            CheckConstraint(
+                and_(
+                    func.char_length(func.trim(cls.name)) > 0,
+                    func.char_length(func.trim(cls.original_name)) > 0,
+                ),
+                name="knowledge_files_names_check",
+            ),
+            CheckConstraint(
+                func.char_length(cls.original_sha256) == literal(64),
+                name="knowledge_files_sha256_length_check",
+            ),
+        )
 
     @classmethod
     def from_domain_schema(cls, *, file: KnowledgeFile) -> Self:

@@ -1,9 +1,9 @@
 from datetime import date
 from typing import Any, Self
 
-from sqlalchemy import Enum, Index, String, text
+from sqlalchemy import Enum, Index, String
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
 
 from core.i18n.enums import LanguageEnum
@@ -23,7 +23,7 @@ from core.resumes.schemas import (
     ResumeSkillGroup,
     ResumeSummary,
 )
-from infra.postgresql.models.base import BaseModel
+from infra.postgresql.models.base import BaseModel, TableArgs
 from infra.postgresql.models.mixins.ids import HexUuidIDMixin
 
 
@@ -39,14 +39,17 @@ class ResumeModel(HexUuidIDMixin, AuditMixin, BaseModel):
     )
     content: Mapped[dict[str, Any]] = mapped_column(JSONB, doc="Structured ATS resume content")
 
-    __table_args__ = (
-        Index(
-            "resumes_resume_author_updated_id_idx",
-            "author_username",
-            text("updated_at DESC"),
-            text("id DESC"),
-        ),
-    )
+    @declared_attr.directive
+    @classmethod
+    def __table_args__(cls) -> TableArgs:
+        return (
+            Index(
+                "resumes_resume_author_updated_id_idx",
+                cls.author_username,
+                cls.updated_at.desc(),
+                cls.id.desc(),
+            ),
+        )
 
     @classmethod
     def from_create_params(cls, *, params: ResumeCreateParams) -> Self:
