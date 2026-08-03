@@ -14,7 +14,13 @@ export const adminPanelRoutes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'articles',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
+        title: 'dashboard.title',
+        loadComponent: () =>
+          import('./pages/dashboard-page.component').then((m) => m.DashboardPageComponent),
       },
       {
         path: 'articles',
@@ -139,12 +145,8 @@ export const adminPanelRoutes: Routes = [
       },
       {
         path: 'workspace/tools',
-        title: 'adminTools.title',
-        canActivate: [teamGuard],
-        loadComponent: () =>
-          import('./pages/admin-tools-page/admin-tools-page.component').then(
-            (m) => m.AdminToolsPageComponent,
-          ),
+        pathMatch: 'full',
+        redirectTo: '/admin-panel/dashboard',
       },
       {
         path: 'workspace/agent-clients',

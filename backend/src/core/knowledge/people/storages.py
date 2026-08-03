@@ -15,6 +15,15 @@ from core.knowledge.people.schemas import (
 
 class PeopleStorage(ABC):
     @abstractmethod
+    async def list_birthday_details_for_months(
+        self,
+        *,
+        months: tuple[int, ...],
+        author_username: str,
+    ) -> list[PersonDetails]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def list_person_page(
         self,
         *,

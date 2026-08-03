@@ -106,6 +106,8 @@ files under `backend/`. Keep shared cross-project configuration and common infra
   `from_domain_schema` for conversion from it when the method signature identifies the exact
   source/target type. Use a specific semantic conversion name only when the conversion changes the
   concept, such as attached resource -> plain external resource.
+- Do not use `cast("Self", ...)` to suppress classmethod return-type errors. Use an accurately typed
+  constructor or an explicit concrete return type.
 - Do not pass Pydantic API schemas, SQLAlchemy models, or Litestar types into the core layer.
 
 ## Response Caching

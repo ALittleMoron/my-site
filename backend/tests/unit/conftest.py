@@ -19,6 +19,7 @@ from tests.unit.mocks.providers.agent_access import MockAgentAccessProvider
 from tests.unit.mocks.providers.articles import MockArticlesProvider
 from tests.unit.mocks.providers.auth import MockAuthProvider
 from tests.unit.mocks.providers.cache_tools import MockCacheToolsProvider
+from tests.unit.mocks.providers.calendar import MockCalendarProvider
 from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
@@ -63,6 +64,7 @@ async def container(  # noqa: PLR0913
         DatabaseProvider(),
         MockGeneralProvider(uuid_=global_random_uuid, hex_uuid=global_random_hex_uuid),
         MockFilesProvider(random_suffix=random_suffix),
+        MockCalendarProvider(),
         MockCompetencyMatrixProvider(),
         MockArticlesProvider(),
         MockContactsProvider(),

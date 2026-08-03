@@ -1,0 +1,304 @@
+<div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h2 class="h4 mb-0">{{ 'dashboard.title' | t }}</h2>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      data-testid="dashboard-refresh"
+      [disabled]="
+        canManageTeam() ? upcomingLoading() : moderatorQueueLoading() || moderatorMatrixLoading()
+      "
+      (click)="loadDashboard()"
+    >
+      {{ 'shared.update' | t }}
+    </button>
+  </div>
+
+  <ul
+    class="nav nav-tabs flex-wrap gap-1 mb-3"
+    role="tablist"
+    [attr.aria-label]="'dashboard.title' | t"
+    data-testid="dashboard-tabs"
+  >
+    @for (tab of tabs(); track tab.key) {
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [id]="tabId(tab.key)"
+          [class.active]="activeTab() === tab.key"
+          [attr.aria-selected]="activeTab() === tab.key"
+          [attr.aria-controls]="tabPanelId(tab.key)"
+          [attr.data-testid]="'dashboard-tab-' + tab.key"
+          (click)="setActiveTab(tab.key)"
+        >
+          {{ tab.labelKey | t }}
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (canManageTeam()) {
+    <div data-testid="dashboard-manager-view">
+      <div
+        role="tabpanel"
+        [id]="tabPanelId('home')"
+        [attr.aria-labelledby]="tabId('home')"
+        [attr.data-testid]="'dashboard-tabpanel-home'"
+        [hidden]="activeTab() !== 'home'"
+      >
+        <app-dashboard-foldable-section
+          sectionKey="upcoming-dates"
+          [title]="'dashboard.dates.title' | t"
+          [summary]="datesSummary()"
+          [expanded]="isSectionExpanded('upcoming-dates')"
+          (expandedChange)="setSectionExpanded('upcoming-dates', $event)"
+        >
+          @if (upcomingLoading()) {
+            <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+          } @else if (upcomingError()) {
+            <app-error-message
+              [error]="upcomingError()!"
+              [retryLabel]="'shared.retry' | t"
+              (retry)="loadUpcomingDates()"
+            />
+          } @else if ((upcomingCalendar()?.entries?.length ?? 0) === 0) {
+            <app-empty-state [message]="'dashboard.dates.empty' | t" />
+          } @else if (upcomingCalendar(); as calendar) {
+            <div class="table-responsive">
+              <table
+                class="table table-sm align-middle mb-0 dashboard-dates-table"
+                data-testid="dashboard-dates-table"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">{{ 'dashboard.dates.name' | t }}</th>
+                    <th scope="col">{{ 'dashboard.dates.date' | t }}</th>
+                    <th scope="col">{{ 'dashboard.dates.type' | t }}</th>
+                    <th scope="col">{{ 'dashboard.dates.people' | t }}</th>
+                    <th scope="col">{{ 'dashboard.dates.additionalInfo' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of calendar.entries; track entry.kind + ':' + entry.id) {
+                    <tr>
+                      <td>
+                        <a class="fw-semibold" [routerLink]="entryRoute(entry)">
+                          {{ entry.displayName }}
+                        </a>
+                      </td>
+                      <td>{{ annualDateLabel(entry) }}</td>
+                      <td>{{ 'dashboard.dates.type.' + entry.kind | t }}</td>
+                      <td>
+                        @if (entry.kind === 'memorableDate') {
+                          @for (person of entry.relatedPeople; track person.id) {
+                            <a
+                              class="d-block"
+                              [routerLink]="['/admin-panel/knowledge/people', person.id]"
+                            >
+                              {{ person.displayName }}
+                            </a>
+                          } @empty {
+                            <span>{{ 'dashboard.dates.everyoneOrNobody' | t }}</span>
+                          }
+                        } @else {
+                          <span class="text-body-secondary">—</span>
+                        }
+                      </td>
+                      <td>
+                        @if (additionalInfoItems(entry); as items) {
+                          @if (items.length > 0) {
+                            <ul
+                              class="dashboard-extra mb-0 ps-3"
+                              [attr.data-testid]="'dashboard-extra-' + entry.id"
+                            >
+                              @for (item of items; track $index) {
+                                <li>{{ item }}</li>
+                              }
+                            </ul>
+                          } @else {
+                            <span class="text-body-secondary">—</span>
+                          }
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </app-dashboard-foldable-section>
+      </div>
+
+      <div
+        role="tabpanel"
+        [id]="tabPanelId('month-calendar')"
+        [attr.aria-labelledby]="tabId('month-calendar')"
+        [attr.data-testid]="'dashboard-tabpanel-month-calendar'"
+        [hidden]="activeTab() !== 'month-calendar'"
+      >
+        <app-dashboard-foldable-section
+          sectionKey="month-calendar"
+          [title]="'dashboard.calendar.title' | t"
+          [summary]="calendarPanelSummary()"
+          [expanded]="isSectionExpanded('month-calendar')"
+          (expandedChange)="setSectionExpanded('month-calendar', $event)"
+        >
+          <app-month-calendar-widget (summaryChange)="monthCalendarSummary.set($event)" />
+        </app-dashboard-foldable-section>
+      </div>
+
+      <div
+        role="tabpanel"
+        [id]="tabPanelId('tools')"
+        [attr.aria-labelledby]="tabId('tools')"
+        [attr.data-testid]="'dashboard-tabpanel-tools'"
+        [hidden]="activeTab() !== 'tools'"
+      >
+        <app-dashboard-foldable-section
+          sectionKey="tools"
+          [title]="'dashboard.tools.title' | t"
+          [summary]="toolsPanelSummary()"
+          [expanded]="isSectionExpanded('tools')"
+          (expandedChange)="setSectionExpanded('tools', $event)"
+        >
+          <app-admin-tools-widget (summaryChange)="toolsStatusSummary.set($event)" />
+        </app-dashboard-foldable-section>
+      </div>
+    </div>
+  } @else {
+    <div data-testid="dashboard-moderator-view">
+      <div
+        role="tabpanel"
+        [id]="tabPanelId('moderator-question-queue')"
+        [attr.aria-labelledby]="tabId('moderator-question-queue')"
+        [attr.data-testid]="'dashboard-tabpanel-moderator-question-queue'"
+        [hidden]="activeTab() !== 'moderator-question-queue'"
+      >
+        <app-dashboard-foldable-section
+          sectionKey="moderator-question-queue"
+          [title]="'dashboard.moderator.queue.title' | t"
+          [summary]="moderatorQueueSummary()"
+          [expanded]="isSectionExpanded('moderator-question-queue')"
+          (expandedChange)="setSectionExpanded('moderator-question-queue', $event)"
+        >
+          @if (moderatorQueueLoading()) {
+            <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+          } @else if (moderatorQueueError()) {
+            <app-error-message
+              [error]="moderatorQueueError()!"
+              [retryLabel]="'shared.retry' | t"
+              (retry)="loadModeratorQueue()"
+            />
+          } @else if (moderatorQueueStats(); as stats) {
+            <div class="row g-3">
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-question-queue"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">{{ stats.total }}</div>
+                    <div>{{ 'dashboard.moderator.queue.total' | t }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-question-queue"
+                  [queryParams]="{ availability: 'available' }"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">{{ stats.available }}</div>
+                    <div>{{ 'dashboard.moderator.queue.available' | t }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-question-queue"
+                  [queryParams]="{ availability: 'claimed' }"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">{{ stats.claimed }}</div>
+                    <div>{{ 'dashboard.moderator.queue.claimed' | t }}</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          }
+        </app-dashboard-foldable-section>
+      </div>
+
+      <div
+        role="tabpanel"
+        [id]="tabPanelId('moderator-matrix-quality')"
+        [attr.aria-labelledby]="tabId('moderator-matrix-quality')"
+        [attr.data-testid]="'dashboard-tabpanel-moderator-matrix-quality'"
+        [hidden]="activeTab() !== 'moderator-matrix-quality'"
+      >
+        <app-dashboard-foldable-section
+          sectionKey="moderator-matrix-quality"
+          [title]="'dashboard.moderator.matrix.title' | t"
+          [summary]="moderatorMatrixSummary()"
+          [expanded]="isSectionExpanded('moderator-matrix-quality')"
+          (expandedChange)="setSectionExpanded('moderator-matrix-quality', $event)"
+        >
+          @if (moderatorMatrixLoading()) {
+            <app-loading-spinner [ariaLabel]="'shared.loading' | t" />
+          } @else if (moderatorMatrixError()) {
+            <app-error-message
+              [error]="moderatorMatrixError()!"
+              [retryLabel]="'shared.retry' | t"
+              (retry)="loadModeratorMatrix()"
+            />
+          } @else if (moderatorMatrixStats(); as stats) {
+            <div class="row g-3">
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-questions"
+                  [queryParams]="{ publishStatus: 'Draft' }"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">{{ stats.draft }}</div>
+                    <div>{{ 'dashboard.moderator.matrix.draft' | t }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-questions"
+                  [queryParams]="{ publishStatus: 'Draft', hasMissingFields: true }"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">{{ stats.missingDraft }}</div>
+                    <div>{{ 'dashboard.moderator.matrix.missingDraft' | t }}</div>
+                  </div>
+                </a>
+              </div>
+              <div class="col-12 col-md-4">
+                <a
+                  class="card h-100 text-decoration-none text-body"
+                  routerLink="/admin-panel/matrix-questions"
+                  [queryParams]="{ publishStatus: 'Published', hasMissingFields: true }"
+                >
+                  <div class="card-body">
+                    <div class="dashboard-stat-value">
+                      {{ stats.dangerousPublished }}
+                    </div>
+                    <div>{{ 'dashboard.moderator.matrix.dangerousPublished' | t }}</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          }
+        </app-dashboard-foldable-section>
+      </div>
+    </div>
+  }
+</div>

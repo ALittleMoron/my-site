@@ -10,10 +10,10 @@ import {
   CacheWarmOperation,
 } from '../../models/admin-tools.model';
 import { AdminToolsService } from '../../services/admin-tools.service';
-import { AdminToolsPageComponent } from './admin-tools-page.component';
+import { AdminToolsWidgetComponent } from './admin-tools-widget.component';
 
-describe('AdminToolsPageComponent', () => {
-  let fixture: ComponentFixture<AdminToolsPageComponent>;
+describe('AdminToolsWidgetComponent', () => {
+  let fixture: ComponentFixture<AdminToolsWidgetComponent>;
   let service: {
     getCacheStatus: jest.Mock;
     clearCache: jest.Mock;
@@ -37,7 +37,7 @@ describe('AdminToolsPageComponent', () => {
     notifications = { success: jest.fn(), error: jest.fn() };
 
     await TestBed.configureTestingModule({
-      imports: [AdminToolsPageComponent],
+      imports: [AdminToolsWidgetComponent],
       providers: [
         provideI18nTesting(),
         { provide: AdminToolsService, useValue: service },
@@ -45,7 +45,7 @@ describe('AdminToolsPageComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(AdminToolsPageComponent);
+    fixture = TestBed.createComponent(AdminToolsWidgetComponent);
   });
 
   afterEach(() => {
@@ -70,7 +70,7 @@ describe('AdminToolsPageComponent', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Служебные инструменты');
+    expect(text).not.toContain('Служебные инструменты');
     expect(text).toContain('Кэш ответов');
     expect(text).toContain('86400');
     expect(text).toContain('Локализация');
@@ -82,6 +82,15 @@ describe('AdminToolsPageComponent', () => {
     expect(text).toContain('4');
     expect(text).toContain('7 дней');
     expect(text).toContain('Успешно');
+  });
+
+  it('reports a dashboard summary with cache state and expired-session count', () => {
+    const summaries: string[] = [];
+    fixture.componentInstance.summaryChange.subscribe((summary) => summaries.push(summary));
+
+    fixture.detectChanges();
+
+    expect(summaries.at(-1)).toBe('Кэш и обслуживание сессий · Включён · Протухшие: 12');
   });
 
   it('shows an actionable cache load error and retries only that card', () => {

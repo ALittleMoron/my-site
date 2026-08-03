@@ -176,17 +176,25 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
         'контакты и дни рождения, теги, типизированные связи, Markdown-заметки, фото и ' +
         'вложения. Памятные ежегодные даты получили календарную сортировку, связи с людьми, ' +
         'теги, заметки и приватные вложения; в карточках людей видны обратные ссылки. ' +
+        'Самостоятельный дашборд админ-панели показывает владельцам и администраторам памятные ' +
+        'даты и дни рождения за текущий и следующий месяцы, перелистываемую месячную сетку и ' +
+        'операционные инструменты в горизонтальных вкладках со складными панелями, а ' +
+        'модераторам — очередь и проблемные или неопубликованные вопросы матрицы компетенций. ' +
         'Приватные файлы хранятся отдельно от публичного media bucket, читаются только через ' +
         'проверяющий автора backend stream, а публичный S3 edge отвечает 404.',
       en:
         'Owners and administrators can maintain author-isolated people records with contacts ' +
         'and birthdays, tags, typed relationships, Markdown notes, photos, and attachments. ' +
         'Annual memorable dates gained calendar sorting, links to people, tags, notes, and ' +
-        'private attachments, with read-only backlinks on people records. Private files stay ' +
+        'private attachments, with read-only backlinks on people records. The standalone admin ' +
+        'dashboard shows owners and administrators memorable dates and birthdays for the current ' +
+        'and next months, a navigable month grid, and operational tools in horizontal tabs with ' +
+        'persisted foldable panels, while moderators see the queue plus problematic or unpublished ' +
+        'competency matrix questions. Private files stay ' +
         'separate from the public media bucket, are read only through an author-checking backend ' +
         'stream, and return 404 at the public S3 edge.',
     },
-    tagIds: ['admin', 'frontend', 'backend', 'security', 'infra'],
+    tagIds: ['admin', 'frontend', 'backend', 'matrix', 'security', 'infra'],
   },
   {
     id: 'release-workflow',

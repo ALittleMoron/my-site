@@ -1,7 +1,30 @@
-@if (sections().length === 0) {
+@if (rootItems().length === 0 && sections().length === 0) {
   <p class="text-body-secondary small mb-0">{{ emptyMessage() }}</p>
 } @else {
   <div class="foldable-tree vstack gap-1" role="tree">
+    @for (item of rootItems(); track item.key) {
+      <button
+        type="button"
+        class="foldable-tree-item foldable-tree-root-item btn btn-sm w-100 text-start"
+        [attr.data-testid]="itemTestId()"
+        role="treeitem"
+        [class.active]="selectedItemKey() === item.key"
+        [class.foldable-tree-item-success]="selectedItemKey() === item.key"
+        [attr.aria-selected]="selectedItemKey() === item.key"
+        [attr.aria-current]="selectedItemKey() === item.key ? 'page' : null"
+        [attr.title]="conditionalTitleFor('rootItem', item.key)"
+        (mouseenter)="showConditionalTitle('rootItem', item.key, item.label, rootItemLabel)"
+        (focus)="showConditionalTitle('rootItem', item.key, item.label, rootItemLabel)"
+        (mouseleave)="clearConditionalTitle('rootItem', item.key)"
+        (blur)="clearConditionalTitle('rootItem', item.key)"
+        (click)="itemSelected.emit(item.key)"
+      >
+        <span #rootItemLabel class="foldable-tree-item-label text-truncate">{{ item.label }}</span>
+        @if (item.badgeText !== null) {
+          <span class="badge text-bg-warning ms-2">{{ item.badgeText }}</span>
+        }
+      </button>
+    }
     @for (section of sections(); track section.key) {
       <div class="foldable-tree-section-group">
         <button
@@ -39,6 +62,7 @@
                 [class.active]="selectedItemKey() === item.key"
                 [class.foldable-tree-item-success]="selectedItemKey() === item.key"
                 [attr.aria-selected]="selectedItemKey() === item.key"
+                [attr.aria-current]="selectedItemKey() === item.key ? 'page' : null"
                 [attr.title]="conditionalTitleFor('item', item.key)"
                 (mouseenter)="showConditionalTitle('item', item.key, item.label, itemLabel)"
                 (focus)="showConditionalTitle('item', item.key, item.label, itemLabel)"

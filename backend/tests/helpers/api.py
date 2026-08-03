@@ -62,6 +62,19 @@ class APIHelper:
         }
         return self.client.get("/api/admin/knowledge/people", params=params)
 
+    def get_admin_calendar(
+        self,
+        *,
+        reference_date: str | None,
+        window: str | None,
+    ) -> Response:
+        params = {
+            key: value
+            for key, value in (("referenceDate", reference_date), ("window", window))
+            if value is not None
+        }
+        return self.client.get("/api/admin/calendar", params=params)
+
     def post_admin_person(self, *, data: dict[str, Any]) -> Response:
         return self.client.post("/api/admin/knowledge/people", json=data)
 

@@ -65,6 +65,7 @@
         ></button>
       </div>
       <app-foldable-tree
+        [rootItems]="rootItems()"
         [sections]="sections()"
         [emptyMessage]="'adminPanel.emptySections' | t"
         [selectedItemKey]="selectedPageKey()"

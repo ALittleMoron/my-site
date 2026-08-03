@@ -26,6 +26,26 @@ from infra.postgresql.models.knowledge.items import (
 class KnowledgeDatesDatabaseStorage(KnowledgeDatesStorage):
     session: AsyncSession
 
+    async def list_details_for_months(
+        self,
+        *,
+        months: tuple[int, ...],
+        author_username: str,
+    ) -> list[KnowledgeDateDetails]:
+        query = (
+            select(KnowledgeDateDetailsModel)
+            .where(
+                KnowledgeDateDetailsModel.author_username == author_username,
+                KnowledgeDateDetailsModel.month.in_(months),
+            )
+            .order_by(
+                KnowledgeDateDetailsModel.month,
+                KnowledgeDateDetailsModel.day,
+                KnowledgeDateDetailsModel.item_id,
+            )
+        )
+        return [model.to_domain_schema() for model in await self.session.scalars(query)]
+
     async def list_date_page(
         self,
         *,

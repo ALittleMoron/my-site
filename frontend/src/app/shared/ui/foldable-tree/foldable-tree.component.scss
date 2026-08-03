@@ -26,6 +26,10 @@
   border-radius: var(--bs-border-radius-sm);
 }
 
+.foldable-tree-root-item {
+  margin-bottom: 0.5rem;
+}
+
 .foldable-tree-item:hover,
 .foldable-tree-item:focus-visible {
   background-color: var(--bs-tertiary-bg);

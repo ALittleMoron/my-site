@@ -7,6 +7,7 @@ from litestar.enums import RequestEncodingType
 from litestar.openapi.spec import Example
 from litestar.params import BodyKwarg, PathParameter, QueryParameter
 
+from core.calendar.enums import CalendarWindow
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
     GradeEnum,
@@ -115,6 +116,32 @@ PageSizeQuery: TypeAlias = Annotated[
         examples=(20,),
         ge=1,
         le=100,
+        min_items=None,
+        max_items=None,
+    ),
+]
+CalendarReferenceDateQuery: TypeAlias = Annotated[
+    date,
+    api_query_parameter(
+        name="referenceDate",
+        title="Calendar reference date",
+        description="Browser-local date used to select the calendar window.",
+        examples=("2026-07-31",),
+        ge=None,
+        le=None,
+        min_items=None,
+        max_items=None,
+    ),
+]
+CalendarWindowQuery: TypeAlias = Annotated[
+    CalendarWindow,
+    api_query_parameter(
+        name="window",
+        title="Calendar window",
+        description="Single reference month or the reference and following months.",
+        examples=(CalendarWindow.CURRENT_AND_NEXT_MONTHS.value,),
+        ge=None,
+        le=None,
         min_items=None,
         max_items=None,
     ),

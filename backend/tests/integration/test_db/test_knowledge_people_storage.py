@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -24,6 +25,7 @@ from core.knowledge.people.enums import (
     PersonRelationshipDirection,
 )
 from core.knowledge.people.schemas import (
+    PersonBirthday,
     PersonFilters,
     PersonQuickCreateParams,
     PersonRelationshipChanges,
@@ -69,6 +71,18 @@ def person_update(
         tag_ids=tag_ids or [],
         relationship_changes=relationship_changes
         or PersonRelationshipChanges(create=[], update=[], delete_ids=[]),
+    )
+
+
+def person_update_with_birthday(
+    *,
+    last_name: str,
+    first_name: str,
+    birthday: PersonBirthday,
+) -> PersonUpdateParams:
+    return replace(
+        person_update(last_name=last_name, first_name=first_name),
+        birthday=birthday,
     )
 
 
@@ -154,6 +168,47 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 person_id=foreign.item.id,
                 author_username="admin",
             )
+
+    async def test_list_birthday_details_for_months_is_author_scoped(self) -> None:
+        created: dict[str, str] = {}
+        for author, first_name, month in (
+            ("admin", "Июль", 7),
+            ("admin", "Август", 8),
+            ("admin", "Сентябрь", 9),
+            ("other-admin", "Чужой август", 8),
+        ):
+            person = await self.people_use_case.create_person(
+                params=PersonQuickCreateParams(
+                    first_name=first_name,
+                    last_name="Тестов",
+                    author_username=author,
+                ),
+            )
+            await self.people_use_case.update_person(
+                person_id=person.item.id,
+                params=person_update_with_birthday(
+                    last_name="Тестов",
+                    first_name=first_name,
+                    birthday=PersonBirthday(day=1, month=month, year=None),
+                ),
+                author_username=author,
+            )
+            created[first_name] = person.item.id
+        without_birthday = await self.people_use_case.create_person(
+            params=PersonQuickCreateParams(
+                first_name="Без даты",
+                last_name="Тестов",
+                author_username="admin",
+            ),
+        )
+
+        details = await self.people_storage.list_birthday_details_for_months(
+            months=(7, 8),
+            author_username="admin",
+        )
+
+        assert [value.item_id for value in details] == [created["Июль"], created["Август"]]
+        assert without_birthday.item.id not in {value.item_id for value in details}
 
     async def test_search_and_tag_and_filters_sort_paginate_without_n_plus_one(self) -> None:
         work = await self.tags_use_case.create_tag(

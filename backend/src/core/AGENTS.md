@@ -54,6 +54,9 @@ event_dispatchers.py    # Domain event/reporting interfaces; concrete transports
 - New core code must be domain dataclasses, value objects, use cases, services, interfaces, exceptions, or generators.
 - Use cases must be concrete standalone classes. Do not add abstract use-case interfaces,
   `Protocol` contracts, base use-case classes, or inheritance between use cases.
+- Use cases must contain orchestration only: do not add private/static helper methods or
+  collection-transformation loops; place reusable business logic in services and
+  construction/conversion logic in domain schema classmethods.
 - Use cases must not define private helper methods. Keep straightforward field checks directly in
   the public use-case method, move domain-entity checks onto the relevant domain schema/value
   object, and perform storage reads plus DB-derived decisions directly inside the public use-case

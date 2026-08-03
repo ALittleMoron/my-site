@@ -54,6 +54,8 @@ Portfolio and articles site with a knowledge database
   Admin UI flows must not reuse public routes when they need privileged data, privileged controls,
   or behavior that may diverge later; duplicate the transport handler instead and keep shared
   schemas/use cases below the HTTP boundary.
+- Keep the admin dashboard as a standalone cross-domain, role-specific composition page; dashboard
+  widgets and business logic remain owned by their source domains.
 - Privileged behavior must be enforced by backend guards and/or use cases, not only by hiding or
   disabling frontend controls. When a UI hides actions based on role or auth state, keep a matching
   backend authorization check and cover the protected path with an API/use-case test.

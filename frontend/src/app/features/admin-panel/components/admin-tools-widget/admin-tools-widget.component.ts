@@ -5,7 +5,9 @@ import {
   DestroyRef,
   OnInit,
   computed,
+  effect,
   inject,
+  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,14 +28,14 @@ import { AdminToolsService } from '../../services/admin-tools.service';
 const CACHE_WARM_POLL_INTERVAL_MS = 1000;
 
 @Component({
-  selector: 'app-admin-tools-page',
+  selector: 'app-admin-tools-widget',
   standalone: true,
   imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './admin-tools-page.component.html',
-  styleUrl: './admin-tools-page.component.scss',
+  templateUrl: './admin-tools-widget.component.html',
+  styleUrl: './admin-tools-widget.component.scss',
 })
-export class AdminToolsPageComponent implements OnInit {
+export class AdminToolsWidgetComponent implements OnInit {
   private readonly service = inject(AdminToolsService);
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
@@ -52,6 +54,7 @@ export class AdminToolsPageComponent implements OnInit {
   readonly sessionsLoadError = signal<ApiError | null>(null);
   readonly sessionsPruning = signal(false);
   readonly sessionsActionErrorKey = signal<string | null>(null);
+  readonly summaryChange = output<string>();
 
   readonly cacheInitialLoading = computed(() => this.cacheLoading() && this.cacheStatus() === null);
   readonly sessionsInitialLoading = computed(
@@ -64,11 +67,33 @@ export class AdminToolsPageComponent implements OnInit {
   readonly cacheActionsDisabled = computed(
     () => this.cacheMutationActive() || this.cacheStatus()?.enabled !== true,
   );
+  readonly dashboardSummary = computed(() => {
+    this.i18n.language();
+    const summary = [this.i18n.translate('dashboard.tools.summary')];
+    const cacheStatus = this.cacheStatus();
+    const sessionsStatus = this.sessionsStatus();
+    if (cacheStatus !== null) {
+      summary.push(
+        this.i18n.translate(
+          cacheStatus.enabled ? 'adminTools.cache.enabled' : 'adminTools.cache.disabled',
+        ),
+      );
+    }
+    if (sessionsStatus !== null) {
+      summary.push(
+        this.i18n.translate('adminTools.sessions.expiredMetric', {
+          count: sessionsStatus.expiredCount,
+        }),
+      );
+    }
+    return summary.join(' · ');
+  });
 
   private warmPollTimeoutId: number | null = null;
 
   constructor() {
     this.destroyRef.onDestroy(() => this.clearWarmPoll());
+    effect(() => this.summaryChange.emit(this.dashboardSummary()));
   }
 
   ngOnInit(): void {

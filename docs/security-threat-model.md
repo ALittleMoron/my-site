@@ -144,9 +144,10 @@ Important boundaries:
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
   refresh the session's idle expiration within the session's absolute lifetime cap, and revoke the
   current session on logout.
-- Knowledge People and Dates APIs are owner/admin-only, absent from OpenAPI, uncached, and private per
-  `author_username`. The backend is the only application reader of `knowledge-private`; public
-  MinIO routing denies the bucket's exact path and every path below it.
+- Knowledge People and Dates APIs plus the standalone Calendar projection are owner/admin-only,
+  absent from OpenAPI, uncached, and private per `author_username`. The backend is the only
+  application reader of `knowledge-private`; public MinIO routing denies the bucket's exact path
+  and every path below it.
 - Auth sessions store server-side secret hashes, current effective expiration timestamps, original
   absolute expiration timestamps, last-used timestamps, auth method, and coarse privacy-safe device
   labels derived from the request user agent. They do not store raw IP addresses, raw user-agent
@@ -207,6 +208,10 @@ Important boundaries:
    every database predicate, and returns only that author's item graph. Protected file reads repeat
    the author check, stream bytes from the internal MinIO client, and return `no-store` responses;
    replacement/deletion removes obsolete objects only after the database commit.
+15. Private Calendar read: an owner/admin sends an authenticated request to `/api/admin/calendar`;
+   the backend derives `author_username` from the token, reads only that author's People birthdays
+   and memorable Dates for the requested window, and returns a `no-store`, OpenAPI-hidden
+   projection to the CSR-only Dashboard.
 
 ## Threats, Controls, And Residual Risk
 
@@ -218,7 +223,7 @@ Important boundaries:
 | Private photos or attachments become reachable through the public MinIO endpoint. | Private objects use a separate `knowledge-private` bucket through the authenticated internal S3 client; initialization removes bucket policy and CORS; responses contain only a protected backend `contentPath`, never a public or presigned URL; public nginx returns `404` for both the exact bucket path and its prefix. | MinIO root credentials, host access, private-network compromise, or a future routing/policy regression can expose objects. Verify policy/CORS and public exact/prefix denial after deploy and restore. |
 | Search terms, contact data, filenames, or object keys leak through logs, URLs, caches, SSR, or API discovery. | The main nginx access log uses method, a normalized URI label, protocol, and status without raw request/query values; nginx and Litestar replace every `/api/admin/knowledge/*` concrete path with one safe label and omit its path parameters; knowledge responses use `Cache-Control: no-store`; the workspace is CSR-only and excluded from Angular transfer cache; controllers are excluded from OpenAPI; file responses do not reveal MinIO URLs. | Infrastructure with privileged traffic/storage access or application exception paths can still observe sensitive metadata. Do not put private values in path segments or add them to metric labels, exception messages, audit fields, or future log fields. |
 | A malicious image or active attachment exploits decoding or browser content handling. | Photos are limited to JPEG/PNG/WebP and 5 MiB, fully decoded with Pillow, MIME-verified, rejected when animated or decompression-bomb-like, bounded to 2048×2048, and re-encoded to WebP. Attachments are limited to 20 MiB and forced to `application/octet-stream` attachment delivery. File responses add `nosniff` and sanitized `Content-Disposition`; Markdown preview uses the centralized sanitizer and People disables inline image uploads. | Image decoders and authorized downloads can still contain unknown vulnerabilities or malicious documents opened in external applications. Keep Pillow patched, do not inline arbitrary attachments, and treat downloaded files as untrusted. |
-| Private data leaks through SSR, OpenAPI, browser object URLs, or intermediary/browser caches. | People and Dates routes are protected CSR routes; private endpoints are absent from OpenAPI and carry `no-store`; protected blobs are fetched only after authorization and browser object URLs are revoked when replaced or no longer needed. | Browser/device compromise, malicious extensions, screenshots, memory inspection, or a successful XSS can read data available to the authenticated session. CSP and URL revocation reduce exposure but cannot protect a compromised endpoint. |
+| Private data leaks through SSR, OpenAPI, browser object URLs, or intermediary/browser caches. | People, Dates, and Dashboard routes are protected CSR routes; Knowledge and Calendar endpoints are absent from OpenAPI and carry `no-store`; protected blobs are fetched only after authorization and browser object URLs are revoked when replaced or no longer needed. | Browser/device compromise, malicious extensions, screenshots, memory inspection, or a successful XSS can read data available to the authenticated session. CSP and URL revocation reduce exposure but cannot protect a compromised endpoint. |
 | A failed transaction deletes a still-referenced object, or an uploaded object becomes orphaned after rollback/commit failure. | Replacement/deletion cleanup remains post-commit and best effort, so rollback preserves referenced bytes. A successful new upload registers a separate request-scoped rollback action that deletes only the new object when the request rolls back or commit fails; successful commit does not run it, and no-throw cleanup preserves the original failure. | Failed best-effort cleanup can still leave private orphan objects. Operational reconciliation, backup retention, and deletion verification remain necessary. |
 | Database, backup, or host media reveals private knowledge data. | Access is limited to authenticated application/operations contours; backups must be encrypted and non-public; MinIO and PostgreSQL have no public service ports. | People/Date fields and object bytes have no application-layer encryption. Database administrators, MinIO credentials, backup readers, or full host compromise can read them; encryption-at-rest supplied by the host/storage provider does not create per-record separation from those actors. |
 
@@ -308,6 +313,9 @@ Important boundaries:
 - Knowledge data uses typed common items plus normalized per-type extension tables. Every knowledge
   query/mutation is author-scoped, private file reads go through the backend, public S3 denies
   `knowledge-private`, and knowledge responses are not cached or server-rendered.
+- Calendar is a read-only cross-domain projection over author-scoped People and Dates storage
+  contracts; `/api/admin/calendar` is owner/admin-only, hidden from OpenAPI, `no-store`, and used
+  only by the CSR Dashboard.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.

@@ -1,8 +1,8 @@
 # Knowledge Database
 
 The knowledge database is a private owner/admin workspace. Its first typed item workspaces are
-People and Dates, while the common item, taxonomy, file, and access boundaries remain reusable for
-future knowledge types. It is not a public content API and is not part of Angular SSR.
+People and Dates. The common item, taxonomy, file, and access boundaries remain reusable for future
+knowledge types. It is not a public content API and is not part of Angular SSR.
 
 ## Architecture
 
@@ -18,8 +18,9 @@ The model uses a typed extension pattern:
   People expose read-only backlinks.
 - People-specific relationships and relationship types stay in their own normalized tables.
 - The core layer exposes generic knowledge-item and file contracts plus typed `PeopleUseCase` and
-  `KnowledgeDatesUseCase` facades. PostgreSQL, S3, Litestar, and Angular remain outside the core
-  model.
+  `KnowledgeDatesUseCase` facades. People and Dates expose author-scoped month reads to the
+  standalone Calendar read domain; Calendar owns cross-domain conversion, relationship projection,
+  summary counts, and ordering. PostgreSQL, S3, Litestar, and Angular remain outside the core model.
 
 Knowledge code is physically partitioned by ownership:
 
@@ -38,8 +39,11 @@ searchability, type safety, and explicit product behavior, so it is not the exte
 
 All knowledge endpoints are admin-classified under `/api/admin/knowledge/*`, guarded for owner and
 administrator roles, excluded from OpenAPI, and returned with `Cache-Control: no-store`.
-`/admin-panel/knowledge/people`, `/admin-panel/knowledge/dates`, and their detail routes are
-protected CSR routes; they are never SSR or Angular transfer-cache inputs.
+`/admin-panel/knowledge/people`, `/admin-panel/knowledge/dates`, and the knowledge detail routes are
+protected CSR routes; they are never SSR or Angular transfer-cache inputs. The standalone
+`/admin-panel/dashboard` is a cross-domain page: its owner/admin view consumes the standalone
+Calendar projection, while its moderator view consumes competency-matrix work summaries. Calendar
+architecture and its private API are documented in [calendar.md](calendar.md).
 
 Knowledge data is private per author account. `author_username` is part of every list, lookup,
 mutation, relationship, tag, and file predicate. Composite foreign keys repeat the author beside
@@ -49,8 +53,8 @@ use-case, and API IDOR tests and must be preserved for every new knowledge type.
 
 ## PostgreSQL Model
 
-Migrations `0014_add_knowledge_people_and_private_files.py` and
-`0015_add_knowledge_dates.py` add:
+Migrations `0014_add_knowledge_people_and_private_files.py`,
+`0015_add_knowledge_dates.py`, and `0016_add_people_birthday_calendar_index.py` add:
 
 | Table | Purpose and main invariants |
 | --- | --- |
@@ -66,6 +70,8 @@ Migrations `0014_add_knowledge_people_and_private_files.py` and
 
 List and relation indexes start with `author_username`. Stable list indexes support name and
 updated-at sorting, item-tag membership, file lookup, and relationship traversal from either side.
+The Date calendar index and the Person `(author_username, birthday_month, birthday_day, item_id)`
+index support the two-month calendar projection without scanning another author's private rows.
 GIN trigram indexes cover the common item display name plus case-insensitive tag,
 first/middle/last name, and email search.
 A partial unique index allows at most one `PERSON_PHOTO` for a person. Composite author FKs and
@@ -80,6 +86,10 @@ optional `relatedPersonId` applies an author-scoped backlink filter. Supported s
 calendar order, newest/oldest update, and ascending/descending name, with explicit pagination.
 
 ## Admin API
+
+People and Dates keep their typed CRUD APIs below. Their author-scoped month reads are storage
+contracts consumed internally by the standalone Calendar domain; they are not additional Knowledge
+HTTP handlers. See [calendar.md](calendar.md) for `/api/admin/calendar`.
 
 People:
 
@@ -151,10 +161,13 @@ discards those rollback actions. A failed cleanup can still leave an orphan and 
 follow-up; it must not replace the original request/commit error or turn a committed database
 mutation into a misleading client failure.
 
-## Angular Workspace
+## Angular Workspaces And Dashboard
 
 The lazy CSR routes are:
 
+- `/admin-panel/dashboard` — the standalone `/admin-panel` landing page described in
+  [calendar.md](calendar.md). People and Date names in its calendar widgets link back to their typed
+  detail routes; moderators instead see queue and matrix work summaries.
 - `/admin-panel/knowledge/people` — URL-synchronized search, AND-tag filters, sorting, page size,
   pagination, loading/error/empty/populated states, quick create, tag management, and delete.
 - `/admin-panel/knowledge/people/:id` — typed person form, day/month birthday with optional year,
@@ -197,7 +210,8 @@ private `knowledge-private` bucket. After a deployment:
 
 Run `make security-infra`, `make query-plans-realistic`, and the relevant backend/frontend test
 targets after changing this contour. Query-plan fixtures cover realistic and stress People and
-Dates lists, details, tags, relationships/backlinks, calendar/name search indexes, and files.
+Dates lists, details, Calendar source reads for Dates and birthdays, tags, relationships/backlinks,
+calendar/name search indexes, and files.
 
 ## Backup And Restore
 

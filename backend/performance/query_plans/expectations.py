@@ -111,6 +111,7 @@ INDEX_RELATION_NAMES: Mapping[str, str] = {
     "person_details_first_name_trgm_idx": "knowledge__person_details_model",
     "person_details_last_name_trgm_idx": "knowledge__person_details_model",
     "person_details_middle_name_trgm_idx": "knowledge__person_details_model",
+    "person_details_author_birthday_item_idx": "knowledge__person_details_model",
     "person_details_id_author_uniq": "knowledge__person_details_model",
     "person_relationship_types_id_author_uniq": ("knowledge__person_relationship_type_model"),
     "person_relationship_types_author_name_id_idx": ("knowledge__person_relationship_type_model"),

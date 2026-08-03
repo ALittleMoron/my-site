@@ -41,6 +41,27 @@ from infra.postgresql.models.knowledge.people import (
 class PeopleDatabaseStorage(PeopleStorage):
     session: AsyncSession
 
+    async def list_birthday_details_for_months(
+        self,
+        *,
+        months: tuple[int, ...],
+        author_username: str,
+    ) -> list[PersonDetails]:
+        query = (
+            select(PersonDetailsModel)
+            .where(
+                PersonDetailsModel.author_username == author_username,
+                PersonDetailsModel.birthday_month.in_(months),
+                PersonDetailsModel.birthday_day.is_not(None),
+            )
+            .order_by(
+                PersonDetailsModel.birthday_month,
+                PersonDetailsModel.birthday_day,
+                PersonDetailsModel.item_id,
+            )
+        )
+        return [model.to_domain_schema() for model in await self.session.scalars(query)]
+
     async def list_person_page(
         self,
         *,

@@ -86,6 +86,13 @@ class PersonDetailsModel(BaseModel):
             "item_id",
         ),
         Index(
+            "person_details_author_birthday_item_idx",
+            "author_username",
+            "birthday_month",
+            "birthday_day",
+            "item_id",
+        ),
+        Index(
             "person_details_last_name_trgm_idx",
             func.lower(last_name).label("last_name_lower_trgm"),
             postgresql_using="gin",

@@ -14,6 +14,7 @@ from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
 from core.cache_tools.use_cases import CacheToolsUseCase
+from core.calendar.use_cases import CalendarUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
 from core.contacts.use_cases import ContactsUseCase
@@ -137,6 +138,10 @@ class IocContainerHelper:
 
     async def get_people_use_case(self) -> Mock:
         use_case = await self.container.get(PeopleUseCase)
+        return cast("Mock", use_case)
+
+    async def get_calendar_use_case(self) -> Mock:
+        use_case = await self.container.get(CalendarUseCase)
         return cast("Mock", use_case)
 
     async def get_knowledge_dates_use_case(self) -> Mock:

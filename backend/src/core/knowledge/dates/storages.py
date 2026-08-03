@@ -9,6 +9,15 @@ from core.knowledge.dates.schemas import (
 
 class KnowledgeDatesStorage(ABC):
     @abstractmethod
+    async def list_details_for_months(
+        self,
+        *,
+        months: tuple[int, ...],
+        author_username: str,
+    ) -> list[KnowledgeDateDetails]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def list_date_page(
         self,
         *,

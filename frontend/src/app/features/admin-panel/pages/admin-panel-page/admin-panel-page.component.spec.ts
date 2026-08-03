@@ -1,9 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WritableSignal, signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Component, WritableSignal, signal } from '@angular/core';
+import { Router, provideRouter } from '@angular/router';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
 import { AdminPanelPageComponent } from './admin-panel-page.component';
+
+@Component({
+  standalone: true,
+  template: '',
+})
+class EmptyRouteComponent {}
 
 describe('AdminPanelPageComponent', () => {
   let fixture: ComponentFixture<AdminPanelPageComponent>;
@@ -13,6 +19,7 @@ describe('AdminPanelPageComponent', () => {
   let canManageContent: WritableSignal<boolean>;
   let canManageTeam: WritableSignal<boolean>;
   let isLoggedIn: WritableSignal<boolean>;
+  let router: Router;
 
   beforeEach(async () => {
     currentUser = signal({ username: 'admin', role: 'admin' });
@@ -24,7 +31,7 @@ describe('AdminPanelPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AdminPanelPageComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '**', component: EmptyRouteComponent }]),
         provideI18nTesting(),
         {
           provide: AuthService,
@@ -40,6 +47,8 @@ describe('AdminPanelPageComponent', () => {
       ],
     }).compileComponents();
 
+    router = TestBed.inject(Router);
+    await router.navigateByUrl('/admin-panel/dashboard');
     fixture = TestBed.createComponent(AdminPanelPageComponent);
     fixture.detectChanges();
   });
@@ -50,10 +59,14 @@ describe('AdminPanelPageComponent', () => {
       fixture.nativeElement.querySelector('[data-testid="admin-panel-side-panel"]'),
     ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Разделы');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="admin-panel-tree-item"]'),
+    ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
+    expect(fixture.nativeElement.textContent).toContain('Дашборд');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
-    expect(fixture.nativeElement.textContent).toContain('Инструменты');
+    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).not.toContain('AI-агенты');
     expect(fixture.nativeElement.textContent).toContain('Папки');
     expect(fixture.nativeElement.textContent).toContain('Теги');
@@ -76,7 +89,7 @@ describe('AdminPanelPageComponent', () => {
     ) as HTMLButtonElement[];
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
-      'Рабочая область3',
+      'Рабочая область2',
       'Статьи4',
       'Матрица3',
       'База знаний2',
@@ -94,6 +107,7 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Резюме');
     expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('Вопросы');
+    expect(fixture.nativeElement.textContent).toContain('Дашборд');
     expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
   });
 
@@ -107,10 +121,37 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
     expect(fixture.nativeElement.textContent).toContain('Резюме');
-    expect(fixture.nativeElement.textContent).toContain('Инструменты');
+    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('AI-агенты');
     expect(fixture.nativeElement.textContent).toContain('База знаний');
     expect(fixture.nativeElement.textContent).toContain('Даты');
+  });
+
+  it('renders Dashboard as a root tree item with the shared active item state', () => {
+    const dashboard = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
+    ).find((item) => item.textContent?.trim() === 'Дашборд') as HTMLButtonElement;
+
+    expect(dashboard.classList).toContain('foldable-tree-item');
+    expect(dashboard.classList).toContain('foldable-tree-item-success');
+    expect(dashboard.getAttribute('aria-selected')).toBe('true');
+    expect(dashboard.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('derives selected items from direct and history navigation URLs', async () => {
+    await router.navigateByUrl('/admin-panel/knowledge/people/person-1');
+    fixture.detectChanges();
+
+    const people = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
+    ).find((item) => item.textContent?.includes('Люди')) as HTMLButtonElement;
+    const dashboard = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
+    ).find((item) => item.textContent?.trim() === 'Дашборд') as HTMLButtonElement;
+
+    expect(people.getAttribute('aria-current')).toBe('page');
+    expect(people.getAttribute('aria-selected')).toBe('true');
+    expect(dashboard.getAttribute('aria-current')).toBeNull();
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {

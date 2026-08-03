@@ -431,6 +431,12 @@ Workspace is protected owner/admin utilities that live only in the admin panel.
   - [x] Manage owner/admin/moderator usernames, roles, passwords, and active status with owner/admin governance.
   - [x] Enforce a single owner at the database level; reject owner self role/deactivation/delete actions.
 
+### Calendar
+
+- [x] Base calendar view in dashboard.
+- [ ] Add day, week, and year views alongside the dashboard calendar month view.
+- [ ] Add calendar creation flows for Person birthdays, memorable Dates, and one-time or recurring Events.
+
 ### Knowledge database
 
 Each knowledge item has its own subfolder in "knowledge database" folder on side-panel in admin panel.
@@ -438,11 +444,10 @@ Each knowledge item has its own subfolder in "knowledge database" folder on side
 - [ ] Workspace
   - [ ] Main page
     - [ ] Important info (in-dashboard CRUD – only text oneline items)
-    - [ ] Dates and birthdays (current and next month)
+    - [x] Dates and birthdays (current and next month)
     - [ ] Recently changed files
     - [ ] Statistics
       - [ ] Files per category count - badge next to folder name with amount of files.
-  - [ ] Calendar (separated page. List of all dates and people birthdays in interactive calendar)
   - [ ] Access
     - [x] V1: Owner/admin only, per-account knowledge items (users can see only their own items)
     - [ ] V2: Public knowledge items, users access to shared dashboard

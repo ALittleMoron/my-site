@@ -14,7 +14,7 @@ export interface FoldableTreeSection {
 }
 
 interface FoldableTreeTitleTarget {
-  kind: 'section' | 'item';
+  kind: 'section' | 'rootItem' | 'item';
   key: string;
   label: string;
 }
@@ -27,6 +27,7 @@ interface FoldableTreeTitleTarget {
   styleUrl: './foldable-tree.component.scss',
 })
 export class FoldableTreeComponent {
+  readonly rootItems = input.required<readonly FoldableTreeItem[]>();
   readonly sections = input.required<readonly FoldableTreeSection[]>();
   readonly emptyMessage = input.required<string>();
   readonly selectedItemKey = input.required<string | null>();

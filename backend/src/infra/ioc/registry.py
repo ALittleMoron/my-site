@@ -11,6 +11,7 @@ from infra.ioc.prodivers.agent_access_provider import AgentAccessProvider
 from infra.ioc.prodivers.agent_admin_provider import AgentAdminProvider
 from infra.ioc.prodivers.articles_provider import ArticlesProvider
 from infra.ioc.prodivers.auth_provider import AuthProvider
+from infra.ioc.prodivers.calendar_provider import CalendarProvider
 from infra.ioc.prodivers.competency_matrix_provider import CompetencyMatrixProvider
 from infra.ioc.prodivers.contacts_provider import ContactsProvider
 from infra.ioc.prodivers.database_provider import DatabaseProvider
@@ -59,6 +60,7 @@ def get_providers() -> Iterable[Provider]:
             matrix_policy=matrix_policy,
         ),
         LitestarProvider(),
+        CalendarProvider(),
         CompetencyMatrixProvider(),
         UserAccountProvider(),
         AuthProvider(),

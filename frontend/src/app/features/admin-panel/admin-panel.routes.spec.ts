@@ -3,6 +3,16 @@ import { adminUnsavedChangesGuard } from './guards/admin-unsaved-changes.guard';
 import { adminPanelRoutes } from './admin-panel.routes';
 
 describe('adminPanelRoutes', () => {
+  it('opens the standalone role-aware dashboard from the admin-panel root', () => {
+    const children = adminPanelRoutes[0].children ?? [];
+    const rootRoute = children.find((route) => route.path === '');
+    const dashboardRoute = children.find((route) => route.path === 'dashboard');
+
+    expect(rootRoute?.redirectTo).toBe('dashboard');
+    expect(dashboardRoute).toBeDefined();
+    expect(dashboardRoute?.canActivate).toBeUndefined();
+  });
+
   it('keeps team-managed workspace routes behind the team guard', () => {
     const children = adminPanelRoutes[0].children ?? [];
     const teamWorkspaceRoutes = children.filter((route) =>
@@ -47,13 +57,15 @@ describe('adminPanelRoutes', () => {
     expect(route?.canDeactivate).toEqual([adminUnsavedChangesGuard]);
   });
 
-  it('keeps operational tools behind the owner and admin team guard', () => {
+  it('redirects the legacy operational tools route to the standalone dashboard', () => {
     const route = (adminPanelRoutes[0].children ?? []).find(
       (child) => child.path === 'workspace/tools',
     );
 
     expect(route).toBeDefined();
-    expect(route?.canActivate).toEqual([teamGuard]);
+    expect(route?.redirectTo).toBe('/admin-panel/dashboard');
+    expect(route?.pathMatch).toBe('full');
+    expect(route?.loadComponent).toBeUndefined();
   });
 
   it('keeps both private People routes behind the team and unsaved-change guards', () => {

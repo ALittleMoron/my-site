@@ -1443,6 +1443,13 @@ async def run_delete_knowledge_file(session: AsyncSession) -> None:
     )
 
 
+async def run_list_knowledge_date_details_for_months(session: AsyncSession) -> None:
+    await KnowledgeDatesDatabaseStorage(session=session).list_details_for_months(
+        months=(1, 2),
+        author_username=SEED_USERNAME,
+    )
+
+
 async def run_list_knowledge_date_page(session: AsyncSession) -> None:
     await KnowledgeDatesDatabaseStorage(session=session).list_date_page(
         filters=KnowledgeDateFilters(
@@ -1542,6 +1549,13 @@ async def run_replace_knowledge_date_person_links(session: AsyncSession) -> None
     await KnowledgeDatesDatabaseStorage(session=session).replace_person_links(
         date_id=EXISTING_KNOWLEDGE_DATE_ID,
         person_ids=[RELATED_PERSON_ID, UPDATED_RELATED_PERSON_ID],
+        author_username=SEED_USERNAME,
+    )
+
+
+async def run_list_person_birthday_details_for_months(session: AsyncSession) -> None:
+    await PeopleDatabaseStorage(session=session).list_birthday_details_for_months(
+        months=(1, 2),
         author_username=SEED_USERNAME,
     )
 
@@ -2148,6 +2162,15 @@ STORAGE_SCENARIOS = (
                 run_delete_knowledge_file,
             ),
             (
+                "knowledge_date_details_for_months",
+                "KnowledgeDatesDatabaseStorage",
+                "list_details_for_months",
+                QueryThresholdGroup.LIST_READ,
+                ("date_details_author_calendar_item_idx",),
+                ("knowledge__date_details_model",),
+                run_list_knowledge_date_details_for_months,
+            ),
+            (
                 "knowledge_dates_page_calendar",
                 "KnowledgeDatesDatabaseStorage",
                 "list_date_page",
@@ -2244,6 +2267,15 @@ STORAGE_SCENARIOS = (
                 (),
                 ("knowledge__date_person_model",),
                 run_replace_knowledge_date_person_links,
+            ),
+            (
+                "people_birthday_details_for_months",
+                "PeopleDatabaseStorage",
+                "list_birthday_details_for_months",
+                QueryThresholdGroup.LIST_READ,
+                ("person_details_author_birthday_item_idx",),
+                ("knowledge__person_details_model",),
+                run_list_person_birthday_details_for_months,
             ),
             (
                 "people_page_search_and_tags",

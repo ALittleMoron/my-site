@@ -238,3 +238,40 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 file_id=file.id,
                 author_username="admin",
             )
+
+    async def test_list_details_for_months_is_author_scoped(self) -> None:
+        own_july = await self.dates_use_case.create_date(
+            params=KnowledgeDateCreateParams(
+                display_name="Июль",
+                date=KnowledgeDateValue(day=31, month=7, year=None),
+                author_username="admin",
+            ),
+        )
+        own_august = await self.dates_use_case.create_date(
+            params=KnowledgeDateCreateParams(
+                display_name="Август",
+                date=KnowledgeDateValue(day=1, month=8, year=None),
+                author_username="admin",
+            ),
+        )
+        await self.dates_use_case.create_date(
+            params=KnowledgeDateCreateParams(
+                display_name="Сентябрь",
+                date=KnowledgeDateValue(day=1, month=9, year=None),
+                author_username="admin",
+            ),
+        )
+        await self.dates_use_case.create_date(
+            params=KnowledgeDateCreateParams(
+                display_name="Чужой август",
+                date=KnowledgeDateValue(day=2, month=8, year=None),
+                author_username="other-admin",
+            ),
+        )
+
+        details = await self.dates_storage.list_details_for_months(
+            months=(7, 8),
+            author_username="admin",
+        )
+
+        assert [value.item_id for value in details] == [own_july.item.id, own_august.item.id]
