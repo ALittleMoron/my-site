@@ -168,6 +168,33 @@ class TestListArticlesAPI(ApiTestCase):
         )
         self.analytics_use_case.get_public_stats.assert_not_called()
 
+    def test_list_articles_truncates_excerpt_at_word_boundary(self) -> None:
+        complete_words = "word " * 35
+        article = self.factory.core.article(
+            article_id=self.factory.core.hex_id(1),
+            title="Typed articles",
+            content=f"{complete_words}unfinishedword trailing text",
+            slug="typed-articles",
+            folder="Engineering",
+            folder_key="engineering",
+            author_username="admin",
+            publish_status=PublishStatusEnum.PUBLISHED,
+            published_at="2026-01-02T03:04:05",
+            created_at="2026-01-01T03:04:05",
+            updated_at="2026-01-03T03:04:05",
+            tags=[],
+        )
+        self.use_case.list_articles.return_value = self.factory.core.article_list(
+            articles=[article],
+            total_count=1,
+            total_pages=1,
+        )
+
+        response = self.api.get_articles(page=1, page_size=10)
+
+        assert response.status_code == codes.OK, response.content
+        assert response.json()["articles"][0]["excerpt"] == f"{complete_words}unfinishedword…"
+
     def test_list_articles_with_publish_date_range_and_search_query(self) -> None:
         self.use_case.list_articles.return_value = self.factory.core.article_list(
             articles=[],

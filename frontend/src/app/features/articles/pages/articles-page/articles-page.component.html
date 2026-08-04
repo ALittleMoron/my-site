@@ -166,28 +166,23 @@
           </div>
         </form>
 
-        <div
-          class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3"
-          data-testid="articles-tag-filters"
-        >
-          <div class="d-flex flex-wrap gap-2">
-            @for (tag of sortedTags(); track tag.id) {
-              <button
-                type="button"
-                class="btn btn-sm"
-                [class.btn-secondary]="activeTagSlug() === tag.slug"
-                [class.btn-outline-secondary]="activeTagSlug() !== tag.slug"
-                (click)="selectTag(tag.slug)"
-              >
-                {{ tag.name }}
-              </button>
-            }
-            @if (activeTagSlug()) {
-              <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearTag()">
-                {{ 'articles.filters.resetTag' | t }}
-              </button>
-            }
-          </div>
+        <div class="articles-tag-filter-list mb-3" data-testid="articles-tag-filters">
+          @for (tag of sortedTags(); track tag.id) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-secondary]="activeTagSlug() === tag.slug"
+              [class.btn-outline-secondary]="activeTagSlug() !== tag.slug"
+              (click)="selectTag(tag.slug)"
+            >
+              {{ tag.name }}
+            </button>
+          }
+          @if (activeTagSlug()) {
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="clearTag()">
+              {{ 'articles.filters.resetTag' | t }}
+            </button>
+          }
         </div>
       }
 

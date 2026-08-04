@@ -41,6 +41,8 @@ from entrypoints.litestar.api.validation import (
 )
 from infra.config.constants import constants
 
+ARTICLE_EXCERPT_CHARACTER_LIMIT = 180
+
 
 class TagResponseSchema(CamelCaseSchema):
     id: Annotated[str, Field(title="Identifier")]
@@ -247,7 +249,13 @@ class ArticleSummaryResponseSchema(CamelCaseSchema):
     def build_excerpt(cls, *, content: str) -> str:
         text = re.sub(r"[`*_#>\-[\]()!]", " ", content)
         text = re.sub(r"\s+", " ", text).strip()
-        return text[:180]
+        if len(text) <= ARTICLE_EXCERPT_CHARACTER_LIMIT:
+            return text
+
+        word_end = text.find(" ", ARTICLE_EXCERPT_CHARACTER_LIMIT)
+        if word_end == -1:
+            return text
+        return f"{text[:word_end]}…"
 
 
 class ArticleDetailResponseSchema(ArticleSummaryResponseSchema):

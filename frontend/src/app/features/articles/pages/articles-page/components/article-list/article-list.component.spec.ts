@@ -62,20 +62,30 @@ describe('ArticleListComponent', () => {
     expect(timestamp?.textContent?.trim()).toBe(formatExpectedDate(publishedAt, 'en-US'));
   });
 
-  it('uses a stackable article summary layout for narrow screens', () => {
+  it('places inline metadata below the article tags', () => {
     const articleSummary = fixture.nativeElement.querySelector(
       '[data-testid="article-list-summary"]',
+    ) as HTMLElement | null;
+    const tags = fixture.nativeElement.querySelector(
+      '[data-testid="article-list-tags"]',
     ) as HTMLElement | null;
     const metadata = fixture.nativeElement.querySelector(
       '[data-testid="article-list-metadata"]',
     ) as HTMLElement | null;
 
     expect(articleSummary).not.toBeNull();
-    expect(articleSummary?.classList).toContain('flex-column');
-    expect(articleSummary?.classList).toContain('flex-sm-row');
+    expect(tags).not.toBeNull();
     expect(metadata).not.toBeNull();
-    expect(metadata?.classList).toContain('text-sm-end');
-    expect(metadata?.classList).toContain('align-self-sm-start');
+    expect(
+      tags?.compareDocumentPosition(metadata!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(metadata?.classList).toContain('d-flex');
+    expect(metadata?.classList).toContain('flex-wrap');
+    expect(Array.from(metadata?.children ?? []).map((child) => child.tagName)).toEqual([
+      'TIME',
+      'SPAN',
+      'SPAN',
+    ]);
   });
 
   it('does not render draft badges on the public article list', () => {

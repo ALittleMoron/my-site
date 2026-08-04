@@ -1,42 +1,35 @@
 <div class="list-group list-group-flush">
   @for (article of articles(); track article.slug) {
     <article class="list-group-item px-3 px-md-4 py-3">
-      <div
-        class="d-flex flex-column flex-sm-row justify-content-between gap-3 align-items-start"
-        data-testid="article-list-summary"
-      >
-        <div class="min-w-0">
-          <button
-            type="button"
-            class="btn btn-link p-0 fw-semibold text-start text-decoration-none text-break articles-title-button"
-            (click)="articleSelected.emit(article.slug)"
-          >
-            {{ article.title }}
-          </button>
-          <p class="text-body-secondary small mb-2 mt-1">{{ article.excerpt }}</p>
-          <div class="d-flex flex-wrap gap-2">
-            @for (tag of article.tags; track tag.id) {
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary py-0"
-                (click)="tagSelected.emit(tag.slug)"
-              >
-                {{ tag.name }}
-              </button>
-            }
-          </div>
+      <div class="min-w-0" data-testid="article-list-summary">
+        <button
+          type="button"
+          class="btn btn-link p-0 fw-semibold text-start text-decoration-none text-break articles-title-button"
+          (click)="articleSelected.emit(article.slug)"
+        >
+          {{ article.title }}
+        </button>
+        <p class="text-body-secondary small mb-2 mt-1">{{ article.excerpt }}</p>
+        <div class="d-flex flex-wrap gap-2" data-testid="article-list-tags">
+          @for (tag of article.tags; track tag.id) {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary py-0"
+              (click)="tagSelected.emit(tag.slug)"
+            >
+              {{ tag.name }}
+            </button>
+          }
         </div>
         <div
-          class="text-start text-sm-end small text-body-secondary align-self-sm-start"
+          class="d-flex flex-wrap align-items-center column-gap-3 row-gap-1 mt-3 small text-body-secondary"
           data-testid="article-list-metadata"
         >
-          <div>
-            <time [attr.datetime]="articleDateValue(article)" data-testid="article-list-date">{{
-              articleDate(article)
-            }}</time>
-          </div>
-          <div>{{ article.authorUsername }}</div>
-          <div>{{ 'articles.views' | t: { count: article.viewCount } }}</div>
+          <time [attr.datetime]="articleDateValue(article)" data-testid="article-list-date">{{
+            articleDate(article)
+          }}</time>
+          <span>{{ article.authorUsername }}</span>
+          <span>{{ 'articles.views' | t: { count: article.viewCount } }}</span>
         </div>
       </div>
     </article>

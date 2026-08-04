@@ -45,6 +45,22 @@
   min-width: 0;
 }
 
+.articles-tag-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 0.5rem;
+}
+
+.articles-tag-filter-list > .btn {
+  margin-right: 0.5rem;
+}
+
+.articles-tag-filter-list::after {
+  content: '';
+  flex: 1 1 0;
+}
+
 .articles-icon-toggle {
   display: inline-flex;
   align-items: center;
