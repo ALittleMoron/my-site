@@ -63,6 +63,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         self,
         *,
         slug: str,
+        lock: bool,
     ) -> Article:
         query = (
             select(ArticleModel)
@@ -73,7 +74,10 @@ class ArticlesDatabaseStorage(ArticlesStorage):
                 selectinload(ArticleModel.file_usage_links),
                 selectinload(ArticleModel.tag_links).selectinload(ArticleToTagSecondaryModel.tag),
             )
+            .execution_options(populate_existing=True)
         )
+        if lock:
+            query = query.with_for_update(of=ArticleModel)
         article_model = await self.session.scalar(query)
         if article_model is None:
             raise ArticleNotFoundError
@@ -304,6 +308,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
+            lock=False,
         )
 
     async def update_article(self, *, article: Article) -> Article:
@@ -333,6 +338,7 @@ class ArticlesDatabaseStorage(ArticlesStorage):
         await self.session.flush()
         return await self.get_article_by_slug(
             slug=article.slug,
+            lock=False,
         )
 
     def _build_tag_links(

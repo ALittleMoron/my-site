@@ -1,8 +1,10 @@
+from datetime import datetime
 from typing import Self
 
 from sqlalchemy import Enum, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from sqlalchemy_dev_utils.mixins.audit import AuditMixin
+from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 from core.files.enums import FilePurpose
 from core.files.schemas import StoredFile
@@ -48,6 +50,11 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
         nullable=True,
         doc="SHA-256 hash of the original uploaded bytes, before processing",
     )
+    orphaned_at: Mapped[datetime | None] = mapped_column(
+        UTCDateTime(timezone=True),
+        nullable=True,
+        doc="UTC time when the managed public file lost its last usage",
+    )
 
     @declared_attr.directive
     @classmethod
@@ -70,6 +77,13 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
                 cls.purpose,
                 cls.original_sha256,
             ),
+            Index(
+                "files_file_namespace_orphaned_id_idx",
+                cls.namespace,
+                cls.orphaned_at,
+                cls.id,
+                postgresql_where=cls.orphaned_at.is_not(None),
+            ),
         )
 
     @classmethod
@@ -84,6 +98,7 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
             name=file.name,
             original_name=file.original_name,
             original_sha256=file.original_sha256,
+            orphaned_at=file.orphaned_at,
             created_at=file.created_at,
             updated_at=file.updated_at,
         )
@@ -99,6 +114,7 @@ class FileModel(HexUuidIDMixin, AuditMixin, BaseModel):
             name=self.name,
             original_name=self.original_name,
             original_sha256=self.original_sha256,
+            orphaned_at=self.orphaned_at,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )

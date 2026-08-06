@@ -490,6 +490,7 @@ async def run_delete_resume(session: AsyncSession) -> None:
 async def run_get_article_by_slug(session: AsyncSession) -> None:
     await ArticlesDatabaseStorage(session=session).get_article_by_slug(
         slug="article-100",
+        lock=False,
     )
 
 

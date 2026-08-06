@@ -3,7 +3,7 @@ from io import BytesIO
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from core.files.exceptions import FileClientInternalError, NamespaceNotAllowedError
 from core.files.schemas import FileUploadResult
@@ -179,6 +179,14 @@ class TestS3FileClient:
         self.internal_client.delete_object.side_effect = create_client_error(
             code="500",
             operation_name="DeleteObject",
+        )
+
+        with pytest.raises(FileClientInternalError, match="File delete failed"):
+            await self.storage.delete_file(object_name="test.txt", namespace="media")
+
+    async def test_delete_file_minio_connection_exception(self) -> None:
+        self.internal_client.delete_object.side_effect = EndpointConnectionError(
+            endpoint_url="http://minio:9000",
         )
 
         with pytest.raises(FileClientInternalError, match="File delete failed"):

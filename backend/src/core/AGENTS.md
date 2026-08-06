@@ -54,6 +54,9 @@ event_dispatchers.py    # Domain event/reporting interfaces; concrete transports
 - New core code must be domain dataclasses, value objects, use cases, services, interfaces, exceptions, or generators.
 - Use cases must be concrete standalone classes. Do not add abstract use-case interfaces,
   `Protocol` contracts, base use-case classes, or inheritance between use cases.
+- Use-case constructor attributes may contain only injected abstractions. Pass operation-specific
+  concrete values, such as the current timestamp, explicitly to public use-case methods; never
+  inject callable factories for those values into a use case.
 - Use cases must contain orchestration only: do not add private/static helper methods or
   collection-transformation loops; place reusable business logic in services and
   construction/conversion logic in domain schema classmethods.
@@ -69,6 +72,12 @@ event_dispatchers.py    # Domain event/reporting interfaces; concrete transports
 - Use cases must not depend on or call other use cases. When the logic belongs to only one
   use case, keep it in that use case and inject storage abstractions directly. Put shared
   cross-use-case business logic in the relevant domain `services.py` as a concrete service.
+- Keep core abstraction names and method parameters technology-neutral. Express a synchronization
+  intent with a name such as `lock`; do not expose adapter implementation terms such as
+  `for_update` in a storage or client contract.
+- Group ordinary service configuration values, such as namespaces, rules, limits, and batch sizes,
+  in a typed configuration schema and inject that schema through a `config` attribute. Keep service
+  attributes outside `config` for collaborating abstractions only.
 - Core exceptions must express domain failures and inherit only from `Exception` or project domain
   exception bases that themselves inherit from `Exception`. Litestar/HTTP representation belongs in
   the Litestar entrypoint layer, where core exceptions should be mapped to

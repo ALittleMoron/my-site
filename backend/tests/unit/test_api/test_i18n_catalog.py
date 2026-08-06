@@ -295,6 +295,8 @@ class TestI18nCatalog:
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
         assert "самовосстанавливается" in russian_messages["siteBuild.architecture.infraBody"]
         assert "self-recovers" in english_messages["siteBuild.architecture.infraBody"]
+        assert "семиднев" not in russian_messages["siteBuild.architecture.infraBody"]
+        assert "seven-day" not in english_messages["siteBuild.architecture.infraBody"]
         for expected, text in (
             ("SSR", russian_quality_body),
             ("SSR", english_quality_body),

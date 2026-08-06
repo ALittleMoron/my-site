@@ -1,7 +1,6 @@
 import secrets
 from collections.abc import AsyncIterable
 from contextlib import AsyncExitStack
-from datetime import UTC, datetime
 from typing import cast
 
 from aiobotocore.config import AioConfig
@@ -14,7 +13,8 @@ from core.files.clients import FileClient
 from core.files.enums import FilePurpose
 from core.files.file_name_generators import FileNameGenerator, TimestampFileNameGenerator
 from core.files.processors import FileContentProcessor
-from core.files.services import FileService
+from core.files.schemas import FileOrphanCleanupConfig, FileServiceConfig
+from core.files.services import FileOrphanCleanupService, FileService
 from core.files.storages import FileStorage
 from infra.config.constants import constants
 from infra.config.settings import settings
@@ -122,7 +122,23 @@ class FilesProvider(Provider):
             file_storage=file_storage,
             file_name_generator=file_name_generator,
             file_content_processor=file_content_processor,
-            namespace=constants.minio_buckets.media,
-            rules=constants.files.rules,
-            now_factory=lambda: datetime.now(tz=UTC),
+            config=FileServiceConfig(
+                namespace=constants.minio_buckets.media,
+                rules=constants.files.rules,
+            ),
+        )
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_file_orphan_cleanup_service(
+        self,
+        file_client: FileClient,
+        file_storage: FileStorage,
+    ) -> FileOrphanCleanupService:
+        return FileOrphanCleanupService(
+            file_client=file_client,
+            file_storage=file_storage,
+            config=FileOrphanCleanupConfig(
+                namespace=constants.minio_buckets.media,
+                batch_size=constants.files.orphan_cleanup_batch_size,
+            ),
         )

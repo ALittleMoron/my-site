@@ -24,6 +24,7 @@ class ArticlesStorage(ABC):
         self,
         *,
         slug: str,
+        lock: bool,
     ) -> Article:
         raise NotImplementedError
 

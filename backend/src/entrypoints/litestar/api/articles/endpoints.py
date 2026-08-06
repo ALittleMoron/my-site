@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
@@ -282,12 +283,14 @@ class AdminArticlesApiController(Controller):
         ],
         use_case: FromDishka[ArticlesUseCase],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.create_article(
             params=data.to_create_schema(
                 article_id=id_generator.get_next(),
                 author_username=request.user.username,
             ),
+            current_datetime=current_datetime,
         )
         await invalidate_response_cache_domain_for_mutation(
             request=request,
@@ -482,10 +485,12 @@ class AdminArticlesApiController(Controller):
         language: LanguageQuery,
         use_case: FromDishka[ArticlesUseCase],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> ArticleDetailResponseSchema:
         article = await use_case.update_article(
             slug=slug,
             params=data.to_update_schema(),
+            current_datetime=current_datetime,
         )
         await invalidate_response_cache_domain_for_mutation(
             request=request,
@@ -509,8 +514,12 @@ class AdminArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> None:
-        await use_case.delete_article(slug=slug)
+        await use_case.delete_article(
+            slug=slug,
+            current_datetime=current_datetime,
+        )
         await invalidate_response_cache_domain_for_mutation(
             request=request,
             domain=ResponseCacheDomain.ARTICLES,

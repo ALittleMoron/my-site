@@ -7,6 +7,7 @@ from entrypoints.taskiq import worker as taskiq_worker_module
 from entrypoints.taskiq.agent_access import tasks as agent_access_tasks_module
 from entrypoints.taskiq.auth import tasks as auth_tasks_module
 from entrypoints.taskiq.cache_warm import tasks as cache_warm_tasks_module
+from entrypoints.taskiq.files import tasks as file_tasks_module
 from infra.config.constants import constants
 from infra.config.settings import settings
 
@@ -77,6 +78,17 @@ class TestTaskiqScheduleConfiguration:
         ]
         assert "cron" not in schedule[0]
 
+    def test_file_orphan_prune_has_exactly_one_interval_schedule(self) -> None:
+        schedule = file_tasks_module.prune_file_orphans.labels["schedule"]
+
+        assert schedule == [
+            {
+                "schedule_id": "file_orphan_prune",
+                "interval": settings.taskiq.file_orphan_prune_interval_seconds,
+            },
+        ]
+        assert "cron" not in schedule[0]
+
     def test_tasks_use_dishka_taskiq_middleware(self) -> None:
         assert any(
             isinstance(middleware, dishka_taskiq.ContainerMiddleware)
@@ -85,6 +97,7 @@ class TestTaskiqScheduleConfiguration:
         assert is_dishka_injected(
             agent_access_tasks_module.prune_expired_agent_audits.original_func,
         )
+        assert is_dishka_injected(file_tasks_module.prune_file_orphans.original_func)
 
     def test_worker_module_is_the_taskiq_registry_entrypoint(self) -> None:
         assert taskiq_worker_module.broker is taskiq_broker_module.broker
@@ -108,4 +121,8 @@ class TestTaskiqScheduleConfiguration:
         assert (
             taskiq_worker_module.broker.find_task(constants.taskiq.agent_audit_prune_task_name)
             is agent_access_tasks_module.prune_expired_agent_audits
+        )
+        assert (
+            taskiq_worker_module.broker.find_task(constants.taskiq.file_orphan_prune_task_name)
+            is file_tasks_module.prune_file_orphans
         )

@@ -1017,6 +1017,10 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'articles.form.seoDescriptionRu': 'SEO-описание RU',
   'articles.form.seoDescriptionEn': 'SEO-описание EN',
   'articles.form.coverImageFile': 'Загрузить обложку',
+  'articles.form.coverImageReplace': 'Заменить обложку',
+  'articles.form.coverImageReplaceHint':
+    'Обложка установлена. Выберите новый файл, чтобы заменить её.',
+  'articles.form.coverImageRemove': 'Удалить обложку',
   'articles.form.coverImageUploading': 'Загрузка обложки...',
   'articles.form.coverImageUploadError': 'Не удалось загрузить обложку.',
   'articles.form.coverImageAltRu': 'Alt обложки RU',

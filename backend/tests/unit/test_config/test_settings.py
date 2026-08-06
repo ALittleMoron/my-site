@@ -90,5 +90,36 @@ class TestSettings:
                 _env_file=None,
                 auth_session_prune_interval_seconds=86_400,
                 cache_warm_interval_seconds=3_600,
+                file_orphan_prune_interval_seconds=86_400,
                 result_expire_seconds=3_600,
             )
+
+    def test_taskiq_file_orphan_prune_interval_is_required(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS")
+
+        with pytest.raises(ValidationError, match="file_orphan_prune_interval_seconds"):
+            type(self.settings.taskiq)(
+                _env_file=None,
+                auth_session_prune_interval_seconds=86_400,
+                agent_audit_prune_interval_seconds=86_400,
+                cache_warm_interval_seconds=3_600,
+                result_expire_seconds=3_600,
+            )
+
+    def test_file_orphan_retention_is_required_and_at_least_seven_days(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.delenv("FILES_ORPHAN_RETENTION_SECONDS")
+
+        with pytest.raises(ValidationError, match="orphan_retention_seconds"):
+            type(self.settings.files)(_env_file=None)
+
+        with pytest.raises(ValidationError, match="greater than or equal to 604800"):
+            type(self.settings.files)(_env_file=None, orphan_retention_seconds=0)
+
+        with pytest.raises(ValidationError, match="greater than or equal to 604800"):
+            type(self.settings.files)(_env_file=None, orphan_retention_seconds=604_799)

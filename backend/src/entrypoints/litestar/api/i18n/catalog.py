@@ -958,6 +958,9 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "а публичный трафик переключается между blue/green слотами после health checks. "
             "Приватные файлы базы знаний вынесены в отдельный MinIO bucket без публичных URL: "
             "backend проверяет автора и стримит содержимое, а публичный S3 edge отвечает 404. "
+            "Для public-media PostgreSQL отслеживает жизненный цикл ссылок, а фоновая "
+            "TaskIQ-задача безопасно удаляет неиспользуемые объекты после настраиваемого периода "
+            "хранения и повторяет неудачные операции. "
             "Edge nginx самовосстанавливается после устойчивого отказа локального liveness "
             "endpoint и использует restart policy для перезапуска Docker или VPS."
         ),
@@ -1409,6 +1412,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.seoDescriptionRu": "SEO-описание RU",
         "articles.form.seoDescriptionEn": "SEO-описание EN",
         "articles.form.coverImageFile": "Загрузить обложку",
+        "articles.form.coverImageReplace": "Заменить обложку",
+        "articles.form.coverImageReplaceHint": (
+            "Обложка установлена. Выберите новый файл, чтобы заменить её."
+        ),
+        "articles.form.coverImageRemove": "Удалить обложку",
         "articles.form.coverImageUploading": "Загрузка обложки...",
         "articles.form.coverImageUploadError": "Не удалось загрузить обложку.",
         "articles.form.coverImageAltRu": "Alt обложки RU",
@@ -2455,7 +2463,10 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "container runtimes, while public traffic switches between blue/green slots only "
             "after health checks pass. Private knowledge files use a separate MinIO bucket with "
             "no public URLs: the backend author-checks and streams content, while the public S3 "
-            "edge returns 404. The edge nginx self-recovers after a sustained local "
+            "edge returns 404. For public media, PostgreSQL tracks the reference lifecycle, while "
+            "a background TaskIQ job safely removes unused objects after a configurable retention "
+            "period and retries failed operations. The "
+            "edge nginx self-recovers after a sustained local "
             "liveness failure and uses a restart policy for Docker daemon or VPS restarts."
         ),
         "siteBuild.architecture.agentTitle": "Safe AI access",
@@ -2899,6 +2910,11 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.seoDescriptionRu": "SEO description RU",
         "articles.form.seoDescriptionEn": "SEO description EN",
         "articles.form.coverImageFile": "Upload cover image",
+        "articles.form.coverImageReplace": "Replace cover image",
+        "articles.form.coverImageReplaceHint": (
+            "A cover image is set. Choose a new file to replace it."
+        ),
+        "articles.form.coverImageRemove": "Remove cover image",
         "articles.form.coverImageUploading": "Uploading cover...",
         "articles.form.coverImageUploadError": "Could not upload the cover image.",
         "articles.form.coverImageAltRu": "Cover alt RU",

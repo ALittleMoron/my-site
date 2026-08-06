@@ -30,6 +30,18 @@ class FileRules:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class FileServiceConfig:
+    namespace: Namespace
+    rules: FileRules
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileOrphanCleanupConfig:
+    namespace: Namespace
+    batch_size: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class StoredFile:
     id: str
     purpose: FilePurpose
@@ -40,12 +52,21 @@ class StoredFile:
     name: str
     original_name: str
     original_sha256: str | None
+    orphaned_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class StoredFiles(ValuedDataclass[StoredFile]): ...
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FileOrphanCleanupResult:
+    scanned_count: int
+    deleted_count: int
+    failed_count: int
+    skipped_in_use_count: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

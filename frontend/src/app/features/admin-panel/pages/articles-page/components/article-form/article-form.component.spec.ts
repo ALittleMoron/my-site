@@ -781,6 +781,139 @@ describe('ArticleFormComponent', () => {
     expect(mediaUpload.getMediaFile).not.toHaveBeenCalled();
   });
 
+  it('explains that an existing cover can be replaced and exposes an accessible remove action', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: 'https://cdn.example.com/existing-cover.jpg',
+      }),
+    );
+    fixture.detectChanges();
+
+    const label = fixture.nativeElement.querySelector(
+      'label[for="articleCoverImageFile"]',
+    ) as HTMLLabelElement;
+    const hint = fixture.nativeElement.querySelector(
+      '#articleCoverImageReplaceHint',
+    ) as HTMLElement | null;
+    const fileInput = fixture.nativeElement.querySelector(
+      '#articleCoverImageFile',
+    ) as HTMLInputElement;
+    const removeButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-remove"]',
+    ) as HTMLButtonElement | null;
+
+    expect(label.textContent).toContain('Заменить обложку');
+    expect(hint?.textContent).toContain(
+      'Обложка установлена. Выберите новый файл, чтобы заменить её.',
+    );
+    expect(fileInput.getAttribute('aria-describedby')).toContain('articleCoverImageReplaceHint');
+    expect(removeButton?.getAttribute('aria-label')).toBe('Удалить обложку');
+    expect(removeButton?.getAttribute('title')).toBe('Удалить обложку');
+    expect(removeButton?.textContent).toContain('×');
+  });
+
+  it('removes the cover from form state without saving and focuses the replacement input', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: 'https://cdn.example.com/existing-cover.jpg',
+      }),
+    );
+    fixture.detectChanges();
+    const saveSpy = jest.fn();
+    fixture.componentInstance.articleSave.subscribe(saveSpy);
+    const fileInput = fixture.nativeElement.querySelector(
+      '#articleCoverImageFile',
+    ) as HTMLInputElement;
+    Object.defineProperty(fileInput, 'value', {
+      configurable: true,
+      value: 'C:\\fakepath\\cover.png',
+      writable: true,
+    });
+
+    const removeButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-remove"]',
+    ) as HTMLButtonElement;
+    removeButton.click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-current-preview"]'),
+    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="article-cover-remove"]')).toBeNull();
+    expect(fixture.componentInstance.form.controls.coverImageFileId.value).toBe('');
+    expect(fixture.componentInstance.form.controls.coverImageAltRu.value).toBe('');
+    expect(fixture.componentInstance.form.controls.coverImageAltEn.value).toBe('');
+    expect(fileInput.value).toBe('');
+    expect(document.activeElement).toBe(fileInput);
+    expect(fixture.componentInstance.form.dirty).toBe(true);
+    expect(unsavedChangesScope.hasChanges()).toBe(true);
+    expect(saveSpy).not.toHaveBeenCalled();
+
+    submitArticleForm();
+
+    expect(saveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          coverImageFileId: null,
+          coverImageAltRu: null,
+          coverImageAltEn: null,
+        }),
+      }),
+    );
+  });
+
+  it('keeps cover removal disabled while a replacement upload is in progress', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: 'https://cdn.example.com/existing-cover.jpg',
+      }),
+    );
+    fixture.detectChanges();
+    const upload$ = new Subject<UploadedMediaFile>();
+    mediaUpload.uploadMediaFile.mockReturnValue(upload$);
+
+    uploadCoverFile();
+
+    const removeButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-remove"]',
+    ) as HTMLButtonElement;
+    expect(removeButton.disabled).toBe(true);
+
+    removeButton.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.controls.coverImageFileId.value).toBe('cover-file-id');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-current-preview"]'),
+    ).not.toBeNull();
+  });
+
+  it('keeps the existing replacement upload flow available', () => {
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'existing-cover-file-id',
+        coverImageUrl: 'https://cdn.example.com/existing-cover.jpg',
+      }),
+    );
+    fixture.detectChanges();
+
+    uploadCoverFile();
+
+    const cover = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-current-preview"]',
+    ) as HTMLImageElement;
+    expect(fixture.componentInstance.form.controls.coverImageFileId.value).toBe('cover-file-id');
+    expect(cover.getAttribute('src')).toBe('https://cdn.example.com/cover.jpg');
+    expect(fixture.nativeElement.textContent).toContain('Заменить обложку');
+  });
+
   it('restores existing cover preview from file metadata when detail has only a file id', () => {
     fixture.componentRef.setInput(
       'article',
@@ -798,6 +931,29 @@ describe('ArticleFormComponent', () => {
     expect(mediaUpload.getMediaFile).toHaveBeenCalledWith('cover-file-id');
     expect(cover).not.toBeNull();
     expect(cover?.getAttribute('src')).toBe('https://cdn.example.com/cover.jpg');
+  });
+
+  it('keeps cover removal available when the existing preview lookup fails', () => {
+    mediaUpload.getMediaFile.mockReturnValue(throwError(() => new Error('preview unavailable')));
+    fixture.componentRef.setInput(
+      'article',
+      articleDetailWithCover({
+        coverImageFileId: 'cover-file-id',
+        coverImageUrl: null,
+      }),
+    );
+    fixture.detectChanges();
+
+    const removeButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-remove"]',
+    ) as HTMLButtonElement | null;
+
+    expect(mediaUpload.getMediaFile).toHaveBeenCalledWith('cover-file-id');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-current-preview"]'),
+    ).toBeNull();
+    expect(removeButton).not.toBeNull();
+    expect(removeButton?.getAttribute('aria-label')).toBe('Удалить обложку');
   });
 
   it('shows cover upload progress and disables save while uploading', () => {

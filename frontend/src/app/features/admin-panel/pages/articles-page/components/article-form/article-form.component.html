@@ -69,19 +69,27 @@
       }
     </div>
     <div class="col-md-6">
-      <label class="form-label" for="articleCoverImageFile">{{
-        'articles.form.coverImageFile' | t
-      }}</label>
+      <label class="form-label" for="articleCoverImageFile">
+        {{
+          (hasCoverImage() ? 'articles.form.coverImageReplace' : 'articles.form.coverImageFile') | t
+        }}
+      </label>
       <input
+        #coverImageInput
         id="articleCoverImageFile"
         type="file"
         class="form-control"
         accept="image/*"
         [disabled]="coverImageUploading()"
         [attr.aria-busy]="coverImageUploading() ? 'true' : null"
-        [attr.aria-describedby]="coverImageUploadError() ? 'articleCoverImageUploadError' : null"
+        [attr.aria-describedby]="coverImageDescriptionIds()"
         (change)="uploadCoverImage($event)"
       />
+      @if (hasCoverImage()) {
+        <div id="articleCoverImageReplaceHint" class="form-text">
+          {{ 'articles.form.coverImageReplaceHint' | t }}
+        </div>
+      }
       @if (coverImageUploading()) {
         <div class="form-text">{{ 'articles.form.coverImageUploading' | t }}</div>
       }
@@ -89,14 +97,30 @@
         <div id="articleCoverImageUploadError" class="text-danger small mt-1">{{ message }}</div>
       }
     </div>
-    @if (coverImagePreviewUrl(); as coverImageUrl) {
+    @if (hasCoverImage()) {
       <div class="col-12">
-        <figure class="article-cover-current-preview">
-          <img
-            data-testid="article-cover-current-preview"
-            [src]="coverImageUrl"
-            [alt]="activePreview().coverImageAlt ?? ''"
-          />
+        <figure
+          class="article-cover-current-preview"
+          [class.article-cover-current-preview--unavailable]="coverImagePreviewUrl() === null"
+        >
+          <button
+            type="button"
+            class="article-cover-remove btn btn-danger rounded-circle"
+            data-testid="article-cover-remove"
+            [disabled]="coverImageUploading()"
+            [attr.aria-label]="'articles.form.coverImageRemove' | t"
+            [attr.title]="'articles.form.coverImageRemove' | t"
+            (click)="removeCoverImage()"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+          @if (coverImagePreviewUrl(); as coverImageUrl) {
+            <img
+              data-testid="article-cover-current-preview"
+              [src]="coverImageUrl"
+              [alt]="activePreview().coverImageAlt ?? ''"
+            />
+          }
         </figure>
       </div>
     }

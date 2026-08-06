@@ -14,6 +14,7 @@ from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.response_cache import ResponseCacheDomain
 from tests.test_cases import ApiTestCase
+from tests.unit.mocks.providers.auth import test_current_datetime
 
 
 class TestAdminArticlesAPI(ApiTestCase):
@@ -82,6 +83,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                     "00000000000040008000000000000032",
                 ],
             ),
+            current_datetime=test_current_datetime,
         )
 
     def test_update_article(self) -> None:
@@ -147,6 +149,7 @@ class TestAdminArticlesAPI(ApiTestCase):
                 ),
                 tag_ids=["00000000000040008000000000000031"],
             ),
+            current_datetime=test_current_datetime,
         )
 
     def test_create_article_requires_metadata_object(self) -> None:
@@ -374,7 +377,10 @@ class TestAdminArticlesAPI(ApiTestCase):
         response = self.api.delete_article(slug="old-article")
 
         assert response.status_code == codes.NO_CONTENT
-        self.use_case.delete_article.assert_called_once_with(slug="old-article")
+        self.use_case.delete_article.assert_called_once_with(
+            slug="old-article",
+            current_datetime=test_current_datetime,
+        )
 
     def test_set_published_status_to_article(self) -> None:
         response = self.api.post_set_published_status_to_article(slug="draft-article")

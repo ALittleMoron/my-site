@@ -889,6 +889,7 @@ class CoreFactoryHelper:
         name: str = "Inline image",
         original_name: str = "original.png",
         original_sha256: str | None = None,
+        orphaned_at: datetime | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> StoredFile:
@@ -903,6 +904,7 @@ class CoreFactoryHelper:
             name=name,
             original_name=original_name,
             original_sha256=original_sha256,
+            orphaned_at=orphaned_at,
             created_at=created_at or now,
             updated_at=updated_at or now,
         )

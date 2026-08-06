@@ -6,7 +6,7 @@ from http import HTTPStatus
 from io import BytesIO
 from typing import Any
 
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 from types_aiobotocore_s3.client import S3Client
 from types_aiobotocore_s3.type_defs import CORSConfigurationTypeDef
 
@@ -142,7 +142,7 @@ class S3FileClient(FileClient):
         logger.info("Deleting file", bucket_name=_namespace, object_name=object_name)
         try:
             await self.clients.internal.delete_object(Bucket=_namespace, Key=object_name)
-        except ClientError as e:
+        except (BotoCoreError, ClientError) as e:
             logger.exception(
                 "S3 delete failed",
                 bucket_name=_namespace,

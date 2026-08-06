@@ -36,6 +36,7 @@ from tests.test_cases import TestCase
 class TestArticlesUseCase(TestCase):
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
+        self.now = datetime(2026, 8, 5, 12, 0, tzinfo=UTC)
         self.storage = Mock(spec=ArticlesStorage)
         self.file_service = Mock(spec=FileService)
         self.file_client = Mock(spec=FileClient)
@@ -196,6 +197,7 @@ class TestArticlesUseCase(TestCase):
         assert result == expected
         self.storage.get_article_by_slug.assert_called_once_with(
             slug="draft-article",
+            lock=False,
         )
 
     async def test_get_article_hydrates_cover_image_url_from_file_client(self) -> None:
@@ -324,7 +326,10 @@ class TestArticlesUseCase(TestCase):
         )
 
         with pytest.raises(TagNotFoundError):
-            await self.use_case.create_article(params=params)
+            await self.use_case.create_article(
+                params=params,
+                current_datetime=self.now,
+            )
 
     async def test_create_article_persists_article_with_tags(self) -> None:
         tag_ids = [self.factory.core.hex_id(1)]
@@ -389,7 +394,10 @@ class TestArticlesUseCase(TestCase):
         self.storage.get_folder_by_id.return_value = folder
         self.storage.create_article.return_value = expected
 
-        result = await self.use_case.create_article(params=params)
+        result = await self.use_case.create_article(
+            params=params,
+            current_datetime=self.now,
+        )
 
         assert result == expected
         self.storage.create_article.assert_called_once()
@@ -443,8 +451,17 @@ class TestArticlesUseCase(TestCase):
             content_file_ids=frozenset({inline_file_id}),
             cover_image_file_id=cover_file_id,
         )
+        transition_order = Mock()
+        transition_order.attach_mock(
+            self.file_service.lock_file_usage_transitions,
+            "lock_files",
+        )
+        transition_order.attach_mock(self.storage.create_article, "write_article")
 
-        await self.use_case.create_article(params=params)
+        await self.use_case.create_article(
+            params=params,
+            current_datetime=self.now,
+        )
 
         created_article = self.storage.create_article.call_args.kwargs["article"]
         assert created_article.metadata.cover_image_file_id == cover_file_id
@@ -461,6 +478,14 @@ class TestArticlesUseCase(TestCase):
                 ),
             ],
         )
+        self.file_service.sync_file_usages.assert_awaited_once_with(
+            attached_file_ids=frozenset({cover_file_id, inline_file_id}),
+            detached_file_ids=frozenset(),
+            orphaned_at=self.now,
+        )
+        assert transition_order.mock_calls.index(
+            call.lock_files(file_ids=frozenset({cover_file_id, inline_file_id})),
+        ) < transition_order.mock_calls.index(call.write_article(article=created_article))
 
     async def test_create_article_requires_existing_folder_before_storage_write(self) -> None:
         params = ArticleCreateParams(
@@ -490,7 +515,10 @@ class TestArticlesUseCase(TestCase):
         self.storage.get_folder_by_id.side_effect = ArticleFolderNotFoundError
 
         with pytest.raises(ArticleFolderNotFoundError):
-            await self.use_case.create_article(params=params)
+            await self.use_case.create_article(
+                params=params,
+                current_datetime=self.now,
+            )
 
         self.storage.create_article.assert_not_called()
 
@@ -547,17 +575,27 @@ class TestArticlesUseCase(TestCase):
         assert article.tags.values == [tag]
 
     async def test_update_article_keeps_existing_author(self) -> None:
+        old_cover_id = self.factory.core.hex_id(20)
+        new_cover_id = self.factory.core.hex_id(21)
+        removed_content_id = self.factory.core.hex_id(22)
+        shared_content_id = self.factory.core.hex_id(23)
+        added_content_id = self.factory.core.hex_id(24)
         tag = self.factory.core.tag(tag_id=1, slug="python")
         existing = self.factory.core.article(
             slug="old-article",
             author_username="original-author",
+            cover_image_file_id=old_cover_id,
+            content_file_ids=frozenset({removed_content_id, shared_content_id}),
             tags=[tag],
         )
         params = ArticleUpdateParams(
             slug="new-article",
             title_ru="Новая",
             title_en="New",
-            content_ru="Новый контент",
+            content_ru=(
+                f"![shared](https://cdn.test/shared.png#fileId={shared_content_id})"
+                f"![added](https://cdn.test/added.png#fileId={added_content_id})"
+            ),
             content_en="New content",
             folder_id=self.factory.core.hex_id(4),
             publish_status=PublishStatusEnum.PUBLISHED,
@@ -566,7 +604,7 @@ class TestArticlesUseCase(TestCase):
                 seo_title_en="New SEO",
                 seo_description_ru="Новое описание",
                 seo_description_en="New description",
-                cover_image_file_id=None,
+                cover_image_file_id=new_cover_id,
                 cover_image_file=None,
                 cover_image_url=None,
                 cover_image_alt_ru=None,
@@ -589,10 +627,17 @@ class TestArticlesUseCase(TestCase):
             publish_status=PublishStatusEnum.PUBLISHED,
             tags=[tag],
         )
+        transition_order = Mock()
+        transition_order.attach_mock(
+            self.file_service.lock_file_usage_transitions,
+            "lock_files",
+        )
+        transition_order.attach_mock(self.storage.update_article, "write_article")
 
         await self.use_case.update_article(
             slug="old-article",
             params=params,
+            current_datetime=self.now,
         )
 
         updated_article = self.storage.update_article.call_args.kwargs["article"]
@@ -603,6 +648,65 @@ class TestArticlesUseCase(TestCase):
         assert updated_article.folder.id == self.factory.core.hex_id(4)
         assert updated_article.metadata == params.metadata
         assert not hasattr(updated_article, "title")
+        self.storage.get_article_by_slug.assert_awaited_once_with(
+            slug="old-article",
+            lock=True,
+        )
+        assert transition_order.mock_calls.index(
+            call.lock_files(
+                file_ids=frozenset(
+                    {
+                        old_cover_id,
+                        new_cover_id,
+                        removed_content_id,
+                        shared_content_id,
+                        added_content_id,
+                    },
+                ),
+            ),
+        ) < transition_order.mock_calls.index(call.write_article(article=updated_article))
+        self.file_service.sync_file_usages.assert_awaited_once_with(
+            attached_file_ids=frozenset(
+                {new_cover_id, shared_content_id, added_content_id},
+            ),
+            detached_file_ids=frozenset({old_cover_id, removed_content_id}),
+            orphaned_at=self.now,
+        )
+
+    async def test_delete_article_orphans_all_managed_files_after_deletion(self) -> None:
+        cover_file_id = self.factory.core.hex_id(30)
+        content_file_id = self.factory.core.hex_id(31)
+        existing = self.factory.core.article(
+            slug="deleted-article",
+            cover_image_file_id=cover_file_id,
+            content_file_ids=frozenset({content_file_id}),
+        )
+        self.storage.get_article_by_slug.return_value = existing
+        transition_order = Mock()
+        transition_order.attach_mock(
+            self.file_service.lock_file_usage_transitions,
+            "lock_files",
+        )
+        transition_order.attach_mock(self.storage.delete_article, "write_article")
+
+        await self.use_case.delete_article(
+            slug=existing.slug,
+            current_datetime=self.now,
+        )
+
+        self.storage.get_article_by_slug.assert_awaited_once_with(
+            slug=existing.slug,
+            lock=True,
+        )
+        assert transition_order.mock_calls.index(
+            call.lock_files(file_ids=frozenset({cover_file_id, content_file_id})),
+        ) < transition_order.mock_calls.index(call.write_article(slug=existing.slug))
+        self.storage.delete_article.assert_awaited_once_with(slug=existing.slug)
+        self.file_service.sync_file_usages.assert_awaited_once_with(
+            attached_file_ids=frozenset(),
+            detached_file_ids=frozenset({cover_file_id, content_file_id}),
+            orphaned_at=self.now,
+        )
 
     async def test_list_folders_delegates_to_storage(self) -> None:
         expected = self.factory.core.article_folders(

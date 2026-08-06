@@ -6,6 +6,7 @@ from entrypoints.taskiq.agent_access import tasks as agent_access_tasks  # noqa:
 from entrypoints.taskiq.auth import tasks as auth_tasks  # noqa: F401
 from entrypoints.taskiq.broker import broker
 from entrypoints.taskiq.cache_warm import tasks  # noqa: F401
+from entrypoints.taskiq.files import tasks as file_tasks  # noqa: F401
 from infra.ioc.container import container
 
 setup_dishka(container=container, broker=broker)

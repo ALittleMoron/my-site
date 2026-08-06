@@ -318,6 +318,7 @@ export_test_runtime_environment() {
     export DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH="1000"
     export DB_SLOW_QUERY_LOG_THRESHOLD_MS="250"
     export DB_USER="my_site"
+    export FILES_ORPHAN_RETENTION_SECONDS="604800"
     export I18N_DEFAULT_LANGUAGE="ru"
     export LE_EMAIL="ops@example.test"
     export MINIO_CORS_MAX_AGE_SECONDS="300"
@@ -332,6 +333,7 @@ export_test_runtime_environment() {
     export TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS="86400"
     export TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS="86400"
     export TASKIQ_CACHE_WARM_INTERVAL_SECONDS="3600"
+    export TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS="86400"
     export TASKIQ_RESULT_EXPIRE_SECONDS="3600"
     export VALKEY_HOST="valkey"
     export VALKEY_PORT="6379"
@@ -424,6 +426,8 @@ run_deploy_env_configuration_check() {
 
     require_file_contains "$manifest_file" '"CACHE_WARM_ARTICLES_PAGE_SIZE"' "cache warm articles page size manifest entry"
     require_file_contains "$manifest_file" '"TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS"' "auth session prune interval manifest entry"
+    require_file_contains "$manifest_file" '"FILES_ORPHAN_RETENTION_SECONDS"' "file orphan retention manifest entry"
+    require_file_contains "$manifest_file" '"TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS"' "file orphan prune interval manifest entry"
     require_file_contains "$manifest_file" '"AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS"' "auth session absolute expiry manifest entry"
     require_file_not_contains "$manifest_file" "CACHE_WARM_NOTES_PAGE_SIZE" "stale cache warm manifest entry"
     require_file_not_contains "$manifest_file" "REMOTE_HOST" "deploy remote host manifest entry"
@@ -466,6 +470,8 @@ run_deploy_env_configuration_check() {
     )
     require_file_contains "$rendered_env" 'CACHE_WARM_ARTICLES_PAGE_SIZE="10"' "rendered cache warm articles page size"
     require_file_contains "$rendered_env" 'TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS="86400"' "rendered auth session prune interval"
+    require_file_contains "$rendered_env" 'FILES_ORPHAN_RETENTION_SECONDS="604800"' "rendered file orphan retention"
+    require_file_contains "$rendered_env" 'TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS="86400"' "rendered file orphan prune interval"
     require_file_contains "$rendered_env" 'AUTH_SESSION_EXPIRE_SECONDS="2592000"' "rendered auth session expiry"
     require_file_contains "$rendered_env" 'AUTH_SESSION_ABSOLUTE_EXPIRE_SECONDS="2592000"' "rendered auth session absolute expiry"
     require_file_contains "$rendered_env" 'MINIO_REGION="us-east-1"' "rendered MinIO region"

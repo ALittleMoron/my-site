@@ -1,6 +1,6 @@
 import hmac
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from hashlib import sha256
 from urllib.parse import urlparse
 
@@ -48,6 +48,7 @@ class ArticlesUseCase:
     async def get_article(self, *, slug: str, only_published: bool) -> Article:
         article = await self.storage.get_article_by_slug(
             slug=slug,
+            lock=False,
         )
         if only_published and not article.is_available():
             raise ArticleNotFoundError
@@ -103,7 +104,12 @@ class ArticlesUseCase:
         )
         return ArticleTree.from_items(items=items)
 
-    async def create_article(self, *, params: ArticleCreateParams) -> Article:
+    async def create_article(
+        self,
+        *,
+        params: ArticleCreateParams,
+        current_datetime: datetime,
+    ) -> Article:
         tags = await self.storage.get_tags_by_ids(
             tag_ids=params.tag_ids,
         )
@@ -119,9 +125,21 @@ class ArticlesUseCase:
             file_ids=params.content_file_ids,
             purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
         )
-        now = datetime.now(tz=UTC)
+        created_article = params.to_article(
+            now=current_datetime,
+            folder=folder,
+            tags=tags,
+        )
+        await self.file_service.lock_file_usage_transitions(
+            file_ids=created_article.managed_file_ids,
+        )
         article = await self.storage.create_article(
-            article=params.to_article(now=now, folder=folder, tags=tags),
+            article=created_article,
+        )
+        await self.file_service.sync_file_usages(
+            attached_file_ids=created_article.managed_file_ids,
+            detached_file_ids=frozenset(),
+            orphaned_at=current_datetime,
         )
         cover_image_file = article.metadata.cover_image_file
         if cover_image_file is None:
@@ -138,9 +156,11 @@ class ArticlesUseCase:
         *,
         slug: str,
         params: ArticleUpdateParams,
+        current_datetime: datetime,
     ) -> Article:
         existing_article = await self.storage.get_article_by_slug(
             slug=slug,
+            lock=True,
         )
         tags = await self.storage.get_tags_by_ids(
             tag_ids=params.tag_ids,
@@ -157,14 +177,24 @@ class ArticlesUseCase:
             file_ids=params.content_file_ids,
             purpose=FilePurpose.ARTICLE_CONTENT_IMAGE,
         )
-        now = datetime.now(tz=UTC)
+        updated_article = params.to_article(
+            existing_article=existing_article,
+            now=current_datetime,
+            folder=folder,
+            tags=tags,
+        )
+        await self.file_service.lock_file_usage_transitions(
+            file_ids=existing_article.managed_file_ids | updated_article.managed_file_ids,
+        )
         article = await self.storage.update_article(
-            article=params.to_article(
-                existing_article=existing_article,
-                now=now,
-                folder=folder,
-                tags=tags,
+            article=updated_article,
+        )
+        await self.file_service.sync_file_usages(
+            attached_file_ids=updated_article.managed_file_ids,
+            detached_file_ids=existing_article.managed_file_ids.difference(
+                updated_article.managed_file_ids,
             ),
+            orphaned_at=current_datetime,
         )
         cover_image_file = article.metadata.cover_image_file
         if cover_image_file is None:
@@ -176,8 +206,17 @@ class ArticlesUseCase:
             ),
         )
 
-    async def delete_article(self, *, slug: str) -> None:
+    async def delete_article(self, *, slug: str, current_datetime: datetime) -> None:
+        article = await self.storage.get_article_by_slug(slug=slug, lock=True)
+        await self.file_service.lock_file_usage_transitions(
+            file_ids=article.managed_file_ids,
+        )
         await self.storage.delete_article(slug=slug)
+        await self.file_service.sync_file_usages(
+            attached_file_ids=frozenset(),
+            detached_file_ids=article.managed_file_ids,
+            orphaned_at=current_datetime,
+        )
 
     async def switch_article_publish_status(
         self,
@@ -335,6 +374,7 @@ class ArticleAnalyticsUseCase:
     async def _get_published_article(self, *, slug: str) -> Article:
         article = await self.articles_storage.get_article_by_slug(
             slug=slug,
+            lock=False,
         )
         if not article.is_available():
             raise ArticleNotFoundError

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka.integrations.litestar import DishkaRouter, FromDishka
@@ -51,6 +52,7 @@ class FilesApiController(Controller):
         ],
         file_service: FromDishka[FileService],
         id_generator: FromDishka[HexUuidIdGenerator],
+        current_datetime: FromDishka[datetime],
     ) -> FileResponseSchema:
         if data.file.filename is None:
             raise InvalidFileDataError
@@ -63,6 +65,7 @@ class FilesApiController(Controller):
                 mime_type=data.file.content_type or "application/octet-stream",
                 content=await data.file.read(),
             ),
+            current_datetime=current_datetime,
         )
         return FileResponseSchema.from_domain_schema(schema=file)
 
@@ -111,11 +114,13 @@ class FilesApiController(Controller):
             ),
         ],
         file_service: FromDishka[FileService],
+        current_datetime: FromDishka[datetime],
     ) -> FileResponseSchema:
         return FileResponseSchema.from_domain_schema(
             schema=await file_service.update_file(
                 file_id=file_id,
                 params=FileUpdateParams(name=data.name),
+                current_datetime=current_datetime,
             ),
         )
 

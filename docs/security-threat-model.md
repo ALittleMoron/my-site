@@ -191,24 +191,28 @@ Important boundaries:
    through the centralized sanitized renderer before binding HTML.
 9. File upload/read: authorized admin upload endpoints store file bytes and metadata through the S3
    adapter; published Markdown can reference computed public object URLs from MinIO.
-10. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
+10. Public media cleanup: the single TaskIQ scheduler submits a scheduled cleanup of database-tracked
+    `media` orphans whose `orphaned_at` is strictly older than the configured retention cutoff. A
+    worker locks and rechecks at most 100 rows, deletes each MinIO object before its metadata, and
+    retains failures for retry without scanning the bucket or the private namespace.
+11. Article analytics: public read UI sends view, engaged-view, or reaction events; the backend stores
    aggregate counts and article-scoped derived reaction identifiers without raw IPs, raw user agents,
    raw referrers, analytics cookies, or third-party analytics IDs.
-11. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
+12. Backup access: Databasus and MinIO Console are routed only through WireGuard-bound nginx
    listeners; backups must remain encrypted and non-public.
-12. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
+13. Deploy: GitHub Actions renders required runtime configuration, syncs source/config to the host,
    the host materializes Compose secret files, builds locally tagged images, runs initialization, and
    switches the healthy blue/green slot.
-13. Agent draft authoring: a separately certified client connects over WireGuard and mTLS, claims a
+14. Agent draft authoring: a separately certified client connects over WireGuard and mTLS, claims a
    queue item for at most two hours, treats queue/web text as untrusted data, reads matrix context,
    references an existing resource ID or a new HTTPS URL without server-side fetching, and
    atomically creates a server-forced draft. Each action receives a privacy-safe audit record.
-14. Private knowledge read/write: an owner/admin sends an authenticated request to
+15. Private knowledge read/write: an owner/admin sends an authenticated request to
    `/api/admin/knowledge/*`; the backend derives `author_username` from the token, includes it in
    every database predicate, and returns only that author's item graph. Protected file reads repeat
    the author check, stream bytes from the internal MinIO client, and return `no-store` responses;
    replacement/deletion removes obsolete objects only after the database commit.
-15. Private Calendar read: an owner/admin sends an authenticated request to `/api/admin/calendar`;
+16. Private Calendar read: an owner/admin sends an authenticated request to `/api/admin/calendar`;
    the backend derives `author_username` from the token, reads only that author's People birthdays
    and memorable Dates for the requested window, and returns a `no-store`, OpenAPI-hidden
    projection to the CSR-only Dashboard.
@@ -247,6 +251,7 @@ Important boundaries:
 | Cross-site request tricks browser-sent auth cookies into refreshing or revoking a session. | Cookie-authenticated auth endpoints require `X-CSRF-Guard: 1`, reject `Sec-Fetch-Site: cross-site`, keep SameSite=Lax/Secure/HttpOnly cookies, and do not make admin APIs cookie-authenticated. | Fetch Metadata is a browser signal; keep no CORS expansion for auth endpoints and reassess CSRF controls before adding any cookie-authenticated state-changing API. |
 | Deploy or runtime config is modified unexpectedly. | Deploy is manual through GitHub `workflow_dispatch`, should be restricted to `main`, waits for protected production environment approval, and requires explicit runtime values. Locally built runtime images use the required `IMAGE_TAG`. | A compromised GitHub account, approved malicious commit, or host access can tamper with production. Keep branch/environment protections and review deploy changes carefully. |
 | Uploaded file metadata or object URLs are abused. | File operations go through admin endpoints and backend-owned metadata; public URLs are computed read-model fields, not write-payload fields. MinIO CORS is restricted to the app origin. | Public object endpoint intentionally serves published objects. Continue to validate upload types/processing when expanding file support. |
+| Cleanup removes public media too early, deletes a newly reused file, or loses retry state after an object-store failure. | Eligibility uses the strict `orphaned_at < now - FILES_ORPHAN_RETENTION_SECONDS` boundary, preserving the complete configured grace period. Each run locks at most 100 oldest database-backed `media` rows with `FOR UPDATE SKIP LOCKED`, rechecks article cover and Markdown usages, and clears a stale marker when a usage appears. Attach, detach, explicit file deletion, deduplicated upload, and cleanup transitions serialize on the file row; article update and deletion also lock and reread the article before calculating file transitions. MinIO deletion happens before metadata deletion; a MinIO failure leaves both metadata and `orphaned_at` for retry. The task never lists buckets, deletes metadata-free objects, or scans `knowledge-private`. | Scheduling means eligible files may remain beyond the configured retention period, and repeated MinIO or worker failures can accumulate public orphans. A database commit or connection failure after successful object deletion can leave metadata pointing to a missing object; row locking prevents concurrent reuse only while the transaction is active. Monitor scheduler/worker health and storage growth, keep backups, and use a separately reviewed reconciliation process for missing or metadata-free objects. |
 | Prompt-injected queue or web text makes an agent exceed its task. | The five-tool allowlist has no shell, generic HTTP, SQL, publish, delete, or structure operation; queue text is explicitly untrusted; scopes and draft-only behavior are enforced server-side. | An ordinary agent workspace may still have separately approved shell, file, or connector capabilities. Prefer an isolated profile for queue work. |
 
 ### Repudiation

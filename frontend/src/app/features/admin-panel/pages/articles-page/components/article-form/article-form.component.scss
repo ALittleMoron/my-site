@@ -14,8 +14,38 @@
 }
 
 .article-cover-current-preview {
+  position: relative;
   max-width: min(100%, 420px);
   margin: 0;
+}
+
+.article-cover-current-preview--unavailable {
+  min-height: 3.5rem;
+  border: var(--bs-border-width) solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background-color: var(--bs-tertiary-bg);
+}
+
+.article-cover-remove {
+  position: absolute;
+  z-index: 1;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.article-cover-remove:focus-visible {
+  outline: 0.2rem solid var(--bs-body-bg);
+  outline-offset: 0.15rem;
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.35);
 }
 
 .article-cover-current-preview img {

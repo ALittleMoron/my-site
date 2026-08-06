@@ -99,6 +99,7 @@ Runtime variables:
 - `DB_SLOW_QUERY_LOG_STATEMENT_MAX_LENGTH`
 - `DB_SLOW_QUERY_LOG_THRESHOLD_MS`
 - `DB_USER`
+- `FILES_ORPHAN_RETENTION_SECONDS`
 - `I18N_DEFAULT_LANGUAGE`
 - `LE_EMAIL`
 - `MINIO_HOST`
@@ -113,6 +114,7 @@ Runtime variables:
 - `TASKIQ_AUTH_SESSION_PRUNE_INTERVAL_SECONDS`
 - `TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS`
 - `TASKIQ_CACHE_WARM_INTERVAL_SECONDS`
+- `TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS`
 - `TASKIQ_RESULT_EXPIRE_SECONDS`
 - `VALKEY_HOST`
 - `VALKEY_PORT`
@@ -161,6 +163,21 @@ computed public file URLs. `MINIO_REGION` must be explicit for SigV4 S3 client o
 region string. The Compose MinIO service derives `MINIO_API_CORS_ALLOW_ORIGIN` from
 `APP_URL_SCHEMA` and `APP_DOMAIN` because the bundled MinIO release does not accept bucket-level
 CORS setup through `PutBucketCors`.
+
+Public files in the `media` bucket use database-backed orphan tracking. Set
+`FILES_ORPHAN_RETENTION_SECONDS=604800` for the minimum seven-day grace period and
+`TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS=86400` for the daily TaskIQ schedule. A new upload is
+an orphan until an article references it; removing or replacing the last article reference starts
+a new grace period. Candidates become eligible only when `orphaned_at` is strictly older than the
+calculated cutoff, so the cleanup never shortens the configured retention window.
+
+Each task run locks and rechecks at most 100 oldest eligible metadata rows from the public `media`
+namespace. It deletes the MinIO object before deleting its database metadata. A MinIO error keeps
+the row and timestamp for the next scheduled retry, while a reference discovered during the final
+check clears the stale orphan marker. The task deliberately does not list the bucket or remove
+objects without database metadata, and it never scans the private `knowledge-private` bucket;
+object/metadata reconciliation remains a separate operational procedure. Run exactly one TaskIQ
+scheduler process, as defined by Compose, while workers may be scaled independently.
 
 ## Private Knowledge Bucket
 

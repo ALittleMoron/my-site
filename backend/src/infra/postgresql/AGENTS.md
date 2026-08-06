@@ -12,6 +12,9 @@ These rules apply to SQLAlchemy models, PostgreSQL storages, and Alembic migrati
 
 ## Data Models
 
+- Every SQLAlchemy datetime column, including nullable columns and matching Alembic column
+  definitions, must use `sqlalchemy_dev_utils.types.datetime.UTCDateTime`; do not use raw
+  `sqlalchemy.DateTime` for persisted timestamps.
 - SQLAlchemy data models may use only database-native PostgreSQL enum types for enum-valued
   columns. Do not set `native_enum=False` or emulate enums with `VARCHAR` plus check constraints;
   matching migrations must preserve native PostgreSQL enum types for those columns.

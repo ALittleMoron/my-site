@@ -63,9 +63,11 @@ class TaskiqConstants:
     cache_warm_latest_operation_key: Literal["latest"] = "latest"
     auth_session_prune_task_name: Literal["auth_session_prune"] = "auth_session_prune"
     agent_audit_prune_task_name: Literal["agent_audit_prune"] = "agent_audit_prune"
+    file_orphan_prune_task_name: Literal["file_orphan_prune"] = "file_orphan_prune"
 
 
 class FilesConstants:
+    orphan_cleanup_batch_size: int = 100
     article_image_mime_types: frozenset[str] = frozenset(
         {"image/png", "image/jpeg", "image/webp", "image/gif"},
     )

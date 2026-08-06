@@ -30,6 +30,15 @@ class FileStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def refresh_file_orphaned_at(
+        self,
+        *,
+        file_id: str,
+        orphaned_at: datetime,
+    ) -> StoredFile:
+        raise NotImplementedError
+
+    @abstractmethod
     async def update_file_name(
         self,
         *,
@@ -41,6 +50,33 @@ class FileStorage(ABC):
 
     @abstractmethod
     async def file_has_usages(self, *, file_id: str) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def lock_files(self, *, file_ids: frozenset[str]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_files_attached(self, *, file_ids: frozenset[str]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_files_orphaned_if_unused(
+        self,
+        *,
+        file_ids: frozenset[str],
+        orphaned_at: datetime,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def list_orphaned_files_for_cleanup(
+        self,
+        *,
+        namespace: Namespace,
+        cutoff: datetime,
+        limit: int,
+    ) -> StoredFiles:
         raise NotImplementedError
 
     @abstractmethod

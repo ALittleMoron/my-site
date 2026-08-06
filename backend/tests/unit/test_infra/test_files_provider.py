@@ -4,6 +4,9 @@ from unittest.mock import Mock, patch
 from dishka import Provider, Scope, make_async_container, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.files.schemas import FileOrphanCleanupConfig
+from core.files.services import FileOrphanCleanupService
+from core.files.storages import FileStorage
 from infra.ioc.prodivers.files_provider import FilesProvider
 from infra.s3.clients import S3ClientBundle
 
@@ -52,6 +55,25 @@ class S3SessionDouble:
 
 
 class TestFilesProvider:
+    async def test_orphan_cleanup_service_targets_only_public_media_namespace(self) -> None:
+        provider = FilesProvider()
+        file_client = Mock()
+        file_storage = Mock(spec=FileStorage)
+
+        service = await provider.provide_file_orphan_cleanup_service(
+            file_client=file_client,
+            file_storage=file_storage,
+        )
+
+        assert service == FileOrphanCleanupService(
+            file_client=file_client,
+            file_storage=file_storage,
+            config=FileOrphanCleanupConfig(
+                namespace="media",
+                batch_size=100,
+            ),
+        )
+
     async def test_s3_clients_exit_contexts_when_container_closes(self) -> None:
         session = S3SessionDouble()
 

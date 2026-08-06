@@ -8,6 +8,7 @@ from core.files.schemas import FileUpdateParams, FileUploadParams
 from entrypoints.litestar.api.files.schemas import FileUploadRequestSchema
 from entrypoints.litestar.api.schemas import CamelCaseSchema
 from tests.test_cases import ApiTestCase
+from tests.unit.mocks.providers.auth import test_current_datetime
 
 
 class TestAdminFilesAPI(ApiTestCase):
@@ -108,6 +109,7 @@ class TestAdminFilesAPI(ApiTestCase):
                 mime_type="image/png",
                 content=b"data",
             ),
+            current_datetime=test_current_datetime,
         )
 
     def test_list_files_maps_purpose_filter(self) -> None:
@@ -142,6 +144,7 @@ class TestAdminFilesAPI(ApiTestCase):
         self.use_case.update_file.assert_called_once_with(
             file_id=self.file_id,
             params=FileUpdateParams(name="Updated cover"),
+            current_datetime=test_current_datetime,
         )
 
     def test_delete_file_maps_file_id(self) -> None:

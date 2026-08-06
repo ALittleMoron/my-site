@@ -106,6 +106,13 @@ class Article:
     def is_available(self) -> bool:
         return self.publish_status == PublishStatusEnum.PUBLISHED
 
+    @property
+    def managed_file_ids(self) -> frozenset[str]:
+        cover_image_file_id = self.metadata.cover_image_file_id
+        if cover_image_file_id is None:
+            return self.content_file_ids
+        return self.content_file_ids | frozenset({cover_image_file_id})
+
     def localized_title(self, *, language: LanguageEnum) -> str:
         if language == LanguageEnum.RU:
             return self.title_ru

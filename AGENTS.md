@@ -89,6 +89,10 @@ Portfolio and articles site with a knowledge database
     public case-study highlights. The case-study page should mention only decisions that are
     genuinely distinctive, risky, educational, or important to the product's architecture,
     security, operations, UX, or quality story.
+  - Keep the public case-study conceptual and independent of current configuration. Do not include
+    exact retention periods, intervals, batch sizes, environment-variable names, or similarly
+    changeable operational values there; keep those details in deployment and operations
+    documentation.
   - For sufficiently large user-visible, architectural, security, operations, or delivery changes,
     ask whether the change should be added to the public updates/changelog page. Do not ask for
     routine refactoring, small fixes, incidental cleanup, dependency churn, or implementation-only

@@ -217,6 +217,13 @@ export class ArticleFormComponent implements OnInit {
 
   readonly tagSearchControl = new FormControl('', { nonNullable: true });
   readonly formSnapshot = signal(this.form.getRawValue());
+  readonly hasCoverImage = computed(() => this.formSnapshot().coverImageFileId.trim().length > 0);
+  readonly coverImageDescriptionIds = computed(() => {
+    const ids: string[] = [];
+    if (this.hasCoverImage()) ids.push('articleCoverImageReplaceHint');
+    if (this.coverImageUploadError() !== null) ids.push('articleCoverImageUploadError');
+    return ids.length === 0 ? null : ids.join(' ');
+  });
   readonly displayedSelectedTags = computed(() =>
     this.selectedTags()
       .map((tag) => localizeTag(tag, this.activeLanguageTab()))
@@ -226,6 +233,7 @@ export class ArticleFormComponent implements OnInit {
   private readonly unsavedSourceActive = signal(true);
   private readonly folderPicker = viewChild(ArticleFolderPickerComponent);
   private readonly tagSearchInput = viewChild<ElementRef<HTMLInputElement>>('tagSearchInput');
+  private readonly coverImageInput = viewChild<ElementRef<HTMLInputElement>>('coverImageInput');
 
   private readonly authoringState = computed(() => ({
     form: this.formSnapshot(),
@@ -401,6 +409,29 @@ export class ArticleFormComponent implements OnInit {
           input.value = '';
         },
       });
+  }
+
+  removeCoverImage(): void {
+    if (this.coverImageUploading()) return;
+
+    const controls = [
+      this.form.controls.coverImageFileId,
+      this.form.controls.coverImageAltRu,
+      this.form.controls.coverImageAltEn,
+    ];
+    for (const control of controls) {
+      control.setValue('');
+      control.markAsDirty();
+    }
+    this.form.markAsDirty();
+    this.coverImagePreviewUrl.set(null);
+    this.coverImageUploadError.set(null);
+
+    const input = this.coverImageInput()?.nativeElement;
+    if (input !== undefined) {
+      input.value = '';
+      input.focus();
+    }
   }
 
   selectTag(tag: ArticleTag): void {

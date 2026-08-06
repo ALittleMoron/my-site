@@ -1,8 +1,10 @@
+import asyncio
 from datetime import date
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.articles.exceptions import (
     ArticleFolderNotFoundError,
@@ -13,8 +15,9 @@ from core.articles.schemas import ArticleFilters
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
-from infra.postgresql.models import ArticleFileUsageModel, ArticleToTagSecondaryModel
+from infra.postgresql.models import ArticleFileUsageModel, ArticleModel, ArticleToTagSecondaryModel
 from infra.postgresql.storages.articles import ArticlesDatabaseStorage
+from tests.helpers.storage import StorageHelper
 from tests.test_cases import StorageTestCase
 
 
@@ -45,7 +48,10 @@ class TestArticlesDatabaseStorage(StorageTestCase):
             ),
         )
 
-        result = await self.storage.get_article_by_slug(slug="test-article")
+        result = await self.storage.get_article_by_slug(
+            slug="test-article",
+            lock=False,
+        )
 
         assert result.localized_title(language=LanguageEnum.RU) == "Test Article"
         assert self.collections.slugs(result.tags) == ["python", "django"]
@@ -80,6 +86,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
 
         result = await self.storage.get_article_by_slug(
             slug="localized-article",
+            lock=False,
         )
 
         assert not hasattr(result, "title")
@@ -208,7 +215,71 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         with pytest.raises(ArticleNotFoundError):
             await self.storage.get_article_by_slug(
                 slug="non-existent",
+                lock=False,
             )
+
+    async def test_locked_get_serializes_same_article_updates_and_reloads_state(
+        self,
+        session_maker: async_sessionmaker[AsyncSession],
+    ) -> None:
+        slug = "concurrent-update"
+        async with session_maker() as seed_session:
+            seed_helper = StorageHelper(session=seed_session)
+            await seed_helper.create_article(
+                article=self.factory.core.article(slug=slug, title_ru="Initial"),
+            )
+            await seed_session.commit()
+
+        async with session_maker() as first_session, session_maker() as second_session:
+            first_storage = ArticlesDatabaseStorage(session=first_session)
+            second_storage = ArticlesDatabaseStorage(session=second_session)
+            first = await first_storage.get_article_by_slug(slug=slug, lock=True)
+            assert first.title_ru == "Initial"
+
+            second_get = asyncio.create_task(
+                second_storage.get_article_by_slug(slug=slug, lock=True),
+            )
+            with pytest.raises(TimeoutError):
+                await asyncio.wait_for(asyncio.shield(second_get), timeout=0.1)
+
+            await first_session.execute(
+                update(ArticleModel)
+                .where(ArticleModel.slug == slug)
+                .values(title_ru="First update"),
+            )
+            await first_session.commit()
+
+            second = await second_get
+            assert second.title_ru == "First update"
+            await second_session.rollback()
+
+    async def test_locked_get_observes_concurrent_article_deletion(
+        self,
+        session_maker: async_sessionmaker[AsyncSession],
+    ) -> None:
+        slug = "concurrent-delete"
+        async with session_maker() as seed_session:
+            seed_helper = StorageHelper(session=seed_session)
+            await seed_helper.create_article(article=self.factory.core.article(slug=slug))
+            await seed_session.commit()
+
+        async with session_maker() as first_session, session_maker() as second_session:
+            first_storage = ArticlesDatabaseStorage(session=first_session)
+            second_storage = ArticlesDatabaseStorage(session=second_session)
+            await first_storage.get_article_by_slug(slug=slug, lock=True)
+
+            second_get = asyncio.create_task(
+                second_storage.get_article_by_slug(slug=slug, lock=True),
+            )
+            with pytest.raises(TimeoutError):
+                await asyncio.wait_for(asyncio.shield(second_get), timeout=0.1)
+
+            await first_storage.delete_article(slug=slug)
+            await first_session.commit()
+
+            with pytest.raises(ArticleNotFoundError):
+                await second_get
+            await second_session.rollback()
 
     async def test_list_articles_filters_by_tag_and_published_status(self) -> None:
         python = self.factory.core.tag(tag_id=self.factory.core.hex_id(1), slug="python")
@@ -760,6 +831,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         )
         first = await self.storage.get_article_by_slug(
             slug="draft",
+            lock=False,
         )
         await self.storage.update_article_publish_status(
             slug="draft",
@@ -771,6 +843,7 @@ class TestArticlesDatabaseStorage(StorageTestCase):
         )
         second = await self.storage.get_article_by_slug(
             slug="draft",
+            lock=False,
         )
 
         assert first.published_at is not None

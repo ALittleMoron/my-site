@@ -1,9 +1,9 @@
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from litestar.config.response_cache import CACHE_FOREVER
-from pydantic import PositiveInt, SecretStr, field_validator
+from pydantic import Field, PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from core.files.types import Namespace
@@ -130,6 +130,12 @@ class MinioSettings(ProjectBaseSettings):
         return f"{self.public_endpoint_url}/{bucket}/{object_path.removeprefix('/')}"
 
 
+class FilesSettings(ProjectBaseSettings):
+    model_config = SettingsConfigDict(env_prefix="FILES_")
+
+    orphan_retention_seconds: Annotated[PositiveInt, Field(ge=604_800)]
+
+
 class SentrySettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="SENTRY_")
 
@@ -189,6 +195,7 @@ class TaskiqSettings(ProjectBaseSettings):
     auth_session_prune_interval_seconds: PositiveInt
     agent_audit_prune_interval_seconds: PositiveInt
     cache_warm_interval_seconds: PositiveInt
+    file_orphan_prune_interval_seconds: PositiveInt
     result_expire_seconds: PositiveInt
 
 
@@ -205,6 +212,7 @@ class Settings:
     cache_warm: CacheWarmSettings
     competency_matrix: CompetencyMatrixSettings
     database: DatabaseSettings
+    files: FilesSettings
     i18n: I18nSettings
     minio: MinioSettings
     owner: OwnerSettings
@@ -219,6 +227,7 @@ class Settings:
         self.cache_warm = CacheWarmSettings()
         self.competency_matrix = CompetencyMatrixSettings()
         self.database = DatabaseSettings()
+        self.files = FilesSettings()
         self.i18n = I18nSettings()
         self.minio = MinioSettings()
         self.owner = OwnerSettings()
